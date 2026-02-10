@@ -1,15 +1,19 @@
-import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql, count } from 'drizzle-orm';
+import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql, count, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   administrations,
   administrationOrgs,
   administrationClasses,
+  administrationGroups,
   orgs,
   classes,
+  groups,
+  userGroups,
   type Administration,
   type Org,
   type Class,
+  type Group,
 } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -20,6 +24,7 @@ import type {
   AdministrationDistrictSortFieldType,
   AdministrationSchoolSortFieldType,
   AdministrationClassSortFieldType,
+  AdministrationGroupSortFieldType,
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
@@ -29,6 +34,7 @@ import { AdministrationAccessControls } from './access-controls/administration.a
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { OrgType } from '../enums/org-type.enum';
+import { isEnrollmentActive } from './utils/enrollment.utils';
 
 /**
  * Explicit mapping from API sort field names to administration table columns.
@@ -57,6 +63,13 @@ const CLASS_SORT_COLUMNS: Record<AdministrationClassSortFieldType, Column> = {
 };
 
 /**
+ * Explicit mapping from API sort field names to group table columns.
+ */
+const GROUP_SORT_COLUMNS: Record<AdministrationGroupSortFieldType, Column> = {
+  name: groups.name,
+};
+
+/**
  * Query options for administration repository methods (API contract format).
  */
 export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortFieldType>;
@@ -77,6 +90,11 @@ export type ListOrgsByAdministrationOptions = BasePaginatedQueryParams;
  * Options for listing classes of an administration.
  */
 export type ListClassesByAdministrationOptions = BasePaginatedQueryParams;
+
+/**
+ * Options for listing groups of an administration.
+ */
+export type ListGroupsByAdministrationOptions = BasePaginatedQueryParams;
 
 /**
  * Administration Repository
@@ -559,5 +577,132 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    */
   async getUserRolesForAdministration(userId: string, administrationId: string): Promise<string[]> {
     return this.accessControls.getUserRolesForAdministration(userId, administrationId);
+  }
+
+  /**
+   * Get groups assigned to an administration.
+   *
+   * @param administrationId - The administration ID to get groups for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with groups
+   */
+  async getGroupsByAdministrationId(
+    administrationId: string,
+    options: ListGroupsByAdministrationOptions,
+  ): Promise<PaginatedResult<Group>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const baseCondition = eq(administrationGroups.administrationId, administrationId);
+
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationGroups)
+      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
+      .where(baseCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Use explicit column mapping for type safety
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationGroupSortFieldType | undefined;
+    const sortColumn = sortField ? GROUP_SORT_COLUMNS[sortField] : groups.name;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ group: groups })
+      .from(administrationGroups)
+      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
+      .where(baseCondition)
+      // Add a stable secondary sort on groups.id to ensure deterministic pagination
+      .orderBy(primaryOrder, asc(groups.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.group),
+      totalItems,
+    };
+  }
+
+  /**
+   * Get groups assigned to an administration, filtered by user's group memberships.
+   *
+   * Unlike getGroupsByAdministrationId (used for super admins), this method filters
+   * the results to only include groups that the user is directly a member of.
+   *
+   * Groups are flat entities (no hierarchy), so access is based on direct membership
+   * in the user_groups table with an allowed role and active enrollment.
+   *
+   * @param accessControlFilter - User ID and allowed roles for group access
+   * @param administrationId - The administration ID to get groups for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with groups the user can access
+   */
+  async getAuthorizedGroupsByAdministrationId(
+    accessControlFilter: AccessControlFilter,
+    administrationId: string,
+    options: ListGroupsByAdministrationOptions,
+  ): Promise<PaginatedResult<Group>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+    const { userId, allowedRoles } = accessControlFilter;
+
+    const whereCondition = eq(administrationGroups.administrationId, administrationId);
+
+    // Filter groups by user's direct membership with allowed role and active enrollment
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationGroups)
+      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
+      .innerJoin(
+        userGroups,
+        and(
+          eq(userGroups.groupId, groups.id),
+          eq(userGroups.userId, userId),
+          inArray(userGroups.role, allowedRoles),
+          isEnrollmentActive(userGroups),
+        ),
+      )
+      .where(whereCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationGroupSortFieldType | undefined;
+    const sortColumn = sortField ? GROUP_SORT_COLUMNS[sortField] : groups.name;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ group: groups })
+      .from(administrationGroups)
+      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
+      .innerJoin(
+        userGroups,
+        and(
+          eq(userGroups.groupId, groups.id),
+          eq(userGroups.userId, userId),
+          inArray(userGroups.role, allowedRoles),
+          isEnrollmentActive(userGroups),
+        ),
+      )
+      .where(whereCondition)
+      // Add a stable secondary sort on groups.id to ensure deterministic pagination
+      .orderBy(primaryOrder, asc(groups.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.group),
+      totalItems,
+    };
   }
 }

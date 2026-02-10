@@ -13,10 +13,13 @@ import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { UserOrgFactory } from '../../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../../test-support/factories/user-class.factory';
+import { UserGroupFactory } from '../../test-support/factories/user-group.factory';
 import { OrgFactory } from '../../test-support/factories/org.factory';
+import { GroupFactory } from '../../test-support/factories/group.factory';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../../test-support/factories/administration-org.factory';
 import { AdministrationClassFactory } from '../../test-support/factories/administration-class.factory';
+import { AdministrationGroupFactory } from '../../test-support/factories/administration-group.factory';
 import { UserRole } from '../../enums/user-role.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
@@ -39,6 +42,13 @@ describe('AdministrationService (integration)', () => {
   };
 
   const defaultClassOptions = {
+    page: 1,
+    perPage: 100,
+    sortBy: 'name' as const,
+    sortOrder: 'asc' as const,
+  };
+
+  const defaultGroupOptions = {
     page: 1,
     perPage: 100,
     sortBy: 'name' as const,
@@ -943,6 +953,393 @@ describe('AdministrationService (integration)', () => {
         expect((error as ApiError).statusCode).toBe(403);
         // This is the "no access to administration" error, not "supervised user" error
         expect((error as ApiError).message).toBe('You do not have permission to perform this action');
+      });
+    });
+  });
+
+  describe('listGroups', () => {
+    describe('supervised role authorization', () => {
+      it('should return 403 when student tries to list groups', async () => {
+        // groupStudent is a student in the standalone group
+        // administrationAssignedToGroup is assigned to that group
+        // Student CAN access the administration but should NOT be able to list groups
+        const authContext = {
+          userId: baseFixture.groupStudent.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listGroups(authContext, baseFixture.administrationAssignedToGroup.id, defaultGroupOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
+      });
+
+      it('should return 403 when guardian tries to list groups', async () => {
+        // Create a guardian user assigned to the group
+        const guardianUser = await UserFactory.create({ nameFirst: 'Test', nameLast: 'GroupGuardian' });
+        await UserGroupFactory.create({
+          userId: guardianUser.id,
+          groupId: baseFixture.group.id,
+          role: UserRole.GUARDIAN,
+        });
+
+        const authContext = {
+          userId: guardianUser.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listGroups(authContext, baseFixture.administrationAssignedToGroup.id, defaultGroupOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+
+      it('should return 403 when parent tries to list groups', async () => {
+        // Create a parent user assigned to the group
+        const parentUser = await UserFactory.create({ nameFirst: 'Test', nameLast: 'GroupParent' });
+        await UserGroupFactory.create({
+          userId: parentUser.id,
+          groupId: baseFixture.group.id,
+          role: UserRole.PARENT,
+        });
+
+        const authContext = {
+          userId: parentUser.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listGroups(authContext, baseFixture.administrationAssignedToGroup.id, defaultGroupOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+
+      it('should return 403 when relative tries to list groups', async () => {
+        // Create a relative user assigned to the group
+        const relativeUser = await UserFactory.create({ nameFirst: 'Test', nameLast: 'GroupRelative' });
+        await UserGroupFactory.create({
+          userId: relativeUser.id,
+          groupId: baseFixture.group.id,
+          role: UserRole.RELATIVE,
+        });
+
+        const authContext = {
+          userId: relativeUser.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listGroups(authContext, baseFixture.administrationAssignedToGroup.id, defaultGroupOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+    });
+
+    describe('supervisory role authorization', () => {
+      it('should allow teacher to list groups they are a member of', async () => {
+        // Create a teacher user assigned to the group
+        const groupTeacher = await UserFactory.create({ nameFirst: 'Test', nameLast: 'GroupTeacher' });
+        await UserGroupFactory.create({
+          userId: groupTeacher.id,
+          groupId: baseFixture.group.id,
+          role: UserRole.TEACHER,
+        });
+
+        const authContext = {
+          userId: groupTeacher.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listGroups(
+          authContext,
+          baseFixture.administrationAssignedToGroup.id,
+          defaultGroupOptions,
+        );
+
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.group.id);
+      });
+
+      it('should allow administrator to list groups they are a member of', async () => {
+        // Create an administrator user assigned to the group
+        const groupAdmin = await UserFactory.create({ nameFirst: 'Test', nameLast: 'GroupAdmin' });
+        await UserGroupFactory.create({
+          userId: groupAdmin.id,
+          groupId: baseFixture.group.id,
+          role: UserRole.ADMINISTRATOR,
+        });
+
+        const authContext = {
+          userId: groupAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listGroups(
+          authContext,
+          baseFixture.administrationAssignedToGroup.id,
+          defaultGroupOptions,
+        );
+
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.group.id);
+      });
+
+      it('should filter groups to only those the user is a member of', async () => {
+        // Create an administration assigned to multiple groups
+        const group2 = await GroupFactory.create({ name: 'Test Group 2' });
+
+        const multiGroupAdmin = await AdministrationFactory.create({
+          name: 'Multi-Group Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationGroupFactory.create({
+          administrationId: multiGroupAdmin.id,
+          groupId: baseFixture.group.id,
+        });
+        await AdministrationGroupFactory.create({
+          administrationId: multiGroupAdmin.id,
+          groupId: group2.id,
+        });
+
+        // Create a teacher who is only a member of group1
+        const groupTeacher = await UserFactory.create({ nameFirst: 'Test', nameLast: 'MultiGroupTeacher' });
+        await UserGroupFactory.create({
+          userId: groupTeacher.id,
+          groupId: baseFixture.group.id,
+          role: UserRole.TEACHER,
+        });
+
+        const authContext = {
+          userId: groupTeacher.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listGroups(authContext, multiGroupAdmin.id, defaultGroupOptions);
+
+        // Should only see the group they are a member of
+        expect(result.totalItems).toBe(1);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(baseFixture.group.id);
+        // Should NOT see group2
+        const groupIds = result.items.map((g) => g.id);
+        expect(groupIds).not.toContain(group2.id);
+      });
+
+      it('should return empty when teacher has no group membership for administration groups', async () => {
+        // Create a teacher who has access to the administration via another path (e.g., org)
+        // but is not a member of the group
+        const nonMemberTeacher = await UserFactory.create({ nameFirst: 'NonMember', nameLast: 'Teacher' });
+        // Give them org-level access so they can access the administration
+        await UserOrgFactory.create({
+          userId: nonMemberTeacher.id,
+          orgId: baseFixture.district.id,
+          role: UserRole.TEACHER,
+        });
+
+        // Create an admin assigned to both the district (for access) and a group
+        const mixedAdmin = await AdministrationFactory.create({
+          name: 'Mixed Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: mixedAdmin.id,
+          orgId: baseFixture.district.id,
+        });
+        await AdministrationGroupFactory.create({
+          administrationId: mixedAdmin.id,
+          groupId: baseFixture.group.id,
+        });
+
+        const authContext = {
+          userId: nonMemberTeacher.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listGroups(authContext, mixedAdmin.id, defaultGroupOptions);
+
+        // Teacher has access to the administration but is not a member of any groups assigned to it
+        expect(result.totalItems).toBe(0);
+        expect(result.items).toHaveLength(0);
+      });
+    });
+
+    describe('super admin authorization', () => {
+      it('should allow super admin to see all groups without filtering', async () => {
+        // Create an administration assigned to multiple groups
+        const group2 = await GroupFactory.create({ name: 'Super Admin Test Group 2' });
+
+        const multiGroupAdmin = await AdministrationFactory.create({
+          name: 'Multi-Group Super Admin Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationGroupFactory.create({
+          administrationId: multiGroupAdmin.id,
+          groupId: baseFixture.group.id,
+        });
+        await AdministrationGroupFactory.create({
+          administrationId: multiGroupAdmin.id,
+          groupId: group2.id,
+        });
+
+        const authContext = {
+          userId: baseFixture.districtAdmin.id, // userId doesn't matter for super admin
+          isSuperAdmin: true,
+        };
+
+        const result = await service.listGroups(authContext, multiGroupAdmin.id, defaultGroupOptions);
+
+        // Super admin should see ALL groups
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const groupIds = result.items.map((g) => g.id);
+        expect(groupIds).toContain(baseFixture.group.id);
+        expect(groupIds).toContain(group2.id);
+      });
+    });
+
+    describe('access control edge cases', () => {
+      it('should return 404 when administration does not exist', async () => {
+        const authContext = {
+          userId: baseFixture.districtAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listGroups(authContext, '00000000-0000-0000-0000-000000000000', defaultGroupOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(404);
+      });
+
+      it('should return 403 when user has no access to administration', async () => {
+        // districtBAdmin has no access to administrationAssignedToGroup
+        const authContext = {
+          userId: baseFixture.districtBAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listGroups(authContext, baseFixture.administrationAssignedToGroup.id, defaultGroupOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        // This is the "no access to administration" error
+        expect((error as ApiError).message).toBe('You do not have permission to perform this action');
+      });
+
+      it('should not return groups for users with future enrollment', async () => {
+        // futureGroupStudent has an enrollment that starts in the future
+        // Create a teacher with the same future enrollment
+        const futureGroupTeacher = await UserFactory.create({ nameFirst: 'Future', nameLast: 'GroupTeacher' });
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 7); // 7 days from now
+        await UserGroupFactory.create({
+          userId: futureGroupTeacher.id,
+          groupId: baseFixture.group.id,
+          role: UserRole.TEACHER,
+          enrollmentStart: futureDate,
+        });
+
+        const authContext = {
+          userId: futureGroupTeacher.id,
+          isSuperAdmin: false,
+        };
+
+        // Teacher should have access to the administration (via some other path or the base fixture setup)
+        // but should not see the group because enrollment hasn't started yet
+        // For this test, we need to ensure the teacher has access to the administration via some active enrollment
+
+        // Create an administration that the teacher has access to via an active org enrollment
+        // but also has a group assigned where the teacher's enrollment is in the future
+        const mixedAdmin = await AdministrationFactory.create({
+          name: 'Future Enrollment Test Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        // Give teacher active access via district
+        await UserOrgFactory.create({
+          userId: futureGroupTeacher.id,
+          orgId: baseFixture.district.id,
+          role: UserRole.TEACHER,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: mixedAdmin.id,
+          orgId: baseFixture.district.id,
+        });
+        await AdministrationGroupFactory.create({
+          administrationId: mixedAdmin.id,
+          groupId: baseFixture.group.id,
+        });
+
+        const result = await service.listGroups(authContext, mixedAdmin.id, defaultGroupOptions);
+
+        // Teacher's group enrollment is in the future, so should not see the group
+        expect(result.totalItems).toBe(0);
+        expect(result.items).toHaveLength(0);
+      });
+    });
+
+    describe('pagination', () => {
+      it('should correctly paginate group results', async () => {
+        // Create multiple groups assigned to an administration
+        const groups = await Promise.all([
+          GroupFactory.create({ name: 'Pagination Group A' }),
+          GroupFactory.create({ name: 'Pagination Group B' }),
+          GroupFactory.create({ name: 'Pagination Group C' }),
+        ]);
+
+        const paginationAdmin = await AdministrationFactory.create({
+          name: 'Pagination Test Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await Promise.all(
+          groups.map((group) =>
+            AdministrationGroupFactory.create({
+              administrationId: paginationAdmin.id,
+              groupId: group.id,
+            }),
+          ),
+        );
+
+        const authContext = {
+          userId: baseFixture.districtAdmin.id,
+          isSuperAdmin: true,
+        };
+
+        // Get first page with 2 items
+        const page1 = await service.listGroups(authContext, paginationAdmin.id, {
+          page: 1,
+          perPage: 2,
+          sortBy: 'name',
+          sortOrder: 'asc',
+        });
+
+        expect(page1.totalItems).toBe(3);
+        expect(page1.items).toHaveLength(2);
+        expect(page1.items[0]!.name).toBe('Pagination Group A');
+        expect(page1.items[1]!.name).toBe('Pagination Group B');
+
+        // Get second page
+        const page2 = await service.listGroups(authContext, paginationAdmin.id, {
+          page: 2,
+          perPage: 2,
+          sortBy: 'name',
+          sortOrder: 'asc',
+        });
+
+        expect(page2.totalItems).toBe(3);
+        expect(page2.items).toHaveLength(1);
+        expect(page2.items[0]!.name).toBe('Pagination Group C');
       });
     });
   });

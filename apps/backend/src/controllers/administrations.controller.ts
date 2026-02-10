@@ -8,13 +8,15 @@ import type {
   AdministrationDistrictsListQuery,
   AdministrationSchoolsListQuery,
   AdministrationClassesListQuery,
+  AdministrationGroupsListQuery,
   Administration as ContractAdministration,
   AdministrationBase as ContractAdministrationBase,
   AdministrationDistrict,
   AdministrationSchool,
   AdministrationClass,
+  AdministrationGroup,
 } from '@roar-dashboard/api-contract';
-import type { Administration, Org, Class } from '../db/schema';
+import type { Administration, Org, Class, Group } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -67,12 +69,14 @@ function transformAdministration(admin: AdministrationWithEmbeds): ContractAdmin
 
 /**
  * Maps a database entity with id and name to the API schema.
- * Used for districts, schools, and classes which share the same contract shape.
+ * Used for districts, schools, classes, and groups which share the same contract shape.
  *
- * @param entity - The database entity (Org or Class)
+ * @param entity - The database entity (Org, Class, or Group)
  * @returns The API-formatted object with id and name
  */
-function toIdName(entity: Org | Class): AdministrationDistrict | AdministrationSchool | AdministrationClass {
+function toIdName(
+  entity: Org | Class | Group,
+): AdministrationDistrict | AdministrationSchool | AdministrationClass | AdministrationGroup {
   return {
     id: entity.id,
     name: entity.name,
@@ -290,6 +294,58 @@ export const AdministrationsController = {
       const { page, perPage, sortBy, sortOrder } = query;
 
       const result = await administrationService.listClasses(authContext, administrationId, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+      });
+
+      // Transform to API response format
+      const items = result.items.map(toIdName);
+
+      const totalPages = Math.ceil(result.totalItems / perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List groups assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listGroups: async (authContext: AuthContext, administrationId: string, query: AdministrationGroupsListQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder } = query;
+
+      const result = await administrationService.listGroups(authContext, administrationId, {
         page,
         perPage,
         sortBy,
