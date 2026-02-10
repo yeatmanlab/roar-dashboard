@@ -10,6 +10,7 @@ import type {
   AdministrationSortFieldType,
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 import { AdministrationAccessControls } from './access-controls/administration.access-controls';
@@ -158,7 +159,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     } as const;
     const sortColumn =
       SORT_FIELD_TO_COLUMN[orderBy?.field as keyof typeof SORT_FIELD_TO_COLUMN] ?? administrations.createdAt;
-    const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join administrations with the accessible IDs subquery + status filter
     const dataResult = await this.db
@@ -254,7 +255,10 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    const sortDirection = orderBy?.direction === 'desc' ? desc(orgs.name) : asc(orgs.name);
+    // orderBy.field is validated by the API contract - use it directly with type assertion
+    const sortField = (orderBy?.field ?? 'name') as keyof typeof orgs;
+    const sortColumn = orgs[sortField] as typeof orgs.name;
+    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ org: orgs })
@@ -312,7 +316,10 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    const sortDirection = orderBy?.direction === 'desc' ? desc(orgs.name) : asc(orgs.name);
+    // orderBy.field is validated by the API contract - use it directly with type assertion
+    const sortField = (orderBy?.field ?? 'name') as keyof typeof orgs;
+    const sortColumn = orgs[sortField] as typeof orgs.name;
+    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ org: orgs })
