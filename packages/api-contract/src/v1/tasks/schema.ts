@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+enum TASK_VARIANT_STATUS {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  DEPRECATED = 'deprecated',
+}
+
 const TaskVariantParameter = z.object({
   name: z.string().min(1).max(255),
   value: z.string().min(1).max(1024),
@@ -11,6 +17,7 @@ export const TaskVariantCreateRequestSchema = z.object({
   name: z.string().trim().min(1).max(255),
   parameters: TaskVariantParametersArray,
   description: z.string().trim().min(1).max(1024).optional(),
+  status: z.nativeEnum(TASK_VARIANT_STATUS).optional(),
 });
 
 export const TaskVariantCreateResponseSchema = z.object({
