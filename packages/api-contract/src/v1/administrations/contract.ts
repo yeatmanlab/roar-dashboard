@@ -69,8 +69,9 @@ export const AdministrationsContract = c.router(
       summary: 'List districts assigned to an administration',
       description:
         'Returns a paginated list of districts assigned to the specified administration. ' +
-        'Supervisory users see only districts in their accessible org tree. ' +
-        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Super admins see all assigned districts. ' +
+        'Supervisory users (administrator, teacher) see only districts in their accessible org tree. ' +
+        'Supervised users (student, guardian, parent, relative) receive 403. ' +
         'Returns 404 if the administration does not exist.',
     },
     listSchools: {
@@ -89,8 +90,9 @@ export const AdministrationsContract = c.router(
       summary: 'List schools assigned to an administration',
       description:
         'Returns a paginated list of schools assigned to the specified administration. ' +
-        'Supervisory users see only schools in their accessible org tree. ' +
-        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Super admins see all assigned schools. ' +
+        'Supervisory users (administrator, teacher) see only schools in their accessible org tree. ' +
+        'Supervised users (student, guardian, parent, relative) receive 403. ' +
         'Returns 404 if the administration does not exist.',
     },
   },
