@@ -1,29 +1,25 @@
-import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql } from 'drizzle-orm';
+import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql, count } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { administrations, type Administration } from '../db/schema';
+import { administrations, administrationOrgs, orgs, type Administration, type Org } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type {
   PaginationQuery,
   SortQuery,
-  ADMINISTRATION_SORT_FIELDS,
+  AdministrationSortFieldType,
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 import { AdministrationAccessControls } from './access-controls/administration.access-controls';
-import type { AccessControlFilter } from './utils/access-controls.utils';
-
-/**
- * Sort field type derived from api-contract.
- */
-export type AdministrationSortField = (typeof ADMINISTRATION_SORT_FIELDS)[number];
+import { OrgAccessControls } from './access-controls/org.access-controls';
+import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 
 /**
  * Query options for administration repository methods (API contract format).
  */
-export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortField>;
+export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortFieldType>;
 
 /**
  * Options for listing administrations with optional status filter.
@@ -31,6 +27,11 @@ export type AdministrationQueryOptions = PaginationQuery & SortQuery<Administrat
 export interface ListAuthorizedOptions extends BasePaginatedQueryParams {
   status?: AdministrationStatus;
 }
+
+/**
+ * Options for listing districts of an administration.
+ */
+export type ListDistrictsOptions = BasePaginatedQueryParams;
 
 /**
  * Administration Repository
@@ -43,13 +44,16 @@ export interface ListAuthorizedOptions extends BasePaginatedQueryParams {
  */
 export class AdministrationRepository extends BaseRepository<Administration, typeof administrations> {
   private readonly accessControls: AdministrationAccessControls;
+  private readonly orgAccessControls: OrgAccessControls;
 
   constructor(
     db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient,
     accessControls: AdministrationAccessControls = new AdministrationAccessControls(db),
+    orgAccessControls: OrgAccessControls = new OrgAccessControls(db),
   ) {
     super(db, administrations);
     this.accessControls = accessControls;
+    this.orgAccessControls = orgAccessControls;
   }
 
   /**
@@ -144,7 +148,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       return { items: [], totalItems: 0 };
     }
 
-    // Map field name to column (matches SORT_FIELD_TO_COLUMN in administration.service.ts)
+    // Map API sort field name to Drizzle column
     const SORT_FIELD_TO_COLUMN = {
       name: administrations.name,
       createdAt: administrations.createdAt,
@@ -172,6 +176,34 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
+   * Get a single administration by ID, only if the user is authorized to access it.
+   *
+   * Combines a direct lookup with an access control check. Returns the administration
+   * if found AND accessible, null otherwise (prevents existence leaking).
+   *
+   * @param accessControlFilter - User ID and allowed roles
+   * @param administrationId - The administration ID to retrieve
+   * @returns The administration if found and accessible, null otherwise
+   */
+  async getAuthorizedById(
+    accessControlFilter: AccessControlFilter,
+    administrationId: string,
+  ): Promise<Administration | null> {
+    const accessibleAdmins = this.accessControls
+      .buildUserAdministrationIdsQuery(accessControlFilter)
+      .as('accessible_admins');
+
+    const result = await this.db
+      .select({ administration: administrations })
+      .from(administrations)
+      .innerJoin(accessibleAdmins, eq(administrations.id, accessibleAdmins.administrationId))
+      .where(eq(administrations.id, administrationId))
+      .limit(1);
+
+    return result[0]?.administration ?? null;
+  }
+
+  /**
    * Get count of assigned users for multiple administrations.
    *
    * A user is "assigned" to an administration if they belong to an org, class, or group
@@ -186,5 +218,130 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    */
   async getAssignedUserCountsByAdministrationIds(administrationIds: string[]): Promise<Map<string, number>> {
     return this.accessControls.getAssignedUserCountsByAdministrationIds(administrationIds);
+  }
+
+  /**
+   * Get districts assigned to an administration.
+   *
+   * Returns only orgs with orgType='district' that are directly assigned to the administration
+   * via the administration_orgs junction table.
+   *
+   * @param administrationId - The administration ID to get districts for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with districts
+   */
+  async getDistrictsByAdministrationId(
+    administrationId: string,
+    options: ListDistrictsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    // Base condition: orgs assigned to this administration that are districts
+    const baseCondition = and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, 'district'));
+
+    // Count query
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .where(baseCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Sort by name (currently the only supported sort field)
+    const sortDirection = orderBy?.direction === 'desc' ? desc(orgs.name) : asc(orgs.name);
+
+    // Data query
+    const dataResult = await this.db
+      .select({ org: orgs })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .where(baseCondition)
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.org),
+      totalItems,
+    };
+  }
+
+  /**
+   * Get districts assigned to an administration, filtered by user's accessible orgs.
+   *
+   * Unlike getDistrictsByAdministrationId (used for super admins), this method filters
+   * the results to only include districts that the user can access based on their
+   * org/class memberships.
+   *
+   * @param accessControlFilter - User ID and allowed roles for org access
+   * @param administrationId - The administration ID to get districts for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with districts the user can access
+   */
+  async getAuthorizedDistrictsByAdministrationId(
+    accessControlFilter: AccessControlFilter,
+    administrationId: string,
+    options: ListDistrictsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    // Build accessible orgs subquery (from OrgAccessControls)
+    const accessibleOrgs = this.orgAccessControls
+      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
+      .as('accessible_orgs');
+
+    // Count query: districts assigned to this administration that the user can access
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
+      .where(and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, 'district')));
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Sort by name (currently the only supported sort field)
+    const sortDirection = orderBy?.direction === 'desc' ? desc(orgs.name) : asc(orgs.name);
+
+    // Data query
+    const dataResult = await this.db
+      .select({ org: orgs })
+      .from(administrationOrgs)
+      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
+      .where(and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, 'district')))
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.org),
+      totalItems,
+    };
+  }
+
+  /**
+   * Get user's roles for a specific administration.
+   *
+   * Delegates to AdministrationAccessControls to determine which roles the user
+   * has that grant access to this administration.
+   *
+   * @param userId - The user ID to get roles for
+   * @param administrationId - The administration ID to check
+   * @returns Array of roles the user has for this administration
+   */
+  async getUserRolesForAdministration(userId: string, administrationId: string): Promise<string[]> {
+    return this.accessControls.getUserRolesForAdministration(userId, administrationId);
   }
 }

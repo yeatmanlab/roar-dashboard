@@ -49,6 +49,7 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
   ],
   [UserRole.TEACHER]: [
     Permissions.Administrations.LIST,
+    Permissions.Administrations.READ,
     Permissions.Organizations.LIST,
     Permissions.Users.LIST,
     Permissions.Administrators.READ,
@@ -58,7 +59,12 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
     Permissions.Tasks.LAUNCH,
     Permissions.Profile.READ,
   ],
-  [UserRole.STUDENT]: [Permissions.Administrations.LIST, Permissions.Tasks.LAUNCH, Permissions.Profile.READ],
+  [UserRole.STUDENT]: [
+    Permissions.Administrations.LIST,
+    Permissions.Administrations.READ,
+    Permissions.Tasks.LAUNCH,
+    Permissions.Profile.READ,
+  ],
 };
 
 /**

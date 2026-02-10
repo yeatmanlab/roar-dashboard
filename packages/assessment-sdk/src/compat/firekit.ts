@@ -1,6 +1,22 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
-import type { StartRunInput, StartRunOutput, FinishRunInput, FinishRunOutput, AbortRunOutput } from '../types';
+import type {
+  StartRunInput,
+  StartRunOutput,
+  FinishRunInput,
+  FinishRunOutput,
+  AbortRunOutput,
+  UpdateEngagementFlagsInput,
+  UpdateEngagementFlagsOutput,
+  AddInteractionInput,
+  AddInteractionOutput,
+  UpdateUserInput,
+  UpdateUserOutput,
+  TrialData,
+  RawScores,
+  ComputedScores,
+  WriteTrialOutput,
+} from '../types';
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
@@ -128,4 +144,87 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
  */
 export function abortRun(): AbortRunOutput {
   throw new SDKError('firekit.abortRun not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * async updateEngagementFlags(flagNames: string[], markAsReliable = false, reliableByBlock = undefined) { […] }
+ *
+ * @param flagNames - Array of engagement flag names to update.
+ * @param markAsReliable - Whether to mark the run as reliable (default: false).
+ * @param reliableByBlock - Optional block-level reliability data.
+ * @returns Promise<void>
+ * @throws SDKError - Always, until implemented.
+ */
+export async function updateEngagementFlags({
+  flagNames,
+  markAsReliable = false,
+  reliableByBlock = undefined,
+}: UpdateEngagementFlagsInput): UpdateEngagementFlagsOutput {
+  void flagNames;
+  void markAsReliable;
+  void reliableByBlock;
+  throw new SDKError('appkit.updateEngagementFlags not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * addInteraction(interaction: InteractionEvent) { […] }
+ *
+ * @param interaction - The interaction event to record.
+ * @returns void
+ * @throws SDKError - Always, until implemented.
+ */
+export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
+  void interaction;
+  throw new SDKError('appkit.addInteraction not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * async updateUser({ tasks, variants, assessmentPid, ...userMetadata }: UserUpdateInput): Promise<void> { […] }
+ *
+ * @deprecated This method is related to standalone apps and may be deprecated in the future.
+ * @param userUpdateData - User update data including tasks, variants, assessmentPid, and other metadata.
+ * @returns Promise<void>
+ * @throws SDKError - Always, until implemented.
+ */
+export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOutput {
+  // Issue deprecation warning
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[DEPRECATION] updateUser() exists only for Firekit compatibility and will be removed in a future version.',
+    );
+  }
+
+  void userUpdateData;
+  throw new SDKError('appkit.updateUser not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * async writeTrial(trialData: TrialData, computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>) { […] }
+ *
+ * Writes trial data to the backend and optionally computes scores via callback.
+ *
+ * @param trialData - Trial data object containing assessment-specific trial information
+ * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores
+ * @returns Promise<void>
+ * @throws SDKError - Always, until implemented.
+ */
+export async function writeTrial(
+  trialData: TrialData,
+  computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
+): WriteTrialOutput {
+  void trialData;
+  void computedScoreCallback;
+  throw new SDKError('appkit.writeTrial not yet implemented');
 }

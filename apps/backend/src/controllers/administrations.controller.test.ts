@@ -4,6 +4,10 @@ import {
   AdministrationFactory,
   AdministrationWithEmbedsFactory,
 } from '../test-support/factories/administration.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { ApiError } from '../errors/api-error';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { OrgType } from '../enums/org-type.enum';
 
 // Mock the AdministrationService module
 vi.mock('../services/administration/administration.service', () => ({
@@ -12,8 +16,20 @@ vi.mock('../services/administration/administration.service', () => ({
 
 import { AdministrationService } from '../services/administration/administration.service';
 
+/**
+ * Type-safe assertion helper for success responses.
+ * Asserts the status is OK and returns the data with proper typing.
+ */
+function expectOkResponse<T>(result: { status: number; body: { data: T } | { error: unknown } }): T {
+  expect(result.status).toBe(StatusCodes.OK);
+  expect(result.body).toHaveProperty('data');
+  return (result.body as { data: T }).data;
+}
+
 describe('AdministrationsController', () => {
   const mockList = vi.fn();
+  const mockGet = vi.fn();
+  const mockListDistricts = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -22,6 +38,8 @@ describe('AdministrationsController', () => {
     // Setup the mock service
     vi.mocked(AdministrationService).mockReturnValue({
       list: mockList,
+      getById: mockGet,
+      listDistricts: mockListDistricts,
     });
   });
 
@@ -44,9 +62,9 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.status).toBe(StatusCodes.OK);
-      expect(result.body.data.items).toHaveLength(2);
-      expect(result.body.data.pagination).toEqual({
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      expect(data.pagination).toEqual({
         page: 1,
         perPage: 25,
         totalItems: 2,
@@ -79,7 +97,8 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      const item = result.body.data.items[0]!;
+      const data = expectOkResponse(result);
+      const item = data.items[0]!;
       expect(item.id).toBe('admin-uuid-123');
       expect(item.name).toBe('Internal Name');
       expect(item.publicName).toBe('Public Name');
@@ -105,7 +124,8 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.body.data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
+      const data = expectOkResponse(result);
+      expect(data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
     });
 
     it('should pass auth context and query parameters to service', async () => {
@@ -144,9 +164,10 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.body.data.items).toEqual([]);
-      expect(result.body.data.pagination.totalItems).toBe(0);
-      expect(result.body.data.pagination.totalPages).toBe(0);
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
     });
 
     it('should include stats in response when embed=stats is requested', async () => {
@@ -177,14 +198,15 @@ describe('AdministrationsController', () => {
         sortOrder: 'desc',
         embed: ['stats'],
       });
-      expect(result.body.data.items[0]!.stats).toEqual({
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.stats).toEqual({
         assigned: 25,
         started: 10,
         completed: 5,
       });
     });
 
-    it('should not include stats in response when not embedded', async () => {
+    it('should not include stats in response when not embedded (list)', async () => {
       const mockAdmin = AdministrationFactory.build({
         id: 'admin-1',
         name: 'Test Admin',
@@ -205,7 +227,8 @@ describe('AdministrationsController', () => {
         embed: [],
       });
 
-      expect(result.body.data.items[0]).not.toHaveProperty('stats');
+      const data = expectOkResponse(result);
+      expect(data.items[0]).not.toHaveProperty('stats');
     });
 
     it('should include tasks in response when embed=tasks is requested', async () => {
@@ -239,10 +262,321 @@ describe('AdministrationsController', () => {
         sortOrder: 'desc',
         embed: ['tasks'],
       });
-      expect(result.body.data.items[0]!.tasks).toEqual([
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.tasks).toEqual([
         { taskId: 'task-1', taskName: 'SWR', variantId: 'variant-1', variantName: 'Variant A', orderIndex: 0 },
         { taskId: 'task-2', taskName: 'PA', variantId: 'variant-2', variantName: null, orderIndex: 1 },
       ]);
+    });
+
+    it('should return 500 when service throws ApiError', async () => {
+      mockList.mockRejectedValue(
+        new ApiError('Failed to retrieve administrations', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.list(mockAuthContext, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: [],
+      });
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Failed to retrieve administrations',
+          code: 'database/query-failed',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockList.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(
+        Controller.list(mockAuthContext, {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          embed: [],
+        }),
+      ).rejects.toThrow('Database connection lost');
+    });
+  });
+
+  describe('get', () => {
+    it('should return administration with 200 status when found and accessible', async () => {
+      const mockAdmin = AdministrationFactory.build({
+        id: 'admin-uuid-123',
+        name: 'Internal Name',
+        namePublic: 'Public Name',
+        dateStart: new Date('2024-01-01T00:00:00Z'),
+        dateEnd: new Date('2024-12-31T23:59:59Z'),
+        createdAt: new Date('2023-06-15T10:30:00Z'),
+        isOrdered: true,
+      });
+      mockGet.mockResolvedValue(mockAdmin);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.get(mockAuthContext, 'admin-uuid-123');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toEqual({
+        data: {
+          id: 'admin-uuid-123',
+          name: 'Internal Name',
+          publicName: 'Public Name',
+          dates: {
+            start: '2024-01-01T00:00:00.000Z',
+            end: '2024-12-31T23:59:59.000Z',
+            created: '2023-06-15T10:30:00.000Z',
+          },
+          isOrdered: true,
+        },
+      });
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockGet.mockRejectedValue(
+        new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.get(mockAuthContext, 'non-existent-id');
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Administration not found',
+          code: 'resource/not-found',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 403 when user lacks permission to access administration', async () => {
+      mockGet.mockRejectedValue(
+        new ApiError('You do not have permission to perform this action', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.get(mockAuthContext, 'admin-123');
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect(result.body).toEqual({
+        error: {
+          message: 'You do not have permission to perform this action',
+          code: 'auth/forbidden',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should pass auth context and administration ID to service', async () => {
+      const mockAdmin = AdministrationFactory.build();
+      mockGet.mockResolvedValue(mockAdmin);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const authContext = { userId: 'user-456', isSuperAdmin: true };
+      await Controller.get(authContext, 'admin-123');
+
+      expect(mockGet).toHaveBeenCalledWith(authContext, 'admin-123');
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockGet.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.get(mockAuthContext, 'admin-123')).rejects.toThrow('Database connection lost');
+    });
+  });
+
+  describe('listDistricts', () => {
+    it('should return paginated districts with 200 status', async () => {
+      const mockDistricts = [
+        OrgFactory.build({ orgType: OrgType.DISTRICT }),
+        OrgFactory.build({ orgType: OrgType.DISTRICT }),
+      ];
+      mockListDistricts.mockResolvedValue({
+        items: mockDistricts,
+        totalItems: 2,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform district fields to API response format', async () => {
+      const mockDistrict = OrgFactory.build({
+        id: 'district-uuid-123',
+        name: 'Test District',
+        orgType: OrgType.DISTRICT,
+      });
+      mockListDistricts.mockResolvedValue({
+        items: [mockDistrict],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      const item = data.items[0]!;
+      expect(item.id).toBe('district-uuid-123');
+      expect(item.name).toBe('Test District');
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockListDistricts.mockRejectedValue(
+        new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'non-existent-id', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Administration not found',
+          code: 'resource/not-found',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 403 when user lacks permission to access administration', async () => {
+      mockListDistricts.mockRejectedValue(
+        new ApiError('You do not have permission to perform this action', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect(result.body).toEqual({
+        error: {
+          message: 'You do not have permission to perform this action',
+          code: 'auth/forbidden',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should pass auth context, administration ID, and query parameters to service', async () => {
+      mockListDistricts.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const authContext = { userId: 'user-456', isSuperAdmin: true };
+      await Controller.listDistricts(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+
+      expect(mockListDistricts).toHaveBeenCalledWith(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+    });
+
+    it('should return empty items array when no districts found', async () => {
+      mockListDistricts.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockListDistricts.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(
+        Controller.listDistricts(mockAuthContext, 'admin-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'name',
+          sortOrder: 'asc',
+        }),
+      ).rejects.toThrow('Database connection lost');
     });
   });
 });

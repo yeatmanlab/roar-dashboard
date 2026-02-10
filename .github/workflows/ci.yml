@@ -43,18 +43,44 @@ jobs:
   # Test
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   test:
-    name: Unit tests
+    name: Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    env:
+      DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
+      CORE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roar_core_test
+      ASSESSMENT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roar_assessment_test
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
-      - name: Run tests
+      - name: Create test databases
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_core_test;"
+          PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_assessment_test;"
+
+      - name: Run all tests
         run: npm run test
 
       - name: Report dashboard coverage

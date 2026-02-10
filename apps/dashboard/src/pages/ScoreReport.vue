@@ -1419,12 +1419,9 @@ const createExportData = ({ rows, includeProgress = false }) => {
       tableRow['School'] = user?.schoolName;
     }
 
-    // if org is from clever, include stateId
-    // if (orgData.value?.clever === true) {
     tableRow['State ID'] = user.stateId;
     tableRow['Student ID'] = user.studentId;
     tableRow['SIS ID'] = user.sisId;
-    // }
 
     for (const taskId in scores) {
       const score = scores[taskId];

@@ -45,18 +45,18 @@ export interface BaseGetParams extends BaseParams {
 }
 
 /**
- * Params for retrieving a document by ID.
+ * Params for retrieving an entity by its primary key.
  */
 export interface BaseGetByIdParams extends BaseParams {
-  /** The document ID to retrieve. */
+  /** The entity's UUID primary key. */
   id: string;
 }
 
 /**
- * Params for retrieving documents using a where clause.
+ * Params for retrieving entities using a where clause.
  */
 export interface BaseGetByWhereParams extends BaseParams {
-  /** The Drizzle SQL where clause */
+  /** The Drizzle SQL where clause. */
   where: SQL;
 }
 
@@ -177,6 +177,9 @@ export interface BaseRunTransactionParams<R> {
  * @see {@link BaseRunTransactionParams} - Parameters for running a transaction in a repository.
  */
 export interface IBaseRepository<T> {
+  /** Retrieves an entity by its ID. Returns null if not found. */
+  getById(params: BaseGetByIdParams): Promise<T | null>;
+
   /** Retrieves an entity by its ID. */
   get(params: BaseGetParams & { id: string }): Promise<T | null>;
 
