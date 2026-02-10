@@ -1,49 +1,26 @@
 import { z } from 'zod';
 
-// const TASK_VARIANT_STATUS_VALUES = ['deprecated', 'draft', 'published'] as const;
-
-// const TaskVariantStatusSchema = z.enum(TASK_VARIANT_STATUS_VALUES);
-
-// type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
-
-// const TaskVariantSchema = z.object({
-//   id: z.string().uuid(),
-//   taskId: z.string().uuid(),
-//   name: z.string().min(1).max(255),
-//   description: z.string().min(1).max(1024),
-//   status: TaskVariantStatusSchema,
-// });
-
-// export type TaskVariant = z.infer<typeof TaskVariantSchema>;
-
-// const TASK_VARIANT_SORT_FIELDS = ['taskId', 'name', 'status', 'createdAt', 'updatedAt'] as const;
-// type TaskVariantSortFieldType = (typeof TASK_VARIANT_SORT_FIELDS)[number];
-// const TaskVariantSortField = {
-//   TASK_ID: 'taskId',
-//   NAME: 'name',
-//   STATUS: 'status',
-//   CREATED_AT: 'createdAt',
-//   UPDATED_AT: 'updatedAt',
-// } as const satisfies Record<string, TaskVariantSortFieldType>;
-
 const TaskVariantParameter = z.object({
   name: z.string().min(1).max(255),
   value: z.string().min(1).max(1024),
 });
 
-const TaskVariantParameters = z.array(TaskVariantParameter);
-
-// type TaskVariantParametersSchema = z.infer<typeof TaskVariantParameters>;
+const TaskVariantParametersArray = z.array(TaskVariantParameter).min(1);
 
 export const TaskVariantCreateRequestSchema = z.object({
-  taskId: z.string().uuid(),
-  name: z.string().min(1).max(255),
-  description: z.string().min(1).max(1024),
-  parameters: TaskVariantParameters,
+  name: z.string().trim().min(1).max(255),
+  parameters: TaskVariantParametersArray,
+  description: z.string().trim().min(1).max(1024).optional(),
 });
 
 export const TaskVariantCreateResponseSchema = z.object({
+  id: z.string().uuid(),
   status: z.literal('created'),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
+export type TaskVariantParameter = z.infer<typeof TaskVariantParameter>;
+export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArray>;
+export type TaskVariantCreateRequest = z.infer<typeof TaskVariantCreateRequestSchema>;
 export type TaskVariantCreateResponse = z.infer<typeof TaskVariantCreateResponseSchema>;
