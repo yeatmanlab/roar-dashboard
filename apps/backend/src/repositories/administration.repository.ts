@@ -1,7 +1,16 @@
 import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql, count } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { administrations, administrationOrgs, orgs, type Administration, type Org } from '../db/schema';
+import {
+  administrations,
+  administrationOrgs,
+  administrationClasses,
+  orgs,
+  classes,
+  type Administration,
+  type Org,
+  type Class,
+} from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type {
@@ -40,6 +49,13 @@ const ORG_SORT_COLUMNS: Record<AdministrationDistrictSortFieldType | Administrat
 };
 
 /**
+ * Explicit mapping from API sort field names to class table columns.
+ */
+const CLASS_SORT_COLUMNS: Record<string, Column> = {
+  name: classes.name,
+};
+
+/**
  * Query options for administration repository methods (API contract format).
  */
 export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortFieldType>;
@@ -55,6 +71,11 @@ export interface ListAuthorizedOptions extends BasePaginatedQueryParams {
  * Options for listing orgs (districts/schools) of an administration.
  */
 export type ListOrgsByAdministrationOptions = BasePaginatedQueryParams;
+
+/**
+ * Options for listing classes of an administration.
+ */
+export type ListClassesByAdministrationOptions = BasePaginatedQueryParams;
 
 /**
  * Administration Repository
@@ -411,6 +432,113 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     options: ListOrgsByAdministrationOptions,
   ): Promise<PaginatedResult<Org>> {
     return this.getAuthorizedOrgsByAdministrationId(accessControlFilter, administrationId, OrgType.SCHOOL, options);
+  }
+
+  /**
+   * Get classes assigned to an administration.
+   *
+   * @param administrationId - The administration ID to get classes for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with classes
+   */
+  async getClassesByAdministrationId(
+    administrationId: string,
+    options: ListClassesByAdministrationOptions,
+  ): Promise<PaginatedResult<Class>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const baseCondition = eq(administrationClasses.administrationId, administrationId);
+
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationClasses)
+      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+      .where(baseCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Use explicit column mapping for type safety
+    const sortColumn = CLASS_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? classes.name;
+    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ class: classes })
+      .from(administrationClasses)
+      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+      .where(baseCondition)
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.class),
+      totalItems,
+    };
+  }
+
+  /**
+   * Get classes assigned to an administration, filtered by user's accessible orgs.
+   *
+   * Unlike getClassesByAdministrationId (used for super admins), this method filters
+   * the results to only include classes that belong to orgs the user can access.
+   *
+   * @param accessControlFilter - User ID and allowed roles for org access
+   * @param administrationId - The administration ID to get classes for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with classes the user can access
+   */
+  async getAuthorizedClassesByAdministrationId(
+    accessControlFilter: AccessControlFilter,
+    administrationId: string,
+    options: ListClassesByAdministrationOptions,
+  ): Promise<PaginatedResult<Class>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    // Get user's accessible orgs - classes belong to schools
+    const accessibleOrgs = this.orgAccessControls
+      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
+      .as('accessible_orgs');
+
+    const whereCondition = eq(administrationClasses.administrationId, administrationId);
+
+    // Filter classes by their schoolId being in the user's accessible orgs
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationClasses)
+      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+      .innerJoin(accessibleOrgs, eq(classes.schoolId, accessibleOrgs.orgId))
+      .where(whereCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Use explicit column mapping for type safety
+    const sortColumn = CLASS_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? classes.name;
+    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ class: classes })
+      .from(administrationClasses)
+      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+      .innerJoin(accessibleOrgs, eq(classes.schoolId, accessibleOrgs.orgId))
+      .where(whereCondition)
+      .orderBy(sortDirection)
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.class),
+      totalItems,
+    };
   }
 
   /**

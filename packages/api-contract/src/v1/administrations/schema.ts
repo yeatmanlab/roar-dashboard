@@ -225,3 +225,47 @@ export type AdministrationSchool = z.infer<typeof AdministrationSchoolSchema>;
 export const AdministrationSchoolsListResponseSchema = createPaginatedResponseSchema(AdministrationSchoolSchema);
 
 export type AdministrationSchoolsListResponse = z.infer<typeof AdministrationSchoolsListResponseSchema>;
+
+/**
+ * Allowed sort fields for administration classes.
+ */
+export const ADMINISTRATION_CLASS_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field type for administration classes.
+ */
+export type AdministrationClassSortFieldType = (typeof ADMINISTRATION_CLASS_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationClassSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, AdministrationClassSortFieldType>;
+
+/**
+ * Query parameters for listing administration classes.
+ */
+export const AdministrationClassesListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_CLASS_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationClassesListQuery = z.infer<typeof AdministrationClassesListQuerySchema>;
+
+/**
+ * Class schema for administration class assignments.
+ * Contains only essential fields (id, name) for listing purposes.
+ */
+export const AdministrationClassSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+});
+
+export type AdministrationClass = z.infer<typeof AdministrationClassSchema>;
+
+/**
+ * Paginated response for administration classes list.
+ */
+export const AdministrationClassesListResponseSchema = createPaginatedResponseSchema(AdministrationClassSchema);
+
+export type AdministrationClassesListResponse = z.infer<typeof AdministrationClassesListResponseSchema>;
