@@ -18,12 +18,11 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
   }
 
   async getBySlug(slug: string): Promise<Task | null> {
-    const result = await this.getAll({
+    const [result] = (await this.get({
       where: eq(tasks.slug, slug),
-      page: 1,
-      perPage: 1,
-    });
+      limit: 1,
+    })) as Task[];
 
-    return result.items[0] ?? null;
+    return result ?? null;
   }
 }
