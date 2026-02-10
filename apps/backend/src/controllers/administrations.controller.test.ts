@@ -372,7 +372,7 @@ describe('AdministrationsController', () => {
 
     it('should return 403 when user lacks permission to access administration', async () => {
       mockGet.mockRejectedValue(
-        new ApiError('You do not have permission to access this administration', {
+        new ApiError('You do not have permission to perform this action', {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
         }),
@@ -385,7 +385,7 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toEqual({
         error: {
-          message: 'You do not have permission to access this administration',
+          message: 'You do not have permission to perform this action',
           code: 'auth/forbidden',
           traceId: expect.any(String),
         },
@@ -448,15 +448,7 @@ describe('AdministrationsController', () => {
       const mockDistrict = OrgFactory.build({
         id: 'district-uuid-123',
         name: 'Test District',
-        abbreviation: 'TD',
         orgType: OrgType.DISTRICT,
-        locationAddressLine1: '123 Main St',
-        locationAddressLine2: 'Suite 100',
-        locationCity: 'Springfield',
-        locationStateProvince: 'IL',
-        locationPostalCode: '62701',
-        locationCountry: 'US',
-        locationLatLong: [-89.6501, 39.7817], // [longitude, latitude]
       });
       mockListDistricts.mockResolvedValue({
         items: [mockDistrict],
@@ -476,60 +468,6 @@ describe('AdministrationsController', () => {
       const item = data.items[0]!;
       expect(item.id).toBe('district-uuid-123');
       expect(item.name).toBe('Test District');
-      expect(item.abbreviation).toBe('TD');
-      expect(item.location).toEqual({
-        addressLine1: '123 Main St',
-        addressLine2: 'Suite 100',
-        city: 'Springfield',
-        stateProvince: 'IL',
-        postalCode: '62701',
-        country: 'US',
-        latLong: {
-          type: 'Point',
-          coordinates: [-89.6501, 39.7817],
-        },
-      });
-    });
-
-    it('should handle null location fields', async () => {
-      const mockDistrict = OrgFactory.build({
-        id: 'district-uuid-456',
-        name: 'Minimal District',
-        abbreviation: 'MD',
-        orgType: OrgType.DISTRICT,
-        locationAddressLine1: null,
-        locationAddressLine2: null,
-        locationCity: null,
-        locationStateProvince: null,
-        locationPostalCode: null,
-        locationCountry: null,
-        locationLatLong: null,
-      });
-      mockListDistricts.mockResolvedValue({
-        items: [mockDistrict],
-        totalItems: 1,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      const item = data.items[0]!;
-      expect(item.location).toEqual({
-        addressLine1: null,
-        addressLine2: null,
-        city: null,
-        stateProvince: null,
-        postalCode: null,
-        country: null,
-        latLong: null,
-      });
     });
 
     it('should return 404 when administration does not exist', async () => {
@@ -561,7 +499,7 @@ describe('AdministrationsController', () => {
 
     it('should return 403 when user lacks permission to access administration', async () => {
       mockListDistricts.mockRejectedValue(
-        new ApiError('You do not have permission to access this administration', {
+        new ApiError('You do not have permission to perform this action', {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
         }),
@@ -579,7 +517,7 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toEqual({
         error: {
-          message: 'You do not have permission to access this administration',
+          message: 'You do not have permission to perform this action',
           code: 'auth/forbidden',
           traceId: expect.any(String),
         },

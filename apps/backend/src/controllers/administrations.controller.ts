@@ -9,8 +9,6 @@ import type {
   Administration as ApiAdministration,
   AdministrationBase as ApiAdministrationBase,
   District as ApiDistrict,
-  DistrictLocation as ApiDistrictLocation,
-  GeoPoint as ApiGeoPoint,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
@@ -64,42 +62,6 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 }
 
 /**
- * Transforms PostgreSQL point type to GeoJSON Point format.
- *
- * Drizzle ORM returns PostgreSQL point columns as [number, number] tuples.
- * GeoJSON coordinates follow [longitude, latitude] order per RFC 7946,
- * which is the opposite of Google Maps (lat, lng) convention.
- *
- * @param point - The PostgreSQL point as [longitude, latitude] tuple, or null
- * @returns GeoJSON Point object with coordinates in [longitude, latitude] order, or null
- */
-function transformLatLong(point: [number, number] | null): ApiGeoPoint | null {
-  if (!point) return null;
-  return {
-    type: 'Point',
-    coordinates: point,
-  };
-}
-
-/**
- * Maps a database Org entity's location fields to the District location schema.
- *
- * @param org - The database Org entity
- * @returns The API-formatted district location object
- */
-function transformDistrictLocation(org: Org): ApiDistrictLocation {
-  return {
-    addressLine1: org.locationAddressLine1,
-    addressLine2: org.locationAddressLine2,
-    city: org.locationCity,
-    stateProvince: org.locationStateProvince,
-    postalCode: org.locationPostalCode,
-    country: org.locationCountry,
-    latLong: transformLatLong(org.locationLatLong),
-  };
-}
-
-/**
  * Maps a database Org entity to the District API schema.
  *
  * @param org - The database Org entity (must be orgType='district')
@@ -109,8 +71,6 @@ function transformDistrict(org: Org): ApiDistrict {
   return {
     id: org.id,
     name: org.name,
-    abbreviation: org.abbreviation,
-    location: transformDistrictLocation(org),
   };
 }
 

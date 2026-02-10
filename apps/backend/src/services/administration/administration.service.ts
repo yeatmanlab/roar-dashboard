@@ -116,7 +116,8 @@ export function AdministrationService({
     const authorized = await administrationRepository.getAuthorizedById({ userId, allowedRoles }, administrationId);
 
     if (!authorized) {
-      throw new ApiError('You do not have permission to access this administration', {
+      logger.warn({ userId, administrationId }, 'User attempted to access administration without permission');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
         context: { userId, administrationId },
