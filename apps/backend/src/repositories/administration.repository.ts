@@ -464,14 +464,15 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     // Use explicit column mapping for type safety
     const sortColumn = CLASS_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? classes.name;
-    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ class: classes })
       .from(administrationClasses)
       .innerJoin(classes, eq(classes.id, administrationClasses.classId))
       .where(baseCondition)
-      .orderBy(sortDirection)
+      // Add a stable secondary sort on classes.id to ensure deterministic pagination
+      .orderBy(primaryOrder, asc(classes.id))
       .limit(perPage)
       .offset(offset);
 
@@ -523,7 +524,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     // Use explicit column mapping for type safety
     const sortColumn = CLASS_SORT_COLUMNS[orderBy?.field ?? 'name'] ?? classes.name;
-    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ class: classes })
@@ -531,7 +532,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .innerJoin(classes, eq(classes.id, administrationClasses.classId))
       .innerJoin(accessibleOrgs, eq(classes.schoolId, accessibleOrgs.orgId))
       .where(whereCondition)
-      .orderBy(sortDirection)
+      // Add a stable secondary sort on classes.id to ensure deterministic pagination
+      .orderBy(primaryOrder, asc(classes.id))
       .limit(perPage)
       .offset(offset);
 
