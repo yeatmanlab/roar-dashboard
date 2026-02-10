@@ -372,7 +372,7 @@ describe('AdministrationsController', () => {
 
     it('should return 403 when user lacks permission to access administration', async () => {
       mockGet.mockRejectedValue(
-        new ApiError('You do not have permission to access this administration', {
+        new ApiError('You do not have permission to perform this action', {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
         }),
@@ -385,7 +385,7 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toEqual({
         error: {
-          message: 'You do not have permission to access this administration',
+          message: 'You do not have permission to perform this action',
           code: 'auth/forbidden',
           traceId: expect.any(String),
         },
@@ -499,7 +499,7 @@ describe('AdministrationsController', () => {
 
     it('should return 403 when user lacks permission to access administration', async () => {
       mockListDistricts.mockRejectedValue(
-        new ApiError('You do not have permission to access this administration', {
+        new ApiError('You do not have permission to perform this action', {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
         }),
@@ -517,7 +517,7 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toEqual({
         error: {
-          message: 'You do not have permission to access this administration',
+          message: 'You do not have permission to perform this action',
           code: 'auth/forbidden',
           traceId: expect.any(String),
         },

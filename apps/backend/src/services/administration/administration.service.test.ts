@@ -711,7 +711,7 @@ describe('AdministrationService', () => {
       });
 
       await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'admin-123')).rejects.toThrow(
-        'You do not have permission to access this administration',
+        'You do not have permission to perform this action',
       );
     });
 
@@ -889,7 +889,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listDistricts({ userId: 'user-123', isSuperAdmin: false }, 'admin-123', defaultOptions),
-      ).rejects.toThrow('You do not have permission to access this administration');
+      ).rejects.toThrow('You do not have permission to perform this action');
       expect(mockGetDistrictsByAdministrationId).not.toHaveBeenCalled();
     });
 
