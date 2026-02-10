@@ -9,8 +9,6 @@ import type {
   AdministrationSchoolsListQuery,
   Administration as ApiAdministration,
   AdministrationBase as ApiAdministrationBase,
-  District as ApiDistrict,
-  School as ApiSchool,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
@@ -64,27 +62,13 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 }
 
 /**
- * Maps a database Org entity to the District API schema.
+ * Maps a database Org entity to the API schema.
  * Returns only essential fields (id, name) for listing purposes.
  *
- * @param org - The database Org entity (must be orgType='district')
- * @returns The API-formatted district object
+ * @param org - The database Org entity
+ * @returns The API-formatted org object with id and name
  */
-function transformDistrict(org: Org): ApiDistrict {
-  return {
-    id: org.id,
-    name: org.name,
-  };
-}
-
-/**
- * Maps a database Org entity to the School API schema.
- * Returns only essential fields (id, name) for listing purposes.
- *
- * @param org - The database Org entity (must be orgType='school')
- * @returns The API-formatted school object
- */
-function transformSchool(org: Org): ApiSchool {
+function transformOrg(org: Org): { id: string; name: string } {
   return {
     id: org.id,
     name: org.name,
@@ -205,7 +189,7 @@ export const AdministrationsController = {
       });
 
       // Transform to API response format
-      const items = result.items.map(transformDistrict);
+      const items = result.items.map(transformOrg);
 
       const totalPages = Math.ceil(result.totalItems / perPage);
 
@@ -257,7 +241,7 @@ export const AdministrationsController = {
       });
 
       // Transform to API response format
-      const items = result.items.map(transformSchool);
+      const items = result.items.map(transformOrg);
 
       const totalPages = Math.ceil(result.totalItems / perPage);
 
