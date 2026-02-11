@@ -313,3 +313,53 @@ export type AdministrationGroup = z.infer<typeof AdministrationGroupSchema>;
 export const AdministrationGroupsListResponseSchema = createPaginatedResponseSchema(AdministrationGroupSchema);
 
 export type AdministrationGroupsListResponse = z.infer<typeof AdministrationGroupsListResponseSchema>;
+
+/**
+ * Allowed sort fields for administration task variants.
+ */
+export const ADMINISTRATION_TASK_VARIANT_SORT_FIELDS = ['orderIndex', 'name'] as const;
+
+/**
+ * Sort field type for administration task variants.
+ */
+export type AdministrationTaskVariantSortFieldType = (typeof ADMINISTRATION_TASK_VARIANT_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationTaskVariantSortField = {
+  ORDER_INDEX: 'orderIndex',
+  NAME: 'name',
+} as const satisfies Record<string, AdministrationTaskVariantSortFieldType>;
+
+/**
+ * Query parameters for listing administration task variants.
+ */
+export const AdministrationTaskVariantsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_TASK_VARIANT_SORT_FIELDS, 'orderIndex'),
+);
+
+export type AdministrationTaskVariantsListQuery = z.infer<typeof AdministrationTaskVariantsListQuerySchema>;
+
+/**
+ * Task variant item for administration task variant assignments.
+ * Includes task information for frontend display purposes.
+ */
+export const AdministrationTaskVariantItemSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().nullable(),
+  taskId: z.string().uuid(),
+  taskName: z.string(),
+  orderIndex: z.number().int(),
+});
+
+export type AdministrationTaskVariantItem = z.infer<typeof AdministrationTaskVariantItemSchema>;
+
+/**
+ * Paginated response for administration task variants list.
+ */
+export const AdministrationTaskVariantsListResponseSchema = createPaginatedResponseSchema(
+  AdministrationTaskVariantItemSchema,
+);
+
+export type AdministrationTaskVariantsListResponse = z.infer<typeof AdministrationTaskVariantsListResponseSchema>;

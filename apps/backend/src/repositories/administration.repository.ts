@@ -6,6 +6,9 @@ import {
   administrationOrgs,
   administrationClasses,
   administrationGroups,
+  administrationTaskVariants,
+  taskVariants,
+  tasks,
   orgs,
   classes,
   groups,
@@ -25,6 +28,7 @@ import type {
   AdministrationSchoolSortFieldType,
   AdministrationClassSortFieldType,
   AdministrationGroupSortFieldType,
+  AdministrationTaskVariantSortFieldType,
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
@@ -70,6 +74,14 @@ const GROUP_SORT_COLUMNS: Record<AdministrationGroupSortFieldType, Column> = {
 };
 
 /**
+ * Explicit mapping from API sort field names to task variant columns.
+ */
+const TASK_VARIANT_SORT_COLUMNS: Record<AdministrationTaskVariantSortFieldType, Column> = {
+  orderIndex: administrationTaskVariants.orderIndex,
+  name: taskVariants.name,
+};
+
+/**
  * Query options for administration repository methods (API contract format).
  */
 export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortFieldType>;
@@ -95,6 +107,31 @@ export type ListClassesByAdministrationOptions = BasePaginatedQueryParams;
  * Options for listing groups of an administration.
  */
 export type ListGroupsByAdministrationOptions = BasePaginatedQueryParams;
+
+/**
+ * Options for listing task variants of an administration.
+ */
+export type ListTaskVariantsByAdministrationOptions = BasePaginatedQueryParams;
+
+/**
+ * Task variant item returned from getTaskVariantsByAdministrationId.
+ * Includes task information for frontend display.
+ *
+ * @property id - The task variant's unique identifier
+ * @property name - The variant's display name (nullable, falls back to task name in UI)
+ * @property taskId - The parent task's unique identifier
+ * @property taskName - The parent task's name (always present)
+ * @property orderIndex - The display order within the administration (0-indexed).
+ *                        Defines the sequence in which assessments should be taken
+ *                        when the administration is "ordered" (isOrdered=true).
+ */
+export interface TaskVariantListItem {
+  id: string;
+  name: string | null;
+  taskId: string;
+  taskName: string;
+  orderIndex: number;
+}
 
 /**
  * Administration Repository
@@ -704,5 +741,70 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       items: dataResult.map((row) => row.group),
       totalItems,
     };
+  }
+
+  /**
+   * Get task variants assigned to an administration.
+   *
+   * Returns task variants with their associated task information (task ID, task name).
+   * Default sort is by orderIndex (ascending) to preserve the intended assessment sequence
+   * for ordered administrations.
+   *
+   * Note: Unlike districts/schools/classes/groups, this method has no "authorized" variant
+   * because task variants are administration-level resources. Authorization is handled
+   * at the service layer by verifying access to the parent administration.
+   *
+   * @param administrationId - The administration ID to get task variants for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with task variant items including orderIndex
+   */
+  async getTaskVariantsByAdministrationId(
+    administrationId: string,
+    options: ListTaskVariantsByAdministrationOptions,
+  ): Promise<PaginatedResult<TaskVariantListItem>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const baseCondition = eq(administrationTaskVariants.administrationId, administrationId);
+
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationTaskVariants)
+      .innerJoin(taskVariants, eq(taskVariants.id, administrationTaskVariants.taskVariantId))
+      .innerJoin(tasks, eq(tasks.id, taskVariants.taskId))
+      .where(baseCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Use explicit column mapping for type safety
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationTaskVariantSortFieldType | undefined;
+    const sortColumn = sortField ? TASK_VARIANT_SORT_COLUMNS[sortField] : administrationTaskVariants.orderIndex;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({
+        id: taskVariants.id,
+        name: taskVariants.name,
+        taskId: tasks.id,
+        taskName: tasks.name,
+        orderIndex: administrationTaskVariants.orderIndex,
+      })
+      .from(administrationTaskVariants)
+      .innerJoin(taskVariants, eq(taskVariants.id, administrationTaskVariants.taskVariantId))
+      .innerJoin(tasks, eq(tasks.id, taskVariants.taskId))
+      .where(baseCondition)
+      // Secondary sort on taskVariants.id ensures deterministic ordering when primary sort
+      // has ties (e.g., multiple variants with same orderIndex or same name). Without this,
+      // PostgreSQL may return rows in arbitrary order, causing pagination inconsistencies.
+      .orderBy(primaryOrder, asc(taskVariants.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return { items: dataResult, totalItems };
   }
 }
