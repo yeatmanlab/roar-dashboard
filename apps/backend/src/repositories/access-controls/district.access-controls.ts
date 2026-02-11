@@ -1,12 +1,13 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { userOrgs, userClasses, userGroups, orgs, classes } from '../../db/schema';
+import { userOrgs, userClasses, orgs, classes } from '../../db/schema';
 import { SUPERVISORY_ROLES } from '../../constants/role-classifications';
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
-import { parseAccessControlFilter, type AccessControlFilter } from '../utils/access-controls.utils';
-import { isDescendantOrEqual, isAncestorOrEqual } from '../utils/ltree.utils';
+import { parseAccessControlFilter, type AccessControlFilter } from '../utils/parse-access-control-filter.utils';
+import { isDescendantOrEqual } from '../utils/is-descendant-or-equal.utils';
+import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 
 /**
  * District Access Controls
@@ -118,20 +119,8 @@ export class DistrictAccessControls {
         ),
       );
 
-    // Path 3: User's group membership → districts via group's org hierarchy
-    // Example: User in Group Y sees Group Y's parent Org's parent District
-    const viaUserGroupToDistrict = this.db
-      .select({ orgId: districtOrgTable.id })
-      .from(userGroups)
-      .innerJoin(userOrgTable, eq(userGroups.orgId, userOrgTable.id))
-      .innerJoin(districtOrgTable, isAncestorOrEqual(districtOrgTable.path, userOrgTable.path))
-      .where(
-        and(
-          eq(userGroups.userId, userId),
-          inArray(userGroups.role, allowedRoles),
-          eq(districtOrgTable.orgType, 'district'),
-        ),
-      );
+    // Note: Groups are standalone entities without org hierarchy, so they don't provide
+    // district access. Users in groups must also have org or class memberships to see districts.
 
     // ─────────────────────────────────────────────────────────────────────────–––––––
     // DESCENDANT ACCESS: Find districts that are descendants of user's entity (supervisory only)
@@ -139,7 +128,7 @@ export class DistrictAccessControls {
 
     if (!isSupervisory) {
       // Non-supervisory users only get ancestor access
-      return viaUserOrgToDistrict.union(viaUserClassToDistrict).union(viaUserGroupToDistrict);
+      return viaUserOrgToDistrict.union(viaUserClassToDistrict);
     }
 
     // Path 4: Supervisory user's org membership → districts that are descendants
@@ -158,9 +147,6 @@ export class DistrictAccessControls {
       );
 
     // Combine all paths with UNION (auto-deduplicates)
-    return viaUserOrgToDistrict
-      .union(viaUserClassToDistrict)
-      .union(viaUserGroupToDistrict)
-      .union(viaUserOrgToDescendantDistricts);
+    return viaUserOrgToDistrict.union(viaUserClassToDistrict).union(viaUserOrgToDescendantDistricts);
   }
 }
