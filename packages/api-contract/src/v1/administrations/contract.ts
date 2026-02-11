@@ -12,6 +12,8 @@ import {
   AdministrationClassesListResponseSchema,
   AdministrationGroupsListQuerySchema,
   AdministrationGroupsListResponseSchema,
+  AdministrationTaskVariantsListQuerySchema,
+  AdministrationTaskVariantsListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
@@ -141,6 +143,27 @@ export const AdministrationsContract = c.router(
         'Returns a paginated list of groups assigned to the specified administration. ' +
         'Super admins see all assigned groups. ' +
         'Supervisory users (administrator, teacher) see only groups they are members of. ' +
+        'Supervised users (student, guardian, parent, relative) receive 403. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
+    },
+    listTaskVariants: {
+      method: 'GET',
+      path: '/:id/task-variants',
+      pathParams: z.object({ id: z.string().uuid() }),
+      query: AdministrationTaskVariantsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationTaskVariantsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List task variants assigned to an administration',
+      description:
+        'Returns a paginated list of task variants assigned to the specified administration. ' +
+        'Task variants are returned with their associated task name and order index. ' +
         'Supervised users (student, guardian, parent, relative) receive 403. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',

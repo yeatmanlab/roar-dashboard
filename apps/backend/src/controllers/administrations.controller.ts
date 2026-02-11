@@ -9,14 +9,17 @@ import type {
   AdministrationSchoolsListQuery,
   AdministrationClassesListQuery,
   AdministrationGroupsListQuery,
+  AdministrationTaskVariantsListQuery,
   Administration as ContractAdministration,
   AdministrationBase as ContractAdministrationBase,
   AdministrationDistrict,
   AdministrationSchool,
   AdministrationClass,
   AdministrationGroup,
+  AdministrationTaskVariantItem,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org, Class, Group } from '../db/schema';
+import type { TaskVariantListItem } from '../repositories/administration.repository';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -83,8 +86,21 @@ function toIdName(
   };
 }
 
-/** Default response item type for sub-resource endpoints */
-type IdNameItem = { id: string; name: string };
+/**
+ * Maps a TaskVariantListItem to the API response schema.
+ *
+ * @param item - The task variant list item from the repository
+ * @returns The API-formatted task variant item
+ */
+function toTaskVariantItem(item: TaskVariantListItem): AdministrationTaskVariantItem {
+  return {
+    id: item.id,
+    name: item.name,
+    taskId: item.taskId,
+    taskName: item.taskName,
+    orderIndex: item.orderIndex,
+  };
+}
 
 /**
  * Builds a paginated response for sub-resource listing endpoints.
@@ -92,13 +108,13 @@ type IdNameItem = { id: string; name: string };
  * @param result - The paginated result from the service
  * @param page - Current page number
  * @param perPage - Items per page (for calculating totalPages)
- * @param mapItem - Optional mapping function for items (defaults to toIdName)
+ * @param mapItem - Mapping function for items
  */
-function handleSubResourceResponse<T extends Org | Class | Group, R = IdNameItem>(
+function handleSubResourceResponse<T extends Org | Class | Group | TaskVariantListItem, R>(
   result: { items: T[]; totalItems: number },
   page: number,
   perPage: number,
-  mapItem: (item: T) => R = toIdName as unknown as (item: T) => R,
+  mapItem: (item: T) => R,
 ) {
   const items = result.items.map(mapItem);
   const totalPages = Math.ceil(result.totalItems / perPage);
@@ -235,7 +251,7 @@ export const AdministrationsController = {
   ) => {
     try {
       const result = await administrationService.listDistricts(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
+      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
     } catch (error) {
       return handleSubResourceError(error);
     }
@@ -254,7 +270,7 @@ export const AdministrationsController = {
   listSchools: async (authContext: AuthContext, administrationId: string, query: AdministrationSchoolsListQuery) => {
     try {
       const result = await administrationService.listSchools(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
+      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
     } catch (error) {
       return handleSubResourceError(error);
     }
@@ -273,7 +289,7 @@ export const AdministrationsController = {
   listClasses: async (authContext: AuthContext, administrationId: string, query: AdministrationClassesListQuery) => {
     try {
       const result = await administrationService.listClasses(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
+      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
     } catch (error) {
       return handleSubResourceError(error);
     }
@@ -292,7 +308,30 @@ export const AdministrationsController = {
   listGroups: async (authContext: AuthContext, administrationId: string, query: AdministrationGroupsListQuery) => {
     try {
       const result = await administrationService.listGroups(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
+      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
+    } catch (error) {
+      return handleSubResourceError(error);
+    }
+  },
+
+  /**
+   * List task variants assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listTaskVariants: async (
+    authContext: AuthContext,
+    administrationId: string,
+    query: AdministrationTaskVariantsListQuery,
+  ) => {
+    try {
+      const result = await administrationService.listTaskVariants(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage, toTaskVariantItem);
     } catch (error) {
       return handleSubResourceError(error);
     }
