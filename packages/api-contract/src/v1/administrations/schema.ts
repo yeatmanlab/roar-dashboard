@@ -334,10 +334,13 @@ export const AdministrationTaskVariantSortField = {
 
 /**
  * Query parameters for listing administration task variants.
+ * Defaults to ascending order (0 → 1 → 2) since orderIndex represents assessment sequence.
  */
 export const AdministrationTaskVariantsListQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ADMINISTRATION_TASK_VARIANT_SORT_FIELDS, 'orderIndex'),
-);
+).extend({
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
 
 export type AdministrationTaskVariantsListQuery = z.infer<typeof AdministrationTaskVariantsListQuerySchema>;
 
