@@ -23,5 +23,7 @@ describe('ClassRepository', () => {
 
       expect(result).toBeNull();
     });
+
+    // TODO: Update tests to include authorization logic
   });
 });
