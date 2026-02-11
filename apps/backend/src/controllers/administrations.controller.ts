@@ -90,15 +90,16 @@ function toIdName(
  * Maps a TaskVariantListItem to the API response schema.
  *
  * @param item - The task variant list item from the repository
- * @returns The API-formatted task variant item
+ * @returns The API-formatted task variant item with nested task and conditions objects
  */
 function toTaskVariantItem(item: TaskVariantListItem): AdministrationTaskVariantItem {
   return {
     id: item.id,
     name: item.name,
-    taskId: item.taskId,
-    taskName: item.taskName,
+    description: item.description,
     orderIndex: item.orderIndex,
+    task: item.task,
+    conditions: item.conditions,
   };
 }
 

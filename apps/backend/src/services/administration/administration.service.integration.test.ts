@@ -1392,7 +1392,7 @@ describe('AdministrationService (integration)', () => {
         expect(result.items).toHaveLength(1);
         expect(result.items[0]!.id).toBe(variant.id);
         expect(result.items[0]!.name).toBe('Student Access Test Variant');
-        expect(result.items[0]!.taskName).toBe('Student Access Test Task');
+        expect(result.items[0]!.task.name).toBe('Student Access Test Task');
       });
 
       it('should allow class-level student to list task variants', async () => {
@@ -1463,8 +1463,8 @@ describe('AdministrationService (integration)', () => {
         expect(result.items.length).toBe(1);
         expect(result.items[0]!.id).toBe(variant.id);
         expect(result.items[0]!.name).toBe('Teacher Variant');
-        expect(result.items[0]!.taskId).toBe(task.id);
-        expect(result.items[0]!.taskName).toBe('Teacher Task Test');
+        expect(result.items[0]!.task.id).toBe(task.id);
+        expect(result.items[0]!.task.name).toBe('Teacher Task Test');
         expect(result.items[0]!.orderIndex).toBe(0);
       });
 
@@ -1691,9 +1691,9 @@ describe('AdministrationService (integration)', () => {
         const item = result.items[0]!;
         expect(item).toHaveProperty('id', variant.id);
         expect(item).toHaveProperty('name', 'Shape Test Variant');
-        expect(item).toHaveProperty('taskId', task.id);
-        expect(item).toHaveProperty('taskName', 'Shape Test Task');
         expect(item).toHaveProperty('orderIndex', 5);
+        expect(item.task).toHaveProperty('id', task.id);
+        expect(item.task).toHaveProperty('name', 'Shape Test Task');
       });
 
       it('should handle null variant name', async () => {

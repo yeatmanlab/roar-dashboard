@@ -114,23 +114,44 @@ export type ListGroupsByAdministrationOptions = BasePaginatedQueryParams;
 export type ListTaskVariantsByAdministrationOptions = BasePaginatedQueryParams;
 
 /**
+ * Task information nested within TaskVariantListItem.
+ */
+export interface TaskVariantTask {
+  id: string;
+  name: string;
+  description: string | null;
+  image: string | null;
+  tutorialVideo: string | null;
+}
+
+/**
+ * Conditions for task variant assignment within an administration.
+ */
+export interface TaskVariantConditions {
+  eligibility: Record<string, unknown> | null;
+  requirements: Record<string, unknown> | null;
+}
+
+/**
  * Task variant item returned from getTaskVariantsByAdministrationId.
- * Includes task information for frontend display.
+ * Includes nested task information for frontend display.
  *
  * @property id - The task variant's unique identifier
  * @property name - The variant's display name (nullable, falls back to task name in UI)
- * @property taskId - The parent task's unique identifier
- * @property taskName - The parent task's name (always present)
+ * @property description - The variant's description (nullable)
  * @property orderIndex - The display order within the administration (0-indexed).
  *                        Defines the sequence in which assessments should be taken
  *                        when the administration is "ordered" (isOrdered=true).
+ * @property task - Nested task information (id, name, description, image, tutorialVideo)
+ * @property conditions - Assignment eligibility and completion requirements
  */
 export interface TaskVariantListItem {
   id: string;
   name: string | null;
-  taskId: string;
-  taskName: string;
+  description: string | null;
   orderIndex: number;
+  task: TaskVariantTask;
+  conditions: TaskVariantConditions;
 }
 
 /**
@@ -794,9 +815,15 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .select({
         id: taskVariants.id,
         name: taskVariants.name,
+        description: taskVariants.description,
+        orderIndex: administrationTaskVariants.orderIndex,
+        conditionsEligibility: administrationTaskVariants.conditionsAssignment,
+        conditionsRequirements: administrationTaskVariants.conditionsRequirements,
         taskId: tasks.id,
         taskName: tasks.name,
-        orderIndex: administrationTaskVariants.orderIndex,
+        taskDescription: tasks.description,
+        taskImage: tasks.image,
+        taskTutorialVideo: tasks.tutorialVideo,
       })
       .from(administrationTaskVariants)
       .innerJoin(taskVariants, eq(taskVariants.id, administrationTaskVariants.taskVariantId))
@@ -809,6 +836,25 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .limit(perPage)
       .offset(offset);
 
-    return { items: dataResult, totalItems };
+    // Transform flat query result into nested structure
+    const items: TaskVariantListItem[] = dataResult.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      orderIndex: row.orderIndex,
+      task: {
+        id: row.taskId,
+        name: row.taskName,
+        description: row.taskDescription,
+        image: row.taskImage,
+        tutorialVideo: row.taskTutorialVideo,
+      },
+      conditions: {
+        eligibility: row.conditionsEligibility as Record<string, unknown> | null,
+        requirements: row.conditionsRequirements as Record<string, unknown> | null,
+      },
+    }));
+
+    return { items, totalItems };
   }
 }
