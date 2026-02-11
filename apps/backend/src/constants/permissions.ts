@@ -77,6 +77,18 @@ export const Permissions = {
   TestData: {
     CREATE: 'testdata.create',
   },
+  Groups: {
+    ALL: 'groups.*',
+    LIST: 'groups.list',
+    READ: 'groups.read',
+    CREATE: 'groups.create',
+    UPDATE: 'groups.update',
+    InvitationCodes: {
+      ALL: 'groups.invitation_codes.*',
+      READ: 'groups.invitation_codes.read',
+      CREATE: 'groups.invitation_codes.create',
+    },
+  },
 } as const;
 
 /**
