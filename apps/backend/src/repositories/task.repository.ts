@@ -17,6 +17,9 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
     this.accessControls = accessControls;
   }
 
+  /**
+   * Example method, this may not be needed in production.
+   */
   async getBySlug(slug: string): Promise<Task | null> {
     const [result] = (await this.get({
       where: eq(tasks.slug, slug),
