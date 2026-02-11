@@ -21,4 +21,6 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
 
     return results as TaskVariant[];
   }
+
+  // TODO: getByTaskSlug()
 }

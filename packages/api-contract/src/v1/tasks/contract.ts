@@ -14,9 +14,6 @@ export const TasksContract = c.router(
     createTaskVariant: {
       method: 'POST',
       path: '/:taskId/variants',
-      headers: z.object({
-        authorization: z.string(),
-      }),
       pathParams: z.object({
         taskId: z.string().uuid(),
       }),

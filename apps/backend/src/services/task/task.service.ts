@@ -8,6 +8,7 @@ import { TaskVariantParameterRepository } from '../../repositories/task-variant-
 import { TaskRepository } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 
 /**
  * Parameter data for creating task variant parameters.
@@ -61,15 +62,26 @@ export function TaskService({
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
    */
-  async function createTaskVariant(authContext: AuthContext, data: CreateTaskVariantData): Promise<TaskVariant> {
-    const { userId } = authContext;
+  async function createTaskVariant(
+    authContext: AuthContext,
+    data: CreateTaskVariantData,
+  ): Promise<Partial<TaskVariant>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.UNAUTHORIZED, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
 
     try {
       // Verify the parent task exists
       const task = await taskRepository.getById({ id: data.taskId });
 
       if (!task) {
-        throw new ApiError('Task not found', {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId, taskId: data.taskId },
@@ -77,7 +89,7 @@ export function TaskService({
       }
 
       // Create the task variant and parameters within a transaction to prevent orphaned data
-      const variant = await taskVariantRepository.runTransaction<TaskVariant>({
+      const variant = await taskVariantRepository.runTransaction<Partial<TaskVariant>>({
         fn: async (tx) => {
           const variantData: NewTaskVariant = {
             taskId: data.taskId,
@@ -87,10 +99,11 @@ export function TaskService({
           };
 
           const newVariant = await taskVariantRepository.create({
-            data: variantData as Partial<TaskVariant>,
+            data: variantData as TaskVariant,
             transaction: tx,
           });
 
+          // TODO: Investigate using a bulk insert operation, either bespoke or in base repository
           for (const param of data.parameters) {
             await taskVariantParameterRepository.create({
               data: {
@@ -114,6 +127,9 @@ export function TaskService({
       return variant;
     } catch (error) {
       if (error instanceof ApiError) throw error;
+
+      // TODO: Create a more specific error code for Postgres conflict on task variant name
+      // 409
 
       logger.error({ err: error, context: { userId, taskId: data.taskId } }, 'Failed to create task variant');
 
