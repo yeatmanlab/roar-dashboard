@@ -765,7 +765,11 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
-    const baseCondition = eq(administrationTaskVariants.administrationId, administrationId);
+    // Only return published task variants - draft/deprecated variants should not be visible
+    const baseCondition = and(
+      eq(administrationTaskVariants.administrationId, administrationId),
+      eq(taskVariants.status, 'published'),
+    );
 
     const countResult = await this.db
       .select({ count: count() })
