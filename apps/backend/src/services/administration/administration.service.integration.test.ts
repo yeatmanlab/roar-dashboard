@@ -7,7 +7,7 @@
  * These tests complement the unit tests by verifying end-to-end behavior
  * with actual database queries and the base fixture's org hierarchy.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { AdministrationService } from './administration.service';
 import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
@@ -20,7 +20,12 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 
 describe('AdministrationService (integration)', () => {
-  const service = AdministrationService();
+  // Initialize after database pools are ready (set up in vitest.setup.ts beforeAll)
+  let service: ReturnType<typeof AdministrationService>;
+
+  beforeAll(() => {
+    service = AdministrationService();
+  });
 
   const defaultDistrictOptions = {
     page: 1,
