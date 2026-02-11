@@ -8,6 +8,7 @@ import {
   type AdministrationSchoolSortFieldType,
   type AdministrationClassSortFieldType,
   type AdministrationGroupSortFieldType,
+  type AdministrationTaskVariantSortFieldType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
@@ -22,6 +23,7 @@ import { logger } from '../../logger';
 import {
   AdministrationRepository,
   type AdministrationQueryOptions,
+  type TaskVariantListItem,
 } from '../../repositories/administration.repository';
 import {
   AdministrationTaskVariantRepository,
@@ -67,6 +69,7 @@ export type ListDistrictsOptions = ListOrgsOptions<AdministrationDistrictSortFie
 export type ListSchoolsOptions = ListOrgsOptions<AdministrationSchoolSortFieldType>;
 export type ListClassesOptions = ListOrgsOptions<AdministrationClassSortFieldType>;
 export type ListGroupsOptions = ListOrgsOptions<AdministrationGroupSortFieldType>;
+export type ListTaskVariantsOptions = ListOrgsOptions<AdministrationTaskVariantSortFieldType>;
 
 /**
  * AdministrationService
@@ -613,5 +616,64 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses, listGroups };
+  /**
+   * List task variants assigned to an administration with access control.
+   *
+   * Task variants are administration-level resources (no org hierarchy filtering).
+   * Unlike districts/schools/classes/groups, task variants are visible to ALL users
+   * with administration access - students need this to know which assessments to take.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all task variants assigned to the administration
+   * - All roles with administration access: sees all task variants
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get task variants for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with task variants
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listTaskVariants(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListTaskVariantsOptions,
+  ): Promise<PaginatedResult<TaskVariantListItem>> {
+    const { userId } = authContext;
+
+    try {
+      // Verify administration exists and user has access (students included)
+      // Unlike districts/schools/classes/groups, task variants are visible to all
+      // users with administration access - students need this to know which assessments to take
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+      };
+
+      return await administrationRepository.getTaskVariantsByAdministrationId(administrationId, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration task variants',
+      );
+
+      throw new ApiError('Failed to retrieve administration task variants', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants };
 }
