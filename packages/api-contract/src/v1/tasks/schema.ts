@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// TODO: Should this be re-used across api-contract and apps/backend?
+// TODO: Find ways to re-use status enum across project
 export enum TASK_VARIANT_STATUS {
   DRAFT = 'draft',
   PUBLISHED = 'published',
@@ -9,16 +9,16 @@ export enum TASK_VARIANT_STATUS {
 
 const TaskVariantParameter = z.object({
   name: z.string().min(1).max(255),
-  value: z.string().min(1).max(1024),
+  value: z.unknown(), // JSONB - can be any JSON-serializable value (string, number, boolean, object, array, null)
 });
 
 const TaskVariantParametersArray = z.array(TaskVariantParameter).min(1);
 
 export const TaskVariantCreateRequestSchema = z.object({
-  name: z.string().trim().min(1).max(255),
+  name: z.string().trim().min(1).max(255).optional(),
   parameters: TaskVariantParametersArray,
   description: z.string().trim().min(1).max(1024).optional(),
-  status: z.nativeEnum(TASK_VARIANT_STATUS).optional().default(TASK_VARIANT_STATUS.DRAFT),
+  status: z.nativeEnum(TASK_VARIANT_STATUS).default(TASK_VARIANT_STATUS.DRAFT),
 });
 
 export const TaskVariantCreateResponseSchema = z.object({
