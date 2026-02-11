@@ -2207,8 +2207,22 @@ describe('AdministrationService', () => {
     };
 
     const mockTaskVariants = [
-      { id: 'variant-1', name: 'Variant A', taskId: 'task-1', taskName: 'Task One', orderIndex: 0 },
-      { id: 'variant-2', name: 'Variant B', taskId: 'task-2', taskName: 'Task Two', orderIndex: 1 },
+      {
+        id: 'variant-1',
+        name: 'Variant A',
+        description: 'Variant A description',
+        orderIndex: 0,
+        task: { id: 'task-1', name: 'Task One', description: 'Task One desc', image: null, tutorialVideo: null },
+        conditions: { eligibility: null, requirements: null },
+      },
+      {
+        id: 'variant-2',
+        name: 'Variant B',
+        description: null,
+        orderIndex: 1,
+        task: { id: 'task-2', name: 'Task Two', description: null, image: 'img.png', tutorialVideo: 'vid.mp4' },
+        conditions: { eligibility: { grade: '3' }, requirements: { minScore: 80 } },
+      },
     ];
 
     it('should return task variants for super admin (unrestricted)', async () => {

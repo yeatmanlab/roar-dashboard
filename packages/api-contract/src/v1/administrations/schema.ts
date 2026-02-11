@@ -345,15 +345,36 @@ export const AdministrationTaskVariantsListQuerySchema = PaginationQuerySchema.m
 export type AdministrationTaskVariantsListQuery = z.infer<typeof AdministrationTaskVariantsListQuerySchema>;
 
 /**
+ * Task information nested within task variant response.
+ */
+export const AdministrationTaskVariantTaskSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  image: z.string().nullable(),
+  tutorialVideo: z.string().nullable(),
+});
+
+/**
+ * Conditions for task variant assignment within an administration.
+ * Eligibility determines who can be assigned; requirements determine completion criteria.
+ */
+export const AdministrationTaskVariantConditionsSchema = z.object({
+  eligibility: z.record(z.unknown()).nullable(),
+  requirements: z.record(z.unknown()).nullable(),
+});
+
+/**
  * Task variant item for administration task variant assignments.
- * Includes task information for frontend display purposes.
+ * Includes nested task information for frontend display purposes.
  */
 export const AdministrationTaskVariantItemSchema = z.object({
   id: z.string().uuid(),
   name: z.string().nullable(),
-  taskId: z.string().uuid(),
-  taskName: z.string(),
+  description: z.string().nullable(),
   orderIndex: z.number().int(),
+  task: AdministrationTaskVariantTaskSchema,
+  conditions: AdministrationTaskVariantConditionsSchema,
 });
 
 export type AdministrationTaskVariantItem = z.infer<typeof AdministrationTaskVariantItemSchema>;
