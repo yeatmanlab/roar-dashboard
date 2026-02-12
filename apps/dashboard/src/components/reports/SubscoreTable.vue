@@ -111,6 +111,7 @@ const columns = computed(() => {
     );
   }
   if (phonicsSubtableToggle.value) {
+    // TODO: Remove this toggle when phonics is ready to be implemented
     if (props.taskId === 'phonics') {
       const subcategories = [
         { field: 'cvc', header: 'CVC' },
@@ -223,6 +224,7 @@ const exportSelected = (selectedRows) => {
       });
     }
     if (phonicsSubtableToggle.value) {
+      // TODO: Remove this toggle when phonics is ready to be implemented
       if (props.taskId === 'phonics') {
         const subcategories = [
           'cvc',
