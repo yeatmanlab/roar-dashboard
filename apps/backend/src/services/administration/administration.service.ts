@@ -23,7 +23,7 @@ import { logger } from '../../logger';
 import {
   AdministrationRepository,
   type AdministrationQueryOptions,
-  type TaskVariantListItem,
+  type TaskVariantWithAssignment,
 } from '../../repositories/administration.repository';
 import {
   AdministrationTaskVariantRepository,
@@ -639,7 +639,7 @@ export function AdministrationService({
     authContext: AuthContext,
     administrationId: string,
     options: ListTaskVariantsOptions,
-  ): Promise<PaginatedResult<TaskVariantListItem>> {
+  ): Promise<PaginatedResult<TaskVariantWithAssignment>> {
     const { userId } = authContext;
 
     try {
