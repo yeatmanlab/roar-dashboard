@@ -8,13 +8,15 @@ import type {
   AdministrationDistrictsListQuery,
   AdministrationSchoolsListQuery,
   AdministrationClassesListQuery,
+  AdministrationGroupsListQuery,
   Administration as ContractAdministration,
   AdministrationBase as ContractAdministrationBase,
   AdministrationDistrict,
   AdministrationSchool,
   AdministrationClass,
+  AdministrationGroup,
 } from '@roar-dashboard/api-contract';
-import type { Administration, Org, Class } from '../db/schema';
+import type { Administration, Org, Class, Group } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -67,16 +69,65 @@ function transformAdministration(admin: AdministrationWithEmbeds): ContractAdmin
 
 /**
  * Maps a database entity with id and name to the API schema.
- * Used for districts, schools, and classes which share the same contract shape.
+ * Used for districts, schools, classes, and groups which share the same contract shape.
  *
- * @param entity - The database entity (Org or Class)
+ * @param entity - The database entity (Org, Class, or Group)
  * @returns The API-formatted object with id and name
  */
-function toIdName(entity: Org | Class): AdministrationDistrict | AdministrationSchool | AdministrationClass {
+function toIdName(
+  entity: Org | Class | Group,
+): AdministrationDistrict | AdministrationSchool | AdministrationClass | AdministrationGroup {
   return {
     id: entity.id,
     name: entity.name,
   };
+}
+
+/** Default response item type for sub-resource endpoints */
+type IdNameItem = { id: string; name: string };
+
+/**
+ * Builds a paginated response for sub-resource listing endpoints.
+ *
+ * @param result - The paginated result from the service
+ * @param page - Current page number
+ * @param perPage - Items per page (for calculating totalPages)
+ * @param mapItem - Optional mapping function for items (defaults to toIdName)
+ */
+function handleSubResourceResponse<T extends Org | Class | Group, R = IdNameItem>(
+  result: { items: T[]; totalItems: number },
+  page: number,
+  perPage: number,
+  mapItem: (item: T) => R = toIdName as unknown as (item: T) => R,
+) {
+  const items = result.items.map(mapItem);
+  const totalPages = Math.ceil(result.totalItems / perPage);
+
+  return {
+    status: StatusCodes.OK as const,
+    body: {
+      data: {
+        items,
+        pagination: {
+          page,
+          perPage,
+          totalItems: result.totalItems,
+          totalPages,
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Handles errors for sub-resource listing endpoints.
+ * Converts ApiError to typed error response or re-throws unknown errors.
+ */
+function handleSubResourceError(error: unknown) {
+  if (error instanceof ApiError) {
+    return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+  }
+  throw error;
 }
 
 /**
@@ -183,43 +234,10 @@ export const AdministrationsController = {
     query: AdministrationDistrictsListQuery,
   ) => {
     try {
-      const { page, perPage, sortBy, sortOrder } = query;
-
-      const result = await administrationService.listDistricts(authContext, administrationId, {
-        page,
-        perPage,
-        sortBy,
-        sortOrder,
-      });
-
-      // Transform to API response format
-      const items = result.items.map(toIdName);
-
-      const totalPages = Math.ceil(result.totalItems / perPage);
-
-      return {
-        status: StatusCodes.OK as const,
-        body: {
-          data: {
-            items,
-            pagination: {
-              page,
-              perPage,
-              totalItems: result.totalItems,
-              totalPages,
-            },
-          },
-        },
-      };
+      const result = await administrationService.listDistricts(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
-      if (error instanceof ApiError) {
-        return toErrorResponse(error, [
-          StatusCodes.NOT_FOUND,
-          StatusCodes.FORBIDDEN,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        ]);
-      }
-      throw error;
+      return handleSubResourceError(error);
     }
   },
 
@@ -235,43 +253,10 @@ export const AdministrationsController = {
    */
   listSchools: async (authContext: AuthContext, administrationId: string, query: AdministrationSchoolsListQuery) => {
     try {
-      const { page, perPage, sortBy, sortOrder } = query;
-
-      const result = await administrationService.listSchools(authContext, administrationId, {
-        page,
-        perPage,
-        sortBy,
-        sortOrder,
-      });
-
-      // Transform to API response format
-      const items = result.items.map(toIdName);
-
-      const totalPages = Math.ceil(result.totalItems / perPage);
-
-      return {
-        status: StatusCodes.OK as const,
-        body: {
-          data: {
-            items,
-            pagination: {
-              page,
-              perPage,
-              totalItems: result.totalItems,
-              totalPages,
-            },
-          },
-        },
-      };
+      const result = await administrationService.listSchools(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
-      if (error instanceof ApiError) {
-        return toErrorResponse(error, [
-          StatusCodes.NOT_FOUND,
-          StatusCodes.FORBIDDEN,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        ]);
-      }
-      throw error;
+      return handleSubResourceError(error);
     }
   },
 
@@ -287,43 +272,29 @@ export const AdministrationsController = {
    */
   listClasses: async (authContext: AuthContext, administrationId: string, query: AdministrationClassesListQuery) => {
     try {
-      const { page, perPage, sortBy, sortOrder } = query;
-
-      const result = await administrationService.listClasses(authContext, administrationId, {
-        page,
-        perPage,
-        sortBy,
-        sortOrder,
-      });
-
-      // Transform to API response format
-      const items = result.items.map(toIdName);
-
-      const totalPages = Math.ceil(result.totalItems / perPage);
-
-      return {
-        status: StatusCodes.OK as const,
-        body: {
-          data: {
-            items,
-            pagination: {
-              page,
-              perPage,
-              totalItems: result.totalItems,
-              totalPages,
-            },
-          },
-        },
-      };
+      const result = await administrationService.listClasses(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
-      if (error instanceof ApiError) {
-        return toErrorResponse(error, [
-          StatusCodes.NOT_FOUND,
-          StatusCodes.FORBIDDEN,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        ]);
-      }
-      throw error;
+      return handleSubResourceError(error);
+    }
+  },
+
+  /**
+   * List groups assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listGroups: async (authContext: AuthContext, administrationId: string, query: AdministrationGroupsListQuery) => {
+    try {
+      const result = await administrationService.listGroups(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
     }
   },
 };

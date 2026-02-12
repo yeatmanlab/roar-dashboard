@@ -7,9 +7,10 @@ import {
   type AdministrationDistrictSortFieldType,
   type AdministrationSchoolSortFieldType,
   type AdministrationClassSortFieldType,
+  type AdministrationGroupSortFieldType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
-import type { Administration, Org, Class } from '../../db/schema';
+import type { Administration, Org, Class, Group } from '../../db/schema';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
@@ -65,6 +66,7 @@ export interface ListOrgsOptions<TSortField extends string = string> {
 export type ListDistrictsOptions = ListOrgsOptions<AdministrationDistrictSortFieldType>;
 export type ListSchoolsOptions = ListOrgsOptions<AdministrationSchoolSortFieldType>;
 export type ListClassesOptions = ListOrgsOptions<AdministrationClassSortFieldType>;
+export type ListGroupsOptions = ListOrgsOptions<AdministrationGroupSortFieldType>;
 
 /**
  * AdministrationService
@@ -460,6 +462,34 @@ export function AdministrationService({
   }
 
   /**
+   * Performs authorization checks for sub-resource listing.
+   * Throws if user lacks access or is a supervised user.
+   *
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
+   */
+  async function authorizeSubResourceAccess(authContext: AuthContext, administrationId: string): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+
+    await verifyAdministrationAccess(authContext, administrationId);
+
+    if (isSuperAdmin) return;
+
+    const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+    if (!hasSupervisoryRole(userRoles)) {
+      logger.warn(
+        { userId, administrationId, userRoles },
+        'Supervised user attempted to list administration sub-resources',
+      );
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    }
+  }
+
+  /**
    * List classes assigned to an administration with access control.
    *
    * Authorization behavior:
@@ -483,7 +513,7 @@ export function AdministrationService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      await verifyAdministrationAccess(authContext, administrationId);
+      await authorizeSubResourceAccess(authContext, administrationId);
 
       const queryParams = {
         page: options.page,
@@ -496,19 +526,6 @@ export function AdministrationService({
 
       if (isSuperAdmin) {
         return await administrationRepository.getClassesByAdministrationId(administrationId, queryParams);
-      }
-
-      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
-
-      if (!hasSupervisoryRole(userRoles)) {
-        logger.warn(
-          { userId, administrationId, userRoles },
-          'Supervised user attempted to list administration classes',
-        );
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        });
       }
 
       const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
@@ -534,5 +551,67 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses };
+  /**
+   * List groups assigned to an administration with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all groups assigned to the administration
+   * - Supervisory roles: sees only groups they are directly a member of (groups are flat, no hierarchy)
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get groups for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with groups
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listGroups(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListGroupsOptions,
+  ): Promise<PaginatedResult<Group>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      await authorizeSubResourceAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+      };
+
+      if (isSuperAdmin) {
+        return await administrationRepository.getGroupsByAdministrationId(administrationId, queryParams);
+      }
+
+      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      return await administrationRepository.getAuthorizedGroupsByAdministrationId(
+        { userId, allowedRoles },
+        administrationId,
+        queryParams,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration groups',
+      );
+
+      throw new ApiError('Failed to retrieve administration groups', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts, listSchools, listClasses, listGroups };
 }
