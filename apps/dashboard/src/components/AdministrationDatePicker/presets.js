@@ -1,14 +1,26 @@
 /**
  * Creates a UTC date for the given year, month, and day.
  *
- * @param {number} year - The year of the date.
- * @param {number} month - The month of the date (0-11).
- * @param {number} day - The day of the date (1-31).
- * @returns {Date} The UTC date.
+ * @param {number} year
+ * @param {number} month - 0–11
+ * @param {number} day - 1–31
+ * @returns {Date}
  */
 function createUTCDate(year, month, day) {
-  // Create date at UTC midnight.
   return new Date(Date.UTC(year, month, day));
+}
+
+/**
+ * Converts a Date to a UTC date-only string in YYYY-MM-DD format.
+ *
+ * @param {Date} date
+ * @returns {string}
+ */
+function toUTCDateOnlyString(date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -18,17 +30,14 @@ function createUTCDate(year, month, day) {
  * - If today is in Jan/Feb/Mar, Winter started Dec 1 of the previous year.
  * - Otherwise, Winter starts Dec 1 of the current year.
  *
- * This avoids incorrectly selecting the *next* winter at the start of a new calendar year.
- *
- * @returns {Object} An object containing the date presets keyed by season.
+ * @param {Date} referenceDate
+ * @returns {Object}
  */
-
 export function generateDatePresets(referenceDate = new Date()) {
   const now = referenceDate;
   const currentYear = now.getUTCFullYear();
   const currentMonth = now.getUTCMonth();
 
-  // If we’re in Jan/Feb/Mar, the “current winter” started last year.
   const winterStartYear = currentMonth <= 2 ? currentYear - 1 : currentYear;
   // Create initial presets
   const presets = [
@@ -59,9 +68,20 @@ export function generateDatePresets(referenceDate = new Date()) {
   ];
 
   // Sort by start date
-  presets.sort((a, b) => a.start - b.start);
+  presets.sort((a, b) => a.start.getTime() - b.start.getTime());
 
-  return Object.fromEntries(presets.map(({ key, label, start, end }) => [key, { label, start, end }]));
+  return Object.fromEntries(
+    presets.map(({ key, label, start, end }) => [
+      key,
+      {
+        label,
+        start,
+        end,
+        startDate: toUTCDateOnlyString(start),
+        endDate: toUTCDateOnlyString(end),
+      },
+    ]),
+  );
 }
 
 export const datePresets = Object.freeze(generateDatePresets());
