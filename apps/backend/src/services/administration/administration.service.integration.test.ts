@@ -1390,8 +1390,8 @@ describe('AdministrationService (integration)', () => {
 
         // Students CAN access task variants - this is intentional
         expect(result.items).toHaveLength(1);
-        expect(result.items[0]!.id).toBe(variant.id);
-        expect(result.items[0]!.name).toBe('Student Access Test Variant');
+        expect(result.items[0]!.variant.id).toBe(variant.id);
+        expect(result.items[0]!.variant.name).toBe('Student Access Test Variant');
         expect(result.items[0]!.task.name).toBe('Student Access Test Task');
       });
 
@@ -1424,7 +1424,7 @@ describe('AdministrationService (integration)', () => {
 
         // Students CAN access task variants - they need this to know their assessments
         expect(result.items).toHaveLength(1);
-        expect(result.items[0]!.id).toBe(variant.id);
+        expect(result.items[0]!.variant.id).toBe(variant.id);
       });
 
       // Note: Guardians/parents/relatives have a separate access path via family relationships
@@ -1461,11 +1461,11 @@ describe('AdministrationService (integration)', () => {
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
         expect(result.items.length).toBe(1);
-        expect(result.items[0]!.id).toBe(variant.id);
-        expect(result.items[0]!.name).toBe('Teacher Variant');
+        expect(result.items[0]!.variant.id).toBe(variant.id);
+        expect(result.items[0]!.variant.name).toBe('Teacher Variant');
         expect(result.items[0]!.task.id).toBe(task.id);
         expect(result.items[0]!.task.name).toBe('Teacher Task Test');
-        expect(result.items[0]!.orderIndex).toBe(0);
+        expect(result.items[0]!.assignment.orderIndex).toBe(0);
       });
 
       it('should allow administrator to list task variants', async () => {
@@ -1495,7 +1495,7 @@ describe('AdministrationService (integration)', () => {
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
         expect(result.items.length).toBe(1);
-        expect(result.items[0]!.id).toBe(variant.id);
+        expect(result.items[0]!.variant.id).toBe(variant.id);
       });
     });
 
@@ -1568,12 +1568,12 @@ describe('AdministrationService (integration)', () => {
         );
 
         // Should be sorted by orderIndex: 0, 1, 2
-        expect(result.items[0]!.orderIndex).toBe(0);
-        expect(result.items[0]!.id).toBe(variant2.id);
-        expect(result.items[1]!.orderIndex).toBe(1);
-        expect(result.items[1]!.id).toBe(variant3.id);
-        expect(result.items[2]!.orderIndex).toBe(2);
-        expect(result.items[2]!.id).toBe(variant1.id);
+        expect(result.items[0]!.assignment.orderIndex).toBe(0);
+        expect(result.items[0]!.variant.id).toBe(variant2.id);
+        expect(result.items[1]!.assignment.orderIndex).toBe(1);
+        expect(result.items[1]!.variant.id).toBe(variant3.id);
+        expect(result.items[2]!.assignment.orderIndex).toBe(2);
+        expect(result.items[2]!.variant.id).toBe(variant1.id);
       });
 
       it('should sort by name when requested', async () => {
@@ -1613,9 +1613,9 @@ describe('AdministrationService (integration)', () => {
         );
 
         // Should be sorted by name alphabetically: Apple, Mango, Zebra
-        expect(result.items[0]!.name).toBe('Apple');
-        expect(result.items[1]!.name).toBe('Mango');
-        expect(result.items[2]!.name).toBe('Zebra');
+        expect(result.items[0]!.variant.name).toBe('Apple');
+        expect(result.items[1]!.variant.name).toBe('Mango');
+        expect(result.items[2]!.variant.name).toBe('Zebra');
       });
 
       it('should sort by orderIndex descending when requested', async () => {
@@ -1655,12 +1655,12 @@ describe('AdministrationService (integration)', () => {
         );
 
         // Should be sorted by orderIndex descending: 2, 1, 0
-        expect(result.items[0]!.orderIndex).toBe(2);
-        expect(result.items[0]!.id).toBe(variant3.id);
-        expect(result.items[1]!.orderIndex).toBe(1);
-        expect(result.items[1]!.id).toBe(variant2.id);
-        expect(result.items[2]!.orderIndex).toBe(0);
-        expect(result.items[2]!.id).toBe(variant1.id);
+        expect(result.items[0]!.assignment.orderIndex).toBe(2);
+        expect(result.items[0]!.variant.id).toBe(variant3.id);
+        expect(result.items[1]!.assignment.orderIndex).toBe(1);
+        expect(result.items[1]!.variant.id).toBe(variant2.id);
+        expect(result.items[2]!.assignment.orderIndex).toBe(0);
+        expect(result.items[2]!.variant.id).toBe(variant1.id);
       });
     });
 
@@ -1689,9 +1689,9 @@ describe('AdministrationService (integration)', () => {
         expect(result.items).toHaveLength(1);
 
         const item = result.items[0]!;
-        expect(item).toHaveProperty('id', variant.id);
-        expect(item).toHaveProperty('name', 'Shape Test Variant');
-        expect(item).toHaveProperty('orderIndex', 5);
+        expect(item.variant).toHaveProperty('id', variant.id);
+        expect(item.variant).toHaveProperty('name', 'Shape Test Variant');
+        expect(item.assignment).toHaveProperty('orderIndex', 5);
         expect(item.task).toHaveProperty('id', task.id);
         expect(item.task).toHaveProperty('name', 'Shape Test Task');
       });
@@ -1716,7 +1716,7 @@ describe('AdministrationService (integration)', () => {
           defaultTaskVariantOptions,
         );
 
-        expect(result.items[0]!.name).toBeNull();
+        expect(result.items[0]!.variant.name).toBeNull();
       });
 
       it('should return empty array for administration with no task variants', async () => {
@@ -1822,8 +1822,8 @@ describe('AdministrationService (integration)', () => {
 
         expect(page1.totalItems).toBe(3);
         expect(page1.items).toHaveLength(2);
-        expect(page1.items[0]!.orderIndex).toBe(0);
-        expect(page1.items[1]!.orderIndex).toBe(1);
+        expect(page1.items[0]!.assignment.orderIndex).toBe(0);
+        expect(page1.items[1]!.assignment.orderIndex).toBe(1);
 
         // Get second page
         const page2 = await service.listTaskVariants(authContext, administration.id, {
@@ -1835,7 +1835,7 @@ describe('AdministrationService (integration)', () => {
 
         expect(page2.totalItems).toBe(3);
         expect(page2.items).toHaveLength(1);
-        expect(page2.items[0]!.orderIndex).toBe(2);
+        expect(page2.items[0]!.assignment.orderIndex).toBe(2);
       });
     });
   });
