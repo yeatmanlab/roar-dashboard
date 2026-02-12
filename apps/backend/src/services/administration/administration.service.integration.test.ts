@@ -12,9 +12,11 @@ import { AdministrationService } from './administration.service';
 import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { UserOrgFactory } from '../../test-support/factories/user-org.factory';
+import { UserClassFactory } from '../../test-support/factories/user-class.factory';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../../test-support/factories/administration-org.factory';
+import { AdministrationClassFactory } from '../../test-support/factories/administration-class.factory';
 import { UserRole } from '../../enums/user-role.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
@@ -30,6 +32,13 @@ describe('AdministrationService (integration)', () => {
   };
 
   const defaultSchoolOptions = {
+    page: 1,
+    perPage: 100,
+    sortBy: 'name' as const,
+    sortOrder: 'asc' as const,
+  };
+
+  const defaultClassOptions = {
     page: 1,
     perPage: 100,
     sortBy: 'name' as const,
@@ -572,6 +581,362 @@ describe('AdministrationService (integration)', () => {
 
         const error = await service
           .listSchools(authContext, baseFixture.administrationAssignedToSchoolA.id, defaultSchoolOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        // This is the "no access to administration" error, not "supervised user" error
+        expect((error as ApiError).message).toBe('You do not have permission to perform this action');
+      });
+    });
+  });
+
+  describe('listClasses', () => {
+    describe('supervised role authorization', () => {
+      it('should return 403 when student tries to list classes', async () => {
+        // classAStudent is a student in classInSchoolA
+        // administrationAssignedToClassA is assigned to classInSchoolA
+        // Student CAN access the administration but should NOT be able to list classes
+        const authContext = {
+          userId: baseFixture.classAStudent.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listClasses(authContext, baseFixture.administrationAssignedToClassA.id, defaultClassOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
+      });
+
+      it('should return 403 when school-level student tries to list classes', async () => {
+        // schoolAStudent is a student at School A
+        // They have access to administrationAssignedToClassA via school → class ancestry
+        const authContext = {
+          userId: baseFixture.schoolAStudent.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listClasses(authContext, baseFixture.administrationAssignedToClassA.id, defaultClassOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+
+      it('should return 403 when guardian tries to list classes', async () => {
+        // Create a guardian user assigned to the class
+        const guardianUser = await UserFactory.create({ nameFirst: 'Test', nameLast: 'ClassGuardian' });
+        await UserClassFactory.create({
+          userId: guardianUser.id,
+          classId: baseFixture.classInSchoolA.id,
+          role: UserRole.GUARDIAN,
+        });
+
+        const authContext = {
+          userId: guardianUser.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listClasses(authContext, baseFixture.administrationAssignedToClassA.id, defaultClassOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+
+      it('should return 403 when parent tries to list classes', async () => {
+        // Create a parent user assigned to the class
+        const parentUser = await UserFactory.create({ nameFirst: 'Test', nameLast: 'ClassParent' });
+        await UserClassFactory.create({
+          userId: parentUser.id,
+          classId: baseFixture.classInSchoolA.id,
+          role: UserRole.PARENT,
+        });
+
+        const authContext = {
+          userId: parentUser.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listClasses(authContext, baseFixture.administrationAssignedToClassA.id, defaultClassOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+
+      it('should return 403 when relative tries to list classes', async () => {
+        // Create a relative user assigned to the class
+        const relativeUser = await UserFactory.create({ nameFirst: 'Test', nameLast: 'ClassRelative' });
+        await UserClassFactory.create({
+          userId: relativeUser.id,
+          classId: baseFixture.classInSchoolA.id,
+          role: UserRole.RELATIVE,
+        });
+
+        const authContext = {
+          userId: relativeUser.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listClasses(authContext, baseFixture.administrationAssignedToClassA.id, defaultClassOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+    });
+
+    describe('supervisory role authorization', () => {
+      it('should allow teacher to list classes with filtering', async () => {
+        // classATeacher is a teacher in classInSchoolA
+        // They should be able to list classes for administrationAssignedToClassA
+        const authContext = {
+          userId: baseFixture.classATeacher.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listClasses(
+          authContext,
+          baseFixture.administrationAssignedToClassA.id,
+          defaultClassOptions,
+        );
+
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+      });
+
+      it('should allow school-level teacher to list classes via descendant access', async () => {
+        // schoolATeacher is a teacher at School A
+        // They should see classInSchoolA via descendant access
+        const authContext = {
+          userId: baseFixture.schoolATeacher.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listClasses(
+          authContext,
+          baseFixture.administrationAssignedToClassA.id,
+          defaultClassOptions,
+        );
+
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+      });
+
+      it('should allow district admin to list classes via descendant access', async () => {
+        // districtAdmin is at district level, which is grandparent of classInSchoolA
+        const authContext = {
+          userId: baseFixture.districtAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listClasses(
+          authContext,
+          baseFixture.administrationAssignedToClassA.id,
+          defaultClassOptions,
+        );
+
+        // District admin should see classInSchoolA via descendant access
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+      });
+
+      it('should filter classes to only those accessible to the user', async () => {
+        // Create an administration assigned to both classes
+        const multiClassAdmin = await AdministrationFactory.create({
+          name: 'Multi-Class Service Test Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: multiClassAdmin.id,
+          classId: baseFixture.classInSchoolA.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: multiClassAdmin.id,
+          classId: baseFixture.classInSchoolB.id,
+        });
+
+        // classATeacher only has access to classInSchoolA (not classInSchoolB)
+        const authContext = {
+          userId: baseFixture.classATeacher.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listClasses(authContext, multiClassAdmin.id, defaultClassOptions);
+
+        // Should only see the class they have access to
+        expect(result.totalItems).toBe(1);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+        // Should NOT see classInSchoolB
+        const classIds = result.items.map((c) => c.id);
+        expect(classIds).not.toContain(baseFixture.classInSchoolB.id);
+      });
+
+      it('should filter classes based on school-level membership (descendant access)', async () => {
+        // Scenario:
+        // - Administration assigned to classInSchoolA and classInSchoolB
+        // - schoolATeacher: teacher at School A -> sees only classInSchoolA
+        // - Create a teacher at School B -> should see only classInSchoolB
+        //
+        // This validates that school-level membership grants access to child classes
+        // via descendant access, but not to classes in sibling schools.
+
+        // Create an administration assigned to both classes
+        const twoClassAdmin = await AdministrationFactory.create({
+          name: 'Two-Class Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: twoClassAdmin.id,
+          classId: baseFixture.classInSchoolA.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: twoClassAdmin.id,
+          classId: baseFixture.classInSchoolB.id,
+        });
+
+        // Create a teacher at School B
+        const schoolBTeacher = await UserFactory.create({ nameFirst: 'SchoolB', nameLast: 'Teacher' });
+        await UserOrgFactory.create({
+          userId: schoolBTeacher.id,
+          orgId: baseFixture.schoolB.id,
+          role: UserRole.TEACHER,
+        });
+
+        // schoolATeacher: teacher at School A -> should see classInSchoolA only
+        const resultA = await service.listClasses(
+          { userId: baseFixture.schoolATeacher.id, isSuperAdmin: false },
+          twoClassAdmin.id,
+          defaultClassOptions,
+        );
+        expect(resultA.totalItems).toBe(1);
+        expect(resultA.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+
+        // schoolBTeacher: teacher at School B -> should see classInSchoolB only
+        const resultB = await service.listClasses(
+          { userId: schoolBTeacher.id, isSuperAdmin: false },
+          twoClassAdmin.id,
+          defaultClassOptions,
+        );
+        expect(resultB.totalItems).toBe(1);
+        expect(resultB.items[0]!.id).toBe(baseFixture.classInSchoolB.id);
+
+        // districtAdmin: admin at district -> should see both classes
+        const resultDistrict = await service.listClasses(
+          { userId: baseFixture.districtAdmin.id, isSuperAdmin: false },
+          twoClassAdmin.id,
+          defaultClassOptions,
+        );
+        expect(resultDistrict.totalItems).toBe(2);
+        const classIds = resultDistrict.items.map((c) => c.id);
+        expect(classIds).toContain(baseFixture.classInSchoolA.id);
+        expect(classIds).toContain(baseFixture.classInSchoolB.id);
+      });
+
+      it('should filter classes across different districts', async () => {
+        // Scenario:
+        // - Administration assigned to classInSchoolA (District A) and classInDistrictB (District B)
+        // - districtAdmin: admin at District A -> sees only classInSchoolA
+        // - districtBAdmin: admin at District B -> sees only classInDistrictB
+
+        const crossDistrictClassAdmin = await AdministrationFactory.create({
+          name: 'Cross-District Class Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: crossDistrictClassAdmin.id,
+          classId: baseFixture.classInSchoolA.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: crossDistrictClassAdmin.id,
+          classId: baseFixture.classInDistrictB.id,
+        });
+
+        // districtAdmin -> should see classInSchoolA only
+        const resultA = await service.listClasses(
+          { userId: baseFixture.districtAdmin.id, isSuperAdmin: false },
+          crossDistrictClassAdmin.id,
+          defaultClassOptions,
+        );
+        expect(resultA.totalItems).toBe(1);
+        expect(resultA.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+
+        // districtBAdmin -> should see classInDistrictB only
+        const resultB = await service.listClasses(
+          { userId: baseFixture.districtBAdmin.id, isSuperAdmin: false },
+          crossDistrictClassAdmin.id,
+          defaultClassOptions,
+        );
+        expect(resultB.totalItems).toBe(1);
+        expect(resultB.items[0]!.id).toBe(baseFixture.classInDistrictB.id);
+      });
+    });
+
+    describe('super admin authorization', () => {
+      it('should allow super admin to see all classes without filtering', async () => {
+        // Create an administration assigned to classes in both schools
+        const multiClassAdmin = await AdministrationFactory.create({
+          name: 'Multi-Class Super Admin Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: multiClassAdmin.id,
+          classId: baseFixture.classInSchoolA.id,
+        });
+        await AdministrationClassFactory.create({
+          administrationId: multiClassAdmin.id,
+          classId: baseFixture.classInSchoolB.id,
+        });
+
+        const authContext = {
+          userId: baseFixture.districtAdmin.id, // userId doesn't matter for super admin
+          isSuperAdmin: true,
+        };
+
+        const result = await service.listClasses(authContext, multiClassAdmin.id, defaultClassOptions);
+
+        // Super admin should see ALL classes
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const classIds = result.items.map((c) => c.id);
+        expect(classIds).toContain(baseFixture.classInSchoolA.id);
+        expect(classIds).toContain(baseFixture.classInSchoolB.id);
+      });
+    });
+
+    describe('access control edge cases', () => {
+      it('should return 404 when administration does not exist', async () => {
+        const authContext = {
+          userId: baseFixture.districtAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listClasses(authContext, '00000000-0000-0000-0000-000000000000', defaultClassOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(404);
+      });
+
+      it('should return 403 when user has no access to administration', async () => {
+        // districtBAdmin has no access to administrationAssignedToClassA (in district A)
+        const authContext = {
+          userId: baseFixture.districtBAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listClasses(authContext, baseFixture.administrationAssignedToClassA.id, defaultClassOptions)
           .catch((e) => e);
 
         expect(error).toBeInstanceOf(ApiError);

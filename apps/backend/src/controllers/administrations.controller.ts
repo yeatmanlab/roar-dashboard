@@ -7,12 +7,14 @@ import type {
   AdministrationsListQuery,
   AdministrationDistrictsListQuery,
   AdministrationSchoolsListQuery,
-  Administration as ApiAdministration,
-  AdministrationBase as ApiAdministrationBase,
+  AdministrationClassesListQuery,
+  Administration as ContractAdministration,
+  AdministrationBase as ContractAdministrationBase,
   AdministrationDistrict,
   AdministrationSchool,
+  AdministrationClass,
 } from '@roar-dashboard/api-contract';
-import type { Administration, Org } from '../db/schema';
+import type { Administration, Org, Class } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -26,7 +28,7 @@ const administrationService = AdministrationService();
  * @param admin - The database Administration entity
  * @returns The API-formatted administration base object
  */
-function transformAdministrationBase(admin: Administration): ApiAdministrationBase {
+function transformAdministrationBase(admin: Administration): ContractAdministrationBase {
   return {
     id: admin.id,
     name: admin.name,
@@ -47,8 +49,8 @@ function transformAdministrationBase(admin: Administration): ApiAdministrationBa
  * @param admin - The database Administration entity with optional embeds
  * @returns The API-formatted administration object with embedded data
  */
-function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministration {
-  const result: ApiAdministration = transformAdministrationBase(admin);
+function transformAdministration(admin: AdministrationWithEmbeds): ContractAdministration {
+  const result: ContractAdministration = transformAdministrationBase(admin);
 
   // Include stats if embedded
   if (admin.stats) {
@@ -64,15 +66,16 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 }
 
 /**
- * Maps a database Org entity to the API schema for districts/schools.
+ * Maps a database entity with id and name to the API schema.
+ * Used for districts, schools, and classes which share the same contract shape.
  *
- * @param org - The database Org entity
- * @returns The API-formatted org object
+ * @param entity - The database entity (Org or Class)
+ * @returns The API-formatted object with id and name
  */
-function transformOrg(org: Org): AdministrationDistrict | AdministrationSchool {
+function toIdName(entity: Org | Class): AdministrationDistrict | AdministrationSchool | AdministrationClass {
   return {
-    id: org.id,
-    name: org.name,
+    id: entity.id,
+    name: entity.name,
   };
 }
 
@@ -190,7 +193,7 @@ export const AdministrationsController = {
       });
 
       // Transform to API response format
-      const items = result.items.map(transformOrg);
+      const items = result.items.map(toIdName);
 
       const totalPages = Math.ceil(result.totalItems / perPage);
 
@@ -242,7 +245,59 @@ export const AdministrationsController = {
       });
 
       // Transform to API response format
-      const items = result.items.map(transformOrg);
+      const items = result.items.map(toIdName);
+
+      const totalPages = Math.ceil(result.totalItems / perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List classes assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listClasses: async (authContext: AuthContext, administrationId: string, query: AdministrationClassesListQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder } = query;
+
+      const result = await administrationService.listClasses(authContext, administrationId, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+      });
+
+      // Transform to API response format
+      const items = result.items.map(toIdName);
 
       const totalPages = Math.ceil(result.totalItems / perPage);
 

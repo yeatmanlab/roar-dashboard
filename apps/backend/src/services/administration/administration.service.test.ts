@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdministrationService } from './administration.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { OrgFactory } from '../../test-support/factories/org.factory';
+import { ClassFactory } from '../../test-support/factories/class.factory';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 
 // Mock the logger (used by the service for error handling)
@@ -27,6 +28,8 @@ describe('AdministrationService', () => {
   const mockGetDistrictsByAdministrationIdAuthorized = vi.fn();
   const mockGetSchoolsByAdministrationId = vi.fn();
   const mockGetSchoolsByAdministrationIdAuthorized = vi.fn();
+  const mockGetClassesByAdministrationId = vi.fn();
+  const mockGetClassesByAdministrationIdAuthorized = vi.fn();
   const mockGetUserRolesForAdministration = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,6 +44,8 @@ describe('AdministrationService', () => {
     getAuthorizedDistrictsByAdministrationId: mockGetDistrictsByAdministrationIdAuthorized,
     getSchoolsByAdministrationId: mockGetSchoolsByAdministrationId,
     getAuthorizedSchoolsByAdministrationId: mockGetSchoolsByAdministrationIdAuthorized,
+    getClassesByAdministrationId: mockGetClassesByAdministrationId,
+    getAuthorizedClassesByAdministrationId: mockGetClassesByAdministrationIdAuthorized,
     getUserRolesForAdministration: mockGetUserRolesForAdministration,
   };
 
@@ -1463,6 +1468,367 @@ describe('AdministrationService', () => {
 
         // Should succeed because user has at least one supervisory role
         expect(mockGetSchoolsByAdministrationIdAuthorized).toHaveBeenCalled();
+        expect(result.items).toHaveLength(1);
+      });
+    });
+  });
+
+  describe('listClasses', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+    };
+
+    it('should return classes for super admin (unrestricted)', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockClasses = [
+        ClassFactory.build({ id: 'class-1', name: 'Class A' }),
+        ClassFactory.build({ id: 'class-2', name: 'Class B' }),
+      ];
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetClassesByAdministrationId.mockResolvedValue({
+        items: mockClasses,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listClasses(
+        { userId: 'admin-user', isSuperAdmin: true },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetByIdAuthorized).not.toHaveBeenCalled();
+      expect(mockGetClassesByAdministrationId).toHaveBeenCalledWith('admin-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should use getAuthorized for non-super admin users with supervisory roles', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      const mockClasses = [ClassFactory.build({ id: 'class-1', name: 'Class A' })];
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+      // User has a supervisory role (teacher)
+      mockGetUserRolesForAdministration.mockResolvedValue(['teacher']);
+      mockGetClassesByAdministrationIdAuthorized.mockResolvedValue({
+        items: mockClasses,
+        totalItems: 1,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listClasses(
+        { userId: 'user-123', isSuperAdmin: false },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetByIdAuthorized).toHaveBeenCalledWith(
+        {
+          userId: 'user-123',
+          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher', 'student']),
+        },
+        'admin-123',
+      );
+      // Should use authorized method for non-super admin with supervisory role
+      expect(mockGetClassesByAdministrationIdAuthorized).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'user-123' }),
+        'admin-123',
+        expect.any(Object),
+      );
+      expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should pass pagination and sorting options to repository', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetClassesByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await service.listClasses({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', {
+        page: 3,
+        perPage: 50,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+
+      expect(mockGetClassesByAdministrationId).toHaveBeenCalledWith('admin-123', {
+        page: 3,
+        perPage: 50,
+        orderBy: { field: 'name', direction: 'desc' },
+      });
+    });
+
+    it('should return empty results when administration has no classes', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetClassesByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listClasses(
+        { userId: 'admin-user', isSuperAdmin: true },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('should throw not-found error when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listClasses({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
+      ).rejects.toThrow('Administration not found');
+      expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetByIdAuthorized.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listClasses({ userId: 'user-123', isSuperAdmin: false }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('You do not have permission to perform this action');
+      expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw not-found error for non-super admin when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listClasses({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
+      ).rejects.toThrow('Administration not found');
+      expect(mockGetByIdAuthorized).not.toHaveBeenCalled();
+      expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw ApiError when getById database query fails', async () => {
+      const dbError = new Error('Connection refused');
+      mockGetById.mockRejectedValue(dbError);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listClasses({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('Failed to retrieve administration classes');
+    });
+
+    it('should throw ApiError when getClassesByAdministrationId query fails', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetClassesByAdministrationId.mockRejectedValue(new Error('Database timeout'));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listClasses({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('Failed to retrieve administration classes');
+    });
+
+    describe('supervised role authorization', () => {
+      it('should throw forbidden error when user has no roles for administration', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        // Edge case: user passed verifyAdministrationAccess but has no roles (empty array)
+        mockGetUserRolesForAdministration.mockResolvedValue([]);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listClasses({ userId: 'user-with-no-roles', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
+        expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+        expect(mockGetClassesByAdministrationIdAuthorized).not.toHaveBeenCalled();
+      });
+
+      it('should throw forbidden error when user only has supervised roles', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        // User only has 'student' role, which is a supervised role
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listClasses({ userId: 'student-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
+        expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+        expect(mockGetClassesByAdministrationIdAuthorized).not.toHaveBeenCalled();
+      });
+
+      it('should throw forbidden error when user has guardian role', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetUserRolesForAdministration.mockResolvedValue(['guardian']);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listClasses({ userId: 'guardian-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
+      });
+
+      it('should throw forbidden error when user has parent role', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetUserRolesForAdministration.mockResolvedValue(['parent']);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listClasses({ userId: 'parent-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
+      });
+
+      it('should throw forbidden error when user has relative role', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetUserRolesForAdministration.mockResolvedValue(['relative']);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listClasses({ userId: 'relative-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toThrow(ApiErrorMessage.FORBIDDEN);
+      });
+    });
+
+    describe('supervisory role authorization', () => {
+      it('should use authorized method for teacher (supervisory role)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockClasses = [ClassFactory.build({ id: 'class-1' })];
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetUserRolesForAdministration.mockResolvedValue(['teacher']);
+        mockGetClassesByAdministrationIdAuthorized.mockResolvedValue({
+          items: mockClasses,
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listClasses(
+          { userId: 'teacher-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(mockGetClassesByAdministrationIdAuthorized).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: 'teacher-user' }),
+          'admin-123',
+          expect.any(Object),
+        );
+        expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+        expect(result.items).toHaveLength(1);
+      });
+
+      it('should use authorized method for administrator (supervisory role)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockClasses = [ClassFactory.build({ id: 'class-1' })];
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetUserRolesForAdministration.mockResolvedValue(['administrator']);
+        mockGetClassesByAdministrationIdAuthorized.mockResolvedValue({
+          items: mockClasses,
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listClasses(
+          { userId: 'admin-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(mockGetClassesByAdministrationIdAuthorized).toHaveBeenCalled();
+        expect(mockGetClassesByAdministrationId).not.toHaveBeenCalled();
+        expect(result.items).toHaveLength(1);
+      });
+
+      it('should allow access when user has both supervised and supervisory roles', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockClasses = [ClassFactory.build({ id: 'class-1' })];
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        // User has both student (supervised) and teacher (supervisory) roles
+        mockGetUserRolesForAdministration.mockResolvedValue(['student', 'teacher']);
+        mockGetClassesByAdministrationIdAuthorized.mockResolvedValue({
+          items: mockClasses,
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listClasses(
+          { userId: 'multi-role-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        // Should succeed because user has at least one supervisory role
+        expect(mockGetClassesByAdministrationIdAuthorized).toHaveBeenCalled();
         expect(result.items).toHaveLength(1);
       });
     });
