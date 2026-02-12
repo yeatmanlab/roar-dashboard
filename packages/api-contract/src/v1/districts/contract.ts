@@ -17,6 +17,8 @@ export const DistrictsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(DistrictsListResponseSchema),
         401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'List districts',

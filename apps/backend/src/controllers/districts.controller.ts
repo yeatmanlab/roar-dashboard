@@ -2,19 +2,14 @@ import { StatusCodes } from 'http-status-codes';
 import { DistrictService, type DistrictWithEmbeds } from '../services/district/district.service';
 import type {
   DistrictsListQuery,
-  District as ApiDistrict,
-  DistrictBase as ApiDistrictBase,
+  DistrictDetail as ApiDistrict,
+  DistrictDetailBase as ApiDistrictBase,
 } from '@roar-dashboard/api-contract';
+import { ApiError } from '../errors/api-error';
+import { toErrorResponse } from '../utils/to-error-response.util';
+import type { AuthContext } from '../types/auth-context';
 
 const districtService = DistrictService();
-
-/**
- * Auth context passed from middleware.
- */
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
 
 /**
  * Maps a database District entity to the base API schema.
@@ -97,38 +92,45 @@ export const DistrictsController = {
    * @returns Paginated list of districts transformed to API response format
    */
   list: async (authContext: AuthContext, query: DistrictsListQuery) => {
-    const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
+    try {
+      const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
 
-    // Check if counts embed is requested
-    const embedCounts = embed?.includes('counts') ?? false;
+      // Check if counts embed is requested
+      const embedCounts = embed?.includes('counts') ?? false;
 
-    const result = await districtService.list(authContext, {
-      page,
-      perPage,
-      sortBy,
-      sortOrder,
-      ...(includeEnded !== undefined && { includeEnded }),
-      ...(embedCounts && { embedCounts }),
-    });
+      const result = await districtService.list(authContext, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        ...(includeEnded !== undefined && { includeEnded }),
+        ...(embedCounts && { embedCounts }),
+      });
 
-    // Transform to API response format
-    const items = result.items.map(transformDistrict);
+      // Transform to API response format
+      const items = result.items.map(transformDistrict);
 
-    const totalPages = Math.ceil(result.totalItems / perPage);
+      const totalPages = Math.ceil(result.totalItems / perPage);
 
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: {
-          items,
-          pagination: {
-            page,
-            perPage,
-            totalItems: result.totalItems,
-            totalPages,
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
           },
         },
-      },
-    };
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
   },
 };

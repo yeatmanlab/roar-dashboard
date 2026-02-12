@@ -60,9 +60,9 @@ export const DistrictCountsSchema = z.object({
 export type DistrictCounts = z.infer<typeof DistrictCountsSchema>;
 
 /**
- * Base district schema (without embedded data).
+ * Base district detail schema (without embedded data).
  */
-export const DistrictBaseSchema = z.object({
+export const DistrictDetailBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   abbreviation: z.string(),
@@ -75,30 +75,30 @@ export const DistrictBaseSchema = z.object({
   rosteringEnded: z.string().datetime().optional(),
 });
 
-export type DistrictBase = z.infer<typeof DistrictBaseSchema>;
+export type DistrictDetailBase = z.infer<typeof DistrictDetailBaseSchema>;
 
 /**
- * Full district schema with optional embedded data.
+ * Full district detail schema with optional embedded data.
  */
-export const DistrictSchema = DistrictBaseSchema.extend({
+export const DistrictDetailSchema = DistrictDetailBaseSchema.extend({
   counts: DistrictCountsSchema.optional(),
 });
 
-export type District = z.infer<typeof DistrictSchema>;
+export type DistrictDetail = z.infer<typeof DistrictDetailSchema>;
 
 /**
- * Allowed sort fields for districts.
+ * Allowed sort fields for district details.
  */
-export const DISTRICT_SORT_FIELDS = ['name', 'abbreviation', 'createdAt'] as const;
+export const DISTRICT_DETAIL_SORT_FIELDS = ['name', 'abbreviation', 'createdAt'] as const;
 
 /**
  * Sort field constants for type-safe access.
  */
-export const DistrictSortField = {
+export const DistrictDetailSortField = {
   NAME: 'name',
   ABBREVIATION: 'abbreviation',
   CREATED_AT: 'createdAt',
-} as const satisfies Record<string, (typeof DISTRICT_SORT_FIELDS)[number]>;
+} as const satisfies Record<string, (typeof DISTRICT_DETAIL_SORT_FIELDS)[number]>;
 
 /**
  * Allowed embed options for districts.
@@ -116,7 +116,7 @@ export const DistrictEmbedOption = {
  * Query parameters for listing districts.
  */
 export const DistrictsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(DISTRICT_SORT_FIELDS, 'createdAt'),
+  createSortQuerySchema(DISTRICT_DETAIL_SORT_FIELDS, 'createdAt'),
 )
   .merge(createEmbedQuerySchema(DISTRICT_EMBED_OPTIONS))
   .extend({
@@ -128,6 +128,6 @@ export type DistrictsListQuery = z.infer<typeof DistrictsListQuerySchema>;
 /**
  * Paginated response for districts list.
  */
-export const DistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
+export const DistrictsListResponseSchema = createPaginatedResponseSchema(DistrictDetailSchema);
 
 export type DistrictsListResponse = z.infer<typeof DistrictsListResponseSchema>;

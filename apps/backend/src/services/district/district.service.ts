@@ -6,14 +6,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
-
-/**
- * Auth context passed from controller/middleware
- */
-export interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
+import type { AuthContext } from '../../types/auth-context';
 
 /**
  * Options for listing districts
@@ -35,13 +28,6 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
 }
 
 /**
- * District Service Dependencies (for testing)
- */
-export interface DistrictServiceDeps {
-  districtRepository?: DistrictRepository;
-}
-
-/**
  * Sort field mapping from API contract to database columns
  */
 const SORT_FIELD_TO_COLUMN: Record<string, string> = {
@@ -56,9 +42,11 @@ const SORT_FIELD_TO_COLUMN: Record<string, string> = {
  * Business logic layer for district operations.
  * Handles authorization (super admin vs regular user) and delegates to repository.
  */
-export function DistrictService(deps: DistrictServiceDeps = {}) {
-  const districtRepository = deps.districtRepository ?? new DistrictRepository();
-
+export function DistrictService({
+  districtRepository = new DistrictRepository(),
+}: {
+  districtRepository?: DistrictRepository;
+} = {}) {
   /**
    * List districts accessible to a user with pagination and sorting.
    *
@@ -96,7 +84,9 @@ export function DistrictService(deps: DistrictServiceDeps = {}) {
         result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
     } catch (error) {
-      if (error instanceof ApiError) throw error;
+      if (error instanceof ApiError) {
+        throw error;
+      }
 
       logger.error({ err: error, context: { userId } }, 'Failed to list districts');
 
