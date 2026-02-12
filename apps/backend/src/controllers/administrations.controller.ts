@@ -19,7 +19,7 @@ import type {
   AdministrationTaskVariantItem,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org, Class, Group } from '../db/schema';
-import type { TaskVariantListItem } from '../repositories/administration.repository';
+import type { TaskVariantWithAssignment } from '../repositories/administration.repository';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -87,19 +87,31 @@ function toIdName(
 }
 
 /**
- * Maps a TaskVariantListItem to the API response schema.
+ * Maps a TaskVariantWithAssignment (raw repository data) to the API response schema.
  *
- * @param item - The task variant list item from the repository
+ * Transforms the flat joined data from the repository into the nested structure
+ * expected by the API contract (task and conditions as nested objects).
+ *
+ * @param item - The raw task variant data from the repository (variant, task, assignment)
  * @returns The API-formatted task variant item with nested task and conditions objects
  */
-function toTaskVariantItem(item: TaskVariantListItem): AdministrationTaskVariantItem {
+function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskVariantItem {
   return {
-    id: item.id,
-    name: item.name,
-    description: item.description,
-    orderIndex: item.orderIndex,
-    task: item.task,
-    conditions: item.conditions,
+    id: item.variant.id,
+    name: item.variant.name,
+    description: item.variant.description,
+    orderIndex: item.assignment.orderIndex,
+    task: {
+      id: item.task.id,
+      name: item.task.name,
+      description: item.task.description,
+      image: item.task.image,
+      tutorialVideo: item.task.tutorialVideo,
+    },
+    conditions: {
+      eligibility: item.assignment.conditionsAssignment as Record<string, unknown> | null,
+      requirements: item.assignment.conditionsRequirements as Record<string, unknown> | null,
+    },
   };
 }
 
@@ -111,7 +123,7 @@ function toTaskVariantItem(item: TaskVariantListItem): AdministrationTaskVariant
  * @param perPage - Items per page (for calculating totalPages)
  * @param mapItem - Mapping function for items
  */
-function handleSubResourceResponse<T extends Org | Class | Group | TaskVariantListItem, R>(
+function handleSubResourceResponse<T extends Org | Class | Group | TaskVariantWithAssignment, R>(
   result: { items: T[]; totalItems: number },
   page: number,
   perPage: number,

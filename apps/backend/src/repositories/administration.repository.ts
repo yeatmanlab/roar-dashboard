@@ -14,9 +14,12 @@ import {
   groups,
   userGroups,
   type Administration,
+  type AdministrationTaskVariant,
   type Org,
   type Class,
   type Group,
+  type Task,
+  type TaskVariant,
 } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -38,6 +41,7 @@ import { AdministrationAccessControls } from './access-controls/administration.a
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { OrgType } from '../enums/org-type.enum';
+import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 
 /**
@@ -114,44 +118,14 @@ export type ListGroupsByAdministrationOptions = BasePaginatedQueryParams;
 export type ListTaskVariantsByAdministrationOptions = BasePaginatedQueryParams;
 
 /**
- * Task information nested within TaskVariantListItem.
+ * Raw joined result from getTaskVariantsByAdministrationId.
+ * Contains the full data from all three joined tables.
+ * Controller layer transforms this to the API response format.
  */
-export interface TaskVariantTask {
-  id: string;
-  name: string;
-  description: string | null;
-  image: string | null;
-  tutorialVideo: string | null;
-}
-
-/**
- * Conditions for task variant assignment within an administration.
- */
-export interface TaskVariantConditions {
-  eligibility: Record<string, unknown> | null;
-  requirements: Record<string, unknown> | null;
-}
-
-/**
- * Task variant item returned from getTaskVariantsByAdministrationId.
- * Includes nested task information for frontend display.
- *
- * @property id - The task variant's unique identifier
- * @property name - The variant's display name (nullable, falls back to task name in UI)
- * @property description - The variant's description (nullable)
- * @property orderIndex - The display order within the administration (0-indexed).
- *                        Defines the sequence in which assessments should be taken
- *                        when the administration is "ordered" (isOrdered=true).
- * @property task - Nested task information (id, name, description, image, tutorialVideo)
- * @property conditions - Assignment eligibility and completion requirements
- */
-export interface TaskVariantListItem {
-  id: string;
-  name: string | null;
-  description: string | null;
-  orderIndex: number;
-  task: TaskVariantTask;
-  conditions: TaskVariantConditions;
+export interface TaskVariantWithAssignment {
+  variant: TaskVariant;
+  task: Task;
+  assignment: AdministrationTaskVariant;
 }
 
 /**
@@ -782,14 +756,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   async getTaskVariantsByAdministrationId(
     administrationId: string,
     options: ListTaskVariantsByAdministrationOptions,
-  ): Promise<PaginatedResult<TaskVariantListItem>> {
+  ): Promise<PaginatedResult<TaskVariantWithAssignment>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
     // Only return published task variants - draft/deprecated variants should not be visible
     const baseCondition = and(
       eq(administrationTaskVariants.administrationId, administrationId),
-      eq(taskVariants.status, 'published'),
+      eq(taskVariants.status, TaskVariantStatus.PUBLISHED),
     );
 
     const countResult = await this.db
@@ -811,19 +785,11 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const sortColumn = sortField ? TASK_VARIANT_SORT_COLUMNS[sortField] : administrationTaskVariants.orderIndex;
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
-    const dataResult = await this.db
+    const items = await this.db
       .select({
-        id: taskVariants.id,
-        name: taskVariants.name,
-        description: taskVariants.description,
-        orderIndex: administrationTaskVariants.orderIndex,
-        conditionsEligibility: administrationTaskVariants.conditionsAssignment,
-        conditionsRequirements: administrationTaskVariants.conditionsRequirements,
-        taskId: tasks.id,
-        taskName: tasks.name,
-        taskDescription: tasks.description,
-        taskImage: tasks.image,
-        taskTutorialVideo: tasks.tutorialVideo,
+        variant: taskVariants,
+        task: tasks,
+        assignment: administrationTaskVariants,
       })
       .from(administrationTaskVariants)
       .innerJoin(taskVariants, eq(taskVariants.id, administrationTaskVariants.taskVariantId))
@@ -835,25 +801,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .orderBy(primaryOrder, asc(taskVariants.id))
       .limit(perPage)
       .offset(offset);
-
-    // Transform flat query result into nested structure
-    const items: TaskVariantListItem[] = dataResult.map((row) => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      orderIndex: row.orderIndex,
-      task: {
-        id: row.taskId,
-        name: row.taskName,
-        description: row.taskDescription,
-        image: row.taskImage,
-        tutorialVideo: row.taskTutorialVideo,
-      },
-      conditions: {
-        eligibility: row.conditionsEligibility as Record<string, unknown> | null,
-        requirements: row.conditionsRequirements as Record<string, unknown> | null,
-      },
-    }));
 
     return { items, totalItems };
   }
