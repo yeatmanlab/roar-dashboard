@@ -29,6 +29,13 @@ describe('AdministrationService (integration)', () => {
     sortOrder: 'asc' as const,
   };
 
+  const defaultSchoolOptions = {
+    page: 1,
+    perPage: 100,
+    sortBy: 'name' as const,
+    sortOrder: 'asc' as const,
+  };
+
   describe('listDistricts', () => {
     describe('supervised role authorization', () => {
       it('should return 403 when student tries to list districts', async () => {
@@ -40,21 +47,13 @@ describe('AdministrationService (integration)', () => {
           isSuperAdmin: false,
         };
 
-        await expect(
-          service.listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions),
-        ).rejects.toThrow(ApiError);
+        const error = await service
+          .listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions)
+          .catch((e) => e);
 
-        try {
-          await service.listDistricts(
-            authContext,
-            baseFixture.administrationAssignedToDistrict.id,
-            defaultDistrictOptions,
-          );
-        } catch (error) {
-          expect(error).toBeInstanceOf(ApiError);
-          expect((error as ApiError).statusCode).toBe(403);
-          expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
-        }
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
       });
 
       it('should return 403 when class-level student tries to list districts', async () => {
@@ -65,20 +64,12 @@ describe('AdministrationService (integration)', () => {
           isSuperAdmin: false,
         };
 
-        await expect(
-          service.listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions),
-        ).rejects.toThrow(ApiError);
+        const error = await service
+          .listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions)
+          .catch((e) => e);
 
-        try {
-          await service.listDistricts(
-            authContext,
-            baseFixture.administrationAssignedToDistrict.id,
-            defaultDistrictOptions,
-          );
-        } catch (error) {
-          expect(error).toBeInstanceOf(ApiError);
-          expect((error as ApiError).statusCode).toBe(403);
-        }
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
       });
 
       it('should return 403 when guardian tries to list districts', async () => {
@@ -95,20 +86,12 @@ describe('AdministrationService (integration)', () => {
           isSuperAdmin: false,
         };
 
-        await expect(
-          service.listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions),
-        ).rejects.toThrow(ApiError);
+        const error = await service
+          .listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions)
+          .catch((e) => e);
 
-        try {
-          await service.listDistricts(
-            authContext,
-            baseFixture.administrationAssignedToDistrict.id,
-            defaultDistrictOptions,
-          );
-        } catch (error) {
-          expect(error).toBeInstanceOf(ApiError);
-          expect((error as ApiError).statusCode).toBe(403);
-        }
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
       });
 
       it('should return 403 when parent tries to list districts', async () => {
@@ -125,20 +108,12 @@ describe('AdministrationService (integration)', () => {
           isSuperAdmin: false,
         };
 
-        await expect(
-          service.listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions),
-        ).rejects.toThrow(ApiError);
+        const error = await service
+          .listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions)
+          .catch((e) => e);
 
-        try {
-          await service.listDistricts(
-            authContext,
-            baseFixture.administrationAssignedToDistrict.id,
-            defaultDistrictOptions,
-          );
-        } catch (error) {
-          expect(error).toBeInstanceOf(ApiError);
-          expect((error as ApiError).statusCode).toBe(403);
-        }
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
       });
 
       it('should return 403 when relative tries to list districts', async () => {
@@ -155,20 +130,12 @@ describe('AdministrationService (integration)', () => {
           isSuperAdmin: false,
         };
 
-        await expect(
-          service.listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions),
-        ).rejects.toThrow(ApiError);
+        const error = await service
+          .listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions)
+          .catch((e) => e);
 
-        try {
-          await service.listDistricts(
-            authContext,
-            baseFixture.administrationAssignedToDistrict.id,
-            defaultDistrictOptions,
-          );
-        } catch (error) {
-          expect(error).toBeInstanceOf(ApiError);
-          expect((error as ApiError).statusCode).toBe(403);
-        }
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
       });
     });
 
@@ -398,16 +365,12 @@ describe('AdministrationService (integration)', () => {
           isSuperAdmin: false,
         };
 
-        await expect(
-          service.listDistricts(authContext, '00000000-0000-0000-0000-000000000000', defaultDistrictOptions),
-        ).rejects.toThrow(ApiError);
+        const error = await service
+          .listDistricts(authContext, '00000000-0000-0000-0000-000000000000', defaultDistrictOptions)
+          .catch((e) => e);
 
-        try {
-          await service.listDistricts(authContext, '00000000-0000-0000-0000-000000000000', defaultDistrictOptions);
-        } catch (error) {
-          expect(error).toBeInstanceOf(ApiError);
-          expect((error as ApiError).statusCode).toBe(404);
-        }
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(404);
       });
 
       it('should return 403 when user has no access to administration', async () => {
@@ -417,22 +380,204 @@ describe('AdministrationService (integration)', () => {
           isSuperAdmin: false,
         };
 
-        await expect(
-          service.listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions),
-        ).rejects.toThrow(ApiError);
+        const error = await service
+          .listDistricts(authContext, baseFixture.administrationAssignedToDistrict.id, defaultDistrictOptions)
+          .catch((e) => e);
 
-        try {
-          await service.listDistricts(
-            authContext,
-            baseFixture.administrationAssignedToDistrict.id,
-            defaultDistrictOptions,
-          );
-        } catch (error) {
-          expect(error).toBeInstanceOf(ApiError);
-          expect((error as ApiError).statusCode).toBe(403);
-          // This is the "no access to administration" error, not "supervised user" error
-          expect((error as ApiError).message).toBe('You do not have permission to perform this action');
-        }
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        // This is the "no access to administration" error, not "supervised user" error
+        expect((error as ApiError).message).toBe('You do not have permission to perform this action');
+      });
+    });
+  });
+
+  describe('listSchools', () => {
+    describe('supervised role authorization', () => {
+      it('should return 403 when student tries to list schools', async () => {
+        // schoolAStudent is a student at School A
+        // administrationAssignedToSchoolA is assigned to schoolA
+        // Student CAN access the administration but should NOT be able to list schools
+        const authContext = {
+          userId: baseFixture.schoolAStudent.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listSchools(authContext, baseFixture.administrationAssignedToSchoolA.id, defaultSchoolOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
+      });
+
+      it('should return 403 when class-level student tries to list schools', async () => {
+        // classAStudent is a student in classInSchoolA
+        // They have access to administrationAssignedToSchoolA via class → school ancestry
+        const authContext = {
+          userId: baseFixture.classAStudent.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listSchools(authContext, baseFixture.administrationAssignedToSchoolA.id, defaultSchoolOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+    });
+
+    describe('supervisory role authorization', () => {
+      it('should allow teacher to list schools with filtering', async () => {
+        // schoolATeacher is a teacher at School A
+        // They should be able to list schools for administrationAssignedToSchoolA
+        const authContext = {
+          userId: baseFixture.schoolATeacher.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listSchools(
+          authContext,
+          baseFixture.administrationAssignedToSchoolA.id,
+          defaultSchoolOptions,
+        );
+
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.schoolA.id);
+      });
+
+      it('should allow administrator to list schools with filtering', async () => {
+        // schoolAAdmin is an administrator at school A level
+        const authContext = {
+          userId: baseFixture.schoolAAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listSchools(
+          authContext,
+          baseFixture.administrationAssignedToSchoolA.id,
+          defaultSchoolOptions,
+        );
+
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.schoolA.id);
+      });
+
+      it('should allow district admin to list schools via descendant access', async () => {
+        // districtAdmin is at district level, which is parent of schoolA
+        const authContext = {
+          userId: baseFixture.districtAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listSchools(
+          authContext,
+          baseFixture.administrationAssignedToSchoolA.id,
+          defaultSchoolOptions,
+        );
+
+        // District admin should see schoolA via descendant access
+        expect(result.items.length).toBe(1);
+        expect(result.items[0]!.id).toBe(baseFixture.schoolA.id);
+      });
+
+      it('should filter schools to only those accessible to the user', async () => {
+        // Create an administration assigned to both schools
+        const multiSchoolAdmin = await AdministrationFactory.create({
+          name: 'Multi-School Service Test Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: multiSchoolAdmin.id,
+          orgId: baseFixture.schoolA.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: multiSchoolAdmin.id,
+          orgId: baseFixture.schoolB.id,
+        });
+
+        // schoolAAdmin only has access to schoolA (not schoolB)
+        const authContext = {
+          userId: baseFixture.schoolAAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const result = await service.listSchools(authContext, multiSchoolAdmin.id, defaultSchoolOptions);
+
+        // Should only see the school they have access to
+        expect(result.totalItems).toBe(1);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(baseFixture.schoolA.id);
+        // Should NOT see schoolB
+        const schoolIds = result.items.map((s) => s.id);
+        expect(schoolIds).not.toContain(baseFixture.schoolB.id);
+      });
+    });
+
+    describe('super admin authorization', () => {
+      it('should allow super admin to see all schools without filtering', async () => {
+        // Create an administration assigned to both schools
+        const multiSchoolAdmin = await AdministrationFactory.create({
+          name: 'Multi-School Super Admin Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: multiSchoolAdmin.id,
+          orgId: baseFixture.schoolA.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: multiSchoolAdmin.id,
+          orgId: baseFixture.schoolB.id,
+        });
+
+        const authContext = {
+          userId: baseFixture.districtAdmin.id, // userId doesn't matter for super admin
+          isSuperAdmin: true,
+        };
+
+        const result = await service.listSchools(authContext, multiSchoolAdmin.id, defaultSchoolOptions);
+
+        // Super admin should see ALL schools
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const schoolIds = result.items.map((s) => s.id);
+        expect(schoolIds).toContain(baseFixture.schoolA.id);
+        expect(schoolIds).toContain(baseFixture.schoolB.id);
+      });
+    });
+
+    describe('access control edge cases', () => {
+      it('should return 404 when administration does not exist', async () => {
+        const authContext = {
+          userId: baseFixture.districtAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listSchools(authContext, '00000000-0000-0000-0000-000000000000', defaultSchoolOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(404);
+      });
+
+      it('should return 403 when user has no access to administration', async () => {
+        // districtBAdmin has no access to administrationAssignedToSchoolA (in district A)
+        const authContext = {
+          userId: baseFixture.districtBAdmin.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listSchools(authContext, baseFixture.administrationAssignedToSchoolA.id, defaultSchoolOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+        // This is the "no access to administration" error, not "supervised user" error
+        expect((error as ApiError).message).toBe('You do not have permission to perform this action');
       });
     });
   });

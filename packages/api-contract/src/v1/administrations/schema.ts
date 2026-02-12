@@ -142,35 +142,35 @@ export type AdministrationsListResponse = z.infer<typeof AdministrationsListResp
 /**
  * District schema for administration district assignments.
  */
-export const DistrictSchema = z.object({
+export const AdministrationDistrictSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
 });
 
-export type District = z.infer<typeof DistrictSchema>;
+export type AdministrationDistrict = z.infer<typeof AdministrationDistrictSchema>;
 
 /**
- * Allowed sort fields for districts.
+ * Allowed sort fields for administration districts.
  */
-export const DISTRICT_SORT_FIELDS = ['name'] as const;
+export const ADMINISTRATION_DISTRICT_SORT_FIELDS = ['name'] as const;
 
 /**
- * Sort field type for districts.
+ * Sort field type for administration districts.
  */
-export type DistrictSortFieldType = (typeof DISTRICT_SORT_FIELDS)[number];
+export type AdministrationDistrictSortFieldType = (typeof ADMINISTRATION_DISTRICT_SORT_FIELDS)[number];
 
 /**
  * Sort field constants for type-safe access.
  */
-export const DistrictSortField = {
+export const AdministrationDistrictSortField = {
   NAME: 'name',
-} as const satisfies Record<string, DistrictSortFieldType>;
+} as const satisfies Record<string, AdministrationDistrictSortFieldType>;
 
 /**
  * Query parameters for listing administration districts.
  */
 export const AdministrationDistrictsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(DISTRICT_SORT_FIELDS, 'name'),
+  createSortQuerySchema(ADMINISTRATION_DISTRICT_SORT_FIELDS, 'name'),
 );
 
 export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDistrictsListQuerySchema>;
@@ -178,6 +178,50 @@ export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDist
 /**
  * Paginated response for administration districts list.
  */
-export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
+export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(AdministrationDistrictSchema);
 
 export type AdministrationDistrictsListResponse = z.infer<typeof AdministrationDistrictsListResponseSchema>;
+
+/**
+ * Allowed sort fields for administration schools.
+ */
+export const ADMINISTRATION_SCHOOL_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field type for administration schools.
+ */
+export type AdministrationSchoolSortFieldType = (typeof ADMINISTRATION_SCHOOL_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationSchoolSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, AdministrationSchoolSortFieldType>;
+
+/**
+ * Query parameters for listing administration schools.
+ */
+export const AdministrationSchoolsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_SCHOOL_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationSchoolsListQuery = z.infer<typeof AdministrationSchoolsListQuerySchema>;
+
+/**
+ * School schema for administration school assignments.
+ * Contains only essential fields (id, name) for listing purposes.
+ */
+export const AdministrationSchoolSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+});
+
+export type AdministrationSchool = z.infer<typeof AdministrationSchoolSchema>;
+
+/**
+ * Paginated response for administration schools list.
+ */
+export const AdministrationSchoolsListResponseSchema = createPaginatedResponseSchema(AdministrationSchoolSchema);
+
+export type AdministrationSchoolsListResponse = z.infer<typeof AdministrationSchoolsListResponseSchema>;
