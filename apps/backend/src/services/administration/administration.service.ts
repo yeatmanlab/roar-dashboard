@@ -30,7 +30,10 @@ import {
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
+import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
+import { TaskService } from '../task/task.service';
+import type { Condition } from '../task/task.types';
 
 /**
  * Administration with optional embedded data.
@@ -84,10 +87,14 @@ export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
   runsRepository = new RunsRepository(),
+  userRepository = new UserRepository(),
+  taskService = TaskService(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   runsRepository?: RunsRepository;
+  userRepository?: UserRepository;
+  taskService?: ReturnType<typeof TaskService>;
 } = {}) {
   /**
    * Verify that an administration exists and the user has access to it.
@@ -617,15 +624,18 @@ export function AdministrationService({
   }
 
   /**
-   * List task variants assigned to an administration with access control.
+   * List task variants assigned to an administration with access control and eligibility filtering.
    *
    * Task variants are administration-level resources (no org hierarchy filtering).
    * Unlike districts/schools/classes/groups, task variants are visible to ALL users
    * with administration access - students need this to know which assessments to take.
    *
-   * Authorization behavior:
-   * - Super admin: sees all task variants assigned to the administration
-   * - All roles with administration access: sees all task variants
+   * Authorization and eligibility behavior:
+   * - Super admin: sees all task variants assigned to the administration (no filtering)
+   * - Supervisory roles (teachers, admins): sees all task variants (no filtering)
+   * - Supervised roles (students): sees only task variants where BOTH conditions pass:
+   *   - conditionsAssignment (eligibility): determines if student is assigned this task
+   *   - conditionsRequirements (requirements): determines if student meets prerequisites
    *
    * @param authContext - User's auth context (id and type)
    * @param administrationId - The administration ID to get task variants for
@@ -640,12 +650,10 @@ export function AdministrationService({
     administrationId: string,
     options: ListTaskVariantsOptions,
   ): Promise<PaginatedResult<TaskVariantWithAssignment>> {
-    const { userId } = authContext;
+    const { userId, isSuperAdmin } = authContext;
 
     try {
       // Verify administration exists and user has access (students included)
-      // Unlike districts/schools/classes/groups, task variants are visible to all
-      // users with administration access - students need this to know which assessments to take
       await verifyAdministrationAccess(authContext, administrationId);
 
       const queryParams = {
@@ -657,7 +665,61 @@ export function AdministrationService({
         },
       };
 
-      return await administrationRepository.getTaskVariantsByAdministrationId(administrationId, queryParams);
+      const result = await administrationRepository.getTaskVariantsByAdministrationId(administrationId, queryParams);
+
+      // Super admins see all task variants without filtering
+      if (isSuperAdmin) {
+        return result;
+      }
+
+      // Get user roles to determine if eligibility filtering applies
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      // Supervisory roles (teachers, admins) see all task variants without filtering
+      if (hasSupervisoryRole(userRoles)) {
+        return result;
+      }
+
+      // For supervised roles (students), filter by eligibility conditions
+      // Fetch user data for condition evaluation
+      const user = await userRepository.getById({ id: userId });
+      if (!user) {
+        // This should be rare - authenticated user exists in auth but not in DB (data inconsistency)
+        logger.error(
+          { userId, administrationId },
+          'User not found during eligibility filtering - possible data inconsistency',
+        );
+        throw new ApiError('Failed to retrieve user data for eligibility check', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Filter task variants by eligibility conditions
+      // Note: Post-filter pagination means totalItems reflects eligible items in result set,
+      // not total eligible items in DB. This is acceptable for typical administration sizes (<50 variants).
+      const eligibleItems = result.items.filter((item) => {
+        try {
+          return taskService.isUserEligibleForTaskVariant(
+            user,
+            item.assignment.conditionsAssignment as Condition | null,
+            item.assignment.conditionsRequirements as Condition | null,
+          );
+        } catch (error) {
+          // Malformed condition data - exclude variant and log warning
+          logger.warn(
+            { taskVariantId: item.variant.id, error, userId, administrationId },
+            'Invalid condition structure - excluding variant from eligibility check',
+          );
+          return false;
+        }
+      });
+
+      return {
+        items: eligibleItems,
+        totalItems: eligibleItems.length,
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
