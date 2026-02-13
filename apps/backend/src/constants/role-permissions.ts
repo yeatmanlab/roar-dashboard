@@ -2,8 +2,8 @@
  * Role-Permission Mappings
  *
  * Defines what permissions each role grants.
- * Uses userRoleEnum values from the join tables (user_orgs, user_classes, user_groups).
- * Every role in userRoleEnum MUST have an entry here.
+ * Uses userRoleEnum values (site_administrator, administrator, teacher, student)
+ * from the join tables (user_orgs, user_classes, user_groups).
  *
  * Note: super_admin bypasses all permission checks (checked via userType).
  * Note: Caregiver access is handled separately via family relationships.
@@ -22,81 +22,60 @@ import { UserRole, type UserRole as UserRoleType } from '../enums/user-role.enum
  * - 'administrations.*' grants all administrations.* permissions
  * - Specific permissions for fine-grained control
  */
-export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() => {
-  // ── Permission tiers ────────────────────────────────────────────────
-  const siteAdmin: readonly Permission[] = [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
-    Permissions.Organizations.READ,
-    Permissions.Profile.READ,
-    Permissions.Reports.Progress.ALL,
+export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]>> = {
+  [UserRole.SITE_ADMINISTRATOR]: [
+    Permissions.Administrations.ALL,
+    Permissions.Organizations.ALL,
+    Permissions.Classes.ALL,
+    Permissions.Groups.ALL,
+    Permissions.TaskVariants.ALL,
+    Permissions.Users.ALL,
+    Permissions.Administrators.ALL,
     Permissions.Reports.Score.ALL,
-    Permissions.Reports.Student.ALL,
-    Permissions.Users.LIST,
-  ];
-
-  const admin: readonly Permission[] = [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
-    Permissions.Organizations.READ,
-    Permissions.Profile.READ,
     Permissions.Reports.Progress.ALL,
-    Permissions.Reports.Score.ALL,
     Permissions.Reports.Student.ALL,
-    Permissions.Users.LIST,
-  ];
-
-  const educator: readonly Permission[] = [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
-    Permissions.Organizations.READ,
-    Permissions.Profile.READ,
+    Permissions.Tasks.ALL,
+    Permissions.Runs.ALL,
+    Permissions.Profile.ALL,
+    Permissions.TestData.CREATE,
+  ],
+  [UserRole.ADMINISTRATOR]: [
+    Permissions.Administrations.ALL,
+    Permissions.Organizations.ALL,
+    Permissions.Classes.ALL,
+    Permissions.Groups.ALL,
+    Permissions.TaskVariants.ALL,
+    Permissions.Users.ALL,
+    Permissions.Administrators.READ,
+    Permissions.Reports.Score.ALL,
     Permissions.Reports.Progress.ALL,
-    Permissions.Reports.Score.ALL,
     Permissions.Reports.Student.ALL,
-    Permissions.Users.LIST,
-  ];
-
-  const caregiver: readonly Permission[] = [
+    Permissions.Tasks.ALL,
+    Permissions.Profile.ALL,
+  ],
+  [UserRole.TEACHER]: [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
     Permissions.Organizations.LIST,
-    Permissions.Organizations.READ,
-    Permissions.Profile.READ,
-    Permissions.Reports.Progress.READ,
+    Permissions.Classes.LIST,
+    Permissions.Groups.LIST,
+    Permissions.TaskVariants.LIST,
+    Permissions.Users.LIST,
+    Permissions.Administrators.READ,
     Permissions.Reports.Score.READ,
+    Permissions.Reports.Progress.READ,
     Permissions.Reports.Student.READ,
     Permissions.Tasks.LAUNCH,
-    Permissions.Users.LIST,
-  ];
-
-  const student: readonly Permission[] = [
+    Permissions.Profile.READ,
+  ],
+  [UserRole.STUDENT]: [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
-    Permissions.Profile.READ,
+    Permissions.TaskVariants.LIST,
     Permissions.Tasks.LAUNCH,
-  ];
-
-  // ── Role → tier mapping ─────────────────────────────────────────────
-  return {
-    [UserRole.SYSTEM_ADMINISTRATOR]: siteAdmin,
-    [UserRole.SITE_ADMINISTRATOR]: siteAdmin,
-    [UserRole.DISTRICT_ADMINISTRATOR]: admin,
-    [UserRole.ADMINISTRATOR]: admin,
-    [UserRole.PRINCIPAL]: educator,
-    [UserRole.COUNSELOR]: educator,
-    [UserRole.TEACHER]: educator,
-    [UserRole.AIDE]: educator,
-    [UserRole.PROCTOR]: educator,
-    [UserRole.STUDENT]: student,
-    [UserRole.GUARDIAN]: caregiver,
-    [UserRole.PARENT]: caregiver,
-    [UserRole.RELATIVE]: caregiver,
-  };
-})();
+    Permissions.Profile.READ,
+  ],
+};
 
 /**
  * Get all roles that have the given permission.

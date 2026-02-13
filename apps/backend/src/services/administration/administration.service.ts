@@ -193,7 +193,7 @@ export function AdministrationService({
         });
       }
 
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
       return orgType === OrgType.DISTRICT
         ? await administrationRepository.getAuthorizedDistrictsByAdministrationId(
             { userId, allowedRoles },
@@ -531,7 +531,7 @@ export function AdministrationService({
         return await administrationRepository.getClassesByAdministrationId(administrationId, queryParams);
       }
 
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      const allowedRoles = rolesForPermission(Permissions.Classes.LIST);
       return await administrationRepository.getAuthorizedClassesByAdministrationId(
         { userId, allowedRoles },
         administrationId,
@@ -593,7 +593,7 @@ export function AdministrationService({
         return await administrationRepository.getGroupsByAdministrationId(administrationId, queryParams);
       }
 
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      const allowedRoles = rolesForPermission(Permissions.Groups.LIST);
       return await administrationRepository.getAuthorizedGroupsByAdministrationId(
         { userId, allowedRoles },
         administrationId,
