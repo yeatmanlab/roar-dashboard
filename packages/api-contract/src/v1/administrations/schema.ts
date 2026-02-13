@@ -142,35 +142,35 @@ export type AdministrationsListResponse = z.infer<typeof AdministrationsListResp
 /**
  * District schema for administration district assignments.
  */
-export const DistrictSchema = z.object({
+export const AdministrationDistrictSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
 });
 
-export type District = z.infer<typeof DistrictSchema>;
+export type AdministrationDistrict = z.infer<typeof AdministrationDistrictSchema>;
 
 /**
- * Allowed sort fields for districts.
+ * Allowed sort fields for administration districts.
  */
-export const DISTRICT_SORT_FIELDS = ['name'] as const;
+export const ADMINISTRATION_DISTRICT_SORT_FIELDS = ['name'] as const;
 
 /**
- * Sort field type for districts.
+ * Sort field type for administration districts.
  */
-export type DistrictSortFieldType = (typeof DISTRICT_SORT_FIELDS)[number];
+export type AdministrationDistrictSortFieldType = (typeof ADMINISTRATION_DISTRICT_SORT_FIELDS)[number];
 
 /**
  * Sort field constants for type-safe access.
  */
-export const DistrictSortField = {
+export const AdministrationDistrictSortField = {
   NAME: 'name',
-} as const satisfies Record<string, DistrictSortFieldType>;
+} as const satisfies Record<string, AdministrationDistrictSortFieldType>;
 
 /**
  * Query parameters for listing administration districts.
  */
 export const AdministrationDistrictsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(DISTRICT_SORT_FIELDS, 'name'),
+  createSortQuerySchema(ADMINISTRATION_DISTRICT_SORT_FIELDS, 'name'),
 );
 
 export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDistrictsListQuerySchema>;
@@ -178,6 +178,138 @@ export type AdministrationDistrictsListQuery = z.infer<typeof AdministrationDist
 /**
  * Paginated response for administration districts list.
  */
-export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(DistrictSchema);
+export const AdministrationDistrictsListResponseSchema = createPaginatedResponseSchema(AdministrationDistrictSchema);
 
 export type AdministrationDistrictsListResponse = z.infer<typeof AdministrationDistrictsListResponseSchema>;
+
+/**
+ * Allowed sort fields for administration schools.
+ */
+export const ADMINISTRATION_SCHOOL_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field type for administration schools.
+ */
+export type AdministrationSchoolSortFieldType = (typeof ADMINISTRATION_SCHOOL_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationSchoolSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, AdministrationSchoolSortFieldType>;
+
+/**
+ * Query parameters for listing administration schools.
+ */
+export const AdministrationSchoolsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_SCHOOL_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationSchoolsListQuery = z.infer<typeof AdministrationSchoolsListQuerySchema>;
+
+/**
+ * School schema for administration school assignments.
+ * Contains only essential fields (id, name) for listing purposes.
+ */
+export const AdministrationSchoolSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+});
+
+export type AdministrationSchool = z.infer<typeof AdministrationSchoolSchema>;
+
+/**
+ * Paginated response for administration schools list.
+ */
+export const AdministrationSchoolsListResponseSchema = createPaginatedResponseSchema(AdministrationSchoolSchema);
+
+export type AdministrationSchoolsListResponse = z.infer<typeof AdministrationSchoolsListResponseSchema>;
+
+/**
+ * Allowed sort fields for administration classes.
+ */
+export const ADMINISTRATION_CLASS_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field type for administration classes.
+ */
+export type AdministrationClassSortFieldType = (typeof ADMINISTRATION_CLASS_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationClassSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, AdministrationClassSortFieldType>;
+
+/**
+ * Query parameters for listing administration classes.
+ */
+export const AdministrationClassesListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_CLASS_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationClassesListQuery = z.infer<typeof AdministrationClassesListQuerySchema>;
+
+/**
+ * Class schema for administration class assignments.
+ * Contains only essential fields (id, name) for listing purposes.
+ */
+export const AdministrationClassSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+});
+
+export type AdministrationClass = z.infer<typeof AdministrationClassSchema>;
+
+/**
+ * Paginated response for administration classes list.
+ */
+export const AdministrationClassesListResponseSchema = createPaginatedResponseSchema(AdministrationClassSchema);
+
+export type AdministrationClassesListResponse = z.infer<typeof AdministrationClassesListResponseSchema>;
+
+/**
+ * Allowed sort fields for administration groups.
+ */
+export const ADMINISTRATION_GROUP_SORT_FIELDS = ['name'] as const;
+
+/**
+ * Sort field type for administration groups.
+ */
+export type AdministrationGroupSortFieldType = (typeof ADMINISTRATION_GROUP_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationGroupSortField = {
+  NAME: 'name',
+} as const satisfies Record<string, AdministrationGroupSortFieldType>;
+
+/**
+ * Query parameters for listing administration groups.
+ */
+export const AdministrationGroupsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_GROUP_SORT_FIELDS, 'name'),
+);
+
+export type AdministrationGroupsListQuery = z.infer<typeof AdministrationGroupsListQuerySchema>;
+
+/**
+ * Group schema for administration group assignments.
+ * Contains only essential fields (id, name) for listing purposes.
+ */
+export const AdministrationGroupSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+});
+
+export type AdministrationGroup = z.infer<typeof AdministrationGroupSchema>;
+
+/**
+ * Paginated response for administration groups list.
+ */
+export const AdministrationGroupsListResponseSchema = createPaginatedResponseSchema(AdministrationGroupSchema);
+
+export type AdministrationGroupsListResponse = z.infer<typeof AdministrationGroupsListResponseSchema>;
