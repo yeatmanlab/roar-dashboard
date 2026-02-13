@@ -2,30 +2,30 @@ import { describe, it, expect } from 'vitest';
 import { rolesForPermission, RolePermissions } from './role-permissions';
 import { Permissions } from './permissions';
 import { UserRole } from '../enums/user-role.enum';
+import { userRoleEnum } from '../db/schema/enums';
 
 describe('role-permissions', () => {
   describe('rolesForPermission', () => {
-    it('should return all roles with administrations.* for administrations.list', () => {
+    it('should return all roles with administrations.* or administrations.list for administrations.list', () => {
       const roles = rolesForPermission(Permissions.Administrations.LIST);
 
-      // site_administrator and administrator have administrations.*
-      // teacher and student have administrations.list directly
+      // All 13 roles have either administrations.* or administrations.list
       expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
       expect(roles).toContain(UserRole.ADMINISTRATOR);
       expect(roles).toContain(UserRole.TEACHER);
       expect(roles).toContain(UserRole.STUDENT);
-      expect(roles).toHaveLength(4);
+      expect(roles).toHaveLength(13);
     });
 
-    it('should return only roles with direct permission for administrations.create', () => {
+    it('should return only roles with administrations.* for administrations.create', () => {
       const roles = rolesForPermission(Permissions.Administrations.CREATE);
 
-      // Only site_administrator and administrator have administrations.* (covers .create)
+      // Only system_administrator, site_administrator, district_administrator, administrator have administrations.*
       expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
       expect(roles).toContain(UserRole.ADMINISTRATOR);
       expect(roles).not.toContain(UserRole.TEACHER);
       expect(roles).not.toContain(UserRole.STUDENT);
-      expect(roles).toHaveLength(2);
+      expect(roles).toHaveLength(4);
     });
 
     it('should handle wildcard matching for nested permissions', () => {
@@ -46,23 +46,23 @@ describe('role-permissions', () => {
       }).toThrow("No roles configured for permission 'unknown.permission'");
     });
 
-    it('should return only site_administrator for testdata.create', () => {
+    it('should return only top-tier admins for testdata.create', () => {
       const roles = rolesForPermission(Permissions.TestData.CREATE);
 
+      expect(roles).toContain(UserRole.SYSTEM_ADMINISTRATOR);
       expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
-      expect(roles).toHaveLength(1);
+      expect(roles).toHaveLength(2);
     });
 
-    it('should handle tasks.launch which is available to all roles', () => {
+    it('should return all roles for tasks.launch', () => {
       const roles = rolesForPermission(Permissions.Tasks.LAUNCH);
 
-      // site_administrator and administrator have tasks.*
-      // teacher has tasks.launch directly
-      // student has tasks.launch directly
+      // All 13 roles have either tasks.* or tasks.launch
       expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
       expect(roles).toContain(UserRole.ADMINISTRATOR);
       expect(roles).toContain(UserRole.TEACHER);
       expect(roles).toContain(UserRole.STUDENT);
+      expect(roles).toHaveLength(13);
     });
   });
 
@@ -86,6 +86,21 @@ describe('role-permissions', () => {
       expect(RolePermissions[UserRole.STUDENT]).toBeDefined();
       expect(RolePermissions[UserRole.STUDENT]).toContain(Permissions.Administrations.LIST);
       expect(RolePermissions[UserRole.STUDENT]).toContain(Permissions.Tasks.LAUNCH);
+    });
+  });
+
+  describe('RolePermissions completeness', () => {
+    it('should have a permission entry for every value in userRoleEnum', () => {
+      const mappedRoles = Object.keys(RolePermissions).sort();
+      const enumRoles = [...userRoleEnum.enumValues].sort();
+
+      expect(mappedRoles).toEqual(enumRoles);
+    });
+
+    it('should not have any empty permission arrays', () => {
+      for (const [role, permissions] of Object.entries(RolePermissions)) {
+        expect(permissions.length, `${role} should have at least one permission`).toBeGreaterThan(0);
+      }
     });
   });
 });
