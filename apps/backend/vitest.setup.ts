@@ -28,9 +28,10 @@ beforeEach(() => {
 // Integration test hooks (per-file)
 if (isIntegrationTest) {
   const { seedBaseFixture } = await import('./src/test-support/fixtures');
-  const { truncateAllTables, closeAllConnections } = await import('./src/test-support/db');
+  const { truncateAllTables, closeAllConnections, initializeDatabasePools } = await import('./src/test-support/db');
 
   beforeAll(async () => {
+    await initializeDatabasePools();
     await truncateAllTables();
     await seedBaseFixture();
   });
