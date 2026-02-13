@@ -4,7 +4,7 @@ import { BaseRepository, type PaginatedResult } from './base.repository';
 import { orgs, type Org, userOrgs, classes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
-import { DistrictAccessControls } from './access-controls/district.access-controls';
+import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/access-controls.utils';
 
 /**
@@ -50,11 +50,11 @@ export interface ListAuthorizedOptions {
  * (for regular users based on their org/class/group memberships).
  */
 export class DistrictRepository extends BaseRepository<District, typeof orgs> {
-  private readonly accessControls: DistrictAccessControls;
+  private readonly accessControls: OrgAccessControls;
 
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, orgs);
-    this.accessControls = new DistrictAccessControls(db);
+    this.accessControls = new OrgAccessControls(db);
   }
 
   /**
@@ -105,10 +105,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
     const offset = (page - 1) * perPage;
 
-    // Build the UNION query for accessible district IDs using access controls
-    const accessibleDistricts = this.accessControls
-      .buildUserDistrictIdsQuery(accessControlFilter)
-      .as('accessible_districts');
+    // Build the UNION query for accessible org IDs using access controls
+    // We'll filter for districts in the WHERE clause
+    const accessibleOrgs = this.accessControls
+      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
+      .as('accessible_orgs');
 
     // Build where conditions
     const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
@@ -120,13 +121,13 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const whereClause = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
 
     // Build the base join condition
-    const baseCondition = eq(orgs.id, accessibleDistricts.orgId);
+    const baseCondition = eq(orgs.id, accessibleOrgs.orgId);
 
     // Count query
     const countResult = await this.db
       .select({ count: countDistinct(orgs.id) })
       .from(orgs)
-      .innerJoin(accessibleDistricts, baseCondition)
+      .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause);
 
     const totalItems = countResult[0]?.count ?? 0;
@@ -152,9 +153,9 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     // Data query: join districts with the accessible IDs subquery
     const dataResult = await this.db
-      .selectDistinct({ org: orgs })
+      .select({ org: orgs })
       .from(orgs)
-      .innerJoin(accessibleDistricts, baseCondition)
+      .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause)
       .orderBy(sortDirection)
       .limit(perPage)
@@ -209,15 +210,15 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @returns District or null if not found, not a district, or user lacks access
    */
   async getByIdAuthorized(id: string, accessControlFilter: AccessControlFilter): Promise<DistrictWithCounts | null> {
-    // Build the UNION query for accessible district IDs
-    const accessibleDistricts = this.accessControls
-      .buildUserDistrictIdsQuery(accessControlFilter)
-      .as('accessible_districts');
+    // Build the UNION query for accessible org IDs
+    const accessibleOrgs = this.accessControls
+      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
+      .as('accessible_orgs');
 
     const result = await this.db
       .select({ org: orgs })
       .from(orgs)
-      .innerJoin(accessibleDistricts, eq(orgs.id, accessibleDistricts.orgId))
+      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
       .where(and(eq(orgs.id, id), eq(orgs.orgType, 'district')))
       .limit(1);
 
