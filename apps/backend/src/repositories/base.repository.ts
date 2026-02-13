@@ -1,5 +1,5 @@
 import { eq, count as drizzleCount, asc, desc } from 'drizzle-orm';
-import type { SQL } from 'drizzle-orm';
+import type { SQL, InferInsertModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type {
@@ -27,9 +27,10 @@ export type { PaginatedResult } from './interfaces/base.repository.interface';
  * This base repository is aligned with `stanford-roar-firebase-functions/packages/core` BaseRepository pattern to
  * ensure consistency across both codebases and allow easier porting of logic.
  *
+ * The insert type is automatically inferred from the table using Drizzle's `InferInsertModel`.
+ *
  * @typeParam TEntity - The select type of the entity (from $inferSelect)
  * @typeParam TTable - The Drizzle PgTable reference
- * @typeParam TInsert - The insert type of the entity (from $inferInsert)
  *
  * @example
  * ```typescript
@@ -43,11 +44,8 @@ export type { PaginatedResult } from './interfaces/base.repository.interface';
  * }
  * ```
  */
-export abstract class BaseRepository<
-  TEntity extends Record<string, unknown>,
-  TTable extends PgTable,
-  TInsert extends Record<string, unknown> = TEntity,
-> implements IBaseRepository<TEntity>
+export abstract class BaseRepository<TEntity extends Record<string, unknown>, TTable extends PgTable>
+  implements IBaseRepository<TEntity, InferInsertModel<TTable>>
 {
   /**
    * Type-safe table reference for Drizzle queries.
@@ -144,11 +142,8 @@ export abstract class BaseRepository<
   /**
    * Creates a new entity.
    */
-  async create(params: BaseCreateParams<TEntity>): Promise<TEntity> {
-    const [entity] = await this.db
-      .insert(this.typedTable)
-      .values(params.data as TInsert)
-      .returning();
+  async create(params: BaseCreateParams<InferInsertModel<TTable>>): Promise<TEntity> {
+    const [entity] = await this.db.insert(this.typedTable).values(params.data).returning();
 
     return entity as TEntity;
   }
@@ -156,7 +151,7 @@ export abstract class BaseRepository<
   /**
    * Updates an existing entity.
    */
-  async update(params: BaseUpdateParams<TEntity>): Promise<void> {
+  async update(params: BaseUpdateParams<InferInsertModel<TTable>>): Promise<void> {
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
     await this.db.update(this.typedTable).set(params.data).where(eq(idColumn, params.id));
   }

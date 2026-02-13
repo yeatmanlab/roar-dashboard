@@ -3,6 +3,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AssessmentDbClient } from '../db/clients';
 import { runs } from '../db/schema/assessment';
 import type * as AssessmentDbSchema from '../db/schema/assessment';
+import { BaseRepository } from './base.repository';
+import type { Run } from '../db/schema'; // adjust if your Run type lives elsewhere
 
 /**
  * Run stats for an administration (started/completed counts from assessment DB).
@@ -15,11 +17,13 @@ export interface AdministrationRunStats {
 /**
  * Runs Repository
  *
- * Provides data access methods for the runs table in the assessment database.
- * This is a purpose-built repository for stats aggregation, not a full CRUD repository.
+ * Provides data access methods for the runs table.
+ * Extends BaseRepository for standard CRUD operations.
  */
-export class RunsRepository {
-  constructor(private readonly db: NodePgDatabase<typeof AssessmentDbSchema> = AssessmentDbClient) {}
+export class RunsRepository extends BaseRepository<Run, typeof runs> {
+  constructor(db: NodePgDatabase<typeof AssessmentDbSchema> = AssessmentDbClient) {
+    super(db, runs);
+  }
 
   /**
    * Get run stats (started, completed counts) for multiple administrations.
@@ -52,7 +56,6 @@ export class RunsRepository {
       .groupBy(runs.administrationId);
 
     const statsMap = new Map<string, AdministrationRunStats>();
-
     for (const row of result) {
       statsMap.set(row.administrationId, {
         started: row.started,
