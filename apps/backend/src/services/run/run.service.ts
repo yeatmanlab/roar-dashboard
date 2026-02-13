@@ -6,7 +6,7 @@ import { logger } from '../../logger';
 import { RunsRepository } from '../../repositories/runs.repository';
 import { AdministrationService } from '../administration/administration.service';
 import type { TaskService } from '../task/task.service';
-import type { Run } from '../../db/schema';
+import type { NewRun } from '../../db/schema';
 
 /**
  * Authentication context containing user identity and privilege level.
@@ -79,7 +79,7 @@ export function RunService({
     await taskService.validateTaskVersion(taskId, body.task_version);
 
     try {
-      const data: Partial<Run> = {
+      const data: NewRun = {
         userId,
         taskId,
         taskVariantId: body.task_variant_id,
