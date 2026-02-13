@@ -53,8 +53,7 @@ export function pgEnumToConst<const V extends readonly string[], EnumName extend
   pgEnumObj: { enumValues: V },
   enumName?: EnumName,
 ) {
-  return Object.fromEntries(pgEnumObj.enumValues.map((v) => [deriveKey(v, enumName), v])) as Record<
-    DerivedKeys<V, EnumName>,
-    V[number]
-  >;
+  return Object.fromEntries(pgEnumObj.enumValues.map((v) => [deriveKey(v, enumName), v])) as {
+    [K in V[number] as DerivedKeys<readonly [K], EnumName>]: K;
+  };
 }
