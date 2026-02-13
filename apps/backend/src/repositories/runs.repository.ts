@@ -17,12 +17,12 @@ export interface AdministrationRunStats {
 /**
  * Runs Repository
  *
- * Provides CRUD access to runs via BaseRepository,
- * plus purpose-built stats aggregation methods.
+ * Provides data access methods for the runs table.
+ * Extends BaseRepository for standard CRUD operations.
  */
 export class RunsRepository extends BaseRepository<Run, typeof runs> {
-  constructor(private readonly assessmentDb: NodePgDatabase<typeof AssessmentDbSchema> = AssessmentDbClient) {
-    super(assessmentDb, runs);
+  constructor(db: NodePgDatabase<typeof AssessmentDbSchema> = AssessmentDbClient) {
+    super(db, runs);
   }
 
   /**
@@ -45,7 +45,7 @@ export class RunsRepository extends BaseRepository<Run, typeof runs> {
     // Count distinct users per administration:
     // - started: users with any run record
     // - completed: users with at least one run where completedAt is not null
-    const result = await this.assessmentDb
+    const result = await this.db
       .select({
         administrationId: runs.administrationId,
         started: sql<number>`COUNT(DISTINCT ${runs.userId})::int`,

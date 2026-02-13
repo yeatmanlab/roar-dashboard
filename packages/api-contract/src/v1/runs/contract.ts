@@ -1,5 +1,5 @@
 import { initContract } from '@ts-rest/core';
-import { StartRunRequestBodySchema, StartRunResponseSchema } from './schema';
+import { CreateRunRequestBodySchema, CreateRunResponseSchema } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -13,20 +13,20 @@ export const RunsContract = c.router(
     create: {
       method: 'POST',
       path: '/',
-      body: StartRunRequestBodySchema,
+      body: CreateRunRequestBodySchema,
       responses: {
-        201: SuccessEnvelopeSchema(StartRunResponseSchema),
+        201: SuccessEnvelopeSchema(CreateRunResponseSchema),
         400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
-        404: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'Create run',
       description:
-        'Creates a new run (assessment session instance) owned by the authenticated user and returns run_id. ' +
-        'Returns 404 if the task variant or administration does not exist. ' +
+        'Creates a new run owned by the authenticated user and returns run_id. ' +
+        'Returns 422 if the provided task variant or administration IDs are invalid or cannot be resolved. ' +
         'Returns 403 if the user lacks access to the provided administration context.',
     },
   },

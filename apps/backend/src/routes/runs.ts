@@ -17,16 +17,11 @@ export function registerRunsRoutes(routerInstance: Router) {
     create: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, body, res }) => {
+      handler: async ({ req, body }) => {
         const result = await RunsController.create(
-          { userId: req.user!.id, isSuperAdmin: req.user!.isSuperAdmin },
+          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
           body,
         );
-
-        // Set Location header on success
-        if (result.status === 201) {
-          res.setHeader('Location', `/v1/runs/${result.body.data.run_id}`);
-        }
 
         return result;
       },
