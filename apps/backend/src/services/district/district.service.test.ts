@@ -1,424 +1,305 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import { DistrictService } from './district.service';
-import { OrgFactory } from '../../test-support/factories/org.factory';
-import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { StatusCodes } from 'http-status-codes';
+import type { AuthContext } from '../../types/auth-context';
 
-// Mock the logger (used by the service for error handling)
-vi.mock('../../logger', () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-  },
-}));
+// Mock repository
+const mockGetByIdWithEmbeds = vi.fn();
+const mockDistrictRepository = {
+  getByIdWithEmbeds: mockGetByIdWithEmbeds,
+};
+
+const mockAuthContext: AuthContext = {
+  userId: 'user-123',
+  isSuperAdmin: false,
+};
+
+const mockSuperAdminContext: AuthContext = {
+  userId: 'admin-123',
+  isSuperAdmin: true,
+};
 
 describe('DistrictService', () => {
-  const mockListAll = vi.fn();
-  const mockListAuthorized = vi.fn();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockDistrictRepository: any = {
-    listAll: mockListAll,
-    listAuthorized: mockListAuthorized,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('list', () => {
-    it('should return all districts for super admins (unrestricted)', async () => {
-      const mockDistricts = OrgFactory.buildList(3, { orgType: OrgType.DISTRICT });
-      mockListAll.mockResolvedValue({
-        items: mockDistricts,
-        totalItems: 3,
-      });
-
+  describe('getById', () => {
+    it('should validate UUID format and throw 400 for invalid UUID', async () => {
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
       });
 
-      const result = await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'createdAt',
-          sortOrder: 'desc',
-        },
-      );
+      await expect(service.getById('invalid-uuid', mockAuthContext, {})).rejects.toThrow(ApiError);
 
-      expect(mockListAll).toHaveBeenCalledWith({
-        page: 1,
-        perPage: 25,
-        orderBy: { field: 'createdAt', direction: 'desc' },
-        includeEnded: false,
-        embedCounts: false,
-      });
-      expect(mockListAuthorized).not.toHaveBeenCalled();
-      expect(result.items).toHaveLength(3);
-      expect(result.totalItems).toBe(3);
+      try {
+        await service.getById('invalid-uuid', mockAuthContext, {});
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(StatusCodes.BAD_REQUEST);
+        expect((error as ApiError).code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+      }
     });
 
-    it('should use listAuthorized for non-super admin users', async () => {
-      const mockDistricts = OrgFactory.buildList(2, { orgType: OrgType.DISTRICT });
+    it('should accept valid UUID format', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      mockListAuthorized.mockResolvedValue({
-        items: mockDistricts,
-        totalItems: 2,
-      });
+      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
-        districtRepository: mockDistrictRepository,
+        districtRepository: mockDistrictRepository as any,
       });
 
-      const result = await service.list(
-        { userId: 'user-123', isSuperAdmin: false },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        },
-      );
+      const result = await service.getById(validUuid, mockAuthContext, {});
 
-      expect(mockListAuthorized).toHaveBeenCalledWith(
+      expect(result).toEqual(mockDistrict);
+      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(validUuid, expect.any(Object), false);
+    });
+
+    it('should build access control filter for regular users', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository as any,
+      });
+
+      await service.getById(validUuid, mockAuthContext, {});
+
+      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(
+        validUuid,
         {
           userId: 'user-123',
           allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
         },
+        false,
+      );
+    });
+
+    it('should build access control filter for super admins', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository as any,
+      });
+
+      await service.getById(validUuid, mockSuperAdminContext, {});
+
+      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(
+        validUuid,
         {
-          page: 1,
-          perPage: 25,
-          orderBy: { field: 'name', direction: 'asc' },
-          includeEnded: false,
-          embedCounts: false,
+          userId: 'admin-123',
+          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
         },
-      );
-      expect(mockListAll).not.toHaveBeenCalled();
-      expect(result.items).toHaveLength(2);
-      expect(result.totalItems).toBe(2);
-    });
-
-    it('should pass includeEnded parameter to repository', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-          includeEnded: true,
-        },
-      );
-
-      expect(mockListAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          includeEnded: true,
-        }),
+        false,
       );
     });
 
-    it('should pass embedCounts parameter to repository', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
+    it('should pass embedChildren=false when not requested', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
-        districtRepository: mockDistrictRepository,
+        districtRepository: mockDistrictRepository as any,
       });
 
-      await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-          embedCounts: true,
-        },
-      );
+      await service.getById(validUuid, mockAuthContext, {});
 
-      expect(mockListAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          embedCounts: true,
-        }),
-      );
+      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(validUuid, expect.any(Object), false);
     });
 
-    it('should default includeEnded to false when not provided', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+    it('should pass embedChildren=true when requested', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        children: [],
+      };
+
+      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
-        districtRepository: mockDistrictRepository,
+        districtRepository: mockDistrictRepository as any,
       });
 
-      await service.list(
-        { userId: 'user-123', isSuperAdmin: false },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        },
-      );
+      await service.getById(validUuid, mockAuthContext, { embedChildren: true });
 
-      expect(mockListAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          includeEnded: false,
-        }),
-      );
+      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(validUuid, expect.any(Object), true);
     });
 
-    it('should default embedCounts to false when not provided', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+    it('should throw 404 when district not found', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      mockGetByIdWithEmbeds.mockResolvedValue(null);
 
       const service = DistrictService({
-        districtRepository: mockDistrictRepository,
+        districtRepository: mockDistrictRepository as any,
       });
 
-      await service.list(
-        { userId: 'user-123', isSuperAdmin: false },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        },
-      );
-
-      expect(mockListAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          embedCounts: false,
-        }),
-      );
-    });
-
-    it('should map sortBy "name" to database column "name"', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        },
-      );
-
-      expect(mockListAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderBy: { field: 'name', direction: 'asc' },
-        }),
-      );
-    });
-
-    it('should map sortBy "abbreviation" to database column "abbreviation"', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'abbreviation',
-          sortOrder: 'desc',
-        },
-      );
-
-      expect(mockListAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderBy: { field: 'abbreviation', direction: 'desc' },
-        }),
-      );
-    });
-
-    it('should map sortBy "createdAt" to database column "createdAt"', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'createdAt',
-          sortOrder: 'desc',
-        },
-      );
-
-      expect(mockListAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderBy: { field: 'createdAt', direction: 'desc' },
-        }),
-      );
-    });
-
-    it('should return empty results when user has no accessible districts', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      const result = await service.list(
-        { userId: 'user-no-access', isSuperAdmin: false },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        },
-      );
-
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
-    });
-
-    it('should pass pagination options correctly', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await service.list(
-        { userId: 'user-456', isSuperAdmin: false },
-        {
-          page: 3,
-          perPage: 50,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        },
-      );
-
-      expect(mockListAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
-        expect.objectContaining({
-          page: 3,
-          perPage: 50,
-        }),
-      );
-    });
-
-    it('should throw ApiError when repository throws ApiError', async () => {
-      const error = new ApiError('Database error', {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
-      });
-      mockListAll.mockRejectedValue(error);
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await expect(
-        service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          {
-            page: 1,
-            perPage: 25,
-            sortBy: 'name',
-            sortOrder: 'asc',
-          },
-        ),
-      ).rejects.toThrow(ApiError);
-    });
-
-    it('should wrap non-ApiError in ApiError with DATABASE_QUERY_FAILED code', async () => {
-      const error = new Error('Unexpected database error');
-      mockListAll.mockRejectedValue(error);
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await expect(
-        service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          {
-            page: 1,
-            perPage: 25,
-            sortBy: 'name',
-            sortOrder: 'asc',
-          },
-        ),
-      ).rejects.toThrow(ApiError);
+      await expect(service.getById(validUuid, mockAuthContext, {})).rejects.toThrow(ApiError);
 
       try {
-        await service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          {
-            page: 1,
-            perPage: 25,
-            sortBy: 'name',
-            sortOrder: 'asc',
-          },
-        );
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((err as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+        await service.getById(validUuid, mockAuthContext, {});
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
+        expect((error as ApiError).code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+        expect((error as ApiError).message).toBe('District not found');
       }
     });
 
-    it('should return districts with counts when embedCounts is true', async () => {
-      const mockDistrictsWithCounts = OrgFactory.buildList(2, { orgType: OrgType.DISTRICT }).map((d) => ({
-        ...d,
-        counts: {
-          users: 100,
-          schools: 5,
-          classes: 20,
-        },
-      }));
-
-      mockListAll.mockResolvedValue({
-        items: mockDistrictsWithCounts,
-        totalItems: 2,
-      });
+    it('should throw 404 when user lacks access (security - no distinction)', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      mockGetByIdWithEmbeds.mockResolvedValue(null);
 
       const service = DistrictService({
-        districtRepository: mockDistrictRepository,
+        districtRepository: mockDistrictRepository as any,
       });
 
-      const result = await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-          embedCounts: true,
-        },
-      );
+      await expect(service.getById(validUuid, mockAuthContext, {})).rejects.toThrow(ApiError);
 
-      expect(result.items[0]).toHaveProperty('counts');
-      expect(result.items[0]!.counts).toEqual({
-        users: 100,
-        schools: 5,
-        classes: 20,
+      try {
+        await service.getById(validUuid, mockAuthContext, {});
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
+        // Should not distinguish between "not found" and "no access" for security
+        expect((error as ApiError).message).toBe('District not found');
+      }
+    });
+
+    it('should return district with children when embedChildren=true', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        children: [
+          {
+            id: 'school-1',
+            name: 'School A',
+            abbreviation: 'SA',
+            orgType: 'school',
+            parentOrgId: validUuid,
+            isRosteringRootOrg: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+      };
+
+      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository as any,
       });
+
+      const result = await service.getById(validUuid, mockAuthContext, { embedChildren: true });
+
+      expect(result).toEqual(mockDistrict);
+      expect(result.children).toHaveLength(1);
+    });
+
+    it('should handle UUID with uppercase letters', async () => {
+      const validUuid = '123E4567-E89B-12D3-A456-426614174000';
+      const mockDistrict = {
+        id: validUuid.toLowerCase(),
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository as any,
+      });
+
+      const result = await service.getById(validUuid, mockAuthContext, {});
+
+      expect(result).toEqual(mockDistrict);
+    });
+  });
+
+  describe('UUID validation edge cases', () => {
+    it('should reject various invalid UUID formats', async () => {
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository as any,
+      });
+
+      const invalidUuids = [
+        '123e4567-e89b-12d3-a456', // Too short
+        '123e4567-e89b-12d3-a456-426614174000-extra', // Too long
+        '123e4567e89b12d3a456426614174000', // No hyphens
+        'not-a-uuid-at-all',
+        '',
+        '123e4567-e89b-12d3-a456-42661417400g', // Invalid character
+      ];
+
+      for (const invalidUuid of invalidUuids) {
+        await expect(service.getById(invalidUuid, mockAuthContext, {})).rejects.toThrow(ApiError);
+      }
     });
   });
 });

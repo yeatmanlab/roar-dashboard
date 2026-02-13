@@ -171,7 +171,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     // Data query: join districts with the accessible IDs subquery
     const dataResult = await this.db
-      .selectDistinct({ org: orgs })
+      .select({ org: orgs })
       .from(orgs)
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause)
