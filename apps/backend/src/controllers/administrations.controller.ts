@@ -6,11 +6,17 @@ import {
 import type {
   AdministrationsListQuery,
   AdministrationDistrictsListQuery,
-  Administration as ApiAdministration,
-  AdministrationBase as ApiAdministrationBase,
-  District as ApiDistrict,
+  AdministrationSchoolsListQuery,
+  AdministrationClassesListQuery,
+  AdministrationGroupsListQuery,
+  Administration as ContractAdministration,
+  AdministrationBase as ContractAdministrationBase,
+  AdministrationDistrict,
+  AdministrationSchool,
+  AdministrationClass,
+  AdministrationGroup,
 } from '@roar-dashboard/api-contract';
-import type { Administration, Org } from '../db/schema';
+import type { Administration, Org, Class, Group } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -24,7 +30,7 @@ const administrationService = AdministrationService();
  * @param admin - The database Administration entity
  * @returns The API-formatted administration base object
  */
-function transformAdministrationBase(admin: Administration): ApiAdministrationBase {
+function transformAdministrationBase(admin: Administration): ContractAdministrationBase {
   return {
     id: admin.id,
     name: admin.name,
@@ -45,8 +51,8 @@ function transformAdministrationBase(admin: Administration): ApiAdministrationBa
  * @param admin - The database Administration entity with optional embeds
  * @returns The API-formatted administration object with embedded data
  */
-function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministration {
-  const result: ApiAdministration = transformAdministrationBase(admin);
+function transformAdministration(admin: AdministrationWithEmbeds): ContractAdministration {
+  const result: ContractAdministration = transformAdministrationBase(admin);
 
   // Include stats if embedded
   if (admin.stats) {
@@ -62,16 +68,66 @@ function transformAdministration(admin: AdministrationWithEmbeds): ApiAdministra
 }
 
 /**
- * Maps a database Org entity to the District API schema.
+ * Maps a database entity with id and name to the API schema.
+ * Used for districts, schools, classes, and groups which share the same contract shape.
  *
- * @param org - The database Org entity (must be orgType='district')
- * @returns The API-formatted district object
+ * @param entity - The database entity (Org, Class, or Group)
+ * @returns The API-formatted object with id and name
  */
-function transformDistrict(org: Org): ApiDistrict {
+function toIdName(
+  entity: Org | Class | Group,
+): AdministrationDistrict | AdministrationSchool | AdministrationClass | AdministrationGroup {
   return {
-    id: org.id,
-    name: org.name,
+    id: entity.id,
+    name: entity.name,
   };
+}
+
+/** Default response item type for sub-resource endpoints */
+type IdNameItem = { id: string; name: string };
+
+/**
+ * Builds a paginated response for sub-resource listing endpoints.
+ *
+ * @param result - The paginated result from the service
+ * @param page - Current page number
+ * @param perPage - Items per page (for calculating totalPages)
+ * @param mapItem - Optional mapping function for items (defaults to toIdName)
+ */
+function handleSubResourceResponse<T extends Org | Class | Group, R = IdNameItem>(
+  result: { items: T[]; totalItems: number },
+  page: number,
+  perPage: number,
+  mapItem: (item: T) => R = toIdName as unknown as (item: T) => R,
+) {
+  const items = result.items.map(mapItem);
+  const totalPages = Math.ceil(result.totalItems / perPage);
+
+  return {
+    status: StatusCodes.OK as const,
+    body: {
+      data: {
+        items,
+        pagination: {
+          page,
+          perPage,
+          totalItems: result.totalItems,
+          totalPages,
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Handles errors for sub-resource listing endpoints.
+ * Converts ApiError to typed error response or re-throws unknown errors.
+ */
+function handleSubResourceError(error: unknown) {
+  if (error instanceof ApiError) {
+    return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+  }
+  throw error;
 }
 
 /**
@@ -178,43 +234,67 @@ export const AdministrationsController = {
     query: AdministrationDistrictsListQuery,
   ) => {
     try {
-      const { page, perPage, sortBy, sortOrder } = query;
-
-      const result = await administrationService.listDistricts(authContext, administrationId, {
-        page,
-        perPage,
-        sortBy,
-        sortOrder,
-      });
-
-      // Transform to API response format
-      const items = result.items.map(transformDistrict);
-
-      const totalPages = Math.ceil(result.totalItems / perPage);
-
-      return {
-        status: StatusCodes.OK as const,
-        body: {
-          data: {
-            items,
-            pagination: {
-              page,
-              perPage,
-              totalItems: result.totalItems,
-              totalPages,
-            },
-          },
-        },
-      };
+      const result = await administrationService.listDistricts(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
-      if (error instanceof ApiError) {
-        return toErrorResponse(error, [
-          StatusCodes.NOT_FOUND,
-          StatusCodes.FORBIDDEN,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        ]);
-      }
-      throw error;
+      return handleSubResourceError(error);
+    }
+  },
+
+  /**
+   * List schools assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listSchools: async (authContext: AuthContext, administrationId: string, query: AdministrationSchoolsListQuery) => {
+    try {
+      const result = await administrationService.listSchools(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
+    }
+  },
+
+  /**
+   * List classes assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listClasses: async (authContext: AuthContext, administrationId: string, query: AdministrationClassesListQuery) => {
+    try {
+      const result = await administrationService.listClasses(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
+    }
+  },
+
+  /**
+   * List groups assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting)
+   */
+  listGroups: async (authContext: AuthContext, administrationId: string, query: AdministrationGroupsListQuery) => {
+    try {
+      const result = await administrationService.listGroups(authContext, administrationId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
     }
   },
 };

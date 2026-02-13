@@ -417,12 +417,29 @@ export class AdministrationAccessControls {
         ),
       );
 
+    // Path 6: User's org membership → admins on classes within user's org tree (supervisory)
+    // Example: Teacher at School A sees admins assigned to Classes in School A
+    const rolesViaUserOrgToDescendantClass = this.db
+      .selectDistinct({ role: userOrgs.role })
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      .innerJoin(classes, isAncestorOrEqual(userOrgTable.path, classes.orgPath))
+      .innerJoin(administrationClasses, eq(administrationClasses.classId, classes.id))
+      .where(
+        and(
+          eq(userOrgs.userId, userId),
+          eq(administrationClasses.administrationId, administrationId),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
+
     // Combine all paths with UNION to get all distinct roles
     const roleUnion = rolesViaUserOrgToAdminOrg
       .union(rolesViaUserOrgToDescendantOrg)
       .union(rolesViaUserClassToAdminOrg)
       .union(rolesViaDirectClass)
-      .union(rolesViaDirectGroup);
+      .union(rolesViaDirectGroup)
+      .union(rolesViaUserOrgToDescendantClass);
 
     const result = await this.db.select({ role: roleUnion.as('roles').role }).from(roleUnion.as('roles'));
 
