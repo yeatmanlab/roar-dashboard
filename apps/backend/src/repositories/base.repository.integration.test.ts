@@ -8,7 +8,7 @@
  * transaction behavior — replacing the previous unit tests that mocked
  * the Drizzle query builder chain.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
@@ -16,7 +16,11 @@ import { UserRepository } from './user.repository';
 import { users } from '../db/schema/core';
 
 describe('BaseRepository', () => {
-  const repository = new UserRepository();
+  let repository: UserRepository;
+
+  beforeAll(() => {
+    repository = new UserRepository();
+  });
 
   describe('getById', () => {
     it('returns entity when found', async () => {
