@@ -144,14 +144,18 @@ export abstract class BaseRepository<
   /**
    * Creates a new entity.
    */
-  async create(params: BaseCreateParams<TEntity>): Promise<TEntity> {
+  async create(params: BaseCreateParams<TEntity>): Promise<{ id: string }> {
     const [entity] = await this.db
       .insert(this.typedTable)
       .values(params.data as TInsert)
-      .returning();
+      .returning({ id: this.typedTable.id });
 
-    return entity as TEntity;
+    return entity as { id: string };
   }
+
+  // async createMany(params: BaseCreateParams<TEntity[]>): Promise<void> {
+  //   const [entities] = await this.db.insert(this.typedTable).values(params.data as TInsert[]);
+  // }
 
   /**
    * Updates an existing entity.
