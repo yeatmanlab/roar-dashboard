@@ -1,34 +1,34 @@
 import {
   AdministrationEmbedOption,
-  AdministrationSortField,
-  ADMINISTRATION_STATUS_VALUES,
   type PaginatedResult,
   type AdministrationStats,
-  type ADMINISTRATION_EMBED_OPTIONS,
+  type AdministrationEmbedOptionType,
   type AdministrationStatus,
+  type AdministrationDistrictSortFieldType,
+  type AdministrationSchoolSortFieldType,
+  type AdministrationClassSortFieldType,
+  type AdministrationGroupSortFieldType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
-import type { Administration } from '../../db/schema';
+import type { Administration, Org, Class, Group } from '../../db/schema';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
+import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import {
   AdministrationRepository,
   type AdministrationQueryOptions,
-  type AdministrationSortField as AdministrationSortFieldType,
 } from '../../repositories/administration.repository';
 import {
   AdministrationTaskVariantRepository,
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
-
-/**
- * Embed option type derived from api-contract.
- */
-type AdministrationEmbedOptionType = (typeof ADMINISTRATION_EMBED_OPTIONS)[number];
+import type { AuthContext } from '../../types/auth-context';
 
 /**
  * Administration with optional embedded data.
@@ -39,30 +39,34 @@ export interface AdministrationWithEmbeds extends Administration {
 }
 
 /**
- * Maps API sort field names to database column names.
- */
-const SORT_FIELD_TO_COLUMN: Record<AdministrationSortFieldType, string> = {
-  [AdministrationSortField.NAME]: 'name',
-  [AdministrationSortField.CREATED_AT]: 'createdAt',
-  [AdministrationSortField.DATE_START]: 'dateStart',
-  [AdministrationSortField.DATE_END]: 'dateEnd',
-};
-
-/**
- * Auth context containing user identity and super admin flag.
- */
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
-
-/**
  * Options for listing administrations including embed and status filter.
+ *
+ * @property embed - Optional array of related data to include ('stats', 'tasks')
+ * @property status - Optional filter by administration status:
+ *   - 'active': dateStart <= now <= dateEnd
+ *   - 'past': dateEnd < now
+ *   - 'upcoming': dateStart > now
  */
 export interface ListOptions extends AdministrationQueryOptions {
   embed?: AdministrationEmbedOptionType[];
   status?: AdministrationStatus;
 }
+
+/**
+ * Options for listing orgs (districts/schools) of an administration.
+ * Generic over the sort field type for type safety.
+ */
+export interface ListOrgsOptions<TSortField extends string = string> {
+  page: number;
+  perPage: number;
+  sortBy: TSortField;
+  sortOrder: 'asc' | 'desc';
+}
+
+export type ListDistrictsOptions = ListOrgsOptions<AdministrationDistrictSortFieldType>;
+export type ListSchoolsOptions = ListOrgsOptions<AdministrationSchoolSortFieldType>;
+export type ListClassesOptions = ListOrgsOptions<AdministrationClassSortFieldType>;
+export type ListGroupsOptions = ListOrgsOptions<AdministrationGroupSortFieldType>;
 
 /**
  * AdministrationService
@@ -82,6 +86,139 @@ export function AdministrationService({
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   runsRepository?: RunsRepository;
 } = {}) {
+  /**
+   * Verify that an administration exists and the user has access to it.
+   *
+   * Performs a two-step check:
+   * 1. Verify the administration exists (returns 404 if not)
+   * 2. Verify the user has access (returns 403 if not, skipped for super admins)
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param administrationId - The administration ID to verify access for
+   * @returns The administration if found and accessible
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
+  async function verifyAdministrationAccess(
+    authContext: AuthContext,
+    administrationId: string,
+  ): Promise<Administration> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Look up the administration first to distinguish 404 from 403
+    const administration = await administrationRepository.getById({ id: administrationId });
+
+    if (!administration) {
+      throw new ApiError('Administration not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, administrationId },
+      });
+    }
+
+    // Super admins have unrestricted access
+    if (isSuperAdmin) {
+      return administration;
+    }
+
+    // Check access for non-super admin users
+    const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+    const authorized = await administrationRepository.getAuthorizedById({ userId, allowedRoles }, administrationId);
+
+    if (!authorized) {
+      logger.warn({ userId, administrationId }, 'User attempted to access administration without permission');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, administrationId },
+      });
+    }
+
+    return authorized;
+  }
+
+  /**
+   * List orgs of a specific type assigned to an administration with access control.
+   * Internal helper used by listDistricts and listSchools.
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get orgs for
+   * @param orgType - The type of org to list (district or school)
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with orgs
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listOrgs(
+    authContext: AuthContext,
+    administrationId: string,
+    orgType: OrgType,
+    options: ListOrgsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    const { userId, isSuperAdmin } = authContext;
+    const orgTypeName = orgType === OrgType.DISTRICT ? 'districts' : 'schools';
+
+    try {
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+      };
+
+      if (isSuperAdmin) {
+        return orgType === OrgType.DISTRICT
+          ? await administrationRepository.getDistrictsByAdministrationId(administrationId, queryParams)
+          : await administrationRepository.getSchoolsByAdministrationId(administrationId, queryParams);
+      }
+
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      if (!hasSupervisoryRole(userRoles)) {
+        logger.warn(
+          { userId, administrationId, userRoles },
+          `Supervised user attempted to list administration ${orgTypeName}`,
+        );
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      }
+
+      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      return orgType === OrgType.DISTRICT
+        ? await administrationRepository.getAuthorizedDistrictsByAdministrationId(
+            { userId, allowedRoles },
+            administrationId,
+            queryParams,
+          )
+        : await administrationRepository.getAuthorizedSchoolsByAdministrationId(
+            { userId, allowedRoles },
+            administrationId,
+            queryParams,
+          );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        `Failed to list administration ${orgTypeName}`,
+      );
+
+      throw new ApiError(`Failed to retrieve administration ${orgTypeName}`, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
   /**
    * Fetch stats for administrations (assigned counts and run stats).
    * Queries run in parallel.
@@ -171,41 +308,65 @@ export function AdministrationService({
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    // Validate status parameter (defense in depth - API contract also validates)
-    if (options.status && !ADMINISTRATION_STATUS_VALUES.includes(options.status)) {
-      throw new ApiError('Invalid status filter', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { status: options.status },
-      });
-    }
-
-    let result;
-
     try {
       // Transform API contract format to repository format
       const queryParams = {
         page: options.page,
         perPage: options.perPage,
         orderBy: {
-          field: SORT_FIELD_TO_COLUMN[options.sortBy],
+          field: options.sortBy,
           direction: options.sortOrder,
         },
+        ...(options.status && { status: options.status }),
       };
 
       // Fetch administrations based on user role and authorization
+      let result;
       if (isSuperAdmin) {
-        result = await administrationRepository.listAll({
-          ...queryParams,
-          ...(options.status && { status: options.status }),
-        });
+        result = await administrationRepository.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
-        result = await administrationRepository.listAuthorized(
-          { userId, allowedRoles },
-          { ...queryParams, ...(options.status && { status: options.status }) },
-        );
+        result = await administrationRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
+
+      // If no embeds requested, return as-is
+      const embedOptions = options.embed ?? [];
+      if (embedOptions.length === 0) {
+        return result;
+      }
+
+      // Early return if no items to embed data onto
+      if (result.items.length === 0) {
+        return result;
+      }
+
+      const administrationIds = result.items.map((admin) => admin.id);
+      const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+
+      // Fetch embed data (throws on failure)
+      const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
+      const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
+
+      // Attach embeds to each administration
+      const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
+        const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
+
+        if (statsMap) {
+          adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
+        }
+
+        if (tasksMap) {
+          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+        }
+
+        return adminWithEmbeds;
+      });
+
+      return {
+        items: itemsWithEmbeds,
+        totalItems: result.totalItems,
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -218,45 +379,6 @@ export function AdministrationService({
         cause: error,
       });
     }
-
-    // If no embeds requested, return as-is
-    const embedOptions = options.embed ?? [];
-    if (embedOptions.length === 0) {
-      return result;
-    }
-
-    // Early return if no items to embed data onto
-    if (result.items.length === 0) {
-      return result;
-    }
-
-    const administrationIds = result.items.map((admin) => admin.id);
-    const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
-    const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
-
-    // Fetch embed data (throws on failure)
-    const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
-    const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
-
-    // Attach embeds to each administration
-    const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
-      const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
-
-      if (statsMap) {
-        adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
-      }
-
-      if (tasksMap) {
-        adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
-      }
-
-      return adminWithEmbeds;
-    });
-
-    return {
-      items: itemsWithEmbeds,
-      totalItems: result.totalItems,
-    };
   }
 
   /**
@@ -273,38 +395,10 @@ export function AdministrationService({
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
   async function getById(authContext: AuthContext, administrationId: string): Promise<Administration> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
 
     try {
-      // Look up the administration first (unrestricted) to distinguish 404 from 403
-      const administration = await administrationRepository.getById({ id: administrationId });
-
-      if (!administration) {
-        throw new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, administrationId },
-        });
-      }
-
-      // Super admins have unrestricted access
-      if (isSuperAdmin) {
-        return administration;
-      }
-
-      // Check access for non-super admin users
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-      const authorized = await administrationRepository.getAuthorized({ userId, allowedRoles }, administrationId);
-
-      if (!authorized) {
-        throw new ApiError('You do not have permission to access this administration', {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, administrationId },
-        });
-      }
-
-      return authorized;
+      return await verifyAdministrationAccess(authContext, administrationId);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -319,5 +413,205 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById };
+  /**
+   * List districts assigned to an administration with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all districts assigned to the administration
+   * - Supervisory roles: sees only districts that intersect with their accessible org tree
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get districts for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with districts
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listDistricts(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListDistrictsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    return listOrgs(authContext, administrationId, OrgType.DISTRICT, options);
+  }
+
+  /**
+   * List schools assigned to an administration with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all schools assigned to the administration
+   * - Supervisory roles: sees only schools that intersect with their accessible org tree
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get schools for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with schools
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listSchools(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListSchoolsOptions,
+  ): Promise<PaginatedResult<Org>> {
+    return listOrgs(authContext, administrationId, OrgType.SCHOOL, options);
+  }
+
+  /**
+   * Performs authorization checks for sub-resource listing.
+   * Throws if user lacks access or is a supervised user.
+   *
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
+   */
+  async function authorizeSubResourceAccess(authContext: AuthContext, administrationId: string): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+
+    await verifyAdministrationAccess(authContext, administrationId);
+
+    if (isSuperAdmin) return;
+
+    const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+    if (!hasSupervisoryRole(userRoles)) {
+      logger.warn(
+        { userId, administrationId, userRoles },
+        'Supervised user attempted to list administration sub-resources',
+      );
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    }
+  }
+
+  /**
+   * List classes assigned to an administration with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all classes assigned to the administration
+   * - Supervisory roles: sees only classes that belong to schools in their accessible org tree
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get classes for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with classes
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listClasses(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListClassesOptions,
+  ): Promise<PaginatedResult<Class>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      await authorizeSubResourceAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+      };
+
+      if (isSuperAdmin) {
+        return await administrationRepository.getClassesByAdministrationId(administrationId, queryParams);
+      }
+
+      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      return await administrationRepository.getAuthorizedClassesByAdministrationId(
+        { userId, allowedRoles },
+        administrationId,
+        queryParams,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration classes',
+      );
+
+      throw new ApiError('Failed to retrieve administration classes', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * List groups assigned to an administration with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all groups assigned to the administration
+   * - Supervisory roles: sees only groups they are directly a member of (groups are flat, no hierarchy)
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get groups for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with groups
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listGroups(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListGroupsOptions,
+  ): Promise<PaginatedResult<Group>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      await authorizeSubResourceAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+      };
+
+      if (isSuperAdmin) {
+        return await administrationRepository.getGroupsByAdministrationId(administrationId, queryParams);
+      }
+
+      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      return await administrationRepository.getAuthorizedGroupsByAdministrationId(
+        { userId, allowedRoles },
+        administrationId,
+        queryParams,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration groups',
+      );
+
+      throw new ApiError('Failed to retrieve administration groups', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts, listSchools, listClasses, listGroups };
 }

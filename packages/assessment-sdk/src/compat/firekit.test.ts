@@ -1,7 +1,22 @@
 import { describe, it, expect, expectTypeOf, vi } from 'vitest';
-import { startRun, finishRun, abortRun, updateEngagementFlags, addInteraction, updateUser } from './firekit';
+import {
+  startRun,
+  finishRun,
+  abortRun,
+  updateEngagementFlags,
+  addInteraction,
+  updateUser,
+  writeTrial,
+} from './firekit';
 import { SDKError } from '../errors/sdk-error';
-import type { UpdateEngagementFlagsInput, AddInteractionInput, UpdateUserInput } from '../types';
+import type {
+  UpdateEngagementFlagsInput,
+  AddInteractionInput,
+  UpdateUserInput,
+  TrialData,
+  RawScores,
+  ComputedScores,
+} from '../types';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
@@ -101,6 +116,31 @@ describe('firekit compat', () => {
 
       // compile-time signature check
       expectTypeOf(updateUser).toEqualTypeOf<(userUpdateData: UpdateUserInput) => Promise<void>>();
+    });
+  });
+
+  describe('writeTrial', () => {
+    it('throws SDKError when called', async () => {
+      const trialData: TrialData = { response: 'correct', rt: 500 };
+      await expect(writeTrial(trialData)).rejects.toBeInstanceOf(SDKError);
+
+      const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
+        return { computed: rawScores };
+      };
+      await expect(writeTrial(trialData, callback)).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('matches Firekit signature', () => {
+      // runtime assertion to satisfy vitest/expect-expect
+      expect(typeof writeTrial).toBe('function');
+
+      // compile-time signature check
+      expectTypeOf(writeTrial).toEqualTypeOf<
+        (
+          trialData: TrialData,
+          computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
+        ) => Promise<void>
+      >();
     });
   });
 });

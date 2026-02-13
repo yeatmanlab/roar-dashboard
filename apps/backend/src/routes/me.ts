@@ -18,7 +18,7 @@ export function registerMeRoutes(routerInstance: Router) {
     get: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req }) => MeController.get(req.user!.id),
+      handler: async ({ req }) => MeController.get(req.user!.userId),
     },
   });
 
