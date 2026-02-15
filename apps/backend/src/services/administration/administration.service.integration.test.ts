@@ -23,6 +23,7 @@ import { AdministrationFactory } from '../../test-support/factories/administrati
 import { AdministrationOrgFactory } from '../../test-support/factories/administration-org.factory';
 import { AdministrationClassFactory } from '../../test-support/factories/administration-class.factory';
 import { AdministrationGroupFactory } from '../../test-support/factories/administration-group.factory';
+import type { AssignmentWithOptional } from '../../repositories/administration.repository';
 import { UserRole } from '../../enums/user-role.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
@@ -1538,12 +1539,19 @@ describe('AdministrationService (integration)', () => {
       });
     });
 
-    describe('eligibility filtering', () => {
-      it('should filter task variants for student based on grade condition', async () => {
-        // Create student with grade 5
-        const student = await UserFactory.create({
-          grade: '5',
-        });
+    describe('eligibility filtering for supervised roles', () => {
+      /**
+       * Condition field semantics:
+       * - assigned_if (conditionsAssignment): Determines VISIBILITY - if condition passes, variant is shown
+       * - optional_if (conditionsRequirements): Determines OPTIONAL flag - if condition passes, variant is optional
+       *
+       * For supervised roles (students), the response contains:
+       * - Filtered list (only variants where assigned_if passes)
+       * - Each item has assignment.optional (boolean) instead of raw conditions
+       */
+
+      it('should filter task variants for student based on assigned_if condition', async () => {
+        const student = await UserFactory.create({ grade: '5' });
         await UserOrgFactory.create({
           userId: student.id,
           orgId: baseFixture.district.id,
@@ -1564,7 +1572,7 @@ describe('AdministrationService (integration)', () => {
           orgId: baseFixture.district.id,
         });
 
-        // Variant with grade 3 condition (student is grade 5, should NOT see)
+        // assigned_if: grade 3 (student is grade 5, should NOT see)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantForGrade3.id,
@@ -1572,7 +1580,7 @@ describe('AdministrationService (integration)', () => {
           conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 3 },
         });
 
-        // Variant with grade 5 condition (student is grade 5, should see)
+        // assigned_if: grade 5 (student is grade 5, should see)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantForGrade5.id,
@@ -1580,18 +1588,14 @@ describe('AdministrationService (integration)', () => {
           conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
         });
 
-        // Variant with no conditions (should see)
+        // No assigned_if condition (should see - null means assigned to all)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantForAll.id,
           orderIndex: 2,
         });
 
-        const authContext = {
-          userId: student.id,
-          isSuperAdmin: false,
-        };
-
+        const authContext = { userId: student.id, isSuperAdmin: false };
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
         // Student should only see grade 5 variant and the one without conditions
@@ -1601,6 +1605,69 @@ describe('AdministrationService (integration)', () => {
         expect(variantIds).toContain(variantForAll.id);
         expect(variantIds).not.toContain(variantForGrade3.id);
         expect(result.totalItems).toBe(2);
+      });
+
+      it('should set optional flag based on optional_if condition for students', async () => {
+        const student = await UserFactory.create({ grade: '5', statusEll: 'active' });
+        await UserOrgFactory.create({
+          userId: student.id,
+          orgId: baseFixture.district.id,
+          role: UserRole.STUDENT,
+        });
+
+        const task = await TaskFactory.create({ name: 'Optional Flag Test Task' });
+        const variantRequired = await TaskVariantFactory.create({ taskId: task.id, name: 'Required Variant' });
+        const variantOptional = await TaskVariantFactory.create({ taskId: task.id, name: 'Optional Variant' });
+        const variantNoOptionalIf = await TaskVariantFactory.create({ taskId: task.id, name: 'No Optional Condition' });
+
+        const administration = await AdministrationFactory.create({
+          name: 'Optional Flag Test Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: administration.id,
+          orgId: baseFixture.district.id,
+        });
+
+        // Assigned to student (grade 5), optional_if fails (ELL inactive) → required
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: variantRequired.id,
+          orderIndex: 0,
+          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
+          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'inactive' },
+        });
+
+        // Assigned to student (grade 5), optional_if passes (ELL active) → optional
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: variantOptional.id,
+          orderIndex: 1,
+          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
+          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
+        });
+
+        // Assigned to student, no optional_if → required (default)
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: variantNoOptionalIf.id,
+          orderIndex: 2,
+          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
+        });
+
+        const authContext = { userId: student.id, isSuperAdmin: false };
+        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
+
+        expect(result.items).toHaveLength(3);
+
+        // Check optional flags
+        const requiredItem = result.items.find((item) => item.variant.id === variantRequired.id);
+        const optionalItem = result.items.find((item) => item.variant.id === variantOptional.id);
+        const noConditionItem = result.items.find((item) => item.variant.id === variantNoOptionalIf.id);
+
+        expect((requiredItem?.assignment as AssignmentWithOptional).optional).toBe(false);
+        expect((optionalItem?.assignment as AssignmentWithOptional).optional).toBe(true);
+        expect((noConditionItem?.assignment as AssignmentWithOptional).optional).toBe(false);
       });
 
       it('should not filter task variants for supervisory roles', async () => {
@@ -1617,7 +1684,6 @@ describe('AdministrationService (integration)', () => {
           orgId: baseFixture.district.id,
         });
 
-        // Both variants have conditions
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantForGrade3.id,
@@ -1631,86 +1697,15 @@ describe('AdministrationService (integration)', () => {
           conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
         });
 
-        // schoolATeacher is a teacher - should see all variants regardless of conditions
-        const authContext = {
-          userId: baseFixture.schoolATeacher.id,
-          isSuperAdmin: false,
-        };
-
+        // Teacher should see all variants regardless of conditions
+        const authContext = { userId: baseFixture.schoolATeacher.id, isSuperAdmin: false };
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
-        // Teacher should see all variants
         expect(result.items).toHaveLength(2);
         expect(result.totalItems).toBe(2);
-      });
 
-      it('should filter by both conditionsAssignment AND conditionsRequirements', async () => {
-        // Create student with grade 5 and ELL status
-        const student = await UserFactory.create({
-          grade: '5',
-          statusEll: 'active',
-        });
-        await UserOrgFactory.create({
-          userId: student.id,
-          orgId: baseFixture.district.id,
-          role: UserRole.STUDENT,
-        });
-
-        const task = await TaskFactory.create({ name: 'Combined Conditions Test Task' });
-        const variantBothPass = await TaskVariantFactory.create({ taskId: task.id, name: 'Both Pass' });
-        const variantAssignmentFails = await TaskVariantFactory.create({ taskId: task.id, name: 'Assignment Fails' });
-        const variantRequirementsFails = await TaskVariantFactory.create({
-          taskId: task.id,
-          name: 'Requirements Fails',
-        });
-
-        const administration = await AdministrationFactory.create({
-          name: 'Combined Conditions Test Admin',
-          createdBy: baseFixture.districtAdmin.id,
-        });
-        await AdministrationOrgFactory.create({
-          administrationId: administration.id,
-          orgId: baseFixture.district.id,
-        });
-
-        // Both conditions pass: grade 5 AND ELL active
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantBothPass.id,
-          orderIndex: 0,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
-          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
-        });
-
-        // Assignment fails: wrong grade
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantAssignmentFails.id,
-          orderIndex: 1,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 3 },
-          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
-        });
-
-        // Requirements fails: wrong ELL status
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantRequirementsFails.id,
-          orderIndex: 2,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
-          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'inactive' },
-        });
-
-        const authContext = {
-          userId: student.id,
-          isSuperAdmin: false,
-        };
-
-        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
-
-        // Only the variant where both conditions pass should be visible
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]!.variant.id).toBe(variantBothPass.id);
-        expect(result.totalItems).toBe(1);
+        // Supervisory roles should get raw conditions, not optional flag
+        expect((result.items[0]?.assignment as Partial<AssignmentWithOptional>).optional).toBeUndefined();
       });
 
       it('should show all variants to super admin regardless of conditions', async () => {
@@ -1723,7 +1718,6 @@ describe('AdministrationService (integration)', () => {
           createdBy: baseFixture.districtAdmin.id,
         });
 
-        // Create variants with restrictive conditions
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variant1.id,
@@ -1737,23 +1731,15 @@ describe('AdministrationService (integration)', () => {
           conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'nonexistent' },
         });
 
-        // Super admin should see all regardless
-        const authContext = {
-          userId: baseFixture.districtAdmin.id,
-          isSuperAdmin: true,
-        };
-
+        const authContext = { userId: baseFixture.districtAdmin.id, isSuperAdmin: true };
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
         expect(result.items).toHaveLength(2);
         expect(result.totalItems).toBe(2);
       });
 
-      it('should handle composite AND conditions', async () => {
-        // Create student with grade 5
-        const student = await UserFactory.create({
-          grade: '5',
-        });
+      it('should handle composite AND conditions for assigned_if', async () => {
+        const student = await UserFactory.create({ grade: '5' });
         await UserOrgFactory.create({
           userId: student.id,
           orgId: baseFixture.district.id,
@@ -1773,7 +1759,7 @@ describe('AdministrationService (integration)', () => {
           orgId: baseFixture.district.id,
         });
 
-        // Composite AND: grade >= 3 AND grade <= 6 (student is grade 5, should pass)
+        // assigned_if: grade >= 3 AND grade <= 6 (student is grade 5, should pass)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantInRange.id,
@@ -1787,7 +1773,7 @@ describe('AdministrationService (integration)', () => {
           },
         });
 
-        // Composite AND: grade >= 7 AND grade <= 10 (student is grade 5, should fail)
+        // assigned_if: grade >= 7 AND grade <= 10 (student is grade 5, should fail)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantOutOfRange.id,
@@ -1801,22 +1787,15 @@ describe('AdministrationService (integration)', () => {
           },
         });
 
-        const authContext = {
-          userId: student.id,
-          isSuperAdmin: false,
-        };
-
+        const authContext = { userId: student.id, isSuperAdmin: false };
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
         expect(result.items).toHaveLength(1);
         expect(result.items[0]!.variant.id).toBe(variantInRange.id);
       });
 
-      it('should handle composite OR conditions', async () => {
-        // Create student with grade 5
-        const student = await UserFactory.create({
-          grade: '5',
-        });
+      it('should handle composite OR conditions for assigned_if', async () => {
+        const student = await UserFactory.create({ grade: '5' });
         await UserOrgFactory.create({
           userId: student.id,
           orgId: baseFixture.district.id,
@@ -1836,7 +1815,7 @@ describe('AdministrationService (integration)', () => {
           orgId: baseFixture.district.id,
         });
 
-        // Composite OR: grade == 3 OR grade == 5 (student is grade 5, should pass)
+        // assigned_if: grade == 3 OR grade == 5 (student is grade 5, should pass)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantMatchesOR.id,
@@ -1850,7 +1829,7 @@ describe('AdministrationService (integration)', () => {
           },
         });
 
-        // Composite OR: grade == 1 OR grade == 2 (student is grade 5, should fail)
+        // assigned_if: grade == 1 OR grade == 2 (student is grade 5, should fail)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variantNoMatch.id,
@@ -1864,22 +1843,15 @@ describe('AdministrationService (integration)', () => {
           },
         });
 
-        const authContext = {
-          userId: student.id,
-          isSuperAdmin: false,
-        };
-
+        const authContext = { userId: student.id, isSuperAdmin: false };
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
         expect(result.items).toHaveLength(1);
         expect(result.items[0]!.variant.id).toBe(variantMatchesOR.id);
       });
 
-      it('should return empty array when no variants match eligibility', async () => {
-        // Create student with grade 1
-        const student = await UserFactory.create({
-          grade: '1',
-        });
+      it('should return empty array when no variants match assigned_if', async () => {
+        const student = await UserFactory.create({ grade: '1' });
         await UserOrgFactory.create({
           userId: student.id,
           orgId: baseFixture.district.id,
@@ -1898,7 +1870,7 @@ describe('AdministrationService (integration)', () => {
           orgId: baseFixture.district.id,
         });
 
-        // Variant requires grade 5 (student is grade 1)
+        // assigned_if: grade 5 (student is grade 1, should not see)
         await AdministrationTaskVariantFactory.create({
           administrationId: administration.id,
           taskVariantId: variant.id,
@@ -1906,13 +1878,107 @@ describe('AdministrationService (integration)', () => {
           conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
         });
 
-        const authContext = {
-          userId: student.id,
-          isSuperAdmin: false,
-        };
-
+        const authContext = { userId: student.id, isSuperAdmin: false };
         const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
 
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('should handle composite conditions for optional_if', async () => {
+        const student = await UserFactory.create({ grade: '5', statusEll: 'active', statusIep: 'true' });
+        await UserOrgFactory.create({
+          userId: student.id,
+          orgId: baseFixture.district.id,
+          role: UserRole.STUDENT,
+        });
+
+        const task = await TaskFactory.create({ name: 'Composite Optional Test Task' });
+        const variantOptionalAND = await TaskVariantFactory.create({ taskId: task.id, name: 'Optional AND' });
+        const variantRequiredAND = await TaskVariantFactory.create({ taskId: task.id, name: 'Required AND' });
+
+        const administration = await AdministrationFactory.create({
+          name: 'Composite Optional Test Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: administration.id,
+          orgId: baseFixture.district.id,
+        });
+
+        // Assigned to all, optional_if: ELL active AND IEP true (both pass → optional)
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: variantOptionalAND.id,
+          orderIndex: 0,
+          conditionsRequirements: {
+            op: 'AND',
+            conditions: [
+              { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
+              { field: 'studentData.statusIep', op: 'EQUAL', value: 'true' },
+            ],
+          },
+        });
+
+        // Assigned to all, optional_if: ELL inactive AND IEP true (ELL fails → required)
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: variantRequiredAND.id,
+          orderIndex: 1,
+          conditionsRequirements: {
+            op: 'AND',
+            conditions: [
+              { field: 'studentData.statusEll', op: 'EQUAL', value: 'inactive' },
+              { field: 'studentData.statusIep', op: 'EQUAL', value: 'true' },
+            ],
+          },
+        });
+
+        const authContext = { userId: student.id, isSuperAdmin: false };
+        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
+
+        expect(result.items).toHaveLength(2);
+
+        const optionalItem = result.items.find((item) => item.variant.id === variantOptionalAND.id);
+        const requiredItem = result.items.find((item) => item.variant.id === variantRequiredAND.id);
+
+        expect((optionalItem?.assignment as AssignmentWithOptional).optional).toBe(true);
+        expect((requiredItem?.assignment as AssignmentWithOptional).optional).toBe(false);
+      });
+
+      it('should exclude variants when user has null field referenced in assigned_if condition', async () => {
+        // Student with null grade - should NOT match assigned_if: grade === 5
+        const studentWithNullGrade = await UserFactory.create({ grade: null });
+        await UserOrgFactory.create({
+          userId: studentWithNullGrade.id,
+          orgId: baseFixture.district.id,
+          role: UserRole.STUDENT,
+        });
+
+        const task = await TaskFactory.create({ name: 'Null Field Test Task' });
+        const variant = await TaskVariantFactory.create({ taskId: task.id, name: 'Grade Required Variant' });
+
+        const administration = await AdministrationFactory.create({
+          name: 'Null Field Test Admin',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await AdministrationOrgFactory.create({
+          administrationId: administration.id,
+          orgId: baseFixture.district.id,
+        });
+
+        // assigned_if: grade equals 5 (student has null grade, should not see)
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: variant.id,
+          orderIndex: 0,
+          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
+        });
+
+        const authContext = { userId: studentWithNullGrade.id, isSuperAdmin: false };
+        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
+
+        // Variant should be excluded because null grade cannot match grade === 5
         expect(result.items).toHaveLength(0);
         expect(result.totalItems).toBe(0);
       });

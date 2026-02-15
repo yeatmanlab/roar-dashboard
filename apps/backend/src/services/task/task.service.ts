@@ -178,13 +178,13 @@ function evaluateFieldCondition(userData: Record<string, unknown>, condition: Fi
     return compareValues(actualGrade, expectedGrade, condition.op);
   }
 
-  // Handle boolean comparisons
   if (typeof expectedValue === 'boolean') {
+    // Handle boolean comparisons
     return compareValues(Boolean(actualValue), expectedValue, condition.op);
   }
 
-  // Handle date comparisons
   if (expectedValue instanceof Date) {
+    // Handle date comparisons
     const actualDate = actualValue instanceof Date ? actualValue : new Date(String(actualValue));
     if (isNaN(actualDate.getTime())) {
       return false;
@@ -192,8 +192,8 @@ function evaluateFieldCondition(userData: Record<string, unknown>, condition: Fi
     return compareValues(actualDate.getTime(), expectedValue.getTime(), condition.op);
   }
 
-  // Handle numeric comparisons
   if (typeof expectedValue === 'number') {
+    // Handle numeric comparisons
     const actualNum = typeof actualValue === 'number' ? actualValue : parseFloat(String(actualValue));
     if (isNaN(actualNum)) {
       return false;
@@ -493,10 +493,30 @@ export function TaskService({
     return passesAssignment && passesRequirements;
   }
 
+  /**
+   * Evaluate a condition for a user.
+   *
+   * Convenience method that maps user data and evaluates the condition.
+   * A null condition is treated as passing (no restriction).
+   *
+   * @param user - The User entity to evaluate for
+   * @param condition - The condition to evaluate (or null)
+   * @returns True if the condition passes (or is null), false otherwise
+   */
+  function evaluateConditionForUser(user: User, condition: Condition | null): boolean {
+    if (!condition) {
+      return true;
+    }
+
+    const userData = mapUserToConditionData(user) as unknown as Record<string, unknown>;
+    return evaluateCondition(userData, condition);
+  }
+
   return {
     createTaskVariant,
     evaluateCondition,
     mapUserToConditionData,
     isUserEligibleForTaskVariant,
+    evaluateConditionForUser,
   };
 }
