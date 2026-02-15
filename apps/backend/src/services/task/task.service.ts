@@ -54,16 +54,23 @@ export interface ConditionUserData {
  * Grade values mapped to numeric values for comparison.
  * Maps Grade enum values (from gradeEnum in db/schema/enums.ts) to numbers.
  *
- * InfantToddler/Preschool = -2, PreKindergarten = -1, Kindergarten/TK = 0, grades 1-13.
- * Special values (Ungraded, PostGraduate, Other, empty) return null via getGradeAsNumber.
+ * Matches the reference implementation from the frontend evaluateCondition.ts:
+ * - All early childhood grades (infant through kindergarten) map to 0
+ * - Grades 1-12 map to their numeric values
+ * - Post-secondary grades map to 13
+ *
+ * Special values (Ungraded, Other, empty) return null via getGradeAsNumber.
  */
 const GRADE_MAP: Record<string, number> = {
-  // Grade enum values (exact matches from DB)
-  infanttoddler: -2,
-  preschool: -2,
-  prekindergarten: -1,
+  // Early childhood - all map to 0 (matching reference)
+  infanttoddler: 0,
+  infant: 0,
+  toddler: 0,
+  preschool: 0,
+  prekindergarten: 0,
   transitionalkindergarten: 0,
   kindergarten: 0,
+  // Grades 1-12
   '1': 1,
   '2': 2,
   '3': 3,
@@ -76,7 +83,9 @@ const GRADE_MAP: Record<string, number> = {
   '10': 10,
   '11': 11,
   '12': 12,
+  // Post-secondary - all map to 13 (matching reference)
   '13': 13,
+  postgraduate: 13,
 };
 
 /**
