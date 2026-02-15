@@ -357,11 +357,60 @@ export const AdministrationTaskVariantTaskSchema = z.object({
 
 /**
  * Conditions for task variant assignment within an administration.
- * Eligibility determines who can be assigned; requirements determine completion criteria.
+ *
+ * The response structure differs based on the user's role:
+ *
+ * ## Supervisory roles (teachers, admins, super admins)
+ *
+ * Returns the raw condition objects for client-side evaluation:
+ * ```json
+ * {
+ *   "conditions": {
+ *     "assigned_if": { "field": "studentData.grade", "op": "GREATER_THAN", "value": 2 },
+ *     "optional_if": { "op": "AND", "conditions": [...] }
+ *   }
+ * }
+ * ```
+ *
+ * ### `assigned_if`
+ * Condition that determines if the task variant is assigned to a user.
+ * - When `null`: variant is assigned to **all** users in the administration
+ * - When condition evaluates to `true`: variant is assigned to that user
+ * - When condition evaluates to `false`: variant is NOT assigned to that user
+ *
+ * ### `optional_if`
+ * Condition that determines if the task variant is optional for an assigned user.
+ * - When `null`: variant is **required** for all assigned users
+ * - When condition evaluates to `true`: variant is **optional** for that user
+ * - When condition evaluates to `false`: variant is **required** for that user
+ *
+ * ## Supervised roles (students, guardians, parents)
+ *
+ * Returns the pre-evaluated result (conditions already applied server-side):
+ * ```json
+ * {
+ *   "conditions": {
+ *     "optional": false
+ *   }
+ * }
+ * ```
+ *
+ * - `optional`: Boolean indicating if this task variant is optional for the current user.
+ *   `false` = required, `true` = optional.
+ *
+ * Note: For supervised roles, variants that don't match the `assigned_if` condition
+ * are filtered out entirely and won't appear in the response.
+ *
+ * ---
+ * **Database column mapping:** The database columns `conditionsAssignment` and
+ * `conditionsRequirements` map to API fields `assigned_if` and `optional_if` respectively.
  */
 export const AdministrationTaskVariantConditionsSchema = z.object({
-  eligibility: z.record(z.unknown()).nullable(),
-  requirements: z.record(z.unknown()).nullable(),
+  // Supervisory role fields (raw conditions for client-side evaluation)
+  assigned_if: z.record(z.unknown()).nullable().optional(),
+  optional_if: z.record(z.unknown()).nullable().optional(),
+  // Supervised role field (pre-evaluated result)
+  optional: z.boolean().optional(),
 });
 
 /**

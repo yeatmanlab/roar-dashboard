@@ -19,12 +19,21 @@ import type {
   AdministrationTaskVariantItem,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org, Class, Group } from '../db/schema';
-import type { TaskVariantWithAssignment } from '../repositories/administration.repository';
+import type { TaskVariantWithAssignment, AssignmentWithOptional } from '../repositories/administration.repository';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
 
 const administrationService = AdministrationService();
+
+/**
+ * Type guard to check if an assignment has the pre-evaluated optional flag.
+ * Used to distinguish supervised role responses (with optional boolean) from
+ * supervisory role responses (with raw conditions).
+ */
+function hasOptionalFlag(assignment: TaskVariantWithAssignment['assignment']): assignment is AssignmentWithOptional {
+  return 'optional' in assignment && typeof (assignment as AssignmentWithOptional).optional === 'boolean';
+}
 
 /**
  * Maps a database Administration entity to the base API schema.
@@ -92,10 +101,36 @@ function toIdName(
  * Transforms the flat joined data from the repository into the nested structure
  * expected by the API contract (task and conditions as nested objects).
  *
+ * For supervisory roles: conditions contains assigned_if and optional_if (raw conditions)
+ * For supervised roles: conditions contains only optional (pre-evaluated boolean)
+ *
  * @param item - The raw task variant data from the repository (variant, task, assignment)
  * @returns The API-formatted task variant item with nested task and conditions objects
  */
 function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskVariantItem {
+  // Service guarantees: for supervised roles, assignment.optional is set;
+  // for supervisory roles, assignment.optional is undefined
+  if (hasOptionalFlag(item.assignment)) {
+    // For supervised roles: return simplified conditions with pre-evaluated optional flag
+    return {
+      id: item.variant.id,
+      name: item.variant.name,
+      description: item.variant.description,
+      orderIndex: item.assignment.orderIndex,
+      task: {
+        id: item.task.id,
+        name: item.task.name,
+        description: item.task.description,
+        image: item.task.image,
+        tutorialVideo: item.task.tutorialVideo,
+      },
+      conditions: {
+        optional: item.assignment.optional,
+      },
+    };
+  }
+
+  // For supervisory roles: return full conditions for client-side evaluation
   return {
     id: item.variant.id,
     name: item.variant.name,
@@ -109,8 +144,8 @@ function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskV
       tutorialVideo: item.task.tutorialVideo,
     },
     conditions: {
-      eligibility: item.assignment.conditionsAssignment as Record<string, unknown> | null,
-      requirements: item.assignment.conditionsRequirements as Record<string, unknown> | null,
+      assigned_if: item.assignment.conditionsAssignment as Record<string, unknown> | null,
+      optional_if: item.assignment.conditionsRequirements as Record<string, unknown> | null,
     },
   };
 }

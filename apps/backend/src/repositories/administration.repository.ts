@@ -129,6 +129,20 @@ export interface TaskVariantWithAssignment {
 }
 
 /**
+ * Extended assignment type that includes the optional flag.
+ * Used for supervised roles (students) where conditions are pre-evaluated server-side.
+ *
+ * NOTE: Database columns conditionsAssignment/conditionsRequirements map to
+ * API fields assigned_if/optional_if respectively.
+ */
+export interface AssignmentWithOptional
+  extends Omit<AdministrationTaskVariant, 'conditionsAssignment' | 'conditionsRequirements'> {
+  conditionsAssignment: null;
+  conditionsRequirements: null;
+  optional: boolean;
+}
+
+/**
  * Administration Repository
  *
  * Provides data access methods for the administrations table.

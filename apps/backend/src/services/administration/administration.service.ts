@@ -697,24 +697,62 @@ export function AdministrationService({
       }
 
       // Filter task variants by eligibility conditions
-      // Note: Post-filter pagination means totalItems reflects eligible items in result set,
-      // not total eligible items in DB. This is acceptable for typical administration sizes (<50 variants).
-      const eligibleItems = result.items.filter((item) => {
-        try {
-          return taskService.isUserEligibleForTaskVariant(
-            user,
-            item.assignment.conditionsAssignment as Condition | null,
-            item.assignment.conditionsRequirements as Condition | null,
-          );
-        } catch (error) {
-          // Malformed condition data - exclude variant and log warning
-          logger.warn(
-            { taskVariantId: item.variant.id, error, userId, administrationId },
-            'Invalid condition structure - excluding variant from eligibility check',
-          );
-          return false;
-        }
-      });
+      // Note: Post-filter pagination fetches all variants from DB, filters in-memory by assigned_if,
+      // and returns the count of eligible items. This is acceptable for typical administration sizes
+      // (<50 variants). For larger datasets, consider moving filtering to the repository layer.
+
+      // For supervised roles:
+      // - assigned_if (conditionsAssignment) determines if the variant is VISIBLE (filter)
+      // - optional_if (conditionsRequirements) determines if the variant is OPTIONAL (transform to optional flag)
+      const eligibleItems = result.items
+        .filter((item) => {
+          try {
+            // assigned_if determines visibility - if condition passes, user is assigned this variant
+            const assignedIf = item.assignment.conditionsAssignment as Condition | null;
+            return taskService.evaluateConditionForUser(user, assignedIf);
+          } catch (error) {
+            // Malformed condition data - exclude variant and log warning
+            logger.warn(
+              { taskVariantId: item.variant.id, error, userId, administrationId },
+              'Invalid assigned_if condition structure - excluding variant',
+            );
+            return false;
+          }
+        })
+        .map((item) => {
+          // For visible variants, evaluate optional_if to determine if optional
+          const optionalIf = item.assignment.conditionsRequirements as Condition | null;
+          let optional: boolean;
+
+          try {
+            if (optionalIf === null) {
+              // No optional_if condition means required for all assigned users
+              optional = false;
+            } else {
+              // Evaluate condition: if it passes, the variant is optional
+              optional = taskService.evaluateConditionForUser(user, optionalIf);
+            }
+          } catch (error) {
+            // Malformed optional_if condition - default to required (not optional)
+            logger.warn(
+              { taskVariantId: item.variant.id, error, userId, administrationId },
+              'Invalid optional_if condition structure - defaulting to required',
+            );
+            optional = false;
+          }
+
+          // For supervised roles: clear conditions and set optional flag
+          // The controller will map this to conditions: { optional }
+          return {
+            ...item,
+            assignment: {
+              ...item.assignment,
+              conditionsAssignment: null,
+              conditionsRequirements: null,
+              optional,
+            },
+          };
+        });
 
       return {
         items: eligibleItems,
