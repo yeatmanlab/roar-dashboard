@@ -52,25 +52,23 @@ export interface ConditionUserData {
 
 /**
  * Grade values mapped to numeric values for comparison.
- * Maps Grade enum values (from gradeEnum in db/schema/enums.ts) to numbers.
+ * Keys are exact matches for the gradeEnum values from db/schema/enums.ts.
  *
- * Matches the reference implementation from the frontend evaluateCondition.ts:
+ * Numeric mapping matches the reference implementation:
  * - All early childhood grades (infant through kindergarten) map to 0
  * - Grades 1-12 map to their numeric values
  * - Post-secondary grades map to 13
  *
- * Special values (Ungraded, Other, empty) return null via getGradeAsNumber.
+ * Special values (Ungraded, Other) return null via getGradeAsNumber.
  */
 const GRADE_MAP: Record<string, number> = {
   // Early childhood - all map to 0 (matching reference)
-  infanttoddler: 0,
-  infant: 0,
-  toddler: 0,
-  preschool: 0,
-  prekindergarten: 0,
-  transitionalkindergarten: 0,
-  kindergarten: 0,
-  // Grades 1-12
+  InfantToddler: 0,
+  Preschool: 0,
+  PreKindergarten: 0,
+  TransitionalKindergarten: 0,
+  Kindergarten: 0,
+  // Grades 1-13 (string enum values)
   '1': 1,
   '2': 2,
   '3': 3,
@@ -83,29 +81,34 @@ const GRADE_MAP: Record<string, number> = {
   '10': 10,
   '11': 11,
   '12': 12,
-  // Post-secondary - all map to 13 (matching reference)
   '13': 13,
-  postgraduate: 13,
+  // Post-secondary
+  PostGraduate: 13,
 };
 
 /**
- * Convert a grade string to a numeric value for comparison.
+ * Convert a grade to a numeric value for comparison.
+ * Accepts exact gradeEnum values from the database or numeric values.
  *
- * @param grade - Grade string (e.g., "kindergarten", "5", "12")
- * @returns Numeric grade value, or null if invalid/unknown
+ * @param grade - Grade enum value (e.g., "Kindergarten", "5") or number
+ * @returns Numeric grade value, or null if invalid/unknown (e.g., "Ungraded")
  */
-function getGradeAsNumber(grade: string | null): number | null {
+function getGradeAsNumber(grade: string | number | null): number | null {
   if (grade === null) return null;
 
-  const normalized = grade.toLowerCase().trim();
-  const mapped = GRADE_MAP[normalized];
+  // If already a number, just validate and return
+  if (typeof grade === 'number') {
+    return isNaN(grade) ? null : grade;
+  }
 
+  // Direct lookup using exact enum value
+  const mapped = GRADE_MAP[grade];
   if (mapped !== undefined) {
     return mapped;
   }
 
-  // Try parsing as number for grades like "1st" → "1"
-  const parsed = parseInt(normalized, 10);
+  // Try parsing as number (handles numeric strings not in map)
+  const parsed = parseInt(grade, 10);
   return isNaN(parsed) ? null : parsed;
 }
 
@@ -175,10 +178,11 @@ function evaluateFieldCondition(userData: Record<string, unknown>, condition: Fi
     return false;
   }
 
-  // Handle grade comparisons specially (convert strings to numbers)
+  // Handle grade comparisons specially (convert both values to numbers)
+  // Reference implementation converts both fieldValue and referenceValue through getGrade
   if (condition.field === 'studentData.grade' || condition.field.endsWith('.grade')) {
-    const actualGrade = getGradeAsNumber(String(actualValue));
-    const expectedGrade = typeof expectedValue === 'number' ? expectedValue : getGradeAsNumber(String(expectedValue));
+    const actualGrade = getGradeAsNumber(actualValue as string | number | null);
+    const expectedGrade = getGradeAsNumber(expectedValue as string | number | null);
 
     if (actualGrade === null || expectedGrade === null) {
       return false;
