@@ -201,12 +201,12 @@ describe('TaskService', () => {
     });
 
     describe('FieldCondition - grade string conversion', () => {
-      it('should convert "kindergarten" to 0', () => {
+      it('should convert "Kindergarten" (DB enum value) to 0', () => {
         const userData = { studentData: { grade: 0 } };
         const condition: FieldCondition = {
           field: 'studentData.grade',
           op: Operator.EQUAL,
-          value: 'kindergarten',
+          value: 'Kindergarten', // Exact DB enum value (PascalCase)
         };
         expect(service.evaluateCondition(userData, condition)).toBe(true);
       });
@@ -445,6 +445,20 @@ describe('TaskService', () => {
       const result = service.mapUserToConditionData(user);
 
       expect(result.studentData.grade).toBe(0);
+    });
+
+    it('should return null for invalid grade values not in the DB enum', () => {
+      // Grades come directly from the database enum, so non-enum values return null
+      const user = {
+        id: 'user-1',
+        assessmentPid: 'test-pid',
+        userType: 'student',
+        grade: 'InvalidGrade', // Not a valid DB enum value
+      } as unknown as User;
+
+      const result = service.mapUserToConditionData(user);
+
+      expect(result.studentData.grade).toBeNull();
     });
 
     it('should handle null grade', () => {
