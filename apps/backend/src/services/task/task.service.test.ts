@@ -1016,7 +1016,7 @@ describe('TaskService', () => {
       expect(result.studentData.grade).toBe(0);
     });
 
-    it('should convert PreKindergarten grade to -1', () => {
+    it('should convert PreKindergarten grade to 0 (all early childhood grades map to 0)', () => {
       const user = {
         id: 'user-1',
         assessmentPid: 'test-pid',
@@ -1026,7 +1026,8 @@ describe('TaskService', () => {
 
       const result = taskService.mapUserToConditionData(user);
 
-      expect(result.studentData.grade).toBe(-1);
+      // All early childhood grades (infant through kindergarten) map to 0
+      expect(result.studentData.grade).toBe(0);
     });
 
     it('should convert TransitionalKindergarten grade to 0', () => {
