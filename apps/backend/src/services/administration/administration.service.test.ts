@@ -5,6 +5,7 @@ import { OrgFactory } from '../../test-support/factories/org.factory';
 import { ClassFactory } from '../../test-support/factories/class.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import type { AssignmentWithOptional } from '../../repositories/administration.repository';
 
 // Mock the logger (used by the service for error handling)
 vi.mock('../../logger', () => ({
@@ -33,6 +34,7 @@ describe('AdministrationService', () => {
   const mockGetClassesByAdministrationIdAuthorized = vi.fn();
   const mockGetGroupsByAdministrationId = vi.fn();
   const mockGetGroupsByAdministrationIdAuthorized = vi.fn();
+  const mockGetTaskVariantsByAdministrationId = vi.fn();
   const mockGetUserRolesForAdministration = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +53,7 @@ describe('AdministrationService', () => {
     getAuthorizedClassesByAdministrationId: mockGetClassesByAdministrationIdAuthorized,
     getGroupsByAdministrationId: mockGetGroupsByAdministrationId,
     getAuthorizedGroupsByAdministrationId: mockGetGroupsByAdministrationIdAuthorized,
+    getTaskVariantsByAdministrationId: mockGetTaskVariantsByAdministrationId,
     getUserRolesForAdministration: mockGetUserRolesForAdministration,
   };
 
@@ -64,8 +67,22 @@ describe('AdministrationService', () => {
     getRunStatsByAdministrationIds: mockGetRunStatsByAdministrationIds,
   };
 
+  const mockUserGetById = vi.fn();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockUserRepository: any = {
+    getById: mockUserGetById,
+  };
+
+  const mockEvaluateConditionForUser = vi.fn();
+  const mockMapUserToConditionData = vi.fn();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockTaskService: any = {
+    evaluateConditionForUser: mockEvaluateConditionForUser,
+    mapUserToConditionData: mockMapUserToConditionData,
+  };
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('list', () => {
@@ -2192,6 +2209,551 @@ describe('AdministrationService', () => {
         // Should succeed because user has at least one supervisory role
         expect(mockGetGroupsByAdministrationIdAuthorized).toHaveBeenCalled();
         expect(result.items).toHaveLength(1);
+      });
+    });
+  });
+
+  describe('listTaskVariants', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'orderIndex' as const,
+      sortOrder: 'asc' as const,
+    };
+
+    const mockTaskVariants = [
+      {
+        variant: { id: 'variant-1', name: 'Variant A', description: 'Variant A description' },
+        task: { id: 'task-1', name: 'Task One', description: 'Task One desc', image: null, tutorialVideo: null },
+        assignment: { orderIndex: 0, conditionsAssignment: null, conditionsRequirements: null },
+      },
+      {
+        variant: { id: 'variant-2', name: 'Variant B', description: null },
+        task: { id: 'task-2', name: 'Task Two', description: null, image: 'img.png', tutorialVideo: 'vid.mp4' },
+        assignment: { orderIndex: 1, conditionsAssignment: { grade: '3' }, conditionsRequirements: { minScore: 80 } },
+      },
+    ];
+
+    it('should return task variants for super admin (unrestricted)', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+        items: mockTaskVariants,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listTaskVariants(
+        { userId: 'admin-user', isSuperAdmin: true },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetByIdAuthorized).not.toHaveBeenCalled();
+      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith('admin-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'orderIndex', direction: 'asc' },
+      });
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should return task variants for non-super admin with administration access (supervisory role)', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+      mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+        items: mockTaskVariants,
+        totalItems: 2,
+      });
+      // Supervisory roles see all task variants without eligibility filtering
+      mockGetUserRolesForAdministration.mockResolvedValue(['teacher']);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        taskService: mockTaskService,
+      });
+
+      const result = await service.listTaskVariants(
+        { userId: 'user-123', isSuperAdmin: false },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockGetByIdAuthorized).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-123' }), 'admin-123');
+      // Role check is performed to determine if eligibility filtering applies
+      expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('user-123', 'admin-123');
+      // Supervisory roles skip eligibility filtering
+      expect(mockEvaluateConditionForUser).not.toHaveBeenCalled();
+      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith('admin-123', expect.any(Object));
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('should pass pagination and sorting options to repository', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetTaskVariantsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await service.listTaskVariants({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', {
+        page: 3,
+        perPage: 50,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+
+      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith('admin-123', {
+        page: 3,
+        perPage: 50,
+        orderBy: { field: 'name', direction: 'desc' },
+      });
+    });
+
+    it('should return empty results when administration has no task variants', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetTaskVariantsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      const result = await service.listTaskVariants(
+        { userId: 'admin-user', isSuperAdmin: true },
+        'admin-123',
+        defaultOptions,
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('should throw not-found error when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listTaskVariants({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
+      ).rejects.toThrow('Administration not found');
+      expect(mockGetTaskVariantsByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetByIdAuthorized.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listTaskVariants({ userId: 'user-123', isSuperAdmin: false }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('You do not have permission to perform this action');
+      expect(mockGetTaskVariantsByAdministrationId).not.toHaveBeenCalled();
+    });
+
+    it('should throw ApiError when database query fails', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetTaskVariantsByAdministrationId.mockRejectedValue(new Error('Database timeout'));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.listTaskVariants({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123', defaultOptions),
+      ).rejects.toThrow('Failed to retrieve administration task variants');
+    });
+
+    describe('role-based eligibility filtering', () => {
+      // Supervisory roles (teachers, admins) see all task variants.
+      // Supervised roles (students) are filtered by eligibility conditions.
+      // Super admins bypass all filtering.
+
+      it('should allow teacher to list all task variants (supervisory role - no filtering)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: mockTaskVariants,
+          totalItems: 2,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['teacher']);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'teacher-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('teacher-user', 'admin-123');
+        expect(mockEvaluateConditionForUser).not.toHaveBeenCalled();
+        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalled();
+        expect(result.items).toHaveLength(2);
+      });
+
+      it('should allow administrator to list all task variants (supervisory role - no filtering)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: mockTaskVariants,
+          totalItems: 2,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['administrator']);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'admin-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('admin-user', 'admin-123');
+        expect(mockEvaluateConditionForUser).not.toHaveBeenCalled();
+        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalled();
+        expect(result.items).toHaveLength(2);
+      });
+
+      it('should filter task variants for student based on assigned_if condition', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'student-user', grade: '5' };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: mockTaskVariants,
+          totalItems: 2,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(mockUser);
+        // First variant: assigned_if passes (visible), optional_if fails (required)
+        // Second variant: assigned_if fails (hidden)
+        mockEvaluateConditionForUser
+          .mockReturnValueOnce(true) // First variant assigned_if
+          .mockReturnValueOnce(false) // First variant optional_if
+          .mockReturnValueOnce(false); // Second variant assigned_if (filtered out)
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'student-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('student-user', 'admin-123');
+        expect(mockUserGetById).toHaveBeenCalledWith({ id: 'student-user' });
+        // Called once per variant for assigned_if, plus once for optional_if on visible variants
+        expect(mockEvaluateConditionForUser).toHaveBeenCalled();
+        expect(result.items).toHaveLength(1);
+        expect(result.totalItems).toBe(1);
+        // Verify optional flag is set (cast to access dynamically added property)
+        expect((result.items[0]!.assignment as AssignmentWithOptional).optional).toBe(false);
+      });
+
+      it('should return empty list when student has no visible task variants (assigned_if fails for all)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'student-user', grade: '1' };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: mockTaskVariants,
+          totalItems: 2,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(mockUser);
+        // assigned_if fails for all variants
+        mockEvaluateConditionForUser.mockReturnValue(false);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'student-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('should return all task variants when student passes assigned_if for all', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'student-user', grade: '5' };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: mockTaskVariants,
+          totalItems: 2,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(mockUser);
+        // assigned_if passes for all, optional_if also passes (making them optional)
+        mockEvaluateConditionForUser.mockReturnValue(true);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'student-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(2);
+        expect(result.totalItems).toBe(2);
+        // All should have optional flag set based on optional_if evaluation (cast to access dynamically added property)
+        expect((result.items[0]!.assignment as AssignmentWithOptional).optional).toBeDefined();
+        expect((result.items[1]!.assignment as AssignmentWithOptional).optional).toBeDefined();
+      });
+
+      it('should throw error when user not found during eligibility filtering', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: mockTaskVariants,
+          totalItems: 2,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        await expect(
+          service.listTaskVariants({ userId: 'non-existent-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toThrow('Failed to retrieve user data for eligibility check');
+      });
+
+      it('should pass assigned_if to evaluateConditionForUser for visibility filtering', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'student-user', grade: '5' };
+        const assignedIfCondition = { field: 'studentData.grade', op: 'EQUAL', value: 5 };
+        const optionalIfCondition = { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' };
+        const variantWithConditions = {
+          variant: { id: 'variant-1', name: 'Test Variant' },
+          task: { id: 'task-1', name: 'Test Task' },
+          assignment: {
+            orderIndex: 0,
+            conditionsAssignment: assignedIfCondition,
+            conditionsRequirements: optionalIfCondition,
+          },
+        };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: [variantWithConditions],
+          totalItems: 1,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(mockUser);
+        // assigned_if passes, optional_if passes (making it optional)
+        mockEvaluateConditionForUser.mockReturnValue(true);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'student-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        // First call: assigned_if for visibility
+        expect(mockEvaluateConditionForUser).toHaveBeenNthCalledWith(1, mockUser, assignedIfCondition);
+        // Second call: optional_if for optional flag
+        expect(mockEvaluateConditionForUser).toHaveBeenNthCalledWith(2, mockUser, optionalIfCondition);
+        // Result should have optional=true (since optional_if passed) - cast to access dynamically added property
+        expect((result.items[0]!.assignment as AssignmentWithOptional).optional).toBe(true);
+      });
+
+      it('should handle null conditions (null assigned_if = visible, null optional_if = required)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'student-user', grade: '5' };
+        const variantWithNullConditions = {
+          variant: { id: 'variant-1', name: 'Test Variant' },
+          task: { id: 'task-1', name: 'Test Task' },
+          assignment: {
+            orderIndex: 0,
+            conditionsAssignment: null,
+            conditionsRequirements: null,
+          },
+        };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: [variantWithNullConditions],
+          totalItems: 1,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(mockUser);
+        // evaluateConditionForUser returns true for null conditions
+        mockEvaluateConditionForUser.mockReturnValue(true);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'student-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        // assigned_if: null should be passed to evaluateConditionForUser
+        expect(mockEvaluateConditionForUser).toHaveBeenNthCalledWith(1, mockUser, null);
+        // Variant should be visible (null assigned_if = assigned to all)
+        expect(result.items).toHaveLength(1);
+        // Null optional_if means required (optional=false), regardless of what evaluateConditionForUser returns
+        // Cast to access dynamically added property
+        expect((result.items[0]!.assignment as AssignmentWithOptional).optional).toBe(false);
+      });
+
+      it('should exclude variant and not crash when assigned_if evaluation throws error (malformed condition)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'student-user', grade: '5' };
+        const variantWithMalformedCondition = {
+          variant: { id: 'variant-malformed', name: 'Malformed Variant' },
+          task: { id: 'task-1', name: 'Test Task' },
+          assignment: {
+            orderIndex: 0,
+            conditionsAssignment: { invalidField: 'bad data' }, // Malformed
+            conditionsRequirements: null,
+          },
+        };
+        const variantWithValidCondition = {
+          variant: { id: 'variant-valid', name: 'Valid Variant' },
+          task: { id: 'task-2', name: 'Test Task 2' },
+          assignment: {
+            orderIndex: 1,
+            conditionsAssignment: null,
+            conditionsRequirements: null,
+          },
+        };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: [variantWithMalformedCondition, variantWithValidCondition],
+          totalItems: 2,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(mockUser);
+        // First call throws (malformed assigned_if), second call returns true (valid assigned_if),
+        // third call returns true (optional_if for valid variant)
+        mockEvaluateConditionForUser
+          .mockImplementationOnce(() => {
+            throw new Error('Invalid condition structure');
+          })
+          .mockReturnValueOnce(true) // Second variant assigned_if
+          .mockReturnValueOnce(true); // Second variant optional_if
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'student-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        // Should exclude malformed variant but include valid one
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.variant.id).toBe('variant-valid');
+        expect(result.totalItems).toBe(1);
+      });
+
+      it('should set optional=false when optional_if evaluation throws error (malformed condition)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'student-user', grade: '5' };
+        const variantWithMalformedOptionalIf = {
+          variant: { id: 'variant-1', name: 'Test Variant' },
+          task: { id: 'task-1', name: 'Test Task' },
+          assignment: {
+            orderIndex: 0,
+            conditionsAssignment: null, // Valid
+            conditionsRequirements: { invalidField: 'bad data' }, // Malformed
+          },
+        };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: [variantWithMalformedOptionalIf],
+          totalItems: 1,
+        });
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockUserGetById.mockResolvedValue(mockUser);
+        // assigned_if passes, optional_if throws
+        mockEvaluateConditionForUser
+          .mockReturnValueOnce(true) // assigned_if
+          .mockImplementationOnce(() => {
+            throw new Error('Invalid condition structure');
+          });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'student-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        // Should include variant but default to required (optional=false)
+        // Cast to access dynamically added property
+        expect(result.items).toHaveLength(1);
+        expect((result.items[0]!.assignment as AssignmentWithOptional).optional).toBe(false);
       });
     });
   });

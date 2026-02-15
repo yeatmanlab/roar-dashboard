@@ -26,6 +26,9 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
   [UserRole.SITE_ADMINISTRATOR]: [
     Permissions.Administrations.ALL,
     Permissions.Organizations.ALL,
+    Permissions.Classes.ALL,
+    Permissions.Groups.ALL,
+    Permissions.TaskVariants.ALL,
     Permissions.Users.ALL,
     Permissions.Administrators.ALL,
     Permissions.Reports.Score.ALL,
@@ -39,6 +42,9 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
   [UserRole.ADMINISTRATOR]: [
     Permissions.Administrations.ALL,
     Permissions.Organizations.ALL,
+    Permissions.Classes.ALL,
+    Permissions.Groups.ALL,
+    Permissions.TaskVariants.ALL,
     Permissions.Users.ALL,
     Permissions.Administrators.READ,
     Permissions.Reports.Score.ALL,
@@ -51,6 +57,9 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
     Permissions.Organizations.LIST,
+    Permissions.Classes.LIST,
+    Permissions.Groups.LIST,
+    Permissions.TaskVariants.LIST,
     Permissions.Users.LIST,
     Permissions.Administrators.READ,
     Permissions.Reports.Score.READ,
@@ -62,6 +71,7 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
   [UserRole.STUDENT]: [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
+    Permissions.TaskVariants.LIST,
     Permissions.Tasks.LAUNCH,
     Permissions.Profile.READ,
   ],

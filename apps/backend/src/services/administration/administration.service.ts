@@ -8,6 +8,7 @@ import {
   type AdministrationSchoolSortFieldType,
   type AdministrationClassSortFieldType,
   type AdministrationGroupSortFieldType,
+  type AdministrationTaskVariantSortFieldType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
@@ -22,13 +23,17 @@ import { logger } from '../../logger';
 import {
   AdministrationRepository,
   type AdministrationQueryOptions,
+  type TaskVariantWithAssignment,
 } from '../../repositories/administration.repository';
 import {
   AdministrationTaskVariantRepository,
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
+import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
+import { TaskService } from '../task/task.service';
+import type { Condition } from '../task/task.types';
 
 /**
  * Administration with optional embedded data.
@@ -67,6 +72,7 @@ export type ListDistrictsOptions = ListOrgsOptions<AdministrationDistrictSortFie
 export type ListSchoolsOptions = ListOrgsOptions<AdministrationSchoolSortFieldType>;
 export type ListClassesOptions = ListOrgsOptions<AdministrationClassSortFieldType>;
 export type ListGroupsOptions = ListOrgsOptions<AdministrationGroupSortFieldType>;
+export type ListTaskVariantsOptions = ListOrgsOptions<AdministrationTaskVariantSortFieldType>;
 
 /**
  * AdministrationService
@@ -81,10 +87,14 @@ export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
   runsRepository = new RunsRepository(),
+  userRepository = new UserRepository(),
+  taskService = TaskService(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   runsRepository?: RunsRepository;
+  userRepository?: UserRepository;
+  taskService?: ReturnType<typeof TaskService>;
 } = {}) {
   /**
    * Verify that an administration exists and the user has access to it.
@@ -190,7 +200,7 @@ export function AdministrationService({
         });
       }
 
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
       return orgType === OrgType.DISTRICT
         ? await administrationRepository.getAuthorizedDistrictsByAdministrationId(
             { userId, allowedRoles },
@@ -528,7 +538,7 @@ export function AdministrationService({
         return await administrationRepository.getClassesByAdministrationId(administrationId, queryParams);
       }
 
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      const allowedRoles = rolesForPermission(Permissions.Classes.LIST);
       return await administrationRepository.getAuthorizedClassesByAdministrationId(
         { userId, allowedRoles },
         administrationId,
@@ -590,7 +600,7 @@ export function AdministrationService({
         return await administrationRepository.getGroupsByAdministrationId(administrationId, queryParams);
       }
 
-      const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+      const allowedRoles = rolesForPermission(Permissions.Groups.LIST);
       return await administrationRepository.getAuthorizedGroupsByAdministrationId(
         { userId, allowedRoles },
         administrationId,
@@ -613,5 +623,157 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses, listGroups };
+  /**
+   * List task variants assigned to an administration with access control and eligibility filtering.
+   *
+   * Task variants are administration-level resources (no org hierarchy filtering).
+   * Unlike districts/schools/classes/groups, task variants are visible to ALL users
+   * with administration access - students need this to know which assessments to take.
+   *
+   * Authorization and eligibility behavior:
+   * - Super admin: sees all task variants assigned to the administration (no filtering)
+   * - Supervisory roles (teachers, admins): sees all task variants (no filtering)
+   * - Supervised roles (students): sees only task variants where BOTH conditions pass:
+   *   - conditionsAssignment (eligibility): determines if student is assigned this task
+   *   - conditionsRequirements (requirements): determines if student meets prerequisites
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get task variants for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with task variants
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listTaskVariants(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListTaskVariantsOptions,
+  ): Promise<PaginatedResult<TaskVariantWithAssignment>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Verify administration exists and user has access (students included)
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+      };
+
+      const result = await administrationRepository.getTaskVariantsByAdministrationId(administrationId, queryParams);
+
+      // Super admins see all task variants without filtering
+      if (isSuperAdmin) {
+        return result;
+      }
+
+      // Get user roles to determine if eligibility filtering applies
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      // Supervisory roles (teachers, admins) see all task variants without filtering
+      if (hasSupervisoryRole(userRoles)) {
+        return result;
+      }
+
+      // For supervised roles (students), filter by eligibility conditions
+      // Fetch user data for condition evaluation
+      const user = await userRepository.getById({ id: userId });
+      if (!user) {
+        // This should be rare - authenticated user exists in auth but not in DB (data inconsistency)
+        logger.error(
+          { userId, administrationId },
+          'User not found during eligibility filtering - possible data inconsistency',
+        );
+        throw new ApiError('Failed to retrieve user data for eligibility check', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Filter task variants by eligibility conditions
+      // Note: Post-filter pagination fetches all variants from DB, filters in-memory by assigned_if,
+      // and returns the count of eligible items. This is acceptable for typical administration sizes
+      // (<50 variants). For larger datasets, consider moving filtering to the repository layer.
+
+      // For supervised roles:
+      // - assigned_if (conditionsAssignment) determines if the variant is VISIBLE (filter)
+      // - optional_if (conditionsRequirements) determines if the variant is OPTIONAL (transform to optional flag)
+      const eligibleItems = result.items
+        .filter((item) => {
+          try {
+            // assigned_if determines visibility - if condition passes, user is assigned this variant
+            const assignedIf = item.assignment.conditionsAssignment as Condition | null;
+            return taskService.evaluateConditionForUser(user, assignedIf);
+          } catch (error) {
+            // Malformed condition data - exclude variant and log warning
+            logger.warn(
+              { taskVariantId: item.variant.id, error, userId, administrationId },
+              'Invalid assigned_if condition structure - excluding variant',
+            );
+            return false;
+          }
+        })
+        .map((item) => {
+          // For visible variants, evaluate optional_if to determine if optional
+          const optionalIf = item.assignment.conditionsRequirements as Condition | null;
+          let optional: boolean;
+
+          try {
+            if (optionalIf === null) {
+              // No optional_if condition means required for all assigned users
+              optional = false;
+            } else {
+              // Evaluate condition: if it passes, the variant is optional
+              optional = taskService.evaluateConditionForUser(user, optionalIf);
+            }
+          } catch (error) {
+            // Malformed optional_if condition - default to required (not optional)
+            logger.warn(
+              { taskVariantId: item.variant.id, error, userId, administrationId },
+              'Invalid optional_if condition structure - defaulting to required',
+            );
+            optional = false;
+          }
+
+          // For supervised roles: clear conditions and set optional flag
+          // The controller will map this to conditions: { optional }
+          return {
+            ...item,
+            assignment: {
+              ...item.assignment,
+              conditionsAssignment: null,
+              conditionsRequirements: null,
+              optional,
+            },
+          };
+        });
+
+      return {
+        items: eligibleItems,
+        totalItems: eligibleItems.length,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration task variants',
+      );
+
+      throw new ApiError('Failed to retrieve administration task variants', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants };
 }
