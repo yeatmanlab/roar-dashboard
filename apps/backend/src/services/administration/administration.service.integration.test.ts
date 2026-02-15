@@ -1546,191 +1546,84 @@ describe('AdministrationService (integration)', () => {
        */
 
       it('should filter task variants for student based on assigned_if condition', async () => {
-        const student = await UserFactory.create({ grade: '5' });
-        await UserOrgFactory.create({
-          userId: student.id,
-          orgId: baseFixture.district.id,
-          role: UserRole.STUDENT,
-        });
+        // Uses pre-seeded fixture: grade5Student sees variantForGrade5 + variantForAllGrades + variantOptionalForEll
+        // but NOT variantForGrade3 (assigned_if: grade 3)
+        const authContext = { userId: baseFixture.grade5Student.id, isSuperAdmin: false };
+        const result = await service.listTaskVariants(
+          authContext,
+          baseFixture.administrationAssignedToDistrict.id,
+          defaultTaskVariantOptions,
+        );
 
-        const task = await TaskFactory.create({ name: 'Eligibility Test Task' });
-        const variantForGrade3 = await TaskVariantFactory.create({ taskId: task.id, name: 'Grade 3 Only' });
-        const variantForGrade5 = await TaskVariantFactory.create({ taskId: task.id, name: 'Grade 5 Only' });
-        const variantForAll = await TaskVariantFactory.create({ taskId: task.id, name: 'For All Grades' });
-
-        const administration = await AdministrationFactory.create({
-          name: 'Eligibility Filter Test Admin',
-          createdBy: baseFixture.districtAdmin.id,
-        });
-        await AdministrationOrgFactory.create({
-          administrationId: administration.id,
-          orgId: baseFixture.district.id,
-        });
-
-        // assigned_if: grade 3 (student is grade 5, should NOT see)
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantForGrade3.id,
-          orderIndex: 0,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 3 },
-        });
-
-        // assigned_if: grade 5 (student is grade 5, should see)
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantForGrade5.id,
-          orderIndex: 1,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
-        });
-
-        // No assigned_if condition (should see - null means assigned to all)
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantForAll.id,
-          orderIndex: 2,
-        });
-
-        const authContext = { userId: student.id, isSuperAdmin: false };
-        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
-
-        // Student should only see grade 5 variant and the one without conditions
-        expect(result.items).toHaveLength(2);
+        // Grade 5 student should see: variantForAllGrades, variantForGrade5, variantOptionalForEll (3 total)
+        // Should NOT see: variantForGrade3
+        expect(result.items).toHaveLength(3);
         const variantIds = result.items.map((item) => item.variant.id);
-        expect(variantIds).toContain(variantForGrade5.id);
-        expect(variantIds).toContain(variantForAll.id);
-        expect(variantIds).not.toContain(variantForGrade3.id);
-        expect(result.totalItems).toBe(2);
+        expect(variantIds).toContain(baseFixture.variantForGrade5.id);
+        expect(variantIds).toContain(baseFixture.variantForAllGrades.id);
+        expect(variantIds).toContain(baseFixture.variantOptionalForEll.id);
+        expect(variantIds).not.toContain(baseFixture.variantForGrade3.id);
+        expect(result.totalItems).toBe(3);
       });
 
       it('should set optional flag based on optional_if condition for students', async () => {
-        const student = await UserFactory.create({ grade: '5', statusEll: 'active' });
-        await UserOrgFactory.create({
-          userId: student.id,
-          orgId: baseFixture.district.id,
-          role: UserRole.STUDENT,
-        });
+        // Uses pre-seeded fixture: grade5EllStudent (grade 5, statusEll='active')
+        // variantOptionalForEll has optional_if: statusEll='active', so it's optional for this student
+        const authContext = { userId: baseFixture.grade5EllStudent.id, isSuperAdmin: false };
+        const result = await service.listTaskVariants(
+          authContext,
+          baseFixture.administrationAssignedToDistrict.id,
+          defaultTaskVariantOptions,
+        );
 
-        const task = await TaskFactory.create({ name: 'Optional Flag Test Task' });
-        const variantRequired = await TaskVariantFactory.create({ taskId: task.id, name: 'Required Variant' });
-        const variantOptional = await TaskVariantFactory.create({ taskId: task.id, name: 'Optional Variant' });
-        const variantNoOptionalIf = await TaskVariantFactory.create({ taskId: task.id, name: 'No Optional Condition' });
-
-        const administration = await AdministrationFactory.create({
-          name: 'Optional Flag Test Admin',
-          createdBy: baseFixture.districtAdmin.id,
-        });
-        await AdministrationOrgFactory.create({
-          administrationId: administration.id,
-          orgId: baseFixture.district.id,
-        });
-
-        // Assigned to student (grade 5), optional_if fails (ELL inactive) → required
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantRequired.id,
-          orderIndex: 0,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
-          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'inactive' },
-        });
-
-        // Assigned to student (grade 5), optional_if passes (ELL active) → optional
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantOptional.id,
-          orderIndex: 1,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
-          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
-        });
-
-        // Assigned to student, no optional_if → required (default)
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantNoOptionalIf.id,
-          orderIndex: 2,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
-        });
-
-        const authContext = { userId: student.id, isSuperAdmin: false };
-        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
-
+        // ELL student sees same 3 variants as grade5Student
         expect(result.items).toHaveLength(3);
 
         // Check optional flags
-        const requiredItem = result.items.find((item) => item.variant.id === variantRequired.id);
-        const optionalItem = result.items.find((item) => item.variant.id === variantOptional.id);
-        const noConditionItem = result.items.find((item) => item.variant.id === variantNoOptionalIf.id);
+        const variantForAllItem = result.items.find((item) => item.variant.id === baseFixture.variantForAllGrades.id);
+        const variantForGrade5Item = result.items.find((item) => item.variant.id === baseFixture.variantForGrade5.id);
+        const variantOptionalForEllItem = result.items.find(
+          (item) => item.variant.id === baseFixture.variantOptionalForEll.id,
+        );
 
-        expect((requiredItem?.assignment as AssignmentWithOptional).optional).toBe(false);
-        expect((optionalItem?.assignment as AssignmentWithOptional).optional).toBe(true);
-        expect((noConditionItem?.assignment as AssignmentWithOptional).optional).toBe(false);
+        // variantForAllGrades: no optional_if → required
+        expect((variantForAllItem?.assignment as AssignmentWithOptional).optional).toBe(false);
+        // variantForGrade5: no optional_if → required
+        expect((variantForGrade5Item?.assignment as AssignmentWithOptional).optional).toBe(false);
+        // variantOptionalForEll: optional_if passes (ELL active) → optional
+        expect((variantOptionalForEllItem?.assignment as AssignmentWithOptional).optional).toBe(true);
       });
 
       it('should not filter task variants for supervisory roles', async () => {
-        const task = await TaskFactory.create({ name: 'Teacher Eligibility Test Task' });
-        const variantForGrade3 = await TaskVariantFactory.create({ taskId: task.id, name: 'Grade 3 Only Teacher' });
-        const variantForGrade5 = await TaskVariantFactory.create({ taskId: task.id, name: 'Grade 5 Only Teacher' });
-
-        const administration = await AdministrationFactory.create({
-          name: 'Teacher Eligibility Filter Test Admin',
-          createdBy: baseFixture.districtAdmin.id,
-        });
-        await AdministrationOrgFactory.create({
-          administrationId: administration.id,
-          orgId: baseFixture.district.id,
-        });
-
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantForGrade3.id,
-          orderIndex: 0,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 3 },
-        });
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variantForGrade5.id,
-          orderIndex: 1,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
-        });
-
-        // Teacher should see all variants regardless of conditions
+        // Uses pre-seeded fixture: schoolATeacher (supervisory role) should see ALL variants
+        // including variantForGrade3 which students wouldn't see
         const authContext = { userId: baseFixture.schoolATeacher.id, isSuperAdmin: false };
-        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
+        const result = await service.listTaskVariants(
+          authContext,
+          baseFixture.administrationAssignedToDistrict.id,
+          defaultTaskVariantOptions,
+        );
 
-        expect(result.items).toHaveLength(2);
-        expect(result.totalItems).toBe(2);
+        // Teacher sees all 4 variants
+        expect(result.items).toHaveLength(4);
+        expect(result.totalItems).toBe(4);
 
         // Supervisory roles should get raw conditions, not optional flag
         expect((result.items[0]?.assignment as Partial<AssignmentWithOptional>).optional).toBeUndefined();
       });
 
       it('should show all variants to super admin regardless of conditions', async () => {
-        const task = await TaskFactory.create({ name: 'Super Admin Eligibility Test Task' });
-        const variant1 = await TaskVariantFactory.create({ taskId: task.id, name: 'Restrictive Variant 1' });
-        const variant2 = await TaskVariantFactory.create({ taskId: task.id, name: 'Restrictive Variant 2' });
-
-        const administration = await AdministrationFactory.create({
-          name: 'Super Admin Eligibility Test Admin',
-          createdBy: baseFixture.districtAdmin.id,
-        });
-
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variant1.id,
-          orderIndex: 0,
-          conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 99 },
-        });
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variant2.id,
-          orderIndex: 1,
-          conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'nonexistent' },
-        });
-
+        // Uses pre-seeded fixture: super admin sees all variants
         const authContext = { userId: baseFixture.districtAdmin.id, isSuperAdmin: true };
-        const result = await service.listTaskVariants(authContext, administration.id, defaultTaskVariantOptions);
+        const result = await service.listTaskVariants(
+          authContext,
+          baseFixture.administrationAssignedToDistrict.id,
+          defaultTaskVariantOptions,
+        );
 
-        expect(result.items).toHaveLength(2);
-        expect(result.totalItems).toBe(2);
+        // Super admin sees all 4 variants
+        expect(result.items).toHaveLength(4);
+        expect(result.totalItems).toBe(4);
       });
 
       it('should handle composite AND conditions for assigned_if', async () => {
@@ -1981,45 +1874,22 @@ describe('AdministrationService (integration)', () => {
 
     describe('sorting', () => {
       it('should sort by orderIndex by default (ascending)', async () => {
-        const task = await TaskFactory.create({ name: 'Sort Test Task' });
-        const variant1 = await TaskVariantFactory.create({ taskId: task.id, name: 'Variant Z' });
-        const variant2 = await TaskVariantFactory.create({ taskId: task.id, name: 'Variant A' });
-        const variant3 = await TaskVariantFactory.create({ taskId: task.id, name: 'Variant M' });
-
-        const administration = await AdministrationFactory.create({
-          name: 'Task Variant Sort Test',
-          createdBy: baseFixture.districtAdmin.id,
-        });
-        // Intentionally assign in non-alphabetical order
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variant1.id,
-          orderIndex: 2,
-        });
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variant2.id,
-          orderIndex: 0,
-        });
-        await AdministrationTaskVariantFactory.create({
-          administrationId: administration.id,
-          taskVariantId: variant3.id,
-          orderIndex: 1,
-        });
-
+        // Uses pre-seeded fixture: 4 variants with orderIndex 0, 1, 2, 3
         const result = await service.listTaskVariants(
           { userId: baseFixture.districtAdmin.id, isSuperAdmin: true },
-          administration.id,
+          baseFixture.administrationAssignedToDistrict.id,
           defaultTaskVariantOptions,
         );
 
-        // Should be sorted by orderIndex: 0, 1, 2
+        // Should be sorted by orderIndex: 0, 1, 2, 3
         expect(result.items[0]!.assignment.orderIndex).toBe(0);
-        expect(result.items[0]!.variant.id).toBe(variant2.id);
+        expect(result.items[0]!.variant.id).toBe(baseFixture.variantForAllGrades.id);
         expect(result.items[1]!.assignment.orderIndex).toBe(1);
-        expect(result.items[1]!.variant.id).toBe(variant3.id);
+        expect(result.items[1]!.variant.id).toBe(baseFixture.variantForGrade5.id);
         expect(result.items[2]!.assignment.orderIndex).toBe(2);
-        expect(result.items[2]!.variant.id).toBe(variant1.id);
+        expect(result.items[2]!.variant.id).toBe(baseFixture.variantForGrade3.id);
+        expect(result.items[3]!.assignment.orderIndex).toBe(3);
+        expect(result.items[3]!.variant.id).toBe(baseFixture.variantOptionalForEll.id);
       });
 
       it('should sort by name when requested', async () => {
