@@ -33,6 +33,16 @@ export interface CreateTaskVariantData {
 }
 
 /**
+ * Result of evaluating a user's eligibility for a task variant.
+ */
+export interface TaskVariantEligibilityResult {
+  /** True if the user is assigned/eligible for this task variant */
+  isAssigned: boolean;
+  /** True if the task variant is optional for this user (only meaningful if isAssigned is true) */
+  isOptional: boolean;
+}
+
+/**
  * Data structure expected by condition evaluation.
  * Maps user fields into the structure that conditions reference.
  */
@@ -481,29 +491,35 @@ export function TaskService({
   }
 
   /**
-   * Check if a user is eligible for a task variant based on its conditions.
+   * Evaluate a user's eligibility and optionality for a task variant.
    *
-   * Both conditionsAssignment (eligibility) and conditionsRequirements (requirements)
-   * must pass for the user to be eligible. A null condition is treated as passing
-   * (no restriction).
+   * This method correctly interprets the two condition types:
+   * - `conditionsAssignment` (assigned_if): Determines if the task variant is VISIBLE/assigned to the user.
+   *   A null value means the variant is assigned to all users.
+   * - `conditionsRequirements` (optional_if): Determines if an assigned variant is OPTIONAL for the user.
+   *   A null value means the variant is required for all assigned users.
    *
-   * @param user - The User entity to check eligibility for
-   * @param conditionsAssignment - The assignment/eligibility condition (or null)
-   * @param conditionsRequirements - The requirements condition (or null)
-   * @returns True if the user is eligible for the task variant
+   * @param user - The User entity to evaluate
+   * @param conditionsAssignment - assigned_if condition (null = assigned to all)
+   * @param conditionsRequirements - optional_if condition (null = required for all)
+   * @returns Object with isAssigned and isOptional flags
    */
-  function isUserEligibleForTaskVariant(
+  function evaluateTaskVariantEligibility(
     user: User,
     conditionsAssignment: Condition | null,
     conditionsRequirements: Condition | null,
-  ): boolean {
-    const userData = mapUserToConditionData(user) as unknown as Record<string, unknown>;
+  ): TaskVariantEligibilityResult {
+    // assigned_if: determines if user is assigned this variant
+    const isAssigned = evaluateConditionForUser(user, conditionsAssignment);
 
-    // Null conditions are treated as passing (no restriction)
-    const passesAssignment = !conditionsAssignment || evaluateCondition(userData, conditionsAssignment);
-    const passesRequirements = !conditionsRequirements || evaluateCondition(userData, conditionsRequirements);
+    if (!isAssigned) {
+      return { isAssigned: false, isOptional: false };
+    }
 
-    return passesAssignment && passesRequirements;
+    // optional_if: if null, required; if condition passes, optional
+    const isOptional = conditionsRequirements === null ? false : evaluateConditionForUser(user, conditionsRequirements);
+
+    return { isAssigned, isOptional };
   }
 
   /**
@@ -529,7 +545,7 @@ export function TaskService({
     createTaskVariant,
     evaluateCondition,
     mapUserToConditionData,
-    isUserEligibleForTaskVariant,
+    evaluateTaskVariantEligibility,
     evaluateConditionForUser,
   };
 }
