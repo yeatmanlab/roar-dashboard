@@ -508,14 +508,14 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
       administrationId: administrationAssignedToDistrict.id,
       taskVariantId: variantForGrade5.id,
       orderIndex: 1,
-      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 5 },
+      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '5' },
     }),
     // assigned_if: grade 3 only
     AdministrationTaskVariantFactory.create({
       administrationId: administrationAssignedToDistrict.id,
       taskVariantId: variantForGrade3.id,
       orderIndex: 2,
-      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: 3 },
+      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '3' },
     }),
     // optional_if: ELL students (assigned to all, optional for ELL)
     AdministrationTaskVariantFactory.create({
