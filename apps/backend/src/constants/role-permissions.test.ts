@@ -17,26 +17,24 @@ describe('role-permissions', () => {
       expect(roles).toHaveLength(13);
     });
 
-    it('should return only roles with administrations.* for administrations.create', () => {
-      const roles = rolesForPermission(Permissions.Administrations.CREATE);
-
-      // Only system_administrator, site_administrator, district_administrator, administrator have administrations.*
-      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
-      expect(roles).toContain(UserRole.ADMINISTRATOR);
-      expect(roles).not.toContain(UserRole.TEACHER);
-      expect(roles).not.toContain(UserRole.STUDENT);
-      expect(roles).toHaveLength(4);
+    it('should throw for administrations.create since no role has it explicitly', () => {
+      expect(() => {
+        rolesForPermission(Permissions.Administrations.CREATE);
+      }).toThrow("No roles configured for permission 'administrations.create'");
     });
 
     it('should handle wildcard matching for nested permissions', () => {
       const roles = rolesForPermission(Permissions.Reports.Score.READ);
 
-      // site_administrator, administrator have reports.score.*
-      // teacher has reports.score.read directly
+      // siteAdmin, admin, educator have reports.score.* (ALL)
+      // caregiver has reports.score.read directly
+      // student does not have reports access
       expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
       expect(roles).toContain(UserRole.ADMINISTRATOR);
       expect(roles).toContain(UserRole.TEACHER);
+      expect(roles).toContain(UserRole.GUARDIAN);
       expect(roles).not.toContain(UserRole.STUDENT);
+      expect(roles).toHaveLength(12);
     });
 
     it('should throw error for unknown permission', () => {
@@ -46,35 +44,37 @@ describe('role-permissions', () => {
       }).toThrow("No roles configured for permission 'unknown.permission'");
     });
 
-    it('should return only top-tier admins for testdata.create', () => {
-      const roles = rolesForPermission(Permissions.TestData.CREATE);
-
-      expect(roles).toContain(UserRole.SYSTEM_ADMINISTRATOR);
-      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
-      expect(roles).toHaveLength(2);
+    it('should throw for testdata.create since no role has it explicitly', () => {
+      expect(() => {
+        rolesForPermission(Permissions.TestData.CREATE);
+      }).toThrow("No roles configured for permission 'testdata.create'");
     });
 
-    it('should return all roles for tasks.launch', () => {
+    it('should return only caregiver and student roles for tasks.launch', () => {
       const roles = rolesForPermission(Permissions.Tasks.LAUNCH);
 
-      // All 13 roles have either tasks.* or tasks.launch
-      expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
-      expect(roles).toContain(UserRole.ADMINISTRATOR);
-      expect(roles).toContain(UserRole.TEACHER);
+      // Only caregiver and student tiers have tasks.launch
       expect(roles).toContain(UserRole.STUDENT);
-      expect(roles).toHaveLength(13);
+      expect(roles).toContain(UserRole.GUARDIAN);
+      expect(roles).toContain(UserRole.PARENT);
+      expect(roles).toContain(UserRole.RELATIVE);
+      expect(roles).not.toContain(UserRole.SITE_ADMINISTRATOR);
+      expect(roles).not.toContain(UserRole.TEACHER);
+      expect(roles).toHaveLength(4);
     });
   });
 
   describe('RolePermissions', () => {
     it('should define permissions for site_administrator', () => {
       expect(RolePermissions[UserRole.SITE_ADMINISTRATOR]).toBeDefined();
-      expect(RolePermissions[UserRole.SITE_ADMINISTRATOR]).toContain(Permissions.Administrations.ALL);
+      expect(RolePermissions[UserRole.SITE_ADMINISTRATOR]).toContain(Permissions.Administrations.LIST);
+      expect(RolePermissions[UserRole.SITE_ADMINISTRATOR]).toContain(Permissions.Administrations.READ);
     });
 
     it('should define permissions for administrator', () => {
       expect(RolePermissions[UserRole.ADMINISTRATOR]).toBeDefined();
-      expect(RolePermissions[UserRole.ADMINISTRATOR]).toContain(Permissions.Administrations.ALL);
+      expect(RolePermissions[UserRole.ADMINISTRATOR]).toContain(Permissions.Administrations.LIST);
+      expect(RolePermissions[UserRole.ADMINISTRATOR]).toContain(Permissions.Administrations.READ);
     });
 
     it('should define permissions for teacher', () => {
