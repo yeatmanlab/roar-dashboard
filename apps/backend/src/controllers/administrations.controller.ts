@@ -152,19 +152,38 @@ function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskV
 
 /**
  * Builds a paginated response for sub-resource listing endpoints.
- *
- * @param result - The paginated result from the service
- * @param page - Current page number
- * @param perPage - Items per page (for calculating totalPages)
- * @param mapItem - Mapping function for items
+ * Defaults to toIdName mapper for orgs/classes/groups; requires explicit mapper for other types.
  */
-function handleSubResourceResponse<T extends Org | Class | Group | TaskVariantWithAssignment, R>(
+function handleSubResourceResponse<T extends Org | Class | Group>(
+  result: { items: T[]; totalItems: number },
+  page: number,
+  perPage: number,
+): {
+  status: typeof StatusCodes.OK;
+  body: {
+    data: {
+      items: ReturnType<typeof toIdName>[];
+      pagination: { page: number; perPage: number; totalItems: number; totalPages: number };
+    };
+  };
+};
+function handleSubResourceResponse<T, R>(
   result: { items: T[]; totalItems: number },
   page: number,
   perPage: number,
   mapItem: (item: T) => R,
+): {
+  status: typeof StatusCodes.OK;
+  body: { data: { items: R[]; pagination: { page: number; perPage: number; totalItems: number; totalPages: number } } };
+};
+function handleSubResourceResponse<T, R>(
+  result: { items: T[]; totalItems: number },
+  page: number,
+  perPage: number,
+  mapItem?: (item: T) => R,
 ) {
-  const items = result.items.map(mapItem);
+  const mapper = mapItem ?? (toIdName as unknown as (item: T) => R);
+  const items = result.items.map(mapper);
   const totalPages = Math.ceil(result.totalItems / perPage);
 
   return {
@@ -299,7 +318,7 @@ export const AdministrationsController = {
   ) => {
     try {
       const result = await administrationService.listDistricts(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }
@@ -318,7 +337,7 @@ export const AdministrationsController = {
   listSchools: async (authContext: AuthContext, administrationId: string, query: AdministrationSchoolsListQuery) => {
     try {
       const result = await administrationService.listSchools(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }
@@ -337,7 +356,7 @@ export const AdministrationsController = {
   listClasses: async (authContext: AuthContext, administrationId: string, query: AdministrationClassesListQuery) => {
     try {
       const result = await administrationService.listClasses(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }
@@ -356,7 +375,7 @@ export const AdministrationsController = {
   listGroups: async (authContext: AuthContext, administrationId: string, query: AdministrationGroupsListQuery) => {
     try {
       const result = await administrationService.listGroups(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage, toIdName);
+      return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }
