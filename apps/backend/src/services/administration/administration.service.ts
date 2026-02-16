@@ -633,9 +633,9 @@ export function AdministrationService({
    * Authorization and eligibility behavior:
    * - Super admin: sees all task variants assigned to the administration (no filtering)
    * - Supervisory roles (teachers, admins): sees all task variants (no filtering)
-   * - Supervised roles (students): sees only task variants where BOTH conditions pass:
-   *   - conditionsAssignment (eligibility): determines if student is assigned this task
-   *   - conditionsRequirements (requirements): determines if student meets prerequisites
+   * - Supervised roles (students): sees only task variants where conditionsAssignment passes.
+   *   - conditionsAssignment (assigned_if): determines if the variant is visible/assigned to the student
+   *   - conditionsRequirements (optional_if): determines if a visible variant is optional (vs required)
    *
    * @param authContext - User's auth context (id and type)
    * @param administrationId - The administration ID to get task variants for
@@ -696,63 +696,37 @@ export function AdministrationService({
         });
       }
 
-      // Filter task variants by eligibility conditions
+      // Filter task variants by eligibility conditions using TaskService
       // Note: Post-filter pagination fetches all variants from DB, filters in-memory by assigned_if,
       // and returns the count of eligible items. This is acceptable for typical administration sizes
       // (<50 variants). For larger datasets, consider moving filtering to the repository layer.
-
-      // For supervised roles:
-      // - assigned_if (conditionsAssignment) determines if the variant is VISIBLE (filter)
-      // - optional_if (conditionsRequirements) determines if the variant is OPTIONAL (transform to optional flag)
       const eligibleItems = result.items
-        .filter((item) => {
+        .map((item) => {
           try {
-            // assigned_if determines visibility - if condition passes, user is assigned this variant
             const assignedIf = item.assignment.conditionsAssignment as Condition | null;
-            return taskService.evaluateConditionForUser(user, assignedIf);
+            const optionalIf = item.assignment.conditionsRequirements as Condition | null;
+            const { isAssigned, isOptional } = taskService.evaluateTaskVariantEligibility(user, assignedIf, optionalIf);
+            return isAssigned ? { item, isOptional } : null;
           } catch (error) {
             // Malformed condition data - exclude variant and log warning
             logger.warn(
               { taskVariantId: item.variant.id, error, userId, administrationId },
-              'Invalid assigned_if condition structure - excluding variant',
+              'Invalid condition structure - excluding variant',
             );
-            return false;
+            return null;
           }
         })
-        .map((item) => {
-          // For visible variants, evaluate optional_if to determine if optional
-          const optionalIf = item.assignment.conditionsRequirements as Condition | null;
-          let optional: boolean;
-
-          try {
-            if (optionalIf === null) {
-              // No optional_if condition means required for all assigned users
-              optional = false;
-            } else {
-              // Evaluate condition: if it passes, the variant is optional
-              optional = taskService.evaluateConditionForUser(user, optionalIf);
-            }
-          } catch (error) {
-            // Malformed optional_if condition - default to required (not optional)
-            logger.warn(
-              { taskVariantId: item.variant.id, error, userId, administrationId },
-              'Invalid optional_if condition structure - defaulting to required',
-            );
-            optional = false;
-          }
-
-          // For supervised roles: clear conditions and set optional flag
-          // The controller will map this to conditions: { optional }
-          return {
-            ...item,
-            assignment: {
-              ...item.assignment,
-              conditionsAssignment: null,
-              conditionsRequirements: null,
-              optional,
-            },
-          };
-        });
+        .filter((result): result is { item: TaskVariantWithAssignment; isOptional: boolean } => result !== null)
+        .map(({ item, isOptional }) => ({
+          ...item,
+          assignment: {
+            ...item.assignment,
+            // Don't expose eligibility conditions to students - only provide evaluated result
+            conditionsAssignment: null,
+            conditionsRequirements: null,
+            optional: isOptional,
+          },
+        }));
 
       return {
         items: eligibleItems,

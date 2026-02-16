@@ -1104,7 +1104,7 @@ describe('TaskService', () => {
     });
   });
 
-  describe('isUserEligibleForTaskVariant', () => {
+  describe('evaluateTaskVariantEligibility', () => {
     const createUser = (overrides: Partial<User> = {}): User =>
       ({
         id: 'user-1',
@@ -1122,117 +1122,176 @@ describe('TaskService', () => {
         ...overrides,
       }) as unknown as User;
 
-    it('should return true when both conditions are null (no restrictions)', () => {
-      const user = createUser();
-      const result = taskService.isUserEligibleForTaskVariant(user, null, null);
-      expect(result).toBe(true);
+    describe('assignment (assigned_if) evaluation', () => {
+      it('should return isAssigned=true when conditionsAssignment is null (assigned to all)', () => {
+        const user = createUser();
+        const result = taskService.evaluateTaskVariantEligibility(user, null, null);
+        expect(result.isAssigned).toBe(true);
+      });
+
+      it('should return isAssigned=true when conditionsAssignment passes', () => {
+        const user = createUser({ grade: '5' });
+        const conditionsAssignment: Condition = {
+          field: 'studentData.grade',
+          op: Operator.EQUAL,
+          value: 5,
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, null);
+        expect(result.isAssigned).toBe(true);
+      });
+
+      it('should return isAssigned=false when conditionsAssignment fails', () => {
+        const user = createUser({ grade: '2' });
+        const conditionsAssignment: Condition = {
+          field: 'studentData.grade',
+          op: Operator.GREATER_THAN_OR_EQUAL,
+          value: 3,
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, null);
+        expect(result.isAssigned).toBe(false);
+      });
+
+      it('should return isAssigned=true when conditionsAssignment is SelectAllCondition (true)', () => {
+        const user = createUser();
+        const result = taskService.evaluateTaskVariantEligibility(user, true, null);
+        expect(result.isAssigned).toBe(true);
+      });
+
+      it('should return assigned and required when SelectAllCondition for assignment but optional_if fails', () => {
+        const user = createUser({ grade: '5', statusEll: 'inactive' });
+        const conditionsRequirements: Condition = {
+          field: 'studentData.statusEll',
+          op: Operator.EQUAL,
+          value: 'active',
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, true, conditionsRequirements);
+        expect(result).toEqual({ isAssigned: true, isOptional: false });
+      });
     });
 
-    it('should return true when conditionsAssignment is null and conditionsRequirements passes', () => {
-      const user = createUser({ grade: '5' });
-      const conditionsRequirements: Condition = {
-        field: 'studentData.grade',
-        op: Operator.EQUAL,
-        value: 5,
-      };
-      const result = taskService.isUserEligibleForTaskVariant(user, null, conditionsRequirements);
-      expect(result).toBe(true);
+    describe('optional (optional_if) evaluation', () => {
+      it('should return isOptional=false when conditionsRequirements is null (required for all)', () => {
+        const user = createUser();
+        const result = taskService.evaluateTaskVariantEligibility(user, null, null);
+        expect(result.isOptional).toBe(false);
+      });
+
+      it('should return isOptional=true when conditionsRequirements passes', () => {
+        const user = createUser({ grade: '5' });
+        const conditionsRequirements: Condition = {
+          field: 'studentData.grade',
+          op: Operator.EQUAL,
+          value: 5,
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, null, conditionsRequirements);
+        expect(result.isOptional).toBe(true);
+      });
+
+      it('should return isOptional=false when conditionsRequirements fails', () => {
+        const user = createUser({ grade: '5', statusEll: 'inactive' });
+        const conditionsRequirements: Condition = {
+          field: 'studentData.statusEll',
+          op: Operator.EQUAL,
+          value: 'active',
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, null, conditionsRequirements);
+        expect(result.isOptional).toBe(false);
+      });
+
+      it('should not evaluate optional_if when user is not assigned (short-circuit)', () => {
+        const user = createUser({ grade: '2' });
+        const conditionsAssignment: Condition = {
+          field: 'studentData.grade',
+          op: Operator.GREATER_THAN_OR_EQUAL,
+          value: 3,
+        };
+        // This condition would pass, but should not be evaluated since user is not assigned
+        const conditionsRequirements: Condition = {
+          field: 'studentData.grade',
+          op: Operator.LESS_THAN,
+          value: 5,
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, conditionsRequirements);
+        expect(result.isAssigned).toBe(false);
+        expect(result.isOptional).toBe(false);
+      });
     });
 
-    it('should return true when conditionsAssignment passes and conditionsRequirements is null', () => {
-      const user = createUser({ grade: '5' });
-      const conditionsAssignment: Condition = {
-        field: 'studentData.grade',
-        op: Operator.EQUAL,
-        value: 5,
-      };
-      const result = taskService.isUserEligibleForTaskVariant(user, conditionsAssignment, null);
-      expect(result).toBe(true);
-    });
+    describe('combined scenarios', () => {
+      it('should return assigned and required when both conditions are null', () => {
+        const user = createUser();
+        const result = taskService.evaluateTaskVariantEligibility(user, null, null);
+        expect(result).toEqual({ isAssigned: true, isOptional: false });
+      });
 
-    it('should return true when both conditions pass', () => {
-      const user = createUser({ grade: '5', statusEll: 'active' });
-      const conditionsAssignment: Condition = {
-        field: 'studentData.grade',
-        op: Operator.GREATER_THAN_OR_EQUAL,
-        value: 3,
-      };
-      const conditionsRequirements: Condition = {
-        field: 'studentData.statusEll',
-        op: Operator.EQUAL,
-        value: 'active',
-      };
-      const result = taskService.isUserEligibleForTaskVariant(user, conditionsAssignment, conditionsRequirements);
-      expect(result).toBe(true);
-    });
+      it('should return assigned and optional when assignment passes and optional_if passes', () => {
+        const user = createUser({ grade: '5', statusEll: 'active' });
+        const conditionsAssignment: Condition = {
+          field: 'studentData.grade',
+          op: Operator.GREATER_THAN_OR_EQUAL,
+          value: 3,
+        };
+        const conditionsRequirements: Condition = {
+          field: 'studentData.statusEll',
+          op: Operator.EQUAL,
+          value: 'active',
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, conditionsRequirements);
+        expect(result).toEqual({ isAssigned: true, isOptional: true });
+      });
 
-    it('should return false when conditionsAssignment fails', () => {
-      const user = createUser({ grade: '2' });
-      const conditionsAssignment: Condition = {
-        field: 'studentData.grade',
-        op: Operator.GREATER_THAN_OR_EQUAL,
-        value: 3,
-      };
-      const result = taskService.isUserEligibleForTaskVariant(user, conditionsAssignment, null);
-      expect(result).toBe(false);
-    });
+      it('should return assigned and required when assignment passes but optional_if fails', () => {
+        const user = createUser({ grade: '5', statusEll: 'inactive' });
+        const conditionsAssignment: Condition = {
+          field: 'studentData.grade',
+          op: Operator.EQUAL,
+          value: 5,
+        };
+        const conditionsRequirements: Condition = {
+          field: 'studentData.statusEll',
+          op: Operator.EQUAL,
+          value: 'active',
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, conditionsRequirements);
+        expect(result).toEqual({ isAssigned: true, isOptional: false });
+      });
 
-    it('should return false when conditionsRequirements fails', () => {
-      const user = createUser({ grade: '5', statusEll: 'inactive' });
-      const conditionsAssignment: Condition = {
-        field: 'studentData.grade',
-        op: Operator.EQUAL,
-        value: 5,
-      };
-      const conditionsRequirements: Condition = {
-        field: 'studentData.statusEll',
-        op: Operator.EQUAL,
-        value: 'active',
-      };
-      const result = taskService.isUserEligibleForTaskVariant(user, conditionsAssignment, conditionsRequirements);
-      expect(result).toBe(false);
-    });
+      it('should return not assigned when assignment fails regardless of optional_if', () => {
+        const user = createUser({ grade: '2', statusEll: 'active' });
+        const conditionsAssignment: Condition = {
+          field: 'studentData.grade',
+          op: Operator.GREATER_THAN_OR_EQUAL,
+          value: 3,
+        };
+        // This would pass if evaluated
+        const conditionsRequirements: Condition = {
+          field: 'studentData.statusEll',
+          op: Operator.EQUAL,
+          value: 'active',
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, conditionsRequirements);
+        expect(result).toEqual({ isAssigned: false, isOptional: false });
+      });
 
-    it('should return false when both conditions fail', () => {
-      const user = createUser({ grade: '2', statusEll: 'inactive' });
-      const conditionsAssignment: Condition = {
-        field: 'studentData.grade',
-        op: Operator.GREATER_THAN_OR_EQUAL,
-        value: 3,
-      };
-      const conditionsRequirements: Condition = {
-        field: 'studentData.statusEll',
-        op: Operator.EQUAL,
-        value: 'active',
-      };
-      const result = taskService.isUserEligibleForTaskVariant(user, conditionsAssignment, conditionsRequirements);
-      expect(result).toBe(false);
-    });
-
-    it('should return true when conditionsAssignment is SelectAllCondition (true)', () => {
-      const user = createUser();
-      const result = taskService.isUserEligibleForTaskVariant(user, true, null);
-      expect(result).toBe(true);
-    });
-
-    it('should handle complex composite conditions', () => {
-      const user = createUser({ grade: '5', statusEll: 'active' });
-      const conditionsAssignment: Condition = {
-        op: 'AND',
-        conditions: [
-          { field: 'studentData.grade', op: Operator.GREATER_THAN_OR_EQUAL, value: 3 },
-          { field: 'studentData.grade', op: Operator.LESS_THAN_OR_EQUAL, value: 8 },
-        ],
-      };
-      const conditionsRequirements: Condition = {
-        op: 'OR',
-        conditions: [
-          { field: 'studentData.statusEll', op: Operator.EQUAL, value: 'active' },
-          { field: 'studentData.statusIep', op: Operator.EQUAL, value: 'yes' },
-        ],
-      };
-      const result = taskService.isUserEligibleForTaskVariant(user, conditionsAssignment, conditionsRequirements);
-      expect(result).toBe(true);
+      it('should handle complex composite conditions', () => {
+        const user = createUser({ grade: '5', statusEll: 'active' });
+        const conditionsAssignment: Condition = {
+          op: 'AND',
+          conditions: [
+            { field: 'studentData.grade', op: Operator.GREATER_THAN_OR_EQUAL, value: 3 },
+            { field: 'studentData.grade', op: Operator.LESS_THAN_OR_EQUAL, value: 8 },
+          ],
+        };
+        const conditionsRequirements: Condition = {
+          op: 'OR',
+          conditions: [
+            { field: 'studentData.statusEll', op: Operator.EQUAL, value: 'active' },
+            { field: 'studentData.statusIep', op: Operator.EQUAL, value: 'yes' },
+          ],
+        };
+        const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, conditionsRequirements);
+        expect(result).toEqual({ isAssigned: true, isOptional: true });
+      });
     });
   });
 });
