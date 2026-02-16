@@ -3103,13 +3103,49 @@ describe('AdministrationService', () => {
         expect(result.items[0]!.agreement.name).toBe('Regular Agreement');
       });
 
-      it('should include requiresMajorityAge for grade 12 (typical age 18)', async () => {
+      it('should filter out requiresMajorityAge for grade 12 (conservative estimate: age 17)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const regularAgreement = AgreementFactory.build({ requiresMajorityAge: false, name: 'Regular Agreement' });
+        const majorityAgeAgreement = AgreementFactory.build({ requiresMajorityAge: true, name: 'Adult Agreement' });
+
+        // Student with no dob but grade 12 - conservative age estimate is 17 (under majority age)
+        const mockUser = UserFactory.build({ dob: null, grade: '12' });
+
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetUserRolesForAdministration.mockResolvedValue(['student']);
+        mockGetAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: regularAgreement, currentVersion: null },
+            { agreement: majorityAgeAgreement, currentVersion: null },
+          ],
+          totalItems: 2,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        // Grade 12 maps to age 17 (conservative), so majority age agreements are filtered out
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Regular Agreement');
+      });
+
+      it('should include requiresMajorityAge for grade 13 (conservative estimate: age 18)', async () => {
         const mockAdmin = AdministrationFactory.build();
         const regularAgreement = AgreementFactory.build({ requiresMajorityAge: false });
         const majorityAgeAgreement = AgreementFactory.build({ requiresMajorityAge: true });
 
-        // Student with no dob but grade 12 (typical age 18)
-        const mockUser = UserFactory.build({ dob: null, grade: '12' });
+        // Student with no dob but grade 13 - conservative age estimate is 18 (majority age)
+        const mockUser = UserFactory.build({ dob: null, grade: '13' });
 
         mockGetById.mockResolvedValue(mockAdmin);
         mockGetByIdAuthorized.mockResolvedValue(mockAdmin);

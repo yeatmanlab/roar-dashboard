@@ -2496,13 +2496,14 @@ describe('AdministrationService (integration)', () => {
         const school = await OrgFactory.create({ orgType: 'school' });
         await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
 
-        // Create student with grade 11 (typical age 17, under 18) but no dob
+        // Create student with grade 11 (conservative age estimate: 16, under 18) but no dob
         const studentGrade11 = await UserFactory.create({ userType: 'student', dob: null, grade: '11' });
         await UserOrgFactory.create({ userId: studentGrade11.id, orgId: school.id, role: UserRole.STUDENT });
 
-        // Create student with grade 12 (typical age 18+) but no dob
-        const studentGrade12 = await UserFactory.create({ userType: 'student', dob: null, grade: '12' });
-        await UserOrgFactory.create({ userId: studentGrade12.id, orgId: school.id, role: UserRole.STUDENT });
+        // Create student with grade 13 (conservative age estimate: 18+) but no dob
+        // Note: grade 12 maps to age 17 (conservative), so we use grade 13 for majority age
+        const studentGrade13 = await UserFactory.create({ userType: 'student', dob: null, grade: '13' });
+        await UserOrgFactory.create({ userId: studentGrade13.id, orgId: school.id, role: UserRole.STUDENT });
 
         // Create both types of agreements
         const regularAgreement = await AgreementFactory.create({
@@ -2539,14 +2540,14 @@ describe('AdministrationService (integration)', () => {
         expect(resultGrade11.items).toHaveLength(1);
         expect(resultGrade11.items[0]!.agreement.name).toBe('Regular');
 
-        // Grade 12 student should see both agreements
-        const authContextGrade12 = { userId: studentGrade12.id, isSuperAdmin: false };
-        const resultGrade12 = await service.listAgreements(
-          authContextGrade12,
+        // Grade 13 student should see both agreements (conservative age estimate: 18+)
+        const authContextGrade13 = { userId: studentGrade13.id, isSuperAdmin: false };
+        const resultGrade13 = await service.listAgreements(
+          authContextGrade13,
           administration.id,
           defaultAgreementOptions,
         );
-        expect(resultGrade12.items).toHaveLength(2);
+        expect(resultGrade13.items).toHaveLength(2);
       });
 
       it('should not filter for supervisory roles (teachers see all)', async () => {
