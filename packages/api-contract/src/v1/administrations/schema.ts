@@ -464,11 +464,23 @@ export const AgreementTypeSchema = z.enum(AGREEMENT_TYPE_VALUES);
 export type AgreementType = z.infer<typeof AgreementTypeSchema>;
 
 /**
+ * BCP-47 locale code schema.
+ * Validates ISO 639-1 language code with optional ISO 3166-1 region code.
+ * Examples: "en", "en-US", "es", "es-MX"
+ */
+export const LocaleSchema = z
+  .string()
+  .max(5)
+  .regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'Invalid locale format. Expected BCP-47 format (e.g., "en", "en-US", "es-MX")');
+
+export type Locale = z.infer<typeof LocaleSchema>;
+
+/**
  * Agreement version schema (current version for requested locale).
  */
 export const AdministrationAgreementVersionSchema = z.object({
   id: z.string().uuid(),
-  locale: z.string(),
+  locale: LocaleSchema,
   githubFilename: z.string(),
   githubOrgRepo: z.string(),
   githubCommitSha: z.string(),
@@ -514,7 +526,7 @@ export const AdministrationAgreementsListQuerySchema = PaginationQuerySchema.mer
   createSortQuerySchema(ADMINISTRATION_AGREEMENT_SORT_FIELDS, 'name'),
 ).extend({
   agreementType: AgreementTypeSchema.optional(),
-  locale: z.string().default('en-US'),
+  locale: LocaleSchema.default('en-US'),
 });
 
 export type AdministrationAgreementsListQuery = z.infer<typeof AdministrationAgreementsListQuerySchema>;
