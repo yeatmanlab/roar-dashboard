@@ -1124,4 +1124,339 @@ describe('AdministrationsController', () => {
       ).rejects.toThrow('Database connection lost');
     });
   });
+
+  describe('listTaskVariants', () => {
+    // Helper to create mock TaskVariantWithAssignment data
+    const createMockTaskVariant = (
+      overrides: {
+        variantId?: string;
+        variantName?: string;
+        variantDescription?: string | null;
+        taskId?: string;
+        taskName?: string;
+        taskDescription?: string | null;
+        taskImage?: string | null;
+        taskTutorialVideo?: string | null;
+        orderIndex?: number;
+        conditionsAssignment?: Record<string, unknown> | null;
+        conditionsRequirements?: Record<string, unknown> | null;
+        optional?: boolean;
+      } = {},
+    ) => ({
+      variant: {
+        id: overrides.variantId ?? 'variant-uuid-123',
+        name: overrides.variantName ?? 'Test Variant',
+        description: overrides.variantDescription ?? 'Variant description',
+        taskId: overrides.taskId ?? 'task-uuid-123',
+        status: 'published',
+        params: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      task: {
+        id: overrides.taskId ?? 'task-uuid-123',
+        name: overrides.taskName ?? 'Test Task',
+        description: overrides.taskDescription ?? 'Task description',
+        image: overrides.taskImage ?? 'https://example.com/image.png',
+        // Use 'in' check to distinguish between undefined (use default) and explicit null
+        tutorialVideo: 'taskTutorialVideo' in overrides ? overrides.taskTutorialVideo : 'https://example.com/video.mp4',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      assignment:
+        overrides.optional !== undefined
+          ? {
+              administrationId: 'admin-123',
+              taskVariantId: overrides.variantId ?? 'variant-uuid-123',
+              orderIndex: overrides.orderIndex ?? 0,
+              conditionsAssignment: null,
+              conditionsRequirements: null,
+              optional: overrides.optional,
+            }
+          : {
+              administrationId: 'admin-123',
+              taskVariantId: overrides.variantId ?? 'variant-uuid-123',
+              orderIndex: overrides.orderIndex ?? 0,
+              conditionsAssignment: overrides.conditionsAssignment ?? null,
+              conditionsRequirements: overrides.conditionsRequirements ?? null,
+            },
+    });
+
+    it('should return paginated task variants with 200 status', async () => {
+      const mockTaskVariants = [createMockTaskVariant(), createMockTaskVariant({ variantId: 'variant-2' })];
+      mockListTaskVariants.mockResolvedValue({
+        items: mockTaskVariants,
+        totalItems: 2,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform TaskVariantWithAssignment to API response format for supervisory roles', async () => {
+      const mockTaskVariant = createMockTaskVariant({
+        variantId: 'variant-uuid-123',
+        variantName: 'SWR Variant A',
+        variantDescription: 'Sight Word Recognition',
+        taskId: 'task-uuid-456',
+        taskName: 'SWR',
+        taskDescription: 'Sight Word Recognition Task',
+        taskImage: 'https://example.com/swr.png',
+        taskTutorialVideo: 'https://example.com/swr-tutorial.mp4',
+        orderIndex: 1,
+        conditionsAssignment: { field: 'studentData.grade', op: 'GREATER_THAN_OR_EQUAL', value: '3' },
+        conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'EL' },
+      });
+      mockListTaskVariants.mockResolvedValue({
+        items: [mockTaskVariant],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      const item = data.items[0]!;
+      expect(item.id).toBe('variant-uuid-123');
+      expect(item.name).toBe('SWR Variant A');
+      expect(item.description).toBe('Sight Word Recognition');
+      expect(item.orderIndex).toBe(1);
+      expect(item.task).toEqual({
+        id: 'task-uuid-456',
+        name: 'SWR',
+        description: 'Sight Word Recognition Task',
+        image: 'https://example.com/swr.png',
+        tutorialVideo: 'https://example.com/swr-tutorial.mp4',
+      });
+      expect(item.conditions).toEqual({
+        assigned_if: { field: 'studentData.grade', op: 'GREATER_THAN_OR_EQUAL', value: '3' },
+        optional_if: { field: 'studentData.statusEll', op: 'EQUAL', value: 'EL' },
+      });
+    });
+
+    it('should transform TaskVariantWithAssignment to API response format for supervised roles', async () => {
+      // Supervised roles (students) receive pre-evaluated optional flag instead of raw conditions
+      const mockTaskVariant = createMockTaskVariant({
+        variantId: 'variant-uuid-123',
+        variantName: 'PA Variant B',
+        variantDescription: 'Phonological Awareness',
+        taskId: 'task-uuid-789',
+        taskName: 'PA',
+        taskDescription: 'Phonological Awareness Task',
+        taskImage: 'https://example.com/pa.png',
+        taskTutorialVideo: null,
+        orderIndex: 2,
+        optional: true, // Pre-evaluated by service for supervised roles
+      });
+      mockListTaskVariants.mockResolvedValue({
+        items: [mockTaskVariant],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      const item = data.items[0]!;
+      expect(item.id).toBe('variant-uuid-123');
+      expect(item.name).toBe('PA Variant B');
+      expect(item.description).toBe('Phonological Awareness');
+      expect(item.orderIndex).toBe(2);
+      expect(item.task).toEqual({
+        id: 'task-uuid-789',
+        name: 'PA',
+        description: 'Phonological Awareness Task',
+        image: 'https://example.com/pa.png',
+        tutorialVideo: null,
+      });
+      expect(item.conditions).toEqual({
+        optional: true,
+      });
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockListTaskVariants.mockRejectedValue(
+        new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'non-existent-id', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Administration not found',
+          code: 'resource/not-found',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 403 when user lacks permission to access administration', async () => {
+      mockListTaskVariants.mockRejectedValue(
+        new ApiError('You do not have permission to perform this action', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect(result.body).toEqual({
+        error: {
+          message: 'You do not have permission to perform this action',
+          code: 'auth/forbidden',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 500 when service throws internal error', async () => {
+      mockListTaskVariants.mockRejectedValue(
+        new ApiError('Failed to retrieve task variants', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Failed to retrieve task variants',
+          code: 'database/query-failed',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should pass auth context, administration ID, and query parameters to service', async () => {
+      mockListTaskVariants.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const authContext = { userId: 'user-456', isSuperAdmin: true };
+      await Controller.listTaskVariants(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+
+      expect(mockListTaskVariants).toHaveBeenCalledWith(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'name',
+        sortOrder: 'desc',
+      });
+    });
+
+    it('should return empty items array when no task variants found', async () => {
+      mockListTaskVariants.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
+    });
+
+    it('should calculate totalPages correctly', async () => {
+      const mockTaskVariants = Array.from({ length: 10 }, (_, i) =>
+        createMockTaskVariant({ variantId: `variant-${i}`, orderIndex: i }),
+      );
+      mockListTaskVariants.mockResolvedValue({
+        items: mockTaskVariants,
+        totalItems: 95,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 10,
+        sortBy: 'orderIndex',
+        sortOrder: 'asc',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockListTaskVariants.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(
+        Controller.listTaskVariants(mockAuthContext, 'admin-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'orderIndex',
+          sortOrder: 'asc',
+        }),
+      ).rejects.toThrow('Database connection lost');
+    });
+  });
 });
