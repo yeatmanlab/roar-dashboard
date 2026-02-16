@@ -74,11 +74,9 @@ describe('AdministrationService', () => {
   };
 
   const mockEvaluateTaskVariantEligibility = vi.fn();
-  const mockMapUserToConditionData = vi.fn();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockTaskService: any = {
     evaluateTaskVariantEligibility: mockEvaluateTaskVariantEligibility,
-    mapUserToConditionData: mockMapUserToConditionData,
   };
 
   beforeEach(() => {
