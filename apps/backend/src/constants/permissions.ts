@@ -48,6 +48,7 @@ export const Permissions = {
     READ: 'administrations.read',
     CREATE: 'administrations.create',
     UPDATE: 'administrations.update',
+    DELETE: 'administrations.delete',
   },
   Administrators: {
     ALL: 'administrators.*',

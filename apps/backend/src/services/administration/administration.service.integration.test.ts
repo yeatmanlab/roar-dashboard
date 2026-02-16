@@ -2584,4 +2584,258 @@ describe('AdministrationService (integration)', () => {
       });
     });
   });
+
+  describe('deleteById', () => {
+    // Helper to get super admin context (baseFixture populated at runtime)
+    const getSuperAdminContext = () => ({ userId: baseFixture.districtAdmin.id, isSuperAdmin: true });
+
+    describe('authorization', () => {
+      it('should allow super admin to delete any administration', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+
+        await service.deleteById(getSuperAdminContext(), administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should allow site_administrator to delete administration they have access to', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        const siteAdmin = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: siteAdmin.id, orgId: school.id, role: UserRole.SITE_ADMINISTRATOR });
+
+        await service.deleteById({ userId: siteAdmin.id, isSuperAdmin: false }, administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should allow administrator to delete administration they have access to', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        const admin = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: admin.id, orgId: school.id, role: UserRole.ADMINISTRATOR });
+
+        await service.deleteById({ userId: admin.id, isSuperAdmin: false }, administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should return 403 when teacher tries to delete (no DELETE permission)', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        const teacher = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: school.id, role: UserRole.TEACHER });
+
+        await expect(
+          service.deleteById({ userId: teacher.id, isSuperAdmin: false }, administration.id),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: ApiErrorMessage.FORBIDDEN,
+        });
+      });
+
+      it('should return 403 when student tries to delete', async () => {
+        const authContext = { userId: baseFixture.schoolAStudent.id, isSuperAdmin: false };
+
+        await expect(
+          service.deleteById(authContext, baseFixture.administrationAssignedToDistrict.id),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: ApiErrorMessage.FORBIDDEN,
+        });
+      });
+
+      it('should return 403 when administrator without access tries to delete', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        // Create an administrator at a DIFFERENT school
+        const differentSchool = await OrgFactory.create({ orgType: 'school' });
+        const admin = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: admin.id, orgId: differentSchool.id, role: UserRole.ADMINISTRATOR });
+
+        await expect(
+          service.deleteById({ userId: admin.id, isSuperAdmin: false }, administration.id),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: ApiErrorMessage.FORBIDDEN,
+        });
+      });
+
+      it('should return 404 when administration does not exist', async () => {
+        await expect(
+          service.deleteById(getSuperAdminContext(), '00000000-0000-0000-0000-000000000000'),
+        ).rejects.toMatchObject({
+          statusCode: 404,
+          message: 'Administration not found',
+        });
+      });
+    });
+
+    describe('cascade deletion', () => {
+      it('should cascade delete to administrationOrgs junction table', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        await service.deleteById(getSuperAdminContext(), administration.id);
+
+        // Verify administration no longer exists (junction records cascade deleted)
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should cascade delete to administrationClasses junction table', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        await AdministrationClassFactory.create({
+          administrationId: administration.id,
+          classId: baseFixture.classInSchoolA.id,
+        });
+
+        // Verify class assignment exists before deletion
+        const classesBefore = await service.listClasses(getSuperAdminContext(), administration.id, defaultClassOptions);
+        expect(classesBefore.items).toHaveLength(1);
+
+        await service.deleteById(getSuperAdminContext(), administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should cascade delete to administrationGroups junction table', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const group = await GroupFactory.create();
+        await AdministrationGroupFactory.create({ administrationId: administration.id, groupId: group.id });
+
+        // Verify group assignment exists before deletion
+        const groupsBefore = await service.listGroups(getSuperAdminContext(), administration.id, defaultGroupOptions);
+        expect(groupsBefore.items).toHaveLength(1);
+
+        await service.deleteById(getSuperAdminContext(), administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should cascade delete to administrationTaskVariants junction table', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const task = await TaskFactory.create();
+        const taskVariant = await TaskVariantFactory.create({ taskId: task.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: taskVariant.id,
+        });
+
+        // Verify task variant assignment exists before deletion
+        const taskVariantsBefore = await service.listTaskVariants(
+          getSuperAdminContext(),
+          administration.id,
+          defaultTaskVariantOptions,
+        );
+        expect(taskVariantsBefore.items).toHaveLength(1);
+
+        await service.deleteById(getSuperAdminContext(), administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should cascade delete to administrationAgreements junction table', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const agreement = await AgreementFactory.create();
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: agreement.id } },
+        );
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: agreement.id },
+        });
+
+        const agreementListOptions = {
+          page: 1,
+          perPage: 100,
+          sortBy: 'name' as const,
+          sortOrder: 'asc' as const,
+          locale: 'en-US',
+        };
+
+        // Verify agreement assignment exists before deletion
+        const agreementsBefore = await service.listAgreements(
+          getSuperAdminContext(),
+          administration.id,
+          agreementListOptions,
+        );
+        expect(agreementsBefore.items).toHaveLength(1);
+
+        await service.deleteById(getSuperAdminContext(), administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should cascade delete all junction tables when administration has multiple assignments', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+
+        // Assign to multiple entities
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        await AdministrationClassFactory.create({
+          administrationId: administration.id,
+          classId: baseFixture.classInSchoolA.id,
+        });
+
+        const group = await GroupFactory.create();
+        await AdministrationGroupFactory.create({ administrationId: administration.id, groupId: group.id });
+
+        const task = await TaskFactory.create();
+        const taskVariant = await TaskVariantFactory.create({ taskId: task.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: administration.id,
+          taskVariantId: taskVariant.id,
+        });
+
+        const agreement = await AgreementFactory.create();
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: agreement.id } },
+        );
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: agreement.id },
+        });
+
+        await service.deleteById(getSuperAdminContext(), administration.id);
+
+        // Verify administration no longer exists
+        await expect(service.getById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+    });
+  });
 });

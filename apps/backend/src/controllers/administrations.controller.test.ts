@@ -39,6 +39,7 @@ describe('AdministrationsController', () => {
   const mockListGroups = vi.fn();
   const mockListTaskVariants = vi.fn();
   const mockListAgreements = vi.fn();
+  const mockDeleteById = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -54,6 +55,7 @@ describe('AdministrationsController', () => {
       listGroups: mockListGroups,
       listTaskVariants: mockListTaskVariants,
       listAgreements: mockListAgreements,
+      deleteById: mockDeleteById,
     });
   });
 
@@ -1666,6 +1668,128 @@ describe('AdministrationsController', () => {
           locale: 'en-US',
         }),
       ).rejects.toThrow('Database connection lost');
+    });
+  });
+
+  describe('delete', () => {
+    it('should return 204 on successful deletion', async () => {
+      mockDeleteById.mockResolvedValue(undefined);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.delete(mockAuthContext, 'admin-123');
+
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
+      expect(result.body).toBeUndefined();
+      expect(mockDeleteById).toHaveBeenCalledWith(mockAuthContext, 'admin-123');
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockDeleteById.mockRejectedValue(
+        new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.delete(mockAuthContext, 'non-existent-id');
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Administration not found',
+          code: 'resource/not-found',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 403 when user lacks permission to delete', async () => {
+      mockDeleteById.mockRejectedValue(
+        new ApiError('You do not have permission to perform this action', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.delete(mockAuthContext, 'admin-123');
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect(result.body).toEqual({
+        error: {
+          message: 'You do not have permission to perform this action',
+          code: 'auth/forbidden',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 409 when FK constraint blocks deletion', async () => {
+      mockDeleteById.mockRejectedValue(
+        new ApiError('Cannot delete administration due to existing dependent records', {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.delete(mockAuthContext, 'admin-123');
+
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Cannot delete administration due to existing dependent records',
+          code: 'resource/conflict',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 500 on internal error', async () => {
+      mockDeleteById.mockRejectedValue(
+        new ApiError('Failed to delete administration', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.delete(mockAuthContext, 'admin-123');
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Failed to delete administration',
+          code: 'database/query-failed',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should pass auth context and administration ID to service', async () => {
+      mockDeleteById.mockResolvedValue(undefined);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const authContext = { userId: 'user-456', isSuperAdmin: true };
+      await Controller.delete(authContext, 'admin-789');
+
+      expect(mockDeleteById).toHaveBeenCalledWith(authContext, 'admin-789');
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockDeleteById.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.delete(mockAuthContext, 'admin-123')).rejects.toThrow('Database connection lost');
     });
   });
 });

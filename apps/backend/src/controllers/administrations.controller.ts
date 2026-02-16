@@ -474,4 +474,34 @@ export const AdministrationsController = {
       return handleSubResourceError(error);
     }
   },
+
+  /**
+   * Delete an administration by ID.
+   *
+   * Delegates to AdministrationService for authorization and deletion.
+   * Returns 204 No Content on success.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration to delete
+   */
+  delete: async (authContext: AuthContext, administrationId: string) => {
+    try {
+      await administrationService.deleteById(authContext, administrationId);
+
+      return {
+        status: StatusCodes.NO_CONTENT as const,
+        body: undefined,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
 };

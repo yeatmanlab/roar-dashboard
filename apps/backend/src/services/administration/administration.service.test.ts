@@ -3239,4 +3239,123 @@ describe('AdministrationService', () => {
       });
     });
   });
+
+  describe('deleteById', () => {
+    const mockDelete = vi.fn();
+
+    beforeEach(() => {
+      // Add delete mock to the mock repository
+      mockAdministrationRepository.delete = mockDelete;
+    });
+
+    it('should delete administration for super admin', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockDelete.mockResolvedValue(undefined);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await service.deleteById({ userId: 'super-admin-user', isSuperAdmin: true }, 'admin-123');
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockDelete).toHaveBeenCalledWith({ id: 'admin-123' });
+    });
+
+    it('should delete administration for authorized non-super admin with DELETE permission', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+      mockDelete.mockResolvedValue(undefined);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await service.deleteById({ userId: 'admin-user', isSuperAdmin: false }, 'admin-123');
+
+      expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
+      // Should check DELETE permission (site_administrator, administrator only)
+      expect(mockGetByIdAuthorized).toHaveBeenCalledWith(
+        {
+          userId: 'admin-user',
+          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator']),
+        },
+        'admin-123',
+      );
+      expect(mockDelete).toHaveBeenCalledWith({ id: 'admin-123' });
+    });
+
+    it('should throw not-found error when administration does not exist', async () => {
+      mockGetById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.deleteById({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id'),
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        message: 'Administration not found',
+      });
+      expect(mockDelete).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden error when non-super admin lacks DELETE permission', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockGetByIdAuthorized.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.deleteById({ userId: 'teacher-user', isSuperAdmin: false }, 'admin-123'),
+      ).rejects.toMatchObject({
+        statusCode: 403,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+      expect(mockDelete).not.toHaveBeenCalled();
+    });
+
+    it('should throw conflict error when FK constraint prevents deletion', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      // Simulate Postgres FK violation error with SQLSTATE code 23503
+      const fkError = new Error('violates foreign key constraint');
+      (fkError as Error & { code: string }).code = '23503';
+      mockDelete.mockRejectedValue(fkError);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.deleteById({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123')).rejects.toMatchObject(
+        {
+          statusCode: 409,
+          message: 'Cannot delete administration due to existing dependent records',
+        },
+      );
+    });
+
+    it('should throw internal error on unexpected database failure', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockGetById.mockResolvedValue(mockAdmin);
+      mockDelete.mockRejectedValue(new Error('Database connection lost'));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.deleteById({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123')).rejects.toMatchObject(
+        {
+          statusCode: 500,
+          message: 'Failed to delete administration',
+        },
+      );
+    });
+  });
 });
