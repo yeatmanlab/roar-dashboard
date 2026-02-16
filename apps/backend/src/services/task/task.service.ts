@@ -543,9 +543,6 @@ export function TaskService({
 
   return {
     createTaskVariant,
-    evaluateCondition,
-    mapUserToConditionData,
     evaluateTaskVariantEligibility,
-    evaluateConditionForUser,
   };
 }
