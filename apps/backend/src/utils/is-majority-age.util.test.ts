@@ -59,37 +59,41 @@ describe('isMajorityAge', () => {
   });
 
   describe('with grade only (no dob)', () => {
-    it('should return true for grade 12 (typical age 18)', () => {
-      const user = { dob: null, grade: '12' as Grade };
-      expect(isMajorityAge(user)).toBe(true);
-    });
+    // Conservative approach: use lower end of typical age range to assume younger
+    // This ensures we err on the side of treating users as minors for consent purposes
 
-    it('should return true for grade 13 (typical age 19)', () => {
+    it('should return true for grade 13 (conservative age 18)', () => {
       const user = { dob: null, grade: '13' as Grade };
       expect(isMajorityAge(user)).toBe(true);
     });
 
-    it('should return true for PostGraduate', () => {
+    it('should return true for PostGraduate (conservative age 18)', () => {
       const user = { dob: null, grade: 'PostGraduate' as Grade };
       expect(isMajorityAge(user)).toBe(true);
     });
 
-    it('should return false for grade 11 (typical age 17)', () => {
+    it('should return false for grade 12 (conservative age 17)', () => {
+      // Grade 12 students could be 17 or 18, so we conservatively assume 17
+      const user = { dob: null, grade: '12' as Grade };
+      expect(isMajorityAge(user)).toBe(false);
+    });
+
+    it('should return false for grade 11 (conservative age 16)', () => {
       const user = { dob: null, grade: '11' as Grade };
       expect(isMajorityAge(user)).toBe(false);
     });
 
-    it('should return false for grade 1 (typical age 7)', () => {
+    it('should return false for grade 1 (conservative age 6)', () => {
       const user = { dob: null, grade: '1' as Grade };
       expect(isMajorityAge(user)).toBe(false);
     });
 
-    it('should return false for Kindergarten (typical age 6)', () => {
+    it('should return false for Kindergarten (conservative age 5)', () => {
       const user = { dob: null, grade: 'Kindergarten' as Grade };
       expect(isMajorityAge(user)).toBe(false);
     });
 
-    it('should return false for PreKindergarten (typical age 5)', () => {
+    it('should return false for PreKindergarten (conservative age 4)', () => {
       const user = { dob: null, grade: 'PreKindergarten' as Grade };
       expect(isMajorityAge(user)).toBe(false);
     });

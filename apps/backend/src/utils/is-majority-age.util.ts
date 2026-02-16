@@ -8,33 +8,39 @@ const MAJORITY_AGE = 18;
 /**
  * Grade to typical age mapping.
  * Based on US education system where students typically start kindergarten at age 5-6.
- * We use the higher end of the typical age range to be conservative
- * (i.e., assume younger age when uncertain).
+ *
+ * We use the LOWER end of the typical age range to be conservative for consent purposes:
+ * when uncertain, assume the user is younger (a minor) to err on the side of requiring
+ * parental consent rather than incorrectly treating a minor as an adult.
  */
 const GRADE_TO_AGE: Record<string, number> = {
-  InfantToddler: 2,
-  Preschool: 4,
-  PreKindergarten: 5,
-  TransitionalKindergarten: 5,
-  Kindergarten: 6,
-  '1': 7,
-  '2': 8,
-  '3': 9,
-  '4': 10,
-  '5': 11,
-  '6': 12,
-  '7': 13,
-  '8': 14,
-  '9': 15,
-  '10': 16,
-  '11': 17,
-  '12': 18,
-  '13': 19,
-  PostGraduate: 19,
+  InfantToddler: 1,
+  Preschool: 3,
+  PreKindergarten: 4,
+  TransitionalKindergarten: 4,
+  Kindergarten: 5,
+  '1': 6,
+  '2': 7,
+  '3': 8,
+  '4': 9,
+  '5': 10,
+  '6': 11,
+  '7': 12,
+  '8': 13,
+  '9': 14,
+  '10': 15,
+  '11': 16,
+  '12': 17,
+  '13': 18,
+  PostGraduate: 18,
 };
 
 /**
  * Calculate a user's age from their date of birth.
+ *
+ * Uses UTC methods consistently to avoid timezone-related off-by-one errors.
+ * Date-only strings like 'YYYY-MM-DD' are parsed as UTC midnight by JavaScript,
+ * so we must use getUTC* methods to get the correct date components.
  *
  * @param dob - Date of birth (Date object or ISO date string)
  * @returns Age in years
@@ -42,11 +48,13 @@ const GRADE_TO_AGE: Record<string, number> = {
 function calculateAgeFromDob(dob: Date | string): number {
   const dobDate = typeof dob === 'string' ? new Date(dob) : dob;
   const today = new Date();
-  let age = today.getFullYear() - dobDate.getFullYear();
-  const monthDiff = today.getMonth() - dobDate.getMonth();
+
+  // Use UTC methods to avoid timezone shifts when parsing date-only strings
+  let age = today.getUTCFullYear() - dobDate.getUTCFullYear();
+  const monthDiff = today.getUTCMonth() - dobDate.getUTCMonth();
 
   // Adjust if birthday hasn't occurred yet this year
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+  if (monthDiff < 0 || (monthDiff === 0 && today.getUTCDate() < dobDate.getUTCDate())) {
     age--;
   }
 
