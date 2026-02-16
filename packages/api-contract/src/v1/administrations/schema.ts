@@ -483,7 +483,6 @@ export const AdministrationAgreementSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   agreementType: AgreementTypeSchema,
-  requiresMajorityAge: z.boolean(),
   currentVersion: AdministrationAgreementVersionSchema.nullable(),
 });
 

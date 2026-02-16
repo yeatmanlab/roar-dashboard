@@ -1489,7 +1489,6 @@ describe('AdministrationsController', () => {
         id: mockAgreement.id,
         name: 'Terms of Service',
         agreementType: 'tos',
-        requiresMajorityAge: mockAgreement.requiresMajorityAge,
         currentVersion: {
           id: mockVersion.id,
           locale: 'en-US',

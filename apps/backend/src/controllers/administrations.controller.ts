@@ -170,7 +170,6 @@ function toAgreementItem(item: AgreementWithVersion): AdministrationAgreement {
     id: item.agreement.id,
     name: item.agreement.name,
     agreementType: item.agreement.agreementType,
-    requiresMajorityAge: item.agreement.requiresMajorityAge,
     currentVersion: item.currentVersion
       ? {
           id: item.currentVersion.id,

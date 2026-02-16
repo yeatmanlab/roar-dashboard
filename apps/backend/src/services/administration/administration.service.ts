@@ -37,6 +37,7 @@ import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { TaskService } from '../task/task.service';
 import type { Condition } from '../task/task.types';
+import { isMajorityAge } from '../../utils/is-majority-age.util';
 
 /**
  * Administration with optional embedded data.
@@ -761,13 +762,18 @@ export function AdministrationService({
   }
 
   /**
-   * List agreements assigned to an administration with access control.
+   * List agreements assigned to an administration with access control and age-based filtering.
    *
    * Unlike districts/schools/classes/groups, agreements are visible to ALL users
    * with administration access - students need this to know which agreements to sign.
    *
    * Each agreement includes the current version for the requested locale.
    * If no current version exists for that locale, currentVersion will be null.
+   *
+   * Age-based filtering for supervised roles (students):
+   * - Agreements with `requiresMajorityAge: true` are only shown to users 18+
+   * - Age is determined first by dob, then by grade if dob is unavailable
+   * - If age cannot be determined, majority-age agreements are excluded (conservative approach)
    *
    * @param authContext - User's auth context (id and type)
    * @param administrationId - The administration ID to get agreements for
@@ -782,7 +788,7 @@ export function AdministrationService({
     administrationId: string,
     options: ListAgreementsOptions,
   ): Promise<PaginatedResult<AgreementWithVersion>> {
-    const { userId } = authContext;
+    const { userId, isSuperAdmin } = authContext;
 
     try {
       // Verify administration exists and user has access (all roles allowed)
@@ -799,7 +805,55 @@ export function AdministrationService({
         locale: options.locale,
       };
 
-      return await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
+      const result = await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
+
+      // Super admins see all agreements without filtering
+      if (isSuperAdmin) {
+        return result;
+      }
+
+      // Get user roles to determine if age-based filtering applies
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      // Supervisory roles (teachers, admins) see all agreements without filtering
+      if (hasSupervisoryRole(userRoles)) {
+        return result;
+      }
+
+      // For supervised roles (students), filter out requiresMajorityAge agreements if user is under 18
+      // Fetch user data for age determination
+      const user = await userRepository.getById({ id: userId });
+      if (!user) {
+        logger.error(
+          { userId, administrationId },
+          'User not found during agreement filtering - possible data inconsistency',
+        );
+        throw new ApiError('Failed to retrieve user data for agreement filtering', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Determine if user is of majority age (18+)
+      const isOfMajorityAge = isMajorityAge({ dob: user.dob, grade: user.grade });
+
+      // Filter agreements based on majority age requirement
+      // If user is 18+ (true), show all agreements
+      // If user is under 18 (false) or age unknown (null), exclude requiresMajorityAge agreements
+      const filteredItems = result.items.filter((item) => {
+        if (!item.agreement.requiresMajorityAge) {
+          // Agreement doesn't require majority age - always include
+          return true;
+        }
+        // Agreement requires majority age - only include if user is confirmed 18+
+        return isOfMajorityAge === true;
+      });
+
+      return {
+        items: filteredItems,
+        totalItems: filteredItems.length,
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
