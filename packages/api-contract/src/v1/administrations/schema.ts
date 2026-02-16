@@ -405,13 +405,27 @@ export const AdministrationTaskVariantTaskSchema = z.object({
  * **Database column mapping:** The database columns `conditionsAssignment` and
  * `conditionsRequirements` map to API fields `assigned_if` and `optional_if` respectively.
  */
-export const AdministrationTaskVariantConditionsSchema = z.object({
-  // Supervisory role fields (raw conditions for client-side evaluation)
-  assigned_if: z.record(z.unknown()).nullable().optional(),
-  optional_if: z.record(z.unknown()).nullable().optional(),
-  // Supervised role field (pre-evaluated result)
-  optional: z.boolean().optional(),
-});
+export const AdministrationTaskVariantConditionsSchema = z
+  .object({
+    // Supervisory role fields (raw conditions for client-side evaluation)
+    assigned_if: z.record(z.unknown()).nullable().optional(),
+    optional_if: z.record(z.unknown()).nullable().optional(),
+    // Supervised role field (pre-evaluated result)
+    optional: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasRawConditions = data.assigned_if !== undefined || data.optional_if !== undefined;
+    const hasEvaluatedFlag = data.optional !== undefined;
+
+    // Enforce mutual exclusivity between raw conditions and evaluated flag
+    if (hasRawConditions && hasEvaluatedFlag) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Conditions must contain either raw condition fields (assigned_if/optional_if) OR the evaluated "optional" flag, not both.',
+      });
+    }
+  });
 
 /**
  * Task variant item for administration task variant assignments.
