@@ -450,3 +450,79 @@ export const AdministrationTaskVariantsListResponseSchema = createPaginatedRespo
 );
 
 export type AdministrationTaskVariantsListResponse = z.infer<typeof AdministrationTaskVariantsListResponseSchema>;
+
+/**
+ * Agreement type values for filtering.
+ */
+export const AGREEMENT_TYPE_VALUES = ['tos', 'assent', 'consent'] as const;
+
+/**
+ * Schema for agreement type filter.
+ */
+export const AgreementTypeSchema = z.enum(AGREEMENT_TYPE_VALUES);
+
+export type AgreementType = z.infer<typeof AgreementTypeSchema>;
+
+/**
+ * Agreement version schema (current version for requested locale).
+ */
+export const AdministrationAgreementVersionSchema = z.object({
+  id: z.string().uuid(),
+  locale: z.string(),
+  githubFilename: z.string(),
+  githubOrgRepo: z.string(),
+  githubCommitSha: z.string(),
+});
+
+export type AdministrationAgreementVersion = z.infer<typeof AdministrationAgreementVersionSchema>;
+
+/**
+ * Agreement schema for administration agreement assignments.
+ */
+export const AdministrationAgreementSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  agreementType: AgreementTypeSchema,
+  requiresMajorityAge: z.boolean(),
+  currentVersion: AdministrationAgreementVersionSchema.nullable(),
+});
+
+export type AdministrationAgreement = z.infer<typeof AdministrationAgreementSchema>;
+
+/**
+ * Allowed sort fields for administration agreements.
+ */
+export const ADMINISTRATION_AGREEMENT_SORT_FIELDS = ['name', 'agreementType', 'createdAt'] as const;
+
+/**
+ * Sort field type for administration agreements.
+ */
+export type AdministrationAgreementSortFieldType = (typeof ADMINISTRATION_AGREEMENT_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationAgreementSortField = {
+  NAME: 'name',
+  AGREEMENT_TYPE: 'agreementType',
+  CREATED_AT: 'createdAt',
+} as const satisfies Record<string, AdministrationAgreementSortFieldType>;
+
+/**
+ * Query parameters for listing administration agreements.
+ */
+export const AdministrationAgreementsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_AGREEMENT_SORT_FIELDS, 'name'),
+).extend({
+  agreementType: AgreementTypeSchema.optional(),
+  locale: z.string().default('en-US'),
+});
+
+export type AdministrationAgreementsListQuery = z.infer<typeof AdministrationAgreementsListQuerySchema>;
+
+/**
+ * Paginated response for administration agreements list.
+ */
+export const AdministrationAgreementsListResponseSchema = createPaginatedResponseSchema(AdministrationAgreementSchema);
+
+export type AdministrationAgreementsListResponse = z.infer<typeof AdministrationAgreementsListResponseSchema>;

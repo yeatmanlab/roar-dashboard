@@ -4,6 +4,8 @@ import { AdministrationFactory } from '../../test-support/factories/administrati
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { ClassFactory } from '../../test-support/factories/class.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
+import { AgreementFactory } from '../../test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import type { AssignmentWithOptional } from '../../repositories/administration.repository';
 
@@ -36,6 +38,7 @@ describe('AdministrationService', () => {
   const mockGetGroupsByAdministrationIdAuthorized = vi.fn();
   const mockGetTaskVariantsByAdministrationId = vi.fn();
   const mockGetUserRolesForAdministration = vi.fn();
+  const mockGetAgreementsByAdministrationId = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockAdministrationRepository: any = {
@@ -55,6 +58,7 @@ describe('AdministrationService', () => {
     getAuthorizedGroupsByAdministrationId: mockGetGroupsByAdministrationIdAuthorized,
     getTaskVariantsByAdministrationId: mockGetTaskVariantsByAdministrationId,
     getUserRolesForAdministration: mockGetUserRolesForAdministration,
+    getAgreementsByAdministrationId: mockGetAgreementsByAdministrationId,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2705,6 +2709,226 @@ describe('AdministrationService', () => {
         expect(result.items).toHaveLength(1);
         expect(result.items[0]!.variant.id).toBe('variant-valid');
         expect(result.totalItems).toBe(1);
+      });
+    });
+  });
+
+  describe('listAgreements', () => {
+    const defaultAgreementOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      locale: 'en-US',
+    };
+
+    describe('authorization', () => {
+      it('should verify administration access before returning agreements', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build();
+        const mockVersion = AgreementVersionFactory.build({ locale: 'en-US' });
+
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'user-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(mockGetById).toHaveBeenCalledWith({ id: mockAdmin.id });
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.id).toBe(mockAgreement.id);
+      });
+
+      it('should return 404 when administration does not exist', async () => {
+        mockGetById.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements(
+            { userId: 'user-123', isSuperAdmin: false },
+            'nonexistent-id',
+            defaultAgreementOptions,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should return 403 when user lacks access to administration', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements({ userId: 'user-123', isSuperAdmin: false }, mockAdmin.id, defaultAgreementOptions),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: ApiErrorMessage.FORBIDDEN,
+        });
+      });
+
+      it('should skip authorization check for super admin', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build();
+        const mockVersion = AgreementVersionFactory.build();
+
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'admin-123', isSuperAdmin: true },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(mockGetByIdAuthorized).not.toHaveBeenCalled();
+        expect(result.items).toHaveLength(1);
+      });
+    });
+
+    describe('data retrieval', () => {
+      it('should pass correct parameters to repository', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await service.listAgreements({ userId: 'admin-123', isSuperAdmin: true }, mockAdmin.id, {
+          page: 2,
+          perPage: 10,
+          sortBy: 'agreementType',
+          sortOrder: 'desc',
+          locale: 'es',
+          agreementType: 'consent',
+        });
+
+        expect(mockGetAgreementsByAdministrationId).toHaveBeenCalledWith(mockAdmin.id, {
+          page: 2,
+          perPage: 10,
+          orderBy: {
+            field: 'agreementType',
+            direction: 'desc',
+          },
+          agreementType: 'consent',
+          locale: 'es',
+        });
+      });
+
+      it('should return agreements with current version', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build({ name: 'Test Agreement', agreementType: 'tos' });
+        const mockVersion = AgreementVersionFactory.build({ locale: 'en-US', githubFilename: 'TOS.md' });
+
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'admin-123', isSuperAdmin: true },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Test Agreement');
+        expect(result.items[0]!.currentVersion).not.toBeNull();
+        expect(result.items[0]!.currentVersion!.locale).toBe('en-US');
+      });
+
+      it('should return null currentVersion when no version exists for locale', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build();
+
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: null }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements({ userId: 'admin-123', isSuperAdmin: true }, mockAdmin.id, {
+          ...defaultAgreementOptions,
+          locale: 'fr',
+        });
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.currentVersion).toBeNull();
+      });
+
+      it('should return empty array when no agreements assigned', async () => {
+        const mockAdmin = AdministrationFactory.build();
+
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'admin-123', isSuperAdmin: true },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toEqual([]);
+        expect(result.totalItems).toBe(0);
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap unexpected errors with appropriate context', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetAgreementsByAdministrationId.mockRejectedValue(new Error('Database connection lost'));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements({ userId: 'admin-123', isSuperAdmin: true }, mockAdmin.id, defaultAgreementOptions),
+        ).rejects.toMatchObject({
+          statusCode: 500,
+          message: 'Failed to retrieve administration agreements',
+        });
       });
     });
   });

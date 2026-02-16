@@ -17,6 +17,9 @@ import { UserGroupFactory } from '../../test-support/factories/user-group.factor
 import { TaskFactory } from '../../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../../test-support/factories/task-variant.factory';
 import { AdministrationTaskVariantFactory } from '../../test-support/factories/administration-task-variant.factory';
+import { AgreementFactory } from '../../test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
+import { AdministrationAgreementFactory } from '../../test-support/factories/administration-agreement.factory';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
@@ -2152,6 +2155,255 @@ describe('AdministrationService (integration)', () => {
         expect(page2.totalItems).toBe(3);
         expect(page2.items).toHaveLength(1);
         expect(page2.items[0]!.assignment.orderIndex).toBe(2);
+      });
+    });
+  });
+
+  describe('listAgreements', () => {
+    const defaultAgreementOptions = {
+      page: 1,
+      perPage: 100,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      locale: 'en-US',
+    };
+
+    describe('authorization', () => {
+      it('should allow students to list agreements', async () => {
+        // Unlike districts/schools/classes, students CAN access agreements
+        // because they need to know what to sign
+        const authContext = {
+          userId: baseFixture.schoolAStudent.id,
+          isSuperAdmin: false,
+        };
+
+        // Create test data for this test
+        const agreement = await AgreementFactory.create({ agreementType: 'consent' });
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: agreement.id } },
+        );
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: {
+            administrationId: baseFixture.administrationAssignedToDistrict.id,
+            agreementId: agreement.id,
+          },
+        });
+
+        const result = await service.listAgreements(
+          authContext,
+          baseFixture.administrationAssignedToDistrict.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items.length).toBeGreaterThanOrEqual(1);
+        const found = result.items.find((item) => item.agreement.id === agreement.id);
+        expect(found).toBeDefined();
+      });
+
+      it('should return 404 when administration does not exist', async () => {
+        const authContext = {
+          userId: baseFixture.schoolAStudent.id,
+          isSuperAdmin: false,
+        };
+
+        const nonExistentId = '00000000-0000-0000-0000-000000000000';
+        const error = await service.listAgreements(authContext, nonExistentId, defaultAgreementOptions).catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(404);
+      });
+
+      it('should return 403 when user lacks access to administration', async () => {
+        // Create a user with no administration access
+        const isolatedUser = await UserFactory.create({ userType: 'student' });
+        const authContext = {
+          userId: isolatedUser.id,
+          isSuperAdmin: false,
+        };
+
+        const error = await service
+          .listAgreements(authContext, baseFixture.administrationAssignedToDistrict.id, defaultAgreementOptions)
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(403);
+      });
+    });
+
+    describe('data retrieval', () => {
+      it('should return agreements with current version for requested locale', async () => {
+        // Create an isolated administration for this test
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        // Create teacher with access
+        const teacher = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: school.id, role: UserRole.TEACHER });
+
+        // Create agreement with English (US) and Spanish versions
+        const agreement = await AgreementFactory.create({ name: 'Test Agreement', agreementType: 'tos' });
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true, githubFilename: 'TOS_EN.md' },
+          { transient: { agreementId: agreement.id } },
+        );
+        await AgreementVersionFactory.create(
+          { locale: 'es', isCurrent: true, githubFilename: 'TOS_ES.md' },
+          { transient: { agreementId: agreement.id } },
+        );
+
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: agreement.id },
+        });
+
+        const authContext = { userId: teacher.id, isSuperAdmin: false };
+
+        // Request English (US) version
+        const resultEn = await service.listAgreements(authContext, administration.id, {
+          ...defaultAgreementOptions,
+          locale: 'en-US',
+        });
+
+        expect(resultEn.items).toHaveLength(1);
+        expect(resultEn.items[0]!.agreement.name).toBe('Test Agreement');
+        expect(resultEn.items[0]!.currentVersion).not.toBeNull();
+        expect(resultEn.items[0]!.currentVersion!.locale).toBe('en-US');
+        expect(resultEn.items[0]!.currentVersion!.githubFilename).toBe('TOS_EN.md');
+
+        // Request Spanish version
+        const resultEs = await service.listAgreements(authContext, administration.id, {
+          ...defaultAgreementOptions,
+          locale: 'es',
+        });
+
+        expect(resultEs.items).toHaveLength(1);
+        expect(resultEs.items[0]!.currentVersion!.locale).toBe('es');
+        expect(resultEs.items[0]!.currentVersion!.githubFilename).toBe('TOS_ES.md');
+      });
+
+      it('should return null currentVersion when no version exists for requested locale', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        const teacher = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: school.id, role: UserRole.TEACHER });
+
+        // Create agreement with only English (US) version
+        const agreement = await AgreementFactory.create({ agreementType: 'consent' });
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: agreement.id } },
+        );
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: agreement.id },
+        });
+
+        const authContext = { userId: teacher.id, isSuperAdmin: false };
+
+        // Request French version (doesn't exist)
+        const result = await service.listAgreements(authContext, administration.id, {
+          ...defaultAgreementOptions,
+          locale: 'fr',
+        });
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.currentVersion).toBeNull();
+      });
+
+      it('should filter by agreementType', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        const teacher = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: school.id, role: UserRole.TEACHER });
+
+        // Create different agreement types
+        const tosAgreement = await AgreementFactory.create({ agreementType: 'tos', name: 'TOS Agreement' });
+        const consentAgreement = await AgreementFactory.create({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: tosAgreement.id } },
+        );
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: consentAgreement.id } },
+        );
+
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: tosAgreement.id },
+        });
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: consentAgreement.id },
+        });
+
+        const authContext = { userId: teacher.id, isSuperAdmin: false };
+
+        // Filter by TOS only
+        const result = await service.listAgreements(authContext, administration.id, {
+          ...defaultAgreementOptions,
+          agreementType: 'tos',
+        });
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.agreementType).toBe('tos');
+        expect(result.items[0]!.agreement.name).toBe('TOS Agreement');
+      });
+
+      it('should sort agreements by name', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+        const school = await OrgFactory.create({ orgType: 'school' });
+        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
+
+        const teacher = await UserFactory.create({ userType: 'educator' });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: school.id, role: UserRole.TEACHER });
+
+        // Create agreements with specific names for sorting
+        const agreementZ = await AgreementFactory.create({ name: 'Zebra Agreement' });
+        const agreementA = await AgreementFactory.create({ name: 'Apple Agreement' });
+
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: agreementZ.id } },
+        );
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: agreementA.id } },
+        );
+
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: agreementZ.id },
+        });
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: agreementA.id },
+        });
+
+        const authContext = { userId: teacher.id, isSuperAdmin: false };
+
+        // Sort ascending
+        const resultAsc = await service.listAgreements(authContext, administration.id, {
+          ...defaultAgreementOptions,
+          sortBy: 'name',
+          sortOrder: 'asc',
+        });
+
+        expect(resultAsc.items).toHaveLength(2);
+        expect(resultAsc.items[0]!.agreement.name).toBe('Apple Agreement');
+        expect(resultAsc.items[1]!.agreement.name).toBe('Zebra Agreement');
+
+        // Sort descending
+        const resultDesc = await service.listAgreements(authContext, administration.id, {
+          ...defaultAgreementOptions,
+          sortBy: 'name',
+          sortOrder: 'desc',
+        });
+
+        expect(resultDesc.items).toHaveLength(2);
+        expect(resultDesc.items[0]!.agreement.name).toBe('Zebra Agreement');
+        expect(resultDesc.items[1]!.agreement.name).toBe('Apple Agreement');
       });
     });
   });

@@ -9,6 +9,8 @@ import {
   type AdministrationClassSortFieldType,
   type AdministrationGroupSortFieldType,
   type AdministrationTaskVariantSortFieldType,
+  type AdministrationAgreementSortFieldType,
+  type AgreementType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
@@ -24,6 +26,7 @@ import {
   AdministrationRepository,
   type AdministrationQueryOptions,
   type TaskVariantWithAssignment,
+  type AgreementWithVersion,
 } from '../../repositories/administration.repository';
 import {
   AdministrationTaskVariantRepository,
@@ -73,6 +76,14 @@ export type ListSchoolsOptions = ListOrgsOptions<AdministrationSchoolSortFieldTy
 export type ListClassesOptions = ListOrgsOptions<AdministrationClassSortFieldType>;
 export type ListGroupsOptions = ListOrgsOptions<AdministrationGroupSortFieldType>;
 export type ListTaskVariantsOptions = ListOrgsOptions<AdministrationTaskVariantSortFieldType>;
+
+/**
+ * Options for listing agreements of an administration.
+ */
+export interface ListAgreementsOptions extends ListOrgsOptions<AdministrationAgreementSortFieldType> {
+  agreementType?: AgreementType | undefined;
+  locale: string;
+}
 
 /**
  * AdministrationService
@@ -749,5 +760,62 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants };
+  /**
+   * List agreements assigned to an administration with access control.
+   *
+   * Unlike districts/schools/classes/groups, agreements are visible to ALL users
+   * with administration access - students need this to know which agreements to sign.
+   *
+   * Each agreement includes the current version for the requested locale.
+   * If no current version exists for that locale, currentVersion will be null.
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get agreements for
+   * @param options - Pagination, sorting, filtering, and locale options
+   * @returns Paginated result with agreements and their current versions
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listAgreements(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListAgreementsOptions,
+  ): Promise<PaginatedResult<AgreementWithVersion>> {
+    const { userId } = authContext;
+
+    try {
+      // Verify administration exists and user has access (all roles allowed)
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        agreementType: options.agreementType,
+        locale: options.locale,
+      };
+
+      return await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration agreements',
+      );
+
+      throw new ApiError('Failed to retrieve administration agreements', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants, listAgreements };
 }

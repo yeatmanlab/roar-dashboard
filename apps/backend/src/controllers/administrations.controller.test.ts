@@ -1467,7 +1467,7 @@ describe('AdministrationsController', () => {
   describe('listAgreements', () => {
     it('should return paginated agreements with 200 status', async () => {
       const mockAgreement = AgreementFactory.build({ name: 'Terms of Service', agreementType: 'tos' });
-      const mockVersion = AgreementVersionFactory.build({ locale: 'en', githubFilename: 'TOS.md' });
+      const mockVersion = AgreementVersionFactory.build({ locale: 'en-US', githubFilename: 'TOS.md' });
       mockListAgreements.mockResolvedValue({
         items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
         totalItems: 1,
@@ -1480,7 +1480,7 @@ describe('AdministrationsController', () => {
         perPage: 25,
         sortBy: 'name',
         sortOrder: 'asc',
-        locale: 'en',
+        locale: 'en-US',
       });
 
       const data = expectOkResponse(result);
@@ -1492,7 +1492,7 @@ describe('AdministrationsController', () => {
         requiresMajorityAge: mockAgreement.requiresMajorityAge,
         currentVersion: {
           id: mockVersion.id,
-          locale: 'en',
+          locale: 'en-US',
           githubFilename: 'TOS.md',
           githubOrgRepo: mockVersion.githubOrgRepo,
           githubCommitSha: mockVersion.githubCommitSha,
@@ -1543,7 +1543,7 @@ describe('AdministrationsController', () => {
         perPage: 25,
         sortBy: 'name',
         sortOrder: 'asc',
-        locale: 'en',
+        locale: 'en-US',
       });
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
@@ -1571,7 +1571,7 @@ describe('AdministrationsController', () => {
         perPage: 25,
         sortBy: 'name',
         sortOrder: 'asc',
-        locale: 'en',
+        locale: 'en-US',
       });
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
@@ -1619,7 +1619,7 @@ describe('AdministrationsController', () => {
         perPage: 25,
         sortBy: 'name',
         sortOrder: 'asc',
-        locale: 'en',
+        locale: 'en-US',
       });
 
       const data = expectOkResponse(result);
@@ -1645,7 +1645,7 @@ describe('AdministrationsController', () => {
         perPage: 10,
         sortBy: 'name',
         sortOrder: 'asc',
-        locale: 'en',
+        locale: 'en-US',
       });
 
       const data = expectOkResponse(result);
@@ -1664,7 +1664,7 @@ describe('AdministrationsController', () => {
           perPage: 25,
           sortBy: 'name',
           sortOrder: 'asc',
-          locale: 'en',
+          locale: 'en-US',
         }),
       ).rejects.toThrow('Database connection lost');
     });
