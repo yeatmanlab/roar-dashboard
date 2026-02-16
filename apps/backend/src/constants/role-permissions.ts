@@ -22,143 +22,85 @@ import { UserRole, type UserRole as UserRoleType } from '../enums/user-role.enum
  * - 'administrations.*' grants all administrations.* permissions
  * - Specific permissions for fine-grained control
  */
-const CAREGIVER_PERMISSIONS: readonly Permission[] = [
-  Permissions.Administrations.LIST,
-  Permissions.Administrations.READ,
-  Permissions.Organizations.LIST,
-  Permissions.Users.LIST,
-  Permissions.Administrators.READ,
-  Permissions.Reports.Score.READ,
-  Permissions.Reports.Progress.READ,
-  Permissions.Reports.Student.READ,
-  Permissions.Tasks.LAUNCH,
-  Permissions.Profile.READ,
-];
-
-export const RolePermissions: Record<UserRoleType, readonly Permission[]> = {
-  // ── Supervisory roles ─────────────────────────────────────────────────
-
-  [UserRole.SYSTEM_ADMINISTRATOR]: [
-    Permissions.Administrations.ALL,
-    Permissions.Organizations.ALL,
-    Permissions.Users.ALL,
-    Permissions.Administrators.ALL,
-    Permissions.Reports.Score.ALL,
+export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() => {
+  // ── Permission tiers ────────────────────────────────────────────────
+  const siteAdmin: readonly Permission[] = [
+    Permissions.Administrations.LIST,
+    Permissions.Administrations.READ,
+    Permissions.Administrators.READ,
+    Permissions.Organizations.LIST,
+    Permissions.Organizations.READ,
+    Permissions.Profile.READ,
     Permissions.Reports.Progress.ALL,
-    Permissions.Reports.Student.ALL,
-    Permissions.Tasks.ALL,
-    Permissions.Runs.ALL,
-    Permissions.Profile.ALL,
-    Permissions.TestData.CREATE,
-  ],
-  [UserRole.SITE_ADMINISTRATOR]: [
-    Permissions.Administrations.ALL,
-    Permissions.Organizations.ALL,
-    Permissions.Users.ALL,
-    Permissions.Administrators.ALL,
     Permissions.Reports.Score.ALL,
-    Permissions.Reports.Progress.ALL,
     Permissions.Reports.Student.ALL,
-    Permissions.Tasks.ALL,
-    Permissions.Runs.ALL,
-    Permissions.Profile.ALL,
-    Permissions.TestData.CREATE,
-  ],
-  [UserRole.DISTRICT_ADMINISTRATOR]: [
-    Permissions.Administrations.ALL,
-    Permissions.Organizations.ALL,
-    Permissions.Users.ALL,
-    Permissions.Administrators.READ,
-    Permissions.Reports.Score.ALL,
-    Permissions.Reports.Progress.ALL,
-    Permissions.Reports.Student.ALL,
-    Permissions.Tasks.ALL,
-    Permissions.Profile.ALL,
-  ],
-  [UserRole.ADMINISTRATOR]: [
-    Permissions.Administrations.ALL,
-    Permissions.Organizations.ALL,
-    Permissions.Users.ALL,
-    Permissions.Administrators.READ,
-    Permissions.Reports.Score.ALL,
-    Permissions.Reports.Progress.ALL,
-    Permissions.Reports.Student.ALL,
-    Permissions.Tasks.ALL,
-    Permissions.Profile.ALL,
-  ],
-  [UserRole.PRINCIPAL]: [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
     Permissions.Users.LIST,
-    Permissions.Administrators.READ,
-    Permissions.Reports.Score.READ,
-    Permissions.Reports.Progress.READ,
-    Permissions.Reports.Student.READ,
-    Permissions.Tasks.LAUNCH,
-    Permissions.Profile.READ,
-  ],
-  [UserRole.COUNSELOR]: [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
-    Permissions.Users.LIST,
-    Permissions.Administrators.READ,
-    Permissions.Reports.Score.READ,
-    Permissions.Reports.Progress.READ,
-    Permissions.Reports.Student.READ,
-    Permissions.Tasks.LAUNCH,
-    Permissions.Profile.READ,
-  ],
-  [UserRole.TEACHER]: [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
-    Permissions.Users.LIST,
-    Permissions.Administrators.READ,
-    Permissions.Reports.Score.READ,
-    Permissions.Reports.Progress.READ,
-    Permissions.Reports.Student.READ,
-    Permissions.Tasks.LAUNCH,
-    Permissions.Profile.READ,
-  ],
-  [UserRole.AIDE]: [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
-    Permissions.Users.LIST,
-    Permissions.Administrators.READ,
-    Permissions.Reports.Score.READ,
-    Permissions.Reports.Progress.READ,
-    Permissions.Reports.Student.READ,
-    Permissions.Tasks.LAUNCH,
-    Permissions.Profile.READ,
-  ],
-  [UserRole.PROCTOR]: [
-    Permissions.Administrations.LIST,
-    Permissions.Administrations.READ,
-    Permissions.Organizations.LIST,
-    Permissions.Users.LIST,
-    Permissions.Administrators.READ,
-    Permissions.Reports.Score.READ,
-    Permissions.Reports.Progress.READ,
-    Permissions.Reports.Student.READ,
-    Permissions.Tasks.LAUNCH,
-    Permissions.Profile.READ,
-  ],
+  ];
 
-  // ── Supervised roles ──────────────────────────────────────────────────
-
-  [UserRole.STUDENT]: [
+  const admin: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
-    Permissions.Tasks.LAUNCH,
+    Permissions.Administrators.READ,
+    Permissions.Organizations.LIST,
+    Permissions.Organizations.READ,
     Permissions.Profile.READ,
-  ],
-  [UserRole.GUARDIAN]: CAREGIVER_PERMISSIONS,
-  [UserRole.PARENT]: CAREGIVER_PERMISSIONS,
-  [UserRole.RELATIVE]: CAREGIVER_PERMISSIONS,
-};
+    Permissions.Reports.Progress.ALL,
+    Permissions.Reports.Score.ALL,
+    Permissions.Reports.Student.ALL,
+    Permissions.Users.LIST,
+  ];
+
+  const educator: readonly Permission[] = [
+    Permissions.Administrations.LIST,
+    Permissions.Administrations.READ,
+    Permissions.Administrators.READ,
+    Permissions.Organizations.LIST,
+    Permissions.Organizations.READ,
+    Permissions.Profile.READ,
+    Permissions.Reports.Progress.ALL,
+    Permissions.Reports.Score.ALL,
+    Permissions.Reports.Student.ALL,
+    Permissions.Users.LIST,
+  ];
+
+  const caregiver: readonly Permission[] = [
+    Permissions.Administrations.LIST,
+    Permissions.Administrations.READ,
+    Permissions.Administrators.READ,
+    Permissions.Organizations.LIST,
+    Permissions.Organizations.READ,
+    Permissions.Profile.READ,
+    Permissions.Reports.Progress.READ,
+    Permissions.Reports.Score.READ,
+    Permissions.Reports.Student.READ,
+    Permissions.Tasks.LAUNCH,
+    Permissions.Users.LIST,
+  ];
+
+  const student: readonly Permission[] = [
+    Permissions.Administrations.LIST,
+    Permissions.Administrations.READ,
+    Permissions.Profile.READ,
+    Permissions.Tasks.LAUNCH,
+  ];
+
+  // ── Role → tier mapping ─────────────────────────────────────────────
+  return {
+    [UserRole.SYSTEM_ADMINISTRATOR]: siteAdmin,
+    [UserRole.SITE_ADMINISTRATOR]: siteAdmin,
+    [UserRole.DISTRICT_ADMINISTRATOR]: admin,
+    [UserRole.ADMINISTRATOR]: admin,
+    [UserRole.PRINCIPAL]: educator,
+    [UserRole.COUNSELOR]: educator,
+    [UserRole.TEACHER]: educator,
+    [UserRole.AIDE]: educator,
+    [UserRole.PROCTOR]: educator,
+    [UserRole.STUDENT]: student,
+    [UserRole.GUARDIAN]: caregiver,
+    [UserRole.PARENT]: caregiver,
+    [UserRole.RELATIVE]: caregiver,
+  };
+})();
 
 /**
  * Get all roles that have the given permission.
