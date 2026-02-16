@@ -346,5 +346,5 @@ export function TaskService() {
     return evaluateCondition(userData, condition);
   }
 
-  return { evaluateCondition, mapUserToConditionData, evaluateTaskVariantEligibility, evaluateConditionForUser };
+  return { evaluateTaskVariantEligibility };
 }
