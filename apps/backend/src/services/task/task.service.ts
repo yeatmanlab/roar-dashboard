@@ -46,10 +46,11 @@ export interface TaskVariantEligibilityResult {
 /**
  * Data structure expected by condition evaluation.
  * Maps user fields into the structure that conditions reference.
+ * Grade conversion happens in evaluateFieldCondition, not here.
  */
 export interface ConditionUserData {
   studentData: {
-    grade: number | null;
+    grade: string | null;
     statusEll: string | null;
     statusIep: string | null;
     statusFrl: string | null;
@@ -407,8 +408,11 @@ export function TaskService({
   /**
    * Map a User entity to the condition data structure expected by conditions.
    *
-   * Conditions reference fields like "studentData.grade", "studentData.statusEll", etc.
-   * This function transforms the flat User entity into the nested structure.
+   * Database conditions store field paths like "studentData.grade", "studentData.statusEll",
+   * etc. This wrapper is required because the condition evaluator uses these paths to
+   * traverse the data structure via getNestedValue(). The User entity has flat fields
+   * (user.grade, user.statusEll), so we wrap them in { studentData: { ... } } to match
+   * the expected path structure.
    *
    * @param user - The User entity from the database
    * @returns The user data in the format expected by condition evaluation
@@ -416,7 +420,7 @@ export function TaskService({
   function mapUserToConditionData(user: User): ConditionUserData {
     return {
       studentData: {
-        grade: getGradeAsNumber(user.grade),
+        grade: user.grade,
         statusEll: user.statusEll,
         statusIep: user.statusIep,
         statusFrl: user.statusFrl,
