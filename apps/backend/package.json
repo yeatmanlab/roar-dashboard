@@ -30,6 +30,7 @@
     "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts"
   },
   "dependencies": {
+    "@google-cloud/cloud-sql-connector": "^1.4.3",
     "@roar-dashboard/api-contract": "*",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",

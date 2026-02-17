@@ -25,7 +25,7 @@
  * 2. Descendant access (supervisory roles): Supervisors see descendant orgs
  * 3. No access: Users in different branches don't see each other's orgs
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { OrgAccessControls } from './org.access-controls';
 import { CoreDbClient } from '../../test-support/db';
 import { baseFixture } from '../../test-support/fixtures';
@@ -35,7 +35,12 @@ import { UserClassFactory } from '../../test-support/factories/user-class.factor
 import { UserRole } from '../../enums/user-role.enum';
 
 describe('OrgAccessControls', () => {
-  const accessControls = new OrgAccessControls();
+  // Initialize inside describe block - CoreDbClient is available after beforeAll in vitest.setup.ts
+  let accessControls: OrgAccessControls;
+
+  beforeAll(() => {
+    accessControls = new OrgAccessControls(CoreDbClient);
+  });
 
   /**
    * Helper to execute the access control query and return org IDs.
