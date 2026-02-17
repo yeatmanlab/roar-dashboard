@@ -92,6 +92,11 @@ export type DistrictDetail = z.infer<typeof DistrictDetailSchema>;
 export const DISTRICT_DETAIL_SORT_FIELDS = ['name', 'abbreviation', 'createdAt'] as const;
 
 /**
+ * Sort field type for districts.
+ */
+export type DistrictSortFieldType = (typeof DISTRICT_DETAIL_SORT_FIELDS)[number];
+
+/**
  * Sort field constants for type-safe access.
  */
 export const DistrictDetailSortField = {

@@ -1,11 +1,13 @@
-import { eq, asc, desc, countDistinct, and, isNull, SQL, sql, inArray } from 'drizzle-orm';
+import { eq, asc, desc, countDistinct, and, isNull, sql, inArray } from 'drizzle-orm';
+import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import { orgs, type Org, userOrgs, classes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { OrgAccessControls } from './access-controls/org.access-controls';
-import type { AccessControlFilter } from './utils/access-controls.utils';
+import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
+import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
 
 /**
  * District-specific type (Org with orgType = 'district')
@@ -29,6 +31,16 @@ export interface DistrictWithCounts extends District {
 }
 
 /**
+ * Explicit mapping from API sort field names to district table columns.
+ * This ensures only valid columns are used for sorting.
+ */
+const DISTRICT_SORT_COLUMNS = {
+  name: orgs.name,
+  abbreviation: orgs.abbreviation,
+  createdAt: orgs.createdAt,
+} as const satisfies Record<DistrictSortFieldType, Column>;
+
+/**
  * Options for listing districts with authorization
  */
 export interface ListAuthorizedOptions {
@@ -39,7 +51,6 @@ export interface ListAuthorizedOptions {
     direction: 'asc' | 'desc';
   };
   includeEnded?: boolean;
-  embedCounts?: boolean;
 }
 
 /**
@@ -66,8 +77,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param options - Pagination, sorting, and optional filters
    * @returns Paginated result with districts
    */
-  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<DistrictWithCounts>> {
-    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
+  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<District>> {
+    const { page, perPage, orderBy, includeEnded = false } = options;
 
     // Build where clause for district type and rostering status
     const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
@@ -78,28 +89,18 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
 
-    const result = await this.getAll({
+    // Resolve sort column
+    const sortField = orderBy?.field as DistrictSortFieldType | undefined;
+    const sortColumn = sortField ? DISTRICT_SORT_COLUMNS[sortField] : orgs.createdAt;
+    const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+    // Delegate to getAll() with array of order expressions (primary sort + secondary sort on ID)
+    return this.getAll({
       page,
       perPage,
-      ...(orderBy && { orderBy }),
+      orderBy: [sortDirection, asc(orgs.id)],
       ...(where && { where }),
     });
-
-    // If embedCounts is requested, fetch aggregated statistics for each district
-    if (embedCounts && result.items.length > 0) {
-      const districtIds = result.items.map((d) => d.id);
-      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
-
-      return {
-        items: result.items.map((district) => ({
-          ...district,
-          counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
-        })),
-        totalItems: result.totalItems,
-      };
-    }
-
-    return result;
   }
 
   /**
@@ -117,8 +118,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   async listAuthorized(
     accessControlFilter: AccessControlFilter,
     options: ListAuthorizedOptions,
-  ): Promise<PaginatedResult<DistrictWithCounts>> {
-    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
+  ): Promise<PaginatedResult<District>> {
+    const { page, perPage, orderBy, includeEnded = false } = options;
     const offset = (page - 1) * perPage;
 
     // Build the UNION query for accessible org IDs using access controls
@@ -152,19 +153,9 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       return { items: [], totalItems: 0 };
     }
 
-    // Get sort column based on field
-    const getSortColumn = (field: string | undefined) => {
-      switch (field) {
-        case 'name':
-          return orgs.name;
-        case 'abbreviation':
-          return orgs.abbreviation;
-        case 'createdAt':
-        default:
-          return orgs.createdAt;
-      }
-    };
-    const sortColumn = getSortColumn(orderBy?.field);
+    // Resolve sort column
+    const sortField = orderBy?.field as DistrictSortFieldType | undefined;
+    const sortColumn = sortField ? DISTRICT_SORT_COLUMNS[sortField] : orgs.createdAt;
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join districts with the accessible IDs subquery
@@ -173,49 +164,16 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .from(orgs)
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause)
-      .orderBy(sortDirection)
+      .orderBy(sortDirection, orgs.id)
       .limit(perPage)
       .offset(offset);
 
     const districts = dataResult.map((row) => row.org as District);
 
-    // If embedCounts is requested, fetch aggregated statistics for each district
-    if (embedCounts && districts.length > 0) {
-      const districtIds = districts.map((d) => d.id);
-      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
-
-      return {
-        items: districts.map((district) => ({
-          ...district,
-          counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
-        })),
-        totalItems,
-      };
-    }
-
     return {
       items: districts,
       totalItems,
     };
-  }
-
-  /**
-   * Get child organizations of a district.
-   *
-   * @param districtId - Parent district ID
-   * @param includeEnded - Whether to include organizations with rosteringEnded set
-   * @returns List of child organizations
-   */
-  async getChildren(districtId: string, includeEnded = false): Promise<Org[]> {
-    const whereConditions: SQL[] = [eq(orgs.parentOrgId, districtId)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
-
-    return this.db.select().from(orgs).where(where).orderBy(asc(orgs.name));
   }
 
   /**
@@ -230,10 +188,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param includeEnded - Whether to include ended organizations in school counts
    * @returns Map of district ID to counts
    */
-  private async fetchDistrictCounts(
-    districtIds: string[],
-    includeEnded: boolean,
-  ): Promise<Map<string, DistrictCounts>> {
+  async fetchDistrictCounts(districtIds: string[], includeEnded: boolean): Promise<Map<string, DistrictCounts>> {
     // Build where conditions for schools
     const schoolWhereConditions: SQL[] = [eq(orgs.orgType, 'school')];
     if (!includeEnded) {

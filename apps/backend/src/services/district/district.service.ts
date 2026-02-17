@@ -28,15 +28,6 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
 }
 
 /**
- * Sort field mapping from API contract to database columns
- */
-const SORT_FIELD_TO_COLUMN: Record<string, string> = {
-  name: 'name',
-  abbreviation: 'abbreviation',
-  createdAt: 'createdAt',
-};
-
-/**
  * District Service
  *
  * Business logic layer for district operations.
@@ -69,11 +60,10 @@ export function DistrictService({
         page: options.page,
         perPage: options.perPage,
         orderBy: {
-          field: SORT_FIELD_TO_COLUMN[options.sortBy] ?? 'createdAt',
+          field: options.sortBy,
           direction: options.sortOrder,
         },
         includeEnded: options.includeEnded ?? false,
-        embedCounts: options.embedCounts ?? false,
       };
 
       // Fetch districts based on user role and authorization
@@ -82,6 +72,20 @@ export function DistrictService({
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
         result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+      }
+
+      // If embedCounts is requested, fetch counts separately and attach to districts
+      if (options.embedCounts && result.items.length > 0) {
+        const districtIds = result.items.map((d) => d.id);
+        const countsMap = await districtRepository.fetchDistrictCounts(districtIds, options.includeEnded ?? false);
+
+        return {
+          items: result.items.map((district) => ({
+            ...district,
+            counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
+          })),
+          totalItems: result.totalItems,
+        };
       }
     } catch (error) {
       if (error instanceof ApiError) {
