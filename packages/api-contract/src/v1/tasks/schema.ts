@@ -51,7 +51,7 @@ export enum TASK_VARIANT_STATUS {
  *   }
  * }
  */
-const TaskVariantParameter = z.object({
+const TaskVariantParameterSchema = z.object({
   name: z
     .string()
     .min(1)
@@ -77,7 +77,7 @@ const TaskVariantParameter = z.object({
  *   { "name": "stimuli", "value": ["word1", "word2", "word3"] }
  * ]
  */
-const TaskVariantParametersArray = z.array(TaskVariantParameter).min(1);
+const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema).min(1);
 
 export const TaskVariantCreateRequestSchema = z.object({
   name: z
@@ -86,7 +86,7 @@ export const TaskVariantCreateRequestSchema = z.object({
     .min(1)
     .max(255)
     .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-  parameters: TaskVariantParametersArray,
+  parameters: TaskVariantParametersArraySchema,
   description: z.string().trim().min(1).max(1024),
   status: z.nativeEnum(TASK_VARIANT_STATUS),
 });
@@ -95,7 +95,7 @@ export const TaskVariantCreateResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
-export type TaskVariantParameter = z.infer<typeof TaskVariantParameter>;
-export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArray>;
+export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
+export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
 export type TaskVariantCreateRequest = z.infer<typeof TaskVariantCreateRequestSchema>;
 export type TaskVariantCreateResponse = z.infer<typeof TaskVariantCreateResponseSchema>;

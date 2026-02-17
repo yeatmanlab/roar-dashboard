@@ -13,7 +13,6 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
   /**
    * Example method, this may not be needed in production.
    */
-  // TODO: Possibly implement an enum for slug to type against
   async getBySlug(slug: string): Promise<Task | null> {
     const [result] = (await this.get({
       where: eq(tasks.slug, slug),
