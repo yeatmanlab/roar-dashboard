@@ -2,7 +2,7 @@ import { z } from 'zod';
 import sjson from 'secure-json-parse';
 
 // Validation constants
-const MAX_STRING_BYTES = 4096;
+const MAX_STRING_BYTES = 1024;
 const MAX_DEPTH = 5;
 const MAX_ARRAY_LENGTH = 100;
 const MAX_KEY_LENGTH = 50;
