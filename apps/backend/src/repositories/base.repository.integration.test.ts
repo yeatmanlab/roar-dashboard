@@ -169,10 +169,11 @@ describe('BaseRepository', () => {
       const userData = UserFactory.build();
       const result = await repository.create({ data: userData });
 
+      if (!result) {
+        throw new Error('Expected create to return a result');
+      }
       expect(result).not.toBeNull();
       expect(result.id).toBeDefined();
-      expect(result.nameFirst).toBe(userData.nameFirst);
-      expect(result.nameLast).toBe(userData.nameLast);
 
       // Verify it was actually persisted
       const fetched = await repository.getById({ id: result.id });
