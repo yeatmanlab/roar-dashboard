@@ -43,13 +43,9 @@ describe('RunEventsService', () => {
       await runEventsService.completeRun(mockAuthContext, validRunId, validBody);
 
       expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(mockRunsRepository.update).toHaveBeenCalledWith({
-        id: validRunId,
-        data: {
-          completedAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      });
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.completedAt).toBeInstanceOf(Date);
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -103,7 +99,7 @@ describe('RunEventsService', () => {
       }
     });
 
-    it('should update both completedAt and updatedAt timestamps', async () => {
+    it('should set completedAt timestamp', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockResolvedValue(undefined);
@@ -114,9 +110,8 @@ describe('RunEventsService', () => {
 
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
       expect(updateCall.data.completedAt).toBeInstanceOf(Date);
-      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
       expect(updateCall.data.completedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
-      expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
+      expect(updateCall.data.completedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
     });
 
     it('should handle optional metadata in event body', async () => {
@@ -224,6 +219,8 @@ describe('RunEventsService', () => {
       expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
       expect(updateCall.data.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
       expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.data.metadata).toEqual({ source: 'mobile', sessionId: 'sess-456' });
     });
   });
 });

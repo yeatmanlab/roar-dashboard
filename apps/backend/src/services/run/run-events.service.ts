@@ -98,7 +98,6 @@ export function RunEventsService({
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
    */
   async function completeRun(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
-    // type="complete"
     if (body.type !== 'complete') {
       throw new ApiError('Invalid event type', {
         statusCode: StatusCodes.BAD_REQUEST,
@@ -115,8 +114,7 @@ export function RunEventsService({
       id: runId,
       data: {
         completedAt: now,
-        updatedAt: now,
-        ...(body.metadata ? { completionMetadata: body.metadata } : {}),
+        ...(body.metadata ? { metadata: body.metadata } : {}),
       },
     });
   }
