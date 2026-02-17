@@ -49,18 +49,38 @@ export function TaskService({
   taskVariantParameterRepository?: TaskVariantParameterRepository;
 } = {}) {
   /**
-   * Create a new task variant for an existing task with its parameters.
+   * Creates a new task variant with its required parameters.
    *
-   * Creates the variant and all its parameters atomically within a transaction.
-   * If any parameter creation fails, the entire operation is rolled back.
+   * Task variants require at least one parameter to be valid. The variant and all its
+   * parameters are created atomically within a database transaction - if any operation
+   * fails, the entire operation is rolled back to prevent orphaned or incomplete data.
    *
-   * Validates that the parent task exists before creating the variant.
+   * This method validates that the parent task exists before creating the variant,
+   * ensuring referential integrity.
    *
-   * @param authContext - User's auth context (id for logging/auditing)
-   * @param data - Task variant data including taskId, name, description, status, and parameters
-   * @returns The created task variant
+   * @param authContext - User's auth context (requires super admin privileges)
+   * @param data - Task variant data including taskId, name, description, status, and required parameters array
+   * @returns The created task variant (without full parameter details)
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} BAD_REQUEST if parameters array is empty
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
-   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
+   * @throws {ApiError} INTERNAL if variant or any parameter creation fails
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   *
+   * @example
+   * ```typescript
+   * const variant = await taskService.createTaskVariant(authContext, {
+   *   taskId: 'task-uuid',
+   *   name: 'easy-mode',
+   *   description: 'Easy difficulty configuration',
+   *   status: 'published',
+   *   parameters: [
+   *     { name: 'difficulty', value: 'easy' },
+   *     { name: 'timeLimit', value: 120 },
+   *     { name: 'hintsEnabled', value: true }
+   *   ]
+   * });
+   * ```
    */
   async function createTaskVariant(
     authContext: AuthContext,
@@ -85,6 +105,17 @@ export function TaskService({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId, taskId: data.taskId },
+        });
+      }
+
+      // Check if the task-variant name already exists (task-variant names are unique)
+      const existingVariant = await taskVariantRepository.getByName(data.name);
+
+      if (existingVariant.length > 0) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, taskId: data.taskId, variantName: data.name },
         });
       }
 
@@ -117,6 +148,7 @@ export function TaskService({
             value: newParameter.value,
           }));
 
+          // Check if any parameters are missing
           if (taskVariantParameterData.length === 0) {
             throw new ApiError('At least one parameter required', {
               statusCode: StatusCodes.BAD_REQUEST,
@@ -156,9 +188,6 @@ export function TaskService({
       return variant;
     } catch (error) {
       if (error instanceof ApiError) throw error;
-
-      // TODO: Create a more specific error code for Postgres conflict on task variant name
-      // 409
 
       logger.error({ err: error, context: { userId, taskId: data.taskId } }, 'Failed to create task variant');
 

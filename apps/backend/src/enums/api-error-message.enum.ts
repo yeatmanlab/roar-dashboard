@@ -14,6 +14,8 @@
  * ```
  */
 export enum ApiErrorMessage {
+  /** Generic conflict error - use when a resource already exists */
+  CONFLICT = 'The requested resource already exists',
   /** Generic forbidden error - use when user lacks permission for an action */
   FORBIDDEN = 'You do not have permission to perform this action',
 
