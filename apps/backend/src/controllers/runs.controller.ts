@@ -1,17 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
-import type { RunEventBody, StartRunRequestBody } from '@roar-dashboard/api-contract';
+import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';
-import { RunEventsService } from '../services/run/run-events.service';
+import type { AuthContext } from '../types/auth-context';
 
 const runService = RunService();
 const runEventsService = RunEventsService();
-
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
 
 /**
  * RunsController
@@ -24,7 +19,7 @@ export const RunsController = {
   /**
    * Create a new run (assessment session instance).
    */
-  create: async (authContext: AuthContext, body: StartRunRequestBody) => {
+  create: async (authContext: AuthContext, body: CreateRunRequestBody) => {
     try {
       const { runId } = await runService.create(authContext, body);
 
@@ -40,7 +35,7 @@ export const RunsController = {
           StatusCodes.BAD_REQUEST,
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
-          StatusCodes.NOT_FOUND,
+          StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

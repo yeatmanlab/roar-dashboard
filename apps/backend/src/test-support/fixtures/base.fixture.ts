@@ -90,6 +90,12 @@ import { AdministrationGroupFactory } from '../factories/administration-group.fa
  * - districtBAdmin: administrator at districtB (for cross-district isolation tests)
  * - districtBStudent: student in districtB (for cross-district isolation tests)
  *
+ * Enrollment boundary test users:
+ * - expiredEnrollmentStudent: student at School A with expired enrollment (enrollment date tests)
+ * - futureEnrollmentStudent: student at School A with future enrollment (enrollment date tests)
+ * - expiredClassStudent: student in classInSchoolA with expired enrollment (enrollment date tests)
+ * - futureGroupStudent: student in group with future enrollment (enrollment date tests)
+ *
  * Administration assignments:
  * - administrationAssignedToDistrict: visible to all users in district hierarchy
  * - administrationAssignedToSchoolA: visible only to users in School A subtree
@@ -173,6 +179,22 @@ export interface BaseFixture {
 
   /** Student in districtB (for cross-district isolation tests) */
   districtBStudent: User;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Enrollment Boundary Test Users
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Student at School A with expired enrollment (enrollmentEnd in the past) */
+  expiredEnrollmentStudent: User;
+
+  /** Student at School A with future enrollment (enrollmentStart in the future) */
+  futureEnrollmentStudent: User;
+
+  /** Student in classInSchoolA with expired enrollment */
+  expiredClassStudent: User;
+
+  /** Student in group with future enrollment */
+  futureGroupStudent: User;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ADMINISTRATIONS
@@ -259,6 +281,11 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     multiAssignedUser,
     districtBAdmin,
     districtBStudent,
+    // Enrollment boundary test users
+    expiredEnrollmentStudent,
+    futureEnrollmentStudent,
+    expiredClassStudent,
+    futureGroupStudent,
   ] = await Promise.all([
     UserFactory.create({ nameFirst: 'District', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Admin', userType: UserType.ADMIN }),
@@ -272,23 +299,35 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     UserFactory.create({ nameFirst: 'Multi', nameLast: 'Assigned', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'DistrictB', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'DistrictB', nameLast: 'Student', userType: UserType.STUDENT }),
+    // Enrollment boundary test users
+    UserFactory.create({ nameFirst: 'Expired', nameLast: 'OrgStudent', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future', nameLast: 'OrgStudent', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Expired', nameLast: 'ClassStudent', userType: UserType.STUDENT }),
+    UserFactory.create({ nameFirst: 'Future', nameLast: 'GroupStudent', userType: UserType.STUDENT }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 3: Assign Users to Orgs/Classes/Groups
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // Enrollment date helpers
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
   await Promise.all([
-    // Org assignments
+    // Org assignments (active enrollments - default enrollmentStart=now, enrollmentEnd=null)
     UserOrgFactory.create({ userId: districtAdmin.id, orgId: district.id, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: schoolAAdmin.id, orgId: schoolA.id, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: schoolATeacher.id, orgId: schoolA.id, role: UserRole.TEACHER }),
     UserOrgFactory.create({ userId: schoolAStudent.id, orgId: schoolA.id, role: UserRole.STUDENT }),
     UserOrgFactory.create({ userId: schoolBStudent.id, orgId: schoolB.id, role: UserRole.STUDENT }),
-    // Class assignments
+    // Class assignments (active enrollments)
     UserClassFactory.create({ userId: classAStudent.id, classId: classInSchoolA.id, role: UserRole.STUDENT }),
     UserClassFactory.create({ userId: classATeacher.id, classId: classInSchoolA.id, role: UserRole.TEACHER }),
-    // Group assignments
+    // Group assignments (active enrollments)
     UserGroupFactory.create({ userId: groupStudent.id, groupId: group.id, role: UserRole.STUDENT }),
     // Multi-assigned user: assigned to both district AND schoolA
     UserOrgFactory.create({ userId: multiAssignedUser.id, orgId: district.id, role: UserRole.ADMINISTRATOR }),
@@ -296,6 +335,43 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     // District B users (for cross-district isolation tests)
     UserOrgFactory.create({ userId: districtBAdmin.id, orgId: districtB.id, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: districtBStudent.id, orgId: districtB.id, role: UserRole.STUDENT }),
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Enrollment boundary test users
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    // Expired org enrollment: started 30 days ago, ended 7 days ago
+    UserOrgFactory.create({
+      userId: expiredEnrollmentStudent.id,
+      orgId: schoolA.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: thirtyDaysAgo,
+      enrollmentEnd: sevenDaysAgo,
+    }),
+    // Future org enrollment: starts 7 days from now
+    UserOrgFactory.create({
+      userId: futureEnrollmentStudent.id,
+      orgId: schoolA.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: sevenDaysFromNow,
+      enrollmentEnd: thirtyDaysFromNow,
+    }),
+    // Expired class enrollment: started 30 days ago, ended 7 days ago
+    UserClassFactory.create({
+      userId: expiredClassStudent.id,
+      classId: classInSchoolA.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: thirtyDaysAgo,
+      enrollmentEnd: sevenDaysAgo,
+    }),
+    // Future group enrollment: starts 7 days from now
+    UserGroupFactory.create({
+      userId: futureGroupStudent.id,
+      groupId: group.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: sevenDaysFromNow,
+      enrollmentEnd: thirtyDaysFromNow,
+    }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -365,6 +441,12 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     multiAssignedUser,
     districtBAdmin,
     districtBStudent,
+
+    // Enrollment boundary test users
+    expiredEnrollmentStudent,
+    futureEnrollmentStudent,
+    expiredClassStudent,
+    futureGroupStudent,
 
     // Administrations
     administrationAssignedToDistrict,

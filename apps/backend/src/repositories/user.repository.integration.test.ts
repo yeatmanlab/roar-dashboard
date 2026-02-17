@@ -6,17 +6,17 @@
  *
  * Thorough BaseRepository CRUD coverage is in base.repository.integration.test.ts.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserRepository } from './user.repository';
 
 describe('UserRepository', () => {
-  const repository = new UserRepository();
+  let repository: UserRepository;
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // findByAuthId (custom method)
-  // ─────────────────────────────────────────────────────────────────────────────
+  beforeAll(() => {
+    repository = new UserRepository();
+  });
 
   describe('findByAuthId', () => {
     it('returns user when found by authId', async () => {
@@ -34,11 +34,7 @@ describe('UserRepository', () => {
     });
   });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Inherited methods (light coverage)
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  describe('getById (inherited)', () => {
+  describe('getById', () => {
     it('returns user', async () => {
       const result = await repository.getById({ id: baseFixture.schoolAStudent.id });
 

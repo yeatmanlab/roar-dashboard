@@ -1,92 +1,154 @@
 import { StatusCodes } from 'http-status-codes';
-import type { StartRunRequestBody } from '@roar-dashboard/api-contract';
+import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { logger } from '../../logger';
 import { RunsRepository } from '../../repositories/runs.repository';
 import { AdministrationService } from '../administration/administration.service';
-import { TaskService } from '../task/task.service';
+import type { TaskService } from '../task/task.service';
+import type { NewRun } from '../../db/schema';
+
+import type { AuthContext } from '../../types/auth-context';
+import { Permissions } from '../../constants/permissions';
+import { rolesForPermission } from '../../constants/role-permissions';
+import { AdministrationAccessControls } from '../../repositories/access-controls/administration.access-controls';
 
 /**
- * Authentication context containing user identity and privilege level.
- */
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
-
-/**
- * RunService
+ * RunService factory function.
  *
- * Orchestrates the creation of new run (assessment session) instances.
- * Handles validation, authorization, and persistence of run records.
+ * Creates a service for managing run operations including creation, completion, and event handling.
+ * Supports dependency injection for testing and flexibility.
  *
- * @param runsRepository - Data access layer for runs table
- * @param administrationService - Service for administration context validation and access control
- * @param taskService - Service for task variant resolution and version validation
+ * @param options - Configuration options for the service
+ * @param options.runsRepository - Repository for run data access (default: new RunsRepository())
+ * @param options.administrationService - Service for administration operations (default: AdministrationService())
+ * @param options.taskService - Service for task operations (required for create method)
+ * @param options.administrationAccessControls - Access control service for authorization (default: new AdministrationAccessControls())
+ * @returns Object with create method for creating new runs
  */
 export function RunService({
   runsRepository = new RunsRepository(),
   administrationService = AdministrationService(),
-  taskService = TaskService(),
+  taskService,
+  administrationAccessControls = new AdministrationAccessControls(),
 }: {
   runsRepository?: RunsRepository;
   administrationService?: ReturnType<typeof AdministrationService>;
   taskService?: ReturnType<typeof TaskService>;
+  administrationAccessControls?: AdministrationAccessControls;
 } = {}) {
   /**
-   * Create a new run instance.
+   * Creates a new run (assessment session instance).
    *
-   * Flow:
-   * 1. Validate required fields (defense-in-depth; contract should already validate)
-   * 2. Validate administration context and user access (throws 404 if not found, 403 if forbidden)
-   * 3. Resolve taskId from task_variant_id and validate task version
-   * 4. Insert run record into assessment database
+   * Performs the following validations and operations:
+   * 1. Validates that taskService is configured
+   * 2. Validates that the administration exists and user has access
+   * 3. For non-super-admin users, checks if they have Runs.START permission
+   * 4. Resolves the taskId from the provided taskVariantId
+   * 5. Creates the run record in the database
    *
-   * @param authContext - User identity and privilege information
+   * @param authContext - Authentication context with userId and isSuperAdmin flag
    * @param body - Request body containing task_variant_id, task_version, administration_id, and optional metadata
-   * @returns Object containing the newly created runId
-   * @throws ApiError with appropriate status codes (400, 403, 404, 500)
+   * @returns Promise resolving to object with runId
+   * @throws ApiError with INTERNAL_SERVER_ERROR if taskService not configured
+   * @throws ApiError with UNPROCESSABLE_ENTITY if administration_id or task_variant_id are invalid
+   * @throws ApiError with FORBIDDEN if user lacks permission to create run
+   * @throws ApiError with INTERNAL_SERVER_ERROR if database operation fails
    */
-  async function create(authContext: AuthContext, body: StartRunRequestBody): Promise<{ runId: string }> {
+  async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ runId: string }> {
     const { userId, isSuperAdmin } = authContext;
 
-    // Defense-in-depth validation (contract should already validate)
-    if (!body.task_variant_id || !body.task_version || !body.administration_id) {
-      throw new ApiError('Missing required fields', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId },
-      });
-    }
-
-    // Validate administration context and access (404 vs 403 handled by administrationService)
-    await administrationService.getById({ userId, isSuperAdmin }, body.administration_id);
-
-    // Resolve taskId from variant and validate version
-    const { taskId } = await taskService.getTaskByVariantId(body.task_variant_id);
-    await taskService.validateTaskVersion(taskId, body.task_version);
-
-    // Create run in assessment database
-    try {
-      const run = await runsRepository.create({
-        data: {
+    if (!taskService) {
+      throw new ApiError('TaskService not configured', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: {
           userId,
-          taskId,
           taskVariantId: body.task_variant_id,
           taskVersion: body.task_version,
           administrationId: body.administration_id,
-          ...(body.metadata ? { metadata: body.metadata } : {}),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any, // if Drizzle insert typing complains, we can tighten this based on runs.$inferInsert
+        },
       });
+    }
+    try {
+      await administrationService.getById({ userId, isSuperAdmin }, body.administration_id);
+    } catch (error) {
+      if (error instanceof ApiError && error.statusCode === StatusCodes.NOT_FOUND) {
+        throw new ApiError('Invalid administration_id', {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, administrationId: body.administration_id },
+          cause: error,
+        });
+      }
+      throw error;
+    }
+
+    if (!isSuperAdmin) {
+      const userRoles = await administrationAccessControls.getUserRolesForAdministration(
+        userId,
+        body.administration_id,
+      );
+
+      // TODO: Emily ask if to create START permission or CREATE permission
+      const allowedRoles = rolesForPermission(Permissions.Runs.START);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return { runId: (run as any).id };
+      const hasPermission = userRoles.some((role) => allowedRoles.includes(role as any));
+
+      if (!hasPermission) {
+        throw new ApiError('Forbidden', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, administrationId: body.administration_id, userRoles, allowedRoles },
+        });
+      }
+    }
+
+    let taskId: string;
+    try {
+      const result = await taskService.getTaskIdByVariantId(body.task_variant_id);
+      taskId = result.taskId;
+    } catch (error) {
+      if (error instanceof ApiError && error.statusCode === StatusCodes.NOT_FOUND) {
+        throw new ApiError('Invalid task_variant_id', {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, taskVariantId: body.task_variant_id },
+          cause: error,
+        });
+      }
+      throw error;
+    }
+
+    try {
+      const data: NewRun = {
+        userId,
+        taskId,
+        taskVariantId: body.task_variant_id,
+        taskVersion: body.task_version,
+        administrationId: body.administration_id,
+        ...(body.metadata ? { metadata: body.metadata } : {}),
+      };
+
+      const run = await runsRepository.create({ data });
+      return { runId: run.id as string };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId, body } }, 'Failed to create run');
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId,
+            taskId,
+            taskVariantId: body.task_variant_id,
+            taskVersion: body.task_version,
+            administrationId: body.administration_id,
+          },
+        },
+        'Failed to create run',
+      );
 
       throw new ApiError('Failed to create run', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
