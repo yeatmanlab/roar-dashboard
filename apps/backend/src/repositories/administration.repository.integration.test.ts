@@ -7,7 +7,7 @@
  * getAssignedUserCountsByAdministrationIds is covered by the existing
  * administration.access-controls.integration.test.ts — only light coverage here.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
@@ -15,7 +15,11 @@ import { AdministrationRepository } from './administration.repository';
 import { UserRole } from '../enums/user-role.enum';
 
 describe('AdministrationRepository', () => {
-  const repository = new AdministrationRepository();
+  let repository: AdministrationRepository;
+
+  beforeAll(() => {
+    repository = new AdministrationRepository();
+  });
 
   describe('listAll', () => {
     it('returns all administrations with pagination', async () => {

@@ -17,8 +17,14 @@ export default async function globalSetup() {
     }
   }
 
+  // Initialize database pools before running migrations
+  const { initializeDatabasePools, closeDatabasePools } = await import('./src/db/clients');
+  await initializeDatabasePools();
+
   // Run migrations once before any tests
-  const { runMigrations, closeAllConnections } = await import('./src/test-support/db');
+  const { runMigrations } = await import('./src/test-support/db');
   await runMigrations();
-  await closeAllConnections(); // Close this process's connections (tests use their own)
+
+  // Close this process's connections (tests use their own)
+  await closeDatabasePools();
 }
