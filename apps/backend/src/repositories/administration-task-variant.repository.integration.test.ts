@@ -16,7 +16,11 @@ import { AdministrationTaskVariantRepository } from './administration-task-varia
 import type { Administration, Task, TaskVariant } from '../db/schema';
 
 describe('AdministrationTaskVariantRepository', () => {
-  const repository = new AdministrationTaskVariantRepository();
+  let repository: AdministrationTaskVariantRepository;
+
+  beforeAll(() => {
+    repository = new AdministrationTaskVariantRepository();
+  });
 
   // Shared test data created once for this file
   let adminA: Administration;
