@@ -502,52 +502,6 @@ describe('RunEventsService', () => {
       expect(mockRunsRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should throw BAD_REQUEST when engagement flag value is not boolean', async () => {
-      const mockRun = { id: validRunId, userId: 'user-123' };
-      mockRunsRepository.getById.mockResolvedValue(mockRun);
-
-      const invalidBody = {
-        type: 'engagement' as const,
-        engagement_flags: {
-          incomplete: 'not-a-boolean',
-        },
-        reliable_run: true,
-      };
-
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        runEventsService.updateEngagement(mockAuthContext, validRunId, invalidBody as any),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-
-      expect(mockRunsRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should throw BAD_REQUEST when engagement flag name is not allowed', async () => {
-      const mockRun = { id: validRunId, userId: 'user-123' };
-      mockRunsRepository.getById.mockResolvedValue(mockRun);
-
-      const invalidBody = {
-        type: 'engagement' as const,
-        engagement_flags: {
-          invalid_flag_name: true,
-        },
-        reliable_run: true,
-      };
-
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        runEventsService.updateEngagement(mockAuthContext, validRunId, invalidBody as any),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-
-      expect(mockRunsRepository.update).not.toHaveBeenCalled();
-    });
-
     it('should handle empty engagement flags', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);

@@ -4,7 +4,6 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { RunsRepository } from '../../repositories/runs.repository';
 import { runTrials, runTrialInteractions } from '../../db/schema/assessment';
-import { ALLOWED_ENGAGEMENT_FLAG_KEYS } from '@roar-dashboard/api-contract';
 
 interface AuthContext {
   userId: string;
@@ -86,33 +85,13 @@ export function RunEventsService({
 
     await assertRunOwnedByUser(runId, authContext.userId);
 
-    const flags = body.engagement_flags ?? {};
-    for (const [key, value] of Object.entries(flags)) {
-      if (typeof value !== 'boolean') {
-        throw new ApiError('Invalid engagement flag value', {
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { runId, key, valueType: typeof value },
-        });
-      }
-
-      if (ALLOWED_ENGAGEMENT_FLAG_KEYS.length > 0 && !ALLOWED_ENGAGEMENT_FLAG_KEYS.includes(key)) {
-        throw new ApiError('Invalid engagement flag name', {
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { runId, key },
-        });
-      }
-    }
-
     await runsRepository.update({
       id: runId,
       data: {
         updatedAt: new Date(),
-        engagementFlags: flags,
+        engagementFlags: body.engagement_flags,
         reliableRun: body.reliable_run,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+      },
     });
   }
 

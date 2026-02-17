@@ -25,4 +25,22 @@ describe('RunsController', () => {
     expect(typeof RunsController.create).toBe('function');
     expect(typeof RunsController.event).toBe('function');
   });
+
+  describe('create', () => {
+    it('should have proper method signature', async () => {
+      const { RunsController } = await import('./runs.controller');
+
+      expect(RunsController.create).toBeDefined();
+      expect(RunsController.create.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('event', () => {
+    it('should have proper method signature', async () => {
+      const { RunsController } = await import('./runs.controller');
+
+      expect(RunsController.event).toBeDefined();
+      expect(RunsController.event.length).toBeGreaterThanOrEqual(3);
+    });
+  });
 });
