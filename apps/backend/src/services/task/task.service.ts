@@ -111,7 +111,7 @@ export function TaskService({
       // Check if the task-variant name already exists (task-variant names are unique)
       const existingVariant = await taskVariantRepository.getByName(data.name);
 
-      if (existingVariant.length > 0) {
+      if (existingVariant) {
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,

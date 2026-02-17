@@ -1,18 +1,46 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
-import { taskVariantParameters, type TaskVariantParameter } from '../db/schema';
+import { taskVariantParameters, type TaskVariantParameter, type NewTaskVariantParameter } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';
 
-export class TaskVariantParameterRepository extends BaseRepository<TaskVariantParameter, typeof taskVariantParameters> {
+/**
+ * Repository for task variant parameter-related database operations.
+ *
+ * Provides CRUD operations for task variant parameters (assessment configuration values).
+ * Parameters are key-value pairs that customize how a task variant behaves.
+ * Extends BaseRepository with task variant parameter-specific query methods.
+ */
+export class TaskVariantParameterRepository extends BaseRepository<
+  TaskVariantParameter,
+  typeof taskVariantParameters,
+  NewTaskVariantParameter
+> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, taskVariantParameters);
   }
 
   /**
-   * Example method to retrieve all parameters for a given task variant.
-   * This may be expanded or modified in future development.
+   * Retrieves all parameters for a given task variant.
+   *
+   * Parameters are key-value pairs stored as JSONB that configure the variant's behavior
+   * (e.g., difficulty settings, time limits, enabled features).
+   *
+   * @param taskVariantId - The UUID of the task variant
+   * @returns Array of parameters for the variant, or empty array if none exist
+   *
+   * @example
+   * ```typescript
+   * const params = await repository.getByTaskVariantId('variant-uuid');
+   * params.forEach(p => {
+   *   console.log(`${p.name}: ${JSON.stringify(p.value)}`);
+   * });
+   * // Output:
+   * // difficulty: "easy"
+   * // timeLimit: 120
+   * // hintsEnabled: true
+   * ```
    */
   async getByTaskVariantId(taskVariantId: string): Promise<TaskVariantParameter[]> {
     const results = await this.get({

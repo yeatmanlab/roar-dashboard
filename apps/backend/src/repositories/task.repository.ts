@@ -1,24 +1,43 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
-import { tasks, type Task } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
+import { eq } from 'drizzle-orm';
+import { tasks, type Task, type NewTask } from '../db/schema';
+import { CoreDbClient } from '../db/clients';
 import { BaseRepository } from './base.repository';
 
-export class TaskRepository extends BaseRepository<Task, typeof tasks> {
+/**
+ * Repository for task-related database operations.
+ *
+ * Provides CRUD operations for tasks (assessments) in the system.
+ * Extends BaseRepository with task-specific query methods.
+ */
+export class TaskRepository extends BaseRepository<Task, typeof tasks, NewTask> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, tasks);
   }
 
   /**
-   * Example method, this may not be needed in production.
+   * Retrieves a task by its unique slug.
+   *
+   * Slugs are unique identifiers in a URL-friendly format (e.g., 'swr', 'letter-task').
+   *
+   * @param slug - The unique slug of the task to retrieve
+   * @returns The task with the given slug, or null if not found
+   *
+   * @example
+   * ```typescript
+   * const task = await taskRepository.getBySlug('swr');
+   * if (task) {
+   *   console.log(task.name); // "Single Word Reading"
+   * }
+   * ```
    */
   async getBySlug(slug: string): Promise<Task | null> {
-    const [result] = (await this.get({
+    const results = await this.get({
       where: eq(tasks.slug, slug),
       limit: 1,
-    })) as Task[];
+    });
 
-    return result ?? null;
+    return results[0] ?? null;
   }
 }
