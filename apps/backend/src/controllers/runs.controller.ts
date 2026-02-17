@@ -60,17 +60,17 @@ export const RunsController = {
    */
   event: async (authContext: AuthContext, runId: string, body: RunEventBody) => {
     try {
-      if (body.type === 'complete') {
+      const eventType = (body as { type?: unknown }).type;
+      if (eventType === 'complete') {
         await runEventsService.completeRun(authContext, runId, body);
-      } else if (body.type === 'abort') {
+      } else if (eventType === 'abort') {
         await runEventsService.abortRun(authContext, runId, body);
       } else {
         // Should never happen due to contract validation, but defense-in-depth:
         throw new ApiError('Invalid event type', {
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          context: { runId, type: (body as any).type },
+          context: { runId, type: eventType },
         });
       }
 

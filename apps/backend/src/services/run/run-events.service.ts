@@ -69,8 +69,7 @@ export function RunEventsService({
       throw new ApiError('Invalid event type', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        context: { runId, type: (body as any).type },
+        context: { runId, type: body.type },
       });
     }
     await assertRunOwnedByUser(runId, authContext.userId);
@@ -107,8 +106,7 @@ export function RunEventsService({
       throw new ApiError('Invalid event type', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        context: { runId, type: (body as any).type },
+        context: { runId, type: body.type },
       });
     }
 
@@ -122,8 +120,7 @@ export function RunEventsService({
         completedAt: now,
         updatedAt: now,
         ...(body.metadata ? { completionMetadata: body.metadata } : {}),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+      },
     });
   }
 
