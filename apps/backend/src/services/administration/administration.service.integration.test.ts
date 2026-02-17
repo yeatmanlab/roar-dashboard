@@ -26,6 +26,7 @@ import { AdministrationFactory } from '../../test-support/factories/administrati
 import { AdministrationOrgFactory } from '../../test-support/factories/administration-org.factory';
 import { AdministrationClassFactory } from '../../test-support/factories/administration-class.factory';
 import { AdministrationGroupFactory } from '../../test-support/factories/administration-group.factory';
+import { RunFactory } from '../../test-support/factories/run.factory';
 import type { AssignmentWithOptional } from '../../repositories/administration.repository';
 import { UserRole } from '../../enums/user-role.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -2685,6 +2686,22 @@ describe('AdministrationService (integration)', () => {
           statusCode: 404,
           message: 'Administration not found',
         });
+      });
+
+      it('should return 409 when runs exist for the administration', async () => {
+        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
+
+        // Create a run in the assessment database referencing this administration
+        await RunFactory.create({ administrationId: administration.id });
+
+        await expect(service.deleteById(getSuperAdminContext(), administration.id)).rejects.toMatchObject({
+          statusCode: 409,
+          message: 'Cannot delete administration with existing assessment runs',
+        });
+
+        // Verify administration still exists
+        const existing = await service.getById(getSuperAdminContext(), administration.id);
+        expect(existing.id).toBe(administration.id);
       });
     });
 

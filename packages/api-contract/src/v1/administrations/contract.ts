@@ -213,7 +213,7 @@ export const AdministrationsContract = c.router(
         'Returns 204 on success. ' +
         'Returns 403 if the user lacks permission to delete the administration. ' +
         'Returns 404 if the administration does not exist. ' +
-        'Returns 409 if foreign key constraints prevent deletion (e.g., dependent records with RESTRICT constraints).',
+        'Returns 409 if the administration has existing assessment runs that must be preserved.',
     },
   },
   { pathPrefix: '/administrations' },

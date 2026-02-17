@@ -1728,9 +1728,9 @@ describe('AdministrationsController', () => {
       });
     });
 
-    it('should return 409 when FK constraint blocks deletion', async () => {
+    it('should return 409 when runs exist for the administration', async () => {
       mockDeleteById.mockRejectedValue(
-        new ApiError('Cannot delete administration due to existing dependent records', {
+        new ApiError('Cannot delete administration with existing assessment runs', {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
         }),
@@ -1743,7 +1743,7 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.CONFLICT);
       expect(result.body).toEqual({
         error: {
-          message: 'Cannot delete administration due to existing dependent records',
+          message: 'Cannot delete administration with existing assessment runs',
           code: 'resource/conflict',
           traceId: expect.any(String),
         },

@@ -17,7 +17,6 @@ import type { Administration, Org, Class, Group } from '../../db/schema';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-import { isForeignKeyViolation } from '../../utils/postgres-error.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { OrgType } from '../../enums/org-type.enum';
@@ -33,9 +32,9 @@ import {
   AdministrationTaskVariantRepository,
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
-import { RunsRepository } from '../../repositories/runs.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
+import { RunsService } from '../runs/runs.service';
 import { TaskService } from '../task/task.service';
 import type { Condition } from '../task/task.types';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
@@ -99,13 +98,13 @@ export interface ListAgreementsOptions extends ListOrgsOptions<AdministrationAgr
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
-  runsRepository = new RunsRepository(),
+  runsService = RunsService(),
   userRepository = new UserRepository(),
   taskService = TaskService(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
-  runsRepository?: RunsRepository;
+  runsService?: ReturnType<typeof RunsService>;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
 } = {}) {
@@ -266,7 +265,7 @@ export function AdministrationService({
           cause: err,
         });
       }),
-      runsRepository.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
+      runsService.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
         throw new ApiError('Failed to fetch administration stats', {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -884,14 +883,13 @@ export function AdministrationService({
    * Junction tables (administrationOrgs, administrationClasses, etc.) have ON DELETE CASCADE,
    * so those will be cleaned up automatically.
    *
-   * Returns 409 CONFLICT if the administration has dependent resources that block deletion
-   * (e.g., future tables with RESTRICT foreign key constraints).
+   * Returns 409 CONFLICT if the administration has existing assessment runs in the assessment database.
    *
    * @param authContext - User's auth context (id and type)
    * @param administrationId - The administration ID to delete
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks permission to delete
-   * @throws {ApiError} CONFLICT if foreign key constraints prevent deletion (e.g., existing runs)
+   * @throws {ApiError} CONFLICT if runs exist for this administration
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
    */
   async function deleteById(authContext: AuthContext, administrationId: string): Promise<void> {
@@ -901,19 +899,21 @@ export function AdministrationService({
       // Verify existence and authorization with DELETE permission
       await verifyAdministrationAccess(authContext, administrationId, Permissions.Administrations.DELETE);
 
-      // Attempt deletion
-      await administrationRepository.delete({ id: administrationId });
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-
-      // Check for FK constraint violation (Postgres SQLSTATE 23503)
-      if (isForeignKeyViolation(error)) {
-        throw new ApiError('Cannot delete administration due to existing dependent records', {
+      // Check if runs exist in the assessment database
+      // Since runs are in a separate DB without FK constraints, we must check explicitly
+      const run = await runsService.getByAdministrationId(administrationId);
+      if (run) {
+        throw new ApiError('Cannot delete administration with existing assessment runs', {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
           context: { userId, administrationId },
         });
       }
+
+      // Delete the administration (junction tables cascade automatically)
+      await administrationRepository.delete({ id: administrationId });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
 
       logger.error({ err: error, context: { userId, administrationId } }, 'Failed to delete administration');
 
