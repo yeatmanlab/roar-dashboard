@@ -2,98 +2,48 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 
-/**
- * Represents a task variant record from the task database.
- */
-export interface TaskVariantRecord {
-  id: string;
-  taskId: string;
-}
+import { TaskVariantRepository } from '../../repositories/task-variant.repository';
 
 /**
- * Function signature for resolving a task variant by its ID.
- * Should query the non-assessment database where task variants are stored.
- */
-type GetTaskVariantByIdFn = (variantId: string) => Promise<TaskVariantRecord | null>;
-
-/**
- * Function signature for validating a task version.
- * Returns true if the version is valid for the given task, false otherwise.
- */
-type IsTaskVersionValidFn = (taskId: string, version: string) => Promise<boolean>;
-
-/**
- * TaskService
+ * TaskService factory function.
  *
- * Provides task-related operations for run creation:
- * - Resolves taskId from task_variant_id (queries non-assessment DB)
- * - Validates task versions
+ * Creates a service for managing task operations including task variant resolution.
+ * Supports dependency injection for testing and flexibility.
  *
- * @param getTaskVariantById - Optional function to resolve task variants (must be provided for production)
- * @param isTaskVersionValid - Optional function to validate task versions (defaults to non-empty string check)
+ * @param options - Configuration options for the service
+ * @param options.taskVariantRepository - Repository for task variant data access (default: new TaskVariantRepository())
+ * @returns Object with getTaskIdByVariantId method for resolving task IDs from variant IDs
  */
 export function TaskService({
-  getTaskVariantById,
-  isTaskVersionValid,
+  taskVariantRepository = new TaskVariantRepository(),
 }: {
-  getTaskVariantById?: GetTaskVariantByIdFn;
-  isTaskVersionValid?: IsTaskVersionValidFn;
+  taskVariantRepository?: TaskVariantRepository;
 } = {}) {
-  const getTaskVariantByIdImpl = getTaskVariantById;
-  // Default version validation: non-empty string
-  const isTaskVersionValidImpl: IsTaskVersionValidFn =
-    isTaskVersionValid ?? (async (_taskId, version) => typeof version === 'string' && version.trim().length > 0);
-
   /**
-   * Resolve taskId from a task variant ID.
+   * Resolves the taskId from a given taskVariantId.
    *
-   * Queries the non-assessment database to find the task variant and extract its taskId.
+   * This method performs semantic validation of the task variant ID.
+   * If the variant ID is invalid or not found, it returns a 422 UNPROCESSABLE_ENTITY
+   * error rather than a 404 NOT_FOUND, because this is a request validation failure,
+   * not a missing resource problem.
    *
-   * @param taskVariantId - UUID of the task variant
-   * @returns Object containing the resolved taskId
-   * @throws ApiError with 500 if resolver not configured
-   * @throws ApiError with 404 if variant not found
+   * @param taskVariantId - The UUID of the task variant to resolve
+   * @returns Promise resolving to object with taskId
+   * @throws ApiError with UNPROCESSABLE_ENTITY if taskVariantId is invalid or not found
    */
-  async function getTaskByVariantId(taskVariantId: string): Promise<{ taskId: string }> {
-    if (!getTaskVariantByIdImpl) {
-      throw new ApiError('Task variant resolver not configured', {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { taskVariantId },
-      });
-    }
+  async function getTaskIdByVariantId(taskVariantId: string): Promise<{ taskId: string }> {
+    const taskId = await taskVariantRepository.getTaskIdByVariantId(taskVariantId);
 
-    const variant = await getTaskVariantByIdImpl(taskVariantId);
-
-    if (!variant) {
-      throw new ApiError('Task variant not found', {
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { taskVariantId },
-      });
-    }
-
-    return { taskId: variant.taskId };
-  }
-
-  /**
-   * Validate that a task version is valid for the given task.
-   *
-   * @param taskId - ID of the task to validate against
-   * @param version - Version string to validate
-   * @throws ApiError with 422 if version is invalid
-   */
-  async function validateTaskVersion(taskId: string, version: string): Promise<void> {
-    const ok = await isTaskVersionValidImpl(taskId, version);
-
-    if (!ok) {
-      throw new ApiError('Invalid task version', {
+    if (!taskId) {
+      throw new ApiError('Invalid task_variant_id', {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { taskId, version },
+        context: { taskVariantId },
       });
     }
+
+    return { taskId };
   }
 
-  return { getTaskByVariantId, validateTaskVersion };
+  return { getTaskIdByVariantId };
 }

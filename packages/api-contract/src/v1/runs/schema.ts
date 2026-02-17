@@ -3,19 +3,19 @@ import { z } from 'zod';
 /**
  * Request body for POST /runs
  */
-export const StartRunRequestBodySchema = z.object({
+export const CreateRunRequestBodySchema = z.object({
   task_variant_id: z.string().uuid(),
-  task_version: z.string().min(1),
-  administration_id: z.string().uuid(), // make it required for now
+  task_version: z.string(),
+  administration_id: z.string().uuid(),
   metadata: z.record(z.unknown()).optional(),
 });
 
-export type StartRunRequestBody = z.infer<typeof StartRunRequestBodySchema>;
+export type CreateRunRequestBody = z.infer<typeof CreateRunRequestBodySchema>;
 
 /**
  * Response payload for POST /runs
  */
-export const StartRunResponseSchema = z.object({
+export const CreateRunResponseSchema = z.object({
   run_id: z.string().uuid(),
 });
 
@@ -50,3 +50,4 @@ export const RunAbortEventSchema = z.object({
 export const RunEventBodySchema = z.discriminatedUnion('type', [RunCompleteEventSchema, RunAbortEventSchema]);
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;
+export type CreateRunResponse = z.infer<typeof CreateRunResponseSchema>;

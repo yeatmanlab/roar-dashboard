@@ -8,14 +8,18 @@
  * use arbitrary UUIDs for userId/taskId/taskVariantId and fixture
  * administration IDs where convenient.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { faker } from '@faker-js/faker';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { RunsRepository } from './runs.repository';
 
 describe('RunsRepository', () => {
-  const repository = new RunsRepository();
+  let repository: RunsRepository;
+
+  beforeAll(() => {
+    repository = new RunsRepository();
+  });
 
   describe('getRunStatsByAdministrationIds', () => {
     it('returns empty map for empty input array', async () => {
