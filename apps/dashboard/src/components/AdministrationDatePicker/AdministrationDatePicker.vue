@@ -105,7 +105,12 @@ const presetChange = (key) => {
 
 // Format a date to a string
 const getDateString = (date) => {
-  return date.toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
 };
 
 onMounted(() => {
