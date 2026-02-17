@@ -54,7 +54,7 @@ describe('GroupsController', () => {
           },
         });
       }
-      expect(mockGetLatestValidByGroupId).toHaveBeenCalledWith('group-id', mockAuthContext);
+      expect(mockGetLatestValidByGroupId).toHaveBeenCalledWith(mockAuthContext, 'group-id');
     });
 
     it('should handle invitation code with null validTo', async () => {

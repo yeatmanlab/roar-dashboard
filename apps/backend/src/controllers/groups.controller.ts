@@ -42,7 +42,7 @@ export const GroupsController = {
    */
   getInvitationCode: async (authContext: AuthContext, groupId: string) => {
     try {
-      const invitationCode = await invitationCodeService.getLatestValidByGroupId(groupId, authContext);
+      const invitationCode = await invitationCodeService.getLatestValidByGroupId(authContext, groupId);
 
       return {
         status: StatusCodes.OK as const,

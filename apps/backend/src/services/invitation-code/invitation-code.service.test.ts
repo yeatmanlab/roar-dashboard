@@ -46,14 +46,14 @@ describe('InvitationCodeService', () => {
       it('should allow super admins to access invitation codes', async () => {
         mockRepository.getLatestValidByGroupId.mockResolvedValue(mockInvitationCode);
 
-        const result = await service.getLatestValidByGroupId('group-id', superAdminContext);
+        const result = await service.getLatestValidByGroupId(superAdminContext, 'group-id');
 
         expect(result).toEqual(mockInvitationCode);
         expect(mockRepository.getLatestValidByGroupId).toHaveBeenCalledWith('group-id');
       });
 
       it('should deny non-super admins with 403', async () => {
-        await expect(service.getLatestValidByGroupId('group-id', regularUserContext)).rejects.toThrow(
+        await expect(service.getLatestValidByGroupId(regularUserContext, 'group-id')).rejects.toThrow(
           expect.objectContaining({
             message: 'Access denied',
             statusCode: StatusCodes.FORBIDDEN,
@@ -69,7 +69,7 @@ describe('InvitationCodeService', () => {
       it('should return invitation code when found', async () => {
         mockRepository.getLatestValidByGroupId.mockResolvedValue(mockInvitationCode);
 
-        const result = await service.getLatestValidByGroupId('group-id', superAdminContext);
+        const result = await service.getLatestValidByGroupId(superAdminContext, 'group-id');
 
         expect(result).toEqual(mockInvitationCode);
       });
@@ -78,7 +78,7 @@ describe('InvitationCodeService', () => {
         const codeWithNullValidTo = { ...mockInvitationCode, validTo: null };
         mockRepository.getLatestValidByGroupId.mockResolvedValue(codeWithNullValidTo);
 
-        const result = await service.getLatestValidByGroupId('group-id', superAdminContext);
+        const result = await service.getLatestValidByGroupId(superAdminContext, 'group-id');
 
         expect(result.validTo).toBeNull();
       });
@@ -88,7 +88,7 @@ describe('InvitationCodeService', () => {
       it('should throw 404 when no invitation code found', async () => {
         mockRepository.getLatestValidByGroupId.mockResolvedValue(null);
 
-        await expect(service.getLatestValidByGroupId('group-id', superAdminContext)).rejects.toThrow(
+        await expect(service.getLatestValidByGroupId(superAdminContext, 'group-id')).rejects.toThrow(
           expect.objectContaining({
             message: 'No valid invitation code found',
             statusCode: StatusCodes.NOT_FOUND,
@@ -104,14 +104,14 @@ describe('InvitationCodeService', () => {
         });
         mockRepository.getLatestValidByGroupId.mockRejectedValue(apiError);
 
-        await expect(service.getLatestValidByGroupId('group-id', superAdminContext)).rejects.toThrow(apiError);
+        await expect(service.getLatestValidByGroupId(superAdminContext, 'group-id')).rejects.toThrow(apiError);
       });
 
       it('should wrap non-ApiError exceptions', async () => {
         const genericError = new Error('Unexpected error');
         mockRepository.getLatestValidByGroupId.mockRejectedValue(genericError);
 
-        await expect(service.getLatestValidByGroupId('group-id', superAdminContext)).rejects.toThrow(
+        await expect(service.getLatestValidByGroupId(superAdminContext, 'group-id')).rejects.toThrow(
           expect.objectContaining({
             message: 'Failed to retrieve invitation code',
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

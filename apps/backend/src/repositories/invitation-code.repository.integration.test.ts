@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { InvitationCodeRepository } from './invitation-code.repository';
 import { invitationCodes, groups } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
-import { sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 describe('InvitationCodeRepository Integration Tests', () => {
   let repository: InvitationCodeRepository;
@@ -15,17 +15,17 @@ describe('InvitationCodeRepository Integration Tests', () => {
     const [group] = await CoreDbClient.insert(groups)
       .values({
         name: 'Test Group',
-        orgId: sql`gen_random_uuid()`,
+        groupType: 'cohort',
         abbreviation: 'TG',
       })
       .returning();
-    testGroupId = group.id;
+    testGroupId = group!.id;
   });
 
   afterEach(async () => {
     // Clean up test data
-    await CoreDbClient.delete(invitationCodes).where(sql`group_id = ${testGroupId}`);
-    await CoreDbClient.delete(groups).where(sql`id = ${testGroupId}`);
+    await CoreDbClient.delete(invitationCodes).where(eq(invitationCodes.groupId, testGroupId));
+    await CoreDbClient.delete(groups).where(eq(groups.id, testGroupId));
   });
 
   describe('getLatestValidByGroupId', () => {
@@ -56,7 +56,7 @@ describe('InvitationCodeRepository Integration Tests', () => {
 
       expect(result).not.toBeNull();
       expect(result?.code).toBe('NEWER456');
-      expect(result?.id).toBe(newer.id);
+      expect(result?.id).toBe(newer!.id);
     });
 
     it('should return null when no valid invitation code exists', async () => {
@@ -124,7 +124,7 @@ describe('InvitationCodeRepository Integration Tests', () => {
       const [otherGroup] = await CoreDbClient.insert(groups)
         .values({
           name: 'Other Group',
-          orgId: sql`gen_random_uuid()`,
+          groupType: 'cohort',
           abbreviation: 'OG',
         })
         .returning();
@@ -138,7 +138,7 @@ describe('InvitationCodeRepository Integration Tests', () => {
           validTo: tomorrow,
         },
         {
-          groupId: otherGroup.id,
+          groupId: otherGroup!.id,
           code: 'OTHERGROUP456',
           validFrom: yesterday,
           validTo: tomorrow,
@@ -151,8 +151,8 @@ describe('InvitationCodeRepository Integration Tests', () => {
       expect(result?.code).toBe('TESTGROUP123');
 
       // Clean up other group
-      await CoreDbClient.delete(invitationCodes).where(sql`group_id = ${otherGroup.id}`);
-      await CoreDbClient.delete(groups).where(sql`id = ${otherGroup.id}`);
+      await CoreDbClient.delete(invitationCodes).where(eq(invitationCodes.groupId, otherGroup!.id));
+      await CoreDbClient.delete(groups).where(eq(groups.id, otherGroup!.id));
     });
 
     it('should handle codes that are valid right now (edge case)', async () => {
