@@ -2,6 +2,8 @@ import { StatusCodes } from 'http-status-codes';
 import { InvitationCodeService } from '../services/invitation-code/invitation-code.service';
 import type { InvitationCode as ApiInvitationCode } from '@roar-dashboard/api-contract';
 import type { InvitationCode } from '../db/schema';
+import { ApiError } from '../errors/api-error';
+import { toErrorResponse } from '../utils/to-error-response.util';
 
 const invitationCodeService = InvitationCodeService();
 
@@ -46,13 +48,24 @@ export const GroupsController = {
    * @returns Invitation code transformed to API response format
    */
   getInvitationCode: async (authContext: AuthContext, groupId: string) => {
-    const invitationCode = await invitationCodeService.getLatestValidByGroupId(groupId, authContext);
+    try {
+      const invitationCode = await invitationCodeService.getLatestValidByGroupId(groupId, authContext);
 
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: transformInvitationCode(invitationCode),
-      },
-    };
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformInvitationCode(invitationCode),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
   },
 };
