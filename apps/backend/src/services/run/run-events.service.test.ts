@@ -219,7 +219,6 @@ describe('RunEventsService', () => {
       expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
       expect(updateCall.data.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
       expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
-      const updateCall = mockRunsRepository.update.mock.calls[0][0];
       expect(updateCall.data.metadata).toEqual({ source: 'mobile', sessionId: 'sess-456' });
     });
   });
