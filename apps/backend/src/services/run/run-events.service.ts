@@ -54,11 +54,11 @@ export function RunEventsService({
    * Marks a run as aborted.
    *
    * Validates the event type, verifies user ownership, and updates the run's
-   * abort status with an optional reason. Currently only supports 'abort' event type.
+   * abort status with the provided abort timestamp. Currently only supports 'abort' event type.
    *
    * @param authContext - Authentication context with userId and isSuperAdmin
    * @param runId - UUID of the run to abort
-   * @param body - Event body containing type and optional reason
+   * @param body - Event body containing type and abortedAt timestamp
    * @throws ApiError with BAD_REQUEST (400) if event type is invalid
    * @throws ApiError with NOT_FOUND (404) if run doesn't exist
    * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
@@ -74,13 +74,10 @@ export function RunEventsService({
     }
     await assertRunOwnedByUser(runId, authContext.userId);
 
-    const now = new Date();
-
     await runsRepository.update({
       id: runId,
       data: {
-        updatedAt: now,
-        abortReason: body.reason ?? null,
+        abortedAt: body.abortedAt,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     });

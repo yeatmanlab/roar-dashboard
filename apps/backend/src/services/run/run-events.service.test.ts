@@ -139,7 +139,8 @@ describe('RunEventsService', () => {
 
   describe('abortRun', () => {
     const validRunId = '550e8400-e29b-41d4-a716-446655440000';
-    const validBody = { type: 'abort' as const };
+    const abortedAtTime = new Date('2024-01-15T10:30:00Z');
+    const validBody = { type: 'abort' as const, abortedAt: abortedAtTime };
 
     it('should abort a run successfully', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
@@ -149,34 +150,29 @@ describe('RunEventsService', () => {
       await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
 
       expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(mockRunsRepository.update).toHaveBeenCalledWith({
-        id: validRunId,
-        data: {
-          updatedAt: expect.any(Date),
-          abortReason: null,
-        },
-      });
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
+      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
 
-    it('should abort a run with a reason', async () => {
+    it('should abort a run with different abortedAt time', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockResolvedValue(undefined);
 
-      const bodyWithReason = {
+      const differentTime = new Date('2024-01-15T11:45:00Z');
+      const bodyWithDifferentTime = {
         type: 'abort' as const,
-        reason: 'User requested cancellation',
+        abortedAt: differentTime,
       };
 
-      await runEventsService.abortRun(mockAuthContext, validRunId, bodyWithReason);
+      await runEventsService.abortRun(mockAuthContext, validRunId, bodyWithDifferentTime);
 
-      expect(mockRunsRepository.update).toHaveBeenCalledWith({
-        id: validRunId,
-        data: {
-          updatedAt: expect.any(Date),
-          abortReason: 'User requested cancellation',
-        },
-      });
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
+      expect(updateCall.data.abortedAt).toBe(differentTime);
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -228,17 +224,6 @@ describe('RunEventsService', () => {
       expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
       expect(updateCall.data.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
       expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
-    });
-
-    it('should set abortReason to null when reason is not provided', async () => {
-      const mockRun = { id: validRunId, userId: 'user-123' };
-      mockRunsRepository.getById.mockResolvedValue(mockRun);
-      mockRunsRepository.update.mockResolvedValue(undefined);
-
-      await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
-
-      const updateCall = mockRunsRepository.update.mock.calls[0][0];
-      expect(updateCall.data.abortReason).toBeNull();
     });
   });
 });

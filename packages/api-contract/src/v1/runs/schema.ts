@@ -82,11 +82,11 @@ export const RunCompleteEventSchema = z.object({
  *
  * Represents an event that marks a run as aborted.
  * - type: Must be 'abort' (literal type for discriminated union)
- * - reason: Optional reason for the abort
+ * - abortedAt: The time the run was aborted
  */
 export const RunAbortEventSchema = z.object({
   type: z.literal('abort'),
-  reason: z.string().min(1).optional(),
+  abortedAt: z.date(),
 });
 
 /**
