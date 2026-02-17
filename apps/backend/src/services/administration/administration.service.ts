@@ -32,9 +32,9 @@ import {
   AdministrationTaskVariantRepository,
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
-import { RunsRepository } from '../../repositories/runs.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
+import { RunsService } from '../runs/runs.service';
 import { TaskService } from '../task/task.service';
 import type { Condition } from '../task/task.types';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
@@ -98,13 +98,13 @@ export interface ListAgreementsOptions extends ListOrgsOptions<AdministrationAgr
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
-  runsRepository = new RunsRepository(),
+  runsService = RunsService(),
   userRepository = new UserRepository(),
   taskService = TaskService(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
-  runsRepository?: RunsRepository;
+  runsService?: ReturnType<typeof RunsService>;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
 } = {}) {
@@ -117,6 +117,7 @@ export function AdministrationService({
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param administrationId - The administration ID to verify access for
+   * @param permission - The permission to check (defaults to READ)
    * @returns The administration if found and accessible
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks access
@@ -124,6 +125,7 @@ export function AdministrationService({
   async function verifyAdministrationAccess(
     authContext: AuthContext,
     administrationId: string,
+    permission: string = Permissions.Administrations.READ,
   ): Promise<Administration> {
     const { userId, isSuperAdmin } = authContext;
 
@@ -144,7 +146,7 @@ export function AdministrationService({
     }
 
     // Check access for non-super admin users
-    const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
+    const allowedRoles = rolesForPermission(permission as Parameters<typeof rolesForPermission>[0]);
     const authorized = await administrationRepository.getAuthorizedById({ userId, allowedRoles }, administrationId);
 
     if (!authorized) {
@@ -263,7 +265,7 @@ export function AdministrationService({
           cause: err,
         });
       }),
-      runsRepository.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
+      runsService.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
         throw new ApiError('Failed to fetch administration stats', {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -871,5 +873,68 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants, listAgreements };
+  /**
+   * Delete an administration by ID with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: can delete any administration
+   * - Users with DELETE permission: can delete administrations they have access to
+   *
+   * Junction tables (administrationOrgs, administrationClasses, etc.) have ON DELETE CASCADE,
+   * so those will be cleaned up automatically.
+   *
+   * Returns 409 CONFLICT if the administration has existing assessment runs in the assessment database.
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to delete
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks permission to delete
+   * @throws {ApiError} CONFLICT if runs exist for this administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
+   */
+  async function deleteById(authContext: AuthContext, administrationId: string): Promise<void> {
+    const { userId } = authContext;
+
+    try {
+      // Verify existence and authorization with DELETE permission
+      await verifyAdministrationAccess(authContext, administrationId, Permissions.Administrations.DELETE);
+
+      // Check if runs exist in the assessment database
+      // Since runs are in a separate DB without FK constraints, we must check explicitly
+      const run = await runsService.getByAdministrationId(administrationId);
+      if (run) {
+        throw new ApiError('Cannot delete administration with existing assessment runs', {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Delete the administration (junction tables cascade automatically)
+      await administrationRepository.delete({ id: administrationId });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to delete administration');
+
+      throw new ApiError('Failed to delete administration', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return {
+    list,
+    getById,
+    listDistricts,
+    listSchools,
+    listClasses,
+    listGroups,
+    listTaskVariants,
+    listAgreements,
+    deleteById,
+  };
 }

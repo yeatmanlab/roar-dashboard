@@ -193,6 +193,28 @@ export const AdministrationsContract = c.router(
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
     },
+    delete: {
+      method: 'DELETE',
+      path: '/:id',
+      pathParams: z.object({ id: z.string().uuid() }),
+      body: z.undefined(),
+      responses: {
+        204: z.undefined(),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Delete an administration',
+      description:
+        'Permanently deletes an administration and all associated assignments (orgs, classes, groups, task variants, agreements). ' +
+        'Returns 204 on success. ' +
+        'Returns 403 if the user lacks permission to delete the administration. ' +
+        'Returns 404 if the administration does not exist. ' +
+        'Returns 409 if the administration has existing assessment runs that must be preserved.',
+    },
   },
   { pathPrefix: '/administrations' },
 );

@@ -114,4 +114,48 @@ describe('RunsRepository', () => {
       expect(stats!.completed).toBe(1);
     });
   });
+
+  describe('getByAdministrationId', () => {
+    it('returns a run when runs exist for the administration', async () => {
+      const administrationId = faker.string.uuid();
+
+      const createdRun = await RunFactory.create({ administrationId });
+
+      const result = await repository.getByAdministrationId(administrationId);
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(createdRun.id);
+      expect(result!.administrationId).toBe(administrationId);
+    });
+
+    it('returns null when no runs exist for the administration', async () => {
+      const administrationId = faker.string.uuid();
+
+      const result = await repository.getByAdministrationId(administrationId);
+
+      expect(result).toBeNull();
+    });
+
+    it('returns a run even when only one run exists', async () => {
+      const administrationId = faker.string.uuid();
+
+      await RunFactory.create({ administrationId });
+
+      const result = await repository.getByAdministrationId(administrationId);
+
+      expect(result).not.toBeNull();
+    });
+
+    it('does not return runs belonging to other administrations', async () => {
+      const targetAdministrationId = faker.string.uuid();
+      const otherAdministrationId = faker.string.uuid();
+
+      // Create run for a different administration
+      await RunFactory.create({ administrationId: otherAdministrationId });
+
+      const result = await repository.getByAdministrationId(targetAdministrationId);
+
+      expect(result).toBeNull();
+    });
+  });
 });
