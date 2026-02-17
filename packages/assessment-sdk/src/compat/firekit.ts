@@ -8,8 +8,14 @@ import type {
   AbortRunOutput,
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
+  AddInteractionInput,
+  AddInteractionOutput,
   UpdateUserInput,
   UpdateUserOutput,
+  TrialData,
+  RawScores,
+  ComputedScores,
+  WriteTrialOutput,
 } from '../types';
 
 /**
@@ -167,6 +173,21 @@ export async function updateEngagementFlags({
  * Firekit compatibility stub.
  *
  * From @bdelab/roar-firekit:
+ * addInteraction(interaction: InteractionEvent) { […] }
+ *
+ * @param interaction - The interaction event to record.
+ * @returns void
+ * @throws SDKError - Always, until implemented.
+ */
+export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
+  void interaction;
+  throw new SDKError('appkit.addInteraction not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
  * async updateUser({ tasks, variants, assessmentPid, ...userMetadata }: UserUpdateInput): Promise<void> { […] }
  *
  * @deprecated This method is related to standalone apps and may be deprecated in the future.
@@ -184,4 +205,26 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
 
   void userUpdateData;
   throw new SDKError('appkit.updateUser not yet implemented');
+}
+
+/**
+ * Firekit compatibility stub.
+ *
+ * From @bdelab/roar-firekit:
+ * async writeTrial(trialData: TrialData, computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>) { […] }
+ *
+ * Writes trial data to the backend and optionally computes scores via callback.
+ *
+ * @param trialData - Trial data object containing assessment-specific trial information
+ * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores
+ * @returns Promise<void>
+ * @throws SDKError - Always, until implemented.
+ */
+export async function writeTrial(
+  trialData: TrialData,
+  computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
+): WriteTrialOutput {
+  void trialData;
+  void computedScoreCallback;
+  throw new SDKError('appkit.writeTrial not yet implemented');
 }
