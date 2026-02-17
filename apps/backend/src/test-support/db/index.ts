@@ -4,6 +4,11 @@
  * Exports all database utilities for integration tests.
  * Uses production database clients with test database connections (via .env.test).
  */
-export { CoreDbClient, AssessmentDbClient, closeAllConnections } from '../../db/clients';
+export {
+  CoreDbClient,
+  AssessmentDbClient,
+  initializeDatabasePools,
+  closeDatabasePools as closeAllConnections,
+} from '../../db/clients';
 export { runMigrations } from './migrate';
 export { truncateAllTables } from './cleanup';

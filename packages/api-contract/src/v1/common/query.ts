@@ -27,6 +27,14 @@ export const SortOrderSchema = z.enum(['asc', 'desc']).default('desc');
 export type SortOrder = z.infer<typeof SortOrderSchema>;
 
 /**
+ * Sort order constants for type-safe access.
+ */
+export const SortOrder = {
+  ASC: 'asc',
+  DESC: 'desc',
+} as const satisfies Record<string, SortOrder>;
+
+/**
  * Creates a sort query schema with a specific set of allowed sort fields.
  * @param sortFields - The allowed sort field values
  * @param defaultField - The default sort field
