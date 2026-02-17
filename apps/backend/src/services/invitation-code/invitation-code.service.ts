@@ -30,7 +30,7 @@ export function InvitationCodeService({
    * @throws {ApiError} 403 if user is not a super admin
    * @throws {ApiError} 404 if no valid invitation code exists
    */
-  async function getLatestValidByGroupId(groupId: string, authContext: AuthContext): Promise<InvitationCode> {
+  async function getLatestValidByGroupId(authContext: AuthContext, groupId: string): Promise<InvitationCode> {
     const { userId, isSuperAdmin } = authContext;
 
     // Only super admins can access invitation codes
