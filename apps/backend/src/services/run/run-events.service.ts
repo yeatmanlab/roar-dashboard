@@ -3,11 +3,7 @@ import type { RunEventBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { RunsRepository } from '../../repositories/runs.repository';
-
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
+import type { AuthContext } from '../../types/auth-context';
 
 /**
  * RunEventsService
@@ -43,8 +39,7 @@ export function RunEventsService({
       });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((run as any).userId !== userId) {
+    if (run.userId !== userId) {
       throw new ApiError('Forbidden', {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
