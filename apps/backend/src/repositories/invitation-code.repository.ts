@@ -1,14 +1,21 @@
-import { and, desc, eq, gte, lte, or, sql } from 'drizzle-orm';
-import { CoreDbClient } from '../db/clients';
+import { and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { BaseRepository } from './base.repository';
 import { invitationCodes, type InvitationCode } from '../db/schema';
+import { CoreDbClient } from '../db/clients';
+import type * as CoreDbSchema from '../db/schema/core';
 
 /**
  * InvitationCodeRepository
  *
  * Handles database operations for invitation codes.
+ * Extends BaseRepository for standard CRUD operations.
+ * Uses CoreDbClient by default, but accepts a custom DB client for testing.
  */
-export class InvitationCodeRepository {
-  private db = CoreDbClient;
+export class InvitationCodeRepository extends BaseRepository<InvitationCode, typeof invitationCodes> {
+  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
+    super(db, invitationCodes);
+  }
 
   /**
    * Get the latest valid invitation code for a group.
@@ -24,7 +31,7 @@ export class InvitationCodeRepository {
    * @returns The latest valid invitation code or null if none found
    */
   async getLatestValidByGroupId(groupId: string): Promise<InvitationCode | null> {
-    const now = new Date();
+    const now = sql`NOW()`;
 
     const result = await this.db
       .select()
@@ -33,7 +40,7 @@ export class InvitationCodeRepository {
         and(
           eq(invitationCodes.groupId, groupId),
           lte(invitationCodes.validFrom, now),
-          or(gte(invitationCodes.validTo, now), sql`${invitationCodes.validTo} IS NULL`),
+          or(gte(invitationCodes.validTo, now), isNull(invitationCodes.validTo)),
         ),
       )
       .orderBy(desc(invitationCodes.createdAt))

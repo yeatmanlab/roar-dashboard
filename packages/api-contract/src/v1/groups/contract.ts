@@ -1,7 +1,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { GroupInvitationCodeResponseSchema } from './schema';
-import { ErrorEnvelopeSchema } from '../response';
+import { InvitationCodeSchema } from './schema';
+import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
 
@@ -17,10 +17,11 @@ export const GroupsContract = c.router(
         groupId: z.string().uuid(),
       }),
       responses: {
-        200: GroupInvitationCodeResponseSchema,
+        200: SuccessEnvelopeSchema(InvitationCodeSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'Get group invitation code',

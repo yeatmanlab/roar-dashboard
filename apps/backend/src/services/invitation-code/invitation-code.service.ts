@@ -4,21 +4,7 @@ import type { InvitationCode } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { logger } from '../../logger';
-
-/**
- * Auth context passed from controller/middleware
- */
-export interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
-
-/**
- * InvitationCodeService Dependencies (for testing)
- */
-export interface InvitationCodeServiceDeps {
-  invitationCodeRepository?: InvitationCodeRepository;
-}
+import type { AuthContext } from '../../types/auth-context';
 
 /**
  * InvitationCodeService
@@ -26,9 +12,11 @@ export interface InvitationCodeServiceDeps {
  * Business logic layer for invitation code operations.
  * Handles authorization (super admin only) and delegates to repository.
  */
-export function InvitationCodeService(deps: InvitationCodeServiceDeps = {}) {
-  const invitationCodeRepository = deps.invitationCodeRepository ?? new InvitationCodeRepository();
-
+export function InvitationCodeService({
+  invitationCodeRepository = new InvitationCodeRepository(),
+}: {
+  invitationCodeRepository?: InvitationCodeRepository;
+} = {}) {
   /**
    * Get the latest valid invitation code for a group.
    *

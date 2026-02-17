@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { SuccessEnvelopeSchema } from '../response';
 
 /**
  * Invitation Code Schema
@@ -19,10 +18,3 @@ export const InvitationCodeSchema = z.object({
 });
 
 export type InvitationCode = z.infer<typeof InvitationCodeSchema>;
-
-/**
- * Response for getting a group's invitation code.
- */
-export const GroupInvitationCodeResponseSchema = SuccessEnvelopeSchema(InvitationCodeSchema);
-
-export type GroupInvitationCodeResponse = z.infer<typeof GroupInvitationCodeResponseSchema>;
