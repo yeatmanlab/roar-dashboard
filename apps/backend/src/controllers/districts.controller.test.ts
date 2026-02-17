@@ -163,7 +163,7 @@ describe('DistrictsController', () => {
       });
 
       const data = expectOkResponse(result);
-      expect(data.items[0].counts).toEqual({
+      expect(data.items[0]!.counts).toEqual({
         users: 150,
         schools: 10,
         classes: 45,

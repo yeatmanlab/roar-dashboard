@@ -320,7 +320,7 @@ describe('DistrictRepository', () => {
 
       expect(result.items.length).toBeGreaterThan(0);
       for (const item of result.items) {
-        expect(item.counts).toBeUndefined();
+        expect((item as DistrictWithCounts).counts).toBeUndefined();
       }
     });
   });

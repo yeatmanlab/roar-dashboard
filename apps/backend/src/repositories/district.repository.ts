@@ -51,6 +51,7 @@ export interface ListAuthorizedOptions {
     direction: 'asc' | 'desc';
   };
   includeEnded?: boolean;
+  embedCounts?: boolean;
 }
 
 /**
@@ -77,8 +78,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param options - Pagination, sorting, and optional filters
    * @returns Paginated result with districts
    */
-  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<District>> {
-    const { page, perPage, orderBy, includeEnded = false } = options;
+  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<District | DistrictWithCounts>> {
+    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
     // Build where clause for district type and rostering status
     const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
@@ -95,12 +96,30 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Delegate to getAll() with array of order expressions (primary sort + secondary sort on ID)
-    return this.getAll({
+    const result = await this.getAll({
       page,
       perPage,
       orderBy: [sortDirection, asc(orgs.id)],
       ...(where && { where }),
     });
+
+    // Fetch and attach counts if requested
+    if (embedCounts && result.items.length > 0) {
+      const districtIds = result.items.map((d) => d.id);
+      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
+
+      const districtsWithCounts = result.items.map((district) => ({
+        ...district,
+        counts: countsMap.get(district.id),
+      })) as DistrictWithCounts[];
+
+      return {
+        items: districtsWithCounts,
+        totalItems: result.totalItems,
+      };
+    }
+
+    return result;
   }
 
   /**
@@ -118,8 +137,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   async listAuthorized(
     accessControlFilter: AccessControlFilter,
     options: ListAuthorizedOptions,
-  ): Promise<PaginatedResult<District>> {
-    const { page, perPage, orderBy, includeEnded = false } = options;
+  ): Promise<PaginatedResult<District | DistrictWithCounts>> {
+    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
     const offset = (page - 1) * perPage;
 
     // Build the UNION query for accessible org IDs using access controls
@@ -168,7 +187,18 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .limit(perPage)
       .offset(offset);
 
-    const districts = dataResult.map((row) => row.org as District);
+    let districts: (District | DistrictWithCounts)[] = dataResult.map((row) => row.org as District);
+
+    // Fetch and attach counts if requested
+    if (embedCounts && districts.length > 0) {
+      const districtIds = districts.map((d) => d.id);
+      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
+
+      districts = districts.map((district) => ({
+        ...district,
+        counts: countsMap.get(district.id),
+      }));
+    }
 
     return {
       items: districts,
@@ -233,5 +263,27 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     }
 
     return countsMap;
+  }
+
+  /**
+   * Get child organizations of a district.
+   *
+   * Returns all organizations that have the given district as their parent.
+   * By default, excludes organizations with rosteringEnded timestamp.
+   *
+   * @param districtId - District ID to get children for
+   * @param includeEnded - Whether to include organizations with rosteringEnded timestamp
+   * @returns Array of child organizations sorted by name ascending
+   */
+  async getChildren(districtId: string, includeEnded = false): Promise<Org[]> {
+    const whereConditions: SQL[] = [eq(orgs.parentOrgId, districtId)];
+
+    if (!includeEnded) {
+      whereConditions.push(isNull(orgs.rosteringEnded));
+    }
+
+    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+
+    return this.db.select().from(orgs).where(where).orderBy(asc(orgs.name));
   }
 }
