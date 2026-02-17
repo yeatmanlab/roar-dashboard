@@ -97,7 +97,7 @@ export function parseJsonB(value: Json, ctx: z.RefinementCtx) {
     });
   }
 
-  // Check total byte size (4KB max)
+  // Check total byte size (1 KB max)
   const stringBytes = Buffer.from(json).length;
   if (stringBytes > MAX_STRING_BYTES) {
     ctx.addIssue({
