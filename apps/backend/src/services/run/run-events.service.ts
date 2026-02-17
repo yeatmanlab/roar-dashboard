@@ -65,13 +65,11 @@ export function RunEventsService({
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
    */
   async function completeRun(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
-    // type="complete"
     if (body.type !== 'complete') {
       throw new ApiError('Invalid event type', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        context: { runId, type: (body as any).type },
+        context: { runId, type: body.type },
       });
     }
 
@@ -83,10 +81,8 @@ export function RunEventsService({
       id: runId,
       data: {
         completedAt: now,
-        updatedAt: now,
-        ...(body.metadata ? { completionMetadata: body.metadata } : {}),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+        ...(body.metadata ? { metadata: body.metadata } : {}),
+      },
     });
   }
 
