@@ -4,6 +4,12 @@ import { RunEventsService } from './run-events.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 
+/**
+ * RunEventsService Tests
+ *
+ * Tests the business logic for handling run events.
+ * Verifies authorization checks, error handling, and state updates.
+ */
 describe('RunEventsService', () => {
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 

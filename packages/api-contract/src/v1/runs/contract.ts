@@ -1,5 +1,5 @@
 import { initContract } from '@ts-rest/core';
-import { CreateRunRequestBodySchema, CreateRunResponseSchema } from './schema';
+import { CreateRunRequestBodySchema, CreateRunResponseSchema, RunEventBodySchema } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { z } from 'zod';
 
@@ -45,7 +45,7 @@ export const RunsContract = c.router(
       },
       strictStatusCodes: true,
       summary: 'Post run event',
-      description: 'Currently supports type="complete" (finishRun).',
+      description: 'Currently supports events',
     },
   },
   { pathPrefix: '/runs' },
