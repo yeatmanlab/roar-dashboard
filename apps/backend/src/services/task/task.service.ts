@@ -1,4 +1,4 @@
-import type { TaskVariant, NewTaskVariant, NewTaskVariantParameter, TaskVariantParameter } from '../../db/schema';
+import type { TaskVariant, NewTaskVariant, NewTaskVariantParameter } from '../../db/schema';
 import type { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { StatusCodes } from 'http-status-codes';
@@ -87,9 +87,10 @@ export function TaskService({
     data: CreateTaskVariantData,
   ): Promise<Partial<TaskVariant>> {
     const { userId, isSuperAdmin } = authContext;
+    const { taskId, name, status, description } = data;
 
     if (!isSuperAdmin) {
-      throw new ApiError(ApiErrorMessage.UNAUTHORIZED, {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
         context: { userId, isSuperAdmin },
@@ -108,8 +109,12 @@ export function TaskService({
         });
       }
 
-      // Check if the task-variant name already exists (task-variant names are unique)
-      const existingVariant = await taskVariantRepository.getByName(data.name);
+      // Check if a variant with this name already exists for this task
+      // (task variant names are unique per task, enforced by database constraint)
+      const existingVariant = await taskVariantRepository.getByTaskIdAndName({
+        taskId,
+        name,
+      });
 
       if (existingVariant) {
         throw new ApiError(ApiErrorMessage.CONFLICT, {
@@ -123,14 +128,14 @@ export function TaskService({
       const variant = await taskVariantRepository.runTransaction<Partial<TaskVariant>>({
         fn: async (tx) => {
           const variantData: NewTaskVariant = {
-            taskId: data.taskId,
-            status: data.status,
-            name: data.name,
-            description: data.description,
+            taskId,
+            status,
+            name,
+            description,
           };
 
           const newVariant = await taskVariantRepository.create({
-            data: variantData as TaskVariant,
+            data: variantData,
             transaction: tx,
           });
 
@@ -142,10 +147,12 @@ export function TaskService({
             });
           }
 
-          const taskVariantParameterData: NewTaskVariantParameter[] = data.parameters.map((newParameter) => ({
-            taskVariantId: newVariant.id,
-            name: newParameter.name,
-            value: newParameter.value,
+          const { id: taskVariantId } = newVariant;
+
+          const taskVariantParameterData: NewTaskVariantParameter[] = data.parameters.map(({ name, value }) => ({
+            taskVariantId,
+            name,
+            value,
           }));
 
           // Check if any parameters are missing
@@ -158,7 +165,7 @@ export function TaskService({
           }
 
           const newTaskVariantParameters = await taskVariantParameterRepository.createMany({
-            data: taskVariantParameterData as TaskVariantParameter[],
+            data: taskVariantParameterData,
             transaction: tx,
           });
 

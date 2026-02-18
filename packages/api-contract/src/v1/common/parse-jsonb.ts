@@ -62,14 +62,14 @@ export type Json = string | number | boolean | null | Json[] | { [key: string]: 
  * Recursive validation ensures nested structures are also valid.
  */
 export const JsonValue: z.ZodType<Json> = z.lazy(() =>
-  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(JsonValue), z.record(JsonValue)]),
+  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(JsonValue), z.object({}).catchall(JsonValue)]),
 );
 
 /**
  * Validates JSONB values with comprehensive security and data quality checks.
  *
  * This function performs the following validations:
- * - Size limit: Maximum 4KB to prevent DoS attacks
+ * - Size limit: Maximum 1 KB to prevent DoS attacks
  * - Type restriction: Only strings, numbers, booleans, and null (no undefined)
  * - Nesting depth: Maximum 5 levels to prevent stack overflow
  * - Array length: Maximum 100 items per array
@@ -179,6 +179,10 @@ export function parseJsonB(value: Json, ctx: z.RefinementCtx) {
       const keys = Object.keys(obj);
 
       if (keys.length > MAX_KEY_LENGTH) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `JSON object has too many keys (max ${MAX_KEY_LENGTH})`,
+        });
         return false;
       }
 
@@ -205,7 +209,7 @@ export function parseJsonB(value: Json, ctx: z.RefinementCtx) {
   if (!checkObjects(value)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `JSON object has too many keys (max ${MAX_KEY_LENGTH})`,
+      message: `JSON object is invalid`,
     });
   }
 
@@ -237,7 +241,7 @@ export function parseJsonB(value: Json, ctx: z.RefinementCtx) {
   } catch {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'JSON value is invalid',
+      message: 'Failed to parse JSON',
     });
   }
 }

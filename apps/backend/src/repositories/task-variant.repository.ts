@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { taskVariants, type TaskVariant, type NewTaskVariant } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import { BaseRepository } from './base.repository';
@@ -37,24 +37,31 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
   }
 
   /**
-   * Retrieves a task variant by its unique name.
+   * Retrieves a task variant by task ID and name combination.
    *
-   * Task variant names are unique per task (enforced by database constraint).
+   * This enforces the unique constraint: variant names are unique per task.
    *
-   * @param variantName - The name of the task variant to retrieve
-   * @returns The task variant with the given name, or null if not found
+   * @param taskId - The UUID of the parent task
+   * @param name - The name of the task variant
+   * @returns The task variant if found, or null if not found
    *
    * @example
    * ```typescript
-   * const variant = await taskVariantRepository.getByName('easy-mode');
-   * if (variant) {
-   *   console.log(variant.description);
+   * const existing = await repository.getByTaskIdAndName('task-uuid', 'easy-mode');
+   * if (existing) {
+   *   throw new Error('Variant already exists for this task');
    * }
    * ```
    */
-  async getByName(variantName: string): Promise<TaskVariant | null> {
+  async getByTaskIdAndName({ taskId, name }: { taskId: string; name: string }): Promise<TaskVariant | null> {
+    const whereClause = and(eq(taskVariants.taskId, taskId), sql`lower(${taskVariants.name}) = lower(${name})`);
+
+    if (!whereClause) {
+      return null;
+    }
+
     const results = await this.get({
-      where: eq(taskVariants.name, variantName),
+      where: whereClause,
       limit: 1,
     });
 

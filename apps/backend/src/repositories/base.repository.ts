@@ -8,6 +8,7 @@ import type {
   BaseGetParams,
   BaseGetAllParams,
   BaseCreateParams,
+  BaseCreateManyParams,
   BaseUpdateParams,
   BaseDeleteParams,
   BaseRunTransactionParams,
@@ -47,7 +48,7 @@ export abstract class BaseRepository<
   TEntity extends Record<string, unknown>,
   TTable extends PgTable,
   TInsert extends Record<string, unknown> = TEntity,
-> implements IBaseRepository<TEntity>
+> implements IBaseRepository<TEntity, TInsert>
 {
   /**
    * Type-safe table reference for Drizzle queries.
@@ -144,7 +145,7 @@ export abstract class BaseRepository<
   /**
    * Creates a new entity.
    */
-  async create(params: BaseCreateParams<TEntity>): Promise<{ id: string } | undefined> {
+  async create(params: BaseCreateParams<TInsert>): Promise<{ id: string } | undefined> {
     const [entity] = await this.db
       .insert(this.typedTable)
       .values(params.data as TInsert)
@@ -175,11 +176,12 @@ export abstract class BaseRepository<
    * }
    * ```
    */
-  async createMany(params: BaseCreateParams<TEntity[]>): Promise<{ id: string }[]> {
-    const entities = await this.db
-      .insert(this.typedTable)
-      .values(params.data as TInsert[])
-      .returning({ id: this.typedTable.id });
+  async createMany(params: BaseCreateManyParams<TInsert>): Promise<{ id: string }[]> {
+    if (!params.data || params.data.length === 0) {
+      return [];
+    }
+
+    const entities = await this.db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
 
     return entities;
   }

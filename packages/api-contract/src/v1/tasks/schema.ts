@@ -85,7 +85,7 @@ export const TaskVariantCreateRequestSchema = z.object({
     .trim()
     .min(1)
     .max(255)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
+    .regex(/^[a-zA-Z][a-zA-Z0-9_-]*$/),
   parameters: TaskVariantParametersArraySchema,
   description: z.string().trim().min(1).max(1024),
   status: z.nativeEnum(TASK_VARIANT_STATUS),

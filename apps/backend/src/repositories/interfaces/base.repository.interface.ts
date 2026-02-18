@@ -124,6 +124,14 @@ export interface BaseCreateParams<T> {
   transaction?: Transaction;
 }
 
+export interface BaseCreateManyParams<T> {
+  /** Data for the entities to be created. */
+  data: Partial<T>[];
+
+  /** Optional transaction context for the operation. */
+  transaction?: Transaction;
+}
+
 /**
  * Parameters for updating an entity in a repository.
  */
@@ -167,7 +175,8 @@ export interface BaseRunTransactionParams<R> {
  * All entities are expected to have an `id` field (UUID primary key).
  * Unlike Firestore's Result<T> wrapper, Drizzle entities already include the id.
  *
- * @typeParam T - The type of entity managed by the repository.
+ * @typeParam T - The type of entity managed by the repository (from $inferSelect).
+ * @typeParam TInsert - The type of data required to insert an entity (from $inferInsert). Defaults to T.
  *
  * @see {@link BaseGetParams} - Base params for retrieving data entities.
  * @see {@link BaseGetAllParams} - Base params for retrieving all data entities.
@@ -176,7 +185,7 @@ export interface BaseRunTransactionParams<R> {
  * @see {@link BaseDeleteParams} - Base params for deleting an entity.
  * @see {@link BaseRunTransactionParams} - Parameters for running a transaction in a repository.
  */
-export interface IBaseRepository<T> {
+export interface IBaseRepository<T, TInsert = T> {
   /** Retrieves an entity by its ID. Returns null if not found. */
   getById(params: BaseGetByIdParams): Promise<T | null>;
 
@@ -193,7 +202,7 @@ export interface IBaseRepository<T> {
   getAll(params: BaseGetAllParams): Promise<PaginatedResult<T>>;
 
   /** Creates a new entity in the repository. */
-  create(params: BaseCreateParams<T>): Promise<{ id: string } | undefined>;
+  create(params: BaseCreateParams<TInsert>): Promise<{ id: string } | undefined>;
 
   /** Updates an existing entity in the repository. */
   update(params: BaseUpdateParams<T>): Promise<void>;
