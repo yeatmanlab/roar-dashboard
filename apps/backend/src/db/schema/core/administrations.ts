@@ -32,6 +32,10 @@ export const administrations = db.table(
 
     isOrdered: p.boolean().notNull(),
 
+    excludedFromResearch: p.boolean().notNull().default(false),
+    excludedFromResearchBy: p.uuid().references(() => users.id, { onDelete: 'restrict' }),
+    excludedFromResearchReason: p.text(),
+
     createdBy: p
       .uuid()
       .notNull()

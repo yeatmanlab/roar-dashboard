@@ -39,8 +39,6 @@ export const runs = db.table(
     engagementFlags: p.jsonb(),
     metadata: p.jsonb(),
 
-    excludeFromResearch: p.boolean().notNull().default(false),
-
     completedAt: p.timestamp({ withTimezone: true }),
 
     ...timestamps,
