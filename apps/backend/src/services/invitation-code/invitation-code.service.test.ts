@@ -1,16 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { InvitationCodeService } from './invitation-code.service';
-import { InvitationCodeRepository } from '../../repositories/invitation-code.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { InvitationCode } from '../../db/schema';
 import type { AuthContext } from '../../types/auth-context';
 
-vi.mock('../../repositories/invitation-code.repository');
-
 describe('InvitationCodeService', () => {
-  let mockRepository: vi.Mocked<InvitationCodeRepository>;
+  let mockRepository: { getLatestValidByGroupId: ReturnType<typeof vi.fn> };
   let service: ReturnType<typeof InvitationCodeService>;
 
   const superAdminContext: AuthContext = {
@@ -37,8 +34,9 @@ describe('InvitationCodeService', () => {
     vi.clearAllMocks();
     mockRepository = {
       getLatestValidByGroupId: vi.fn(),
-    } as unknown as vi.Mocked<InvitationCodeRepository>;
-    service = InvitationCodeService({ invitationCodeRepository: mockRepository });
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    service = InvitationCodeService({ invitationCodeRepository: mockRepository as any });
   });
 
   describe('getLatestValidByGroupId', () => {
