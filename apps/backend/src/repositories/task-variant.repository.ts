@@ -56,12 +56,8 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
   async getByTaskIdAndName({ taskId, name }: { taskId: string; name: string }): Promise<TaskVariant | null> {
     const whereClause = and(eq(taskVariants.taskId, taskId), sql`lower(${taskVariants.name}) = lower(${name})`);
 
-    if (!whereClause) {
-      return null;
-    }
-
     const results = await this.get({
-      where: whereClause,
+      where: whereClause!, // Non-null assertion: and() with two valid conditions always returns SQL
       limit: 1,
     });
 
