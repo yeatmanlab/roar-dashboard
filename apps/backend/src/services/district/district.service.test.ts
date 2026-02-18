@@ -10,7 +10,7 @@ import type { AuthContext } from '../../types/auth-context';
 const mockGetByIdWithEmbeds = vi.fn();
 const mockDistrictRepository = {
   getByIdWithEmbeds: mockGetByIdWithEmbeds,
-};
+} as any;
 
 const mockAuthContext: AuthContext = {
   userId: 'user-123',

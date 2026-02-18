@@ -207,7 +207,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param id - District ID
    * @returns District or null if not found or not a district
    */
-  async getById(id: string): Promise<District | null> {
+  async getByIdUnrestricted(id: string): Promise<District | null> {
     const result = await this.db
       .select()
       .from(orgs)

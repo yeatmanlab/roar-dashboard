@@ -48,7 +48,9 @@ describe('DistrictsController', () => {
       });
 
       expect(result.status).toBe(StatusCodes.OK);
-      expect(result.body).toMatchObject({
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data).toMatchObject({
         id: 'district-123',
         name: 'Test District',
         abbreviation: 'TD',
@@ -83,7 +85,9 @@ describe('DistrictsController', () => {
       });
 
       expect(result.status).toBe(StatusCodes.OK);
-      expect(result.body.location).toMatchObject({
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data.location).toMatchObject({
         addressLine1: '123 Main St',
         city: 'Test City',
         stateProvince: 'CA',
@@ -119,7 +123,9 @@ describe('DistrictsController', () => {
       });
 
       expect(result.status).toBe(StatusCodes.OK);
-      expect(result.body.identifiers).toMatchObject({
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data.identifiers).toMatchObject({
         mdrNumber: 'MDR123',
         ncesId: 'NCES456',
         stateId: 'STATE789',
@@ -168,8 +174,11 @@ describe('DistrictsController', () => {
       });
 
       expect(result.status).toBe(StatusCodes.OK);
-      expect(result.body.children).toHaveLength(2);
-      expect(result.body.children?.[0]).toMatchObject({
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = (result.body as { data: any }).data;
+      expect(data.children).toHaveLength(2);
+      expect(data.children?.[0]).toMatchObject({
         id: 'school-1',
         name: 'School A',
       });
@@ -198,7 +207,9 @@ describe('DistrictsController', () => {
       });
 
       expect(result.status).toBe(StatusCodes.OK);
-      expect(result.body.rosteringEnded).toBe('2023-12-31T00:00:00.000Z');
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data.rosteringEnded).toBe('2023-12-31T00:00:00.000Z');
     });
 
     it('should handle ApiError with 400 Bad Request', async () => {

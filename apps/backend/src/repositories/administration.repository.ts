@@ -556,9 +556,11 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationClassSortFieldType | undefined;
+    const sortField =
+      orderBy && !Array.isArray(orderBy) ? (orderBy.field as AdministrationClassSortFieldType | undefined) : undefined;
     const sortColumn = sortField ? CLASS_SORT_COLUMNS[sortField] : classes.name;
-    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder =
+      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ class: classes })
@@ -691,9 +693,11 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationGroupSortFieldType | undefined;
+    const sortField =
+      orderBy && !Array.isArray(orderBy) ? (orderBy.field as AdministrationGroupSortFieldType | undefined) : undefined;
     const sortColumn = sortField ? GROUP_SORT_COLUMNS[sortField] : groups.name;
-    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder =
+      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ group: groups })
