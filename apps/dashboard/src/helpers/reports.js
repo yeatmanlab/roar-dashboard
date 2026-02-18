@@ -523,6 +523,62 @@ export const roamFluencySubskillHeaders = {
   numAttempted: 'Num Attempted',
 };
 
+/**
+ * Threshold for PA subtask skills. A subtask is flagged as "needs work" when
+ * the percentage of correct responses is below (15/19)*100 (~78.9%).
+ */
+export const PA_SKILL_THRESHOLD = (15 / 19) * 100;
+
+/**
+ * Legacy threshold for PA subtask skills when only roarScore is available
+ * (non-adaptive, fixed 19-item assessments).
+ */
+export const PA_SKILL_LEGACY_THRESHOLD = 15;
+
+/**
+ * PA subtask definitions mapping score keys to display labels.
+ * Follows the SCORE_FIELD_MAPPINGS pattern for new/legacy field resolution:
+ *   - new: 'percentCorrect' (0-100 scale, compared against PA_SKILL_THRESHOLD)
+ *   - legacy: 'roarScore' (raw count, compared against PA_SKILL_LEGACY_THRESHOLD)
+ */
+const PA_SUBTASKS = [
+  { key: 'FSM', label: 'First Sound Matching' },
+  { key: 'LSM', label: 'Last Sound Matching' },
+  { key: 'DEL', label: 'Deletion' },
+];
+
+/**
+ * Determines which PA subtask skills need work based on proportion correct.
+ * Uses percentCorrect when available (new adaptive scoring), falling back to
+ * roarScore (legacy fixed-item scoring) for backwards compatibility.
+ *
+ * @param {Object} scores - The computed scores object containing FSM, LSM, DEL subtask data.
+ *   Each subtask may have:
+ *     - percentCorrect {number} (new) – percent correct (0-100), compared against PA_SKILL_THRESHOLD
+ *     - roarScore {number} (legacy) – raw correct count, compared against PA_SKILL_LEGACY_THRESHOLD
+ * @returns {string[]} Array of skill labels that need work, e.g. ['First Sound Matching', 'Deletion']
+ */
+export function getPaSkillsToWorkOn(scores) {
+  const skills = [];
+
+  for (const { key, label } of PA_SUBTASKS) {
+    const subtask = scores?.[key];
+
+    let needsWork = false;
+    if (subtask?.percentCorrect != null) {
+      needsWork = subtask.percentCorrect < PA_SKILL_THRESHOLD;
+    } else if (subtask?.roarScore != null) {
+      needsWork = subtask.roarScore < PA_SKILL_LEGACY_THRESHOLD;
+    }
+
+    if (needsWork) {
+      skills.push(label);
+    }
+  }
+
+  return skills;
+}
+
 export const updatedNormVersions = {
   swr: 7,
   'swr-es': 1,

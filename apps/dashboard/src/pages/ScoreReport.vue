@@ -456,6 +456,7 @@ import {
   getTagColor,
   roamFluencyTasks,
   roamFluencySubskillHeaders,
+  getPaSkillsToWorkOn,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
@@ -1205,17 +1206,17 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
         if (taskId === 'pa' && assessment.scores) {
-          const first = _get(assessment, 'scores.computed.FSM.roarScore');
-          const last = _get(assessment, 'scores.computed.LSM.roarScore');
-          const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
-          let skills = [];
-          if (first < 15) skills.push('First Sound Matching');
-          if (last < 15) skills.push('Last sound matching');
-          if (deletion < 15) skills.push('Deletion');
-          currRowScores[taskId].firstSound = first;
-          currRowScores[taskId].lastSound = last;
-          currRowScores[taskId].deletion = deletion;
-          currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
+          const computedScores = _get(assessment, 'scores.computed');
+          const skills = getPaSkillsToWorkOn(computedScores);
+          const formatPaSubtaskScore = (subtaskKey) => {
+            const pct = _get(computedScores, `${subtaskKey}.percentCorrect`);
+            if (pct != null) return `${Math.round(pct)}%`;
+            return _get(computedScores, `${subtaskKey}.roarScore`);
+          };
+          currRowScores[taskId].firstSound = formatPaSubtaskScore('FSM');
+          currRowScores[taskId].lastSound = formatPaSubtaskScore('LSM');
+          currRowScores[taskId].deletion = formatPaSubtaskScore('DEL');
+          currRowScores[taskId].total = _get(computedScores, 'composite.roarScore');
           currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {

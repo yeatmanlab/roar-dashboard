@@ -24,6 +24,27 @@ vi.mock('@/helpers/reports', () => ({
   }),
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
+  getPaSkillsToWorkOn: vi.fn((scores) => {
+    const threshold = (15 / 19) * 100;
+    const legacyThreshold = 15;
+    const subtasks = [
+      { key: 'FSM', label: 'First Sound Matching' },
+      { key: 'LSM', label: 'Last Sound Matching' },
+      { key: 'DEL', label: 'Deletion' },
+    ];
+    const skills = [];
+    for (const { key, label } of subtasks) {
+      const subtask = scores?.[key];
+      let needsWork = false;
+      if (subtask?.percentCorrect != null) {
+        needsWork = subtask.percentCorrect < threshold;
+      } else if (subtask?.roarScore != null) {
+        needsWork = subtask.roarScore < legacyThreshold;
+      }
+      if (needsWork) skills.push(label);
+    }
+    return skills;
+  }),
   getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
   getScoreValue: vi.fn().mockImplementation((scoresObject, taskId, grade, fieldType) => {
     // Return the actual field value from the scores object if it exists
@@ -557,9 +578,9 @@ describe('ScoreReportService', () => {
               percentileScore: 65,
               standardScore: 95,
             },
-            FSM: { roarScore: 10 }, // Below 15 threshold
-            LSM: { roarScore: 20 }, // Above 15 threshold
-            DEL: { roarScore: 8 }, // Below 15 threshold
+            FSM: { roarScore: 10 }, // Below 15 threshold (legacy fallback)
+            LSM: { roarScore: 20 }, // Above 15 threshold (legacy fallback)
+            DEL: { roarScore: 8 }, // Below 15 threshold (legacy fallback)
           },
         },
       ];
@@ -591,9 +612,9 @@ describe('ScoreReportService', () => {
               percentileScore: 85,
               standardScore: 110,
             },
-            FSM: { roarScore: 20 }, // Above 15 threshold
-            LSM: { roarScore: 18 }, // Above 15 threshold
-            DEL: { roarScore: 22 }, // Above 15 threshold
+            FSM: { roarScore: 20 }, // Above 15 threshold (legacy fallback)
+            LSM: { roarScore: 18 }, // Above 15 threshold (legacy fallback)
+            DEL: { roarScore: 22 }, // Above 15 threshold (legacy fallback)
           },
         },
       ];
@@ -622,9 +643,9 @@ describe('ScoreReportService', () => {
               percentileScore: 65,
               standardScore: 95,
             },
-            FSM: { roarScore: 20 }, // Above 15 threshold
-            LSM: { roarScore: 10 }, // Below 15 threshold - this covers line 150
-            DEL: { roarScore: 18 }, // Above 15 threshold
+            FSM: { roarScore: 20 }, // Above 15 threshold (legacy fallback)
+            LSM: { roarScore: 10 }, // Below 15 threshold (legacy fallback)
+            DEL: { roarScore: 18 }, // Above 15 threshold (legacy fallback)
           },
         },
       ];
@@ -643,6 +664,40 @@ describe('ScoreReportService', () => {
 
       // Since only LSM is below threshold, skills to work on should include LSM
       // The actual skills array logic is tested through the i18n calls
+    });
+
+    it('should handle PA task with adaptive scoring using percentCorrect', () => {
+      const taskData = [
+        {
+          taskId: 'pa',
+          optional: false,
+          reliable: true,
+          scores: {
+            composite: {
+              rawScore: 20,
+              percentileScore: 65,
+              standardScore: 95,
+            },
+            FSM: { roarScore: 16, percentCorrect: 75 }, // 75% < ~78.9% → needs work
+            LSM: { roarScore: 18, percentCorrect: 83.3 }, // 83.3% > ~78.9% → ok
+            DEL: { roarScore: 14, percentCorrect: 71.4 }, // 71.4% < ~78.9% → needs work
+          },
+        },
+      ];
+
+      const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n);
+
+      expect(result).toHaveLength(1);
+      const task = result[0];
+
+      expect(task.taskId).toBe('pa');
+      expect(task.scoresArray).toBeDefined();
+
+      // Verify PA-specific translations were called
+      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.firstSoundMatching');
+      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.lastSoundMatching');
+      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.deletion');
+      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.skillsToWorkOn');
     });
 
     it('should validate complete tags object structure for required and reliable task', () => {

@@ -9,6 +9,7 @@ import {
   getRawScoreRange,
   getScoreValue,
   tasksToDisplayPercentCorrect,
+  getPaSkillsToWorkOn,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -111,14 +112,14 @@ const ScoreReportService = (() => {
     });
 
     if (taskId === 'pa') {
-      const fsm = scores?.FSM?.roarScore;
-      const lsm = scores?.LSM?.roarScore;
-      const del = scores?.DEL?.roarScore;
-      const skills = [];
-
-      if (fsm < 15) skills.push('FSM');
-      if (lsm < 15) skills.push('LSM');
-      if (del < 15) skills.push('DEL');
+      const formatPaSubtaskScore = (subtask) => {
+        if (subtask?.percentCorrect != null) return `${Math.round(subtask.percentCorrect)}%`;
+        return subtask?.roarScore;
+      };
+      const fsm = formatPaSubtaskScore(scores?.FSM);
+      const lsm = formatPaSubtaskScore(scores?.LSM);
+      const del = formatPaSubtaskScore(scores?.DEL);
+      const skills = getPaSkillsToWorkOn(scores);
 
       formattedScoresArray.push([i18n.t('scoreReports.firstSoundMatching'), fsm]);
       formattedScoresArray.push([i18n.t('scoreReports.lastSoundMatching'), lsm]);

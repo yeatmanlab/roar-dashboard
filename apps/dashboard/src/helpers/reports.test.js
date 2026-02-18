@@ -11,11 +11,29 @@ import {
   taskInfoById,
   getDialColor,
   getDistributionChartPath,
+  getPaSkillsToWorkOn,
+  PA_SKILL_THRESHOLD,
+  PA_SKILL_LEGACY_THRESHOLD,
 } from './reports';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 vi.mock('./index', () => ({
   flattenObj: vi.fn((obj) => obj),
+}));
+
+vi.mock('@/translations/i18n', () => ({
+  i18n: {
+    global: {
+      t: vi.fn((key) => key),
+    },
+  },
+}));
+
+vi.mock('vue-i18n', () => ({
+  useI18n: vi.fn(() => ({
+    locale: { value: 'en' },
+    t: vi.fn((key) => key),
+  })),
 }));
 
 vi.mock('html2canvas', () => ({
@@ -847,6 +865,152 @@ describe('reports', () => {
       expect(getDistributionChartPath('3', { swr: 7, sre: 4 }, 'en')).toMatch(
         /distribution-chart-elementary-v2-en\.webp$/,
       );
+    });
+  });
+
+  describe('getPaSkillsToWorkOn', () => {
+    describe('threshold constants', () => {
+      it('should define PA_SKILL_THRESHOLD as (15/19)*100', () => {
+        expect(PA_SKILL_THRESHOLD).toBeCloseTo((15 / 19) * 100);
+      });
+
+      it('should define PA_SKILL_LEGACY_THRESHOLD as 15', () => {
+        expect(PA_SKILL_LEGACY_THRESHOLD).toBe(15);
+      });
+    });
+
+    describe('new scoring with percentCorrect', () => {
+      it('should flag all subtasks below threshold', () => {
+        const scores = {
+          FSM: { percentCorrect: 50 },
+          LSM: { percentCorrect: 60 },
+          DEL: { percentCorrect: 70 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Last Sound Matching', 'Deletion']);
+      });
+
+      it('should flag no subtasks when all are above threshold', () => {
+        const scores = {
+          FSM: { percentCorrect: 85 },
+          LSM: { percentCorrect: 90 },
+          DEL: { percentCorrect: 80 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+
+      it('should flag only subtasks below threshold', () => {
+        const scores = {
+          FSM: { percentCorrect: 75 }, // below (15/19)*100 (~78.9%)
+          LSM: { percentCorrect: 85 }, // above
+          DEL: { percentCorrect: 60 }, // below
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Deletion']);
+      });
+
+      it('should treat percentCorrect exactly at threshold as not needing work', () => {
+        const scores = {
+          FSM: { percentCorrect: (15 / 19) * 100 },
+          LSM: { percentCorrect: (15 / 19) * 100 },
+          DEL: { percentCorrect: (15 / 19) * 100 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+
+      it('should prefer percentCorrect over roarScore when both are present', () => {
+        const scores = {
+          FSM: { percentCorrect: 85, roarScore: 10 }, // percentCorrect above → ok (roarScore would say needs work)
+          LSM: { percentCorrect: 50, roarScore: 20 }, // percentCorrect below → needs work (roarScore would say ok)
+          DEL: { percentCorrect: 90, roarScore: 8 }, // percentCorrect above → ok
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['Last Sound Matching']);
+      });
+    });
+
+    describe('legacy scoring with roarScore fallback', () => {
+      it('should flag all subtasks below legacy threshold', () => {
+        const scores = {
+          FSM: { roarScore: 10 },
+          LSM: { roarScore: 8 },
+          DEL: { roarScore: 12 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Last Sound Matching', 'Deletion']);
+      });
+
+      it('should flag no subtasks when all are at or above legacy threshold', () => {
+        const scores = {
+          FSM: { roarScore: 15 },
+          LSM: { roarScore: 18 },
+          DEL: { roarScore: 19 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+
+      it('should flag only subtasks below legacy threshold', () => {
+        const scores = {
+          FSM: { roarScore: 10 },
+          LSM: { roarScore: 20 },
+          DEL: { roarScore: 8 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Deletion']);
+      });
+
+      it('should treat roarScore exactly at legacy threshold as not needing work', () => {
+        const scores = {
+          FSM: { roarScore: 15 },
+          LSM: { roarScore: 15 },
+          DEL: { roarScore: 15 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should return empty array for null scores', () => {
+        expect(getPaSkillsToWorkOn(null)).toEqual([]);
+      });
+
+      it('should return empty array for undefined scores', () => {
+        expect(getPaSkillsToWorkOn(undefined)).toEqual([]);
+      });
+
+      it('should return empty array for empty scores object', () => {
+        expect(getPaSkillsToWorkOn({})).toEqual([]);
+      });
+
+      it('should handle missing subtask keys gracefully', () => {
+        const scores = {
+          FSM: { roarScore: 10 },
+          // LSM and DEL missing
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching']);
+      });
+
+      it('should handle subtask with neither percentCorrect nor roarScore', () => {
+        const scores = {
+          FSM: { someOtherField: 5 },
+          LSM: { roarScore: 10 },
+          DEL: { percentCorrect: 90 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['Last Sound Matching']);
+      });
+
+      it('should handle percentCorrect of 0 as needing work', () => {
+        const scores = {
+          FSM: { percentCorrect: 0 },
+          LSM: { percentCorrect: 90 },
+          DEL: { percentCorrect: 90 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching']);
+      });
+
+      it('should handle roarScore of 0 as needing work', () => {
+        const scores = {
+          FSM: { roarScore: 0 },
+          LSM: { roarScore: 18 },
+          DEL: { roarScore: 16 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching']);
+      });
     });
   });
 });
