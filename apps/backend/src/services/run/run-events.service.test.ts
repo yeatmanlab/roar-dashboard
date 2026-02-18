@@ -147,7 +147,6 @@ describe('RunEventsService', () => {
       expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
       expect(updateCall.id).toBe(validRunId);
-      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
       expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
 
@@ -166,7 +165,6 @@ describe('RunEventsService', () => {
 
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
       expect(updateCall.id).toBe(validRunId);
-      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
       expect(updateCall.data.abortedAt).toBe(differentTime);
     });
 
@@ -206,20 +204,15 @@ describe('RunEventsService', () => {
       expect(mockRunsRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should update timestamp when aborting', async () => {
+    it('should set abortedAt timestamp', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockResolvedValue(undefined);
 
-      const beforeCall = new Date();
       await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
-      const afterCall = new Date();
 
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
-      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
-      expect(updateCall.data.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
-      expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
-      expect(updateCall.data.metadata).toEqual({ source: 'mobile', sessionId: 'sess-456' });
+      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
   });
 });

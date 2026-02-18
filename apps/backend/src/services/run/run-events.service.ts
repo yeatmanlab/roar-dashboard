@@ -114,7 +114,7 @@ export function RunEventsService({
       id: runId,
       data: {
         completedAt: now,
-        ...(body.metadata ? { metadata: body.metadata } : {}),
+        ...(body.metadata ? { completionMetadata: body.metadata } : {}),
       },
     });
   }
