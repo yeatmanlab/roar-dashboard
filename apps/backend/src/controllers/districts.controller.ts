@@ -1,10 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { DistrictService, type DistrictWithEmbeds } from '../services/district/district.service';
-import type {
-  DistrictsListQuery,
-  DistrictDetail as ApiDistrict,
-  DistrictDetailBase as ApiDistrictBase,
-} from '@roar-dashboard/api-contract';
+import type { DistrictsListQuery, DistrictDetail as ApiDistrict } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -15,7 +11,7 @@ const districtService = DistrictService();
  * Maps a database District entity to the base API schema.
  * Converts Date fields to ISO strings and transforms location data to match the contract.
  */
-function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrictBase {
+function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
   if (district.locationLatLong) {
