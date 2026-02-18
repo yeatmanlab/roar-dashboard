@@ -5,6 +5,8 @@ import { TaskService } from '../services/task/task.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
+const taskService = TaskService();
+
 /**
  * Handles HTTP concerns for the /tasks endpoints.
  *
@@ -31,7 +33,7 @@ export const TasksController = {
    */
   createTaskVariant: async (authContext: AuthContext, data: CreateTaskVariantData) => {
     try {
-      const id = await TaskService().createTaskVariant(authContext, data);
+      const id = await taskService.createTaskVariant(authContext, data);
       return {
         status: StatusCodes.CREATED as const,
         body: {
