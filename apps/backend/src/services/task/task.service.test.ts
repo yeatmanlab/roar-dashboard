@@ -51,9 +51,6 @@ describe('TaskService', () => {
 
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.name).toBe('easy-mode');
-      expect(result.description).toBe('Easy difficulty configuration');
-      expect(result.status).toBe('published');
 
       // Verify the variant was actually created in the database
       const createdVariant = await taskVariantRepository.getById({ id: result.id! });
@@ -156,8 +153,6 @@ describe('TaskService', () => {
       const result = await service.createTaskVariant({ userId: 'admin-123', isSuperAdmin: true }, variantData);
 
       expect(result).toBeDefined();
-      expect(result.name).toBe('shared-name');
-      expect(result.taskId).toBe(task2.id);
     });
 
     it('should throw bad-request error when parameters array is empty', async () => {
@@ -295,7 +290,6 @@ describe('TaskService', () => {
       const result = await service.createTaskVariant({ userId: 'admin-123', isSuperAdmin: true }, variantData);
 
       expect(result).toBeDefined();
-      expect(result.status).toBe('draft');
 
       const createdVariant = await taskVariantRepository.getById({ id: result.id! });
       expect(createdVariant!.status).toBe('draft');

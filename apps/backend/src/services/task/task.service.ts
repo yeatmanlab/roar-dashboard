@@ -1,4 +1,4 @@
-import type { TaskVariant, NewTaskVariant, NewTaskVariantParameter } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter } from '../../db/schema';
 import type { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { StatusCodes } from 'http-status-codes';
@@ -82,10 +82,7 @@ export function TaskService({
    * });
    * ```
    */
-  async function createTaskVariant(
-    authContext: AuthContext,
-    data: CreateTaskVariantData,
-  ): Promise<Partial<TaskVariant>> {
+  async function createTaskVariant(authContext: AuthContext, data: CreateTaskVariantData): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
     const { taskId, name, status, description } = data;
 
@@ -125,7 +122,7 @@ export function TaskService({
       }
 
       // Create the task variant and parameters within a transaction to prevent orphaned data
-      const variant = await taskVariantRepository.runTransaction<Partial<TaskVariant>>({
+      const variant = await taskVariantRepository.runTransaction({
         fn: async (tx) => {
           const variantData: NewTaskVariant = {
             taskId,
