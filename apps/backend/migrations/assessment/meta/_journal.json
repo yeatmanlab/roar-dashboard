@@ -113,6 +113,13 @@
       "when": 1771437123302,
       "tag": "0015_add_abort_and_soft_delete_support_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1771437190207,
+      "tag": "0016_remove_run_scores_task_ids",
+      "breakpoints": true
     }
   ]
 }
