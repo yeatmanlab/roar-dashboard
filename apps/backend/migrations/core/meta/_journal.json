@@ -379,6 +379,13 @@
       "when": 1771436422734,
       "tag": "0053_relocate_exclude_from_research_to_administrations",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1771437274458,
+      "tag": "0054_remove_agreement_majority_age_flag",
+      "breakpoints": true
     }
   ]
 }
