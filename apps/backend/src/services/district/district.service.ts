@@ -63,8 +63,6 @@ export function DistrictService({
   async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<DistrictWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    let result;
-
     try {
       // Transform API contract format to repository format
       const queryParams = {
@@ -75,16 +73,31 @@ export function DistrictService({
           direction: options.sortOrder,
         },
         includeEnded: options.includeEnded ?? false,
-        embedCounts: options.embedCounts ?? false,
       };
 
-      // Fetch districts based on user role and authorization
-      if (isSuperAdmin) {
-        result = await repo.listAll(queryParams);
-      } else {
-        const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
+      // Fetch base districts based on user role and authorization
+      const result = isSuperAdmin
+        ? await repo.listAll(queryParams)
+        : await repo.listAuthorized(
+            { userId, allowedRoles: rolesForPermission(Permissions.Organizations.LIST) },
+            queryParams,
+          );
+
+      // Handle embed orchestration: fetch counts if requested
+      if (options.embedCounts && result.items.length > 0) {
+        const districtIds = result.items.map((d) => d.id);
+        const countsMap = await repo.fetchDistrictCounts(districtIds, options.includeEnded ?? false);
+
+        return {
+          items: result.items.map((district) => ({
+            ...district,
+            counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
+          })),
+          totalItems: result.totalItems,
+        };
       }
+
+      return result;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -99,8 +112,6 @@ export function DistrictService({
         cause: error,
       });
     }
-
-    return result;
   }
 
   /**
