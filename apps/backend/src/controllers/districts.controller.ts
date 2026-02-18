@@ -160,7 +160,9 @@ export const DistrictsController = {
 
       return {
         status: StatusCodes.OK as const,
-        body: transformDistrictDetail(district),
+        body: {
+          data: transformDistrictDetail(district),
+        },
       };
     } catch (error) {
       if (error instanceof ApiError) {
