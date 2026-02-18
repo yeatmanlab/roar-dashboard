@@ -113,7 +113,7 @@ export function RunEventsService({
             runId,
             trialId,
             event: i.event,
-            trialIndex: i.trial_id ?? null,
+            trialIndex: i.trial_id,
             timeMs: i.time_ms,
             createdAt: now,
           }));

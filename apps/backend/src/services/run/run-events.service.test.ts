@@ -346,42 +346,76 @@ describe('RunEventsService', () => {
         ],
       };
 
+      const insertMock = vi.fn();
+      const valuesMock = vi.fn();
+      const returningMock = vi.fn();
+
+      insertMock.mockReturnValue({
+        values: valuesMock,
+      });
+      valuesMock.mockReturnValue({
+        returning: returningMock,
+      });
+      returningMock.mockResolvedValue([{ id: 1 }]);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockRunsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
         await fn({
-          insert: vi.fn().mockReturnValue({
-            values: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue([{ id: 1 }]),
-            }),
-          }),
+          insert: insertMock,
         });
       });
 
       await runEventsService.writeTrial(mockAuthContext, validRunId, bodyWithInteractions);
 
       expect(mockRunsRepository.runTransaction).toHaveBeenCalled();
+      // Verify insert was called twice (once for trials, once for interactions)
+      expect(insertMock).toHaveBeenCalledTimes(2);
+      // Verify the second insert call has the interactions data
+      const secondValuesCall = valuesMock.mock.calls[1];
+      expect(secondValuesCall).toBeDefined();
+      if (secondValuesCall) {
+        const interactionsData = secondValuesCall[0];
+        expect(Array.isArray(interactionsData)).toBe(true);
+        if (Array.isArray(interactionsData) && interactionsData.length > 0) {
+          expect(interactionsData[0]).toHaveProperty('event', 'focus');
+          expect(interactionsData[0]).toHaveProperty('trialIndex', 0);
+          expect(interactionsData[0]).toHaveProperty('timeMs', 100);
+        }
+      }
     });
 
     it('should convert boolean correct to integer (true -> 1)', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
 
-      const transactionFn = vi.fn();
+      const insertMock = vi.fn();
+      const valuesMock = vi.fn();
+      const returningMock = vi.fn();
+
+      insertMock.mockReturnValue({
+        values: valuesMock,
+      });
+      valuesMock.mockReturnValue({
+        returning: returningMock,
+      });
+      returningMock.mockResolvedValue([{ id: 1 }]);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockRunsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
-        transactionFn(fn);
         await fn({
-          insert: vi.fn().mockReturnValue({
-            values: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue([{ id: 1 }]),
-            }),
-          }),
+          insert: insertMock,
         });
       });
 
       await runEventsService.writeTrial(mockAuthContext, validRunId, validBody);
 
-      expect(transactionFn).toHaveBeenCalled();
+      // Verify the first insert (runTrials) was called with correct: 1
+      expect(insertMock).toHaveBeenCalled();
+      const firstValuesCall = valuesMock.mock.calls[0];
+      expect(firstValuesCall).toBeDefined();
+      if (firstValuesCall) {
+        expect(firstValuesCall[0]).toHaveProperty('correct', 1);
+      }
     });
 
     it('should convert boolean correct to integer (false -> 0)', async () => {
@@ -396,20 +430,34 @@ describe('RunEventsService', () => {
         },
       };
 
+      const insertMock = vi.fn();
+      const valuesMock = vi.fn();
+      const returningMock = vi.fn();
+
+      insertMock.mockReturnValue({
+        values: valuesMock,
+      });
+      valuesMock.mockReturnValue({
+        returning: returningMock,
+      });
+      returningMock.mockResolvedValue([{ id: 1 }]);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockRunsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
         await fn({
-          insert: vi.fn().mockReturnValue({
-            values: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue([{ id: 1 }]),
-            }),
-          }),
+          insert: insertMock,
         });
       });
 
       await runEventsService.writeTrial(mockAuthContext, validRunId, bodyWithIncorrect);
 
-      expect(mockRunsRepository.runTransaction).toHaveBeenCalled();
+      // Verify the first insert (runTrials) was called with correct: 0
+      expect(insertMock).toHaveBeenCalled();
+      const firstValuesCall = valuesMock.mock.calls[0];
+      expect(firstValuesCall).toBeDefined();
+      if (firstValuesCall) {
+        expect(firstValuesCall[0]).toHaveProperty('correct', 0);
+      }
     });
   });
 });
