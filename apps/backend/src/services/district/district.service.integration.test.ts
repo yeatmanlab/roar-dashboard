@@ -7,8 +7,8 @@
  * These tests complement the unit tests by verifying end-to-end behavior
  * with actual database queries and the base fixture's org hierarchy.
  */
-import { describe, it, expect } from 'vitest';
-import { DistrictService } from './district.service';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { DistrictService, type IDistrictService } from './district.service';
 import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { UserOrgFactory } from '../../test-support/factories/user-org.factory';
@@ -17,7 +17,11 @@ import { UserRole } from '../../enums/user-role.enum';
 import { OrgType } from '../../enums/org-type.enum';
 
 describe('DistrictService (integration)', () => {
-  const service = DistrictService();
+  let service: IDistrictService;
+
+  beforeAll(() => {
+    service = DistrictService();
+  });
 
   const defaultListOptions = {
     page: 1,

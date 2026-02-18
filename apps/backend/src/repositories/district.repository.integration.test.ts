@@ -6,7 +6,7 @@
  *
  * Verifies SQL correctness and proper filtering by orgType, rosteringEnded, etc.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
@@ -16,7 +16,11 @@ import { UserRole } from '../enums/user-role.enum';
 import { OrgType } from '../enums/org-type.enum';
 
 describe('DistrictRepository', () => {
-  const repository = new DistrictRepository();
+  let repository: DistrictRepository;
+
+  beforeAll(() => {
+    repository = new DistrictRepository();
+  });
 
   describe('listAll', () => {
     it('returns all districts with pagination', async () => {

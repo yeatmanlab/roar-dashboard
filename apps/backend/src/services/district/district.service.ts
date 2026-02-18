@@ -34,10 +34,12 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
  * Handles authorization (super admin vs regular user) and delegates to repository.
  */
 export function DistrictService({
-  districtRepository = new DistrictRepository(),
+  districtRepository,
 }: {
   districtRepository?: DistrictRepository;
 } = {}) {
+  // Lazy initialize repository to avoid creating it before database is initialized
+  const repo = districtRepository ?? new DistrictRepository();
   /**
    * List districts accessible to a user with pagination and sorting.
    *
@@ -64,28 +66,15 @@ export function DistrictService({
           direction: options.sortOrder,
         },
         includeEnded: options.includeEnded ?? false,
+        embedCounts: options.embedCounts ?? false,
       };
 
       // Fetch districts based on user role and authorization
       if (isSuperAdmin) {
-        result = await districtRepository.listAll(queryParams);
+        result = await repo.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
-      }
-
-      // If embedCounts is requested, fetch counts separately and attach to districts
-      if (options.embedCounts && result.items.length > 0) {
-        const districtIds = result.items.map((d) => d.id);
-        const countsMap = await districtRepository.fetchDistrictCounts(districtIds, options.includeEnded ?? false);
-
-        return {
-          items: result.items.map((district) => ({
-            ...district,
-            counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
-          })),
-          totalItems: result.totalItems,
-        };
+        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) {
