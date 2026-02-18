@@ -42,6 +42,10 @@ export const runs = db.table(
     isAnonymous: p.boolean().default(false),
 
     completedAt: p.timestamp({ withTimezone: true }),
+    abortedAt: p.timestamp({ withTimezone: true }),
+
+    deletedAt: p.timestamp({ withTimezone: true }),
+    deletedBy: p.uuid(),
 
     ...timestamps,
   },
@@ -58,6 +62,10 @@ export const runs = db.table(
       .index('runs_user_reporting_run_idx')
       .on(table.userId)
       .where(sql`${table.useForReporting} = true`),
+
+    // Constraints
+    // - Ensure deletedBy is set when deletedAt is set
+    p.check('runs_deleted_by_required', sql`${table.deletedAt} IS NULL OR ${table.deletedBy} IS NOT NULL`),
   ],
 );
 
