@@ -45,7 +45,7 @@ export const RunsContract = c.router(
       },
       strictStatusCodes: true,
       summary: 'Post run event',
-      description: 'Currently supports type="complete" (finishRun).',
+      description: 'Currently supports events',
     },
   },
   { pathPrefix: '/runs' },

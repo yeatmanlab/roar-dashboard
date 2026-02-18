@@ -43,7 +43,7 @@ export function RunService({
    * Performs the following validations and operations:
    * 1. Validates that taskService is configured
    * 2. Validates that the administration exists and user has access
-   * 3. For non-super-admin users, checks if they have Runs.START permission
+   * 3. For non-super-admin users, checks if they have Runs.CREATE permission
    * 4. Resolves the taskId from the provided taskVariantId
    * 5. Creates the run record in the database
    *
@@ -90,8 +90,7 @@ export function RunService({
         body.administration_id,
       );
 
-      // TODO: Emily ask if to create START permission or CREATE permission
-      const allowedRoles = rolesForPermission(Permissions.Runs.START);
+      const allowedRoles = rolesForPermission(Permissions.Runs.CREATE);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const hasPermission = userRoles.some((role) => allowedRoles.includes(role as any));

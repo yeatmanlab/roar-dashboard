@@ -26,21 +26,23 @@ describe('RunsController', () => {
     expect(typeof RunsController.event).toBe('function');
   });
 
-  describe('create', () => {
-    it('should have proper method signature', async () => {
-      const { RunsController } = await import('./runs.controller');
-
-      expect(RunsController.create).toBeDefined();
-      expect(RunsController.create.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
   describe('event', () => {
     it('should have proper method signature', async () => {
       const { RunsController } = await import('./runs.controller');
 
-      expect(RunsController.event).toBeDefined();
-      expect(RunsController.event.length).toBeGreaterThanOrEqual(3);
+      const eventMethod = RunsController.event;
+      expect(eventMethod).toBeDefined();
+      expect(eventMethod.length).toBe(3); // authContext, runId, body
+    });
+  });
+
+  describe('create', () => {
+    it('should have proper method signature', async () => {
+      const { RunsController } = await import('./runs.controller');
+
+      const createMethod = RunsController.create;
+      expect(createMethod).toBeDefined();
+      expect(createMethod.length).toBe(2); // authContext, body
     });
   });
 });

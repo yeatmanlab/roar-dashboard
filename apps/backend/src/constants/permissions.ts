@@ -70,7 +70,7 @@ export const Permissions = {
   Runs: {
     ALL: 'runs.*',
     DELETE: 'runs.delete',
-    START: 'runs.start',
+    CREATE: 'runs.create',
     Scores: {
       MARK_INELIGIBLE: 'runs.scores.mark_ineligible',
     },

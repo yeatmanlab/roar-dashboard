@@ -6,6 +6,12 @@ export const allowEngagementFlagEnum = z.enum([
   'accuracy_too_low',
   'not_enough_responses',
 ]);
+const MAX_METADATA_SIZE = 1024;
+
+function jsonByteSize(value: unknown): number {
+  const json = JSON.stringify(value);
+  return new TextEncoder().encode(json).length;
+}
 
 /**
  * Request body for POST /runs
@@ -14,7 +20,27 @@ export const CreateRunRequestBodySchema = z.object({
   task_variant_id: z.string().uuid(),
   task_version: z.string(),
   administration_id: z.string().uuid(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z
+    .record(z.unknown())
+    .optional()
+    .superRefine((metadata, context) => {
+      if (!metadata) return;
+
+      try {
+        const bytes = jsonByteSize(metadata);
+        if (bytes > MAX_METADATA_SIZE) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `metadata is too large (${bytes} bytes). Max is ${MAX_METADATA_SIZE} bytes.`,
+          });
+        }
+      } catch {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'metadata must be JSON-serializable',
+        });
+      }
+    }),
 });
 
 export type CreateRunRequestBody = z.infer<typeof CreateRunRequestBodySchema>;
@@ -35,18 +61,38 @@ export const CreateRunResponseSchema = z.object({
  */
 export const RunCompleteEventSchema = z.object({
   type: z.literal('complete'),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z
+    .record(z.unknown())
+    .optional()
+    .superRefine((metadata, context) => {
+      if (!metadata) return;
+
+      try {
+        const bytes = jsonByteSize(metadata);
+        if (bytes > MAX_METADATA_SIZE) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `metadata is too large (${bytes} bytes). Max is ${MAX_METADATA_SIZE} bytes.`,
+          });
+        }
+      } catch {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'metadata must be JSON-serializable',
+        });
+      }
+    }),
 });
 /**
  * Schema for a run abort event.
  *
  * Represents an event that marks a run as aborted.
  * - type: Must be 'abort' (literal type for discriminated union)
- * - reason: Optional reason for the abort
+ * - abortedAt: The time the run was aborted
  */
 export const RunAbortEventSchema = z.object({
   type: z.literal('abort'),
-  reason: z.string().min(1).optional(),
+  abortedAt: z.date(),
 });
 /**
  * Schema for a run trial interaction event.

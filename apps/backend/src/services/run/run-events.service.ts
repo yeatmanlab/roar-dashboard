@@ -4,11 +4,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { RunsRepository } from '../../repositories/runs.repository';
 import { runTrials, runTrialInteractions } from '../../db/schema/assessment';
-
-interface AuthContext {
-  userId: string;
-  isSuperAdmin: boolean;
-}
+import type { AuthContext } from '../../types/auth-context';
 
 /**
  * RunEventsService
@@ -44,8 +40,7 @@ export function RunEventsService({
       });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((run as any).userId !== userId) {
+    if (run.userId !== userId) {
       throw new ApiError('Forbidden', {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -157,7 +152,7 @@ export function RunEventsService({
             runId,
             trialId,
             event: i.event,
-            trialIndex: i.trial_id ?? null,
+            trialIndex: i.trial_id,
             timeMs: i.time_ms,
             createdAt: now,
           }));
@@ -172,11 +167,11 @@ export function RunEventsService({
    * Marks a run as aborted.
    *
    * Validates the event type, verifies user ownership, and updates the run's
-   * abort status with an optional reason. Currently only supports 'abort' event type.
+   * abort status with the provided abort timestamp. Currently only supports 'abort' event type.
    *
    * @param authContext - Authentication context with userId and isSuperAdmin
    * @param runId - UUID of the run to abort
-   * @param body - Event body containing type and optional reason
+   * @param body - Event body containing type and abortedAt timestamp
    * @throws ApiError with BAD_REQUEST (400) if event type is invalid
    * @throws ApiError with NOT_FOUND (404) if run doesn't exist
    * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
@@ -187,19 +182,15 @@ export function RunEventsService({
       throw new ApiError('Invalid event type', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        context: { runId, type: (body as any).type },
+        context: { runId, type: body.type },
       });
     }
     await assertRunOwnedByUser(runId, authContext.userId);
 
-    const now = new Date();
-
     await runsRepository.update({
       id: runId,
       data: {
-        updatedAt: now,
-        abortReason: body.reason ?? null,
+        abortedAt: body.abortedAt,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     });
@@ -220,13 +211,11 @@ export function RunEventsService({
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
    */
   async function completeRun(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
-    // type="complete"
     if (body.type !== 'complete') {
       throw new ApiError('Invalid event type', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        context: { runId, type: (body as any).type },
+        context: { runId, type: body.type },
       });
     }
 
@@ -238,10 +227,8 @@ export function RunEventsService({
       id: runId,
       data: {
         completedAt: now,
-        updatedAt: now,
         ...(body.metadata ? { completionMetadata: body.metadata } : {}),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+      },
     });
   }
 
