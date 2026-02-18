@@ -39,6 +39,8 @@ export const runs = db.table(
     engagementFlags: p.jsonb(),
     metadata: p.jsonb(),
 
+    isAnonymous: p.boolean().default(false),
+
     completedAt: p.timestamp({ withTimezone: true }),
 
     ...timestamps,
