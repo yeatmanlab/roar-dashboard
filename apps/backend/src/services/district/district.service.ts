@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import type { Org } from '../../db/schema';
-import { DistrictRepository, type District, type DistrictWithCounts } from '../../repositories/district.repository';
+import { DistrictRepository, type DistrictWithCounts } from '../../repositories/district.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
@@ -43,10 +43,12 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
  * Follows the factory pattern with dependency injection.
  */
 export function DistrictService({
-  districtRepository = new DistrictRepository(),
+  districtRepository,
 }: {
   districtRepository?: DistrictRepository;
 } = {}) {
+  // Lazy initialize repository to avoid creating it before database is initialized
+  const repo = districtRepository ?? new DistrictRepository();
   /**
    * List districts accessible to a user with pagination and sorting.
    *
@@ -78,10 +80,10 @@ export function DistrictService({
 
       // Fetch districts based on user role and authorization
       if (isSuperAdmin) {
-        result = await districtRepository.listAll(queryParams);
+        result = await repo.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) {
@@ -138,11 +140,7 @@ export function DistrictService({
     };
 
     // Fetch district with optional embeds
-    const district = await districtRepository.getByIdWithEmbeds(
-      id,
-      accessControlFilter,
-      options.embedChildren ?? false,
-    );
+    const district = await repo.getByIdWithEmbeds(id, accessControlFilter, options.embedChildren ?? false);
 
     if (!district) {
       // District not found or user lacks access
