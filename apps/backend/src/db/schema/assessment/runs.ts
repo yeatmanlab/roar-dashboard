@@ -33,7 +33,7 @@ export const runs = db.table(
 
     administrationId: p.uuid().notNull(),
 
-    bestRun: p.boolean().notNull().default(false),
+    useForReporting: p.boolean().notNull().default(false),
     reliableRun: p.boolean().notNull().default(false),
 
     engagementFlags: p.jsonb(),
@@ -51,11 +51,11 @@ export const runs = db.table(
     //- Lookup for all runs by a user
     p.index('runs_user_id_idx').on(table.userId),
 
-    // - Lookup to identify best runs for a user
+    // - Lookup to identify reporting runs for a user
     p
-      .index('runs_user_best_run_idx')
+      .index('runs_user_reporting_run_idx')
       .on(table.userId)
-      .where(sql`${table.bestRun} = true`),
+      .where(sql`${table.useForReporting} = true`),
   ],
 );
 
