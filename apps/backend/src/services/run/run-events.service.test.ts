@@ -4,6 +4,12 @@ import { RunEventsService } from './run-events.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 
+/**
+ * RunEventsService Tests
+ *
+ * Tests the business logic for handling run events.
+ * Verifies authorization checks, error handling, and state updates.
+ */
 describe('RunEventsService', () => {
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
@@ -37,13 +43,9 @@ describe('RunEventsService', () => {
       await runEventsService.completeRun(mockAuthContext, validRunId, validBody);
 
       expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(mockRunsRepository.update).toHaveBeenCalledWith({
-        id: validRunId,
-        data: {
-          completedAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        },
-      });
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.completedAt).toBeInstanceOf(Date);
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -97,7 +99,7 @@ describe('RunEventsService', () => {
       }
     });
 
-    it('should update both completedAt and updatedAt timestamps', async () => {
+    it('should set completedAt timestamp', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockResolvedValue(undefined);
@@ -108,9 +110,8 @@ describe('RunEventsService', () => {
 
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
       expect(updateCall.data.completedAt).toBeInstanceOf(Date);
-      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
       expect(updateCall.data.completedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
-      expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
+      expect(updateCall.data.completedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
     });
 
     it('should handle optional metadata in event body', async () => {
@@ -133,7 +134,8 @@ describe('RunEventsService', () => {
 
   describe('abortRun', () => {
     const validRunId = '550e8400-e29b-41d4-a716-446655440000';
-    const validBody = { type: 'abort' as const };
+    const abortedAtTime = new Date('2024-01-15T10:30:00Z');
+    const validBody = { type: 'abort' as const, abortedAt: abortedAtTime };
 
     it('should abort a run successfully', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
@@ -143,34 +145,27 @@ describe('RunEventsService', () => {
       await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
 
       expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(mockRunsRepository.update).toHaveBeenCalledWith({
-        id: validRunId,
-        data: {
-          updatedAt: expect.any(Date),
-          abortReason: null,
-        },
-      });
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
 
-    it('should abort a run with a reason', async () => {
+    it('should abort a run with different abortedAt time', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockResolvedValue(undefined);
 
-      const bodyWithReason = {
+      const differentTime = new Date('2024-01-15T11:45:00Z');
+      const bodyWithDifferentTime = {
         type: 'abort' as const,
-        reason: 'User requested cancellation',
+        abortedAt: differentTime,
       };
 
-      await runEventsService.abortRun(mockAuthContext, validRunId, bodyWithReason);
+      await runEventsService.abortRun(mockAuthContext, validRunId, bodyWithDifferentTime);
 
-      expect(mockRunsRepository.update).toHaveBeenCalledWith({
-        id: validRunId,
-        data: {
-          updatedAt: expect.any(Date),
-          abortReason: 'User requested cancellation',
-        },
-      });
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.abortedAt).toBe(differentTime);
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -209,22 +204,7 @@ describe('RunEventsService', () => {
       expect(mockRunsRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should update timestamp when aborting', async () => {
-      const mockRun = { id: validRunId, userId: 'user-123' };
-      mockRunsRepository.getById.mockResolvedValue(mockRun);
-      mockRunsRepository.update.mockResolvedValue(undefined);
-
-      const beforeCall = new Date();
-      await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
-      const afterCall = new Date();
-
-      const updateCall = mockRunsRepository.update.mock.calls[0][0];
-      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
-      expect(updateCall.data.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
-      expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
-    });
-
-    it('should set abortReason to null when reason is not provided', async () => {
+    it('should set abortedAt timestamp', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockResolvedValue(undefined);
@@ -232,7 +212,7 @@ describe('RunEventsService', () => {
       await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
 
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
-      expect(updateCall.data.abortReason).toBeNull();
+      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
   });
 

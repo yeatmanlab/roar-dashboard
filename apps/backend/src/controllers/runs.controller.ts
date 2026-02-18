@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
+import type { CreateRunRequestBody, RunEventBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';
@@ -20,6 +20,10 @@ const runEventsService = RunEventsService();
 export const RunsController = {
   /**
    * Create a new run (assessment session instance).
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param body - Request body with task_variant_id, task_version, administration_id, and optional metadata
+   * @returns Response with status 201 and run_id on success, or error response on failure
    */
   create: async (authContext: AuthContext, body: CreateRunRequestBody) => {
     try {
@@ -44,11 +48,22 @@ export const RunsController = {
       throw error;
     }
   },
+  /**
+   * Handle a run event (complete).
+   *
+   * Marks a run as complete with optional metadata.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param runId - UUID of the run to post the event to
+   * @param body - Event body with type 'complete' and optional metadata
+   * @returns Response with status 200 and { status: 'ok' } on success, or error response on failure
+   */
   event: async (authContext: AuthContext, runId: string, body: RunEventBody) => {
     try {
-      if (body.type === 'complete') {
+      const eventType = (body as { type?: unknown }).type;
+      if (eventType === 'complete') {
         await runEventsService.completeRun(authContext, runId, body);
-      } else if (body.type === 'abort') {
+      } else if (eventType === 'abort') {
         await runEventsService.abortRun(authContext, runId, body);
       } else if (body.type === 'trial') {
         await runEventsService.writeTrial(authContext, runId, body);
@@ -57,8 +72,7 @@ export const RunsController = {
         throw new ApiError('Invalid event type', {
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          context: { runId, type: (body as any).type },
+          context: { runId, type: eventType },
         });
       }
 
