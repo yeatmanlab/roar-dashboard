@@ -145,7 +145,7 @@ export abstract class BaseRepository<
   /**
    * Creates a new entity.
    */
-  async create(params: BaseCreateParams<TInsert>): Promise<{ id: string } | undefined> {
+  async create(params: BaseCreateParams<TInsert>): Promise<{ id: string }> {
     const { transaction } = params;
     const db = transaction ?? this.db;
 
