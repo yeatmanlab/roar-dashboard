@@ -178,10 +178,6 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
     const { transaction } = params;
     const db = transaction ?? this.db;
 
-    if (!params.data || params.data.length === 0) {
-      return [];
-    }
-
     const entities = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
 
     return entities;
