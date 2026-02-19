@@ -4,6 +4,7 @@ import { taskVariantParameters, type TaskVariantParameter, type NewTaskVariantPa
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';
+import { BaseCreateManyParams } from './interfaces/base.repository.interface';
 
 /**
  * Repository for task variant parameter-related database operations.
@@ -48,5 +49,23 @@ export class TaskVariantParameterRepository extends BaseRepository<
     });
 
     return results;
+  }
+
+  /**
+   * Creates multiple task variant parameters.
+   *
+   * Overrides base createMany because this table uses a composite primary key (taskVariantId, name)
+   * instead of a single id column. Returns placeholder objects to satisfy the base interface.
+   */
+  override async createMany(params: BaseCreateManyParams<NewTaskVariantParameter>): Promise<{ id: string }[]> {
+    if (!params.data || params.data.length === 0) {
+      return [];
+    }
+
+    const db = params.transaction ?? this.db;
+    await db.insert(taskVariantParameters).values(params.data);
+
+    // Return placeholder array with same length (service only checks length)
+    return params.data.map(() => ({ id: '' }));
   }
 }
