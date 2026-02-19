@@ -630,10 +630,10 @@ export function AdministrationService({
    * Unlike districts/schools/classes/groups, task variants are visible to ALL users
    * with administration access - students need this to know which assessments to take.
    *
-   * Authorization and eligibility behavior:
-   * - Super admin: sees all task variants assigned to the administration (no filtering)
-   * - Supervisory roles (teachers, admins): sees all task variants (no filtering)
-   * - Supervised roles (students): sees only task variants where conditionsAssignment passes.
+   * Authorization, status filtering, and eligibility behavior:
+   * - Super admin: sees all task variants (including draft/deprecated), no eligibility filtering
+   * - Supervisory roles (teachers, admins): sees all task variants (including draft/deprecated), no eligibility filtering
+   * - Supervised roles (students): sees only **published** task variants where conditionsAssignment passes.
    *   - conditionsAssignment (assigned_if): determines if the variant is visible/assigned to the student
    *   - conditionsRequirements (optional_if): determines if a visible variant is optional (vs required)
    *
@@ -656,6 +656,16 @@ export function AdministrationService({
       // Verify administration exists and user has access (students included)
       await verifyAdministrationAccess(authContext, administrationId);
 
+      // Determine if user is supervisory (affects which variants they can see)
+      // Super admins and supervisory roles see all variants of all statuses
+      // Supervised roles only see published variants
+      let isSupervisory = isSuperAdmin;
+
+      if (!isSuperAdmin) {
+        const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+        isSupervisory = hasSupervisoryRole(userRoles);
+      }
+
       const queryParams = {
         page: options.page,
         perPage: options.perPage,
@@ -665,18 +675,16 @@ export function AdministrationService({
         },
       };
 
-      const result = await administrationRepository.getTaskVariantsByAdministrationId(administrationId, queryParams);
+      // Supervised roles only see published task variants; supervisory roles see all statuses
+      const publishedOnly = !isSupervisory;
+      const result = await administrationRepository.getTaskVariantsByAdministrationId(
+        administrationId,
+        publishedOnly,
+        queryParams,
+      );
 
-      // Super admins see all task variants without filtering
-      if (isSuperAdmin) {
-        return result;
-      }
-
-      // Get user roles to determine if eligibility filtering applies
-      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
-
-      // Supervisory roles (teachers, admins) see all task variants without filtering
-      if (hasSupervisoryRole(userRoles)) {
+      // Super admins and supervisory roles see all task variants without eligibility filtering
+      if (isSupervisory) {
         return result;
       }
 
@@ -684,7 +692,6 @@ export function AdministrationService({
       // Fetch user data for condition evaluation
       const user = await userRepository.getById({ id: userId });
       if (!user) {
-        // This should be rare - authenticated user exists in auth but not in DB (data inconsistency)
         logger.error(
           { userId, administrationId },
           'User not found during eligibility filtering - possible data inconsistency',
