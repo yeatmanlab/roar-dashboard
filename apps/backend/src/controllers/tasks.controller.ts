@@ -22,11 +22,6 @@ export const TasksController = {
    *
    * @param authContext - User's authentication context.
    * @param data - Parameters for CreateTaskVariantData interface
-   *             - taskId: string
-   *             - name: string,
-   *             - description: string,
-   *             - status: TaskVariantStatus type - ['draft', 'published', 'deprecated'] (defaults to 'published')
-                 - parameters: CreateTaskVariantParameterData[] type - Array of CreateTaskVariantParameterData name/value pairs
    * @returns An object containing the newly created task variant's UUID.
    *
    * @see {@link CreateTaskVariantData} - Parameters for creating a new task variant.
