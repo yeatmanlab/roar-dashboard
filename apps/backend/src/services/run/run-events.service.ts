@@ -3,7 +3,8 @@ import type { RunEventBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { RunsRepository } from '../../repositories/runs.repository';
-import { runTrials, runTrialInteractions } from '../../db/schema/assessment';
+import { RunTrialsRepository } from '../../repositories/run-trials.repository';
+import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
 import type { AuthContext } from '../../types/auth-context';
 
 /**
@@ -13,12 +14,18 @@ import type { AuthContext } from '../../types/auth-context';
  * Manages authorization checks and updates to run state.
  *
  * @param runsRepository - Repository for accessing run data (injected for testing)
+ * @param runTrialsRepository - Repository for accessing run trials (injected for testing)
+ * @param runTrialInteractionsRepository - Repository for accessing run trial interactions (injected for testing)
  * @returns Object with event handling methods
  */
 export function RunEventsService({
   runsRepository = new RunsRepository(),
+  runTrialsRepository = new RunTrialsRepository(),
+  runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
 }: {
   runsRepository?: RunsRepository;
+  runTrialsRepository?: RunTrialsRepository;
+  runTrialInteractionsRepository?: RunTrialInteractionsRepository;
 } = {}) {
   /**
    * Verifies that a run exists and is owned by the specified user.
@@ -111,8 +118,7 @@ export function RunEventsService({
       throw new ApiError('Invalid event type', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        context: { runId, type: (body as any).type },
+        context: { runId, type: body.type },
       });
     }
 
@@ -127,37 +133,32 @@ export function RunEventsService({
       });
     }
 
-    const now = new Date();
-    const correctInt = body.trial.correct ? 1 : 0;
-
-    await runsRepository.runTransaction({
+    await runTrialsRepository.runTransaction({
       fn: async (tx) => {
-        const [createdTrial] = await tx
-          .insert(runTrials)
-          .values({
+        const createdTrial = await runTrialsRepository.create({
+          data: {
             runId,
             assessmentStage: body.trial.assessment_stage,
-            correct: correctInt,
-            createdAt: now,
-            updatedAt: now,
-            payload: body.trial,
-          })
-          .returning({ id: runTrials.id });
-
-        const trialId = createdTrial.id;
+            correct: typeof body.trial.correct === 'boolean' ? (body.trial.correct ? 1 : 0) : body.trial.correct,
+            metadata: body.trial,
+          },
+          transaction: tx,
+        });
 
         // This part is optional
         if (body.interactions && body.interactions.length > 0) {
-          const rows = body.interactions.map((i) => ({
-            runId,
-            trialId,
-            event: i.event,
-            trialIndex: i.trial_id,
-            timeMs: i.time_ms,
-            createdAt: now,
-          }));
+          const interactionPromises = body.interactions.map((i) =>
+            runTrialInteractionsRepository.create({
+              data: {
+                trialId: createdTrial.id,
+                interactionType: i.event,
+                timeMs: i.time_ms,
+              },
+              transaction: tx,
+            }),
+          );
 
-          await tx.insert(runTrialInteractions).values(rows);
+          await Promise.all(interactionPromises);
         }
       },
     });

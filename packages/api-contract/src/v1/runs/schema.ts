@@ -102,7 +102,7 @@ export const RunAbortEventSchema = z.object({
  * - time_ms: The time in milliseconds since the start of the trial
  */
 export const RunTrialInteractionSchema = z.object({
-  event: z.string().min(1),
+  event: z.enum(['blur', 'focus', 'fullscreen_enter', 'fullscreen_exit']),
   trial_id: z.number().int().nonnegative(),
   time_ms: z.number().int().nonnegative(),
 });
@@ -118,8 +118,8 @@ export const RunTrialEventSchema = z.object({
   type: z.literal('trial'),
   trial: z
     .object({
-      assessment_stage: z.string().min(1),
-      correct: z.boolean(),
+      assessment_stage: z.enum(['practice', 'test']),
+      correct: z.boolean().or(z.number().int().min(0).max(1)),
     })
     .passthrough(), // allow app-specific
   interactions: z.array(RunTrialInteractionSchema).optional(),
