@@ -27,7 +27,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { OrgAccessControls } from './org.access-controls';
-import { CoreDbClient } from '../../test-support/db';
+import { getCoreDbClient } from '../../test-support/db';
 import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { UserOrgFactory } from '../../test-support/factories/user-org.factory';
@@ -35,11 +35,11 @@ import { UserClassFactory } from '../../test-support/factories/user-class.factor
 import { UserRole } from '../../enums/user-role.enum';
 
 describe('OrgAccessControls', () => {
-  // Initialize inside describe block - CoreDbClient is available after beforeAll in vitest.setup.ts
+  // Initialize inside describe block - getCoreDbClient() is available after beforeAll in vitest.setup.ts
   let accessControls: OrgAccessControls;
 
   beforeAll(() => {
-    accessControls = new OrgAccessControls(CoreDbClient);
+    accessControls = new OrgAccessControls(getCoreDbClient());
   });
 
   /**
@@ -49,7 +49,7 @@ describe('OrgAccessControls', () => {
     const query = accessControls.buildUserAccessibleOrgIdsQuery({ userId, allowedRoles });
     const subquery = query.as('accessible');
 
-    const result = await CoreDbClient.select({ orgId: subquery.orgId }).from(subquery);
+    const result = await getCoreDbClient().select({ orgId: subquery.orgId }).from(subquery);
 
     return result.map((r) => r.orgId);
   }

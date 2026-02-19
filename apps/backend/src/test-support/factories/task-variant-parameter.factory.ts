@@ -1,7 +1,7 @@
 import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { TaskVariantParameter, NewTaskVariantParameter } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { taskVariantParameters } from '../../db/schema/core';
 
 /**
@@ -30,7 +30,7 @@ export const TaskVariantParameterFactory = Factory.define<TaskVariantParameter>(
       value: param.value,
     };
 
-    const [inserted] = await CoreDbClient.insert(taskVariantParameters).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(taskVariantParameters).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert task variant parameter');
     return inserted;
   });

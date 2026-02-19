@@ -31,7 +31,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { AdministrationAccessControls } from './administration.access-controls';
-import { CoreDbClient } from '../../test-support/db';
+import { getCoreDbClient } from '../../test-support/db';
 import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { UserOrgFactory } from '../../test-support/factories/user-org.factory';
@@ -53,7 +53,7 @@ describe('AdministrationAccessControls', () => {
     const query = accessControls.buildUserAdministrationIdsQuery({ userId, allowedRoles });
     const subquery = query.as('accessible');
 
-    const result = await CoreDbClient.select({ administrationId: subquery.administrationId }).from(subquery);
+    const result = await getCoreDbClient().select({ administrationId: subquery.administrationId }).from(subquery);
 
     return result.map((r) => r.administrationId);
   }
@@ -287,10 +287,12 @@ describe('AdministrationAccessControls', () => {
       ]);
       const subquery = query.as('assignments');
 
-      const result = await CoreDbClient.select({
-        administrationId: subquery.administrationId,
-        userId: subquery.userId,
-      }).from(subquery);
+      const result = await getCoreDbClient()
+        .select({
+          administrationId: subquery.administrationId,
+          userId: subquery.userId,
+        })
+        .from(subquery);
 
       const userIds = result.map((r) => r.userId);
 
@@ -313,10 +315,12 @@ describe('AdministrationAccessControls', () => {
       ]);
       const subquery = query.as('assignments');
 
-      const result = await CoreDbClient.select({
-        administrationId: subquery.administrationId,
-        userId: subquery.userId,
-      }).from(subquery);
+      const result = await getCoreDbClient()
+        .select({
+          administrationId: subquery.administrationId,
+          userId: subquery.userId,
+        })
+        .from(subquery);
 
       const userIds = result.map((r) => r.userId);
 
@@ -334,10 +338,12 @@ describe('AdministrationAccessControls', () => {
       ]);
       const subquery = query.as('assignments');
 
-      const result = await CoreDbClient.select({
-        administrationId: subquery.administrationId,
-        userId: subquery.userId,
-      }).from(subquery);
+      const result = await getCoreDbClient()
+        .select({
+          administrationId: subquery.administrationId,
+          userId: subquery.userId,
+        })
+        .from(subquery);
 
       const userIds = result.map((r) => r.userId);
 
@@ -456,7 +462,7 @@ describe('AdministrationAccessControls', () => {
           baseFixture.administrationAssignedToSchoolA.id,
         ]);
         const subquery = query.as('assignments');
-        const result = await CoreDbClient.select({ userId: subquery.userId }).from(subquery);
+        const result = await getCoreDbClient().select({ userId: subquery.userId }).from(subquery);
         const userIds = result.map((r) => r.userId);
 
         // Active enrollment users should be included
@@ -480,7 +486,7 @@ describe('AdministrationAccessControls', () => {
           baseFixture.administrationAssignedToClassA.id,
         ]);
         const subquery = query.as('assignments');
-        const result = await CoreDbClient.select({ userId: subquery.userId }).from(subquery);
+        const result = await getCoreDbClient().select({ userId: subquery.userId }).from(subquery);
         const userIds = result.map((r) => r.userId);
 
         // Active enrollment user should be included
@@ -497,7 +503,7 @@ describe('AdministrationAccessControls', () => {
           baseFixture.administrationAssignedToGroup.id,
         ]);
         const subquery = query.as('assignments');
-        const result = await CoreDbClient.select({ userId: subquery.userId }).from(subquery);
+        const result = await getCoreDbClient().select({ userId: subquery.userId }).from(subquery);
         const userIds = result.map((r) => r.userId);
 
         // Active enrollment user should be included

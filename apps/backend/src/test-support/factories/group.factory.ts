@@ -1,7 +1,7 @@
 import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { Group, NewGroup } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { groups } from '../../db/schema/core';
 import { GroupType } from '../../enums/group-type.enum';
 
@@ -29,7 +29,7 @@ export const GroupFactory = Factory.define<Group>(({ onCreate }) => {
       locationCountry: group.locationCountry,
     };
 
-    const [inserted] = await CoreDbClient.insert(groups).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(groups).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert group');
     return inserted;
   });

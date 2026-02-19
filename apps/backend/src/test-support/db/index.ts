@@ -5,8 +5,8 @@
  * Uses production database clients with test database connections (via .env.test).
  */
 export {
-  CoreDbClient,
-  AssessmentDbClient,
+  getCoreDbClient,
+  getAssessmentDbClient,
   initializeDatabasePools,
   closeDatabasePools as closeAllConnections,
 } from '../../db/clients';

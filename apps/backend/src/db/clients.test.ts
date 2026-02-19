@@ -85,8 +85,8 @@ describe('clients', () => {
         });
         expect(ConnectorMock).not.toHaveBeenCalled();
         expect(drizzleMock).toHaveBeenCalledTimes(2);
-        expect(clients.CoreDbClient).toBeDefined();
-        expect(clients.AssessmentDbClient).toBeDefined();
+        expect(clients.getCoreDbClient()).toBeDefined();
+        expect(clients.getAssessmentDbClient()).toBeDefined();
       });
 
       it('throws error when CORE_DATABASE_URL is missing', async () => {

@@ -22,9 +22,9 @@ vi.mock('../services/user', () => ({
   }),
 }));
 
-// Mock CoreDbClient
+// Mock getCoreDbClient
 vi.mock('../db/clients', () => ({
-  CoreDbClient: {},
+  getCoreDbClient: () => ({}),
 }));
 
 describe('GET /me', () => {

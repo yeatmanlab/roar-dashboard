@@ -1,6 +1,6 @@
 import { Factory } from 'fishery';
 import type { AdministrationTaskVariant, NewAdministrationTaskVariant } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { administrationTaskVariants } from '../../db/schema/core';
 
 /**
@@ -26,7 +26,7 @@ export const AdministrationTaskVariantFactory = Factory.define<AdministrationTas
       conditionsRequirements: record.conditionsRequirements,
     };
 
-    const [inserted] = await CoreDbClient.insert(administrationTaskVariants).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(administrationTaskVariants).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert administration_task_variant');
     return inserted;
   });

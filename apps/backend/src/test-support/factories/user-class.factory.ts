@@ -1,6 +1,6 @@
 import { Factory } from 'fishery';
 import type { UserClass, NewUserClass } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { userClasses } from '../../db/schema/core';
 import { UserRole } from '../../enums/user-role.enum';
 
@@ -27,7 +27,7 @@ export const UserClassFactory = Factory.define<UserClass>(({ onCreate }) => {
       enrollmentEnd: userClass.enrollmentEnd,
     };
 
-    const [inserted] = await CoreDbClient.insert(userClasses).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(userClasses).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert user_class');
     return inserted;
   });

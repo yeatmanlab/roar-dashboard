@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
 import { eq } from 'drizzle-orm';
 import { tasks, type Task, type NewTask } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
+import { getCoreDbClient } from '../db/clients';
 import { BaseRepository } from './base.repository';
 
 /**
@@ -12,8 +12,8 @@ import { BaseRepository } from './base.repository';
  * Extends BaseRepository with task-specific query methods.
  */
 export class TaskRepository extends BaseRepository<Task, typeof tasks, NewTask> {
-  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, tasks);
+  constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+    super(db ?? getCoreDbClient(), tasks);
   }
 
   /**

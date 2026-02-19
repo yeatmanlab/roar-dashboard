@@ -15,7 +15,7 @@ import {
   type Class,
   type Group,
 } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
+import { getCoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type {
   PaginationQuery,
@@ -110,13 +110,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   private readonly orgAccessControls: OrgAccessControls;
 
   constructor(
-    db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient,
-    accessControls: AdministrationAccessControls = new AdministrationAccessControls(db),
-    orgAccessControls: OrgAccessControls = new OrgAccessControls(db),
+    db?: NodePgDatabase<typeof CoreDbSchema>,
+    accessControls?: AdministrationAccessControls,
+    orgAccessControls?: OrgAccessControls,
   ) {
-    super(db, administrations);
-    this.accessControls = accessControls;
-    this.orgAccessControls = orgAccessControls;
+    const dbClient = db ?? getCoreDbClient();
+    super(dbClient, administrations);
+    this.accessControls = accessControls ?? new AdministrationAccessControls(dbClient);
+    this.orgAccessControls = orgAccessControls ?? new OrgAccessControls(dbClient);
   }
 
   /**

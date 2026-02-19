@@ -35,8 +35,8 @@ export type { PaginatedResult } from './interfaces/base.repository.interface';
  * @example
  * ```typescript
  * export class UserRepository extends BaseRepository<User, typeof users> {
- *   constructor(db = CoreDbClient) {
- *     super(db, users);
+ *   constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+ *     super(db ?? getCoreDbClient(), users);
  *   }
  *
  *   // Custom methods beyond CRUD
@@ -146,7 +146,8 @@ export abstract class BaseRepository<
    * Creates a new entity.
    */
   async create(params: BaseCreateParams<TInsert>): Promise<{ id: string } | undefined> {
-    const [entity] = await this.db
+    const db = params.transaction ?? this.db;
+    const [entity] = await db
       .insert(this.typedTable)
       .values(params.data as TInsert)
       .returning({ id: this.typedTable.id });
@@ -181,7 +182,8 @@ export abstract class BaseRepository<
       return [];
     }
 
-    const entities = await this.db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
+    const db = params.transaction ?? this.db;
+    const entities = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
 
     return entities;
   }
@@ -190,16 +192,18 @@ export abstract class BaseRepository<
    * Updates an existing entity.
    */
   async update(params: BaseUpdateParams<TEntity>): Promise<void> {
+    const db = params.transaction ?? this.db;
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
-    await this.db.update(this.typedTable).set(params.data).where(eq(idColumn, params.id));
+    await db.update(this.typedTable).set(params.data).where(eq(idColumn, params.id));
   }
 
   /**
    * Deletes an entity by ID.
    */
   async delete(params: BaseDeleteParams): Promise<void> {
+    const db = params.transaction ?? this.db;
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
-    await this.db.delete(this.typedTable).where(eq(idColumn, params.id));
+    await db.delete(this.typedTable).where(eq(idColumn, params.id));
   }
 
   /**

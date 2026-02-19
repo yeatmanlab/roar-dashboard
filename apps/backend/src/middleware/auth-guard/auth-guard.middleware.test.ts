@@ -27,9 +27,9 @@ vi.mock('../../repositories', () => ({
   UserRepository: vi.fn(),
 }));
 
-// Mock CoreDbClient
+// Mock getCoreDbClient
 vi.mock('../../db/clients', () => ({
-  CoreDbClient: {},
+  getCoreDbClient: () => ({}),
 }));
 
 describe('AuthGuardMiddleware', () => {

@@ -1,6 +1,6 @@
 import { Factory } from 'fishery';
 import type { AdministrationGroup, NewAdministrationGroup } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { administrationGroups } from '../../db/schema/core';
 
 /**
@@ -23,7 +23,7 @@ export const AdministrationGroupFactory = Factory.define<AdministrationGroup>(({
       groupId: adminGroup.groupId,
     };
 
-    const [inserted] = await CoreDbClient.insert(administrationGroups).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(administrationGroups).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert administration_group');
     return inserted;
   });

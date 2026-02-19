@@ -1,6 +1,6 @@
 import { Factory } from 'fishery';
 import type { UserOrg, NewUserOrg } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { userOrgs } from '../../db/schema/core';
 import { UserRole } from '../../enums/user-role.enum';
 
@@ -27,7 +27,7 @@ export const UserOrgFactory = Factory.define<UserOrg>(({ onCreate }) => {
       enrollmentEnd: userOrg.enrollmentEnd,
     };
 
-    const [inserted] = await CoreDbClient.insert(userOrgs).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(userOrgs).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert user_org');
     return inserted;
   });

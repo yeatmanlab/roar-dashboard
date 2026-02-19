@@ -1,7 +1,7 @@
 import { eq, inArray } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { administrationTaskVariants, taskVariants, tasks } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
+import { getCoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 
 /**
@@ -23,7 +23,11 @@ export interface AdministrationTask {
  * to provide complete task information for administrations.
  */
 export class AdministrationTaskVariantRepository {
-  constructor(private readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
+  private readonly db: NodePgDatabase<typeof CoreDbSchema>;
+
+  constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+    this.db = db ?? getCoreDbClient();
+  }
 
   /**
    * Get tasks (with variant and task details) for multiple administrations.

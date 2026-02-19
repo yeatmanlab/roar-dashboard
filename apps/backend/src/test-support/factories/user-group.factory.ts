@@ -1,6 +1,6 @@
 import { Factory } from 'fishery';
 import type { UserGroup, NewUserGroup } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { userGroups } from '../../db/schema/core';
 import { UserRole } from '../../enums/user-role.enum';
 
@@ -27,7 +27,7 @@ export const UserGroupFactory = Factory.define<UserGroup>(({ onCreate }) => {
       enrollmentEnd: userGroup.enrollmentEnd,
     };
 
-    const [inserted] = await CoreDbClient.insert(userGroups).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(userGroups).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert user_group');
     return inserted;
   });

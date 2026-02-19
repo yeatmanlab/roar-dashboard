@@ -6,9 +6,6 @@ import { AuthService } from '../../services/auth/auth.service';
 import { UserService } from '../../services/user';
 import { extractJwt } from './jwt-extractor';
 
-// Create service instance (repository auto-instantiated with correct DB client)
-const userService = UserService();
-
 /**
  * The AuthGuardMiddleware extracts the JWT token from the Authorization header, validates it and uses the AuthService
  * to decode the user information before passing the request to the next middleware.
@@ -39,7 +36,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     const decodedUser = await AuthService.verifyToken(token);
 
     // Look up user in PostgreSQL by Firebase auth ID
-    const user = await userService.findByAuthId(decodedUser.uid);
+    const user = await UserService().findByAuthId(decodedUser.uid);
     if (!user) {
       return next(
         new ApiError('User not found.', {

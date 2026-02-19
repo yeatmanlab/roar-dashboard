@@ -1,7 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
+import type { BaseCreateManyParams } from './interfaces/base.repository.interface';
 import { taskVariantParameters, type TaskVariantParameter, type NewTaskVariantParameter } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
+import { getCoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';
 
@@ -17,8 +18,8 @@ export class TaskVariantParameterRepository extends BaseRepository<
   typeof taskVariantParameters,
   NewTaskVariantParameter
 > {
-  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, taskVariantParameters);
+  constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+    super(db ?? getCoreDbClient(), taskVariantParameters);
   }
 
   /**
@@ -48,5 +49,23 @@ export class TaskVariantParameterRepository extends BaseRepository<
     });
 
     return results;
+  }
+
+  /**
+   * Creates multiple task variant parameters.
+   *
+   * Overrides base createMany because this table uses a composite primary key (taskVariantId, name)
+   * instead of a single id column. Returns placeholder objects to satisfy the base interface.
+   */
+  override async createMany(params: BaseCreateManyParams<NewTaskVariantParameter>): Promise<{ id: string }[]> {
+    if (!params.data || params.data.length === 0) {
+      return [];
+    }
+
+    const db = params.transaction ?? this.db;
+    await db.insert(taskVariantParameters).values(params.data);
+
+    // Return placeholder array with same length (service only checks length)
+    return params.data.map(() => ({ id: '' }));
   }
 }

@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, and, sql } from 'drizzle-orm';
 import { taskVariants, type TaskVariant, type NewTaskVariant } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
+import { getCoreDbClient } from '../db/clients';
 import { BaseRepository } from './base.repository';
 import type * as CoreDbSchema from '../db/schema/core';
 
@@ -12,8 +12,8 @@ import type * as CoreDbSchema from '../db/schema/core';
  * Extends BaseRepository with task variant-specific query methods.
  */
 export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof taskVariants, NewTaskVariant> {
-  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, taskVariants);
+  constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+    super(db ?? getCoreDbClient(), taskVariants);
   }
 
   /**

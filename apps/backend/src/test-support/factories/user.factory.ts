@@ -2,7 +2,7 @@ import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { User, NewUser } from '../../db/schema';
 import type { AuthContext } from '../../types/auth-context';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { users } from '../../db/schema/core';
 import { AuthProvider } from '../../enums/auth-provider.enum';
 import { UserType } from '../../enums/user-type.enum';
@@ -46,7 +46,7 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
       isSuperAdmin: user.isSuperAdmin,
     };
 
-    const [inserted] = await CoreDbClient.insert(users).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(users).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert user');
     return inserted;
   });

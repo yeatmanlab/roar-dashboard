@@ -1,7 +1,7 @@
 import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { Run, NewRun } from '../../db/schema/assessment';
-import { AssessmentDbClient } from '../../db/clients';
+import { getAssessmentDbClient } from '../../db/clients';
 import { runs } from '../../db/schema/assessment';
 
 /**
@@ -31,7 +31,7 @@ export const RunFactory = Factory.define<Run>(({ onCreate }) => {
       completedAt: run.completedAt,
     };
 
-    const [inserted] = await AssessmentDbClient.insert(runs).values(insertData).returning();
+    const [inserted] = await getAssessmentDbClient().insert(runs).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert run');
     return inserted;
   });

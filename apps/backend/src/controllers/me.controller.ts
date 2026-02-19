@@ -1,8 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
 
-const userService = UserService();
-
 /**
  * MeController
  *
@@ -17,7 +15,7 @@ export const MeController = {
    * @returns ts-rest response object with user profile or error
    */
   get: async (userId: string) => {
-    const user = await userService.getById(userId);
+    const user = await UserService().getById(userId);
 
     if (!user) {
       return {

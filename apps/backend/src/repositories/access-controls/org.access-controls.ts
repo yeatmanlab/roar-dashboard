@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { userOrgs, userClasses, orgs, classes } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
 import { logger } from '../../logger';
 import { parseAccessControlFilter, type AccessControlFilter } from '../utils/parse-access-control-filter.utils';
@@ -40,7 +40,11 @@ import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
  * - Teacher in School sees that School (no child orgs, but could see sibling classes)
  */
 export class OrgAccessControls {
-  constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
+  protected readonly db: NodePgDatabase<typeof CoreDbSchema>;
+
+  constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+    this.db = db ?? getCoreDbClient();
+  }
 
   /**
    * Returns all org IDs a user can access based on their memberships.

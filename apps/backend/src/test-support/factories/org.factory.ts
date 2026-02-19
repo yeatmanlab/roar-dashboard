@@ -1,7 +1,7 @@
 import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { Org, NewOrg } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { orgs } from '../../db/schema/core';
 import { OrgType, type OrgType as OrgTypeValue } from '../../enums/org-type.enum';
 
@@ -68,7 +68,7 @@ export const OrgFactory = Factory.define<Org>(({ onCreate, params }) => {
       isRosteringRootOrg,
     };
 
-    const [inserted] = await CoreDbClient.insert(orgs).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(orgs).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert org');
     return inserted;
   });

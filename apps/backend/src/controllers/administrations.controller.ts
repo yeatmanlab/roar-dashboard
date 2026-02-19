@@ -21,8 +21,6 @@ import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
 
-const administrationService = AdministrationService();
-
 /**
  * Maps a database Administration entity to the base API schema.
  * Converts Date fields to ISO strings and renames fields to match the contract.
@@ -149,7 +147,7 @@ export const AdministrationsController = {
    */
   get: async (authContext: AuthContext, administrationId: string) => {
     try {
-      const administration = await administrationService.getById(authContext, administrationId);
+      const administration = await AdministrationService().getById(authContext, administrationId);
 
       return {
         status: StatusCodes.OK as const,
@@ -182,7 +180,7 @@ export const AdministrationsController = {
     try {
       const { page, perPage, sortBy, sortOrder, embed, status } = query;
 
-      const result = await administrationService.list(authContext, {
+      const result = await AdministrationService().list(authContext, {
         page,
         perPage,
         sortBy,
@@ -234,7 +232,7 @@ export const AdministrationsController = {
     query: AdministrationDistrictsListQuery,
   ) => {
     try {
-      const result = await administrationService.listDistricts(authContext, administrationId, query);
+      const result = await AdministrationService().listDistricts(authContext, administrationId, query);
       return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
@@ -253,7 +251,7 @@ export const AdministrationsController = {
    */
   listSchools: async (authContext: AuthContext, administrationId: string, query: AdministrationSchoolsListQuery) => {
     try {
-      const result = await administrationService.listSchools(authContext, administrationId, query);
+      const result = await AdministrationService().listSchools(authContext, administrationId, query);
       return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
@@ -272,7 +270,7 @@ export const AdministrationsController = {
    */
   listClasses: async (authContext: AuthContext, administrationId: string, query: AdministrationClassesListQuery) => {
     try {
-      const result = await administrationService.listClasses(authContext, administrationId, query);
+      const result = await AdministrationService().listClasses(authContext, administrationId, query);
       return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
@@ -291,7 +289,7 @@ export const AdministrationsController = {
    */
   listGroups: async (authContext: AuthContext, administrationId: string, query: AdministrationGroupsListQuery) => {
     try {
-      const result = await administrationService.listGroups(authContext, administrationId, query);
+      const result = await AdministrationService().listGroups(authContext, administrationId, query);
       return handleSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);

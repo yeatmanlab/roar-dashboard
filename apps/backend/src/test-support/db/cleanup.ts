@@ -6,7 +6,7 @@
  */
 import { sql } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { CoreDbClient, AssessmentDbClient } from '../../db/clients';
+import { getCoreDbClient, getAssessmentDbClient } from '../../db/clients';
 
 /**
  * Truncate all tables in a specific schema.
@@ -39,7 +39,7 @@ async function truncateSchema(db: NodePgDatabase<Record<string, unknown>>, schem
  */
 export async function truncateAllTables(): Promise<void> {
   await Promise.all([
-    truncateSchema(CoreDbClient as NodePgDatabase<Record<string, unknown>>, 'app'),
-    truncateSchema(AssessmentDbClient as NodePgDatabase<Record<string, unknown>>, 'app'),
+    truncateSchema(getCoreDbClient() as NodePgDatabase<Record<string, unknown>>, 'app'),
+    truncateSchema(getAssessmentDbClient() as NodePgDatabase<Record<string, unknown>>, 'app'),
   ]);
 }

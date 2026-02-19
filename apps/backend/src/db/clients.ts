@@ -37,11 +37,41 @@ let corePool: Pool | null = null;
 let assessmentPool: Pool | null = null;
 let initialized = false;
 
-/** Drizzle ORM client for the core database. Initialized by {@link initializeDatabasePools}. */
-export let CoreDbClient: CoreDbClientType;
+/** Private database client instances. Use getter functions to access. */
+let _coreDbClient: CoreDbClientType | null = null;
+let _assessmentDbClient: AssessmentDbClientType | null = null;
 
-/** Drizzle ORM client for the assessment database. Initialized by {@link initializeDatabasePools}. */
-export let AssessmentDbClient: AssessmentDbClientType;
+/**
+ * Get the Drizzle ORM client for the core database.
+ *
+ * @throws {Error} If called before {@link initializeDatabasePools}.
+ * @returns The initialized core database client.
+ */
+export function getCoreDbClient(): CoreDbClientType {
+  if (!_coreDbClient) {
+    throw new Error('Core database not initialized. Call initializeDatabasePools() first.');
+  }
+  return _coreDbClient;
+}
+
+/**
+ * Get the Drizzle ORM client for the assessment database.
+ *
+ * @throws {Error} If called before {@link initializeDatabasePools}.
+ * @returns The initialized assessment database client.
+ */
+export function getAssessmentDbClient(): AssessmentDbClientType {
+  if (!_assessmentDbClient) {
+    throw new Error('Assessment database not initialized. Call initializeDatabasePools() first.');
+  }
+  return _assessmentDbClient;
+}
+
+/** @deprecated Use getCoreDbClient() instead. */
+export const CoreDbClient = getCoreDbClient;
+
+/** @deprecated Use getAssessmentDbClient() instead. */
+export const AssessmentDbClient = getAssessmentDbClient;
 
 /**
  * Creates a PostgreSQL connection pool.
@@ -171,8 +201,8 @@ export async function initializeDatabasePools(): Promise<void> {
     ]);
   }
 
-  CoreDbClient = drizzle({ client: corePool, casing: 'snake_case', schema: CoreDbSchema, logger: false });
-  AssessmentDbClient = drizzle({
+  _coreDbClient = drizzle({ client: corePool, casing: 'snake_case', schema: CoreDbSchema, logger: false });
+  _assessmentDbClient = drizzle({
     client: assessmentPool,
     casing: 'snake_case',
     schema: AssessmentDbSchema,
@@ -195,5 +225,7 @@ export async function closeDatabasePools(): Promise<void> {
   corePool = null;
   assessmentPool = null;
   connector = null;
+  _coreDbClient = null;
+  _assessmentDbClient = null;
   initialized = false;
 }

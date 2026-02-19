@@ -1,6 +1,6 @@
 import { Factory } from 'fishery';
 import type { AdministrationOrg, NewAdministrationOrg } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { administrationOrgs } from '../../db/schema/core';
 
 /**
@@ -23,7 +23,7 @@ export const AdministrationOrgFactory = Factory.define<AdministrationOrg>(({ onC
       orgId: adminOrg.orgId,
     };
 
-    const [inserted] = await CoreDbClient.insert(administrationOrgs).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(administrationOrgs).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert administration_org');
     return inserted;
   });

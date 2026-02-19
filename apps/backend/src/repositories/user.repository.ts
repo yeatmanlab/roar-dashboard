@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { users, type User } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
+import { getCoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';
 
@@ -13,8 +13,8 @@ import { BaseRepository } from './base.repository';
  * Uses CoreDbClient by default, but accepts a custom DB client for testing.
  */
 export class UserRepository extends BaseRepository<User, typeof users> {
-  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, users);
+  constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+    super(db ?? getCoreDbClient(), users);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

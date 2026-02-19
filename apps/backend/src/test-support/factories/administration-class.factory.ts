@@ -1,6 +1,6 @@
 import { Factory } from 'fishery';
 import type { AdministrationClass, NewAdministrationClass } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { administrationClasses } from '../../db/schema/core';
 
 /**
@@ -23,7 +23,7 @@ export const AdministrationClassFactory = Factory.define<AdministrationClass>(({
       classId: adminClass.classId,
     };
 
-    const [inserted] = await CoreDbClient.insert(administrationClasses).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(administrationClasses).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert administration_class');
     return inserted;
   });

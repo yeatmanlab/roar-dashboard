@@ -11,7 +11,7 @@ import {
   orgs,
   classes,
 } from '../../db/schema';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
 import { logger } from '../../logger';
 import { parseAccessControlFilter, type AccessControlFilter } from '../utils/parse-access-control-filter.utils';
@@ -60,7 +60,11 @@ import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
  * - `isAncestorOrEqual(ancestor, child)` — ancestor path is ancestor of (or equal to) child path
  */
 export class AdministrationAccessControls {
-  constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
+  protected readonly db: NodePgDatabase<typeof CoreDbSchema>;
+
+  constructor(db?: NodePgDatabase<typeof CoreDbSchema>) {
+    this.db = db ?? getCoreDbClient();
+  }
 
   /**
    * Returns all administration IDs a user can access.

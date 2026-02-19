@@ -2,7 +2,7 @@ import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
 import type { Administration, NewAdministration } from '../../db/schema';
 import type { AdministrationWithEmbeds } from '../../services/administration/administration.service';
-import { CoreDbClient } from '../../db/clients';
+import { getCoreDbClient } from '../../db/clients';
 import { administrations } from '../../db/schema/core';
 
 /**
@@ -31,7 +31,7 @@ export const AdministrationFactory = Factory.define<Administration>(({ onCreate 
       createdBy: administration.createdBy,
     };
 
-    const [inserted] = await CoreDbClient.insert(administrations).values(insertData).returning();
+    const [inserted] = await getCoreDbClient().insert(administrations).values(insertData).returning();
     if (!inserted) throw new Error('Failed to insert administration');
     return inserted;
   });
