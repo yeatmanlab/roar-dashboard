@@ -34,3 +34,6 @@ coverage
 
 # Other
 .DS_Store
+# Root-level directories that shouldn't be tracked
+/env-configs
+/roar-firebase-functions

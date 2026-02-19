@@ -60,9 +60,9 @@ export const DistrictCountsSchema = z.object({
 export type DistrictCounts = z.infer<typeof DistrictCountsSchema>;
 
 /**
- * Base district detail schema (without embedded data).
+ * Base district schema (without embedded data).
  */
-export const DistrictDetailBaseSchema = z.object({
+export const DistrictBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   abbreviation: z.string(),
@@ -75,55 +75,82 @@ export const DistrictDetailBaseSchema = z.object({
   rosteringEnded: z.string().datetime().optional(),
 });
 
-export type DistrictDetailBase = z.infer<typeof DistrictDetailBaseSchema>;
+export type DistrictBase = z.infer<typeof DistrictBaseSchema>;
+
+/**
+ * Organization schema (for children embed).
+ * Represents any child organization (school, department, etc.)
+ */
+export const OrganizationSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  abbreviation: z.string(),
+  orgType: z.string(),
+  parentOrgId: z.string().uuid().nullable(),
+  location: DistrictLocationSchema.optional(),
+  identifiers: DistrictIdentifiersSchema.optional(),
+  dates: DistrictDatesSchema,
+  isRosteringRootOrg: z.boolean(),
+  rosteringEnded: z.string().datetime().optional(),
+});
+
+export type Organization = z.infer<typeof OrganizationSchema>;
 
 /**
  * Full district detail schema with optional embedded data.
+ * Supports both counts (for list) and children (for detail) embeds.
  */
-export const DistrictDetailSchema = DistrictDetailBaseSchema.extend({
+export const DistrictDetailSchema = DistrictBaseSchema.extend({
   counts: DistrictCountsSchema.optional(),
+  children: z.array(OrganizationSchema).optional(),
 });
 
 export type DistrictDetail = z.infer<typeof DistrictDetailSchema>;
 
 /**
- * Allowed sort fields for district details.
+ * Allowed sort fields for districts list.
  */
-export const DISTRICT_DETAIL_SORT_FIELDS = ['name', 'abbreviation', 'createdAt'] as const;
+export const DISTRICTS_SORT_FIELDS = ['name', 'abbreviation', 'createdAt'] as const;
 
 /**
  * Sort field type for districts.
  */
-export type DistrictSortFieldType = (typeof DISTRICT_DETAIL_SORT_FIELDS)[number];
+export type DistrictSortFieldType = (typeof DISTRICTS_SORT_FIELDS)[number];
 
 /**
  * Sort field constants for type-safe access.
  */
-export const DistrictDetailSortField = {
+export const DistrictsSortField = {
   NAME: 'name',
   ABBREVIATION: 'abbreviation',
   CREATED_AT: 'createdAt',
-} as const satisfies Record<string, (typeof DISTRICT_DETAIL_SORT_FIELDS)[number]>;
+} as const satisfies Record<string, (typeof DISTRICTS_SORT_FIELDS)[number]>;
 
 /**
- * Allowed embed options for districts.
+ * Allowed embed options for districts list.
  */
-export const DISTRICT_EMBED_OPTIONS = ['counts'] as const;
+export const DISTRICT_LIST_EMBED_OPTIONS = ['counts'] as const;
+
+/**
+ * Allowed embed options for district detail.
+ */
+export const DISTRICT_DETAIL_EMBED_OPTIONS = ['children'] as const;
 
 /**
  * Embed option constants for type-safe access.
  */
 export const DistrictEmbedOption = {
   COUNTS: 'counts',
-} as const satisfies Record<string, (typeof DISTRICT_EMBED_OPTIONS)[number]>;
+  CHILDREN: 'children',
+} as const;
 
 /**
  * Query parameters for listing districts.
  */
 export const DistrictsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(DISTRICT_DETAIL_SORT_FIELDS, 'createdAt'),
+  createSortQuerySchema(DISTRICTS_SORT_FIELDS, 'createdAt'),
 )
-  .merge(createEmbedQuerySchema(DISTRICT_EMBED_OPTIONS))
+  .merge(createEmbedQuerySchema(DISTRICT_LIST_EMBED_OPTIONS))
   .extend({
     includeEnded: z.boolean().optional(),
   });
@@ -136,3 +163,17 @@ export type DistrictsListQuery = z.infer<typeof DistrictsListQuerySchema>;
 export const DistrictsListResponseSchema = createPaginatedResponseSchema(DistrictDetailSchema);
 
 export type DistrictsListResponse = z.infer<typeof DistrictsListResponseSchema>;
+
+/**
+ * Query parameters for getting a single district.
+ */
+export const DistrictGetQuerySchema = createEmbedQuerySchema(DISTRICT_DETAIL_EMBED_OPTIONS);
+
+export type DistrictGetQuery = z.infer<typeof DistrictGetQuerySchema>;
+
+/**
+ * Response for single district.
+ */
+export const DistrictGetResponseSchema = DistrictDetailSchema;
+
+export type DistrictGetResponse = z.infer<typeof DistrictGetResponseSchema>;

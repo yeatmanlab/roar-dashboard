@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import { DistrictRepository, type District, type DistrictWithCounts } from '../../repositories/district.repository';
+import type { Org } from '../../db/schema';
+import { DistrictRepository, type DistrictWithCounts } from '../../repositories/district.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
@@ -21,10 +22,17 @@ export interface ListOptions {
 }
 
 /**
- * District with optional embeds
+ * Options for getting a district by ID.
+ */
+export interface GetByIdOptions {
+  embedChildren?: boolean;
+}
+
+/**
+ * District with optional embedded data.
  */
 export interface DistrictWithEmbeds extends DistrictWithCounts {
-  children?: District[];
+  children?: Org[];
 }
 
 /**
@@ -32,6 +40,7 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
  *
  * Business logic layer for district operations.
  * Handles authorization (super admin vs regular user) and delegates to repository.
+ * Follows the factory pattern with dependency injection.
  */
 export function DistrictService({
   districtRepository,
@@ -54,8 +63,6 @@ export function DistrictService({
   async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<DistrictWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    let result;
-
     try {
       // Transform API contract format to repository format
       const queryParams = {
@@ -66,16 +73,31 @@ export function DistrictService({
           direction: options.sortOrder,
         },
         includeEnded: options.includeEnded ?? false,
-        embedCounts: options.embedCounts ?? false,
       };
 
-      // Fetch districts based on user role and authorization
-      if (isSuperAdmin) {
-        result = await repo.listAll(queryParams);
-      } else {
-        const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
+      // Fetch base districts based on user role and authorization
+      const result = isSuperAdmin
+        ? await repo.listAll(queryParams)
+        : await repo.listAuthorized(
+            { userId, allowedRoles: rolesForPermission(Permissions.Organizations.LIST) },
+            queryParams,
+          );
+
+      // Handle embed orchestration: fetch counts if requested
+      if (options.embedCounts && result.items.length > 0) {
+        const districtIds = result.items.map((d) => d.id);
+        const countsMap = await repo.fetchDistrictCounts(districtIds, options.includeEnded ?? false);
+
+        return {
+          items: result.items.map((district) => ({
+            ...district,
+            counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
+          })),
+          totalItems: result.totalItems,
+        };
       }
+
+      return result;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -90,12 +112,63 @@ export function DistrictService({
         cause: error,
       });
     }
+  }
 
-    return result;
+  /**
+   * Get a district by ID with optional embeds.
+   *
+   * Enforces access control:
+   * - Super admins can access any district
+   * - Regular users can only access districts where they have active membership
+   *
+   * @param id - District UUID
+   * @param authContext - Authenticated user context
+   * @param options - Optional embeds (children)
+   * @returns District with optional embeds
+   * @throws ApiError 400 if ID is invalid UUID format
+   * @throws ApiError 403 if user lacks access to the district
+   * @throws ApiError 404 if district not found or not a district type
+   */
+  async function getById(
+    id: string,
+    authContext: AuthContext,
+    options: GetByIdOptions = {},
+  ): Promise<DistrictWithEmbeds> {
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      logger.warn(`Invalid UUID format for district ID: ${id}`);
+      throw new ApiError('Invalid UUID format', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    }
+
+    // Build access control filter
+    const accessControlFilter = {
+      userId: authContext.userId,
+      allowedRoles: rolesForPermission(Permissions.Organizations.LIST),
+    };
+
+    // Fetch district with optional embeds
+    const district = await repo.getByIdWithEmbeds(id, accessControlFilter, options.embedChildren ?? false);
+
+    if (!district) {
+      // District not found or user lacks access
+      // We don't distinguish between these cases for security reasons
+      logger.warn(`District not found or access denied: ${id} for user ${authContext.userId}`);
+      throw new ApiError('District not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    }
+
+    return district;
   }
 
   return {
     list,
+    getById,
   };
 }
 

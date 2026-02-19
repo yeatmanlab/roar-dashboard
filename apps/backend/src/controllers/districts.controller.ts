@@ -1,6 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import { DistrictService, type DistrictWithEmbeds } from '../services/district/district.service';
-import type { DistrictsListQuery, DistrictDetail as ApiDistrict } from '@roar-dashboard/api-contract';
+import type {
+  DistrictsListQuery,
+  DistrictGetQuery,
+  DistrictDetail as ApiDistrictDetail,
+  Organization as ApiOrganization,
+} from '@roar-dashboard/api-contract';
+import type { Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -8,76 +14,81 @@ import type { AuthContext } from '../types/auth-context';
 const districtService = DistrictService();
 
 /**
- * Maps a database District entity to the base API schema.
- * Converts Date fields to ISO strings and transforms location data to match the contract.
+ * Maps a database Org entity to the Organization API schema.
+ *
+ * @param org - The database Org entity
+ * @returns The API-formatted organization object
  */
-function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
-  // Transform PostgreSQL point to GeoJSON format if present
-  let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
-  if (district.locationLatLong) {
-    const point = district.locationLatLong as unknown as { x: number; y: number };
-    coordinates = {
-      type: 'Point',
-      coordinates: [point.x, point.y], // [longitude, latitude]
-    };
-  }
-
-  // Build location object only if at least one field is present
-  const location = {
-    ...(district.locationAddressLine1 && { addressLine1: district.locationAddressLine1 }),
-    ...(district.locationAddressLine2 && { addressLine2: district.locationAddressLine2 }),
-    ...(district.locationCity && { city: district.locationCity }),
-    ...(district.locationStateProvince && { stateProvince: district.locationStateProvince }),
-    ...(district.locationPostalCode && { postalCode: district.locationPostalCode }),
-    ...(district.locationCountry && { country: district.locationCountry }),
-    ...(coordinates && { coordinates }),
-  };
-
-  // Build identifiers object only if at least one field is present
-  const identifiers = {
-    ...(district.mdrNumber && { mdrNumber: district.mdrNumber }),
-    ...(district.ncesId && { ncesId: district.ncesId }),
-    ...(district.stateId && { stateId: district.stateId }),
-    ...(district.schoolNumber && { schoolNumber: district.schoolNumber }),
-  };
-
+function transformOrganization(org: Org): ApiOrganization {
   return {
-    id: district.id,
-    name: district.name,
-    abbreviation: district.abbreviation,
-    orgType: district.orgType,
-    parentOrgId: district.parentOrgId,
-    ...(Object.keys(location).length > 0 && { location }),
-    ...(Object.keys(identifiers).length > 0 && { identifiers }),
+    id: org.id,
+    name: org.name,
+    abbreviation: org.abbreviation,
+    orgType: org.orgType,
+    parentOrgId: org.parentOrgId,
+    location:
+      org.locationAddressLine1 || org.locationCity || org.locationLatLong
+        ? {
+            addressLine1: org.locationAddressLine1 ?? undefined,
+            addressLine2: org.locationAddressLine2 ?? undefined,
+            city: org.locationCity ?? undefined,
+            stateProvince: org.locationStateProvince ?? undefined,
+            postalCode: org.locationPostalCode ?? undefined,
+            country: org.locationCountry ?? undefined,
+            coordinates: org.locationLatLong
+              ? {
+                  type: 'Point' as const,
+                  coordinates: org.locationLatLong, // [longitude, latitude]
+                }
+              : undefined,
+          }
+        : undefined,
+    identifiers:
+      org.mdrNumber || org.ncesId || org.stateId || org.schoolNumber
+        ? {
+            mdrNumber: org.mdrNumber ?? undefined,
+            ncesId: org.ncesId ?? undefined,
+            stateId: org.stateId ?? undefined,
+            schoolNumber: org.schoolNumber ?? undefined,
+          }
+        : undefined,
     dates: {
-      created: district.createdAt.toISOString(),
-      updated: district.updatedAt?.toISOString() ?? district.createdAt.toISOString(),
+      created: org.createdAt.toISOString(),
+      updated: (org.updatedAt ?? org.createdAt).toISOString(),
     },
-    isRosteringRootOrg: district.isRosteringRootOrg,
-    ...(district.rosteringEnded && { rosteringEnded: district.rosteringEnded.toISOString() }),
+    isRosteringRootOrg: org.isRosteringRootOrg,
+    rosteringEnded: org.rosteringEnded?.toISOString(),
   };
 }
 
 /**
- * Maps a database District entity to the full API schema, attaching
- * optional embed data (counts) when present.
+ * Maps a database District entity with embeds to the full API schema.
+ *
+ * @param district - The database District entity with optional embeds
+ * @returns The API-formatted district detail object
  */
-function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
-  const result: ApiDistrict = transformDistrictBase(district);
+function transformDistrictDetail(district: DistrictWithEmbeds): ApiDistrictDetail {
+  const result: ApiDistrictDetail = transformOrganization(district);
 
   // Include counts if embedded
   if (district.counts) {
     result.counts = district.counts;
   }
 
+  // Include children if embedded
+  if (district.children) {
+    result.children = district.children.map(transformOrganization);
+  }
+
   return result;
 }
 
 /**
- * DistrictsController
- *
  * Handles HTTP concerns for the /districts endpoints.
- * Calls DistrictService for business logic and formats responses.
+ *
+ * Responsible for transforming service results into ts-rest responses
+ * and mapping known ApiError status codes to typed error responses.
+ * Business logic and authorization live in DistrictService.
  */
 export const DistrictsController = {
   /**
@@ -104,7 +115,7 @@ export const DistrictsController = {
       });
 
       // Transform to API response format
-      const items = result.items.map(transformDistrict);
+      const items = result.items.map(transformDistrictDetail);
 
       const totalPages = Math.ceil(result.totalItems / perPage);
 
@@ -125,6 +136,42 @@ export const DistrictsController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single district by ID with optional embeds.
+   *
+   * Delegates to DistrictService for authorization and retrieval.
+   *
+   * @param authContext - User's authentication context
+   * @param districtId - UUID of the district to retrieve
+   * @param query - Query parameters (embed options)
+   */
+  getById: async (authContext: AuthContext, districtId: string, query: DistrictGetQuery) => {
+    try {
+      const embedChildren = query.embed?.includes('children') ?? false;
+
+      const district = await districtService.getById(districtId, authContext, {
+        embedChildren,
+      });
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformDistrictDetail(district),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }
