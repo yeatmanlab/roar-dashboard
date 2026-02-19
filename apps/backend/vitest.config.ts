@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 
-// NOTE: Unsure why my compiler is identifying the "mode" parameter as having an incorrect type; this parameter has not changed relative to the base branch
+// NOTE: Unsure why the compiler is identifying the "mode" parameter as having an incorrect type; this parameter has not changed relative to the base branch
 // @ts-expect-error - Ignore type error for now
 export default defineConfig(({ mode }) => {
   // Vitest normally uses mode === 'test', but we don't rely on that implicitly.
