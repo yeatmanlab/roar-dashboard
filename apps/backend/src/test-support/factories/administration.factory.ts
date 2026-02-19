@@ -47,9 +47,12 @@ export const AdministrationFactory = Factory.define<Administration>(({ onCreate 
     dateStart,
     dateEnd: faker.date.future({ refDate: dateStart }),
     isOrdered: faker.datatype.boolean(),
+    excludedFromResearch: null,
+    excludedFromResearchBy: null,
+    excludedFromResearchReason: null,
     createdBy: '00000000-0000-0000-0000-000000000000', // Sentinel; must be overridden when using create()
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: null,
   };
 });
 

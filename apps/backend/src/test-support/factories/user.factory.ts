@@ -42,7 +42,6 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
       race: user.race,
       hispanicEthnicity: user.hispanicEthnicity,
       homeLanguage: user.homeLanguage,
-      excludeFromResearch: user.excludeFromResearch,
       isSuperAdmin: user.isSuperAdmin,
     };
 
@@ -76,7 +75,6 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
     race: null,
     hispanicEthnicity: null,
     homeLanguage: null,
-    excludeFromResearch: false,
     isSuperAdmin: false,
     createdAt: new Date(),
     updatedAt: new Date(),

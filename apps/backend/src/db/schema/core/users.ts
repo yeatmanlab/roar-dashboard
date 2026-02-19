@@ -16,7 +16,6 @@ const db = p.pgSchema('app');
  * - `authId` - External authentication provider ID (nullable due to rostering sync timing)
  * - `authProvider` - Array of authentication providers the user can use (e.g., Clever, ClassLink, Google)
  * - `schoolLevel` - Auto-generated from `grade` using `app.get_school_level_from_grade()`
- * - `excludeFromResearch` - When true, user's data should not be included in research datasets
  *
  * Status fields (ELL, FRL, IEP):
  * - `statusEll` - English Language Learner status
@@ -72,7 +71,6 @@ export const users = db.table(
     hispanicEthnicity: p.boolean(),
     homeLanguage: p.text(),
 
-    excludeFromResearch: p.boolean().notNull().default(false),
     isSuperAdmin: p.boolean().notNull().default(false),
 
     ...timestamps,
