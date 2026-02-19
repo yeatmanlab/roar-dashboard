@@ -39,9 +39,6 @@ export const runScores = db.table(
       .references(() => runs.id, { onDelete: 'cascade' })
       .notNull(),
 
-    taskId: p.uuid().notNull(),
-    taskVariantId: p.uuid().notNull(),
-
     type: scoreTypeEnum().notNull(),
     domain: p.text().notNull(),
     name: p.text().notNull(),
