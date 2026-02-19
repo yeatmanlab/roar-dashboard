@@ -202,7 +202,7 @@ export interface IBaseRepository<T, TInsert = T> {
   getAll(params: BaseGetAllParams): Promise<PaginatedResult<T>>;
 
   /** Creates a new entity in the repository. */
-  create(params: BaseCreateParams<TInsert>): Promise<{ id: string } | undefined>;
+  create(params: BaseCreateParams<TInsert>): Promise<{ id: string }>;
 
   /** Updates an existing entity in the repository. */
   update(params: BaseUpdateParams<T>): Promise<void>;
