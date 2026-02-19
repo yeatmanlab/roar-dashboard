@@ -16,6 +16,10 @@ describe('RunEventsService', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockRunsRepository: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockRunTrialsRepository: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockRunTrialInteractionsRepository: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let runEventsService: any;
 
   beforeEach(() => {
@@ -26,8 +30,19 @@ describe('RunEventsService', () => {
       update: vi.fn(),
     };
 
+    mockRunTrialsRepository = {
+      create: vi.fn(),
+      runTransaction: vi.fn(),
+    };
+
+    mockRunTrialInteractionsRepository = {
+      create: vi.fn(),
+    };
+
     runEventsService = RunEventsService({
       runsRepository: mockRunsRepository,
+      runTrialsRepository: mockRunTrialsRepository,
+      runTrialInteractionsRepository: mockRunTrialInteractionsRepository,
     });
   });
 
@@ -226,28 +241,30 @@ describe('RunEventsService', () => {
       },
     };
 
-    beforeEach(() => {
-      mockRunsRepository.runTransaction = vi.fn();
-    });
-
     it('should write a trial successfully', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
+
+      const createdTrial = { id: 'trial-123' };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockRunsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
-        await fn({
-          insert: vi.fn().mockReturnValue({
-            values: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue([{ id: 1 }]),
-            }),
-          }),
-        });
+      mockRunTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
       });
+      mockRunTrialsRepository.create.mockResolvedValue(createdTrial);
 
       await runEventsService.writeTrial(mockAuthContext, validRunId, validBody);
 
       expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(mockRunsRepository.runTransaction).toHaveBeenCalled();
+      expect(mockRunTrialsRepository.runTransaction).toHaveBeenCalled();
+      expect(mockRunTrialsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            runId: validRunId,
+            assessmentStage: 'stage-1',
+            correct: 1,
+          }),
+        }),
+      );
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -258,7 +275,7 @@ describe('RunEventsService', () => {
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
 
-      expect(mockRunsRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockRunTrialsRepository.runTransaction).not.toHaveBeenCalled();
     });
 
     it('should throw FORBIDDEN when user does not own the run', async () => {
@@ -270,7 +287,7 @@ describe('RunEventsService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      expect(mockRunsRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockRunTrialsRepository.runTransaction).not.toHaveBeenCalled();
     });
 
     it('should throw BAD_REQUEST when event type is invalid', async () => {
@@ -283,7 +300,7 @@ describe('RunEventsService', () => {
       });
 
       expect(mockRunsRepository.getById).not.toHaveBeenCalled();
-      expect(mockRunsRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockRunTrialsRepository.runTransaction).not.toHaveBeenCalled();
     });
 
     it('should throw BAD_REQUEST when trial payload is malformed (missing assessment_stage)', async () => {
@@ -305,7 +322,7 @@ describe('RunEventsService', () => {
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
 
-      expect(mockRunsRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockRunTrialsRepository.runTransaction).not.toHaveBeenCalled();
     });
 
     it('should throw BAD_REQUEST when trial payload is malformed (missing correct)', async () => {
@@ -327,7 +344,7 @@ describe('RunEventsService', () => {
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
 
-      expect(mockRunsRepository.runTransaction).not.toHaveBeenCalled();
+      expect(mockRunTrialsRepository.runTransaction).not.toHaveBeenCalled();
     });
 
     it('should handle trial with interactions', async () => {
@@ -346,76 +363,52 @@ describe('RunEventsService', () => {
         ],
       };
 
-      const insertMock = vi.fn();
-      const valuesMock = vi.fn();
-      const returningMock = vi.fn();
-
-      insertMock.mockReturnValue({
-        values: valuesMock,
-      });
-      valuesMock.mockReturnValue({
-        returning: returningMock,
-      });
-      returningMock.mockResolvedValue([{ id: 1 }]);
-
+      const createdTrial = { id: 'trial-123' };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockRunsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
-        await fn({
-          insert: insertMock,
-        });
+      mockRunTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
       });
+      mockRunTrialsRepository.create.mockResolvedValue(createdTrial);
+      mockRunTrialInteractionsRepository.create.mockResolvedValue({ id: 'interaction-1' });
 
       await runEventsService.writeTrial(mockAuthContext, validRunId, bodyWithInteractions);
 
-      expect(mockRunsRepository.runTransaction).toHaveBeenCalled();
-      // Verify insert was called twice (once for trials, once for interactions)
-      expect(insertMock).toHaveBeenCalledTimes(2);
-      // Verify the second insert call has the interactions data
-      const secondValuesCall = valuesMock.mock.calls[1];
-      expect(secondValuesCall).toBeDefined();
-      if (secondValuesCall) {
-        const interactionsData = secondValuesCall[0];
-        expect(Array.isArray(interactionsData)).toBe(true);
-        if (Array.isArray(interactionsData) && interactionsData.length > 0) {
-          expect(interactionsData[0]).toHaveProperty('event', 'focus');
-          expect(interactionsData[0]).toHaveProperty('trialIndex', 0);
-          expect(interactionsData[0]).toHaveProperty('timeMs', 100);
-        }
-      }
+      expect(mockRunTrialsRepository.runTransaction).toHaveBeenCalled();
+      expect(mockRunTrialsRepository.create).toHaveBeenCalled();
+      // Verify interactions were created
+      expect(mockRunTrialInteractionsRepository.create).toHaveBeenCalledTimes(2);
+      expect(mockRunTrialInteractionsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            trialId: 'trial-123',
+            interactionType: 'focus',
+            timeMs: 100,
+          }),
+        }),
+      );
     });
 
     it('should convert boolean correct to integer (true -> 1)', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
 
-      const insertMock = vi.fn();
-      const valuesMock = vi.fn();
-      const returningMock = vi.fn();
-
-      insertMock.mockReturnValue({
-        values: valuesMock,
-      });
-      valuesMock.mockReturnValue({
-        returning: returningMock,
-      });
-      returningMock.mockResolvedValue([{ id: 1 }]);
-
+      const createdTrial = { id: 'trial-123' };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockRunsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
-        await fn({
-          insert: insertMock,
-        });
+      mockRunTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
       });
+      mockRunTrialsRepository.create.mockResolvedValue(createdTrial);
 
       await runEventsService.writeTrial(mockAuthContext, validRunId, validBody);
 
-      // Verify the first insert (runTrials) was called with correct: 1
-      expect(insertMock).toHaveBeenCalled();
-      const firstValuesCall = valuesMock.mock.calls[0];
-      expect(firstValuesCall).toBeDefined();
-      if (firstValuesCall) {
-        expect(firstValuesCall[0]).toHaveProperty('correct', 1);
-      }
+      // Verify the trial was created with correct: 1
+      expect(mockRunTrialsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            correct: 1,
+          }),
+        }),
+      );
     });
 
     it('should convert boolean correct to integer (false -> 0)', async () => {
@@ -430,34 +423,23 @@ describe('RunEventsService', () => {
         },
       };
 
-      const insertMock = vi.fn();
-      const valuesMock = vi.fn();
-      const returningMock = vi.fn();
-
-      insertMock.mockReturnValue({
-        values: valuesMock,
-      });
-      valuesMock.mockReturnValue({
-        returning: returningMock,
-      });
-      returningMock.mockResolvedValue([{ id: 1 }]);
-
+      const createdTrial = { id: 'trial-123' };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockRunsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
-        await fn({
-          insert: insertMock,
-        });
+      mockRunTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+        await fn({});
       });
+      mockRunTrialsRepository.create.mockResolvedValue(createdTrial);
 
       await runEventsService.writeTrial(mockAuthContext, validRunId, bodyWithIncorrect);
 
-      // Verify the first insert (runTrials) was called with correct: 0
-      expect(insertMock).toHaveBeenCalled();
-      const firstValuesCall = valuesMock.mock.calls[0];
-      expect(firstValuesCall).toBeDefined();
-      if (firstValuesCall) {
-        expect(firstValuesCall[0]).toHaveProperty('correct', 0);
-      }
+      // Verify the trial was created with correct: 0
+      expect(mockRunTrialsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            correct: 0,
+          }),
+        }),
+      );
     });
   });
 });
