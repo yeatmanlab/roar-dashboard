@@ -33,8 +33,8 @@ export const TasksContract = c.router(
       description:
         'Create a new task variant for a given task. ' +
         'The request includes an array of task-variant parameters, each with a name and a value. ' +
-        'A successful response returns a 201 with status created, ' +
-        '409 if a variant with the same name already exists.',
+        'Returns 201 upon successful creation. ' +
+        'Returns 409 if a variant with the same name already exists.',
     },
   },
   { pathPrefix: '/tasks' },
