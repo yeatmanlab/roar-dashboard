@@ -58,14 +58,16 @@ export class TaskVariantParameterRepository extends BaseRepository<
    * instead of a single id column. Returns placeholder objects to satisfy the base interface.
    */
   override async createMany(params: BaseCreateManyParams<NewTaskVariantParameter>): Promise<{ id: string }[]> {
+    const { transaction } = params;
+    const db = transaction ?? this.db;
+
     if (!params.data || params.data.length === 0) {
       return [];
     }
 
-    const db = params.transaction ?? this.db;
     await db.insert(taskVariantParameters).values(params.data);
 
-    // Return placeholder array with same length (service only checks length)
-    return params.data.map(() => ({ id: '' }));
+    // Return taskVariantId as id to maintain interface typing, or empty string if not provided
+    return params.data.map((p) => ({ id: p.taskVariantId ?? '' }));
   }
 }
