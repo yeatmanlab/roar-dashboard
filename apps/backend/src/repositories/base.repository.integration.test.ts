@@ -169,9 +169,6 @@ describe('BaseRepository', () => {
       const userData = UserFactory.build();
       const result = await repository.create({ data: userData });
 
-      if (!result) {
-        throw new Error('Expected create to return a result');
-      }
       expect(result).not.toBeNull();
       expect(result.id).toBeDefined();
 
