@@ -135,7 +135,7 @@ export const RunTrialEventSchema = z.object({
  */
 export const RunEngagementEventSchema = z.object({
   type: z.literal('engagement'),
-  engagement_flags: z.record(z.boolean()),
+  engagement_flags: z.record(allowEngagementFlagEnum),
   reliable_run: z.boolean(),
 });
 
