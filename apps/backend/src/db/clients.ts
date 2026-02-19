@@ -44,6 +44,38 @@ export let CoreDbClient: CoreDbClientType;
 export let AssessmentDbClient: AssessmentDbClientType;
 
 /**
+ * Returns the core database client, throwing if not initialized.
+ *
+ * Use this getter for defense-in-depth to get a clear error message
+ * if the database is accessed before initialization.
+ *
+ * @returns The initialized core database client.
+ * @throws {Error} If {@link initializeDatabasePools} has not been called.
+ */
+export function getCoreDbClient(): CoreDbClientType {
+  if (!CoreDbClient) {
+    throw new Error('Database not initialized. Call initializeDatabasePools() first.');
+  }
+  return CoreDbClient;
+}
+
+/**
+ * Returns the assessment database client, throwing if not initialized.
+ *
+ * Use this getter for defense-in-depth to get a clear error message
+ * if the database is accessed before initialization.
+ *
+ * @returns The initialized assessment database client.
+ * @throws {Error} If {@link initializeDatabasePools} has not been called.
+ */
+export function getAssessmentDbClient(): AssessmentDbClientType {
+  if (!AssessmentDbClient) {
+    throw new Error('Database not initialized. Call initializeDatabasePools() first.');
+  }
+  return AssessmentDbClient;
+}
+
+/**
  * Creates a PostgreSQL connection pool.
  *
  * Supports two authentication modes:

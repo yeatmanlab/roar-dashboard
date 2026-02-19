@@ -23,12 +23,15 @@ export const RunFactory = Factory.define<Run>(({ onCreate }) => {
       taskVariantId: run.taskVariantId,
       taskVersion: run.taskVersion,
       administrationId: run.administrationId,
-      bestRun: run.bestRun,
+      useForReporting: run.useForReporting,
       reliableRun: run.reliableRun,
       engagementFlags: run.engagementFlags,
       metadata: run.metadata,
-      excludeFromResearch: run.excludeFromResearch,
+      isAnonymous: run.isAnonymous,
       completedAt: run.completedAt,
+      abortedAt: run.abortedAt,
+      deletedAt: run.deletedAt,
+      deletedBy: run.deletedBy,
     };
 
     const [inserted] = await AssessmentDbClient.insert(runs).values(insertData).returning();
@@ -43,13 +46,16 @@ export const RunFactory = Factory.define<Run>(({ onCreate }) => {
     taskVariantId: faker.string.uuid(),
     taskVersion: '1.0.0',
     administrationId: faker.string.uuid(),
-    bestRun: false,
+    useForReporting: false,
     reliableRun: false,
     engagementFlags: null,
     metadata: null,
-    excludeFromResearch: false,
+    isAnonymous: false,
     completedAt: null,
+    abortedAt: null,
+    deletedAt: null,
+    deletedBy: null,
     createdAt: new Date(),
-    updatedAt: new Date(),
+    updatedAt: null,
   };
 });
