@@ -764,21 +764,25 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * at the service layer by verifying access to the parent administration.
    *
    * @param administrationId - The administration ID to get task variants for
+   * @param publishedOnly - If true, only return published variants (for supervised roles)
    * @param options - Pagination and sorting options
    * @returns Paginated result with task variant items including orderIndex
    */
   async getTaskVariantsByAdministrationId(
     administrationId: string,
+    publishedOnly: boolean,
     options: ListTaskVariantsByAdministrationOptions,
   ): Promise<PaginatedResult<TaskVariantWithAssignment>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
-    // Only return published task variants - draft/deprecated variants should not be visible
-    const baseCondition = and(
-      eq(administrationTaskVariants.administrationId, administrationId),
-      eq(taskVariants.status, TaskVariantStatus.PUBLISHED),
-    );
+    // Build base condition - optionally filter to published variants only
+    const baseCondition = publishedOnly
+      ? and(
+          eq(administrationTaskVariants.administrationId, administrationId),
+          eq(taskVariants.status, TaskVariantStatus.PUBLISHED),
+        )
+      : eq(administrationTaskVariants.administrationId, administrationId);
 
     const countResult = await this.db
       .select({ count: count() })

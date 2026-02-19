@@ -2252,11 +2252,12 @@ describe('AdministrationService', () => {
 
       expect(mockGetById).toHaveBeenCalledWith({ id: 'admin-123' });
       expect(mockGetByIdAuthorized).not.toHaveBeenCalled();
-      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith('admin-123', {
-        page: 1,
-        perPage: 25,
-        orderBy: { field: 'orderIndex', direction: 'asc' },
-      });
+      // Super admin sees all variants including draft/deprecated (publishedOnly: false)
+      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
+        'admin-123',
+        false, // publishedOnly
+        { page: 1, perPage: 25, orderBy: { field: 'orderIndex', direction: 'asc' } },
+      );
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
     });
@@ -2290,7 +2291,12 @@ describe('AdministrationService', () => {
       expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('user-123', 'admin-123');
       // Supervisory roles skip eligibility filtering
       expect(mockEvaluateTaskVariantEligibility).not.toHaveBeenCalled();
-      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith('admin-123', expect.any(Object));
+      // Supervisory roles see all variants including draft/deprecated (publishedOnly: false)
+      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
+        'admin-123',
+        false, // publishedOnly
+        { page: 1, perPage: 25, orderBy: { field: 'orderIndex', direction: 'asc' } },
+      );
       expect(result.items).toHaveLength(2);
     });
 
@@ -2310,11 +2316,11 @@ describe('AdministrationService', () => {
         sortOrder: 'desc',
       });
 
-      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith('admin-123', {
-        page: 3,
-        perPage: 50,
-        orderBy: { field: 'name', direction: 'desc' },
-      });
+      expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
+        'admin-123',
+        false, // publishedOnly (super admin)
+        { page: 3, perPage: 50, orderBy: { field: 'name', direction: 'desc' } },
+      );
     });
 
     it('should return empty results when administration has no task variants', async () => {
@@ -2407,7 +2413,12 @@ describe('AdministrationService', () => {
 
         expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('teacher-user', 'admin-123');
         expect(mockEvaluateTaskVariantEligibility).not.toHaveBeenCalled();
-        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalled();
+        // Supervisory roles see all variants including draft/deprecated (publishedOnly: false)
+        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
+          'admin-123',
+          false, // publishedOnly
+          { page: 1, perPage: 25, orderBy: { field: 'orderIndex', direction: 'asc' } },
+        );
         expect(result.items).toHaveLength(2);
       });
 
@@ -2435,7 +2446,12 @@ describe('AdministrationService', () => {
 
         expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('admin-user', 'admin-123');
         expect(mockEvaluateTaskVariantEligibility).not.toHaveBeenCalled();
-        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalled();
+        // Supervisory roles see all variants including draft/deprecated (publishedOnly: false)
+        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
+          'admin-123',
+          false, // publishedOnly
+          { page: 1, perPage: 25, orderBy: { field: 'orderIndex', direction: 'asc' } },
+        );
         expect(result.items).toHaveLength(2);
       });
 
@@ -2468,6 +2484,12 @@ describe('AdministrationService', () => {
         );
 
         expect(mockGetUserRolesForAdministration).toHaveBeenCalledWith('student-user', 'admin-123');
+        // Supervised roles (students) only see published variants (publishedOnly: true)
+        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
+          'admin-123',
+          true, // publishedOnly
+          { page: 1, perPage: 25, orderBy: { field: 'orderIndex', direction: 'asc' } },
+        );
         expect(mockUserGetById).toHaveBeenCalledWith({ id: 'student-user' });
         // Called once per variant
         expect(mockEvaluateTaskVariantEligibility).toHaveBeenCalledTimes(2);
@@ -2705,6 +2727,44 @@ describe('AdministrationService', () => {
         expect(result.items).toHaveLength(1);
         expect(result.items[0]!.variant.id).toBe('variant-valid');
         expect(result.totalItems).toBe(1);
+      });
+
+      it('should treat user with no roles as supervised (publishedOnly: true, eligibility filtering applied)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        const mockUser = { id: 'no-roles-user', grade: '5' };
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
+          items: mockTaskVariants,
+          totalItems: 2,
+        });
+        // User has no roles for this administration (empty array)
+        mockGetUserRolesForAdministration.mockResolvedValue([]);
+        mockUserGetById.mockResolvedValue(mockUser);
+        mockEvaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        const result = await service.listTaskVariants(
+          { userId: 'no-roles-user', isSuperAdmin: false },
+          'admin-123',
+          defaultOptions,
+        );
+
+        // Should be treated as supervised: publishedOnly: true
+        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
+          'admin-123',
+          true, // publishedOnly
+          { page: 1, perPage: 25, orderBy: { field: 'orderIndex', direction: 'asc' } },
+        );
+        // Should apply eligibility filtering (like students)
+        expect(mockUserGetById).toHaveBeenCalledWith({ id: 'no-roles-user' });
+        expect(mockEvaluateTaskVariantEligibility).toHaveBeenCalledTimes(2);
+        expect(result.items).toHaveLength(2);
       });
     });
   });

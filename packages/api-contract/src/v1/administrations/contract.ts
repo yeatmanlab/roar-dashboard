@@ -163,8 +163,8 @@ export const AdministrationsContract = c.router(
       summary: 'List task variants assigned to an administration',
       description:
         'Returns a paginated list of task variants assigned to the specified administration. ' +
-        'Supervisory roles (teachers, admins) receive raw conditions for client-side evaluation. ' +
-        'Supervised roles (students) receive filtered results with pre-evaluated optional flags - ' +
+        'Supervisory roles (teachers, admins) see all variants (including draft/deprecated) with raw conditions for client-side evaluation. ' +
+        'Supervised roles (students) see only published variants, filtered by eligibility - ' +
         'only variants where assigned_if passes are returned, and optional is set based on optional_if. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
