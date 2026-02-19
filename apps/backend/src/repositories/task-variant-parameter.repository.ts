@@ -13,11 +13,7 @@ import { BaseCreateManyParams } from './interfaces/base.repository.interface';
  * Parameters are key-value pairs that customize how a task variant behaves.
  * Extends BaseRepository with task variant parameter-specific query methods.
  */
-export class TaskVariantParameterRepository extends BaseRepository<
-  TaskVariantParameter,
-  typeof taskVariantParameters,
-  NewTaskVariantParameter
-> {
+export class TaskVariantParameterRepository extends BaseRepository<TaskVariantParameter, typeof taskVariantParameters> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, taskVariantParameters);
   }
