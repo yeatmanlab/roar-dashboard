@@ -26,6 +26,7 @@ export default defineConfig({
         format: 'esm',
         sourcemap: true,
         exports: 'auto',
+        inlineDynamicImports: true,
       },
   plugins: [
     // Externalize Node deps to keep bundle fast and small. In dev we purposely do not externalize the local workspace
