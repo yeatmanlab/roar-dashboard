@@ -2,14 +2,11 @@ import 'dotenv/config';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
-import app from './app';
+import type { Express } from 'express';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { logger } from './logger';
 
 const { NODE_ENV = 'development', PORT = '4000', KEEP_ALIVE_TIMEOUT = '75000' } = process.env;
-
-const port: number = parseInt(PORT, 10);
-app.set('port', port);
 
 let server: http.Server | https.Server;
 
@@ -18,9 +15,10 @@ let server: http.Server | https.Server;
  * Provides friendly messages for common errors like permission denied or port in use.
  *
  * @param error - The error object.
+ * @param port - The port number that caused the error.
  * @returns void
  */
-function onError(error: NodeJS.ErrnoException): void {
+function onError(error: NodeJS.ErrnoException, port: number): void {
   if (error.syscall !== 'listen') throw error;
 
   const bind = `Port ${port}`;
@@ -52,8 +50,19 @@ function onListening(): void {
 }
 
 async function startServer(): Promise<void> {
-  // Initialize database pools before starting the server
+  // Initialize database pools FIRST, before importing app.
+  // This ensures CoreDbClient and AssessmentDbClient are defined
+  // before any module-level service instantiation occurs.
   await initializeDatabasePools();
+
+  // Dynamic import AFTER database is ready.
+  // This fixes the initialization order issue where repositories would
+  // receive undefined db clients due to module-level instantiation
+  // happening before initializeDatabasePools() completes.
+  const { default: app }: { default: Express } = await import('./app');
+
+  const port = parseInt(PORT, 10);
+  app.set('port', port);
 
   if (NODE_ENV === 'development') {
     const LOCAL_SSL_KEY_PATH = '../../certs/roar-local.key';
@@ -89,7 +98,7 @@ async function startServer(): Promise<void> {
   server.headersTimeout = keepAliveMs + 1000;
   server.requestTimeout = 0;
 
-  server.on('error', onError);
+  server.on('error', (err) => onError(err, port));
   server.on('listening', onListening);
 
   /**
