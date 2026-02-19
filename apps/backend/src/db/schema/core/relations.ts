@@ -151,6 +151,7 @@ export const taskBundleVariantsRelations = relations(taskBundleVariants, ({ one 
  */
 export const administrationsRelations = relations(administrations, ({ one, many }) => ({
   createdByUser: one(users, { fields: [administrations.createdBy], references: [users.id] }),
+  excludedFromResearchByUser: one(users, { fields: [administrations.excludedFromResearchBy], references: [users.id] }),
   agreements: many(administrationAgreements),
   classes: many(administrationClasses),
   groups: many(administrationGroups),
