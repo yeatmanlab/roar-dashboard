@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import sjson from 'secure-json-parse';
 
 // Validation constants
 const MAX_STRING_BYTES = 1024;
 const MAX_DEPTH = 5;
 const MAX_ARRAY_LENGTH = 100;
-const MAX_KEY_LENGTH = 50;
-const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+const MAX_KEYS_PER_OBJECT = 50;
+const MAX_KEY_NAME_LENGTH = 50;
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
  * JSON-compatible value type for JSONB columns and payloads.
@@ -68,15 +68,19 @@ export const JsonValue: z.ZodType<Json> = z.lazy(() =>
 /**
  * Validates JSONB values with comprehensive security and data quality checks.
  *
- * This function performs the following validations:
+ * This function performs the following validations in a single pass:
  * - Size limit: Maximum 1 KB to prevent DoS attacks
  * - Type restriction: Only strings, numbers, booleans, and null (no undefined)
  * - Nesting depth: Maximum 5 levels to prevent stack overflow
  * - Array length: Maximum 100 items per array
- * - Object keys: Maximum 50 keys per object
+ * - Object keys: Maximum 50 keys per object, max 50 chars per key name
  * - Dangerous keys: Blocks __proto__, constructor, prototype (prototype pollution protection)
  * - Number ranges: Must be finite and within safe integer range
- * - JSON validity: Must be parseable by secure-json-parse
+ *
+ * Notes on depth:
+ * - The root value is validated at depth = 1
+ * - Each nested array/object increases depth by 1
+ * - Depth must be <= MAX_DEPTH
  *
  * @param value - The JSON value to validate
  * @param ctx - Zod refinement context for adding validation issues
@@ -86,109 +90,95 @@ export const JsonValue: z.ZodType<Json> = z.lazy(() =>
  *   data: JsonValue.superRefine(parseJsonB)
  * });
  */
-export function parseJsonB(value: Json, ctx: z.RefinementCtx) {
-  const json = JSON.stringify(value);
-
-  // Check if JSON is empty
-  if (!json) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'JSON value is empty',
-    });
-  }
-
+export function parseJsonB(value: Json, ctx: z.RefinementCtx): void {
   // Check total byte size (1 KB max)
-  const stringBytes = Buffer.from(json).length;
-  if (stringBytes > MAX_STRING_BYTES) {
+  const json = JSON.stringify(value);
+  const byteLength = Buffer.byteLength(json, 'utf8');
+
+  if (byteLength > MAX_STRING_BYTES) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `JSON value is too large (max ${MAX_STRING_BYTES} bytes)`,
+      message: `JSON value exceeds maximum size of ${MAX_STRING_BYTES} bytes`,
     });
+    return; // Early return - no point validating structure if too large
   }
 
-  // Enforce only strings, numbers, booleans, and null (no undefined)
-  const isValidType = (obj: unknown): boolean => {
-    const type = typeof obj;
-
-    if (type === 'string' || type === 'number' || type === 'boolean' || obj === null) {
-      return true;
-    }
-
-    if (obj === undefined) {
+  // Single-pass recursive validation.
+  // Returns true/false for short-circuiting; emits at most one issue (the first encountered).
+  const validate = (obj: unknown, depth: number): boolean => {
+    // Check depth (root is depth=1)
+    if (depth > MAX_DEPTH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `JSON nesting depth exceeds maximum of ${MAX_DEPTH}`,
+      });
       return false;
     }
 
-    if (Array.isArray(obj)) {
-      return obj.every(isValidType);
+    // Primitives
+    if (obj === null || typeof obj === 'string' || typeof obj === 'boolean') {
+      return true;
     }
 
-    if (type === 'object') {
-      return Object.values(obj).every(isValidType);
-    }
-
-    return false;
-  };
-
-  if (!isValidType(value)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'JSON value must contain only strings, numbers, booleans, and null',
-    });
-  }
-
-  // Check nesting depth (max 5 levels)
-  const getDepth = (obj: unknown, depth = 0): number => {
-    if (depth > MAX_DEPTH) return depth;
-    if (obj && typeof obj === 'object') {
-      const values = Array.isArray(obj) ? obj : Object.values(obj);
-      if (values.length === 0) return depth;
-      return 1 + Math.max(...values.map((v) => getDepth(v, depth + 1)));
-    }
-    return depth;
-  };
-
-  if (getDepth(value) > MAX_DEPTH) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: `JSON nesting depth exceeds maximum of ${MAX_DEPTH}`,
-    });
-  }
-
-  // Check array lengths (max 100 items per array)
-  const checkArrays = (obj: unknown): boolean => {
-    if (Array.isArray(obj)) {
-      if (obj.length > MAX_ARRAY_LENGTH) return false;
-      return obj.every(checkArrays);
-    }
-    if (obj && typeof obj === 'object') {
-      return Object.values(obj).every(checkArrays);
-    }
-    return true;
-  };
-
-  if (!checkArrays(value)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: `JSON array exceeds maximum length of ${MAX_ARRAY_LENGTH}`,
-    });
-  }
-
-  // Check object key counts and dangerous keys (max 50 keys per object)
-  const checkObjects = (obj: unknown): boolean => {
-    if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-      const keys = Object.keys(obj);
-
-      if (keys.length > MAX_KEY_LENGTH) {
+    // Numbers - check range
+    if (typeof obj === 'number') {
+      if (!Number.isFinite(obj) || obj < Number.MIN_SAFE_INTEGER || obj > Number.MAX_SAFE_INTEGER) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `JSON object has too many keys (max ${MAX_KEY_LENGTH})`,
+          message: 'JSON contains number outside safe range or non-finite number',
+        });
+        return false;
+      }
+      return true;
+    }
+
+    // Reject undefined explicitly (defense-in-depth; JsonValue schema already excludes it)
+    if (obj === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'JSON value must not contain undefined',
+      });
+      return false;
+    }
+
+    // Arrays
+    if (Array.isArray(obj)) {
+      if (obj.length > MAX_ARRAY_LENGTH) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `JSON array exceeds maximum length of ${MAX_ARRAY_LENGTH}`,
+        });
+        return false;
+      }
+      for (const item of obj) {
+        if (!validate(item, depth + 1)) return false;
+      }
+      return true;
+    }
+
+    // Objects
+    if (typeof obj === 'object') {
+      const record = obj as Record<string, unknown>;
+      const keys = Object.keys(record);
+
+      if (keys.length > MAX_KEYS_PER_OBJECT) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `JSON object exceeds maximum of ${MAX_KEYS_PER_OBJECT} keys`,
         });
         return false;
       }
 
-      // Check for dangerous keys (prototype pollution protection)
       for (const key of keys) {
-        if (DANGEROUS_KEYS.includes(key)) {
+        if (key.length > MAX_KEY_NAME_LENGTH) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `JSON object key is too long (max ${MAX_KEY_NAME_LENGTH} chars)`,
+          });
+          return false;
+        }
+
+        if (DANGEROUS_KEYS.has(key)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `Dangerous object key detected: ${key}`,
@@ -197,51 +187,22 @@ export function parseJsonB(value: Json, ctx: z.RefinementCtx) {
         }
       }
 
-      // Recursively check nested objects
-      return Object.values(obj).every(checkObjects);
-    }
-    if (Array.isArray(obj)) {
-      return obj.every(checkObjects);
-    }
-    return true;
-  };
-
-  if (!checkObjects(value)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: `JSON object is invalid`,
-    });
-  }
-
-  // Check number ranges (must be safe and finite)
-  const checkNumberRanges = (obj: unknown): boolean => {
-    if (typeof obj === 'number') {
-      if (!Number.isFinite(obj)) return false;
-      if (obj < Number.MIN_SAFE_INTEGER || obj > Number.MAX_SAFE_INTEGER) {
-        return false;
+      // Validate values (single pass, short-circuit on first failure)
+      for (const val of Object.values(record)) {
+        if (!validate(val, depth + 1)) return false;
       }
+
+      return true;
     }
-    if (obj && typeof obj === 'object') {
-      const values = Array.isArray(obj) ? obj : Object.values(obj);
-      return values.every(checkNumberRanges);
-    }
-    return true;
+
+    // Unknown type (symbol, bigint, function, etc.) - defense-in-depth
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `Invalid JSON value type: ${typeof obj}`,
+    });
+    return false;
   };
 
-  if (!checkNumberRanges(value)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'JSON contains number outside safe range or non-finite number',
-    });
-  }
-
-  // Validate with secure JSON parse
-  try {
-    sjson.parse(json);
-  } catch {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Failed to parse JSON',
-    });
-  }
+  // Root counts as depth 1
+  validate(value, 1);
 }
