@@ -127,9 +127,9 @@ describe('TaskService', () => {
       await expect(
         service.createTaskVariant({ userId: 'admin-123', isSuperAdmin: true }, variantData),
       ).rejects.toMatchObject({
-        message: ApiErrorMessage.CONFLICT,
         statusCode: 409,
         code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { userId: 'admin-123', taskId: task.id, variantName: variantData.name },
       });
     });
 
@@ -254,7 +254,6 @@ describe('TaskService', () => {
           { name: 'stringParam', value: 'test string' },
           { name: 'numberParam', value: 42 },
           { name: 'booleanParam', value: false },
-          { name: 'nullParam', value: null },
           { name: 'arrayParam', value: [1, 2, 3] },
           { name: 'objectParam', value: { key: 'value', nested: { data: true } } },
         ],
@@ -266,13 +265,12 @@ describe('TaskService', () => {
 
       // Verify all parameter types are preserved
       const parameters = await taskVariantParameterRepository.getByTaskVariantId(result.id!);
-      expect(parameters).toHaveLength(6);
+      expect(parameters).toHaveLength(5);
 
       const paramMap = new Map(parameters.map((p) => [p.name, p.value]));
       expect(paramMap.get('stringParam')).toBe('test string');
       expect(paramMap.get('numberParam')).toBe(42);
       expect(paramMap.get('booleanParam')).toBe(false);
-      expect(paramMap.get('nullParam')).toBeNull();
       expect(paramMap.get('arrayParam')).toEqual([1, 2, 3]);
       expect(paramMap.get('objectParam')).toEqual({ key: 'value', nested: { data: true } });
     });

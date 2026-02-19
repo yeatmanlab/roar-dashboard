@@ -9,7 +9,7 @@ import { TaskRepository } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import { isUniqueViolation } from '../../errors';
+import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 
 /**
  * Parameter data for creating task variant parameters.
@@ -179,8 +179,11 @@ export function TaskService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
+      // Unwrap the Drizzle error to get the underlying database error with SQLSTATE codes
+      const dbError = unwrapDrizzleError(error);
+
       // Check for Postgres unique constraint violation
-      if (isUniqueViolation(error)) {
+      if (isUniqueViolation(dbError)) {
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,

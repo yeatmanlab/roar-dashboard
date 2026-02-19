@@ -6,3 +6,4 @@ export {
   isForeignKeyViolation,
   isNotNullViolation,
 } from './postgres-error';
+export { unwrapDrizzleError, isDrizzleQueryError } from './drizzle-error';
