@@ -9,6 +9,7 @@ import { TaskRepository } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { isUniqueViolation } from '../../errors';
 
 /**
  * Parameter data for creating task variant parameters.
@@ -106,21 +107,6 @@ export function TaskService({
         });
       }
 
-      // Check if a variant with this name already exists for this task
-      // (task variant names are unique per task, enforced by database constraint)
-      const existingVariant = await taskVariantRepository.getByTaskIdAndName({
-        taskId,
-        name,
-      });
-
-      if (existingVariant) {
-        throw new ApiError(ApiErrorMessage.CONFLICT, {
-          statusCode: StatusCodes.CONFLICT,
-          code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { userId, taskId: data.taskId, variantName: data.name },
-        });
-      }
-
       // Create the task variant and parameters within a transaction to prevent orphaned data
       const variant = await taskVariantRepository.runTransaction({
         fn: async (tx) => {
@@ -192,6 +178,16 @@ export function TaskService({
       return variant;
     } catch (error) {
       if (error instanceof ApiError) throw error;
+
+      // Check for Postgres unique constraint violation
+      if (isUniqueViolation(error)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, taskId: data.taskId, variantName: data.name },
+          cause: error,
+        });
+      }
 
       logger.error({ err: error, context: { userId, taskId: data.taskId } }, 'Failed to create task variant');
 
