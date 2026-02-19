@@ -14,7 +14,7 @@ import { taskVariantParameters } from '../../db/schema/core';
  * IMPORTANT: taskVariantId and name are required for database persistence.
  * The referenced task variant must already exist.
  */
-export const TaskVariantParameterFactory = Factory.define<TaskVariantParameter>(({ onCreate, sequence }) => {
+export const TaskVariantParameterFactory = Factory.define<TaskVariantParameter>(({ onCreate, sequence, params }) => {
   onCreate(async (param) => {
     if (!param.taskVariantId || param.taskVariantId === '00000000-0000-0000-0000-000000000000') {
       throw new Error('TaskVariantParameterFactory.create() requires taskVariantId to reference an existing variant');
@@ -38,7 +38,8 @@ export const TaskVariantParameterFactory = Factory.define<TaskVariantParameter>(
   return {
     taskVariantId: '00000000-0000-0000-0000-000000000000', // Sentinel; must be overridden when using create()
     name: `param-${sequence}`, // Sentinel; should be overridden for meaningful tests
-    value: { setting: faker.word.words(2), enabled: true },
+    // Only use default value if no value was explicitly provided
+    value: params.value ?? { setting: faker.word.words(2), enabled: true },
     createdAt: new Date(),
     updatedAt: new Date(),
   };
