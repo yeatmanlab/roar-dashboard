@@ -164,9 +164,24 @@ const chartOptions = computed(() => ({
     },
     x: {
       type: 'time',
-      time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
-      ticks: { maxRotation: 0, autoSkip: true, autoSkipPadding: 8 },
+      time: {
+        unit: filteredSeries.value.length === 1 ? 'day' : 'month',
+        displayFormats: { month: 'MMM yyyy', day: 'MMM d, yyyy' },
+      },
+      ticks: {
+        maxRotation: 0,
+        autoSkip: true,
+        autoSkipPadding: 2,
+        maxTicksLimit: filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
+        ...(filteredSeries.value.length === 1 ? { source: 'data' } : {}),
+      },
       grid: { display: false },
+      ...(filteredSeries.value.length === 1 && filteredSeries.value[0]
+        ? {
+            min: new Date(filteredSeries.value[0].x).getTime() - 7 * 24 * 60 * 60 * 1000, // 7 days before
+            max: new Date(filteredSeries.value[0].x).getTime() + 7 * 24 * 60 * 60 * 1000, // 7 days after
+          }
+        : {}),
     },
   },
   interaction: { mode: 'nearest', axis: 'x', intersect: false },
