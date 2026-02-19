@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
+import { IDENTIFIER_WITH_HYPHENS, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
 
 // TODO: For repeated enums like this, create a test file which validates that all instances are equal
 // SEE: apps/backend/src/enums/user-type.enum.test.ts
@@ -52,11 +53,7 @@ export enum TASK_VARIANT_STATUS {
  * }
  */
 const TaskVariantParameterSchema = z.object({
-  name: z
-    .string()
-    .min(1)
-    .max(255)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
+  name: z.string().min(1).max(255).regex(IDENTIFIER_WITH_UNDERSCORES),
   value: JsonValue.superRefine((value, ctx) => {
     parseJsonB(value, ctx);
   }),
@@ -80,12 +77,7 @@ const TaskVariantParameterSchema = z.object({
 const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema).min(1);
 
 export const TaskVariantCreateRequestSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1)
-    .max(255)
-    .regex(/^[a-zA-Z][a-zA-Z0-9_-]*$/),
+  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_HYPHENS),
   parameters: TaskVariantParametersArraySchema,
   description: z.string().trim().min(1).max(1024),
   status: z.nativeEnum(TASK_VARIANT_STATUS),
