@@ -9,6 +9,8 @@ import {
   type AdministrationClassSortFieldType,
   type AdministrationGroupSortFieldType,
   type AdministrationTaskVariantSortFieldType,
+  type AdministrationAgreementSortFieldType,
+  type AgreementType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
@@ -24,6 +26,7 @@ import {
   AdministrationRepository,
   type AdministrationQueryOptions,
   type TaskVariantWithAssignment,
+  type AgreementWithVersion,
 } from '../../repositories/administration.repository';
 import {
   AdministrationTaskVariantRepository,
@@ -34,6 +37,7 @@ import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { TaskService } from '../task/task.service';
 import type { Condition } from '../task/task.types';
+import { isMajorityAge } from '../../utils/is-majority-age.util';
 
 /**
  * Administration with optional embedded data.
@@ -73,6 +77,14 @@ export type ListSchoolsOptions = ListOrgsOptions<AdministrationSchoolSortFieldTy
 export type ListClassesOptions = ListOrgsOptions<AdministrationClassSortFieldType>;
 export type ListGroupsOptions = ListOrgsOptions<AdministrationGroupSortFieldType>;
 export type ListTaskVariantsOptions = ListOrgsOptions<AdministrationTaskVariantSortFieldType>;
+
+/**
+ * Options for listing agreements of an administration.
+ */
+export interface ListAgreementsOptions extends ListOrgsOptions<AdministrationAgreementSortFieldType> {
+  agreementType?: AgreementType | undefined;
+  locale: string;
+}
 
 /**
  * AdministrationService
@@ -756,5 +768,115 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants };
+  /**
+   * List agreements assigned to an administration with access control and age-based filtering.
+   *
+   * Unlike districts/schools/classes/groups, agreements are visible to ALL users
+   * with administration access - students need this to know which agreements to sign.
+   *
+   * Each agreement includes the current version for the requested locale.
+   * If no current version exists for that locale, currentVersion will be null.
+   *
+   * Age-based filtering for supervised roles (students):
+   * - Agreements with `requiresMajorityAge: true` are only shown to users 18+
+   * - Age is determined first by dob, then by grade if dob is unavailable
+   * - If age cannot be determined, majority-age agreements are excluded (conservative approach)
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get agreements for
+   * @param options - Pagination, sorting, filtering, and locale options
+   * @returns Paginated result with agreements and their current versions
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listAgreements(
+    authContext: AuthContext,
+    administrationId: string,
+    options: ListAgreementsOptions,
+  ): Promise<PaginatedResult<AgreementWithVersion>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Verify administration exists and user has access (all roles allowed)
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        agreementType: options.agreementType,
+        locale: options.locale,
+      };
+
+      const result = await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
+
+      // Super admins see all agreements without filtering
+      if (isSuperAdmin) {
+        return result;
+      }
+
+      // Get user roles to determine if age-based filtering applies
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      // Supervisory roles (teachers, admins) see all agreements without filtering
+      if (hasSupervisoryRole(userRoles)) {
+        return result;
+      }
+
+      // For supervised roles (students), filter out requiresMajorityAge agreements if user is under 18
+      // Fetch user data for age determination
+      const user = await userRepository.getById({ id: userId });
+      if (!user) {
+        logger.error(
+          { userId, administrationId },
+          'User not found during agreement filtering - possible data inconsistency',
+        );
+        throw new ApiError('Failed to retrieve user data for agreement filtering', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Determine if user is of majority age (18+)
+      const isOfMajorityAge = isMajorityAge({ dob: user.dob, grade: user.grade });
+
+      // Filter agreements based on majority age requirement
+      // If user is 18+ (true), show all agreements
+      // If user is under 18 (false) or age unknown (null), exclude requiresMajorityAge agreements
+      const filteredItems = result.items.filter((item) => {
+        if (!item.agreement.requiresMajorityAge) {
+          // Agreement doesn't require majority age - always include
+          return true;
+        }
+        // Agreement requires majority age - only include if user is confirmed 18+
+        return isOfMajorityAge === true;
+      });
+
+      return {
+        items: filteredItems,
+        totalItems: filteredItems.length,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, options } },
+        'Failed to list administration agreements',
+      );
+
+      throw new ApiError('Failed to retrieve administration agreements', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants, listAgreements };
 }

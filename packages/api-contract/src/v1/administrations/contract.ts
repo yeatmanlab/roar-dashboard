@@ -14,6 +14,8 @@ import {
   AdministrationGroupsListResponseSchema,
   AdministrationTaskVariantsListQuerySchema,
   AdministrationTaskVariantsListResponseSchema,
+  AdministrationAgreementsListQuerySchema,
+  AdministrationAgreementsListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
@@ -166,6 +168,28 @@ export const AdministrationsContract = c.router(
         'Supervisory roles (teachers, admins) see all variants (including draft/deprecated) with raw conditions for client-side evaluation. ' +
         'Supervised roles (students) see only published variants, filtered by eligibility - ' +
         'only variants where assigned_if passes are returned, and optional is set based on optional_if. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
+    },
+    listAgreements: {
+      method: 'GET',
+      path: '/:id/agreements',
+      pathParams: z.object({ id: z.string().uuid() }),
+      query: AdministrationAgreementsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationAgreementsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List agreements assigned to an administration',
+      description:
+        'Returns a paginated list of agreements assigned to the specified administration. ' +
+        'Each agreement includes the current version for the requested locale (default: en-US). ' +
+        'Use ?locale=es or ?locale=es-MX for other locales (BCP-47 format). ' +
+        'Use ?agreementType=tos|assent|consent to filter by agreement type. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
     },

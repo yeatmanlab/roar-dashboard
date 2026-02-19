@@ -10,6 +10,7 @@ import type {
   AdministrationClassesListQuery,
   AdministrationGroupsListQuery,
   AdministrationTaskVariantsListQuery,
+  AdministrationAgreementsListQuery,
   Administration as ContractAdministration,
   AdministrationBase as ContractAdministrationBase,
   AdministrationDistrict,
@@ -17,9 +18,14 @@ import type {
   AdministrationClass,
   AdministrationGroup,
   AdministrationTaskVariantItem,
+  AdministrationAgreement,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org, Class, Group } from '../db/schema';
-import type { TaskVariantWithAssignment, AssignmentWithOptional } from '../repositories/administration.repository';
+import type {
+  TaskVariantWithAssignment,
+  AssignmentWithOptional,
+  AgreementWithVersion,
+} from '../repositories/administration.repository';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -147,6 +153,32 @@ function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskV
       assigned_if: item.assignment.conditionsAssignment as Record<string, unknown> | null,
       optional_if: item.assignment.conditionsRequirements as Record<string, unknown> | null,
     },
+  };
+}
+
+/**
+ * Maps an AgreementWithVersion (raw repository data) to the API response schema.
+ *
+ * Transforms the joined data from the repository into the structure expected
+ * by the API contract.
+ *
+ * @param item - The raw agreement data from the repository (agreement and currentVersion)
+ * @returns The API-formatted agreement item with nested currentVersion
+ */
+function toAgreementItem(item: AgreementWithVersion): AdministrationAgreement {
+  return {
+    id: item.agreement.id,
+    name: item.agreement.name,
+    agreementType: item.agreement.agreementType,
+    currentVersion: item.currentVersion
+      ? {
+          id: item.currentVersion.id,
+          locale: item.currentVersion.locale,
+          githubFilename: item.currentVersion.githubFilename,
+          githubOrgRepo: item.currentVersion.githubOrgRepo,
+          githubCommitSha: item.currentVersion.githubCommitSha,
+        }
+      : null,
   };
 }
 
@@ -399,6 +431,45 @@ export const AdministrationsController = {
     try {
       const result = await administrationService.listTaskVariants(authContext, administrationId, query);
       return handleSubResourceResponse(result, query.page, query.perPage, toTaskVariantItem);
+    } catch (error) {
+      return handleSubResourceError(error);
+    }
+  },
+
+  /**
+   * List agreements assigned to an administration.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, sorting, agreementType filter, locale)
+   */
+  listAgreements: async (
+    authContext: AuthContext,
+    administrationId: string,
+    query: AdministrationAgreementsListQuery,
+  ) => {
+    try {
+      const result = await administrationService.listAgreements(authContext, administrationId, query);
+      const items = result.items.map(toAgreementItem);
+      const totalPages = Math.ceil(result.totalItems / query.perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page: query.page,
+              perPage: query.perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
     } catch (error) {
       return handleSubResourceError(error);
     }

@@ -7,6 +7,8 @@ import {
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { ClassFactory } from '../test-support/factories/class.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
+import { AgreementFactory } from '../test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { OrgType } from '../enums/org-type.enum';
@@ -36,6 +38,7 @@ describe('AdministrationsController', () => {
   const mockListClasses = vi.fn();
   const mockListGroups = vi.fn();
   const mockListTaskVariants = vi.fn();
+  const mockListAgreements = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -50,6 +53,7 @@ describe('AdministrationsController', () => {
       listClasses: mockListClasses,
       listGroups: mockListGroups,
       listTaskVariants: mockListTaskVariants,
+      listAgreements: mockListAgreements,
     });
   });
 
@@ -1455,6 +1459,211 @@ describe('AdministrationsController', () => {
           perPage: 25,
           sortBy: 'orderIndex',
           sortOrder: 'asc',
+        }),
+      ).rejects.toThrow('Database connection lost');
+    });
+  });
+
+  describe('listAgreements', () => {
+    it('should return paginated agreements with 200 status', async () => {
+      const mockAgreement = AgreementFactory.build({ name: 'Terms of Service', agreementType: 'tos' });
+      const mockVersion = AgreementVersionFactory.build({ locale: 'en-US', githubFilename: 'TOS.md' });
+      mockListAgreements.mockResolvedValue({
+        items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listAgreements(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        locale: 'en-US',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0]).toEqual({
+        id: mockAgreement.id,
+        name: 'Terms of Service',
+        agreementType: 'tos',
+        currentVersion: {
+          id: mockVersion.id,
+          locale: 'en-US',
+          githubFilename: 'TOS.md',
+          githubOrgRepo: mockVersion.githubOrgRepo,
+          githubCommitSha: mockVersion.githubCommitSha,
+        },
+      });
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 1,
+        totalPages: 1,
+      });
+    });
+
+    it('should handle null currentVersion when version not found for locale', async () => {
+      const mockAgreement = AgreementFactory.build();
+      mockListAgreements.mockResolvedValue({
+        items: [{ agreement: mockAgreement, currentVersion: null }],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listAgreements(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        locale: 'fr',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0]!.currentVersion).toBeNull();
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockListAgreements.mockRejectedValue(
+        new ApiError('Administration not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listAgreements(mockAuthContext, 'nonexistent-id', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        locale: 'en-US',
+      });
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Administration not found',
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 403 when user lacks permission to access administration', async () => {
+      mockListAgreements.mockRejectedValue(
+        new ApiError('Forbidden', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listAgreements(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        locale: 'en-US',
+      });
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect(result.body).toEqual({
+        error: {
+          message: 'Forbidden',
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should pass auth context, administration ID, and query parameters to service', async () => {
+      mockListAgreements.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const authContext = { userId: 'user-456', isSuperAdmin: true };
+      await Controller.listAgreements(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'agreementType',
+        sortOrder: 'desc',
+        locale: 'es',
+        agreementType: 'consent',
+      });
+
+      expect(mockListAgreements).toHaveBeenCalledWith(authContext, 'admin-123', {
+        page: 2,
+        perPage: 10,
+        sortBy: 'agreementType',
+        sortOrder: 'desc',
+        locale: 'es',
+        agreementType: 'consent',
+      });
+    });
+
+    it('should return empty items array when no agreements found', async () => {
+      mockListAgreements.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listAgreements(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        locale: 'en-US',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
+    });
+
+    it('should calculate totalPages correctly', async () => {
+      const mockAgreements = Array.from({ length: 10 }, () => ({
+        agreement: AgreementFactory.build(),
+        currentVersion: AgreementVersionFactory.build(),
+      }));
+      mockListAgreements.mockResolvedValue({
+        items: mockAgreements,
+        totalItems: 95,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.listAgreements(mockAuthContext, 'admin-123', {
+        page: 1,
+        perPage: 10,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        locale: 'en-US',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Database connection lost');
+      mockListAgreements.mockRejectedValue(unexpectedError);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(
+        Controller.listAgreements(mockAuthContext, 'admin-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'name',
+          sortOrder: 'asc',
+          locale: 'en-US',
         }),
       ).rejects.toThrow('Database connection lost');
     });
