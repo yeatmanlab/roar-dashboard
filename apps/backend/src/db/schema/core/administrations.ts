@@ -32,6 +32,10 @@ export const administrations = db.table(
 
     isOrdered: p.boolean().notNull(),
 
+    excludedFromResearch: p.timestamp({ withTimezone: true }),
+    excludedFromResearchBy: p.uuid().references(() => users.id, { onDelete: 'restrict' }),
+    excludedFromResearchReason: p.text(),
+
     createdBy: p
       .uuid()
       .notNull()
@@ -59,6 +63,11 @@ export const administrations = db.table(
     p.uniqueIndex('administrations_name_unique_idx').on(sql`lower(${table.name})`),
     // - Date range must be valid
     p.check('administrations_date_start_end_check', sql`(${table.dateStart} < ${table.dateEnd})`),
+    // - Ensure excludedFromResearchBy and excludedFromResearchReason are set when excludedFromResearchAt is set
+    p.check(
+      'administrations_excluded_from_research_required',
+      sql`${table.excludedFromResearch} IS NULL OR (${table.excludedFromResearchBy} IS NOT NULL AND ${table.excludedFromResearchReason} IS NOT NULL)`,
+    ),
   ],
 );
 
