@@ -1,0 +1,1 @@
+ALTER TABLE "app"."runs" DROP COLUMN "exclude_from_research";
