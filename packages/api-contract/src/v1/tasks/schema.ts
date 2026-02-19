@@ -2,13 +2,7 @@ import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
 import { IDENTIFIER_WITH_HYPHENS, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
 
-// TODO: For repeated enums like this, create a test file which validates that all instances are equal
-// SEE: apps/backend/src/enums/user-type.enum.test.ts
-export enum TASK_VARIANT_STATUS {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  DEPRECATED = 'deprecated',
-}
+export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
 
 /**
  * Task Variant Parameter Schema
@@ -80,13 +74,14 @@ export const TaskVariantCreateRequestSchema = z.object({
   name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_HYPHENS),
   parameters: TaskVariantParametersArraySchema,
   description: z.string().trim().min(1).max(1024),
-  status: z.nativeEnum(TASK_VARIANT_STATUS),
+  status: TaskVariantStatusSchema,
 });
 
 export const TaskVariantCreateResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
+export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
 export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
 export type TaskVariantCreateRequest = z.infer<typeof TaskVariantCreateRequestSchema>;
