@@ -97,6 +97,29 @@ export const OrganizationSchema = z.object({
 export type Organization = z.infer<typeof OrganizationSchema>;
 
 /**
+ * Stats by task schema
+ */
+export const TaskStatsSchema = z.object({
+  taskId: z.string().uuid(),
+  taskName: z.string(),
+  assigned: z.number().int(),
+  started: z.number().int(),
+  completed: z.number().int(),
+});
+
+/**
+ * Base District-level Administrations Stats Schema
+ */
+export const DistrictAdministrationStatsSchema = z.object({
+  assigned: z.number().int(),
+  started: z.number().int(),
+  completed: z.number().int(),
+  byTask: z.record(z.string().uuid(), TaskStatsSchema),
+});
+
+export type DistrictAdministrationStats = z.infer<typeof DistrictAdministrationStatsSchema>;
+
+/**
  * Full district detail schema with optional embedded data.
  * Supports both counts (for list) and children (for detail) embeds.
  */
@@ -177,3 +200,17 @@ export type DistrictGetQuery = z.infer<typeof DistrictGetQuerySchema>;
 export const DistrictGetResponseSchema = DistrictDetailSchema;
 
 export type DistrictGetResponse = z.infer<typeof DistrictGetResponseSchema>;
+
+/**
+ * Query parameters for getting a single district-level administration statistics object.
+ */
+export const DistrictAdministrationStatsQuerySchema = z.object({
+  taskId: z.string().uuid().optional(),
+});
+
+export type DistrictAdministrationStatsQuery = z.infer<typeof DistrictAdministrationStatsQuerySchema>;
+
+/**
+ * Response for single district-level administration statistics object.
+ */
+export const DistrictAdministrationStatsResponseSchema = z.object({});
