@@ -1,5 +1,5 @@
 import { eq, count as drizzleCount, asc, desc } from 'drizzle-orm';
-import type { SQL } from 'drizzle-orm';
+import type { SQL, InferInsertModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type {
@@ -8,6 +8,7 @@ import type {
   BaseGetParams,
   BaseGetAllParams,
   BaseCreateParams,
+  BaseCreateManyParams,
   BaseUpdateParams,
   BaseDeleteParams,
   BaseRunTransactionParams,
@@ -27,9 +28,10 @@ export type { PaginatedResult } from './interfaces/base.repository.interface';
  * This base repository is aligned with `stanford-roar-firebase-functions/packages/core` BaseRepository pattern to
  * ensure consistency across both codebases and allow easier porting of logic.
  *
+ * The insert type is automatically inferred from the table using Drizzle's `InferInsertModel`.
+ *
  * @typeParam TEntity - The select type of the entity (from $inferSelect)
  * @typeParam TTable - The Drizzle PgTable reference
- * @typeParam TInsert - The insert type of the entity (from $inferInsert)
  *
  * @example
  * ```typescript
@@ -43,11 +45,8 @@ export type { PaginatedResult } from './interfaces/base.repository.interface';
  * }
  * ```
  */
-export abstract class BaseRepository<
-  TEntity extends Record<string, unknown>,
-  TTable extends PgTable,
-  TInsert extends Record<string, unknown> = TEntity,
-> implements IBaseRepository<TEntity>
+export abstract class BaseRepository<TEntity extends Record<string, unknown>, TTable extends PgTable>
+  implements IBaseRepository<TEntity, InferInsertModel<TTable>>
 {
   /**
    * Type-safe table reference for Drizzle queries.
@@ -144,19 +143,50 @@ export abstract class BaseRepository<
   /**
    * Creates a new entity.
    */
-  async create(params: BaseCreateParams<TEntity>): Promise<TEntity> {
-    const [entity] = await this.db
-      .insert(this.typedTable)
-      .values(params.data as TInsert)
-      .returning();
+  async create(params: BaseCreateParams<InferInsertModel<TTable>>): Promise<{ id: string }> {
+    const { transaction } = params;
+    const db = transaction ?? this.db;
 
-    return entity as TEntity;
+    const [entity] = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
+
+    return entity;
+  }
+
+  /**
+   * Creates multiple entities in a single operation.
+   *
+   * This method faithfully returns what the database created without validation.
+   * It is the caller's responsibility to verify the result matches expectations.
+   *
+   * @param params - Create parameters with array of entity data
+   * @returns Array of created entity IDs. May be empty or contain fewer items than input
+   *          if database constraints, triggers, or other issues prevent some insertions.
+   *
+   * @example
+   * ```typescript
+   * const result = await repo.createMany({ data: [item1, item2, item3] });
+   *
+   * // Caller validates at service layer based on business rules
+   * if (result.length !== 3) {
+   *   throw new ApiError('Failed to create all items', {
+   *     context: { expected: 3, created: result.length }
+   *   });
+   * }
+   * ```
+   */
+  async createMany(params: BaseCreateManyParams<InferInsertModel<TTable>>): Promise<{ id: string }[]> {
+    const { transaction } = params;
+    const db = transaction ?? this.db;
+
+    const entities = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
+
+    return entities;
   }
 
   /**
    * Updates an existing entity.
    */
-  async update(params: BaseUpdateParams<TEntity>): Promise<void> {
+  async update(params: BaseUpdateParams<InferInsertModel<TTable>>): Promise<void> {
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
     await this.db.update(this.typedTable).set(params.data).where(eq(idColumn, params.id));
   }
