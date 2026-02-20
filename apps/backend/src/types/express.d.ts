@@ -1,9 +1,14 @@
-import type { DecodedUser } from '../services/auth/auth.types';
+import type { AuthContext } from './auth-context';
 
 declare global {
   namespace Express {
     interface Request {
-      user?: DecodedUser;
+      /**
+       * Authenticated user context.
+       * Contains minimal user info (userId, isSuperAdmin) for authorization checks.
+       * Only present after successful authentication via auth-guard middleware.
+       */
+      user?: AuthContext;
     }
   }
 }

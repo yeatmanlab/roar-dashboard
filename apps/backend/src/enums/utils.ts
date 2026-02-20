@@ -2,6 +2,10 @@
  * Utility functions for converting Drizzle pgEnums to TypeScript const objects
  */
 
+type DerivedKeys<V extends readonly string[], EnumName extends string | undefined> = Uppercase<
+  EnumName extends string ? `${EnumName}_${V[number]}` | V[number] : V[number]
+>;
+
 /**
  * Derives an UPPER_SNAKE_CASE key from an enum value
  *
@@ -45,12 +49,12 @@ function deriveKey(value: string, enumName?: string): string {
  * const Grade = pgEnumToConst(gradeEnum, 'grade');
  * // Result: { GRADE_1: '1', GRADE_2: '2', KINDERGARTEN: 'Kindergarten' }
  */
-export function pgEnumToConst<T extends { enumValues: readonly string[] }>(
-  pgEnumObj: T,
-  enumName?: string,
-): Record<string, T['enumValues'][number]> {
+export function pgEnumToConst<const V extends readonly string[], EnumName extends string | undefined = undefined>(
+  pgEnumObj: { enumValues: V },
+  enumName?: EnumName,
+) {
   return Object.fromEntries(pgEnumObj.enumValues.map((v) => [deriveKey(v, enumName), v])) as Record<
-    string,
-    T['enumValues'][number]
+    DerivedKeys<V, EnumName>,
+    V[number]
   >;
 }

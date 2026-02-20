@@ -55,15 +55,9 @@ export const orgsRelations = relations(orgs, ({ one, many }) => ({
 /**
  * Group Relations
  *
- * Groups form a hierarchical structure with self-referencing parent/child relationships.
+ * Groups are standalone entities with no hierarchy.
  */
-export const groupsRelations = relations(groups, ({ one, many }) => ({
-  parent: one(groups, {
-    fields: [groups.parentGroupId],
-    references: [groups.id],
-    relationName: 'groupHierarchy',
-  }),
-  children: many(groups, { relationName: 'groupHierarchy' }),
+export const groupsRelations = relations(groups, ({ many }) => ({
   users: many(userGroups),
   administrations: many(administrationGroups),
   invitationCodes: many(invitationCodes),
@@ -157,6 +151,7 @@ export const taskBundleVariantsRelations = relations(taskBundleVariants, ({ one 
  */
 export const administrationsRelations = relations(administrations, ({ one, many }) => ({
   createdByUser: one(users, { fields: [administrations.createdBy], references: [users.id] }),
+  excludedFromResearchByUser: one(users, { fields: [administrations.excludedFromResearchBy], references: [users.id] }),
   agreements: many(administrationAgreements),
   classes: many(administrationClasses),
   groups: many(administrationGroups),

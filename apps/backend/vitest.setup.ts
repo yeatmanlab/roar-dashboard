@@ -1,44 +1,42 @@
-import { vi, beforeEach } from 'vitest';
+/**
+ * Test Setup
+ *
+ * This setup file is shared between unit and integration tests.
+ *
+ * The integration test hooks are conditionally enabled based on VITEST_PROJECT,
+ * which is set via the `env` option in vitest.config.ts for the integration project.
+ *
+ * Integration tests get a pre-seeded base fixture with standard test data.
+ * Tests can append additional data using factories as needed.
+ *
+ * Note: Migrations run once in globalSetup. Per-file, we truncate and re-seed
+ * to ensure test isolation between files.
+ */
+import { vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
-// Global mock for firebase-admin/app
-vi.mock('firebase-admin/app', () => {
-  const initializeApp = vi.fn();
-  const getApp = vi.fn();
-  const getApps = vi.fn(() => []);
-  const applicationDefault = vi.fn(() => ({ __type: 'mock-adc-credential' }));
-  const cert = vi.fn((json) => ({ __type: 'mock-cert-credential', json }));
+// Shared Firebase Admin mocks (vi.mock calls are hoisted)
+import './src/test-support/mocks/firebase-admin.mock';
 
-  return {
-    initializeApp,
-    getApp,
-    getApps,
-    applicationDefault,
-    cert,
-  };
-});
+// Check if running integration tests (set via env in vitest.config.ts)
+const isIntegrationTest = process.env.VITEST_PROJECT === 'integration';
 
-// Global mock for firebase-admin/auth
-vi.mock('firebase-admin/auth', () => {
-  const getAuth = vi.fn(() => ({
-    name: 'mock-auth-instance',
-    app: { name: 'mock-app' },
-    verifyIdToken: vi.fn(),
-    createUser: vi.fn(),
-    getUserByEmail: vi.fn(),
-    deleteUser: vi.fn(),
-    setCustomUserClaims: vi.fn(),
-    createCustomToken: vi.fn(),
-    listUsers: vi.fn(),
-    updateUser: vi.fn(),
-  }));
-
-  return {
-    getAuth,
-  };
-});
-
-// Global test setup
+// Global test setup for all tests
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.resetModules();
 });
+
+// Integration test hooks (per-file)
+if (isIntegrationTest) {
+  const { seedBaseFixture } = await import('./src/test-support/fixtures');
+  const { truncateAllTables, closeAllConnections, initializeDatabasePools } = await import('./src/test-support/db');
+
+  beforeAll(async () => {
+    await initializeDatabasePools();
+    await truncateAllTables();
+    await seedBaseFixture();
+  });
+
+  afterAll(async () => {
+    await closeAllConnections();
+  });
+}
