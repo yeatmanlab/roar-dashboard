@@ -1213,7 +1213,7 @@ const computeAssignmentAndRunData = computed(() => {
           const translatedSkills = skillKeys.map((key) => i18n.global.t(PA_SUBTASK_I18N_KEYS[key]));
           const formatPaSubtaskScore = (subtaskKey) => {
             const pct = _get(computedScores, `${subtaskKey}.percentCorrect`);
-            if (pct != null) return `${Math.round(pct)}%`;
+            if (pct != null) return `${Math.floor(pct)}%`;
             return _get(computedScores, `${subtaskKey}.roarScore`);
           };
           currRowScores[taskId].firstSound = formatPaSubtaskScore('FSM');
