@@ -147,11 +147,11 @@ const ScoreReportService = (() => {
       const phonemeIncorrect = scores?.Phonemes?.phonemeIncorrect;
       const incorrectPhonemes = Array.isArray(phonemeIncorrect) ? phonemeIncorrect.join(', ') : '';
 
-      formattedScoresArray.push([i18n.t('Lower Case'), scores?.LowercaseNames?.subScore, 0, 26]);
-      formattedScoresArray.push([i18n.t('Upper Case'), scores?.UppercaseNames?.subScore, 0, 26]);
-      formattedScoresArray.push([i18n.t('Letter Sounds'), scores?.Phonemes?.subScore, 0, 38]);
-      formattedScoresArray.push([i18n.t('Letter To Work On'), incorrectLetters]);
-      formattedScoresArray.push([i18n.t('Letter Sounds To Work On'), incorrectPhonemes]);
+      formattedScoresArray.push([i18n.t('scoreReports.lowerCase'), scores?.LowercaseNames?.subScore, 0, 26]);
+      formattedScoresArray.push([i18n.t('scoreReports.upperCase'), scores?.UppercaseNames?.subScore, 0, 26]);
+      formattedScoresArray.push([i18n.t('scoreReports.letterSounds'), scores?.Phonemes?.subScore, 0, 38]);
+      formattedScoresArray.push([i18n.t('scoreReports.lettersToWorkOn'), incorrectLetters]);
+      formattedScoresArray.push([i18n.t('scoreReports.letterSoundsToWorkOn'), incorrectPhonemes]);
     }
 
     const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
