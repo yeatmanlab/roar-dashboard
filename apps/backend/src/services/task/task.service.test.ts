@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { AuthContext } from '../../types/auth-context';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { logger } from '../../logger';
 import {
+  MockTaskRepository,
+  MockTaskVariantRepository,
+  MockTaskVariantParameterRepository,
   createMockTaskRepository,
   createMockTaskVariantRepository,
   createMockTaskVariantParameterRepository,
@@ -15,16 +17,18 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
+import type { AuthContext } from '../../types/auth-context';
 
 describe('TaskService', () => {
-  let mockAuthContext: AuthContext;
-  let taskRepository: ReturnType<typeof createMockTaskRepository>;
-  let taskVariantRepository: ReturnType<typeof createMockTaskVariantRepository>;
-  let taskVariantParameterRepository: ReturnType<typeof createMockTaskVariantParameterRepository>;
+  let authContext: AuthContext;
+  let taskRepository: MockTaskRepository;
+  let taskVariantRepository: MockTaskVariantRepository;
+  let taskVariantParameterRepository: MockTaskVariantParameterRepository;
   let taskService: ReturnType<typeof TaskService>;
 
   beforeEach(() => {
-    mockAuthContext = { userId: 'admin-1', isSuperAdmin: true };
+    vi.clearAllMocks();
+    authContext = { userId: 'admin-1', isSuperAdmin: true };
     taskRepository = createMockTaskRepository();
     taskVariantRepository = createMockTaskVariantRepository();
     taskVariantParameterRepository = createMockTaskVariantParameterRepository();
@@ -66,7 +70,7 @@ describe('TaskService', () => {
           status: TaskVariantStatus.PUBLISHED,
           parameters: mockTaskVariantParameterData,
         };
-        const result = await taskService.createTaskVariant(mockAuthContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, mockData);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskRepository.getById).toHaveBeenCalledWith({ id: mockTask.id });
@@ -118,7 +122,7 @@ describe('TaskService', () => {
           parameters: mockParameters,
         };
 
-        const result = await taskService.createTaskVariant(mockAuthContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, mockData);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -163,7 +167,7 @@ describe('TaskService', () => {
           parameters: [complexParameter],
         };
 
-        const result = await taskService.createTaskVariant(mockAuthContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, mockData);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -221,7 +225,7 @@ describe('TaskService', () => {
           parameters: [], // Empty array - should fail
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
           message: 'At least one parameter required',
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
@@ -252,7 +256,7 @@ describe('TaskService', () => {
           ],
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
           message: 'Failed to create all task variant parameters',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
@@ -278,7 +282,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: {
@@ -324,7 +328,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
           context: {
@@ -355,7 +359,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
           message: 'Failed to create task variant',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -387,7 +391,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
           message: 'Failed to create task variant',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
@@ -414,7 +418,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toThrow(nestedApiError);
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toThrow(nestedApiError);
 
         // Should not wrap in another ApiError
         expect(logger.error).not.toHaveBeenCalled();
@@ -445,7 +449,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(mockAuthContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
           context: {
@@ -481,7 +485,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        const result = await taskService.createTaskVariant(mockAuthContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, mockData);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
@@ -510,7 +514,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        const result = await taskService.createTaskVariant(mockAuthContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, mockData);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
@@ -539,7 +543,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'optionalConfig', value: null }],
         };
 
-        const result = await taskService.createTaskVariant(mockAuthContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, mockData);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -574,7 +578,7 @@ describe('TaskService', () => {
           parameters: [{ name: 'choices', value: arrayValue }],
         };
 
-        const result = await taskService.createTaskVariant(mockAuthContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, mockData);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({

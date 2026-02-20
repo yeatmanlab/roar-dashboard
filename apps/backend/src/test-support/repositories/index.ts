@@ -1,3 +1,6 @@
-export { createMockTaskRepository } from './task.repository';
-export { createMockTaskVariantRepository } from './task-variant.repository';
-export { createMockTaskVariantParameterRepository } from './task-variant-parameter.repository';
+export { createMockTaskRepository, MockTaskRepository } from './task.repository';
+export { createMockTaskVariantRepository, MockTaskVariantRepository } from './task-variant.repository';
+export {
+  createMockTaskVariantParameterRepository,
+  MockTaskVariantParameterRepository,
+} from './task-variant-parameter.repository';

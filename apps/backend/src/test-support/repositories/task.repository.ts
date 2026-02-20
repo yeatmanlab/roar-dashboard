@@ -14,3 +14,5 @@ export function createMockTaskRepository(): MockedObject<TaskRepository> {
     getBySlug: vi.fn(),
   } as MockedObject<TaskRepository>;
 }
+
+export type MockTaskRepository = ReturnType<typeof createMockTaskRepository>;

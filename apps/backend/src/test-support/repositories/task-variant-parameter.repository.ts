@@ -15,3 +15,5 @@ export function createMockTaskVariantParameterRepository(): MockedObject<TaskVar
     createMany: vi.fn(),
   } as MockedObject<TaskVariantParameterRepository>;
 }
+
+export type MockTaskVariantParameterRepository = MockedObject<TaskVariantParameterRepository>;
