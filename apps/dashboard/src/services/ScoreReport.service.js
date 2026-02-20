@@ -114,7 +114,7 @@ const ScoreReportService = (() => {
 
     if (taskId === 'pa') {
       const formatPaSubtaskScore = (subtask) => {
-        if (subtask?.percentCorrect != null) return `${Math.round(subtask.percentCorrect)}%`;
+        if (subtask?.percentCorrect != null) return `${Math.floor(subtask.percentCorrect)}%`;
         return subtask?.roarScore;
       };
       const fsm = formatPaSubtaskScore(scores?.FSM);
