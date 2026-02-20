@@ -8,6 +8,7 @@ import type {
   BaseGetParams,
   BaseGetAllParams,
   BaseCreateParams,
+  BaseCreateManyParams,
   BaseUpdateParams,
   BaseDeleteParams,
   BaseRunTransactionParams,
@@ -146,6 +147,37 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
     const [entity] = await this.db.insert(this.typedTable).values(params.data).returning();
 
     return entity as TEntity;
+  }
+
+  /**
+   * Creates multiple entities in a single operation.
+   *
+   * This method faithfully returns what the database created without validation.
+   * It is the caller's responsibility to verify the result matches expectations.
+   *
+   * @param params - Create parameters with array of entity data
+   * @returns Array of created entity IDs. May be empty or contain fewer items than input
+   *          if database constraints, triggers, or other issues prevent some insertions.
+   *
+   * @example
+   * ```typescript
+   * const result = await repo.createMany({ data: [item1, item2, item3] });
+   *
+   * // Caller validates at service layer based on business rules
+   * if (result.length !== 3) {
+   *   throw new ApiError('Failed to create all items', {
+   *     context: { expected: 3, created: result.length }
+   *   });
+   * }
+   * ```
+   */
+  async createMany(params: BaseCreateManyParams<InferInsertModel<TTable>>): Promise<{ id: string }[]> {
+    const { transaction } = params;
+    const db = transaction ?? this.db;
+
+    const entities = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
+
+    return entities;
   }
 
   /**

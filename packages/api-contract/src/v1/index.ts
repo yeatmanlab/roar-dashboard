@@ -2,6 +2,7 @@ import { initContract } from '@ts-rest/core';
 import { MeContract } from './me/index';
 import { AdministrationsContract } from './administrations/index';
 import { RunsContract } from './runs/index';
+import { TasksContract } from './tasks/index';
 export * from './response';
 export * from './common/index';
 
@@ -11,8 +12,10 @@ export const ApiContractV1 = c.router({
   me: MeContract,
   administrations: AdministrationsContract,
   runs: RunsContract,
+  tasks: TasksContract,
 });
 
 export * from './me/index';
 export * from './administrations/index';
 export * from './runs/index';
+export * from './tasks/index';

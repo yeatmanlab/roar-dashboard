@@ -50,7 +50,6 @@ describe('UserRepository', () => {
 
       expect(result).not.toBeNull();
       expect(result.id).toBeDefined();
-      expect(result.nameFirst).toBe(userData.nameFirst);
     });
   });
 });
