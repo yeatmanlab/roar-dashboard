@@ -70,12 +70,6 @@ export interface BasePaginatedQueryParams {
 
   /** Number of items per page. Required for paginated queries. */
   perPage: number;
-
-  /** Optional order by field and direction. */
-  orderBy?: {
-    field: string;
-    direction: 'asc' | 'desc';
-  };
 }
 
 /**
@@ -94,6 +88,13 @@ export interface BaseGetAllParams extends BasePaginatedQueryParams {
 
   /** Optional fields to select from the entities. */
   select?: string[];
+
+  /**
+   * Optional order by expressions. Can be:
+   * - A single object with field and direction (legacy format for simple sorts)
+   * - An array of SQL order expressions for multiple sorts (e.g., [desc(col), asc(id)])
+   */
+  orderBy?: { field: string; direction: 'asc' | 'desc' } | SQL[];
 }
 
 /**

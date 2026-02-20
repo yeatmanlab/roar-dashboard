@@ -1,6 +1,7 @@
 import { Router, type Express } from 'express';
 import { registerMeRoutes } from './me';
 import { registerAdministrationsRoutes } from './administrations';
+import { registerDistrictsRoutes } from './districts';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
@@ -24,6 +25,7 @@ export function registerAllRoutes(app: Express) {
 
   registerMeRoutes(router);
   registerAdministrationsRoutes(router);
+  registerDistrictsRoutes(router);
 
   app.use(`/${API_VERSION.V1}`, router);
 }

@@ -132,8 +132,14 @@ export abstract class BaseRepository<
       itemsQuery.where(where);
     }
     if (orderBy) {
-      const column = this.typedTable[orderBy.field] as Parameters<typeof asc>[0];
-      itemsQuery.orderBy(this.buildOrderClause(column, orderBy.direction));
+      if (Array.isArray(orderBy)) {
+        // Array of SQL expressions - pass them all to orderBy
+        itemsQuery.orderBy(...orderBy);
+      } else {
+        // Legacy object format - convert to SQL expression
+        const column = this.typedTable[orderBy.field] as Parameters<typeof asc>[0];
+        itemsQuery.orderBy(this.buildOrderClause(column, orderBy.direction));
+      }
     }
     itemsQuery.limit(perPage).offset(offset);
     const items = (await itemsQuery) as TEntity[];
