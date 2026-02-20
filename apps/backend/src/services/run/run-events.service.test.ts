@@ -130,7 +130,7 @@ describe('RunEventsService', () => {
 
       expect(mockRunsRepository.update).toHaveBeenCalled();
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
-      expect(updateCall.data.completionMetadata).toEqual(bodyWithMetadata.metadata);
+      expect(updateCall.data.metadata).toEqual(bodyWithMetadata.metadata);
     });
   });
 
@@ -222,7 +222,7 @@ describe('RunEventsService', () => {
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockRejectedValue(new Error('Database connection lost'));
 
-      await expect(runEventsService.completeRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
@@ -237,7 +237,7 @@ describe('RunEventsService', () => {
       });
       mockRunsRepository.update.mockRejectedValue(apiError);
 
-      await expect(runEventsService.completeRun(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
     });
   });
 });

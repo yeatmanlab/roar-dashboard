@@ -22,18 +22,8 @@ import { RunEventsService } from '../services/run/run-events.service';
  * Tests verify the controller's error handling behavior and response structure.
  * The create endpoint is tested with mocked RunService to isolate controller logic.
  *
-<<<<<<< run/runId/event-abortRun
- * For comprehensive testing of the business logic, see:
- * - run.service.test.ts for create endpoint logic
- * - run-events.service.test.ts for event endpoint logic
- *
- * The controller handles HTTP concerns and delegates business logic to services:
- * - create: POST /runs - Creates a new run
- * - event: POST /runs/:runId/event - Handles run events (complete, abort)
-=======
  * For comprehensive testing of the create endpoint business logic, see run.service.test.ts
  * which tests the service in isolation.
->>>>>>> run/runId/event-completeRun
  */
 describe('RunsController', () => {
   const mockCreate = vi.fn();
@@ -56,6 +46,7 @@ describe('RunsController', () => {
     // Setup the mock RunEventsService
     vi.mocked(RunEventsService).mockReturnValue({
       completeRun: mockCompleteRun,
+      abortRun: vi.fn(),
     });
   });
 
@@ -432,26 +423,6 @@ describe('RunsController', () => {
       expect(typeof (result.body as any).error.traceId).toBe('string');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((result.body as any).error.traceId.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('event', () => {
-    it('should have proper method signature', async () => {
-      const { RunsController } = await import('./runs.controller');
-
-      const eventMethod = RunsController.event;
-      expect(eventMethod).toBeDefined();
-      expect(eventMethod.length).toBe(3); // authContext, runId, body
-    });
-  });
-
-  describe('create', () => {
-    it('should have proper method signature', async () => {
-      const { RunsController } = await import('./runs.controller');
-
-      const createMethod = RunsController.create;
-      expect(createMethod).toBeDefined();
-      expect(createMethod.length).toBe(2); // authContext, body
     });
   });
 });

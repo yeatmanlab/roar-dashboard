@@ -73,15 +73,39 @@ export function RunEventsService({
         context: { runId, type: body.type },
       });
     }
-    await assertRunOwnedByUser(runId, authContext.userId);
 
-    await runsRepository.update({
-      id: runId,
-      data: {
-        abortedAt: body.abortedAt,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-    });
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
+
+      await runsRepository.update({
+        id: runId,
+        data: {
+          abortedAt: body.abortedAt,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+            abortedAt: body.abortedAt,
+          },
+        },
+        'Failed to abort run',
+      );
+
+      throw new ApiError('Failed to abort run', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
+      });
+    }
   }
 
   /**
