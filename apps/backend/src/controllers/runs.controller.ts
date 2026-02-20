@@ -87,6 +87,7 @@ export const RunsController = {
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
       throw error;
