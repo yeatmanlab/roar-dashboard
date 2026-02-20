@@ -4,6 +4,7 @@ import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';
 import { RunEventsService } from '../services/run/run-events.service';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
 import type { AuthContext } from '../types/auth-context';
 
 const runService = RunService();
@@ -59,7 +60,19 @@ export const RunsController = {
    */
   event: async (authContext: AuthContext, runId: string, body: RunEventBody) => {
     try {
-      await runEventsService.completeRun(authContext, runId, body);
+      const eventType = (body as { type?: unknown }).type;
+      if (eventType === 'complete') {
+        await runEventsService.completeRun(authContext, runId, body);
+      } else if (eventType === 'abort') {
+        await runEventsService.abortRun(authContext, runId, body);
+      } else {
+        // Should never happen due to contract validation, but defense-in-depth:
+        throw new ApiError('Invalid event type', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { runId, type: eventType },
+        });
+      }
 
       return {
         status: StatusCodes.OK as const,

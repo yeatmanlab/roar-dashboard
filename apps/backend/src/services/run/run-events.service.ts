@@ -52,6 +52,63 @@ export function RunEventsService({
   }
 
   /**
+   * Marks a run as aborted.
+   *
+   * Validates the event type, verifies user ownership, and updates the run's
+   * abort status with the provided abort timestamp. Currently only supports 'abort' event type.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param runId - UUID of the run to abort
+   * @param body - Event body containing type and abortedAt timestamp
+   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
+   * @throws ApiError with NOT_FOUND (404) if run doesn't exist
+   * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
+   * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
+   */
+  async function abortRun(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
+    if (body.type !== 'abort') {
+      throw new ApiError('Invalid event type', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { runId, type: body.type },
+      });
+    }
+
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
+
+      await runsRepository.update({
+        id: runId,
+        data: {
+          abortedAt: body.abortedAt,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+            abortedAt: body.abortedAt,
+          },
+        },
+        'Failed to abort run',
+      );
+
+      throw new ApiError('Failed to abort run', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Marks a run as complete.
    *
    * Validates the event type, verifies user ownership, and updates the run's
@@ -110,5 +167,5 @@ export function RunEventsService({
     }
   }
 
-  return { completeRun };
+  return { completeRun, abortRun };
 }

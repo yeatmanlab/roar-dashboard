@@ -77,11 +77,22 @@ export const RunCompleteEventSchema = z.object({
       }
     }),
 });
+/**
+ * Schema for a run abort event.
+ *
+ * Represents an event that marks a run as aborted.
+ * - type: Must be 'abort' (literal type for discriminated union)
+ * - abortedAt: The time the run was aborted
+ */
+export const RunAbortEventSchema = z.object({
+  type: z.literal('abort'),
+  abortedAt: z.date(),
+});
 
 /**
  * Discriminated union schema for run events.
  */
-export const RunEventBodySchema = z.discriminatedUnion('type', [RunCompleteEventSchema]);
+export const RunEventBodySchema = z.discriminatedUnion('type', [RunCompleteEventSchema, RunAbortEventSchema]);
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;
 export type CreateRunResponse = z.infer<typeof CreateRunResponseSchema>;

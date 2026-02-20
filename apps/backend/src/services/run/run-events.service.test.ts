@@ -128,8 +128,93 @@ describe('RunEventsService', () => {
 
       await runEventsService.completeRun(mockAuthContext, validRunId, bodyWithMetadata);
 
+      expect(mockRunsRepository.update).toHaveBeenCalled();
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
-      expect(updateCall.data.metadata).toEqual({ source: 'mobile', sessionId: 'sess-456' });
+      expect(updateCall.data.metadata).toEqual(bodyWithMetadata.metadata);
+    });
+  });
+
+  describe('abortRun', () => {
+    const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+    const abortedAtTime = new Date('2024-01-15T10:30:00Z');
+    const validBody = { type: 'abort' as const, abortedAt: abortedAtTime };
+
+    it('should abort a run successfully', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
+
+      expect(mockRunsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
+    });
+
+    it('should abort a run with different abortedAt time', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockResolvedValue(undefined);
+
+      const differentTime = new Date('2024-01-15T11:45:00Z');
+      const bodyWithDifferentTime = {
+        type: 'abort' as const,
+        abortedAt: differentTime,
+      };
+
+      await runEventsService.abortRun(mockAuthContext, validRunId, bodyWithDifferentTime);
+
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.id).toBe(validRunId);
+      expect(updateCall.data.abortedAt).toBe(differentTime);
+    });
+
+    it('should throw NOT_FOUND when run does not exist', async () => {
+      mockRunsRepository.getById.mockResolvedValue(null);
+
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when user does not own the run', async () => {
+      const mockRun = { id: validRunId, userId: 'different-user' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw BAD_REQUEST when event type is invalid', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const invalidBody = { type: 'invalid' } as any;
+
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, invalidBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+
+      expect(mockRunsRepository.getById).not.toHaveBeenCalled();
+      expect(mockRunsRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should set abortedAt timestamp', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.abortRun(mockAuthContext, validRunId, validBody);
+
+      const updateCall = mockRunsRepository.update.mock.calls[0][0];
+      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
 
     it('should return 500 when database update fails', async () => {
@@ -137,7 +222,7 @@ describe('RunEventsService', () => {
       mockRunsRepository.getById.mockResolvedValue(mockRun);
       mockRunsRepository.update.mockRejectedValue(new Error('Database connection lost'));
 
-      await expect(runEventsService.completeRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
@@ -152,7 +237,7 @@ describe('RunEventsService', () => {
       });
       mockRunsRepository.update.mockRejectedValue(apiError);
 
-      await expect(runEventsService.completeRun(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
     });
   });
 });
