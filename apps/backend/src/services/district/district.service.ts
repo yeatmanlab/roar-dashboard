@@ -29,6 +29,13 @@ export interface GetByIdOptions {
 }
 
 /**
+ * Option for getting administration statistics for a district.
+ */
+export interface GetAdministrationStatsOptions {
+  taskId?: string | undefined;
+}
+
+/**
  * District with optional embedded data.
  */
 export interface DistrictWithEmbeds extends DistrictWithCounts {
@@ -166,9 +173,39 @@ export function DistrictService({
     return district;
   }
 
+  /**
+   * Get administration statistics for this district.
+   *
+   * Enforces access control:
+   * - Super admins can access any district or administration.
+   * - Regular users can only access districts where they have active
+   *   membership AND are able to see the requested administration per
+   *   the org hierarchy rules.
+   *
+   * @param districtId - District UUID
+   * @param administrationId - Administration UUID
+   * @param authContext - Authenticated user context
+   * @param options - Optional query parameters
+   * @returns Administration statistics for this district
+   */
+  async function getAdministrationStatsById(
+    districtId: string,
+    administrationId: string,
+    authContext: AuthContext,
+    options: GetAdministrationStatsOptions = {},
+  ) {
+    // 1. Pull info out from authContext
+    const { userId } = authContext;
+    // 2. Validate that the user has access to the district
+
+    // 3. Validate that the administration is visible to the user per the org hierarchy rules
+    // 4. Fetch the administration stats
+  }
+
   return {
     list,
     getById,
+    getAdministrationStatsById,
   };
 }
 
