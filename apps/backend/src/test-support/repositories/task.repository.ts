@@ -10,8 +10,7 @@ import type { TaskRepository } from '../../repositories/task.repository';
  */
 export function createMockTaskRepository(): MockedObject<TaskRepository> {
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(createMockBaseRepositoryMethods() as any),
+    ...createMockBaseRepositoryMethods(),
     getBySlug: vi.fn(),
   } as MockedObject<TaskRepository>;
 }
