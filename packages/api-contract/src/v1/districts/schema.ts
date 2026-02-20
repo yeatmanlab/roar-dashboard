@@ -5,6 +5,7 @@ import {
   createEmbedQuerySchema,
   createPaginatedResponseSchema,
 } from '../common/query';
+import { AdministrationStatsSchema } from '../administrations';
 
 /**
  * District location schema.
@@ -108,18 +109,6 @@ export const TaskStatsSchema = z.object({
 });
 
 /**
- * Base District-level Administrations Stats Schema
- */
-export const DistrictAdministrationStatsSchema = z.object({
-  assigned: z.number().int(),
-  started: z.number().int(),
-  completed: z.number().int(),
-  byTask: z.record(z.string().uuid(), TaskStatsSchema),
-});
-
-export type DistrictAdministrationStats = z.infer<typeof DistrictAdministrationStatsSchema>;
-
-/**
  * Full district detail schema with optional embedded data.
  * Supports both counts (for list) and children (for detail) embeds.
  */
@@ -213,4 +202,8 @@ export type DistrictAdministrationStatsQuery = z.infer<typeof DistrictAdministra
 /**
  * Response for single district-level administration statistics object.
  */
-export const DistrictAdministrationStatsResponseSchema = z.object({});
+export const DistrictAdministrationStatsResponseSchema = AdministrationStatsSchema.extend({
+  byTask: z.record(z.string().uuid(), TaskStatsSchema),
+});
+
+export type DistrictAdministrationStatsResponse = z.infer<typeof DistrictAdministrationStatsResponseSchema>;
