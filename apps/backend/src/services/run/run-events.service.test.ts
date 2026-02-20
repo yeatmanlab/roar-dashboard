@@ -4,6 +4,8 @@ import { RunEventsService } from './run-events.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 
+vi.mock('../../logger');
+
 /**
  * RunEventsService Tests
  *
@@ -213,6 +215,29 @@ describe('RunEventsService', () => {
 
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
       expect(updateCall.data.abortedAt).toBe(abortedAtTime);
+    });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockRejectedValue(new Error('Database connection lost'));
+
+      await expect(runEventsService.completeRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError exceptions', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockRunsRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.completeRun(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
     });
   });
 });
