@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { AuthContext } from '../../types/auth-context';
 // import { logger } from '../../logger';
-import { createMockTaskRepository } from '../../test-support/repositories/task.repository';
-import { createMockTaskVariantRepository } from '../../test-support/repositories/task-variant.repository';
-import { createMockTaskVariantParameterRepository } from '../../test-support/repositories/task-variant-parameter.repository';
+import {
+  createMockTaskRepository,
+  createMockTaskVariantRepository,
+  createMockTaskVariantParameterRepository,
+} from '../../test-support/repositories';
 import { TaskFactory } from '../../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../../test-support/factories/task-variant.factory';
 import { TaskVariantParameterFactory } from '../../test-support/factories/task-variant-parameter.factory';

@@ -209,6 +209,9 @@ export interface IBaseRepository<TEntity, TInsert = TEntity> {
   /** Creates a new entity in the repository. */
   create(params: BaseCreateParams<TInsert>): Promise<{ id: string }>;
 
+  /** Creates multiple entities in the repository. */
+  createMany(params: BaseCreateManyParams<TInsert>): Promise<{ id: string }[]>;
+
   /** Updates an existing entity in the repository. */
   update(params: BaseUpdateParams<TInsert>): Promise<void>;
 
