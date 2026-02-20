@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 
-import { getSupportLevel, getRawScoreRange } from '@/helpers/reports';
+import { getSupportLevel, getRawScoreRange, getPaSkillsToWorkOn } from '@/helpers/reports';
 
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
@@ -24,27 +24,12 @@ vi.mock('@/helpers/reports', () => ({
   }),
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
-  getPaSkillsToWorkOn: vi.fn((scores) => {
-    const threshold = (15 / 19) * 100;
-    const legacyThreshold = 15;
-    const subtasks = [
-      { key: 'FSM', label: 'First Sound Matching' },
-      { key: 'LSM', label: 'Last Sound Matching' },
-      { key: 'DEL', label: 'Deletion' },
-    ];
-    const skills = [];
-    for (const { key, label } of subtasks) {
-      const subtask = scores?.[key];
-      let needsWork = false;
-      if (subtask?.percentCorrect != null) {
-        needsWork = subtask.percentCorrect < threshold;
-      } else if (subtask?.roarScore != null) {
-        needsWork = subtask.roarScore < legacyThreshold;
-      }
-      if (needsWork) skills.push(label);
-    }
-    return skills;
-  }),
+  getPaSkillsToWorkOn: vi.fn().mockReturnValue([]),
+  PA_SUBTASK_I18N_KEYS: {
+    FSM: 'scoreReports.firstSoundMatching',
+    LSM: 'scoreReports.lastSoundMatching',
+    DEL: 'scoreReports.deletion',
+  },
   getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
   getScoreValue: vi.fn().mockImplementation((scoresObject, taskId, grade, fieldType) => {
     // Return the actual field value from the scores object if it exists
@@ -567,6 +552,7 @@ describe('ScoreReportService', () => {
     });
 
     it('should handle PA task with special score processing', () => {
+      getPaSkillsToWorkOn.mockReturnValue(['FSM', 'DEL']);
       const taskData = [
         {
           taskId: 'pa',
@@ -578,9 +564,9 @@ describe('ScoreReportService', () => {
               percentileScore: 65,
               standardScore: 95,
             },
-            FSM: { roarScore: 10 }, // Below 15 threshold (legacy fallback)
-            LSM: { roarScore: 20 }, // Above 15 threshold (legacy fallback)
-            DEL: { roarScore: 8 }, // Below 15 threshold (legacy fallback)
+            FSM: { roarScore: 10 },
+            LSM: { roarScore: 20 },
+            DEL: { roarScore: 8 },
           },
         },
       ];
@@ -601,6 +587,7 @@ describe('ScoreReportService', () => {
     });
 
     it('should handle PA task with all skills above threshold', () => {
+      getPaSkillsToWorkOn.mockReturnValue([]);
       const taskData = [
         {
           taskId: 'pa',
@@ -612,9 +599,9 @@ describe('ScoreReportService', () => {
               percentileScore: 85,
               standardScore: 110,
             },
-            FSM: { roarScore: 20 }, // Above 15 threshold (legacy fallback)
-            LSM: { roarScore: 18 }, // Above 15 threshold (legacy fallback)
-            DEL: { roarScore: 22 }, // Above 15 threshold (legacy fallback)
+            FSM: { roarScore: 20 },
+            LSM: { roarScore: 18 },
+            DEL: { roarScore: 22 },
           },
         },
       ];
@@ -632,6 +619,7 @@ describe('ScoreReportService', () => {
     });
 
     it('should handle PA task with LSM skill below threshold', () => {
+      getPaSkillsToWorkOn.mockReturnValue(['LSM']);
       const taskData = [
         {
           taskId: 'pa',
@@ -643,9 +631,9 @@ describe('ScoreReportService', () => {
               percentileScore: 65,
               standardScore: 95,
             },
-            FSM: { roarScore: 20 }, // Above 15 threshold (legacy fallback)
-            LSM: { roarScore: 10 }, // Below 15 threshold (legacy fallback)
-            DEL: { roarScore: 18 }, // Above 15 threshold (legacy fallback)
+            FSM: { roarScore: 20 },
+            LSM: { roarScore: 10 },
+            DEL: { roarScore: 18 },
           },
         },
       ];
@@ -661,12 +649,10 @@ describe('ScoreReportService', () => {
       // Verify that LSM-specific translations were called
       expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.lastSoundMatching');
       expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.skillsToWorkOn');
-
-      // Since only LSM is below threshold, skills to work on should include LSM
-      // The actual skills array logic is tested through the i18n calls
     });
 
     it('should handle PA task with adaptive scoring using percentCorrect', () => {
+      getPaSkillsToWorkOn.mockReturnValue(['FSM', 'DEL']);
       const taskData = [
         {
           taskId: 'pa',
@@ -678,9 +664,9 @@ describe('ScoreReportService', () => {
               percentileScore: 65,
               standardScore: 95,
             },
-            FSM: { roarScore: 16, percentCorrect: 75 }, // 75% < ~78.9% → needs work
-            LSM: { roarScore: 18, percentCorrect: 83.3 }, // 83.3% > ~78.9% → ok
-            DEL: { roarScore: 14, percentCorrect: 71.4 }, // 71.4% < ~78.9% → needs work
+            FSM: { roarScore: 16, percentCorrect: 75 },
+            LSM: { roarScore: 18, percentCorrect: 83.3 },
+            DEL: { roarScore: 14, percentCorrect: 71.4 },
           },
         },
       ];

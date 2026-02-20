@@ -886,7 +886,7 @@ describe('reports', () => {
           LSM: { percentCorrect: 60 },
           DEL: { percentCorrect: 70 },
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Last Sound Matching', 'Deletion']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'LSM', 'DEL']);
       });
 
       it('should flag no subtasks when all are above threshold', () => {
@@ -904,7 +904,7 @@ describe('reports', () => {
           LSM: { percentCorrect: 85 }, // above
           DEL: { percentCorrect: 60 }, // below
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Deletion']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'DEL']);
       });
 
       it('should treat percentCorrect exactly at threshold as not needing work', () => {
@@ -922,7 +922,7 @@ describe('reports', () => {
           LSM: { percentCorrect: 50, roarScore: 20 }, // percentCorrect below → needs work (roarScore would say ok)
           DEL: { percentCorrect: 90, roarScore: 8 }, // percentCorrect above → ok
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['Last Sound Matching']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['LSM']);
       });
     });
 
@@ -933,7 +933,7 @@ describe('reports', () => {
           LSM: { roarScore: 8 },
           DEL: { roarScore: 12 },
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Last Sound Matching', 'Deletion']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'LSM', 'DEL']);
       });
 
       it('should flag no subtasks when all are at or above legacy threshold', () => {
@@ -951,7 +951,7 @@ describe('reports', () => {
           LSM: { roarScore: 20 },
           DEL: { roarScore: 8 },
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching', 'Deletion']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'DEL']);
       });
 
       it('should treat roarScore exactly at legacy threshold as not needing work', () => {
@@ -982,7 +982,7 @@ describe('reports', () => {
           FSM: { roarScore: 10 },
           // LSM and DEL missing
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
       });
 
       it('should handle subtask with neither percentCorrect nor roarScore', () => {
@@ -991,7 +991,7 @@ describe('reports', () => {
           LSM: { roarScore: 10 },
           DEL: { percentCorrect: 90 },
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['Last Sound Matching']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['LSM']);
       });
 
       it('should handle percentCorrect of 0 as needing work', () => {
@@ -1000,7 +1000,7 @@ describe('reports', () => {
           LSM: { percentCorrect: 90 },
           DEL: { percentCorrect: 90 },
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
       });
 
       it('should handle roarScore of 0 as needing work', () => {
@@ -1009,7 +1009,7 @@ describe('reports', () => {
           LSM: { roarScore: 18 },
           DEL: { roarScore: 16 },
         };
-        expect(getPaSkillsToWorkOn(scores)).toEqual(['First Sound Matching']);
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
       });
     });
   });

@@ -457,7 +457,9 @@ import {
   roamFluencyTasks,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
+  PA_SUBTASK_I18N_KEYS,
 } from '@/helpers/reports';
+import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
@@ -1207,7 +1209,8 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (taskId === 'pa' && assessment.scores) {
           const computedScores = _get(assessment, 'scores.computed');
-          const skills = getPaSkillsToWorkOn(computedScores);
+          const skillKeys = getPaSkillsToWorkOn(computedScores);
+          const translatedSkills = skillKeys.map((key) => i18n.global.t(PA_SUBTASK_I18N_KEYS[key]));
           const formatPaSubtaskScore = (subtaskKey) => {
             const pct = _get(computedScores, `${subtaskKey}.percentCorrect`);
             if (pct != null) return `${Math.round(pct)}%`;
@@ -1217,7 +1220,8 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].lastSound = formatPaSubtaskScore('LSM');
           currRowScores[taskId].deletion = formatPaSubtaskScore('DEL');
           currRowScores[taskId].total = _get(computedScores, 'composite.roarScore');
-          currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
+          currRowScores[taskId].skills =
+            translatedSkills.length > 0 ? translatedSkills.join(', ') : i18n.global.t('scoreReports.none');
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');

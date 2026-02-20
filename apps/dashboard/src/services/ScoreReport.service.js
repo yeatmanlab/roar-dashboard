@@ -10,6 +10,7 @@ import {
   getScoreValue,
   tasksToDisplayPercentCorrect,
   getPaSkillsToWorkOn,
+  PA_SUBTASK_I18N_KEYS,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -119,12 +120,16 @@ const ScoreReportService = (() => {
       const fsm = formatPaSubtaskScore(scores?.FSM);
       const lsm = formatPaSubtaskScore(scores?.LSM);
       const del = formatPaSubtaskScore(scores?.DEL);
-      const skills = getPaSkillsToWorkOn(scores);
+      const skillKeys = getPaSkillsToWorkOn(scores);
+      const translatedSkills = skillKeys.map((key) => i18n.t(PA_SUBTASK_I18N_KEYS[key]));
 
       formattedScoresArray.push([i18n.t('scoreReports.firstSoundMatching'), fsm]);
       formattedScoresArray.push([i18n.t('scoreReports.lastSoundMatching'), lsm]);
       formattedScoresArray.push([i18n.t('scoreReports.deletion'), del]);
-      formattedScoresArray.push([i18n.t('scoreReports.skillsToWorkOn'), skills.join(', ') || 'None']);
+      formattedScoresArray.push([
+        i18n.t('scoreReports.skillsToWorkOn'),
+        translatedSkills.join(', ') || i18n.t('scoreReports.none'),
+      ]);
     }
 
     if (taskId === 'letter' || taskId === 'letter-en-ca') {

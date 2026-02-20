@@ -536,16 +536,19 @@ export const PA_SKILL_THRESHOLD = (15 / 19) * 100;
 export const PA_SKILL_LEGACY_THRESHOLD = 15;
 
 /**
- * PA subtask definitions mapping score keys to display labels.
- * Follows the SCORE_FIELD_MAPPINGS pattern for new/legacy field resolution:
- *   - new: 'percentCorrect' (0-100 scale, compared against PA_SKILL_THRESHOLD)
- *   - legacy: 'roarScore' (raw count, compared against PA_SKILL_LEGACY_THRESHOLD)
+ * PA subtask keys used for score lookups and threshold checks.
  */
-const PA_SUBTASKS = [
-  { key: 'FSM', label: 'First Sound Matching' },
-  { key: 'LSM', label: 'Last Sound Matching' },
-  { key: 'DEL', label: 'Deletion' },
-];
+const PA_SUBTASK_KEYS = ['FSM', 'LSM', 'DEL'];
+
+/**
+ * Mapping from PA subtask keys to i18n translation keys.
+ * Callers should use this to translate the keys returned by getPaSkillsToWorkOn.
+ */
+export const PA_SUBTASK_I18N_KEYS = {
+  FSM: 'scoreReports.firstSoundMatching',
+  LSM: 'scoreReports.lastSoundMatching',
+  DEL: 'scoreReports.deletion',
+};
 
 /**
  * Determines which PA subtask skills need work based on proportion correct.
@@ -556,12 +559,12 @@ const PA_SUBTASKS = [
  *   Each subtask may have:
  *     - percentCorrect {number} (new) – percent correct (0-100), compared against PA_SKILL_THRESHOLD
  *     - roarScore {number} (legacy) – raw correct count, compared against PA_SKILL_LEGACY_THRESHOLD
- * @returns {string[]} Array of skill labels that need work, e.g. ['First Sound Matching', 'Deletion']
+ * @returns {string[]} Array of subtask keys that need work, e.g. ['FSM', 'DEL']
  */
 export function getPaSkillsToWorkOn(scores) {
   const skills = [];
 
-  for (const { key, label } of PA_SUBTASKS) {
+  for (const key of PA_SUBTASK_KEYS) {
     const subtask = scores?.[key];
 
     let needsWork = false;
@@ -572,7 +575,7 @@ export function getPaSkillsToWorkOn(scores) {
     }
 
     if (needsWork) {
-      skills.push(label);
+      skills.push(key);
     }
   }
 
