@@ -16,6 +16,7 @@ import { vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
 // Shared Firebase Admin mocks (vi.mock calls are hoisted)
 import './src/test-support/mocks/firebase-admin.mock';
+import './src/test-support/mocks/logger.mock';
 
 // Check if running integration tests (set via env in vitest.config.ts)
 const isIntegrationTest = process.env.VITEST_PROJECT === 'integration';
