@@ -574,5 +574,31 @@ describe('RunEventsService', () => {
       expect(updateCall.data.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
       expect(updateCall.data.updatedAt.getTime()).toBeLessThanOrEqual(afterCall.getTime());
     });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+
+      const dbError = new Error('Database connection lost');
+      mockRunsRepository.update.mockRejectedValue(dbError);
+
+      await expect(runEventsService.updateEngagement(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError when thrown during update', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockRunsRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.updateEngagement(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
+    });
   });
 });

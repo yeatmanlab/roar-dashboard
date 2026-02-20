@@ -85,16 +85,39 @@ export function RunEventsService({
       });
     }
 
-    await assertRunOwnedByUser(runId, authContext.userId);
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
 
-    await runsRepository.update({
-      id: runId,
-      data: {
-        updatedAt: new Date(),
-        engagementFlags: body.engagement_flags,
-        reliableRun: body.reliable_run,
-      },
-    });
+      await runsRepository.update({
+        id: runId,
+        data: {
+          updatedAt: new Date(),
+          engagementFlags: body.engagement_flags,
+          reliableRun: body.reliable_run,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+          },
+        },
+        'Failed to update engagement',
+      );
+
+      throw new ApiError('Failed to update engagement', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
+      });
+    }
   }
 
   /**
