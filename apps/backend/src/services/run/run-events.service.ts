@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import type { RunEventBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { logger } from '../../logger';
 import { RunsRepository } from '../../repositories/runs.repository';
 import type { AuthContext } from '../../types/auth-context';
 
@@ -73,17 +74,40 @@ export function RunEventsService({
       });
     }
 
-    await assertRunOwnedByUser(runId, authContext.userId);
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
 
-    const now = new Date();
+      const now = new Date();
 
-    await runsRepository.update({
-      id: runId,
-      data: {
-        completedAt: now,
-        ...(body.metadata ? { metadata: body.metadata } : {}),
-      },
-    });
+      await runsRepository.update({
+        id: runId,
+        data: {
+          completedAt: now,
+          ...(body.metadata ? { metadata: body.metadata } : {}),
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+          },
+        },
+        'Failed to complete run',
+      );
+
+      throw new ApiError('Failed to complete run', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
+      });
+    }
   }
 
   return { completeRun };
