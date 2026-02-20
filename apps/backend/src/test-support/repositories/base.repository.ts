@@ -6,8 +6,7 @@ import { vi } from 'vitest';
  */
 export function createMockBaseRepositoryMethods() {
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getById: vi.fn() as any,
+    getById: vi.fn(),
     get: vi.fn(),
     getAll: vi.fn(),
     create: vi.fn(),
