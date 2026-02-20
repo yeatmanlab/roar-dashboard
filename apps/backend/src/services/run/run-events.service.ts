@@ -84,46 +84,69 @@ export function RunEventsService({
       });
     }
 
-    await assertRunOwnedByUser(runId, authContext.userId);
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
 
-    // Defense-in-depth (contract already checks required fields)
-    if (!body.trial?.assessment_stage || typeof body.trial.correct !== 'boolean') {
-      throw new ApiError('Malformed trial payload', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { runId },
+      // Defense-in-depth (contract already checks required fields)
+      if (!body.trial?.assessment_stage || typeof body.trial.correct !== 'number') {
+        throw new ApiError('Malformed trial payload', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { runId },
+        });
+      }
+
+      await runTrialsRepository.runTransaction({
+        fn: async (tx) => {
+          const createdTrial = await runTrialsRepository.create({
+            data: {
+              runId,
+              assessmentStage: body.trial.assessment_stage,
+              correct: body.trial.correct,
+              metadata: body.trial,
+            },
+            transaction: tx,
+          });
+
+          // This part is optional
+          if (body.interactions && body.interactions.length > 0) {
+            const interactionPromises = body.interactions.map((i) =>
+              runTrialInteractionsRepository.create({
+                data: {
+                  trialId: createdTrial.id,
+                  interactionType: i.event,
+                  timeMs: i.time_ms,
+                },
+                transaction: tx,
+              }),
+            );
+
+            await Promise.all(interactionPromises);
+          }
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+          },
+        },
+        'Failed to write trial',
+      );
+
+      throw new ApiError('Failed to write trial', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
       });
     }
-
-    await runTrialsRepository.runTransaction({
-      fn: async (tx) => {
-        const createdTrial = await runTrialsRepository.create({
-          data: {
-            runId,
-            assessmentStage: body.trial.assessment_stage,
-            correct: typeof body.trial.correct === 'boolean' ? (body.trial.correct ? 1 : 0) : body.trial.correct,
-            metadata: body.trial,
-          },
-          transaction: tx,
-        });
-
-        // This part is optional
-        if (body.interactions && body.interactions.length > 0) {
-          const interactionPromises = body.interactions.map((i) =>
-            runTrialInteractionsRepository.create({
-              data: {
-                trialId: createdTrial.id,
-                interactionType: i.event,
-                timeMs: i.time_ms,
-              },
-              transaction: tx,
-            }),
-          );
-
-          await Promise.all(interactionPromises);
-        }
-      },
-    });
   }
 
   /**
