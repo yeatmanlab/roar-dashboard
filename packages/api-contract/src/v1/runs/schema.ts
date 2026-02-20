@@ -119,7 +119,7 @@ export const RunTrialEventSchema = z.object({
   trial: z
     .object({
       assessment_stage: z.enum(['practice', 'test']),
-      correct: z.boolean().or(z.number().int().min(0).max(1)),
+      correct: z.number().int().min(0).max(1),
     })
     .passthrough(), // allow app-specific
   interactions: z.array(RunTrialInteractionSchema).optional(),

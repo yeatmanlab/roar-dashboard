@@ -4,6 +4,8 @@ import { RunEventsService } from './run-events.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 
+vi.mock('../../logger');
+
 /**
  * RunEventsService Tests
  *
@@ -143,7 +145,7 @@ describe('RunEventsService', () => {
 
       expect(mockRunsRepository.update).toHaveBeenCalled();
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
-      expect(updateCall.data.completionMetadata).toEqual(bodyWithMetadata.metadata);
+      expect(updateCall.data.metadata).toEqual(bodyWithMetadata.metadata);
     });
   });
 
@@ -229,6 +231,29 @@ describe('RunEventsService', () => {
       const updateCall = mockRunsRepository.update.mock.calls[0][0];
       expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      mockRunsRepository.update.mockRejectedValue(new Error('Database connection lost'));
+
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError exceptions', async () => {
+      const mockRun = { id: validRunId, userId: 'user-123' };
+      mockRunsRepository.getById.mockResolvedValue(mockRun);
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockRunsRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.abortRun(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
+    });
   });
 
   describe('writeTrial', () => {
@@ -236,8 +261,8 @@ describe('RunEventsService', () => {
     const validBody = {
       type: 'trial' as const,
       trial: {
-        assessment_stage: 'stage-1',
-        correct: true,
+        assessment_stage: 'test' as const,
+        correct: 1,
       },
     };
 
@@ -260,7 +285,7 @@ describe('RunEventsService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             runId: validRunId,
-            assessmentStage: 'stage-1',
+            assessmentStage: 'test',
             correct: 1,
           }),
         }),
@@ -310,7 +335,7 @@ describe('RunEventsService', () => {
       const malformedBody = {
         type: 'trial' as const,
         trial: {
-          correct: true,
+          correct: 1,
         },
       };
 
@@ -332,7 +357,7 @@ describe('RunEventsService', () => {
       const malformedBody = {
         type: 'trial' as const,
         trial: {
-          assessment_stage: 'stage-1',
+          assessment_stage: 'test',
         },
       };
 
@@ -354,8 +379,8 @@ describe('RunEventsService', () => {
       const bodyWithInteractions = {
         type: 'trial' as const,
         trial: {
-          assessment_stage: 'stage-1',
-          correct: true,
+          assessment_stage: 'practice' as const,
+          correct: 1,
         },
         interactions: [
           { event: 'focus', trial_id: 0, time_ms: 100 },
@@ -388,58 +413,30 @@ describe('RunEventsService', () => {
       );
     });
 
-    it('should convert boolean correct to integer (true -> 1)', async () => {
+    it('should return 500 when database transaction fails', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
 
-      const createdTrial = { id: 'trial-123' };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockRunTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
-        await fn({});
+      const dbError = new Error('Database connection lost');
+      mockRunTrialsRepository.runTransaction.mockRejectedValue(dbError);
+
+      await expect(runEventsService.writeTrial(mockAuthContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
-      mockRunTrialsRepository.create.mockResolvedValue(createdTrial);
-
-      await runEventsService.writeTrial(mockAuthContext, validRunId, validBody);
-
-      // Verify the trial was created with correct: 1
-      expect(mockRunTrialsRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            correct: 1,
-          }),
-        }),
-      );
     });
 
-    it('should convert boolean correct to integer (false -> 0)', async () => {
+    it('should re-throw ApiError when thrown during transaction', async () => {
       const mockRun = { id: validRunId, userId: 'user-123' };
       mockRunsRepository.getById.mockResolvedValue(mockRun);
 
-      const bodyWithIncorrect = {
-        type: 'trial' as const,
-        trial: {
-          assessment_stage: 'stage-1',
-          correct: false,
-        },
-      };
-
-      const createdTrial = { id: 'trial-123' };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockRunTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
-        await fn({});
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
-      mockRunTrialsRepository.create.mockResolvedValue(createdTrial);
+      mockRunTrialsRepository.runTransaction.mockRejectedValue(apiError);
 
-      await runEventsService.writeTrial(mockAuthContext, validRunId, bodyWithIncorrect);
-
-      // Verify the trial was created with correct: 0
-      expect(mockRunTrialsRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            correct: 0,
-          }),
-        }),
-      );
+      await expect(runEventsService.writeTrial(mockAuthContext, validRunId, validBody)).rejects.toBe(apiError);
     });
   });
 

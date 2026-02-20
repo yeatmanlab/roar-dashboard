@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import type { RunEventBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { logger } from '../../logger';
 import { RunsRepository } from '../../repositories/runs.repository';
 import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
@@ -121,46 +122,69 @@ export function RunEventsService({
       });
     }
 
-    await assertRunOwnedByUser(runId, authContext.userId);
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
 
-    // Defense-in-depth (contract already checks required fields)
-    if (!body.trial?.assessment_stage || typeof body.trial.correct !== 'boolean') {
-      throw new ApiError('Malformed trial payload', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { runId },
+      // Defense-in-depth (contract already checks required fields)
+      if (!body.trial?.assessment_stage || typeof body.trial.correct !== 'number') {
+        throw new ApiError('Malformed trial payload', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { runId },
+        });
+      }
+
+      await runTrialsRepository.runTransaction({
+        fn: async (tx) => {
+          const createdTrial = await runTrialsRepository.create({
+            data: {
+              runId,
+              assessmentStage: body.trial.assessment_stage,
+              correct: body.trial.correct,
+              metadata: body.trial,
+            },
+            transaction: tx,
+          });
+
+          // This part is optional
+          if (body.interactions && body.interactions.length > 0) {
+            const interactionPromises = body.interactions.map((i) =>
+              runTrialInteractionsRepository.create({
+                data: {
+                  trialId: createdTrial.id,
+                  interactionType: i.event,
+                  timeMs: i.time_ms,
+                },
+                transaction: tx,
+              }),
+            );
+
+            await Promise.all(interactionPromises);
+          }
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+          },
+        },
+        'Failed to write trial',
+      );
+
+      throw new ApiError('Failed to write trial', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
       });
     }
-
-    await runTrialsRepository.runTransaction({
-      fn: async (tx) => {
-        const createdTrial = await runTrialsRepository.create({
-          data: {
-            runId,
-            assessmentStage: body.trial.assessment_stage,
-            correct: typeof body.trial.correct === 'boolean' ? (body.trial.correct ? 1 : 0) : body.trial.correct,
-            metadata: body.trial,
-          },
-          transaction: tx,
-        });
-
-        // This part is optional
-        if (body.interactions && body.interactions.length > 0) {
-          const interactionPromises = body.interactions.map((i) =>
-            runTrialInteractionsRepository.create({
-              data: {
-                trialId: createdTrial.id,
-                interactionType: i.event,
-                timeMs: i.time_ms,
-              },
-              transaction: tx,
-            }),
-          );
-
-          await Promise.all(interactionPromises);
-        }
-      },
-    });
   }
 
   /**
@@ -185,15 +209,39 @@ export function RunEventsService({
         context: { runId, type: body.type },
       });
     }
-    await assertRunOwnedByUser(runId, authContext.userId);
 
-    await runsRepository.update({
-      id: runId,
-      data: {
-        abortedAt: body.abortedAt,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-    });
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
+
+      await runsRepository.update({
+        id: runId,
+        data: {
+          abortedAt: body.abortedAt,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+            abortedAt: body.abortedAt,
+          },
+        },
+        'Failed to abort run',
+      );
+
+      throw new ApiError('Failed to abort run', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
+      });
+    }
   }
 
   /**
@@ -219,17 +267,40 @@ export function RunEventsService({
       });
     }
 
-    await assertRunOwnedByUser(runId, authContext.userId);
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
 
-    const now = new Date();
+      const now = new Date();
 
-    await runsRepository.update({
-      id: runId,
-      data: {
-        completedAt: now,
-        ...(body.metadata ? { completionMetadata: body.metadata } : {}),
-      },
-    });
+      await runsRepository.update({
+        id: runId,
+        data: {
+          completedAt: now,
+          ...(body.metadata ? { metadata: body.metadata } : {}),
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+          },
+        },
+        'Failed to complete run',
+      );
+
+      throw new ApiError('Failed to complete run', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
+      });
+    }
   }
 
   return { completeRun, abortRun, writeTrial, updateEngagement };
