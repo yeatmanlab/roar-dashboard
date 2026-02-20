@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { logger } from '../../logger';
 import {
   MockTaskRepository,
   MockTaskVariantRepository,
@@ -17,7 +16,17 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
+import { logger } from '../../logger';
 import type { AuthContext } from '../../types/auth-context';
+
+// Mock the logger (used by the service for error handling)
+vi.mock('../../logger', () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+  },
+}));
 
 describe('TaskService', () => {
   let authContext: AuthContext;
