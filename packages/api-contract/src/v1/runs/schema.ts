@@ -88,11 +88,45 @@ export const RunAbortEventSchema = z.object({
   type: z.literal('abort'),
   abortedAt: z.date(),
 });
+/**
+ * Schema for a run trial interaction event.
+ *
+ * - event: The type of interaction (e.g., "blur", "focus")
+ * - trial_id: The ID of the trial associated with the interaction
+ * - time_ms: The time in milliseconds since the start of the trial
+ */
+export const RunTrialInteractionSchema = z.object({
+  event: z.enum(['blur', 'focus', 'fullscreen_enter', 'fullscreen_exit']),
+  trial_id: z.number().int().nonnegative(),
+  time_ms: z.number().int().nonnegative(),
+});
+/**
+ * Schema for a run write trial event.
+ *
+ * Represents an event that writes a trial.
+ * - type: Must be 'trial' (literal type for discriminated union)
+ * - trial: The trial data
+ * - interactions: Optional array of trial interactions
+ */
+export const RunTrialEventSchema = z.object({
+  type: z.literal('trial'),
+  trial: z
+    .object({
+      assessment_stage: z.enum(['practice', 'test']),
+      correct: z.number().int().min(0).max(1),
+    })
+    .passthrough(), // allow app-specific
+  interactions: z.array(RunTrialInteractionSchema).optional(),
+});
 
 /**
  * Discriminated union schema for run events.
  */
-export const RunEventBodySchema = z.discriminatedUnion('type', [RunCompleteEventSchema, RunAbortEventSchema]);
+export const RunEventBodySchema = z.discriminatedUnion('type', [
+  RunCompleteEventSchema,
+  RunAbortEventSchema,
+  RunTrialEventSchema,
+]);
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;
 export type CreateRunResponse = z.infer<typeof CreateRunResponseSchema>;
