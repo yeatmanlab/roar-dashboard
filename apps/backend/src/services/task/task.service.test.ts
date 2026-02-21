@@ -69,7 +69,7 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockTaskVariantParameterReturnValue);
 
         const mockData = {
@@ -81,7 +81,7 @@ describe('TaskService', () => {
         };
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(result).toEqual(mockTaskVariant);
         expect(taskRepository.getById).toHaveBeenCalledWith({ id: mockTask.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith({
           data: {
@@ -120,7 +120,7 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockParameterReturnValues);
 
         const mockData = {
@@ -133,7 +133,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(result).toEqual(mockTaskVariant);
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: mockParameters.map((param) => ({
             taskVariantId: mockTaskVariant.id,
@@ -165,7 +165,7 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
         const mockData = {
@@ -178,7 +178,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(result).toEqual(mockTaskVariant);
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: [
             {
@@ -219,12 +219,13 @@ describe('TaskService', () => {
     describe('validation errors', () => {
       it('should throw BAD_REQUEST when parameters array is empty', async () => {
         const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: 'variant-1' });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
 
         const mockData = {
           taskId: mockTask.id,
@@ -243,12 +244,13 @@ describe('TaskService', () => {
 
       it('should throw INTERNAL when not all parameters are created', async () => {
         const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
         taskRepository.getById.mockResolvedValue(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: 'variant-1' });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
 
         // Only 1 parameter created instead of 3
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -483,7 +485,7 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
         const mockData = {
@@ -496,7 +498,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(result).toEqual(mockTaskVariant);
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({ status: TaskVariantStatus.DEPRECATED }),
@@ -512,7 +514,7 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
         const mockData = {
@@ -525,7 +527,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(result).toEqual(mockTaskVariant);
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({ status: TaskVariantStatus.DRAFT }),
@@ -541,7 +543,7 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
         const mockData = {
@@ -554,7 +556,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(result).toEqual(mockTaskVariant);
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: [
             {
@@ -575,7 +577,7 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
         const arrayValue = ['option1', 'option2', 'option3'];
@@ -589,7 +591,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(result).toEqual(mockTaskVariant);
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: [
             {
