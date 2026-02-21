@@ -107,6 +107,15 @@ export function TaskService({
         });
       }
 
+      // Validate parameters before starting transaction to prevent creating orphaned variants
+      if (data.parameters.length === 0) {
+        throw new ApiError('At least one parameter required', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, isSuperAdmin, taskId: data.taskId },
+        });
+      }
+
       // Create the task variant and parameters within a transaction to prevent orphaned data
       const variant = await taskVariantRepository.runTransaction({
         fn: async (tx) => {
@@ -137,15 +146,6 @@ export function TaskService({
             name,
             value,
           }));
-
-          // Check if any parameters are missing
-          if (taskVariantParameterData.length === 0) {
-            throw new ApiError('At least one parameter required', {
-              statusCode: StatusCodes.BAD_REQUEST,
-              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-              context: { userId, isSuperAdmin, taskId: data.taskId },
-            });
-          }
 
           const newTaskVariantParameters = await taskVariantParameterRepository.createMany({
             data: taskVariantParameterData,
@@ -203,7 +203,34 @@ export function TaskService({
     }
   }
 
+  /**
+   * Resolves the taskId from a given taskVariantId.
+   *
+   * This method performs semantic validation of the task variant ID.
+   * If the variant ID is invalid or not found, it returns a 422 UNPROCESSABLE_ENTITY
+   * error rather than a 404 NOT_FOUND, because this is a request validation failure,
+   * not a missing resource problem.
+   *
+   * @param taskVariantId - The UUID of the task variant to resolve
+   * @returns Promise resolving to object with taskId
+   * @throws ApiError with UNPROCESSABLE_ENTITY if taskVariantId is invalid or not found
+   */
+  async function getTaskIdByVariantId(taskVariantId: string): Promise<{ taskId: string }> {
+    const variant = await taskVariantRepository.getById({ id: taskVariantId });
+
+    if (!variant) {
+      throw new ApiError('Invalid task_variant_id', {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { taskVariantId },
+      });
+    }
+
+    return { taskId: variant.taskId };
+  }
+
   return {
     createTaskVariant,
+    getTaskIdByVariantId,
   };
 }

@@ -64,6 +64,7 @@ export const RolePermissions: Partial<Record<UserRoleType, readonly Permission[]
     Permissions.Administrations.READ,
     Permissions.Tasks.LAUNCH,
     Permissions.Profile.READ,
+    Permissions.Runs.CREATE,
   ],
 };
 
