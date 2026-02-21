@@ -107,6 +107,15 @@ export function TaskService({
         });
       }
 
+      // Validate parameters before starting transaction to prevent creating orphaned variants
+      if (data.parameters.length === 0) {
+        throw new ApiError('At least one parameter required', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, isSuperAdmin, taskId: data.taskId },
+        });
+      }
+
       // Create the task variant and parameters within a transaction to prevent orphaned data
       const variant = await taskVariantRepository.runTransaction({
         fn: async (tx) => {
@@ -137,15 +146,6 @@ export function TaskService({
             name,
             value,
           }));
-
-          // Check if any parameters are missing
-          if (taskVariantParameterData.length === 0) {
-            throw new ApiError('At least one parameter required', {
-              statusCode: StatusCodes.BAD_REQUEST,
-              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-              context: { userId, isSuperAdmin, taskId: data.taskId },
-            });
-          }
 
           const newTaskVariantParameters = await taskVariantParameterRepository.createMany({
             data: taskVariantParameterData,
