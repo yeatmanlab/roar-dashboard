@@ -17,6 +17,7 @@ import type {
   AdministrationClass,
   AdministrationGroup,
   AdministrationTaskVariantItem,
+  Condition,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org, Class, Group } from '../db/schema';
 import type { TaskVariantWithAssignment, AssignmentWithOptional } from '../repositories/administration.repository';
@@ -144,8 +145,8 @@ function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskV
       tutorialVideo: item.task.tutorialVideo,
     },
     conditions: {
-      assigned_if: item.assignment.conditionsAssignment as Record<string, unknown> | null,
-      optional_if: item.assignment.conditionsRequirements as Record<string, unknown> | null,
+      assigned_if: item.assignment.conditionsAssignment as Condition | null,
+      optional_if: item.assignment.conditionsRequirements as Condition | null,
     },
   };
 }
