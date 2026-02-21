@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ConditionSchema } from '../common/condition';
 import {
   PaginationQuerySchema,
   createSortQuerySchema,
@@ -408,8 +409,8 @@ export const AdministrationTaskVariantTaskSchema = z.object({
 export const AdministrationTaskVariantConditionsSchema = z
   .object({
     // Supervisory role fields (raw conditions for client-side evaluation)
-    assigned_if: z.record(z.unknown()).nullable().optional(),
-    optional_if: z.record(z.unknown()).nullable().optional(),
+    assigned_if: ConditionSchema.nullable().optional(),
+    optional_if: ConditionSchema.nullable().optional(),
     // Supervised role field (pre-evaluated result)
     optional: z.boolean().optional(),
   })
