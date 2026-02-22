@@ -30,6 +30,18 @@ export const Permissions = {
     CREATE: 'organizations.create',
     UPDATE: 'organizations.update',
   },
+  Classes: {
+    ALL: 'classes.*',
+    LIST: 'classes.list',
+  },
+  Groups: {
+    ALL: 'groups.*',
+    LIST: 'groups.list',
+  },
+  TaskVariants: {
+    ALL: 'task_variants.*',
+    LIST: 'task_variants.list',
+  },
   Administrations: {
     ALL: 'administrations.*',
     LIST: 'administrations.list',

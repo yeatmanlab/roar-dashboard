@@ -38,7 +38,7 @@
  * });
  * ```
  */
-import type { Org, Class, Group, User, Administration } from '../../db/schema';
+import type { Org, Class, Group, User, Administration, Task, TaskVariant } from '../../db/schema';
 import { OrgType } from '../../enums/org-type.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
@@ -53,6 +53,9 @@ import { UserGroupFactory } from '../factories/user-group.factory';
 import { AdministrationOrgFactory } from '../factories/administration-org.factory';
 import { AdministrationClassFactory } from '../factories/administration-class.factory';
 import { AdministrationGroupFactory } from '../factories/administration-group.factory';
+import { TaskFactory } from '../factories/task.factory';
+import { TaskVariantFactory } from '../factories/task-variant.factory';
+import { AdministrationTaskVariantFactory } from '../factories/administration-task-variant.factory';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -95,6 +98,18 @@ import { AdministrationGroupFactory } from '../factories/administration-group.fa
  * - futureEnrollmentStudent: student at School A with future enrollment (enrollment date tests)
  * - expiredClassStudent: student in classInSchoolA with expired enrollment (enrollment date tests)
  * - futureGroupStudent: student in group with future enrollment (enrollment date tests)
+ *
+ * Demographic test users (for task variant eligibility filtering):
+ * - grade5Student: grade 5 student in district (sees variantForGrade5 and variantForAllGrades)
+ * - grade3Student: grade 3 student in district (sees variantForGrade3 and variantForAllGrades)
+ * - grade5EllStudent: grade 5 ELL student in district (variantOptionalForEll is optional for them)
+ *
+ * Tasks and Task Variants (assigned to administrationAssignedToDistrict):
+ * - task: base task for testing
+ * - variantForAllGrades: no conditions (assigned to all students)
+ * - variantForGrade5: assigned only to grade 5 students
+ * - variantForGrade3: assigned only to grade 3 students
+ * - variantOptionalForEll: optional for ELL students
  *
  * Administration assignments:
  * - administrationAssignedToDistrict: visible to all users in district hierarchy
@@ -196,6 +211,38 @@ export interface BaseFixture {
   /** Student in group with future enrollment */
   futureGroupStudent: User;
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Demographic Test Users (for task variant eligibility filtering)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /** Grade 5 student in district (sees variantForGrade5 and variantForAllGrades) */
+  grade5Student: User;
+
+  /** Grade 3 student in district (sees variantForGrade3 and variantForAllGrades) */
+  grade3Student: User;
+
+  /** Grade 5 ELL student in district (variantOptionalForEll is optional for them) */
+  grade5EllStudent: User;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TASKS & TASK VARIANTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Base task for testing task variant endpoints */
+  task: Task;
+
+  /** Variant assigned to all grades (no conditions) - orderIndex: 0 */
+  variantForAllGrades: TaskVariant;
+
+  /** Variant assigned only to grade 5 students - orderIndex: 1 */
+  variantForGrade5: TaskVariant;
+
+  /** Variant assigned only to grade 3 students - orderIndex: 2 */
+  variantForGrade3: TaskVariant;
+
+  /** Variant that is optional for ELL students - orderIndex: 3 */
+  variantOptionalForEll: TaskVariant;
+
   // ═══════════════════════════════════════════════════════════════════════════
   // ADMINISTRATIONS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -286,6 +333,10 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     futureEnrollmentStudent,
     expiredClassStudent,
     futureGroupStudent,
+    // Demographic test users
+    grade5Student,
+    grade3Student,
+    grade5EllStudent,
   ] = await Promise.all([
     UserFactory.create({ nameFirst: 'District', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Admin', userType: UserType.ADMIN }),
@@ -304,6 +355,16 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     UserFactory.create({ nameFirst: 'Future', nameLast: 'OrgStudent', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Expired', nameLast: 'ClassStudent', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'Future', nameLast: 'GroupStudent', userType: UserType.STUDENT }),
+    // Demographic test users (for task variant eligibility filtering)
+    UserFactory.create({ nameFirst: 'Grade5', nameLast: 'Student', userType: UserType.STUDENT, grade: '5' }),
+    UserFactory.create({ nameFirst: 'Grade3', nameLast: 'Student', userType: UserType.STUDENT, grade: '3' }),
+    UserFactory.create({
+      nameFirst: 'Grade5Ell',
+      nameLast: 'Student',
+      userType: UserType.STUDENT,
+      grade: '5',
+      statusEll: 'active',
+    }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -372,6 +433,14 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
       enrollmentStart: sevenDaysFromNow,
       enrollmentEnd: thirtyDaysFromNow,
     }),
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Demographic test users (for task variant eligibility filtering)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    UserOrgFactory.create({ userId: grade5Student.id, orgId: district.id, role: UserRole.STUDENT }),
+    UserOrgFactory.create({ userId: grade3Student.id, orgId: district.id, role: UserRole.STUDENT }),
+    UserOrgFactory.create({ userId: grade5EllStudent.id, orgId: district.id, role: UserRole.STUDENT }),
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -411,6 +480,53 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // Step 6: Create Tasks & Task Variants
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const task = await TaskFactory.create({ name: 'Base Fixture Task' });
+
+  const [variantForAllGrades, variantForGrade5, variantForGrade3, variantOptionalForEll] = await Promise.all([
+    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For All Grades' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 5' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 3' }),
+    TaskVariantFactory.create({ taskId: task.id, name: 'Variant Optional For ELL' }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Step 7: Assign Task Variants to District Administration
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  await Promise.all([
+    // No conditions - assigned to all students
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForAllGrades.id,
+      orderIndex: 0,
+    }),
+    // assigned_if: grade 5 only
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForGrade5.id,
+      orderIndex: 1,
+      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '5' },
+    }),
+    // assigned_if: grade 3 only
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForGrade3.id,
+      orderIndex: 2,
+      conditionsAssignment: { field: 'studentData.grade', op: 'EQUAL', value: '3' },
+    }),
+    // optional_if: ELL students (assigned to all, optional for ELL)
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantOptionalForEll.id,
+      orderIndex: 3,
+      conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
+    }),
+  ]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // Validate & Return
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -447,6 +563,18 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     futureEnrollmentStudent,
     expiredClassStudent,
     futureGroupStudent,
+
+    // Demographic test users
+    grade5Student,
+    grade3Student,
+    grade5EllStudent,
+
+    // Tasks & Task Variants
+    task,
+    variantForAllGrades,
+    variantForGrade5,
+    variantForGrade3,
+    variantOptionalForEll,
 
     // Administrations
     administrationAssignedToDistrict,
