@@ -134,14 +134,26 @@ export function DistrictService({
     authContext: AuthContext,
     options: GetByIdOptions = {},
   ): Promise<DistrictWithEmbeds> {
-    // Build access control filter
-    const accessControlFilter = {
-      userId: authContext.userId,
-      allowedRoles: rolesForPermission(Permissions.Organizations.LIST),
-    };
+    let district: DistrictWithEmbeds | null;
 
-    // Fetch district with optional embeds
-    const district = await repo.getByIdWithEmbeds(id, accessControlFilter, options.embedChildren ?? false);
+    // Super admins get unrestricted access
+    if (authContext.isSuperAdmin) {
+      district = await repo.getByIdUnrestricted(id);
+
+      // Add children if requested
+      if (district && options.embedChildren) {
+        const children = await repo.getChildren(id, false);
+        district = { ...district, children };
+      }
+    } else {
+      // Regular users need authorization checks
+      const accessControlFilter = {
+        userId: authContext.userId,
+        allowedRoles: rolesForPermission(Permissions.Organizations.LIST),
+      };
+
+      district = await repo.getByIdWithEmbeds(id, accessControlFilter, options.embedChildren ?? false);
+    }
 
     if (!district) {
       // District not found or user lacks access
