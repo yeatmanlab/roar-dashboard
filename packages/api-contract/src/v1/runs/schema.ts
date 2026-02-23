@@ -1,11 +1,5 @@
 import { z } from 'zod';
-
-const MAX_METADATA_SIZE = 1024;
-
-function jsonByteSize(value: unknown): number {
-  const json = JSON.stringify(value);
-  return new TextEncoder().encode(json).length;
-}
+import { JsonValue, parseJsonB } from '../common/parse-jsonb';
 
 /**
  * Request body for POST /runs
@@ -14,27 +8,10 @@ export const CreateRunRequestBodySchema = z.object({
   task_variant_id: z.string().uuid(),
   task_version: z.string(),
   administration_id: z.string().uuid(),
-  metadata: z
-    .record(z.unknown())
-    .optional()
-    .superRefine((metadata, context) => {
-      if (!metadata) return;
-
-      try {
-        const bytes = jsonByteSize(metadata);
-        if (bytes > MAX_METADATA_SIZE) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `metadata is too large (${bytes} bytes). Max is ${MAX_METADATA_SIZE} bytes.`,
-          });
-        }
-      } catch {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'metadata must be JSON-serializable',
-        });
-      }
-    }),
+  metadata: JsonValue.optional().superRefine((metadata, ctx) => {
+    if (!metadata) return;
+    parseJsonB(metadata, ctx);
+  }),
 });
 
 export type CreateRunRequestBody = z.infer<typeof CreateRunRequestBodySchema>;
@@ -55,27 +32,10 @@ export const CreateRunResponseSchema = z.object({
  */
 export const RunCompleteEventSchema = z.object({
   type: z.literal('complete'),
-  metadata: z
-    .record(z.unknown())
-    .optional()
-    .superRefine((metadata, context) => {
-      if (!metadata) return;
-
-      try {
-        const bytes = jsonByteSize(metadata);
-        if (bytes > MAX_METADATA_SIZE) {
-          context.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `metadata is too large (${bytes} bytes). Max is ${MAX_METADATA_SIZE} bytes.`,
-          });
-        }
-      } catch {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'metadata must be JSON-serializable',
-        });
-      }
-    }),
+  metadata: JsonValue.optional().superRefine((metadata, ctx) => {
+    if (!metadata) return;
+    parseJsonB(metadata, ctx);
+  }),
 });
 
 /**
