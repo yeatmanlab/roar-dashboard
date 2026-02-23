@@ -50,7 +50,6 @@ export interface ListAuthorizedOptions {
     direction: 'asc' | 'desc';
   };
   includeEnded?: boolean;
-  embedCounts?: boolean;
 }
 
 /**
@@ -77,8 +76,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param options - Pagination, sorting, and optional filters
    * @returns Paginated result with districts
    */
-  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<District | DistrictWithCounts>> {
-    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
+  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<District>> {
+    const { page, perPage, orderBy, includeEnded = false } = options;
 
     // Build where clause for district type and rostering status
     const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
@@ -95,30 +94,12 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Delegate to getAll() with array of order expressions (primary sort + secondary sort on ID)
-    const result = await this.getAll({
+    return this.getAll({
       page,
       perPage,
       orderBy: [sortDirection, asc(orgs.id)],
       ...(where && { where }),
     });
-
-    // Fetch and attach counts if requested
-    if (embedCounts && result.items.length > 0) {
-      const districtIds = result.items.map((d) => d.id);
-      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
-
-      const districtsWithCounts = result.items.map((district) => ({
-        ...district,
-        counts: countsMap.get(district.id),
-      })) as DistrictWithCounts[];
-
-      return {
-        items: districtsWithCounts,
-        totalItems: result.totalItems,
-      };
-    }
-
-    return result;
   }
 
   /**
@@ -136,8 +117,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   async listAuthorized(
     accessControlFilter: AccessControlFilter,
     options: ListAuthorizedOptions,
-  ): Promise<PaginatedResult<District | DistrictWithCounts>> {
-    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
+  ): Promise<PaginatedResult<District>> {
+    const { page, perPage, orderBy, includeEnded = false } = options;
     const offset = (page - 1) * perPage;
 
     // Build the UNION query for accessible org IDs using access controls
@@ -186,18 +167,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .limit(perPage)
       .offset(offset);
 
-    let districts: (District | DistrictWithCounts)[] = dataResult.map((row) => row.org as District);
-
-    // Fetch and attach counts if requested
-    if (embedCounts && districts.length > 0) {
-      const districtIds = districts.map((d) => d.id);
-      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
-
-      districts = districts.map((district) => ({
-        ...district,
-        counts: countsMap.get(district.id),
-      }));
-    }
+    const districts: District[] = dataResult.map((row) => row.org as District);
 
     return {
       items: districts,
@@ -245,52 +215,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .limit(1);
 
     return (result[0]?.org as District) ?? null;
-  }
-
-  /**
-   * Get a single district by ID with optional embeds and authorization filtering.
-   *
-   * @param id - District ID
-   * @param accessControlFilter - User ID and allowed roles
-   * @param embedChildren - Whether to include child organizations
-   * @returns District with optional children, or null if not found/no access
-   */
-  async getByIdWithEmbeds(
-    id: string,
-    accessControlFilter: AccessControlFilter,
-    embedChildren = false,
-  ): Promise<(DistrictWithCounts & { children?: Org[] }) | null> {
-    const district = await this.getAuthorizedById(id, accessControlFilter);
-
-    if (!district) {
-      return null;
-    }
-
-    if (embedChildren) {
-      const children = await this.getChildren(id, false);
-      return { ...district, children };
-    }
-
-    return district;
-  }
-
-  /**
-   * Get child organizations of a district.
-   *
-   * @param districtId - Parent district ID
-   * @param includeEnded - Whether to include organizations with rosteringEnded set
-   * @returns List of child organizations
-   */
-  async getChildren(districtId: string, includeEnded = false): Promise<Org[]> {
-    const whereConditions: SQL[] = [eq(orgs.parentOrgId, districtId)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
-
-    return this.db.select().from(orgs).where(where).orderBy(asc(orgs.name));
   }
 
   /**

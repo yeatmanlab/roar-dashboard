@@ -1,5 +1,4 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Org } from '../../db/schema';
 import { DistrictRepository, type DistrictWithCounts } from '../../repositories/district.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
@@ -22,18 +21,9 @@ export interface ListOptions {
 }
 
 /**
- * Options for getting a district by ID.
- */
-export interface GetByIdOptions {
-  embedChildren?: boolean;
-}
-
-/**
  * District with optional embedded data.
  */
-export interface DistrictWithEmbeds extends DistrictWithCounts {
-  children?: Org[];
-}
+export type DistrictWithEmbeds = DistrictWithCounts;
 
 /**
  * District Service
@@ -83,21 +73,27 @@ export function DistrictService({
             queryParams,
           );
 
-      // Handle embed orchestration: fetch counts if requested
-      if (options.embedCounts && result.items.length > 0) {
-        const districtIds = result.items.map((d) => d.id);
-        const countsMap = await repo.fetchDistrictCounts(districtIds, options.includeEnded ?? false);
-
-        return {
-          items: result.items.map((district) => ({
-            ...district,
-            counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
-          })),
-          totalItems: result.totalItems,
-        };
+      // If counts not requested, return as-is
+      if (!options.embedCounts) {
+        return result;
       }
 
-      return result;
+      // Early return if no items to embed data onto
+      if (result.items.length === 0) {
+        return result;
+      }
+
+      // Fetch and attach counts
+      const districtIds = result.items.map((d) => d.id);
+      const countsMap = await repo.fetchDistrictCounts(districtIds, options.includeEnded ?? false);
+
+      return {
+        items: result.items.map((district) => ({
+          ...district,
+          counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
+        })),
+        totalItems: result.totalItems,
+      };
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -115,7 +111,7 @@ export function DistrictService({
   }
 
   /**
-   * Get a district by ID with optional embeds.
+   * Get a district by ID.
    *
    * Enforces access control:
    * - Super admins can access any district
@@ -123,28 +119,16 @@ export function DistrictService({
    *
    * @param id - District UUID
    * @param authContext - Authenticated user context
-   * @param options - Optional embeds (children)
-   * @returns District with optional embeds
-   * @throws ApiError 400 if ID is invalid UUID format
+   * @returns District
    * @throws ApiError 403 if user lacks access to the district
    * @throws ApiError 404 if district not found or not a district type
    */
-  async function getById(
-    id: string,
-    authContext: AuthContext,
-    options: GetByIdOptions = {},
-  ): Promise<DistrictWithEmbeds> {
+  async function getById(id: string, authContext: AuthContext): Promise<DistrictWithEmbeds> {
     let district: DistrictWithEmbeds | null;
 
     // Super admins get unrestricted access
     if (authContext.isSuperAdmin) {
       district = await repo.getByIdUnrestricted(id);
-
-      // Add children if requested
-      if (district && options.embedChildren) {
-        const children = await repo.getChildren(id, false);
-        district = { ...district, children };
-      }
     } else {
       // Regular users need authorization checks
       const accessControlFilter = {
@@ -152,13 +136,13 @@ export function DistrictService({
         allowedRoles: rolesForPermission(Permissions.Organizations.LIST),
       };
 
-      district = await repo.getByIdWithEmbeds(id, accessControlFilter, options.embedChildren ?? false);
+      district = await repo.getAuthorizedById(id, accessControlFilter);
     }
 
     if (!district) {
       // District not found or user lacks access
       // We don't distinguish between these cases for security reasons
-      logger.warn(`District not found or access denied: ${id} for user ${authContext.userId}`);
+      logger.warn({ districtId: id, userId: authContext.userId }, 'District not found or access denied');
       throw new ApiError('District not found', {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,

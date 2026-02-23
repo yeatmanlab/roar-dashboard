@@ -40,7 +40,7 @@ export const DistrictsContract = c.router(
     },
 
     /**
-     * Get a single district by ID with optional embedding.
+     * Get a single district by ID.
      */
     getById: {
       method: 'GET',
@@ -51,15 +51,13 @@ export const DistrictsContract = c.router(
       query: DistrictGetQuerySchema,
       responses: {
         200: SuccessEnvelopeSchema(DistrictGetResponseSchema),
-        400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
-        403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'Get district by ID',
-      description: 'Retrieve detailed information for a specific district by ID with optional child embedding',
+      description: 'Retrieve detailed information for a specific district by ID',
     },
   },
   { pathPrefix: '/districts' },

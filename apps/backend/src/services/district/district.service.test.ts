@@ -7,13 +7,11 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
 
 // Mock repository
-const mockGetByIdWithEmbeds = vi.fn();
+const mockGetAuthorizedById = vi.fn();
 const mockGetByIdUnrestricted = vi.fn();
-const mockGetChildren = vi.fn();
 const mockDistrictRepository = {
-  getByIdWithEmbeds: mockGetByIdWithEmbeds,
+  getAuthorizedById: mockGetAuthorizedById,
   getByIdUnrestricted: mockGetByIdUnrestricted,
-  getChildren: mockGetChildren,
 } as any;
 
 const mockAuthContext: AuthContext = {
@@ -45,16 +43,16 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository as any,
       });
 
-      const result = await service.getById(validUuid, mockAuthContext, {});
+      const result = await service.getById(validUuid, mockAuthContext);
 
       expect(result).toEqual(mockDistrict);
-      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(validUuid, expect.any(Object), false);
+      expect(mockGetByIdUnrestricted).not.toHaveBeenCalled();
     });
 
     it('should build access control filter for regular users', async () => {
@@ -70,22 +68,18 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository as any,
       });
 
-      await service.getById(validUuid, mockAuthContext, {});
+      await service.getById(validUuid, mockAuthContext);
 
-      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(
-        validUuid,
-        {
-          userId: 'user-123',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        false,
-      );
+      expect(mockGetAuthorizedById).toHaveBeenCalledWith(validUuid, {
+        userId: 'user-123',
+        allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
+      });
     });
 
     it('should use getByIdUnrestricted for super admins', async () => {
@@ -107,74 +101,25 @@ describe('DistrictService', () => {
         districtRepository: mockDistrictRepository as any,
       });
 
-      await service.getById(validUuid, mockSuperAdminContext, {});
+      await service.getById(validUuid, mockSuperAdminContext);
 
       // Super admins should use unrestricted method, not the authorized one
       expect(mockGetByIdUnrestricted).toHaveBeenCalledWith(validUuid);
-      expect(mockGetByIdWithEmbeds).not.toHaveBeenCalled();
-    });
-
-    it('should pass embedChildren=false when not requested', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const mockDistrict = {
-        id: validUuid,
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: 'district',
-        parentOrgId: null,
-        isRosteringRootOrg: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository as any,
-      });
-
-      await service.getById(validUuid, mockAuthContext, {});
-
-      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(validUuid, expect.any(Object), false);
-    });
-
-    it('should pass embedChildren=true when requested', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const mockDistrict = {
-        id: validUuid,
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: 'district',
-        parentOrgId: null,
-        isRosteringRootOrg: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        children: [],
-      };
-
-      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository as any,
-      });
-
-      await service.getById(validUuid, mockAuthContext, { embedChildren: true });
-
-      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(validUuid, expect.any(Object), true);
+      expect(mockGetAuthorizedById).not.toHaveBeenCalled();
     });
 
     it('should throw 404 when district not found', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      mockGetByIdWithEmbeds.mockResolvedValue(null);
+      mockGetAuthorizedById.mockResolvedValue(null);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository as any,
       });
 
-      await expect(service.getById(validUuid, mockAuthContext, {})).rejects.toThrow(ApiError);
+      await expect(service.getById(validUuid, mockAuthContext)).rejects.toThrow(ApiError);
 
       try {
-        await service.getById(validUuid, mockAuthContext, {});
+        await service.getById(validUuid, mockAuthContext);
       } catch (error) {
         expect(error).toBeInstanceOf(ApiError);
         expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
@@ -185,59 +130,22 @@ describe('DistrictService', () => {
 
     it('should throw 404 when user lacks access (security - no distinction)', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      mockGetByIdWithEmbeds.mockResolvedValue(null);
+      mockGetAuthorizedById.mockResolvedValue(null);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository as any,
       });
 
-      await expect(service.getById(validUuid, mockAuthContext, {})).rejects.toThrow(ApiError);
+      await expect(service.getById(validUuid, mockAuthContext)).rejects.toThrow(ApiError);
 
       try {
-        await service.getById(validUuid, mockAuthContext, {});
+        await service.getById(validUuid, mockAuthContext);
       } catch (error) {
         expect(error).toBeInstanceOf(ApiError);
         expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
         // Should not distinguish between "not found" and "no access" for security
         expect((error as ApiError).message).toBe('District not found');
       }
-    });
-
-    it('should return district with children when embedChildren=true', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const mockDistrict = {
-        id: validUuid,
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: 'district',
-        parentOrgId: null,
-        isRosteringRootOrg: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        children: [
-          {
-            id: 'school-1',
-            name: 'School A',
-            abbreviation: 'SA',
-            orgType: 'school',
-            parentOrgId: validUuid,
-            isRosteringRootOrg: false,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-      };
-
-      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository as any,
-      });
-
-      const result = await service.getById(validUuid, mockAuthContext, { embedChildren: true });
-
-      expect(result).toEqual(mockDistrict);
-      expect(result.children).toHaveLength(1);
     });
 
     it('should handle UUID with uppercase letters', async () => {
@@ -253,13 +161,13 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository as any,
       });
 
-      const result = await service.getById(validUuid, mockAuthContext, {});
+      const result = await service.getById(validUuid, mockAuthContext);
 
       expect(result).toEqual(mockDistrict);
     });

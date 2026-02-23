@@ -1,11 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { DistrictService, type DistrictWithEmbeds } from '../services/district/district.service';
-import type {
-  DistrictsListQuery,
-  DistrictGetQuery,
-  DistrictDetail as ApiDistrictDetail,
-  Organization as ApiOrganization,
-} from '@roar-dashboard/api-contract';
+import type { DistrictsListQuery, DistrictDetail as ApiDistrictDetail } from '@roar-dashboard/api-contract';
 import type { Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
@@ -14,12 +9,12 @@ import type { AuthContext } from '../types/auth-context';
 const districtService = DistrictService();
 
 /**
- * Maps a database Org entity to the Organization API schema.
+ * Maps a database Org entity to the District API schema.
  *
  * @param org - The database Org entity
- * @returns The API-formatted organization object
+ * @returns The API-formatted district object
  */
-function transformOrganization(org: Org): ApiOrganization {
+function transformOrganization(org: Org): ApiDistrictDetail {
   return {
     id: org.id,
     name: org.name,
@@ -73,11 +68,6 @@ function transformDistrictDetail(district: DistrictWithEmbeds): ApiDistrictDetai
   // Include counts if embedded
   if (district.counts) {
     result.counts = district.counts;
-  }
-
-  // Include children if embedded
-  if (district.children) {
-    result.children = district.children.map(transformOrganization);
   }
 
   return result;
@@ -142,21 +132,16 @@ export const DistrictsController = {
   },
 
   /**
-   * Get a single district by ID with optional embeds.
+   * Get a single district by ID.
    *
    * Delegates to DistrictService for authorization and retrieval.
    *
    * @param authContext - User's authentication context
    * @param districtId - UUID of the district to retrieve
-   * @param query - Query parameters (embed options)
    */
-  getById: async (authContext: AuthContext, districtId: string, query: DistrictGetQuery) => {
+  getById: async (authContext: AuthContext, districtId: string) => {
     try {
-      const embedChildren = query.embed?.includes('children') ?? false;
-
-      const district = await districtService.getById(districtId, authContext, {
-        embedChildren,
-      });
+      const district = await districtService.getById(districtId, authContext);
 
       return {
         status: StatusCodes.OK as const,
@@ -166,12 +151,7 @@ export const DistrictsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [
-          StatusCodes.BAD_REQUEST,
-          StatusCodes.NOT_FOUND,
-          StatusCodes.FORBIDDEN,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        ]);
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }
