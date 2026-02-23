@@ -1595,7 +1595,6 @@ describe('AdministrationsController', () => {
         sortBy: 'agreementType',
         sortOrder: 'desc',
         locale: 'es',
-        agreementType: 'consent',
       });
 
       expect(mockListAgreements).toHaveBeenCalledWith(authContext, 'admin-123', {
@@ -1604,7 +1603,6 @@ describe('AdministrationsController', () => {
         sortBy: 'agreementType',
         sortOrder: 'desc',
         locale: 'es',
-        agreementType: 'consent',
       });
     });
 

@@ -189,7 +189,6 @@ export const AdministrationsContract = c.router(
         'Returns a paginated list of agreements assigned to the specified administration. ' +
         'Each agreement includes the current version for the requested locale (default: en-US). ' +
         'Use ?locale=es or ?locale=es-MX for other locales (BCP-47 format). ' +
-        'Use ?agreementType=tos|assent|consent to filter by agreement type. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
     },

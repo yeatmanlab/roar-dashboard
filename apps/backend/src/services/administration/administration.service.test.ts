@@ -2974,7 +2974,6 @@ describe('AdministrationService', () => {
           sortBy: 'agreementType',
           sortOrder: 'desc',
           locale: 'es',
-          agreementType: 'consent',
         });
 
         expect(mockAdministrationRepository.getAgreementsByAdministrationId).toHaveBeenCalledWith(mockAdmin.id, {
@@ -2984,7 +2983,6 @@ describe('AdministrationService', () => {
             field: 'agreementType',
             direction: 'desc',
           },
-          agreementType: 'consent',
           locale: 'es',
         });
       });

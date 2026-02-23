@@ -39,7 +39,6 @@ import type {
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
   AdministrationStatus,
-  AgreementType,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
@@ -139,7 +138,6 @@ export type ListTaskVariantsByAdministrationOptions = Omit<BaseGetAllParams, 'or
  * Options for listing agreements of an administration.
  */
 export interface ListAgreementsByAdministrationOptions extends BasePaginatedQueryParams {
-  agreementType?: AgreementType | undefined;
   locale: string;
 }
 
@@ -894,15 +892,10 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     administrationId: string,
     options: ListAgreementsByAdministrationOptions,
   ): Promise<PaginatedResult<AgreementWithVersion>> {
-    const { page, perPage, orderBy, agreementType, locale } = options;
+    const { page, perPage, orderBy, locale } = options;
     const offset = (page - 1) * perPage;
 
-    // Build base condition with optional agreement type filter
-    const baseConditions = [eq(administrationAgreements.administrationId, administrationId)];
-    if (agreementType) {
-      baseConditions.push(eq(agreements.agreementType, agreementType));
-    }
-    const whereCondition = and(...baseConditions);
+    const whereCondition = eq(administrationAgreements.administrationId, administrationId);
 
     // Count query - counts distinct agreements (not versions)
     const countResult = await this.db

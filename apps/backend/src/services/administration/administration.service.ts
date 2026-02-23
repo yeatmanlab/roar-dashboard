@@ -83,7 +83,6 @@ export type ListTaskVariantsOptions = ListOrgsOptions<AdministrationTaskVariantS
  * Options for listing agreements of an administration.
  */
 export interface ListAgreementsOptions extends ListOrgsOptions<AdministrationAgreementSortFieldType> {
-  agreementType?: AgreementType | undefined;
   locale: string;
 }
 
@@ -831,7 +830,6 @@ export function AdministrationService({
           field: options.sortBy,
           direction: options.sortOrder,
         },
-        agreementType: options.agreementType,
         locale: options.locale,
       };
 

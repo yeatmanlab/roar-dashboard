@@ -2318,47 +2318,6 @@ describe('AdministrationService (integration)', () => {
         expect(result.items[0]!.currentVersion).toBeNull();
       });
 
-      it('should filter by agreementType', async () => {
-        const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
-        const school = await OrgFactory.create({ orgType: 'school' });
-        await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
-
-        const teacher = await UserFactory.create({ userType: 'educator' });
-        await UserOrgFactory.create({ userId: teacher.id, orgId: school.id, role: UserRole.TEACHER });
-
-        // Create different agreement types
-        const tosAgreement = await AgreementFactory.create({ agreementType: 'tos', name: 'TOS Agreement' });
-        const consentAgreement = await AgreementFactory.create({ agreementType: 'consent', name: 'Consent Agreement' });
-
-        await AgreementVersionFactory.create(
-          { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: tosAgreement.id } },
-        );
-        await AgreementVersionFactory.create(
-          { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: consentAgreement.id } },
-        );
-
-        await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: tosAgreement.id },
-        });
-        await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: consentAgreement.id },
-        });
-
-        const authContext = { userId: teacher.id, isSuperAdmin: false };
-
-        // Filter by TOS only
-        const result = await service.listAgreements(authContext, administration.id, {
-          ...defaultAgreementOptions,
-          agreementType: 'tos',
-        });
-
-        expect(result.items).toHaveLength(1);
-        expect(result.items[0]!.agreement.agreementType).toBe('tos');
-        expect(result.items[0]!.agreement.name).toBe('TOS Agreement');
-      });
-
       it('should sort agreements by name', async () => {
         const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
         const school = await OrgFactory.create({ orgType: 'school' });

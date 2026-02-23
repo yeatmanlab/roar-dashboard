@@ -526,7 +526,6 @@ export const AdministrationAgreementSortField = {
 export const AdministrationAgreementsListQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ADMINISTRATION_AGREEMENT_SORT_FIELDS, 'name'),
 ).extend({
-  agreementType: AgreementTypeSchema.optional(),
   locale: LocaleSchema.default('en-US'),
 });
 
