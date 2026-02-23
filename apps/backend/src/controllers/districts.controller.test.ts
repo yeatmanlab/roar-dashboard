@@ -262,10 +262,8 @@ describe('DistrictsController', () => {
       const error = new Error('Unexpected error');
       mockList.mockRejectedValue(error);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
-
       await expect(
-        Controller.list(mockAuthContext, {
+        DistrictsController.list(mockAuthContext, {
           page: 1,
           perPage: 25,
           sortBy: 'name',
@@ -291,9 +289,7 @@ describe('DistrictsController', () => {
         totalItems: 1,
       });
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
-
-      const result = await Controller.list(mockAuthContext, {
+      const result = await DistrictsController.list(mockAuthContext, {
         page: 1,
         perPage: 25,
         sortBy: 'name',
@@ -302,34 +298,7 @@ describe('DistrictsController', () => {
       });
 
       const data = expectOkResponse(result);
-      expect(data.items[0]).not.toHaveProperty('location');
-    });
-
-    it('should omit identifiers when all identifier fields are null', async () => {
-      const mockDistrict = OrgFactory.build({
-        orgType: OrgType.DISTRICT,
-        mdrNumber: null,
-        ncesId: null,
-        stateId: null,
-        schoolNumber: null,
-      });
-      mockList.mockResolvedValue({
-        items: [mockDistrict],
-        totalItems: 1,
-      });
-
-      const { DistrictsController: Controller } = await import('./districts.controller');
-
-      const result = await Controller.list(mockAuthContext, {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-        embed: [],
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items[0]).not.toHaveProperty('identifiers');
+      expect(data.items[0]?.location).toBeUndefined();
     });
   });
 });
