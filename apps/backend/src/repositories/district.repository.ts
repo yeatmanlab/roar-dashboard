@@ -306,12 +306,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @returns Map of district ID to counts
    */
   async fetchDistrictCounts(districtIds: string[], includeEnded: boolean): Promise<Map<string, DistrictCounts>> {
-    // Build where conditions for schools
-    const schoolWhereConditions: SQL[] = [eq(orgs.orgType, 'school')];
-    if (!includeEnded) {
-      schoolWhereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
     // Query to get counts for all districts in one go
     // We use separate subqueries for each count to handle the different join conditions
     const results = await this.db
