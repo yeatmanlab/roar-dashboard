@@ -5,12 +5,6 @@ import { UserFactory } from '../../test-support/factories/user.factory';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 
-vi.mock('../../logger', () => ({
-  logger: {
-    error: vi.fn(),
-  },
-}));
-
 describe('UserService', () => {
   const mockUserRepository = {
     findByAuthId: vi.fn(),

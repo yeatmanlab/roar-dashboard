@@ -21,15 +21,6 @@ import type { AuthContext } from '../../types/auth-context';
 import { Operator, type Condition } from './task.types';
 import type { User } from '../../db/schema';
 
-// Mock the logger (used by the service for error handling)
-vi.mock('../../logger', () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-  },
-}));
-
 describe('TaskService', () => {
   let authContext: AuthContext;
   let taskRepository: MockTaskRepository;
