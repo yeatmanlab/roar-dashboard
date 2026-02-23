@@ -47,6 +47,8 @@ describe('RunsController', () => {
     vi.mocked(RunEventsService).mockReturnValue({
       completeRun: mockCompleteRun,
       abortRun: vi.fn(),
+      writeTrial: vi.fn(),
+      updateEngagement: vi.fn(),
     });
   });
 
