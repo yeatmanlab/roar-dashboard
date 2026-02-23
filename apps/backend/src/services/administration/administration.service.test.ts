@@ -5,10 +5,11 @@ import { AdministrationFactory } from '../../test-support/factories/administrati
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { ClassFactory } from '../../test-support/factories/class.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
+import { UserFactory } from '../../test-support/factories/user.factory';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
-import type { AssignmentWithOptional } from '../../repositories/administration.repository';
+import type { AssignmentWithOptional, TaskVariantWithAssignment } from '../../repositories/administration.repository';
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
@@ -2184,16 +2185,72 @@ describe('AdministrationService', () => {
       sortOrder: 'asc' as const,
     };
 
-    const mockTaskVariants = [
+    const mockTaskVariants: TaskVariantWithAssignment[] = [
       {
-        variant: { id: 'variant-1', name: 'Variant A', description: 'Variant A description' },
-        task: { id: 'task-1', name: 'Task One', description: 'Task One desc', image: null, tutorialVideo: null },
-        assignment: { orderIndex: 0, conditionsAssignment: null, conditionsRequirements: null },
+        variant: {
+          id: 'variant-1',
+          name: 'Variant A',
+          description: 'Variant A description',
+          taskId: 'task-1',
+          status: 'published' as const,
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-02'),
+        },
+        task: {
+          id: 'task-1',
+          name: 'Task One',
+          description: 'Task One desc',
+          image: null,
+          tutorialVideo: null,
+          slug: 'test-slug',
+          nameSimple: 'Test',
+          nameTechnical: 'test',
+          taskConfig: null,
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+        },
+        assignment: {
+          administrationId: 'admin-123',
+          taskVariantId: 'variant-1',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+        },
       },
       {
-        variant: { id: 'variant-2', name: 'Variant B', description: null },
-        task: { id: 'task-2', name: 'Task Two', description: null, image: 'img.png', tutorialVideo: 'vid.mp4' },
-        assignment: { orderIndex: 1, conditionsAssignment: { grade: '3' }, conditionsRequirements: { minScore: 80 } },
+        variant: {
+          id: 'variant-2',
+          name: 'Variant B',
+          description: null,
+          taskId: 'task-2',
+          status: 'published' as const,
+          createdAt: new Date('2024-01-01'),
+          updatedAt: null,
+        },
+        task: {
+          id: 'task-2',
+          name: 'Task Two',
+          description: null,
+          image: 'img.png',
+          tutorialVideo: 'vid.mp4',
+          slug: 'test-slug',
+          nameSimple: 'Test',
+          nameTechnical: 'test',
+          taskConfig: null,
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+        },
+        assignment: {
+          administrationId: 'admin-123',
+          taskVariantId: 'variant-2',
+          orderIndex: 1,
+          conditionsAssignment: { grade: '3' },
+          conditionsRequirements: { minScore: 80 },
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+        },
       },
     ];
 
@@ -2431,7 +2488,7 @@ describe('AdministrationService', () => {
 
       it('should filter task variants for student based on assigned_if condition', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
-        const mockUser = { id: 'student-user', grade: '5' };
+        const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
@@ -2478,7 +2535,7 @@ describe('AdministrationService', () => {
 
       it('should return empty list when student has no visible task variants (assigned_if fails for all)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
-        const mockUser = { id: 'student-user', grade: '1' };
+        const mockUser = UserFactory.build({ id: 'student-user', grade: '1' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
@@ -2508,7 +2565,7 @@ describe('AdministrationService', () => {
 
       it('should return all task variants when student passes assigned_if for all', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
-        const mockUser = { id: 'student-user', grade: '5' };
+        const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
@@ -2563,16 +2620,40 @@ describe('AdministrationService', () => {
 
       it('should pass conditions to evaluateTaskVariantEligibility for eligibility and optionality evaluation', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
-        const mockUser = { id: 'student-user', grade: '5' };
+        const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         const assignedIfCondition = { field: 'studentData.grade', op: 'EQUAL', value: 5 };
         const optionalIfCondition = { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' };
         const variantWithConditions = {
-          variant: { id: 'variant-1', name: 'Test Variant' },
-          task: { id: 'task-1', name: 'Test Task' },
+          variant: {
+            id: 'variant-1',
+            name: 'Test Variant',
+            description: null,
+            taskId: 'task-1',
+            status: 'published' as const,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
+          task: {
+            id: 'task-1',
+            name: 'Test Task',
+            description: null,
+            image: null,
+            tutorialVideo: null,
+            slug: 'test-slug',
+            nameSimple: 'Test',
+            nameTechnical: 'test',
+            taskConfig: null,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
           assignment: {
+            administrationId: 'admin-123',
+            taskVariantId: 'variant-1',
             orderIndex: 0,
             conditionsAssignment: assignedIfCondition,
             conditionsRequirements: optionalIfCondition,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
           },
         };
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
@@ -2610,14 +2691,38 @@ describe('AdministrationService', () => {
 
       it('should handle null conditions (null assigned_if = visible, null optional_if = required)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
-        const mockUser = { id: 'student-user', grade: '5' };
+        const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         const variantWithNullConditions = {
-          variant: { id: 'variant-1', name: 'Test Variant' },
-          task: { id: 'task-1', name: 'Test Task' },
+          variant: {
+            id: 'variant-1',
+            name: 'Test Variant',
+            description: null,
+            taskId: 'task-1',
+            status: 'published' as const,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
+          task: {
+            id: 'task-1',
+            name: 'Test Task',
+            description: null,
+            image: null,
+            tutorialVideo: null,
+            slug: 'test-slug',
+            nameSimple: 'Test',
+            nameTechnical: 'test',
+            taskConfig: null,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
           assignment: {
+            administrationId: 'admin-123',
+            taskVariantId: 'variant-1',
             orderIndex: 0,
             conditionsAssignment: null,
             conditionsRequirements: null,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
           },
         };
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
@@ -2654,23 +2759,71 @@ describe('AdministrationService', () => {
 
       it('should exclude variant and not crash when eligibility evaluation throws error (malformed condition)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
-        const mockUser = { id: 'student-user', grade: '5' };
+        const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         const variantWithMalformedCondition = {
-          variant: { id: 'variant-malformed', name: 'Malformed Variant' },
-          task: { id: 'task-1', name: 'Test Task' },
+          variant: {
+            id: 'variant-malformed',
+            name: 'Malformed Variant',
+            description: null,
+            taskId: 'task-1',
+            status: 'published' as const,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
+          task: {
+            id: 'task-1',
+            name: 'Test Task',
+            description: null,
+            image: null,
+            tutorialVideo: null,
+            slug: 'test-slug',
+            nameSimple: 'Test',
+            nameTechnical: 'test',
+            taskConfig: null,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
           assignment: {
+            administrationId: 'admin-123',
+            taskVariantId: 'variant-malformed',
             orderIndex: 0,
             conditionsAssignment: { invalidField: 'bad data' }, // Malformed
             conditionsRequirements: null,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
           },
         };
         const variantWithValidCondition = {
-          variant: { id: 'variant-valid', name: 'Valid Variant' },
-          task: { id: 'task-2', name: 'Test Task 2' },
+          variant: {
+            id: 'variant-valid',
+            name: 'Valid Variant',
+            description: null,
+            taskId: 'task-2',
+            status: 'published' as const,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
+          task: {
+            id: 'task-2',
+            name: 'Test Task 2',
+            description: null,
+            image: null,
+            tutorialVideo: null,
+            slug: 'test-slug',
+            nameSimple: 'Test',
+            nameTechnical: 'test',
+            taskConfig: null,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
+          },
           assignment: {
+            administrationId: 'admin-123',
+            taskVariantId: 'variant-valid',
             orderIndex: 1,
             conditionsAssignment: null,
             conditionsRequirements: null,
+            createdAt: new Date('2024-01-01'),
+            updatedAt: null,
           },
         };
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);

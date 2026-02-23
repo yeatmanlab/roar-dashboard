@@ -10,7 +10,7 @@ import type { AdministrationTaskVariantRepository } from '../../repositories/adm
 export function createMockAdministrationTaskVariantRepository(): MockedObject<AdministrationTaskVariantRepository> {
   return {
     getByAdministrationIds: vi.fn(),
-  } as MockedObject<AdministrationTaskVariantRepository>;
+  } as unknown as MockedObject<AdministrationTaskVariantRepository>;
 }
 
 export type MockAdministrationTaskVariantRepository = ReturnType<typeof createMockAdministrationTaskVariantRepository>;

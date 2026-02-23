@@ -10,7 +10,7 @@ import type { RunsRepository } from '../../repositories/runs.repository';
 export function createMockRunsRepository(): MockedObject<RunsRepository> {
   return {
     getRunStatsByAdministrationIds: vi.fn(),
-  } as MockedObject<RunsRepository>;
+  } as unknown as MockedObject<RunsRepository>;
 }
 
 export type MockRunsRepository = ReturnType<typeof createMockRunsRepository>;

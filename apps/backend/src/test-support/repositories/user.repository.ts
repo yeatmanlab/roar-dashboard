@@ -12,7 +12,7 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
     findByAuthId: vi.fn(),
-  } as MockedObject<UserRepository>;
+  } as unknown as MockedObject<UserRepository>;
 }
 
 export type MockUserRepository = ReturnType<typeof createMockUserRepository>;
