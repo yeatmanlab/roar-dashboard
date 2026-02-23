@@ -5,6 +5,8 @@ import {
   DistrictsListResponseSchema,
   DistrictGetQuerySchema,
   DistrictGetResponseSchema,
+  DistrictAdministrationStatsQuerySchema,
+  DistrictAdministrationStatsResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
@@ -60,6 +62,31 @@ export const DistrictsContract = c.router(
       strictStatusCodes: true,
       summary: 'Get district by ID',
       description: 'Retrieve detailed information for a specific district by ID with optional child embedding',
+    },
+
+    /**
+     * Get aggregated statistics for an administration scoped to a specific district
+     */
+    getAdministrationStatsById: {
+      method: 'GET',
+      path: '/:districtId/administrations/:administrationId/stats',
+      pathParams: z.object({
+        districtId: z.string().uuid(),
+        administrationId: z.string().uuid(),
+      }),
+      query: DistrictAdministrationStatsQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(DistrictAdministrationStatsResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get district-level administration statistics',
+      description:
+        'Retrieve aggregated statistics for an administration scoped to a specific district. Optionally filter by a single task id.',
     },
   },
   { pathPrefix: '/districts' },

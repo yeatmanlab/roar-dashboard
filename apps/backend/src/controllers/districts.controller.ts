@@ -5,6 +5,7 @@ import type {
   DistrictGetQuery,
   DistrictDetail as ApiDistrictDetail,
   Organization as ApiOrganization,
+  DistrictAdministrationStatsQuery,
 } from '@roar-dashboard/api-contract';
 import type { Org } from '../db/schema';
 import { ApiError } from '../errors/api-error';
@@ -162,6 +163,42 @@ export const DistrictsController = {
         status: StatusCodes.OK as const,
         body: {
           data: transformDistrictDetail(district),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get administration statistics for this district.
+   *
+   * @param authContext - User's authentication context
+   * @param districtId - UUID of the district
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters
+   */
+  getAdministrationStatsById: async (
+    authContext: AuthContext,
+    districtId: string,
+    administrationId: string,
+    query: DistrictAdministrationStatsQuery,
+  ) => {
+    try {
+      const stats = await districtService.getAdministrationStatsById(districtId, administrationId, authContext, query);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: stats,
         },
       };
     } catch (error) {
