@@ -55,6 +55,27 @@ export function DistrictService({
   districtRepository?: DistrictRepository;
 } = {}) {
   /**
+   * Verify that a district exists and the user has access to it.
+   */
+  async function verifyDistrictAccess(districtId: string, authContext: AuthContext): Promise<void> {
+    const { userId } = authContext;
+
+    const accessControlFilter = {
+      userId,
+      allowedRoles: rolesForPermission(Permissions.Organizations.READ),
+    };
+
+    const district = await districtRepository.getByIdAuthorized(districtId, accessControlFilter);
+
+    if (!district) {
+      throw new ApiError('District not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    }
+  }
+
+  /**
    * List districts accessible to a user with pagination and sorting.
    *
    * super_admin users have unrestricted access to all districts.
@@ -187,8 +208,12 @@ export function DistrictService({
   ) {
     // 1. Pull info out from authContext
     const { userId } = authContext;
-    // 2. Validate that the user has access to the district
 
+    const accessControlFilter = {
+      userId,
+      allowedRoles: rolesForPermission(Permissions.Organizations.LIST),
+    };
+    // 2. Validate that the user has access to the district
     // 3. Validate that the administration is visible to the user per the org hierarchy rules
     // 4. Fetch the administration stats
   }
