@@ -45,8 +45,7 @@
     </div>
   </div>
   <div v-if="orgType !== 'district'" class="my-2 mx-4">
-    <!-- Commenting out phonics table until ready to be implemented -->
-    <!-- <SubscoreTable
+    <SubscoreTable
       v-if="taskId === 'phonics' && !isLoadingTasksDictionary"
       task-id="phonics"
       :task-name="tasksDictionary['phonics'].publicName"
@@ -56,7 +55,7 @@
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
-    /> -->
+    />
     <SubscoreTable
       v-if="taskId === 'letter' && !isLoadingTasksDictionary"
       task-id="letter"

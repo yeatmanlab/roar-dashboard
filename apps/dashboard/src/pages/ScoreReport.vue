@@ -456,7 +456,10 @@ import {
   getTagColor,
   roamFluencyTasks,
   roamFluencySubskillHeaders,
+  getPaSkillsToWorkOn,
+  PA_SUBTASK_I18N_KEYS,
 } from '@/helpers/reports';
+import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
@@ -1205,18 +1208,20 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
         if (taskId === 'pa' && assessment.scores) {
-          const first = _get(assessment, 'scores.computed.FSM.roarScore');
-          const last = _get(assessment, 'scores.computed.LSM.roarScore');
-          const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
-          let skills = [];
-          if (first < 15) skills.push('First Sound Matching');
-          if (last < 15) skills.push('Last sound matching');
-          if (deletion < 15) skills.push('Deletion');
-          currRowScores[taskId].firstSound = first;
-          currRowScores[taskId].lastSound = last;
-          currRowScores[taskId].deletion = deletion;
-          currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
-          currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
+          const computedScores = _get(assessment, 'scores.computed');
+          const skillKeys = getPaSkillsToWorkOn(computedScores);
+          const translatedSkills = skillKeys.map((key) => i18n.global.t(PA_SUBTASK_I18N_KEYS[key]));
+          const formatPaSubtaskScore = (subtaskKey) => {
+            const pct = _get(computedScores, `${subtaskKey}.percentCorrect`);
+            if (pct != null) return `${Math.floor(pct)}%`;
+            return _get(computedScores, `${subtaskKey}.roarScore`);
+          };
+          currRowScores[taskId].firstSound = formatPaSubtaskScore('FSM');
+          currRowScores[taskId].lastSound = formatPaSubtaskScore('LSM');
+          currRowScores[taskId].deletion = formatPaSubtaskScore('DEL');
+          currRowScores[taskId].total = _get(computedScores, 'composite.roarScore');
+          currRowScores[taskId].skills =
+            translatedSkills.length > 0 ? translatedSkills.join(', ') : i18n.global.t('scoreReports.none');
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');

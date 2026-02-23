@@ -37,8 +37,6 @@ const props = defineProps({
   orgName: { type: String, default: '' },
 });
 
-const phonicsSubtableToggle = ref(false);
-
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -110,57 +108,54 @@ const columns = computed(() => {
       { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
     );
   }
-  if (phonicsSubtableToggle.value) {
-    // TODO: Remove this toggle when phonics is ready to be implemented
-    if (props.taskId === 'phonics') {
-      const subcategories = [
-        { field: 'cvc', header: 'CVC' },
-        { field: 'digraph', header: 'Digraph' },
-        { field: 'initial_blend', header: 'Initial Blend' },
-        { field: 'tri_blend', header: 'Triple Blend' },
-        { field: 'final_blend', header: 'Final Blend' },
-        { field: 'r_controlled', header: 'R-Controlled' },
-        { field: 'r_cluster', header: 'R-Cluster' },
-        { field: 'silent_e', header: 'Silent E' },
-        { field: 'vowel_team', header: 'Vowel Team' },
-      ];
+  if (props.taskId === 'phonics') {
+    const subcategories = [
+      { field: 'cvc', header: 'CVC' },
+      { field: 'digraph', header: 'Digraph' },
+      { field: 'initial_blend', header: 'Initial Blend' },
+      { field: 'tri_blend', header: 'Triple Blend' },
+      { field: 'final_blend', header: 'Final Blend' },
+      { field: 'r_controlled', header: 'R-Controlled' },
+      { field: 'r_cluster', header: 'R-Cluster' },
+      { field: 'silent_e', header: 'Silent E' },
+      { field: 'vowel_team', header: 'Vowel Team' },
+    ];
 
-      // Add columns for each subcategory
-      subcategories.forEach(({ field, header }) => {
-        tableColumns.push({
-          field: `scores.${props.taskId}.composite.subscores.${field}`,
-          header: header,
-          dataType: 'text',
-          sort: true,
-          tooltip: false,
-          body: (row) => {
-            return _get(row, `scores.${props.taskId}.composite.subscores.${field}`) || '0/0';
-          },
-        });
-      });
-
-      // Add total percentage
+    // Add columns for each subcategory
+    subcategories.forEach(({ field, header }) => {
       tableColumns.push({
-        field: `scores.${props.taskId}.composite.totalPercentCorrect`,
-        header: 'Total % Correct',
-        dataType: 'number',
+        field: `scores.${props.taskId}.composite.subscores.${field}`,
+        header: header,
+        dataType: 'text',
         sort: true,
         tooltip: false,
         body: (row) => {
-          const totalPercent = _get(row, `scores.${props.taskId}.composite.totalPercentCorrect`);
-          return typeof totalPercent === 'number' ? `${Math.round(totalPercent)}%` : '0%';
+          return _get(row, `scores.${props.taskId}.composite.subscores.${field}`) || '0/0';
         },
       });
+    });
 
-      // Add skills to work on
-      tableColumns.push({
-        field: `scores.${props.taskId}.skillsToWorkOn`,
-        header: 'Skills To Work On',
-        dataType: 'text',
-        sort: false,
-        tooltip: false,
-      });
-    }
+    // Add total percentage
+    tableColumns.push({
+      field: `scores.${props.taskId}.composite.totalPercentCorrect`,
+      header: 'Total % Correct',
+      dataType: 'number',
+      sort: true,
+      tooltip: false,
+      body: (row) => {
+        const totalPercent = _get(row, `scores.${props.taskId}.composite.totalPercentCorrect`);
+        return typeof totalPercent === 'number' ? `${Math.round(totalPercent)}%` : '0%';
+      },
+    });
+
+    // Hide skills to work on
+    // tableColumns.push({
+    //   field: `scores.${props.taskId}.skillsToWorkOn`,
+    //   header: 'Skills To Work On',
+    //   dataType: 'text',
+    //   sort: false,
+    //   tooltip: false,
+    // });
   }
   if (props.taskId === 'roam-alpaca') {
     const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
@@ -223,31 +218,28 @@ const exportSelected = (selectedRows) => {
         _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
       });
     }
-    if (phonicsSubtableToggle.value) {
-      // TODO: Remove this toggle when phonics is ready to be implemented
-      if (props.taskId === 'phonics') {
-        const subcategories = [
-          'cvc',
-          'digraph',
-          'initial_blend',
-          'tri_blend',
-          'final_blend',
-          'r_controlled',
-          'r_cluster',
-          'silent_e',
-          'vowel_team',
-        ];
-        subcategories.forEach((category) => {
-          const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
-          _set(
-            tableRow,
-            `${category} (Correct/Attempted)`,
-            subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0',
-          );
-        });
-        _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
-        _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
-      }
+    if (props.taskId === 'phonics') {
+      const subcategories = [
+        'cvc',
+        'digraph',
+        'initial_blend',
+        'tri_blend',
+        'final_blend',
+        'r_controlled',
+        'r_cluster',
+        'silent_e',
+        'vowel_team',
+      ];
+      subcategories.forEach((category) => {
+        const subscore = _get(scores, `${props.taskId}.composite.subscores.${category}`);
+        _set(
+          tableRow,
+          `${category} (Correct/Attempted)`,
+          subscore ? `${subscore.correct}/${subscore.attempted}` : '0/0',
+        );
+      });
+      _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
+      _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
     }
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
