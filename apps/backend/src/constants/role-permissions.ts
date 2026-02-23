@@ -27,7 +27,6 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
   const siteAdmin: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
-    Permissions.Administrators.READ,
     Permissions.Organizations.LIST,
     Permissions.Organizations.READ,
     Permissions.Profile.READ,
@@ -40,7 +39,6 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
   const admin: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
-    Permissions.Administrators.READ,
     Permissions.Organizations.LIST,
     Permissions.Organizations.READ,
     Permissions.Profile.READ,
@@ -53,7 +51,6 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
   const educator: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
-    Permissions.Administrators.READ,
     Permissions.Organizations.LIST,
     Permissions.Organizations.READ,
     Permissions.Profile.READ,
@@ -66,7 +63,6 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
   const caregiver: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
-    Permissions.Administrators.READ,
     Permissions.Organizations.LIST,
     Permissions.Organizations.READ,
     Permissions.Profile.READ,

@@ -40,7 +40,6 @@ export const Permissions = {
   },
   Administrators: {
     ALL: 'administrators.*',
-    READ: 'administrators.read',
     CREATE: 'administrators.create',
     UPDATE: 'administrators.update',
     Credentials: {
