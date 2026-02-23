@@ -888,6 +888,8 @@ export function AdministrationService({
       // - assent: shown only to minors (isAdult === false)
       // - consent: shown only to adults (isAdult === true)
       // - tos: never shown to students
+      // TODO: Pagination is broken for students - filtering happens after DB pagination,
+      // so totalItems/page counts are incorrect. Fix by moving filter to repository layer.
       const filteredItems = result.items.filter((item) => {
         switch (item.agreement.agreementType) {
           case AgreementType.ASSENT:
