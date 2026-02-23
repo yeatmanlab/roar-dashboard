@@ -1,7 +1,11 @@
 import { Router, type Express } from 'express';
 import { registerMeRoutes } from './me';
 import { registerAdministrationsRoutes } from './administrations';
+<<<<<<< enh/add-districts-list-rbac
 import { registerDistrictsRoutes } from './districts';
+=======
+import { registerTasksRoutes } from './task';
+>>>>>>> project/backend-refactor
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
@@ -25,7 +29,11 @@ export function registerAllRoutes(app: Express) {
 
   registerMeRoutes(router);
   registerAdministrationsRoutes(router);
+<<<<<<< enh/add-districts-list-rbac
   registerDistrictsRoutes(router);
+=======
+  registerTasksRoutes(router);
+>>>>>>> project/backend-refactor
 
   app.use(`/${API_VERSION.V1}`, router);
 }

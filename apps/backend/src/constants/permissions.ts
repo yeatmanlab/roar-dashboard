@@ -27,6 +27,7 @@ export const Permissions = {
   Organizations: {
     ALL: 'organizations.*',
     LIST: 'organizations.list',
+    READ: 'organizations.read',
     CREATE: 'organizations.create',
     UPDATE: 'organizations.update',
   },
@@ -39,7 +40,6 @@ export const Permissions = {
   },
   Administrators: {
     ALL: 'administrators.*',
-    READ: 'administrators.read',
     CREATE: 'administrators.create',
     UPDATE: 'administrators.update',
     Credentials: {

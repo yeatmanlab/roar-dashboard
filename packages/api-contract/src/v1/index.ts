@@ -1,7 +1,11 @@
 import { initContract } from '@ts-rest/core';
 import { MeContract } from './me/index';
 import { AdministrationsContract } from './administrations/index';
+<<<<<<< enh/add-districts-list-rbac
 import { DistrictsContract } from './districts/index';
+=======
+import { TasksContract } from './tasks/index';
+>>>>>>> project/backend-refactor
 export * from './response';
 export * from './common/index';
 
@@ -11,8 +15,10 @@ export const ApiContractV1 = c.router({
   me: MeContract,
   administrations: AdministrationsContract,
   districts: DistrictsContract,
+  tasks: TasksContract,
 });
 
 export * from './me/index';
 export * from './administrations/index';
 export * from './districts/index';
+export * from './tasks/index';
