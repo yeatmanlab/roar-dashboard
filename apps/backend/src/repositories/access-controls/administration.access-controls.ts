@@ -55,7 +55,7 @@ import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
  * We use PostgreSQL's ltree extension to efficiently query ancestor/descendant relationships.
  * Paths are stored as dot-separated segments: `district_uuid.school_uuid`
  *
- * ltree operators are wrapped in helper functions (see `../utils/ltree.utils.ts`):
+ * ltree operators are wrapped in helper functions:
  * - `isDescendantOrEqual(child, ancestor)` — child path is descendant of (or equal to) ancestor path
  * - `isAncestorOrEqual(ancestor, child)` — ancestor path is ancestor of (or equal to) child path
  */
