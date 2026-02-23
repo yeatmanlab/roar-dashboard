@@ -2188,49 +2188,69 @@ describe('AdministrationService', () => {
       sortOrder: 'asc' as const,
     };
 
-    const task1 = TaskFactory.build({ id: 'task-1', name: 'Task One', description: 'Task One desc' });
-    const task2 = TaskFactory.build({
-      id: 'task-2',
-      name: 'Task Two',
-      description: null,
-      image: 'img.png',
-      tutorialVideo: 'vid.mp4',
-    });
+    /**
+     * Helper to create a TaskVariantWithAssignment mock using factories.
+     * Provides sensible defaults while allowing overrides for specific test needs.
+     */
+    const createMockTaskVariant = (overrides?: {
+      variantId?: string;
+      variantName?: string;
+      taskId?: string;
+      taskName?: string;
+      administrationId?: string;
+      orderIndex?: number;
+      conditionsAssignment?: unknown;
+      conditionsRequirements?: unknown;
+      taskOverrides?: Partial<ReturnType<typeof TaskFactory.build>>;
+      variantOverrides?: Partial<ReturnType<typeof TaskVariantFactory.build>>;
+      assignmentOverrides?: Partial<ReturnType<typeof AdministrationTaskVariantFactory.build>>;
+    }): TaskVariantWithAssignment => {
+      const task = TaskFactory.build({
+        ...(overrides?.taskId && { id: overrides.taskId }),
+        ...(overrides?.taskName && { name: overrides.taskName }),
+        ...overrides?.taskOverrides,
+      });
+
+      const variant = TaskVariantFactory.build({
+        ...(overrides?.variantId && { id: overrides.variantId }),
+        ...(overrides?.variantName && { name: overrides.variantName }),
+        taskId: task.id,
+        ...overrides?.variantOverrides,
+      });
+
+      const assignment = AdministrationTaskVariantFactory.build({
+        administrationId: overrides?.administrationId ?? 'admin-123',
+        taskVariantId: variant.id,
+        orderIndex: overrides?.orderIndex ?? 0,
+        conditionsAssignment: overrides?.conditionsAssignment ?? null,
+        conditionsRequirements: overrides?.conditionsRequirements ?? null,
+        ...overrides?.assignmentOverrides,
+      });
+
+      return { variant, task, assignment };
+    };
 
     const mockTaskVariants: TaskVariantWithAssignment[] = [
-      {
-        variant: TaskVariantFactory.build({
-          id: 'variant-1',
-          name: 'Variant A',
-          description: 'Variant A description',
-          taskId: task1.id,
-        }),
-        task: task1,
-        assignment: AdministrationTaskVariantFactory.build({
-          administrationId: 'admin-123',
-          taskVariantId: 'variant-1',
-          orderIndex: 0,
-          conditionsAssignment: null,
-          conditionsRequirements: null,
-        }),
-      },
-      {
-        variant: TaskVariantFactory.build({
-          id: 'variant-2',
-          name: 'Variant B',
-          description: null,
-          taskId: task2.id,
-          updatedAt: null,
-        }),
-        task: task2,
-        assignment: AdministrationTaskVariantFactory.build({
-          administrationId: 'admin-123',
-          taskVariantId: 'variant-2',
-          orderIndex: 1,
-          conditionsAssignment: { grade: '3' },
-          conditionsRequirements: { minScore: 80 },
-        }),
-      },
+      createMockTaskVariant({
+        variantId: 'variant-1',
+        variantName: 'Variant A',
+        taskId: 'task-1',
+        taskName: 'Task One',
+        orderIndex: 0,
+        variantOverrides: { description: 'Variant A description' },
+        taskOverrides: { description: 'Task One desc' },
+      }),
+      createMockTaskVariant({
+        variantId: 'variant-2',
+        variantName: 'Variant B',
+        taskId: 'task-2',
+        taskName: 'Task Two',
+        orderIndex: 1,
+        conditionsAssignment: { grade: '3' },
+        conditionsRequirements: { minScore: 80 },
+        variantOverrides: { description: null, updatedAt: null },
+        taskOverrides: { description: null, image: 'img.png', tutorialVideo: 'vid.mp4' },
+      }),
     ];
 
     it('should return task variants for super admin (unrestricted)', async () => {
@@ -2602,25 +2622,17 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         const assignedIfCondition = { field: 'studentData.grade', op: 'EQUAL', value: 5 };
         const optionalIfCondition = { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' };
-        const testTask = TaskFactory.build({ id: 'task-1', name: 'Test Task', description: null });
-        const variantWithConditions = {
-          variant: TaskVariantFactory.build({
-            id: 'variant-1',
-            name: 'Test Variant',
-            description: null,
-            taskId: testTask.id,
-            updatedAt: null,
-          }),
-          task: testTask,
-          assignment: AdministrationTaskVariantFactory.build({
-            administrationId: 'admin-123',
-            taskVariantId: 'variant-1',
-            orderIndex: 0,
-            conditionsAssignment: assignedIfCondition,
-            conditionsRequirements: optionalIfCondition,
-            updatedAt: null,
-          }),
-        };
+        const variantWithConditions = createMockTaskVariant({
+          variantId: 'variant-1',
+          variantName: 'Test Variant',
+          taskId: 'task-1',
+          taskName: 'Test Task',
+          conditionsAssignment: assignedIfCondition,
+          conditionsRequirements: optionalIfCondition,
+          variantOverrides: { description: null, updatedAt: null },
+          taskOverrides: { description: null },
+          assignmentOverrides: { updatedAt: null },
+        });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
@@ -2657,25 +2669,15 @@ describe('AdministrationService', () => {
       it('should handle null conditions (null assigned_if = visible, null optional_if = required)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
-        const testTask2 = TaskFactory.build({ id: 'task-1', name: 'Test Task', description: null });
-        const variantWithNullConditions = {
-          variant: TaskVariantFactory.build({
-            id: 'variant-1',
-            name: 'Test Variant',
-            description: null,
-            taskId: testTask2.id,
-            updatedAt: null,
-          }),
-          task: testTask2,
-          assignment: AdministrationTaskVariantFactory.build({
-            administrationId: 'admin-123',
-            taskVariantId: 'variant-1',
-            orderIndex: 0,
-            conditionsAssignment: null,
-            conditionsRequirements: null,
-            updatedAt: null,
-          }),
-        };
+        const variantWithNullConditions = createMockTaskVariant({
+          variantId: 'variant-1',
+          variantName: 'Test Variant',
+          taskId: 'task-1',
+          taskName: 'Test Task',
+          variantOverrides: { description: null, updatedAt: null },
+          taskOverrides: { description: null },
+          assignmentOverrides: { updatedAt: null },
+        });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
@@ -2711,45 +2713,27 @@ describe('AdministrationService', () => {
       it('should exclude variant and not crash when eligibility evaluation throws error (malformed condition)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
-        const testTask3 = TaskFactory.build({ id: 'task-1', name: 'Test Task', description: null });
-        const testTask4 = TaskFactory.build({ id: 'task-2', name: 'Test Task 2', description: null });
-
-        const variantWithMalformedCondition = {
-          variant: TaskVariantFactory.build({
-            id: 'variant-malformed',
-            name: 'Malformed Variant',
-            description: null,
-            taskId: testTask3.id,
-            updatedAt: null,
-          }),
-          task: testTask3,
-          assignment: AdministrationTaskVariantFactory.build({
-            administrationId: 'admin-123',
-            taskVariantId: 'variant-malformed',
-            orderIndex: 0,
-            conditionsAssignment: { invalidField: 'bad data' }, // Malformed
-            conditionsRequirements: null,
-            updatedAt: null,
-          }),
-        };
-        const variantWithValidCondition = {
-          variant: TaskVariantFactory.build({
-            id: 'variant-valid',
-            name: 'Valid Variant',
-            description: null,
-            taskId: testTask4.id,
-            updatedAt: null,
-          }),
-          task: testTask4,
-          assignment: AdministrationTaskVariantFactory.build({
-            administrationId: 'admin-123',
-            taskVariantId: 'variant-valid',
-            orderIndex: 1,
-            conditionsAssignment: null,
-            conditionsRequirements: null,
-            updatedAt: null,
-          }),
-        };
+        const variantWithMalformedCondition = createMockTaskVariant({
+          variantId: 'variant-malformed',
+          variantName: 'Malformed Variant',
+          taskId: 'task-1',
+          taskName: 'Test Task',
+          orderIndex: 0,
+          conditionsAssignment: { invalidField: 'bad data' }, // Malformed
+          variantOverrides: { description: null, updatedAt: null },
+          taskOverrides: { description: null },
+          assignmentOverrides: { updatedAt: null },
+        });
+        const variantWithValidCondition = createMockTaskVariant({
+          variantId: 'variant-valid',
+          variantName: 'Valid Variant',
+          taskId: 'task-2',
+          taskName: 'Test Task 2',
+          orderIndex: 1,
+          variantOverrides: { description: null, updatedAt: null },
+          taskOverrides: { description: null },
+          assignmentOverrides: { updatedAt: null },
+        });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
