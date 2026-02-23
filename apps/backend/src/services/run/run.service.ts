@@ -73,7 +73,7 @@ export function RunService({
     try {
       await administrationService.getById({ userId, isSuperAdmin }, body.administration_id);
     } catch (error) {
-      if (error instanceof ApiError && error.statusCode === StatusCodes.NOT_FOUND) {
+      if (error instanceof ApiError && error.statusCode === StatusCodes.UNPROCESSABLE_ENTITY) {
         throw new ApiError('Invalid administration_id', {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
@@ -109,7 +109,7 @@ export function RunService({
       const result = await taskService.getTaskIdByVariantId(body.task_variant_id);
       taskId = result.taskId;
     } catch (error) {
-      if (error instanceof ApiError && error.statusCode === StatusCodes.NOT_FOUND) {
+      if (error instanceof ApiError && error.statusCode === StatusCodes.UNPROCESSABLE_ENTITY) {
         throw new ApiError('Invalid task_variant_id', {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,

@@ -82,8 +82,8 @@ describe('RunService', () => {
     it('should throw UNPROCESSABLE_ENTITY when administration does not exist', async () => {
       administrationService.getById.mockRejectedValue(
         new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         }),
       );
 
