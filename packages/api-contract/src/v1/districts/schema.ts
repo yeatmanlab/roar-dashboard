@@ -125,7 +125,7 @@ export const DistrictsListQuerySchema = PaginationQuerySchema.merge(
 )
   .merge(createEmbedQuerySchema(DISTRICT_EMBED_OPTIONS))
   .extend({
-    includeEnded: z.boolean().optional(),
+    includeEnded: z.coerce.boolean().optional(),
   });
 
 export type DistrictsListQuery = z.infer<typeof DistrictsListQuerySchema>;
