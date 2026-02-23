@@ -17,7 +17,6 @@ export const AgreementFactory = Factory.define<Agreement>(({ onCreate, sequence 
       id: agreement.id,
       name: agreement.name,
       agreementType: agreement.agreementType,
-      requiresMajorityAge: agreement.requiresMajorityAge,
     };
 
     const [inserted] = await CoreDbClient.insert(agreements).values(insertData).returning();
@@ -29,7 +28,6 @@ export const AgreementFactory = Factory.define<Agreement>(({ onCreate, sequence 
     id: faker.string.uuid(),
     name: `Agreement ${sequence}`,
     agreementType: faker.helpers.arrayElement(['tos', 'assent', 'consent'] as const),
-    requiresMajorityAge: faker.datatype.boolean(),
     createdAt: new Date(),
     updatedAt: new Date(),
   };

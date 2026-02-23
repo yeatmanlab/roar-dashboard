@@ -2183,8 +2183,8 @@ describe('AdministrationService (integration)', () => {
         };
 
         // Create test data for this test
-        // Set requiresMajorityAge: false to ensure agreement is visible regardless of student's age
-        const agreement = await AgreementFactory.create({ agreementType: 'consent', requiresMajorityAge: false });
+        // Use assent agreement type so it's visible to a student (baseFixture student is likely a minor)
+        const agreement = await AgreementFactory.create({ agreementType: 'assent' });
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
           { transient: { agreementId: agreement.id } },
@@ -2413,8 +2413,8 @@ describe('AdministrationService (integration)', () => {
       });
     });
 
-    describe('majority age filtering', () => {
-      it('should filter out requiresMajorityAge agreements for student under 18 (by dob)', async () => {
+    describe('agreement type filtering by role and age', () => {
+      it('should show only assent agreements for minor student (by dob)', async () => {
         // Create isolated administration
         const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
         const school = await OrgFactory.create({ orgType: 'school' });
@@ -2427,39 +2427,42 @@ describe('AdministrationService (integration)', () => {
         const youngStudent = await UserFactory.create({ userType: 'student', dob: dobString });
         await UserOrgFactory.create({ userId: youngStudent.id, orgId: school.id, role: UserRole.STUDENT });
 
-        // Create regular and majority-age agreements
-        const regularAgreement = await AgreementFactory.create({
-          name: 'Regular Agreement',
-          requiresMajorityAge: false,
-        });
-        const adultAgreement = await AgreementFactory.create({
-          name: 'Adult Agreement',
-          requiresMajorityAge: true,
-        });
+        // Create all agreement types
+        const tosAgreement = await AgreementFactory.create({ name: 'TOS Agreement', agreementType: 'tos' });
+        const assentAgreement = await AgreementFactory.create({ name: 'Assent Agreement', agreementType: 'assent' });
+        const consentAgreement = await AgreementFactory.create({ name: 'Consent Agreement', agreementType: 'consent' });
 
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: regularAgreement.id } },
+          { transient: { agreementId: tosAgreement.id } },
         );
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: adultAgreement.id } },
+          { transient: { agreementId: assentAgreement.id } },
+        );
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: consentAgreement.id } },
         );
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: regularAgreement.id },
+          transient: { administrationId: administration.id, agreementId: tosAgreement.id },
         });
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: adultAgreement.id },
+          transient: { administrationId: administration.id, agreementId: assentAgreement.id },
+        });
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: consentAgreement.id },
         });
 
         const authContext = { userId: youngStudent.id, isSuperAdmin: false };
         const result = await service.listAgreements(authContext, administration.id, defaultAgreementOptions);
 
+        // Minor student should only see assent agreement
         expect(result.items).toHaveLength(1);
-        expect(result.items[0]!.agreement.name).toBe('Regular Agreement');
+        expect(result.items[0]!.agreement.name).toBe('Assent Agreement');
       });
 
-      it('should include requiresMajorityAge agreements for student 18+ (by dob)', async () => {
+      it('should show only consent agreements for adult student (by dob)', async () => {
         const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
         const school = await OrgFactory.create({ orgType: 'school' });
         await AdministrationOrgFactory.create({ administrationId: administration.id, orgId: school.id });
@@ -2471,29 +2474,39 @@ describe('AdministrationService (integration)', () => {
         const adultStudent = await UserFactory.create({ userType: 'student', dob: dobString });
         await UserOrgFactory.create({ userId: adultStudent.id, orgId: school.id, role: UserRole.STUDENT });
 
-        // Create both types of agreements
-        const regularAgreement = await AgreementFactory.create({ requiresMajorityAge: false });
-        const adultAgreement = await AgreementFactory.create({ requiresMajorityAge: true });
+        // Create all agreement types
+        const tosAgreement = await AgreementFactory.create({ name: 'TOS Agreement', agreementType: 'tos' });
+        const assentAgreement = await AgreementFactory.create({ name: 'Assent Agreement', agreementType: 'assent' });
+        const consentAgreement = await AgreementFactory.create({ name: 'Consent Agreement', agreementType: 'consent' });
 
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: regularAgreement.id } },
+          { transient: { agreementId: tosAgreement.id } },
         );
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: adultAgreement.id } },
+          { transient: { agreementId: assentAgreement.id } },
+        );
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: consentAgreement.id } },
         );
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: regularAgreement.id },
+          transient: { administrationId: administration.id, agreementId: tosAgreement.id },
         });
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: adultAgreement.id },
+          transient: { administrationId: administration.id, agreementId: assentAgreement.id },
+        });
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: consentAgreement.id },
         });
 
         const authContext = { userId: adultStudent.id, isSuperAdmin: false };
         const result = await service.listAgreements(authContext, administration.id, defaultAgreementOptions);
 
-        expect(result.items).toHaveLength(2);
+        // Adult student should only see consent agreement
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Consent Agreement');
       });
 
       it('should filter by grade when dob is not available', async () => {
@@ -2506,36 +2519,29 @@ describe('AdministrationService (integration)', () => {
         await UserOrgFactory.create({ userId: studentGrade11.id, orgId: school.id, role: UserRole.STUDENT });
 
         // Create student with grade 13 (conservative age estimate: 18+) but no dob
-        // Note: grade 12 maps to age 17 (conservative), so we use grade 13 for majority age
         const studentGrade13 = await UserFactory.create({ userType: 'student', dob: null, grade: '13' });
         await UserOrgFactory.create({ userId: studentGrade13.id, orgId: school.id, role: UserRole.STUDENT });
 
-        // Create both types of agreements
-        const regularAgreement = await AgreementFactory.create({
-          name: 'Regular',
-          requiresMajorityAge: false,
-        });
-        const adultAgreement = await AgreementFactory.create({
-          name: 'Adult Only',
-          requiresMajorityAge: true,
-        });
+        // Create assent and consent agreements
+        const assentAgreement = await AgreementFactory.create({ name: 'Assent', agreementType: 'assent' });
+        const consentAgreement = await AgreementFactory.create({ name: 'Consent', agreementType: 'consent' });
 
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: regularAgreement.id } },
+          { transient: { agreementId: assentAgreement.id } },
         );
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: adultAgreement.id } },
+          { transient: { agreementId: consentAgreement.id } },
         );
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: regularAgreement.id },
+          transient: { administrationId: administration.id, agreementId: assentAgreement.id },
         });
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: adultAgreement.id },
+          transient: { administrationId: administration.id, agreementId: consentAgreement.id },
         });
 
-        // Grade 11 student should only see regular agreement
+        // Grade 11 student (minor) should only see assent agreement
         const authContextGrade11 = { userId: studentGrade11.id, isSuperAdmin: false };
         const resultGrade11 = await service.listAgreements(
           authContextGrade11,
@@ -2543,17 +2549,22 @@ describe('AdministrationService (integration)', () => {
           defaultAgreementOptions,
         );
         expect(resultGrade11.items).toHaveLength(1);
-        expect(resultGrade11.items[0]!.agreement.name).toBe('Regular');
+        expect(resultGrade11.items[0]!.agreement.name).toBe('Assent');
 
-        // Grade 13 student should see both agreements (conservative age estimate: 18+)
+        // Grade 13 student (adult) should only see consent agreement
         const authContextGrade13 = { userId: studentGrade13.id, isSuperAdmin: false };
         const resultGrade13 = await service.listAgreements(
           authContextGrade13,
           administration.id,
           defaultAgreementOptions,
         );
-        expect(resultGrade13.items).toHaveLength(2);
+        expect(resultGrade13.items).toHaveLength(1);
+        expect(resultGrade13.items[0]!.agreement.name).toBe('Consent');
       });
+
+      // Note: Guardian/parent/relative roles don't have Administrations.READ permission,
+      // so they can't access this endpoint directly. Caregiver access is handled separately
+      // via family relationships. The filtering logic for these roles is tested in unit tests.
 
       it('should not filter for supervisory roles (teachers see all)', async () => {
         const administration = await AdministrationFactory.create({ createdBy: baseFixture.schoolATeacher.id });
@@ -2563,29 +2574,37 @@ describe('AdministrationService (integration)', () => {
         const teacher = await UserFactory.create({ userType: 'educator' });
         await UserOrgFactory.create({ userId: teacher.id, orgId: school.id, role: UserRole.TEACHER });
 
-        const regularAgreement = await AgreementFactory.create({ requiresMajorityAge: false });
-        const adultAgreement = await AgreementFactory.create({ requiresMajorityAge: true });
+        const tosAgreement = await AgreementFactory.create({ agreementType: 'tos' });
+        const assentAgreement = await AgreementFactory.create({ agreementType: 'assent' });
+        const consentAgreement = await AgreementFactory.create({ agreementType: 'consent' });
 
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: regularAgreement.id } },
+          { transient: { agreementId: tosAgreement.id } },
         );
         await AgreementVersionFactory.create(
           { locale: 'en-US', isCurrent: true },
-          { transient: { agreementId: adultAgreement.id } },
+          { transient: { agreementId: assentAgreement.id } },
+        );
+        await AgreementVersionFactory.create(
+          { locale: 'en-US', isCurrent: true },
+          { transient: { agreementId: consentAgreement.id } },
         );
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: regularAgreement.id },
+          transient: { administrationId: administration.id, agreementId: tosAgreement.id },
         });
         await AdministrationAgreementFactory.create(undefined, {
-          transient: { administrationId: administration.id, agreementId: adultAgreement.id },
+          transient: { administrationId: administration.id, agreementId: assentAgreement.id },
+        });
+        await AdministrationAgreementFactory.create(undefined, {
+          transient: { administrationId: administration.id, agreementId: consentAgreement.id },
         });
 
         const authContext = { userId: teacher.id, isSuperAdmin: false };
         const result = await service.listAgreements(authContext, administration.id, defaultAgreementOptions);
 
-        // Teachers see all agreements regardless of requiresMajorityAge
-        expect(result.items).toHaveLength(2);
+        // Teachers see all agreements without filtering
+        expect(result.items).toHaveLength(3);
       });
     });
   });

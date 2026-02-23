@@ -10,13 +10,13 @@ import {
   type AdministrationGroupSortFieldType,
   type AdministrationTaskVariantSortFieldType,
   type AdministrationAgreementSortFieldType,
-  type AgreementType,
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
+import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { OrgType } from '../../enums/org-type.enum';
@@ -794,23 +794,23 @@ export function AdministrationService({
   /**
    * List agreements assigned to an administration with access control and age-based filtering.
    *
-   * Unlike districts/schools/classes/groups, agreements are visible to ALL users
-   * with administration access - students need this to know which agreements to sign.
-   *
    * Each agreement includes the current version for the requested locale.
    * If no current version exists for that locale, currentVersion will be null.
    *
-   * Age-based filtering for supervised roles (students):
-   * - Agreements with `requiresMajorityAge: true` are only shown to users 18+
-   * - Age is determined first by dob, then by grade if dob is unavailable
-   * - If age cannot be determined, majority-age agreements are excluded (conservative approach)
+   * Access control:
+   * - **Super admins and supervisory roles** (teachers, admins): see all agreements
+   * - **Students**: see `assent` (if minor) or `consent` (if adult)
+   * - **Other supervised roles** (guardian, parent, relative): 403 Forbidden
+   *
+   * Age is determined first by dob, then by grade if dob is unavailable.
+   * If age cannot be determined, the student is conservatively treated as a minor.
    *
    * @param authContext - User's auth context (id and type)
    * @param administrationId - The administration ID to get agreements for
    * @param options - Pagination, sorting, filtering, and locale options
    * @returns Paginated result with agreements and their current versions
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} FORBIDDEN if user lacks access or is a non-student supervised role
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
   async function listAgreements(
@@ -850,7 +850,23 @@ export function AdministrationService({
         return result;
       }
 
-      // For supervised roles (students), filter out requiresMajorityAge agreements if user is under 18
+      // For supervised roles, only students can access agreements
+      // Other supervised roles (guardian, parent, relative) get 403 Forbidden
+      const isStudent = userRoles.includes(UserRole.STUDENT);
+
+      if (!isStudent) {
+        logger.warn(
+          { userId, administrationId, userRoles },
+          'Non-student supervised role attempted to access agreements',
+        );
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Students: filter by age (assent for minors, consent for adults)
       // Fetch user data for age determination
       const user = await userRepository.getById({ id: userId });
       if (!user) {
@@ -866,18 +882,23 @@ export function AdministrationService({
       }
 
       // Determine if user is of majority age (18+)
+      // null means age cannot be determined - conservatively treat as minor
       const isOfMajorityAge = isMajorityAge({ dob: user.dob, grade: user.grade });
+      const isAdult = isOfMajorityAge === true;
 
-      // Filter agreements based on majority age requirement
-      // If user is 18+ (true), show all agreements
-      // If user is under 18 (false) or age unknown (null), exclude requiresMajorityAge agreements
+      // Filter agreements based on student's age:
+      // - assent: shown only to minors (isAdult === false)
+      // - consent: shown only to adults (isAdult === true)
+      // - tos: never shown to students
       const filteredItems = result.items.filter((item) => {
-        if (!item.agreement.requiresMajorityAge) {
-          // Agreement doesn't require majority age - always include
-          return true;
+        switch (item.agreement.agreementType) {
+          case AgreementType.ASSENT:
+            return !isAdult;
+          case AgreementType.CONSENT:
+            return isAdult;
+          default:
+            return false; // Students never see TOS or unknown types
         }
-        // Agreement requires majority age - only include if user is confirmed 18+
-        return isOfMajorityAge === true;
       });
 
       return {
