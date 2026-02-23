@@ -2,6 +2,7 @@ import { Router, type Express } from 'express';
 import { registerMeRoutes } from './me';
 import { registerAdministrationsRoutes } from './administrations';
 import { registerRunsRoutes } from './runs';
+import { registerDistrictsRoutes } from './districts';
 import { registerGroupsRoutes } from './groups';
 import { registerTasksRoutes } from './task';
 import { API_VERSION } from '../constants/api';
@@ -28,6 +29,7 @@ export function registerAllRoutes(app: Express) {
   registerMeRoutes(router);
   registerAdministrationsRoutes(router);
   registerRunsRoutes(router);
+  registerDistrictsRoutes(router);
   registerGroupsRoutes(router);
   registerTasksRoutes(router);
 
