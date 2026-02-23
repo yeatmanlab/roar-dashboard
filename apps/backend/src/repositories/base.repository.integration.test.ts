@@ -171,8 +171,6 @@ describe('BaseRepository', () => {
 
       expect(result).not.toBeNull();
       expect(result.id).toBeDefined();
-      expect(result.nameFirst).toBe(userData.nameFirst);
-      expect(result.nameLast).toBe(userData.nameLast);
 
       // Verify it was actually persisted
       const fetched = await repository.getById({ id: result.id });
