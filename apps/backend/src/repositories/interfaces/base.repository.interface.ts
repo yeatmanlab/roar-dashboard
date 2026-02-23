@@ -126,6 +126,14 @@ export interface BaseCreateParams<TInsert> {
   transaction?: Transaction;
 }
 
+export interface BaseCreateManyParams<T> {
+  /** Data for the entities to be created. */
+  data: Partial<T>[];
+
+  /** Optional transaction context for the operation. */
+  transaction?: Transaction;
+}
+
 /**
  * Parameters for updating an entity in a repository.
  *
@@ -199,7 +207,10 @@ export interface IBaseRepository<TEntity, TInsert = TEntity> {
   getAll(params: BaseGetAllParams): Promise<PaginatedResult<TEntity>>;
 
   /** Creates a new entity in the repository. */
-  create(params: BaseCreateParams<TInsert>): Promise<TEntity>;
+  create(params: BaseCreateParams<TInsert>): Promise<{ id: string }>;
+
+  /** Creates multiple entities in the repository. */
+  createMany(params: BaseCreateManyParams<TInsert>): Promise<{ id: string }[]>;
 
   /** Updates an existing entity in the repository. */
   update(params: BaseUpdateParams<TInsert>): Promise<void>;
