@@ -231,7 +231,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param accessControlFilter - User ID and allowed roles
    * @returns District or null if not found, not a district, or user lacks access
    */
-  async getByIdAuthorized(id: string, accessControlFilter: AccessControlFilter): Promise<DistrictWithCounts | null> {
+  async getAuthorizedById(id: string, accessControlFilter: AccessControlFilter): Promise<DistrictWithCounts | null> {
     // Build the UNION query for accessible org IDs
     const accessibleOrgs = this.accessControls
       .buildUserAccessibleOrgIdsQuery(accessControlFilter)
@@ -260,7 +260,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     accessControlFilter: AccessControlFilter,
     embedChildren = false,
   ): Promise<(DistrictWithCounts & { children?: Org[] }) | null> {
-    const district = await this.getByIdAuthorized(id, accessControlFilter);
+    const district = await this.getAuthorizedById(id, accessControlFilter);
 
     if (!district) {
       return null;
