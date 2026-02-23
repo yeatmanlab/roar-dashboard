@@ -109,30 +109,8 @@ function toIdName(
  * @returns The API-formatted task variant item with nested task and conditions objects
  */
 function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskVariantItem {
-  // Service guarantees: for supervised roles, assignment.optional is set;
-  // for supervisory roles, assignment.optional is undefined
-  if (hasOptionalFlag(item.assignment)) {
-    // For supervised roles: return simplified conditions with pre-evaluated optional flag
-    return {
-      id: item.variant.id,
-      name: item.variant.name,
-      description: item.variant.description,
-      orderIndex: item.assignment.orderIndex,
-      task: {
-        id: item.task.id,
-        name: item.task.name,
-        description: item.task.description,
-        image: item.task.image,
-        tutorialVideo: item.task.tutorialVideo,
-      },
-      conditions: {
-        optional: item.assignment.optional,
-      },
-    };
-  }
-
-  // For supervisory roles: return full conditions for client-side evaluation
-  return {
+  // Build the common base structure
+  const base = {
     id: item.variant.id,
     name: item.variant.name,
     description: item.variant.description,
@@ -144,6 +122,23 @@ function toTaskVariantItem(item: TaskVariantWithAssignment): AdministrationTaskV
       image: item.task.image,
       tutorialVideo: item.task.tutorialVideo,
     },
+  };
+
+  // Service guarantees: for supervised roles, assignment.optional is set;
+  // for supervisory roles, assignment.optional is undefined
+  if (hasOptionalFlag(item.assignment)) {
+    // For supervised roles: return simplified conditions with pre-evaluated optional flag
+    return {
+      ...base,
+      conditions: {
+        optional: item.assignment.optional,
+      },
+    };
+  }
+
+  // For supervisory roles: return full conditions for client-side evaluation
+  return {
+    ...base,
     conditions: {
       assigned_if: item.assignment.conditionsAssignment as Condition | null,
       optional_if: item.assignment.conditionsRequirements as Condition | null,
