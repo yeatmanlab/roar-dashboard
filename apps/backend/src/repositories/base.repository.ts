@@ -143,10 +143,13 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
   /**
    * Creates a new entity.
    */
-  async create(params: BaseCreateParams<InferInsertModel<TTable>>): Promise<TEntity> {
-    const [entity] = await this.db.insert(this.typedTable).values(params.data).returning();
+  async create(params: BaseCreateParams<InferInsertModel<TTable>>): Promise<{ id: string }> {
+    const { transaction } = params;
+    const db = transaction ?? this.db;
 
-    return entity as TEntity;
+    const [entity] = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
+
+    return entity;
   }
 
   /**

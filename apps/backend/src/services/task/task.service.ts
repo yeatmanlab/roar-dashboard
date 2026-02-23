@@ -175,7 +175,7 @@ export function TaskService({
         'Created task variant with parameters',
       );
 
-      return variant;
+      return { id: variant.id };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

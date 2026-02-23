@@ -81,7 +81,7 @@ describe('TaskService', () => {
         };
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual(mockTaskVariant);
+        expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskRepository.getById).toHaveBeenCalledWith({ id: mockTask.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith({
           data: {
@@ -133,7 +133,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual(mockTaskVariant);
+        expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: mockParameters.map((param) => ({
             taskVariantId: mockTaskVariant.id,
@@ -178,7 +178,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual(mockTaskVariant);
+        expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: [
             {
@@ -498,7 +498,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual(mockTaskVariant);
+        expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({ status: TaskVariantStatus.DEPRECATED }),
@@ -527,7 +527,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual(mockTaskVariant);
+        expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({ status: TaskVariantStatus.DRAFT }),
@@ -556,7 +556,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual(mockTaskVariant);
+        expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: [
             {
@@ -591,7 +591,7 @@ describe('TaskService', () => {
 
         const result = await taskService.createTaskVariant(authContext, mockData);
 
-        expect(result).toEqual(mockTaskVariant);
+        expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
           data: [
             {
