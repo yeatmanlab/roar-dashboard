@@ -66,6 +66,7 @@ export const OrgFactory = Factory.define<Org>(({ onCreate, params }) => {
       stateId: org.stateId,
       schoolNumber: org.schoolNumber,
       isRosteringRootOrg,
+      rosteringEnded: org.rosteringEnded,
     };
 
     const [inserted] = await CoreDbClient.insert(orgs).values(insertData).returning();
