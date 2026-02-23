@@ -18,6 +18,7 @@ import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { OrgType } from '../../enums/org-type.enum';
+import { UserRole } from '../../enums/user-role.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import {
@@ -627,22 +628,21 @@ export function AdministrationService({
    * List task variants assigned to an administration with access control and eligibility filtering.
    *
    * Task variants are administration-level resources (no org hierarchy filtering).
-   * Unlike districts/schools/classes/groups, task variants are visible to ALL users
-   * with administration access - students need this to know which assessments to take.
    *
    * Authorization, status filtering, and eligibility behavior:
    * - Super admin: sees all task variants (including draft/deprecated), no eligibility filtering
    * - Supervisory roles (teachers, admins): sees all task variants (including draft/deprecated), no eligibility filtering
-   * - Supervised roles (students): sees only **published** task variants where conditionsAssignment passes.
+   * - Students: sees only **published** task variants where conditionsAssignment passes.
    *   - conditionsAssignment (assigned_if): determines if the variant is visible/assigned to the student
    *   - conditionsRequirements (optional_if): determines if a visible variant is optional (vs required)
+   * - Other supervised roles (guardian, parent, relative): returns 403 Forbidden
    *
    * @param authContext - User's auth context (id and type)
    * @param administrationId - The administration ID to get task variants for
    * @param options - Pagination and sorting options
    * @returns Paginated result with task variants
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access to the administration
+   * @throws {ApiError} FORBIDDEN if user lacks access to the administration or is a non-student supervised role
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
   async function listTaskVariants(
@@ -656,16 +656,6 @@ export function AdministrationService({
       // Verify administration exists and user has access (students included)
       await verifyAdministrationAccess(authContext, administrationId);
 
-      // Determine if user is supervisory (affects which variants they can see)
-      // Super admins and supervisory roles see all variants of all statuses
-      // Supervised roles only see published variants
-      let isSupervisory = isSuperAdmin;
-
-      if (!isSuperAdmin) {
-        const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
-        isSupervisory = hasSupervisoryRole(userRoles);
-      }
-
       const queryParams = {
         page: options.page,
         perPage: options.perPage,
@@ -675,20 +665,53 @@ export function AdministrationService({
         },
       };
 
-      // Supervised roles only see published task variants; supervisory roles see all statuses
-      const publishedOnly = !isSupervisory;
-      const result = await administrationRepository.getTaskVariantsByAdministrationId(
-        administrationId,
-        publishedOnly,
-        queryParams,
-      );
-
-      // Super admins and supervisory roles see all task variants without eligibility filtering
-      if (isSupervisory) {
+      // Super admins see all task variants of all statuses without eligibility filtering
+      if (isSuperAdmin) {
+        const result = await administrationRepository.getTaskVariantsByAdministrationId(
+          administrationId,
+          false, // publishedOnly = false
+          queryParams,
+        );
         return result;
       }
 
-      // For supervised roles (students), filter by eligibility conditions
+      // For non-super-admin users, check if they have supervisory roles
+      const userRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+
+      // Supervisory roles (teachers, admins) see all task variants of all statuses without eligibility filtering
+      if (hasSupervisoryRole(userRoles)) {
+        const result = await administrationRepository.getTaskVariantsByAdministrationId(
+          administrationId,
+          false, // publishedOnly = false
+          queryParams,
+        );
+        return result;
+      }
+
+      // For supervised roles, only students can access task variants
+      // Other supervised roles (guardian, parent, relative) get 403 Forbidden
+      const isStudent = userRoles.includes(UserRole.STUDENT);
+
+      if (!isStudent) {
+        logger.warn(
+          { userId, administrationId, userRoles },
+          'Non-student supervised role attempted to access task variants',
+        );
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Students only see published task variants
+      const result = await administrationRepository.getTaskVariantsByAdministrationId(
+        administrationId,
+        true, // publishedOnly = true
+        queryParams,
+      );
+
+      // Students: filter by eligibility conditions
       // Fetch user data for condition evaluation
       const user = await userRepository.getById({ id: userId });
       if (!user) {

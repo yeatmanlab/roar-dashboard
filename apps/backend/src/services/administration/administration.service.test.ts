@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import { AdministrationService } from './administration.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { ClassFactory } from '../../test-support/factories/class.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { UserRole } from '../../enums/user-role.enum';
 import type { AssignmentWithOptional } from '../../repositories/administration.repository';
 
 // Mock the logger (used by the service for error handling)
@@ -2729,19 +2732,12 @@ describe('AdministrationService', () => {
         expect(result.totalItems).toBe(1);
       });
 
-      it('should treat user with no roles as supervised (publishedOnly: true, eligibility filtering applied)', async () => {
+      it('should throw forbidden error for non-student supervised roles (guardian)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
-        const mockUser = { id: 'no-roles-user', grade: '5' };
         mockGetById.mockResolvedValue(mockAdmin);
         mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
-        mockGetTaskVariantsByAdministrationId.mockResolvedValue({
-          items: mockTaskVariants,
-          totalItems: 2,
-        });
-        // User has no roles for this administration (empty array)
-        mockGetUserRolesForAdministration.mockResolvedValue([]);
-        mockUserGetById.mockResolvedValue(mockUser);
-        mockEvaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        // User has guardian role (supervised, but not student)
+        mockGetUserRolesForAdministration.mockResolvedValue([UserRole.GUARDIAN]);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -2749,22 +2745,79 @@ describe('AdministrationService', () => {
           taskService: mockTaskService,
         });
 
-        const result = await service.listTaskVariants(
-          { userId: 'no-roles-user', isSuperAdmin: false },
-          'admin-123',
-          defaultOptions,
-        );
+        await expect(
+          service.listTaskVariants({ userId: 'guardian-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
 
-        // Should be treated as supervised: publishedOnly: true
-        expect(mockGetTaskVariantsByAdministrationId).toHaveBeenCalledWith(
-          'admin-123',
-          true, // publishedOnly
-          { page: 1, perPage: 25, orderBy: { field: 'orderIndex', direction: 'asc' } },
-        );
-        // Should apply eligibility filtering (like students)
-        expect(mockUserGetById).toHaveBeenCalledWith({ id: 'no-roles-user' });
-        expect(mockEvaluateTaskVariantEligibility).toHaveBeenCalledTimes(2);
-        expect(result.items).toHaveLength(2);
+      it('should throw forbidden error for non-student supervised roles (parent)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        // User has parent role (supervised, but not student)
+        mockGetUserRolesForAdministration.mockResolvedValue([UserRole.PARENT]);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        await expect(
+          service.listTaskVariants({ userId: 'parent-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+
+      it('should throw forbidden error for non-student supervised roles (relative)', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        // User has relative role (supervised, but not student)
+        mockGetUserRolesForAdministration.mockResolvedValue([UserRole.RELATIVE]);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        await expect(
+          service.listTaskVariants({ userId: 'relative-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+
+      it('should throw forbidden error when user has no roles for administration', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockGetById.mockResolvedValue(mockAdmin);
+        mockGetByIdAuthorized.mockResolvedValue(mockAdmin);
+        // User has no roles for this administration (empty array)
+        mockGetUserRolesForAdministration.mockResolvedValue([]);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+          taskService: mockTaskService,
+        });
+
+        await expect(
+          service.listTaskVariants({ userId: 'no-roles-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
       });
     });
   });
