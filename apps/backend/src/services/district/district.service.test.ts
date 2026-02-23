@@ -28,22 +28,6 @@ describe('DistrictService', () => {
   });
 
   describe('getById', () => {
-    it('should validate UUID format and throw 400 for invalid UUID', async () => {
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await expect(service.getById('invalid-uuid', mockAuthContext, {})).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById('invalid-uuid', mockAuthContext, {});
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.BAD_REQUEST);
-        expect((error as ApiError).code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
-      }
-    });
-
     it('should accept valid UUID format', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
@@ -279,27 +263,6 @@ describe('DistrictService', () => {
       const result = await service.getById(validUuid, mockAuthContext, {});
 
       expect(result).toEqual(mockDistrict);
-    });
-  });
-
-  describe('UUID validation edge cases', () => {
-    it('should reject various invalid UUID formats', async () => {
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository as any,
-      });
-
-      const invalidUuids = [
-        '123e4567-e89b-12d3-a456', // Too short
-        '123e4567-e89b-12d3-a456-426614174000-extra', // Too long
-        '123e4567e89b12d3a456426614174000', // No hyphens
-        'not-a-uuid-at-all',
-        '',
-        '123e4567-e89b-12d3-a456-42661417400g', // Invalid character
-      ];
-
-      for (const invalidUuid of invalidUuids) {
-        await expect(service.getById(invalidUuid, mockAuthContext, {})).rejects.toThrow(ApiError);
-      }
     });
   });
 });

@@ -134,16 +134,6 @@ export function DistrictService({
     authContext: AuthContext,
     options: GetByIdOptions = {},
   ): Promise<DistrictWithEmbeds> {
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      logger.warn(`Invalid UUID format for district ID: ${id}`);
-      throw new ApiError('Invalid UUID format', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-    }
-
     // Build access control filter
     const accessControlFilter = {
       userId: authContext.userId,
