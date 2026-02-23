@@ -114,11 +114,21 @@ export interface BaseCountParams extends BaseParams {
 
 /**
  * Parameters for creating a new entity in a repository.
- * If no data is provided, a new entity will be created with a generated ID.
+ *
+ * @typeParam TInsert - The insert type (from Drizzle's $inferInsert), which correctly
+ *                      types optional fields for insertion.
  */
-export interface BaseCreateParams<T> {
-  /** Optional data for the entity to be created. */
-  data?: Partial<T>;
+export interface BaseCreateParams<TInsert> {
+  /** Data for the entity to be created (uses the Drizzle insert type). */
+  data: TInsert;
+
+  /** Optional transaction context for the operation. */
+  transaction?: Transaction;
+}
+
+export interface BaseCreateManyParams<T> {
+  /** Data for the entities to be created. */
+  data: Partial<T>[];
 
   /** Optional transaction context for the operation. */
   transaction?: Transaction;
@@ -126,13 +136,16 @@ export interface BaseCreateParams<T> {
 
 /**
  * Parameters for updating an entity in a repository.
+ *
+ * @typeParam TInsert - The insert type (from Drizzle's $inferInsert), which correctly
+ *                      types optional fields for updates.
  */
-export interface BaseUpdateParams<T> {
+export interface BaseUpdateParams<TInsert> {
   /** ID of the entity to be updated. */
   id: string;
 
-  /** Data for the entity to be updated. */
-  data: Partial<T>;
+  /** Data for the entity to be updated (partial insert type). */
+  data: Partial<TInsert>;
 
   /** Optional transaction context for the operation. */
   transaction?: Transaction;
@@ -167,7 +180,8 @@ export interface BaseRunTransactionParams<R> {
  * All entities are expected to have an `id` field (UUID primary key).
  * Unlike Firestore's Result<T> wrapper, Drizzle entities already include the id.
  *
- * @typeParam T - The type of entity managed by the repository.
+ * @typeParam TEntity - The select type of the entity (from Drizzle's $inferSelect).
+ * @typeParam TInsert - The insert type of the entity (from Drizzle's $inferInsert). Defaults to TEntity.
  *
  * @see {@link BaseGetParams} - Base params for retrieving data entities.
  * @see {@link BaseGetAllParams} - Base params for retrieving all data entities.
@@ -176,27 +190,30 @@ export interface BaseRunTransactionParams<R> {
  * @see {@link BaseDeleteParams} - Base params for deleting an entity.
  * @see {@link BaseRunTransactionParams} - Parameters for running a transaction in a repository.
  */
-export interface IBaseRepository<T> {
+export interface IBaseRepository<TEntity, TInsert = TEntity> {
   /** Retrieves an entity by its ID. Returns null if not found. */
-  getById(params: BaseGetByIdParams): Promise<T | null>;
+  getById(params: BaseGetByIdParams): Promise<TEntity | null>;
 
   /** Retrieves an entity by its ID. */
-  get(params: BaseGetParams & { id: string }): Promise<T | null>;
+  get(params: BaseGetParams & { id: string }): Promise<TEntity | null>;
 
   /** Retrieves entities based on provided where clause. */
-  get(params: BaseGetParams & { where: SQL }): Promise<T[]>;
+  get(params: BaseGetParams & { where: SQL }): Promise<TEntity[]>;
 
   /** Retrieves entities based on provided parameters. */
-  get(params: BaseGetParams): Promise<T | T[] | null>;
+  get(params: BaseGetParams): Promise<TEntity | TEntity[] | null>;
 
   /** Retrieves all entities with pagination, optional where clause, and ordering. */
-  getAll(params: BaseGetAllParams): Promise<PaginatedResult<T>>;
+  getAll(params: BaseGetAllParams): Promise<PaginatedResult<TEntity>>;
 
   /** Creates a new entity in the repository. */
-  create(params: BaseCreateParams<T>): Promise<T>;
+  create(params: BaseCreateParams<TInsert>): Promise<{ id: string }>;
+
+  /** Creates multiple entities in the repository. */
+  createMany(params: BaseCreateManyParams<TInsert>): Promise<{ id: string }[]>;
 
   /** Updates an existing entity in the repository. */
-  update(params: BaseUpdateParams<T>): Promise<void>;
+  update(params: BaseUpdateParams<TInsert>): Promise<void>;
 
   /** Deletes an entity from the repository. */
   delete(params: BaseDeleteParams): Promise<void>;
