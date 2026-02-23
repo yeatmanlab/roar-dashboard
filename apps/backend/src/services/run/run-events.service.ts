@@ -60,6 +60,67 @@ export function RunEventsService({
   }
 
   /**
+   * Updates engagement flags and reliability status for a run.
+   *
+   * Validates the event type, verifies user ownership, and validates all engagement
+   * flags against the allowed set. Updates the run with engagement flags and
+   * reliable_run status.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param runId - UUID of the run to update engagement for
+   * @param body - Event body containing engagement_flags and reliable_run
+   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
+   * @throws ApiError with BAD_REQUEST (400) if engagement flag value is not boolean
+   * @throws ApiError with BAD_REQUEST (400) if engagement flag name is not allowed
+   * @throws ApiError with NOT_FOUND (404) if run doesn't exist
+   * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
+   * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
+   */
+  async function updateEngagement(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
+    if (body.type !== 'engagement') {
+      throw new ApiError('Invalid event type', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { runId, type: body.type },
+      });
+    }
+
+    try {
+      await assertRunOwnedByUser(runId, authContext.userId);
+
+      await runsRepository.update({
+        id: runId,
+        data: {
+          updatedAt: new Date(),
+          engagementFlags: body.engagement_flags,
+          reliableRun: body.reliable_run,
+        },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: {
+            userId: authContext.userId,
+            runId,
+            eventType: body.type,
+          },
+        },
+        'Failed to update engagement',
+      );
+
+      throw new ApiError('Failed to update engagement', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId: authContext.userId, runId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Records a trial event for a run.
    *
    * Validates the event type, verifies user ownership, and persists trial data
@@ -265,5 +326,5 @@ export function RunEventsService({
     }
   }
 
-  return { completeRun, abortRun, writeTrial };
+  return { completeRun, abortRun, writeTrial, updateEngagement };
 }

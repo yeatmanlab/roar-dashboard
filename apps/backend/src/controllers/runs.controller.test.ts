@@ -48,6 +48,7 @@ describe('RunsController', () => {
       completeRun: mockCompleteRun,
       abortRun: vi.fn(),
       writeTrial: vi.fn(),
+      updateEngagement: vi.fn(),
     });
   });
 

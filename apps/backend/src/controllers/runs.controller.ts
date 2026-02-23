@@ -49,13 +49,18 @@ export const RunsController = {
     }
   },
   /**
-   * Handle a run event (complete).
+   * Handle a run event (complete, abort, trial, or engagement).
    *
-   * Marks a run as complete with optional metadata.
+   * Routes the event to the appropriate RunEventsService method based on event type.
+   * Supports four event types:
+   * - complete: Mark run as complete with optional metadata
+   * - abort: Mark run as aborted with optional reason
+   * - trial: Record a trial event with optional interactions
+   * - engagement: Update engagement flags and reliability status
    *
    * @param authContext - Authentication context with userId and isSuperAdmin
    * @param runId - UUID of the run to post the event to
-   * @param body - Event body with type 'complete' and optional metadata
+   * @param body - Event body with type and type-specific fields
    * @returns Response with status 200 and { status: 'ok' } on success, or error response on failure
    */
   event: async (authContext: AuthContext, runId: string, body: RunEventBody) => {
@@ -67,6 +72,8 @@ export const RunsController = {
         await runEventsService.abortRun(authContext, runId, body);
       } else if (body.type === 'trial') {
         await runEventsService.writeTrial(authContext, runId, body);
+      } else if (body.type === 'engagement') {
+        await runEventsService.updateEngagement(authContext, runId, body);
       } else {
         // Should never happen due to contract validation, but defense-in-depth:
         throw new ApiError('Invalid event type', {
