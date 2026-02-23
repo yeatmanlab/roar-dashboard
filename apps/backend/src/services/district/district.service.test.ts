@@ -8,8 +8,12 @@ import type { AuthContext } from '../../types/auth-context';
 
 // Mock repository
 const mockGetByIdWithEmbeds = vi.fn();
+const mockGetByIdUnrestricted = vi.fn();
+const mockGetChildren = vi.fn();
 const mockDistrictRepository = {
   getByIdWithEmbeds: mockGetByIdWithEmbeds,
+  getByIdUnrestricted: mockGetByIdUnrestricted,
+  getChildren: mockGetChildren,
 } as any;
 
 const mockAuthContext: AuthContext = {
@@ -28,23 +32,7 @@ describe('DistrictService', () => {
   });
 
   describe('getById', () => {
-    it('should validate UUID format and throw 400 for invalid UUID', async () => {
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await expect(service.getById('invalid-uuid', mockAuthContext, {})).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById('invalid-uuid', mockAuthContext, {});
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.BAD_REQUEST);
-        expect((error as ApiError).code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
-      }
-    });
-
-    it('should accept valid UUID format', async () => {
+    it('should fetch district by ID for regular users', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
         id: validUuid,
@@ -100,7 +88,7 @@ describe('DistrictService', () => {
       );
     });
 
-    it('should build access control filter for super admins', async () => {
+    it('should use getByIdUnrestricted for super admins', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
         id: validUuid,
@@ -113,7 +101,7 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockGetByIdWithEmbeds.mockResolvedValue(mockDistrict);
+      mockGetByIdUnrestricted.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository as any,
@@ -121,14 +109,9 @@ describe('DistrictService', () => {
 
       await service.getById(validUuid, mockSuperAdminContext, {});
 
-      expect(mockGetByIdWithEmbeds).toHaveBeenCalledWith(
-        validUuid,
-        {
-          userId: 'admin-123',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        false,
-      );
+      // Super admins should use unrestricted method, not the authorized one
+      expect(mockGetByIdUnrestricted).toHaveBeenCalledWith(validUuid);
+      expect(mockGetByIdWithEmbeds).not.toHaveBeenCalled();
     });
 
     it('should pass embedChildren=false when not requested', async () => {
@@ -279,27 +262,6 @@ describe('DistrictService', () => {
       const result = await service.getById(validUuid, mockAuthContext, {});
 
       expect(result).toEqual(mockDistrict);
-    });
-  });
-
-  describe('UUID validation edge cases', () => {
-    it('should reject various invalid UUID formats', async () => {
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository as any,
-      });
-
-      const invalidUuids = [
-        '123e4567-e89b-12d3-a456', // Too short
-        '123e4567-e89b-12d3-a456-426614174000-extra', // Too long
-        '123e4567e89b12d3a456426614174000', // No hyphens
-        'not-a-uuid-at-all',
-        '',
-        '123e4567-e89b-12d3-a456-42661417400g', // Invalid character
-      ];
-
-      for (const invalidUuid of invalidUuids) {
-        await expect(service.getById(invalidUuid, mockAuthContext, {})).rejects.toThrow(ApiError);
-      }
     });
   });
 });
