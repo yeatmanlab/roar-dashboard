@@ -21,32 +21,26 @@ function transformOrganization(org: Org): ApiDistrictDetail {
     abbreviation: org.abbreviation,
     orgType: org.orgType,
     parentOrgId: org.parentOrgId,
-    location:
-      org.locationAddressLine1 || org.locationCity || org.locationLatLong
+    location: {
+      addressLine1: org.locationAddressLine1 ?? undefined,
+      addressLine2: org.locationAddressLine2 ?? undefined,
+      city: org.locationCity ?? undefined,
+      stateProvince: org.locationStateProvince ?? undefined,
+      postalCode: org.locationPostalCode ?? undefined,
+      country: org.locationCountry ?? undefined,
+      coordinates: org.locationLatLong
         ? {
-            addressLine1: org.locationAddressLine1 ?? undefined,
-            addressLine2: org.locationAddressLine2 ?? undefined,
-            city: org.locationCity ?? undefined,
-            stateProvince: org.locationStateProvince ?? undefined,
-            postalCode: org.locationPostalCode ?? undefined,
-            country: org.locationCountry ?? undefined,
-            coordinates: org.locationLatLong
-              ? {
-                  type: 'Point' as const,
-                  coordinates: org.locationLatLong, // [longitude, latitude]
-                }
-              : undefined,
+            type: 'Point' as const,
+            coordinates: org.locationLatLong,
           }
         : undefined,
-    identifiers:
-      org.mdrNumber || org.ncesId || org.stateId || org.schoolNumber
-        ? {
-            mdrNumber: org.mdrNumber ?? undefined,
-            ncesId: org.ncesId ?? undefined,
-            stateId: org.stateId ?? undefined,
-            schoolNumber: org.schoolNumber ?? undefined,
-          }
-        : undefined,
+    },
+    identifiers: {
+      mdrNumber: org.mdrNumber ?? undefined,
+      ncesId: org.ncesId ?? undefined,
+      stateId: org.stateId ?? undefined,
+      schoolNumber: org.schoolNumber ?? undefined,
+    },
     dates: {
       created: org.createdAt.toISOString(),
       updated: (org.updatedAt ?? org.createdAt).toISOString(),

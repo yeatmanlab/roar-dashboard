@@ -305,7 +305,16 @@ describe('DistrictsController', () => {
       });
 
       const data = expectOkResponse(result);
-      expect(data.items[0]?.location).toBeUndefined();
+      expect(data.items[0]).toHaveProperty('location');
+      expect(data.items[0].location).toEqual({
+        addressLine1: undefined,
+        addressLine2: undefined,
+        city: undefined,
+        stateProvince: undefined,
+        postalCode: undefined,
+        country: undefined,
+        coordinates: undefined,
+      });
     });
   });
 
