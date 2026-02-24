@@ -11,14 +11,6 @@ import type { AdministrationRepository } from '../../repositories/administration
 export function createMockAdministrationRepository(): MockedObject<AdministrationRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
-    // Private properties (mocked as undefined since they're not directly accessed in tests)
-    accessControls: undefined as unknown,
-    orgAccessControls: undefined as unknown,
-    // Private methods
-    getStatusFilterCondition: vi.fn(),
-    getOrgsByAdministrationId: vi.fn(),
-    getAuthorizedOrgsByAdministrationId: vi.fn(),
-    // Public methods
     listAll: vi.fn(),
     listAuthorized: vi.fn(),
     getAuthorizedById: vi.fn(),

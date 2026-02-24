@@ -12,7 +12,7 @@ export function createMockTaskRepository(): MockedObject<TaskRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
     getBySlug: vi.fn(),
-  } as unknown as MockedObject<TaskRepository>;
+  } as MockedObject<TaskRepository>;
 }
 
 export type MockTaskRepository = ReturnType<typeof createMockTaskRepository>;

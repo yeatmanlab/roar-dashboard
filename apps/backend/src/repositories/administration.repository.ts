@@ -115,7 +115,9 @@ export type ListGroupsByAdministrationOptions = BaseGetAllParams;
 /**
  * Options for listing task variants of an administration.
  */
-export type ListTaskVariantsByAdministrationOptions = BasePaginatedQueryParams;
+export type ListTaskVariantsByAdministrationOptions = Omit<BaseGetAllParams, 'orderBy'> & {
+  orderBy?: { field: string; direction: 'asc' | 'desc' };
+};
 
 /**
  * Raw joined result from getTaskVariantsByAdministrationId.
