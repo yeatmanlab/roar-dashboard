@@ -49,7 +49,7 @@ export function RunEventsService({
     }
 
     if (run.userId !== userId) {
-      throw new ApiError('Forbidden', {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
         context: { runId, userId },
