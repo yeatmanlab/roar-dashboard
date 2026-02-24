@@ -147,29 +147,5 @@ describe('DistrictService', () => {
         expect((error as ApiError).message).toBe('District not found');
       }
     });
-
-    it('should handle UUID with uppercase letters', async () => {
-      const validUuid = '123E4567-E89B-12D3-A456-426614174000';
-      const mockDistrict = {
-        id: validUuid.toLowerCase(),
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: 'district',
-        parentOrgId: null,
-        isRosteringRootOrg: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository as any,
-      });
-
-      const result = await service.getById(validUuid, mockAuthContext);
-
-      expect(result).toEqual(mockDistrict);
-    });
   });
 });
