@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
-import { IDENTIFIER_WITH_HYPHENS, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
+import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
 
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
 
@@ -71,7 +71,7 @@ const TaskVariantParameterSchema = z.object({
 const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema).min(1);
 
 export const TaskVariantCreateRequestSchema = z.object({
-  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_HYPHENS),
+  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES),
   parameters: TaskVariantParametersArraySchema,
   description: z.string().trim().min(1).max(1024),
   status: TaskVariantStatusSchema,

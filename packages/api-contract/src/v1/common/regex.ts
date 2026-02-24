@@ -3,6 +3,15 @@
  */
 
 /**
+ * Matches valid identifiers that:
+ * - Start with a letter (a-z, A-Z)
+ * - Followed by letters, digits, underscores, hyphens, or spaces
+ *
+ * Examples: "My Task", "task-1", "Task_Variant", "a1 b2 c3", "my-task name"
+ */
+export const IDENTIFIER_WITH_SPACES = /^[a-zA-Z][a-zA-Z0-9_\- ]*$/;
+
+/**
  * Matches valid identifier names that:
  * - Start with a letter (a-z, A-Z)
  * - Followed by letters, digits, underscores, or hyphens
