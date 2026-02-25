@@ -129,4 +129,30 @@ export const DistrictsController = {
       throw error;
     }
   },
+
+  /**
+   * Get a single district by ID.
+   *
+   * Delegates to DistrictService for authorization and retrieval.
+   *
+   * @param authContext - User's authentication context
+   * @param districtId - UUID of the district to retrieve
+   */
+  getById: async (authContext: AuthContext, districtId: string) => {
+    try {
+      const district = await districtService.getById(districtId, authContext);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformDistrict(district),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
 };
