@@ -23,12 +23,6 @@ vi.mock('drizzle-orm/node-postgres', () => ({
 
 vi.mock('./schema/core', () => ({}));
 vi.mock('./schema/assessment', () => ({}));
-vi.mock('../logger', () => ({
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-  },
-}));
 
 import { Pool } from 'pg';
 import { Connector } from '@google-cloud/cloud-sql-connector';
