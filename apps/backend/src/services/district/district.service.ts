@@ -100,12 +100,12 @@ export function DistrictService({
    * super_admin users can access any district.
    * Other users can only access districts they're assigned to.
    *
-   * @param districtId - UUID of the district to retrieve
    * @param authContext - User's auth context (id and super admin flag)
+   * @param districtId - UUID of the district to retrieve
    * @returns The district if found and authorized
    * @throws {ApiError} 404 if not found or not authorized, 500 on database errors
    */
-  async function getById(districtId: string, authContext: AuthContext): Promise<District> {
+  async function getById(authContext: AuthContext, districtId: string): Promise<District> {
     const { userId, isSuperAdmin } = authContext;
 
     try {

@@ -449,7 +449,7 @@ describe('DistrictService', () => {
         districtRepository: mockDistrictRepository,
       });
 
-      const result = await service.getById(validUuid, mockAuthContext);
+      const result = await service.getById(mockAuthContext, validUuid);
 
       expect(result).toEqual(mockDistrict);
       expect(mockGetByIdUnrestricted).not.toHaveBeenCalled();
@@ -474,7 +474,7 @@ describe('DistrictService', () => {
         districtRepository: mockDistrictRepository,
       });
 
-      await service.getById(validUuid, mockAuthContext);
+      await service.getById(mockAuthContext, validUuid);
 
       expect(mockGetAuthorizedById).toHaveBeenCalledWith(validUuid, {
         userId: 'user-123',
@@ -501,7 +501,7 @@ describe('DistrictService', () => {
         districtRepository: mockDistrictRepository,
       });
 
-      await service.getById(validUuid, mockSuperAdminContext);
+      await service.getById(mockSuperAdminContext, validUuid);
 
       // Super admins should use unrestricted method, not the authorized one
       expect(mockGetByIdUnrestricted).toHaveBeenCalledWith(validUuid);
@@ -516,10 +516,10 @@ describe('DistrictService', () => {
         districtRepository: mockDistrictRepository,
       });
 
-      await expect(service.getById(validUuid, mockAuthContext)).rejects.toThrow(ApiError);
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
 
       try {
-        await service.getById(validUuid, mockAuthContext);
+        await service.getById(mockAuthContext, validUuid);
       } catch (error) {
         expect(error).toBeInstanceOf(ApiError);
         expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
@@ -536,15 +536,35 @@ describe('DistrictService', () => {
         districtRepository: mockDistrictRepository,
       });
 
-      await expect(service.getById(validUuid, mockAuthContext)).rejects.toThrow(ApiError);
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
 
       try {
-        await service.getById(validUuid, mockAuthContext);
+        await service.getById(mockAuthContext, validUuid);
       } catch (error) {
         expect(error).toBeInstanceOf(ApiError);
         expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
         // Should not distinguish between "not found" and "no access" for security
         expect((error as ApiError).message).toBe('District not found');
+      }
+    });
+
+    it('should wrap database errors in ApiError with DATABASE_QUERY_FAILED code', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const dbError = new Error('Database connection lost');
+      mockGetAuthorizedById.mockRejectedValue(dbError);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
+
+      try {
+        await service.getById(mockAuthContext, validUuid);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+        expect((error as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       }
     });
   });

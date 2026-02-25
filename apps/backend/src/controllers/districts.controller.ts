@@ -140,7 +140,7 @@ export const DistrictsController = {
    */
   getById: async (authContext: AuthContext, districtId: string) => {
     try {
-      const district = await districtService.getById(districtId, authContext);
+      const district = await districtService.getById(authContext, districtId);
 
       return {
         status: StatusCodes.OK as const,

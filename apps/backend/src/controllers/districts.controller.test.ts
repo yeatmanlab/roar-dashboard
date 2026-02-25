@@ -363,7 +363,7 @@ describe('DistrictsController', () => {
         name: 'Test District',
         abbreviation: 'TD',
       });
-      expect(mockGetById).toHaveBeenCalledWith('district-123', mockAuthContext);
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'district-123');
     });
 
     it('should transform district with location data', async () => {
