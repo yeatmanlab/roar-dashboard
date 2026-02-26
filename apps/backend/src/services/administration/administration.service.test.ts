@@ -3062,7 +3062,9 @@ describe('AdministrationService', () => {
       it('should wrap unexpected errors with appropriate context', async () => {
         const mockAdmin = AdministrationFactory.build();
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAdministrationRepository.getAgreementsByAdministrationId.mockRejectedValue(new Error('Database connection lost'));
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockRejectedValue(
+          new Error('Database connection lost'),
+        );
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
