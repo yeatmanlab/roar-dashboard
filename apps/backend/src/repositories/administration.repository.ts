@@ -7,6 +7,9 @@ import {
   administrationClasses,
   administrationGroups,
   administrationTaskVariants,
+  administrationAgreements,
+  agreements,
+  agreementVersions,
   taskVariants,
   tasks,
   orgs,
@@ -20,6 +23,8 @@ import {
   type Group,
   type Task,
   type TaskVariant,
+  type Agreement,
+  type AgreementVersion,
 } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -32,11 +37,12 @@ import type {
   AdministrationClassSortFieldType,
   AdministrationGroupSortFieldType,
   AdministrationTaskVariantSortFieldType,
+  AdministrationAgreementSortFieldType,
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
-import type { BaseGetAllParams } from './interfaces/base.repository.interface';
+import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 import { AdministrationAccessControls } from './access-controls/administration.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
@@ -86,6 +92,15 @@ const TASK_VARIANT_SORT_COLUMNS: Record<AdministrationTaskVariantSortFieldType, 
 };
 
 /**
+ * Explicit mapping from API sort field names to agreement table columns.
+ */
+const AGREEMENT_SORT_COLUMNS: Record<AdministrationAgreementSortFieldType, Column> = {
+  name: agreements.name,
+  agreementType: agreements.agreementType,
+  createdAt: agreements.createdAt,
+};
+
+/**
  * Query options for administration repository methods (API contract format).
  */
 export type AdministrationQueryOptions = PaginationQuery & SortQuery<AdministrationSortFieldType>;
@@ -100,24 +115,29 @@ export interface ListAuthorizedOptions extends BaseGetAllParams {
 /**
  * Options for listing orgs (districts/schools) of an administration.
  */
-export type ListOrgsByAdministrationOptions = BaseGetAllParams;
+export type ListOrgsByAdministrationOptions = BasePaginatedQueryParams;
 
 /**
  * Options for listing classes of an administration.
  */
-export type ListClassesByAdministrationOptions = BaseGetAllParams;
+export type ListClassesByAdministrationOptions = BasePaginatedQueryParams;
 
 /**
  * Options for listing groups of an administration.
  */
-export type ListGroupsByAdministrationOptions = BaseGetAllParams;
+export type ListGroupsByAdministrationOptions = BasePaginatedQueryParams;
 
 /**
  * Options for listing task variants of an administration.
  */
-export type ListTaskVariantsByAdministrationOptions = Omit<BaseGetAllParams, 'orderBy'> & {
-  orderBy?: { field: string; direction: 'asc' | 'desc' };
-};
+export type ListTaskVariantsByAdministrationOptions = BasePaginatedQueryParams;
+
+/**
+ * Options for listing agreements of an administration.
+ */
+export interface ListAgreementsByAdministrationOptions extends BasePaginatedQueryParams {
+  locale: string;
+}
 
 /**
  * Raw joined result from getTaskVariantsByAdministrationId.
@@ -142,6 +162,15 @@ export interface AssignmentWithOptional
   conditionsAssignment: null;
   conditionsRequirements: null;
   optional: boolean;
+}
+
+/**
+ * Raw joined result from getAgreementsByAdministrationId.
+ * Contains the agreement with its current version for the requested locale.
+ */
+export interface AgreementWithVersion {
+  agreement: Agreement;
+  currentVersion: AgreementVersion | null;
 }
 
 /**
@@ -261,11 +290,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     // Use explicit column mapping for type safety
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField =
-      orderBy && !Array.isArray(orderBy) ? (orderBy.field as AdministrationSortFieldType | undefined) : undefined;
+    const sortField = orderBy?.field as AdministrationSortFieldType | undefined;
     const sortColumn = sortField ? ADMINISTRATION_SORT_COLUMNS[sortField] : administrations.createdAt;
-    const sortDirection =
-      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
+    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join administrations with the accessible IDs subquery + status filter
     const dataResult = await this.db
@@ -362,13 +389,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField =
-      orderBy && !Array.isArray(orderBy)
-        ? (orderBy.field as AdministrationDistrictSortFieldType | undefined)
-        : undefined;
+    const sortField = orderBy?.field as AdministrationDistrictSortFieldType | undefined;
     const sortColumn = sortField ? ORG_SORT_COLUMNS[sortField] : orgs.name;
-    const sortDirection =
-      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ org: orgs })
@@ -427,13 +450,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField =
-      orderBy && !Array.isArray(orderBy)
-        ? (orderBy.field as AdministrationDistrictSortFieldType | undefined)
-        : undefined;
+    const sortField = orderBy?.field as AdministrationDistrictSortFieldType | undefined;
     const sortColumn = sortField ? ORG_SORT_COLUMNS[sortField] : orgs.name;
-    const sortDirection =
-      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ org: orgs })
@@ -541,11 +560,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     // Use explicit column mapping for type safety
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField =
-      orderBy && !Array.isArray(orderBy) ? (orderBy.field as AdministrationClassSortFieldType | undefined) : undefined;
+    const sortField = orderBy?.field as AdministrationClassSortFieldType | undefined;
     const sortColumn = sortField ? CLASS_SORT_COLUMNS[sortField] : classes.name;
-    const primaryOrder =
-      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ class: classes })
@@ -604,11 +621,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField =
-      orderBy && !Array.isArray(orderBy) ? (orderBy.field as AdministrationClassSortFieldType | undefined) : undefined;
+    const sortField = orderBy?.field as AdministrationClassSortFieldType | undefined;
     const sortColumn = sortField ? CLASS_SORT_COLUMNS[sortField] : classes.name;
-    const primaryOrder =
-      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ class: classes })
@@ -671,11 +686,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     // Use explicit column mapping for type safety
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField =
-      orderBy && !Array.isArray(orderBy) ? (orderBy.field as AdministrationGroupSortFieldType | undefined) : undefined;
+    const sortField = orderBy?.field as AdministrationGroupSortFieldType | undefined;
     const sortColumn = sortField ? GROUP_SORT_COLUMNS[sortField] : groups.name;
-    const primaryOrder =
-      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ group: groups })
@@ -741,11 +754,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField =
-      orderBy && !Array.isArray(orderBy) ? (orderBy.field as AdministrationGroupSortFieldType | undefined) : undefined;
+    const sortField = orderBy?.field as AdministrationGroupSortFieldType | undefined;
     const sortColumn = sortField ? GROUP_SORT_COLUMNS[sortField] : groups.name;
-    const primaryOrder =
-      orderBy && !Array.isArray(orderBy) && orderBy.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ group: groups })
@@ -841,5 +852,78 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .offset(offset);
 
     return { items, totalItems };
+  }
+
+  /**
+   * Get agreements assigned to an administration.
+   *
+   * Returns agreements with their current version for the requested locale.
+   * If no current version exists for the requested locale, currentVersion will be null.
+   *
+   * Note: This method has no "authorized" variant because agreements are required
+   * for all users in an administration (students need to know what to sign).
+   * Authorization is handled at the service layer by verifying access to the parent administration.
+   *
+   * @param administrationId - The administration ID to get agreements for
+   * @param options - Pagination, sorting, filtering, and locale options
+   * @returns Paginated result with agreements and their current versions
+   */
+  async getAgreementsByAdministrationId(
+    administrationId: string,
+    options: ListAgreementsByAdministrationOptions,
+  ): Promise<PaginatedResult<AgreementWithVersion>> {
+    const { page, perPage, orderBy, locale } = options;
+    const offset = (page - 1) * perPage;
+
+    const whereCondition = eq(administrationAgreements.administrationId, administrationId);
+
+    // Count query - counts distinct agreements (not versions)
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(administrationAgreements)
+      .innerJoin(agreements, eq(agreements.id, administrationAgreements.agreementId))
+      .where(whereCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Use explicit column mapping for type safety
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as AdministrationAgreementSortFieldType | undefined;
+    const sortColumn = (sortField && AGREEMENT_SORT_COLUMNS[sortField]) || agreements.name;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    // Data query - left join with agreement versions to get current version for locale
+    // Left join ensures we return agreements even if no version exists for the locale
+    const dataResult = await this.db
+      .select({
+        agreement: agreements,
+        currentVersion: agreementVersions,
+      })
+      .from(administrationAgreements)
+      .innerJoin(agreements, eq(agreements.id, administrationAgreements.agreementId))
+      .leftJoin(
+        agreementVersions,
+        and(
+          eq(agreementVersions.agreementId, agreements.id),
+          eq(agreementVersions.isCurrent, true),
+          eq(agreementVersions.locale, locale),
+        ),
+      )
+      .where(whereCondition)
+      .orderBy(primaryOrder, asc(agreements.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => ({
+        agreement: row.agreement,
+        currentVersion: row.currentVersion,
+      })),
+      totalItems,
+    };
   }
 }

@@ -9,6 +9,8 @@ import { UserFactory } from '../../test-support/factories/user.factory';
 import { TaskFactory } from '../../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../../test-support/factories/task-variant.factory';
 import { AdministrationTaskVariantFactory } from '../../test-support/factories/administration-task-variant.factory';
+import { AgreementFactory } from '../../test-support/factories/agreement.factory';
+import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
@@ -2852,6 +2854,676 @@ describe('AdministrationService', () => {
           message: ApiErrorMessage.FORBIDDEN,
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+    });
+  });
+
+  describe('listAgreements', () => {
+    const defaultAgreementOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      locale: 'en-US',
+    };
+
+    describe('authorization', () => {
+      it('should verify administration access before returning agreements', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build();
+        const mockVersion = AgreementVersionFactory.build({ locale: 'en-US' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'user-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: mockAdmin.id });
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.id).toBe(mockAgreement.id);
+      });
+
+      it('should return 404 when administration does not exist', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements(
+            { userId: 'user-123', isSuperAdmin: false },
+            'nonexistent-id',
+            defaultAgreementOptions,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: 404,
+        });
+      });
+
+      it('should return 403 when user lacks access to administration', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements({ userId: 'user-123', isSuperAdmin: false }, mockAdmin.id, defaultAgreementOptions),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+          message: ApiErrorMessage.FORBIDDEN,
+        });
+      });
+
+      it('should skip authorization check for super admin', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build();
+        const mockVersion = AgreementVersionFactory.build();
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'admin-123', isSuperAdmin: true },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(mockAdministrationRepository.getAuthorizedById).not.toHaveBeenCalled();
+        expect(result.items).toHaveLength(1);
+      });
+    });
+
+    describe('data retrieval', () => {
+      it('should pass correct parameters to repository', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await service.listAgreements({ userId: 'admin-123', isSuperAdmin: true }, mockAdmin.id, {
+          page: 2,
+          perPage: 10,
+          sortBy: 'agreementType',
+          sortOrder: 'desc',
+          locale: 'es',
+        });
+
+        expect(mockAdministrationRepository.getAgreementsByAdministrationId).toHaveBeenCalledWith(mockAdmin.id, {
+          page: 2,
+          perPage: 10,
+          orderBy: {
+            field: 'agreementType',
+            direction: 'desc',
+          },
+          locale: 'es',
+        });
+      });
+
+      it('should return agreements with current version', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build({ name: 'Test Agreement', agreementType: 'tos' });
+        const mockVersion = AgreementVersionFactory.build({ locale: 'en-US', githubFilename: 'TOS.md' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'admin-123', isSuperAdmin: true },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Test Agreement');
+        expect(result.items[0]!.currentVersion).not.toBeNull();
+        expect(result.items[0]!.currentVersion!.locale).toBe('en-US');
+      });
+
+      it('should return null currentVersion when no version exists for locale', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const mockAgreement = AgreementFactory.build();
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: mockAgreement, currentVersion: null }],
+          totalItems: 1,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements({ userId: 'admin-123', isSuperAdmin: true }, mockAdmin.id, {
+          ...defaultAgreementOptions,
+          locale: 'fr',
+        });
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.currentVersion).toBeNull();
+      });
+
+      it('should return empty array when no agreements assigned', async () => {
+        const mockAdmin = AdministrationFactory.build();
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'admin-123', isSuperAdmin: true },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toEqual([]);
+        expect(result.totalItems).toBe(0);
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap unexpected errors with appropriate context', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockRejectedValue(
+          new Error('Database connection lost'),
+        );
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements({ userId: 'admin-123', isSuperAdmin: true }, mockAdmin.id, defaultAgreementOptions),
+        ).rejects.toMatchObject({
+          statusCode: 500,
+          message: 'Failed to retrieve administration agreements',
+        });
+      });
+    });
+
+    describe('agreement type filtering for students', () => {
+      it('should not filter agreements for super admin', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const tosAgreement = AgreementFactory.build({ agreementType: 'tos' });
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: tosAgreement, currentVersion: null },
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 3,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'admin-123', isSuperAdmin: true },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(3);
+        expect(mockAdministrationRepository.getUserRolesForAdministration).not.toHaveBeenCalled();
+      });
+
+      it('should not filter agreements for supervisory roles (teacher)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const tosAgreement = AgreementFactory.build({ agreementType: 'tos' });
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: tosAgreement, currentVersion: null },
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 3,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'teacher-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(3);
+      });
+
+      it('should not filter agreements when user has both student and supervisory roles (supervisory takes precedence)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const tosAgreement = AgreementFactory.build({ agreementType: 'tos', name: 'TOS Agreement' });
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent', name: 'Assent Agreement' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        // User has both student and teacher roles - supervisory role (teacher) takes precedence
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student', 'teacher']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: tosAgreement, currentVersion: null },
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 3,
+        });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'multi-role-user', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        // Supervisory role takes precedence, so user sees all agreements without filtering
+        expect(result.items).toHaveLength(3);
+        // User data should not be fetched since supervisory role bypasses age check
+        expect(mockUserRepository.getById).not.toHaveBeenCalled();
+      });
+
+      it('should show only assent agreements for minor student (by dob)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const tosAgreement = AgreementFactory.build({ agreementType: 'tos', name: 'TOS Agreement' });
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent', name: 'Assent Agreement' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        // Student born 10 years ago (under 18)
+        const tenYearsAgo = new Date();
+        tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+        const dobString = tenYearsAgo.toISOString().split('T')[0]!;
+        const mockUser = UserFactory.build({ dob: dobString, grade: null });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: tosAgreement, currentVersion: null },
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 3,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Assent Agreement');
+        expect(result.totalItems).toBe(1);
+      });
+
+      it('should show only consent agreements for adult student (by dob)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const tosAgreement = AgreementFactory.build({ agreementType: 'tos', name: 'TOS Agreement' });
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent', name: 'Assent Agreement' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        // Student born 20 years ago (over 18)
+        const twentyYearsAgo = new Date();
+        twentyYearsAgo.setFullYear(twentyYearsAgo.getFullYear() - 20);
+        const dobString = twentyYearsAgo.toISOString().split('T')[0]!;
+        const mockUser = UserFactory.build({ dob: dobString, grade: null });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: tosAgreement, currentVersion: null },
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 3,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'adult-student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Consent Agreement');
+      });
+
+      it('should show assent for minor when age estimated from grade (grade 11 = age 16)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent', name: 'Assent Agreement' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        // Student with no dob but grade 11 (typical age 16)
+        const mockUser = UserFactory.build({ dob: null, grade: '11' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 2,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Assent Agreement');
+      });
+
+      it('should show assent for grade 12 (conservative estimate: age 17, still minor)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent', name: 'Assent Agreement' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        // Student with no dob but grade 12 - conservative age estimate is 17 (under majority age)
+        const mockUser = UserFactory.build({ dob: null, grade: '12' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 2,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        // Grade 12 maps to age 17 (conservative), still a minor
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Assent Agreement');
+      });
+
+      it('should show consent for grade 13 (conservative estimate: age 18, adult)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent', name: 'Assent Agreement' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        // Student with no dob but grade 13 - conservative age estimate is 18 (majority age)
+        const mockUser = UserFactory.build({ dob: null, grade: '13' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 2,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Consent Agreement');
+      });
+
+      it('should show assent when age cannot be determined (conservative: treat as minor)', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent', name: 'Assent Agreement' });
+        const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
+
+        // Student with neither dob nor grade - conservative approach: treat as minor
+        const mockUser = UserFactory.build({ dob: null, grade: null });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [
+            { agreement: assentAgreement, currentVersion: null },
+            { agreement: consentAgreement, currentVersion: null },
+          ],
+          totalItems: 2,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.agreement.name).toBe('Assent Agreement');
+      });
+
+      it('should never show TOS agreements to students regardless of age', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const tosAgreement = AgreementFactory.build({ agreementType: 'tos', name: 'TOS Agreement' });
+
+        // Adult student
+        const twentyYearsAgo = new Date();
+        twentyYearsAgo.setFullYear(twentyYearsAgo.getFullYear() - 20);
+        const dobString = twentyYearsAgo.toISOString().split('T')[0]!;
+        const mockUser = UserFactory.build({ dob: dobString, grade: null });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: tosAgreement, currentVersion: null }],
+          totalItems: 1,
+        });
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        const result = await service.listAgreements(
+          { userId: 'adult-student-123', isSuperAdmin: false },
+          mockAdmin.id,
+          defaultAgreementOptions,
+        );
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('should throw error when user not found during filtering', async () => {
+        const mockAdmin = AdministrationFactory.build();
+        const assentAgreement = AgreementFactory.build({ agreementType: 'assent' });
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
+          items: [{ agreement: assentAgreement, currentVersion: null }],
+          totalItems: 1,
+        });
+        mockUserRepository.getById.mockResolvedValue(null);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          userRepository: mockUserRepository,
+        });
+
+        await expect(
+          service.listAgreements(
+            { userId: 'missing-user', isSuperAdmin: false },
+            mockAdmin.id,
+            defaultAgreementOptions,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: 500,
+          message: 'Failed to retrieve user data for agreement filtering',
+        });
+      });
+
+      it('should return 403 Forbidden for guardian role', async () => {
+        const mockAdmin = AdministrationFactory.build();
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['guardian']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements(
+            { userId: 'guardian-123', isSuperAdmin: false },
+            mockAdmin.id,
+            defaultAgreementOptions,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+        });
+      });
+
+      it('should return 403 Forbidden for parent role', async () => {
+        const mockAdmin = AdministrationFactory.build();
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['parent']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements({ userId: 'parent-123', isSuperAdmin: false }, mockAdmin.id, defaultAgreementOptions),
+        ).rejects.toMatchObject({
+          statusCode: 403,
+        });
+      });
+
+      it('should return 403 Forbidden for relative role', async () => {
+        const mockAdmin = AdministrationFactory.build();
+
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+        mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['relative']);
+        mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        await expect(
+          service.listAgreements(
+            { userId: 'relative-123', isSuperAdmin: false },
+            mockAdmin.id,
+            defaultAgreementOptions,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: 403,
         });
       });
     });

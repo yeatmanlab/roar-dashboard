@@ -130,15 +130,14 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
     if (where) {
       itemsQuery.where(where);
     }
+    // Always append asc(id) as a secondary sort to guarantee stable pagination order.
+    // Without a tiebreaker, rows with identical sort-column values may appear in
+    // arbitrary order across pages, causing duplicates or missing rows.
     if (orderBy) {
-      if (Array.isArray(orderBy)) {
-        // Array of SQL expressions - pass them all to orderBy
-        itemsQuery.orderBy(...orderBy);
-      } else {
-        // Legacy object format - convert to SQL expression
-        const column = this.typedTable[orderBy.field] as Parameters<typeof asc>[0];
-        itemsQuery.orderBy(this.buildOrderClause(column, orderBy.direction));
-      }
+      const column = this.typedTable[orderBy.field] as Parameters<typeof asc>[0];
+      itemsQuery.orderBy(this.buildOrderClause(column, orderBy.direction), asc(this.typedTable['id']));
+    } else {
+      itemsQuery.orderBy(asc(this.typedTable['id']));
     }
     itemsQuery.limit(perPage).offset(offset);
     const items = (await itemsQuery) as TEntity[];
