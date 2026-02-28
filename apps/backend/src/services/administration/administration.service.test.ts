@@ -18,15 +18,20 @@ import type { AssignmentWithOptional, TaskVariantWithAssignment } from '../../re
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
-  createMockRunsRepository,
   createMockUserRepository,
 } from '../../test-support/repositories';
 
 describe('AdministrationService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockAdministrationTaskVariantRepository: ReturnType<typeof createMockAdministrationTaskVariantRepository>;
-  let mockRunsRepository: ReturnType<typeof createMockRunsRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
+
+  // Mock RunsService (service-level, not repository) — matches ReturnType<typeof RunsService>
+  const mockRunsService = {
+    getRunStatsByAdministrationIds: vi.fn(),
+    getByAdministrationId: vi.fn(),
+  };
+
   const mockEvaluateTaskVariantEligibility = vi.fn();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockTaskService: any = {
@@ -37,7 +42,6 @@ describe('AdministrationService', () => {
     vi.resetAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
     mockAdministrationTaskVariantRepository = createMockAdministrationTaskVariantRepository();
-    mockRunsRepository = createMockRunsRepository();
     mockUserRepository = createMockUserRepository();
   });
 
@@ -234,11 +238,11 @@ describe('AdministrationService', () => {
         const assignedCounts = new Map([['admin-1', 10]]);
         const runStats = new Map([['admin-1', { started: 5, completed: 2 }]]);
         mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(assignedCounts);
-        mockRunsRepository.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
+        mockRunsService.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -263,7 +267,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -272,7 +276,7 @@ describe('AdministrationService', () => {
         );
 
         expect(mockAdministrationRepository.getAssignedUserCountsByAdministrationIds).not.toHaveBeenCalled();
-        expect(mockRunsRepository.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
+        expect(mockRunsService.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
         expect(result.items[0]).not.toHaveProperty('stats');
       });
 
@@ -282,7 +286,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -291,7 +295,7 @@ describe('AdministrationService', () => {
         );
 
         expect(mockAdministrationRepository.getAssignedUserCountsByAdministrationIds).not.toHaveBeenCalled();
-        expect(mockRunsRepository.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
+        expect(mockRunsService.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
         expect(result.items[0]).not.toHaveProperty('stats');
       });
 
@@ -301,7 +305,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -310,7 +314,7 @@ describe('AdministrationService', () => {
         );
 
         expect(mockAdministrationRepository.getAssignedUserCountsByAdministrationIds).not.toHaveBeenCalled();
-        expect(mockRunsRepository.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
+        expect(mockRunsService.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
         expect(result.items[0]).not.toHaveProperty('stats');
       });
 
@@ -330,11 +334,11 @@ describe('AdministrationService', () => {
           ['admin-2', { started: 30, completed: 20 }],
         ]);
         mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(assignedCounts);
-        mockRunsRepository.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
+        mockRunsService.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -346,7 +350,7 @@ describe('AdministrationService', () => {
           'admin-1',
           'admin-2',
         ]);
-        expect(mockRunsRepository.getRunStatsByAdministrationIds).toHaveBeenCalledWith(['admin-1', 'admin-2']);
+        expect(mockRunsService.getRunStatsByAdministrationIds).toHaveBeenCalledWith(['admin-1', 'admin-2']);
         expect(result.items[0]!.stats).toEqual({ assigned: 25, started: 10, completed: 5 });
         expect(result.items[1]!.stats).toEqual({ assigned: 50, started: 30, completed: 20 });
       });
@@ -362,11 +366,11 @@ describe('AdministrationService', () => {
         const assignedCounts = new Map([['admin-1', 10]]);
         const runStats = new Map([['admin-1', { started: 5, completed: 2 }]]);
         mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(assignedCounts);
-        mockRunsRepository.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
+        mockRunsService.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -390,7 +394,7 @@ describe('AdministrationService', () => {
           callOrder.push('assigned-end');
           return new Map([['admin-1', 10]]);
         });
-        mockRunsRepository.getRunStatsByAdministrationIds.mockImplementation(async () => {
+        mockRunsService.getRunStatsByAdministrationIds.mockImplementation(async () => {
           callOrder.push('runs-start');
           await new Promise((r) => setTimeout(r, 10));
           callOrder.push('runs-end');
@@ -399,7 +403,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         await service.list(
@@ -422,7 +426,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -431,7 +435,7 @@ describe('AdministrationService', () => {
         );
 
         expect(mockAdministrationRepository.getAssignedUserCountsByAdministrationIds).not.toHaveBeenCalled();
-        expect(mockRunsRepository.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
+        expect(mockRunsService.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
         expect(result.items).toEqual([]);
       });
 
@@ -441,13 +445,13 @@ describe('AdministrationService', () => {
 
         const dbError = new Error('Database connection failed');
         mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockRejectedValue(dbError);
-        mockRunsRepository.getRunStatsByAdministrationIds.mockResolvedValue(
+        mockRunsService.getRunStatsByAdministrationIds.mockResolvedValue(
           new Map([['admin-1', { started: 5, completed: 2 }]]),
         );
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         await expect(
@@ -466,11 +470,11 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(
           new Map([['admin-1', 25]]),
         );
-        mockRunsRepository.getRunStatsByAdministrationIds.mockRejectedValue(dbError);
+        mockRunsService.getRunStatsByAdministrationIds.mockRejectedValue(dbError);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         await expect(
@@ -629,13 +633,13 @@ describe('AdministrationService', () => {
         ]);
 
         mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(assignedCounts);
-        mockRunsRepository.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
+        mockRunsService.getRunStatsByAdministrationIds.mockResolvedValue(runStats);
         mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(tasksMap);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
-          runsRepository: mockRunsRepository,
+          runsService: mockRunsService,
         });
 
         const result = await service.list(
@@ -3526,6 +3530,129 @@ describe('AdministrationService', () => {
           statusCode: 403,
         });
       });
+    });
+  });
+
+  describe('deleteById', () => {
+    it('should delete administration for super admin when no runs exist', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockRunsService.getByAdministrationId.mockResolvedValue(null);
+      mockAdministrationRepository.delete.mockResolvedValue(undefined);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runsService: mockRunsService,
+      });
+
+      await service.deleteById({ userId: 'super-admin-user', isSuperAdmin: true }, 'admin-123');
+
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockRunsService.getByAdministrationId).toHaveBeenCalledWith('admin-123');
+      expect(mockAdministrationRepository.delete).toHaveBeenCalledWith({ id: 'admin-123' });
+    });
+
+    it('should delete administration for authorized non-super admin with DELETE permission', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(mockAdmin);
+      mockRunsService.getByAdministrationId.mockResolvedValue(null);
+      mockAdministrationRepository.delete.mockResolvedValue(undefined);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runsService: mockRunsService,
+      });
+
+      await service.deleteById({ userId: 'admin-user', isSuperAdmin: false }, 'admin-123');
+
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
+      // Should check DELETE permission (site_administrator, administrator only)
+      expect(mockAdministrationRepository.getAuthorizedById).toHaveBeenCalledWith(
+        {
+          userId: 'admin-user',
+          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator']),
+        },
+        'admin-123',
+      );
+      expect(mockRunsService.getByAdministrationId).toHaveBeenCalledWith('admin-123');
+      expect(mockAdministrationRepository.delete).toHaveBeenCalledWith({ id: 'admin-123' });
+    });
+
+    it('should throw not-found error when administration does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runsService: mockRunsService,
+      });
+
+      await expect(
+        service.deleteById({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id'),
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        message: 'Administration not found',
+      });
+      expect(mockRunsService.getByAdministrationId).not.toHaveBeenCalled();
+      expect(mockAdministrationRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw forbidden error when non-super admin lacks DELETE permission', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runsService: mockRunsService,
+      });
+
+      await expect(
+        service.deleteById({ userId: 'teacher-user', isSuperAdmin: false }, 'admin-123'),
+      ).rejects.toMatchObject({
+        statusCode: 403,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+      expect(mockRunsService.getByAdministrationId).not.toHaveBeenCalled();
+      expect(mockAdministrationRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw conflict error when runs exist for the administration', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockRunsService.getByAdministrationId.mockResolvedValue({ id: 'run-123' }); // A run exists
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runsService: mockRunsService,
+      });
+
+      await expect(service.deleteById({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123')).rejects.toMatchObject(
+        {
+          statusCode: 409,
+          message: 'Cannot delete administration with existing assessment runs',
+        },
+      );
+      expect(mockAdministrationRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw internal error on unexpected database failure', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockRunsService.getByAdministrationId.mockResolvedValue(null);
+      mockAdministrationRepository.delete.mockRejectedValue(new Error('Database connection lost'));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runsService: mockRunsService,
+      });
+
+      await expect(service.deleteById({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123')).rejects.toMatchObject(
+        {
+          statusCode: 500,
+          message: 'Failed to delete administration',
+        },
+      );
     });
   });
 });

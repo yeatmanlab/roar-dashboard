@@ -86,6 +86,17 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
           query,
         ),
     },
+    delete: {
+      middleware: [AuthGuardMiddleware as never],
+      handler: async ({
+        req,
+        params,
+      }: {
+        req: { user?: { userId: string; isSuperAdmin: boolean } };
+        params: { id: string };
+      }) =>
+        AdministrationsController.delete({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo
