@@ -13,7 +13,7 @@ import {
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
-import { Permissions } from '../../constants/permissions';
+import { Permissions, type Permission } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { AgreementType } from '../../enums/agreement-type.enum';
@@ -125,7 +125,7 @@ export function AdministrationService({
   async function verifyAdministrationAccess(
     authContext: AuthContext,
     administrationId: string,
-    permission: string = Permissions.Administrations.READ,
+    permission: Permission = Permissions.Administrations.READ,
   ): Promise<Administration> {
     const { userId, isSuperAdmin } = authContext;
 
@@ -146,7 +146,7 @@ export function AdministrationService({
     }
 
     // Check access for non-super admin users
-    const allowedRoles = rolesForPermission(permission as Parameters<typeof rolesForPermission>[0]);
+    const allowedRoles = rolesForPermission(permission);
     const authorized = await administrationRepository.getAuthorizedById({ userId, allowedRoles }, administrationId);
 
     if (!authorized) {
