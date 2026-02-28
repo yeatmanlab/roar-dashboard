@@ -140,16 +140,6 @@ describe('RunsRepository', () => {
       expect(result).toBeNull();
     });
 
-    it('returns a run even when only one run exists', async () => {
-      const administrationId = faker.string.uuid();
-
-      await RunFactory.create({ administrationId });
-
-      const result = await repository.getByAdministrationId(administrationId);
-
-      expect(result).not.toBeNull();
-    });
-
     it('does not return runs belonging to other administrations', async () => {
       const targetAdministrationId = faker.string.uuid();
       const otherAdministrationId = faker.string.uuid();

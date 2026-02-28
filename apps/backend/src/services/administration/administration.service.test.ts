@@ -20,29 +20,22 @@ import {
   createMockAdministrationTaskVariantRepository,
   createMockUserRepository,
 } from '../../test-support/repositories';
+import { createMockRunsService, createMockTaskService } from '../../test-support/services';
 
 describe('AdministrationService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockAdministrationTaskVariantRepository: ReturnType<typeof createMockAdministrationTaskVariantRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
-
-  // Mock RunsService (service-level, not repository) — matches ReturnType<typeof RunsService>
-  const mockRunsService = {
-    getRunStatsByAdministrationIds: vi.fn(),
-    getByAdministrationId: vi.fn(),
-  };
-
-  const mockEvaluateTaskVariantEligibility = vi.fn();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockTaskService: any = {
-    evaluateTaskVariantEligibility: mockEvaluateTaskVariantEligibility,
-  };
+  let mockRunsService: ReturnType<typeof createMockRunsService>;
+  let mockTaskService: ReturnType<typeof createMockTaskService>;
 
   beforeEach(() => {
     vi.resetAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
     mockAdministrationTaskVariantRepository = createMockAdministrationTaskVariantRepository();
     mockUserRepository = createMockUserRepository();
+    mockRunsService = createMockRunsService();
+    mockTaskService = createMockTaskService();
   });
 
   describe('list', () => {
@@ -2320,7 +2313,7 @@ describe('AdministrationService', () => {
       // Role check is performed to determine if eligibility filtering applies
       expect(mockAdministrationRepository.getUserRolesForAdministration).toHaveBeenCalledWith('user-123', 'admin-123');
       // Supervisory roles skip eligibility filtering
-      expect(mockEvaluateTaskVariantEligibility).not.toHaveBeenCalled();
+      expect(mockTaskService.evaluateTaskVariantEligibility).not.toHaveBeenCalled();
       // Supervisory roles see all variants including draft/deprecated (publishedOnly: false)
       expect(mockAdministrationRepository.getTaskVariantsByAdministrationId).toHaveBeenCalledWith(
         'admin-123',
@@ -2445,7 +2438,7 @@ describe('AdministrationService', () => {
           'teacher-user',
           'admin-123',
         );
-        expect(mockEvaluateTaskVariantEligibility).not.toHaveBeenCalled();
+        expect(mockTaskService.evaluateTaskVariantEligibility).not.toHaveBeenCalled();
         // Supervisory roles see all variants including draft/deprecated (publishedOnly: false)
         expect(mockAdministrationRepository.getTaskVariantsByAdministrationId).toHaveBeenCalledWith(
           'admin-123',
@@ -2481,7 +2474,7 @@ describe('AdministrationService', () => {
           'admin-user',
           'admin-123',
         );
-        expect(mockEvaluateTaskVariantEligibility).not.toHaveBeenCalled();
+        expect(mockTaskService.evaluateTaskVariantEligibility).not.toHaveBeenCalled();
         // Supervisory roles see all variants including draft/deprecated (publishedOnly: false)
         expect(mockAdministrationRepository.getTaskVariantsByAdministrationId).toHaveBeenCalledWith(
           'admin-123',
@@ -2503,7 +2496,7 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
         mockUserRepository.getById.mockResolvedValue(mockUser);
         // First variant: assigned and required, Second variant: not assigned
-        mockEvaluateTaskVariantEligibility
+        mockTaskService.evaluateTaskVariantEligibility
           .mockReturnValueOnce({ isAssigned: true, isOptional: false }) // First variant: visible, required
           .mockReturnValueOnce({ isAssigned: false, isOptional: false }); // Second variant: not visible
 
@@ -2531,7 +2524,7 @@ describe('AdministrationService', () => {
         );
         expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'student-user' });
         // Called once per variant
-        expect(mockEvaluateTaskVariantEligibility).toHaveBeenCalledTimes(2);
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledTimes(2);
         expect(result.items).toHaveLength(1);
         expect(result.totalItems).toBe(1);
         // Verify optional flag is set (cast to access dynamically added property)
@@ -2550,7 +2543,7 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
         mockUserRepository.getById.mockResolvedValue(mockUser);
         // assigned_if fails for all variants
-        mockEvaluateTaskVariantEligibility.mockReturnValue({ isAssigned: false, isOptional: false });
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: false, isOptional: false });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -2580,7 +2573,7 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
         mockUserRepository.getById.mockResolvedValue(mockUser);
         // assigned_if passes for all, optional_if also passes (making them optional)
-        mockEvaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -2648,7 +2641,7 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
         mockUserRepository.getById.mockResolvedValue(mockUser);
         // assigned and optional
-        mockEvaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -2663,7 +2656,7 @@ describe('AdministrationService', () => {
         );
 
         // Called once with user, assigned_if, and optional_if
-        expect(mockEvaluateTaskVariantEligibility).toHaveBeenCalledWith(
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(
           mockUser,
           assignedIfCondition,
           optionalIfCondition,
@@ -2693,7 +2686,7 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
         mockUserRepository.getById.mockResolvedValue(mockUser);
         // null assigned_if = assigned to all, null optional_if = required
-        mockEvaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
+        mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -2708,7 +2701,7 @@ describe('AdministrationService', () => {
         );
 
         // Called with both null conditions
-        expect(mockEvaluateTaskVariantEligibility).toHaveBeenCalledWith(mockUser, null, null);
+        expect(mockTaskService.evaluateTaskVariantEligibility).toHaveBeenCalledWith(mockUser, null, null);
         // Variant should be visible (null assigned_if = assigned to all)
         expect(result.items).toHaveLength(1);
         // Null optional_if means required (optional=false)
@@ -2749,7 +2742,7 @@ describe('AdministrationService', () => {
         mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
         mockUserRepository.getById.mockResolvedValue(mockUser);
         // First call throws (malformed conditions), second call succeeds
-        mockEvaluateTaskVariantEligibility
+        mockTaskService.evaluateTaskVariantEligibility
           .mockImplementationOnce(() => {
             throw new Error('Invalid condition structure');
           })
