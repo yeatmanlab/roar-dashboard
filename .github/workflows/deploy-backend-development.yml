@@ -1,0 +1,76 @@
+name: Deploy Backend to Dev
+
+on:
+  push:
+    branches:
+      - project/backend-refactor
+
+concurrency:
+  # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
+  # cancel-in-progress: false — never interrupt a running migration.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Migrate databases (parallel)
+  # ––––––––––––––––––––––––––––––––––––– #
+  core-db-migrations:
+    name: Migrate core database
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run core database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_CORE_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: core
+
+  assessment-db-migrations:
+    name: Migrate assessment database
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run assessment database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_ASSESSMENT_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: assessment
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Build & deploy (after migrations)
+  # ––––––––––––––––––––––––––––––––––––– #
+  deploy:
+    name: Build & Deploy API
+    needs: [core-db-migrations, assessment-db-migrations]
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build and deploy to Cloud Run
+        uses: ./.github/actions/deploy-cloud-run
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          region: ${{ secrets.GCP_BACKEND_REGION }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+          artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
+          cloud-run-service: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
+          dockerfile: apps/backend/Dockerfile
+          image-tag: ${{ github.sha }}
