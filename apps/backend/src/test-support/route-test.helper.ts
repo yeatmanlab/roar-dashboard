@@ -8,23 +8,26 @@
  *
  * @example
  * ```typescript
- * import { createTestApp, authenticateAs } from '../test-support/route-test.helper';
- * import { registerAdministrationsRoutes } from './administrations';
+ * import { authenticateAs } from '../test-support/route-test.helper';
  * import { baseFixture } from '../test-support/fixtures';
  *
- * describe('GET /v1/administrations', () => {
- *   const app = createTestApp(registerAdministrationsRoutes);
+ * // Create app in beforeAll — after DB pools are initialized by vitest.setup.ts.
+ * // Route modules instantiate services at import time which capture CoreDbClient,
+ * // so they must be imported after initializeDatabasePools() completes.
+ * let app: express.Application;
+ * beforeAll(async () => {
+ *   const { createTestApp } = await import('../test-support/route-test.helper');
+ *   const { registerAdministrationsRoutes } = await import('./administrations');
+ *   app = createTestApp(registerAdministrationsRoutes);
+ * });
  *
- *   it('returns administrations for authenticated user', async () => {
- *     authenticateAs(baseFixture.districtAdmin);
- *
- *     const response = await request(app)
- *       .get('/v1/administrations')
- *       .set('Authorization', 'Bearer token')
- *       .expect(200);
- *
- *     expect(response.body.data).toBeDefined();
- *   });
+ * it('returns administrations for authenticated user', async () => {
+ *   authenticateAs(baseFixture.districtAdmin);
+ *   const response = await request(app)
+ *     .get('/v1/administrations')
+ *     .set('Authorization', 'Bearer token')
+ *     .expect(200);
+ *   expect(response.body.data).toBeDefined();
  * });
  * ```
  */
