@@ -196,7 +196,6 @@ export const AdministrationsContract = c.router(
       method: 'DELETE',
       path: '/:id',
       pathParams: z.object({ id: z.string().uuid() }),
-      body: z.undefined(),
       responses: {
         204: z.undefined(),
         401: ErrorEnvelopeSchema,
