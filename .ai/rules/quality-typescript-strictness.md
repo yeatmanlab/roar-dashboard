@@ -1,14 +1,14 @@
 ---
 title: TypeScript Strictness
-description: The backend uses strict TypeScript — as const for literals, @ts-expect-error over @ts-ignore, type-safe Drizzle operators, and Permission types over raw strings.
+description: All TypeScript packages use strict mode — as const for literals, @ts-expect-error over @ts-ignore, avoid as any, prefer typed APIs over raw strings.
 impact: MEDIUM
-scope: backend
+scope: shared
 tags: typescript, types, strictness, conventions
 ---
 
 ## TypeScript strictness
 
-The backend runs with `strict: true` plus additional strictness flags (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`). These aren't negotiable — work with the type system, don't fight it.
+All TypeScript packages in the monorepo (backend, api-contract, assessment-sdk) share `packages/config-typescript/base.json` with `strict: true` plus additional flags (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`). These aren't negotiable — work with the type system, don't fight it.
 
 ### Incorrect
 
@@ -17,14 +17,11 @@ The backend runs with `strict: true` plus additional strictness flags (`noUnchec
 // @ts-ignore
 middleware: [AuthGuardMiddleware],
 
-// as any in production code — only acceptable in tests
+// as any — avoid in both production and test code
 const result = items as any;
 
-// Raw permission strings — use the typed constant
+// Raw strings where typed constants exist
 const roles = rolesForPermission('administrations.read');
-
-// Raw SQL when Drizzle operators exist
-const result = await db.execute(sql`SELECT * FROM orgs WHERE id = ${id}`);
 ```
 
 ### Correct
@@ -35,13 +32,7 @@ const result = await db.execute(sql`SELECT * FROM orgs WHERE id = ${id}`);
 // Status codes — enables ts-rest type narrowing
 return { status: StatusCodes.OK as const, body: { data: result } };
 
-// Sort column mappings
-const SORT_COLUMNS = {
-  createdAt: administrations.createdAt,
-  name: administrations.name,
-} as const satisfies Record<SortFieldType, Column>;
-
-// Permission constants — the Permission type is derived from this object
+// Constant objects — derive types from values, not the other way around
 export const Permissions = {
   Administrations: {
     LIST: 'administrations.list',
@@ -50,6 +41,15 @@ export const Permissions = {
 } as const;
 
 export type Permission = DeepValues<typeof Permissions>;
+```
+
+Use `as const satisfies` when you need both a literal type and compile-time validation against a constraint:
+
+```typescript
+const SORT_COLUMNS = {
+  createdAt: administrations.createdAt,
+  name: administrations.name,
+} as const satisfies Record<SortFieldType, Column>;
 ```
 
 **`@ts-expect-error` with explanation:**
@@ -61,10 +61,22 @@ middleware: [AuthGuardMiddleware],
 
 Always explain *why* the suppression is needed. `@ts-ignore` is never used — `@ts-expect-error` will error if the suppression becomes unnecessary (e.g., after a type fix).
 
+**Typed constants over raw strings:**
+
+```typescript
+// Permission is a union of all literal permission strings — typos become compile errors
+const roles = rolesForPermission(Permissions.Administrations.READ);
+```
+
+This applies broadly: use typed enums and constants instead of raw strings wherever the set of valid values is known at compile time.
+
+**Avoid `as any`** — even in tests. Use typed mock factories instead of casting inline mocks. See `backend-testing-unit-vs-integration.md` for the pattern.
+
+### Backend-specific patterns
+
 **Type-safe Drizzle operators over raw SQL:**
 
 ```typescript
-// Prefer Drizzle's typed operators
 const result = await db
   .select()
   .from(administrations)
@@ -76,23 +88,18 @@ const result = await db
 
 Reserve `sql` template literals for expressions that can't be expressed with Drizzle operators (e.g., `NOW()`, ltree functions).
 
-**Permission type over raw strings:**
+**Enums derived from database schema** — not defined independently:
 
 ```typescript
-// Permission is a union of all literal permission strings
-const roles = rolesForPermission(Permissions.Administrations.READ);
+import { userRoleEnum } from '../db/schema/enums';
+export const UserRole = pgEnumToConst(userRoleEnum);
+export type UserRole = (typeof userRoleEnum.enumValues)[number];
 ```
 
-Typos in permission strings become compile errors.
+**Shared types** used across multiple layers live in `src/types/` as the single source of truth:
 
-**`as any` only in tests, with ESLint disable:**
-
-```typescript
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const service = AdministrationService({ repository: mockRepo as any });
-```
-
-Mock injection in unit tests is the one place `as any` is acceptable. Always add the inline ESLint disable comment.
+- **`auth-context.ts`** — `AuthContext` type (`{ userId, isSuperAdmin }`)
+- **`express.d.ts`** — augments Express `Request` with `user?: AuthContext`
 
 ### Non-null assertions (`!`)
 
@@ -116,21 +123,6 @@ Non-null assertions are used in three specific contexts:
    // user is guaranteed non-null from here
    ```
 
-### Shared types
-
-Types used across multiple layers live in `src/types/` as the single source of truth:
-
-- **`auth-context.ts`** — `AuthContext` type (`{ userId, isSuperAdmin }`) used by routes, controllers, and services
-- **`express.d.ts`** — augments Express `Request` with `user?: AuthContext`
-
-Enums are derived from database schema types, not defined independently:
-
-```typescript
-import { userRoleEnum } from '../db/schema/enums';
-export const UserRole = pgEnumToConst(userRoleEnum);
-export type UserRole = (typeof userRoleEnum.enumValues)[number];
-```
-
 ### The principle
 
-Strict TypeScript catches bugs at compile time that would otherwise surface in production. `as const` turns runtime values into compile-time types. `@ts-expect-error` is self-cleaning — it tells you when a workaround is no longer needed. Type-safe Drizzle operators prevent SQL injection and column name typos. The `Permission` type turns misspelled permission strings into compile errors. Every exception (`as any`, `!`, `@ts-expect-error`) is documented and scoped to the narrowest possible context.
+Strict TypeScript catches bugs at compile time that would otherwise surface in production. `as const` turns runtime values into compile-time types. `@ts-expect-error` is self-cleaning — it tells you when a workaround is no longer needed. Every exception (`as any`, `!`, `@ts-expect-error`) is documented and scoped to the narrowest possible context.
