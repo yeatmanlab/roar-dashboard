@@ -17,10 +17,34 @@ permissions:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––– #
-  # Migrate databases
+  # 1. Build Docker image
+  # ––––––––––––––––––––––––––––––––––––– #
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    environment: development
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Build and push image
+        uses: ./.github/actions/build-docker-image
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          region: ${{ secrets.GCP_BACKEND_REGION }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+          artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
+          image-name: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
+          dockerfile: apps/backend/Dockerfile
+          image-tag: ${{ github.sha }}
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # 2. Migrate databases (parallel)
   # ––––––––––––––––––––––––––––––––––––– #
   core-db-migrations:
     name: Migrate core database
+    needs: [build]
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 10
@@ -37,6 +61,7 @@ jobs:
 
   assessment-db-migrations:
     name: Migrate assessment database
+    needs: [build]
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 10
@@ -52,18 +77,18 @@ jobs:
           database: assessment
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # Build & deploy
+  # 3. Deploy to Cloud Run
   # ––––––––––––––––––––––––––––––––––––– #
   deploy:
-    name: Build & Deploy API
+    name: Deploy backend to Cloud Run
     needs: [core-db-migrations, assessment-db-migrations]
     runs-on: ubuntu-latest
     environment: development
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Build and deploy to Cloud Run
+      - name: Deploy to Cloud Run
         uses: ./.github/actions/deploy-cloud-run
         with:
           gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
@@ -72,5 +97,5 @@ jobs:
           project-id: ${{ secrets.GCP_PROJECT_ID }}
           artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
           cloud-run-service: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
-          dockerfile: apps/backend/Dockerfile
+          image-name: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
           image-tag: ${{ github.sha }}
