@@ -49,7 +49,7 @@ The `repositories/access-controls/` directory contains classes that build the SQ
 
 The resulting subquery is used as an `INNER JOIN` in the repository's data query, so filtering and fetching happen in a single round-trip.
 
-### incorrect
+### Incorrect
 
 ```typescript
 // Problem 1: No existence check before auth — if the resource doesn't exist,
@@ -81,7 +81,7 @@ async function getById(authContext: AuthContext, id: string) {
 }
 ```
 
-### correct
+### Correct
 
 **Route layer** — authentication only (identity verification):
 ```typescript
@@ -165,6 +165,6 @@ async function authorizeSubResourceAccess(authContext: AuthContext, parentId: st
 }
 ```
 
-### Why this matters
+### The principle
 
-Authorization bugs are security vulnerabilities. Putting auth in middleware means you either duplicate complex org hierarchy queries or skip them entirely. The lookup-before-auth pattern ensures correct status codes — a missing resource returns 404 regardless of the user's permissions, rather than a misleading 403. Every authorization decision in this codebase follows this service-layer pattern; deviating creates inconsistent security boundaries.
+Authorization and data fetching are inseparable in our model — they share the same joins, the same hierarchy queries, the same round-trip. Splitting them across middleware and service would mean either duplicating those queries or skipping them. By keeping authorization in the repository layer alongside the data fetch, we get correctness (404 before 403), performance (one query), and consistency (one pattern everywhere).

@@ -20,13 +20,13 @@ Rules use a flat structure with prefix-based categories:
 
 Each rule file follows the naming convention `{prefix}{rule-name}.md` (e.g., `backend-error-handling.md`).
 
-## Impact Levels
+## Impact levels
 
 - **CRITICAL** — Violations cause security issues, broken authorization, or data leaks. Must always be followed.
 - **HIGH** — Violations cause architectural inconsistency or maintenance burden. Follow unless there's a documented reason not to.
 - **MEDIUM** — Best practices that improve consistency. Follow for new code; existing code is grandfathered.
 
-## How to Use
+## How to use
 
 Rules are designed to work with any AI coding tool and for direct human reference.
 
@@ -38,25 +38,22 @@ Rules are designed to work with any AI coding tool and for direct human referenc
 
 1. Use the template below to create a new rule file
 2. Use the appropriate prefix for your rule's scope
-3. Include concrete incorrect/correct examples from this codebase
-4. Set the `references` field to point to canonical implementations
+3. Write a clear `description` in frontmatter — it's the first thing humans and AI tools see
+4. Include concrete incorrect/correct examples from this codebase
 5. Add the rule in the same PR that introduces or changes the pattern
 
-## Rule Template
+## Rule template
 
 ```markdown
 ---
 title: Rule Title
+description: A brief, natural-language summary of what this rule is about.
 impact: CRITICAL | HIGH | MEDIUM
 scope: backend | frontend | shared | all
 tags: tag1, tag2
-references:
-  - path/to/reference/implementation.ts
 ---
 
-## Rule Title
-
-**Impact:** CRITICAL | HIGH | MEDIUM
+## Rule title
 
 Brief explanation (2-3 sentences) of what this enforces and why.
 
@@ -72,12 +69,12 @@ Brief explanation (2-3 sentences) of what this enforces and why.
 // Correct approach with explanation
 \```
 
-### Why This Matters
+### The principle
 
-One paragraph on consequences of violating this rule in the ROAR codebase.
+One paragraph on the underlying rationale and what goes wrong when this rule is violated.
 ```
 
-## Reference Implementations
+## Reference implementations
 
 The administrations endpoints serve as the primary backend reference:
 - Contract: `packages/api-contract/src/v1/administrations/`
