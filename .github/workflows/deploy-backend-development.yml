@@ -3,7 +3,7 @@ name: Deploy Backend to Dev
 on:
   push:
     branches:
-      - project/backend-refactor
+      - enh/1645/backend-deployment
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––– #
-  # Migrate databases (parallel)
+  # Migrate databases
   # ––––––––––––––––––––––––––––––––––––– #
   core-db-migrations:
     name: Migrate core database
@@ -52,7 +52,7 @@ jobs:
           database: assessment
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # Build & deploy (after migrations)
+  # Build & deploy
   # ––––––––––––––––––––––––––––––––––––– #
   deploy:
     name: Build & Deploy API
