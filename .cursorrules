@@ -1,0 +1,14 @@
+# ROAR Dashboard — Cursor Rules
+
+This project uses modular AI rules in `.ai/rules/`. Before generating or modifying code, read the relevant rules based on the file you're editing:
+
+- **Backend files** (`apps/backend/`): Read all `.ai/rules/backend-*.md` rules
+- **Frontend files** (`apps/dashboard/`): Read all `.ai/rules/frontend-*.md` rules
+- **Test files** (`*.test.ts`, `*.integration.test.ts`): Read all `.ai/rules/testing-*.md` rules
+- **API contract files** (`packages/api-contract/`): Read `.ai/rules/api-*.md` and `.ai/rules/backend-api-contract-conventions.md`
+
+Key rules by priority:
+- CRITICAL: `backend-layer-architecture`, `backend-authorization-pattern`, `backend-error-message-security`
+- HIGH: `backend-error-handling`, `backend-service-factory-pattern`, `backend-controller-no-business-logic`, `backend-api-contract-conventions`, `backend-repository-pattern`, `frontend-component-conventions`, `frontend-state-management`
+
+The administrations endpoints are the reference implementation. See `.ai/rules/README.md` for full details.
