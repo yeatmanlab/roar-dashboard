@@ -8,34 +8,78 @@
  *
  * @example
  * ```typescript
- * import { authenticateAs } from '../test-support/route-test.helper';
  * import { baseFixture } from '../test-support/fixtures';
  *
- * // Create app in beforeAll — after DB pools are initialized by vitest.setup.ts.
- * // Route modules instantiate services at import time which capture CoreDbClient,
- * // so they must be imported after initializeDatabasePools() completes.
  * let app: express.Application;
+ * let expectRoute: ReturnType<typeof createRouteHelper>;
+ * let tiers: TierUsers;
+ *
  * beforeAll(async () => {
- *   const { createTestApp } = await import('../test-support/route-test.helper');
+ *   const { createTestApp, createRouteHelper, createTierUsers } = await import('../test-support/route-test.helper');
  *   const { registerAdministrationsRoutes } = await import('./administrations');
+ *
  *   app = createTestApp(registerAdministrationsRoutes);
+ *   expectRoute = createRouteHelper(app);
+ *   tiers = await createTierUsers(baseFixture.district.id);
  * });
  *
- * it('returns administrations for authenticated user', async () => {
- *   authenticateAs(baseFixture.districtAdmin);
- *   const response = await request(app)
- *     .get('/v1/administrations')
- *     .set('Authorization', 'Bearer token')
- *     .expect(200);
- *   expect(response.body.data).toBeDefined();
+ * it('admin can list administrations', async () => {
+ *   const res = await expectRoute('GET', '/v1/administrations')
+ *     .as(tiers.admin).toReturn(200);
+ *   expect(res.body.data.items).toBeInstanceOf(Array);
+ * });
+ *
+ * it('returns 401 without auth', async () => {
+ *   const res = await expectRoute('GET', '/v1/administrations')
+ *     .unauthenticated().toReturn(401);
  * });
  * ```
  */
 import express from 'express';
 import type { Router } from 'express';
-import { vi } from 'vitest';
+import request from 'supertest';
+import { expect, vi } from 'vitest';
 import { AuthService } from '../services/auth/auth.service';
 import { errorHandler } from '../error-handler';
+import { UserRole } from '../enums/user-role.enum';
+import { UserFactory } from './factories/user.factory';
+import { UserOrgFactory } from './factories/user-org.factory';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Types
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * A user identity for route tests — only `authId` is needed since
+ * AuthGuardMiddleware looks up the full user record from the DB.
+ */
+export interface TierUser {
+  authId: string;
+}
+
+/**
+ * One representative user per RolePermissions permission tier.
+ *
+ * Maps directly to the tier groupings in `constants/role-permissions.ts`:
+ *   - superAdmin:  isSuperAdmin=true in DB (bypasses all access control)
+ *   - siteAdmin:   site_administrator role
+ *   - admin:       administrator role
+ *   - educator:    teacher role
+ *   - student:     student role
+ *   - caregiver:   guardian role
+ */
+export interface TierUsers {
+  superAdmin: TierUser;
+  siteAdmin: TierUser;
+  admin: TierUser;
+  educator: TierUser;
+  student: TierUser;
+  caregiver: TierUser;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// App & Auth
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Creates an Express app wired for route integration tests.
@@ -78,4 +122,101 @@ export function authenticateAs(user: { authId: string | null }) {
     uid: user.authId!,
     claims: {},
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Tier Users
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Creates one user per permission tier, all enrolled at the given org.
+ *
+ * Call once in `beforeAll` after DB pools are initialized. The returned
+ * users can be passed to `expectRoute(...).as(tiers.admin)`.
+ *
+ * @param orgId - The org to enroll all tier users at (e.g., baseFixture.district.id)
+ * @returns TierUsers with one representative per permission tier
+ */
+export async function createTierUsers(orgId: string): Promise<TierUsers> {
+  const [superAdminUser, siteAdminUser, adminUser, educatorUser, studentUser, caregiverUser] = await Promise.all([
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SuperAdmin', isSuperAdmin: true }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SiteAdmin' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Admin' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Educator' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Student' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Caregiver' }),
+  ]);
+
+  await Promise.all([
+    UserOrgFactory.create({ userId: superAdminUser.id, orgId, role: UserRole.ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: siteAdminUser.id, orgId, role: UserRole.SITE_ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: adminUser.id, orgId, role: UserRole.ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: educatorUser.id, orgId, role: UserRole.TEACHER }),
+    UserOrgFactory.create({ userId: studentUser.id, orgId, role: UserRole.STUDENT }),
+    UserOrgFactory.create({ userId: caregiverUser.id, orgId, role: UserRole.GUARDIAN }),
+  ]);
+
+  return {
+    superAdmin: { authId: superAdminUser.authId! },
+    siteAdmin: { authId: siteAdminUser.authId! },
+    admin: { authId: adminUser.authId! },
+    educator: { authId: educatorUser.authId! },
+    student: { authId: studentUser.authId! },
+    caregiver: { authId: caregiverUser.authId! },
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Route Helper
+// ═══════════════════════════════════════════════════════════════════════════
+
+type HttpMethod = 'get' | 'post' | 'put' | 'delete';
+
+/**
+ * Creates a fluent helper for making HTTP requests and asserting responses.
+ *
+ * Binds to the given Express app so tests don't need to pass it each time.
+ *
+ * @param app - The Express application (from createTestApp)
+ * @returns A function `expectRoute(method, path)` with `.as()` and `.unauthenticated()` chains
+ *
+ * @example
+ * ```typescript
+ * const expectRoute = createRouteHelper(app);
+ *
+ * // Authenticated request
+ * const res = await expectRoute('GET', '/v1/administrations')
+ *   .as(tiers.admin).toReturn(200);
+ *
+ * // Unauthenticated request
+ * const res = await expectRoute('GET', '/v1/administrations')
+ *   .unauthenticated().toReturn(401);
+ * ```
+ */
+export function createRouteHelper(app: express.Application) {
+  return function expectRoute(method: string, path: string) {
+    const httpMethod = method.toLowerCase() as HttpMethod;
+
+    return {
+      as(user: TierUser) {
+        return {
+          async toReturn(expectedStatus: number): Promise<request.Response> {
+            authenticateAs(user);
+            const res = await request(app)[httpMethod](path).set('Authorization', 'Bearer token');
+            expect(res.status).toBe(expectedStatus);
+            return res;
+          },
+        };
+      },
+      unauthenticated() {
+        return {
+          async toReturn(expectedStatus: number): Promise<request.Response> {
+            const res = await request(app)[httpMethod](path);
+            expect(res.status).toBe(expectedStatus);
+            return res;
+          },
+        };
+      },
+    };
+  };
 }
