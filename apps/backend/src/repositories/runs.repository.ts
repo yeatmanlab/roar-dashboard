@@ -4,7 +4,6 @@ import { AssessmentDbClient } from '../db/clients';
 import { runs, type Run } from '../db/schema/assessment';
 import type * as AssessmentDbSchema from '../db/schema/assessment';
 import { BaseRepository } from './base.repository';
-import type { Run } from '../db/schema'; // adjust if your Run type lives elsewhere
 
 /**
  * Run stats for an administration (started/completed counts from assessment DB).

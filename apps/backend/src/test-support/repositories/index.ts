@@ -16,4 +16,3 @@ export {
   MockAdministrationTaskVariantRepository,
 } from './administration-task-variant.repository';
 export { createMockUserRepository, MockUserRepository } from './user.repository';
-

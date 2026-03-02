@@ -8,13 +8,15 @@ export const allowEngagementFlagEnum = z.enum([
   'not_enough_responses',
 ]);
 
+export const runEventTypeEnum = z.enum(['complete', 'abort', 'trial', 'engagement']);
+
 /**
  * Request body for POST /runs
  */
 export const CreateRunRequestBodySchema = z.object({
-  task_variant_id: z.string().uuid(),
-  task_version: z.string(),
-  administration_id: z.string().uuid(),
+  taskVariantId: z.string().uuid(),
+  taskVersion: z.string(),
+  administrationId: z.string().uuid(),
   metadata: JsonValue.optional().superRefine((metadata, ctx) => {
     if (!metadata) return;
     parseJsonB(metadata, ctx);
@@ -27,7 +29,7 @@ export type CreateRunRequestBody = z.infer<typeof CreateRunRequestBodySchema>;
  * Response payload for POST /runs
  */
 export const CreateRunResponseSchema = z.object({
-  run_id: z.string().uuid(),
+  runId: z.string().uuid(),
 });
 
 /**
@@ -53,19 +55,18 @@ export const RunCompleteEventSchema = z.object({
  */
 export const RunAbortEventSchema = z.object({
   type: z.literal('abort'),
-  abortedAt: z.date(),
 });
 /**
  * Schema for a run trial interaction event.
  *
  * - event: The type of interaction (e.g., "blur", "focus")
- * - trial_id: The ID of the trial associated with the interaction
- * - time_ms: The time in milliseconds since the start of the trial
+ * - trialId: The ID of the trial associated with the interaction
+ * - timeMs: The time in milliseconds since the start of the trial
  */
 export const RunTrialInteractionSchema = z.object({
   event: z.enum(['blur', 'focus', 'fullscreen_enter', 'fullscreen_exit']),
-  trial_id: z.number().int().nonnegative(),
-  time_ms: z.number().int().nonnegative(),
+  trialId: z.number().int().nonnegative(),
+  timeMs: z.number().int().nonnegative(),
 });
 /**
  * Schema for a run write trial event.
@@ -79,7 +80,7 @@ export const RunTrialEventSchema = z.object({
   type: z.literal('trial'),
   trial: z
     .object({
-      assessment_stage: z.enum(['practice', 'test']),
+      assessmentStage: z.enum(['practice', 'test']),
       correct: z.number().int().min(0).max(1),
     })
     .passthrough(), // allow app-specific
@@ -91,13 +92,13 @@ export const RunTrialEventSchema = z.object({
  *
  * Represents an event that marks a run engagement.
  * - type: Must be 'engagement' (literal type for discriminated union)
- * - engagement_flags: Engagement flags
- * - reliable_run: Whether the engagement is reliable
+ * - engagementFlags: Engagement flags
+ * - reliableRun: Whether the engagement is reliable
  */
 export const RunEngagementEventSchema = z.object({
   type: z.literal('engagement'),
-  engagement_flags: z.record(allowEngagementFlagEnum),
-  reliable_run: z.boolean(),
+  engagementFlags: z.record(allowEngagementFlagEnum),
+  reliableRun: z.boolean(),
 });
 
 /**

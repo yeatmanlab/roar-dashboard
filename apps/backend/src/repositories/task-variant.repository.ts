@@ -63,4 +63,31 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
 
     return results[0] ?? null;
   }
+
+  /**
+   * Retrieves the taskId associated with a given task variant ID.
+   *
+   * @param taskVariantId - The UUID of the task variant
+   * @returns Object containing taskId if found, or null if not found
+   *
+   * @example
+   * ```typescript
+   * const result = await repository.getTaskIdByVariantId('variant-uuid');
+   * if (!result) {
+   *   throw new Error('Invalid taskVariantId');
+   * }
+   * console.log(result.taskId);
+   * ```
+   */
+  async getTaskIdByVariantId(taskVariantId: string): Promise<{ taskId: string } | null> {
+    const results = await this.get({
+      where: eq(taskVariants.id, taskVariantId),
+      limit: 1,
+    });
+
+    const variant = results[0];
+    if (!variant) return null;
+
+    return { taskId: variant.taskId };
+  }
 }

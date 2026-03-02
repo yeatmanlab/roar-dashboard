@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import type { CreateRunRequestBody, RunEventBody } from '@roar-dashboard/api-contract';
+import { runEventTypeEnum } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';
@@ -9,6 +10,7 @@ import type { AuthContext } from '../types/auth-context';
 
 const runService = RunService();
 const runEventsService = RunEventsService();
+const RunEventType = runEventTypeEnum.enum;
 
 /**
  * RunsController
@@ -48,6 +50,7 @@ export const RunsController = {
       throw error;
     }
   },
+
   /**
    * Handle a run event (complete, abort, trial, or engagement).
    *
@@ -65,27 +68,36 @@ export const RunsController = {
    */
   event: async (authContext: AuthContext, runId: string, body: RunEventBody) => {
     try {
-      const eventType = (body as { type?: unknown }).type;
-      if (eventType === 'complete') {
-        await runEventsService.completeRun(authContext, runId, body);
-      } else if (eventType === 'abort') {
-        await runEventsService.abortRun(authContext, runId, body);
-      } else if (body.type === 'trial') {
-        await runEventsService.writeTrial(authContext, runId, body);
-      } else if (body.type === 'engagement') {
-        await runEventsService.updateEngagement(authContext, runId, body);
-      } else {
-        // Should never happen due to contract validation, but defense-in-depth:
-        throw new ApiError('Invalid event type', {
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { runId, type: eventType },
-        });
+      switch (body.type) {
+        case RunEventType.complete:
+          await runEventsService.completeRun(authContext, runId, body);
+          break;
+
+        case RunEventType.abort:
+          await runEventsService.abortRun(authContext, runId, body);
+          break;
+
+        case RunEventType.trial:
+          await runEventsService.writeTrial(authContext, runId, body);
+          break;
+
+        case RunEventType.engagement:
+          await runEventsService.updateEngagement(authContext, runId, body);
+          break;
+
+        default: {
+          const eventType = (body as { type?: unknown }).type;
+          throw new ApiError('Invalid event type', {
+            statusCode: StatusCodes.BAD_REQUEST,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { runId, type: eventType },
+          });
+        }
       }
 
       return {
-        status: StatusCodes.OK as const,
-        body: { data: { status: 'ok' as const } },
+        status: StatusCodes.CREATED as const,
+        body: { data: { id: runId } },
       };
     } catch (error) {
       if (error instanceof ApiError) {

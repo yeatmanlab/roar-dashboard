@@ -922,5 +922,15 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses, listGroups, listTaskVariants, listAgreements };
+  return {
+    verifyAdministrationAccess,
+    list,
+    getById,
+    listDistricts,
+    listSchools,
+    listClasses,
+    listGroups,
+    listTaskVariants,
+    listAgreements,
+  };
 }

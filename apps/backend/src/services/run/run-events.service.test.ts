@@ -260,7 +260,7 @@ describe('RunEventsService', () => {
     const validBody = {
       type: 'trial' as const,
       trial: {
-        assessment_stage: 'test' as const,
+        assessmentStage: 'test' as const,
         correct: 1,
       },
     };
@@ -334,6 +334,7 @@ describe('RunEventsService', () => {
       const malformedBody = {
         type: 'trial' as const,
         trial: {
+          assessmentStage: undefined,
           correct: 1,
         },
       };
@@ -356,7 +357,7 @@ describe('RunEventsService', () => {
       const malformedBody = {
         type: 'trial' as const,
         trial: {
-          assessment_stage: 'test',
+          assessmentStage: 'test',
         },
       };
 
@@ -378,12 +379,12 @@ describe('RunEventsService', () => {
       const bodyWithInteractions = {
         type: 'trial' as const,
         trial: {
-          assessment_stage: 'practice' as const,
+          assessmentStage: 'practice' as const,
           correct: 1,
         },
         interactions: [
-          { event: 'focus' as const, trial_id: 0, time_ms: 100 },
-          { event: 'blur' as const, trial_id: 0, time_ms: 200 },
+          { event: 'focus' as const, trialId: 0, timeMs: 100 },
+          { event: 'blur' as const, trialId: 0, timeMs: 200 },
         ],
       };
 
@@ -443,11 +444,11 @@ describe('RunEventsService', () => {
     const validRunId = '550e8400-e29b-41d4-a716-446655440000';
     const validBody = {
       type: 'engagement' as const,
-      engagement_flags: {
+      engagementFlags: {
         incomplete: 'incomplete' as const,
         response_time_too_fast: 'response_time_too_fast' as const,
       },
-      reliable_run: true,
+      reliableRun: true,
     };
 
     beforeEach(() => {
@@ -466,7 +467,7 @@ describe('RunEventsService', () => {
         id: validRunId,
         data: {
           updatedAt: expect.any(Date),
-          engagementFlags: validBody.engagement_flags,
+          engagementFlags: validBody.engagementFlags,
           reliableRun: true,
         },
       });
@@ -515,8 +516,8 @@ describe('RunEventsService', () => {
 
       const bodyWithEmptyFlags = {
         type: 'engagement' as const,
-        engagement_flags: {},
-        reliable_run: false,
+        engagementFlags: {},
+        reliableRun: false,
       };
 
       await runEventsService.updateEngagement(authContext, validRunId, bodyWithEmptyFlags);
@@ -538,13 +539,13 @@ describe('RunEventsService', () => {
 
       const bodyWithMultipleFlags = {
         type: 'engagement' as const,
-        engagement_flags: {
+        engagementFlags: {
           incomplete: 'incomplete' as const,
           response_time_too_fast: 'response_time_too_fast' as const,
           accuracy_too_low: 'accuracy_too_low' as const,
           not_enough_responses: 'not_enough_responses' as const,
         },
-        reliable_run: false,
+        reliableRun: false,
       };
 
       await runEventsService.updateEngagement(authContext, validRunId, bodyWithMultipleFlags);
@@ -553,7 +554,7 @@ describe('RunEventsService', () => {
         id: validRunId,
         data: {
           updatedAt: expect.any(Date),
-          engagementFlags: bodyWithMultipleFlags.engagement_flags,
+          engagementFlags: bodyWithMultipleFlags.engagementFlags,
           reliableRun: false,
         },
       });

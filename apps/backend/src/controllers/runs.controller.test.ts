@@ -30,9 +30,9 @@ describe('RunsController', () => {
   const mockCompleteRun = vi.fn();
   const mockAuthContext = { userId: 'test-user', isSuperAdmin: false };
   const mockBody = {
-    task_variant_id: '550e8400-e29b-41d4-a716-446655440000',
-    task_version: '1.0.0',
-    administration_id: '660e8400-e29b-41d4-a716-446655440001',
+    taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+    taskVersion: '1.0.0',
+    administrationId: '660e8400-e29b-41d4-a716-446655440001',
   };
 
   beforeEach(() => {
@@ -246,16 +246,16 @@ describe('RunsController', () => {
     const validRunId = '550e8400-e29b-41d4-a716-446655440000';
     const validEventBody = { type: 'complete' as const };
 
-    it('should return 200 OK on success', async () => {
+    it('should return 201 CREATED on success', async () => {
       mockCompleteRun.mockResolvedValue(undefined);
 
       const { RunsController } = await import('./runs.controller');
 
       const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
 
-      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.status).toBe(StatusCodes.CREATED);
       expect(result.body).toEqual({
-        data: { status: 'ok' },
+        data: { id: validRunId },
       });
     });
 

@@ -18,14 +18,14 @@ import type { AssignmentWithOptional, TaskVariantWithAssignment } from '../../re
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
-  createMockRunsRepository,
+  createMockRunRepository,
   createMockUserRepository,
 } from '../../test-support/repositories';
 
 describe('AdministrationService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockAdministrationTaskVariantRepository: ReturnType<typeof createMockAdministrationTaskVariantRepository>;
-  let mockRunsRepository: ReturnType<typeof createMockRunsRepository>;
+  let mockRunsRepository: ReturnType<typeof createMockRunRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   const mockEvaluateTaskVariantEligibility = vi.fn();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,7 +37,7 @@ describe('AdministrationService', () => {
     vi.resetAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
     mockAdministrationTaskVariantRepository = createMockAdministrationTaskVariantRepository();
-    mockRunsRepository = createMockRunsRepository();
+    mockRunsRepository = createMockRunRepository();
     mockUserRepository = createMockUserRepository();
   });
 
