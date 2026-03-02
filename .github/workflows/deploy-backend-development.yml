@@ -3,7 +3,7 @@ name: Deploy Backend to Dev
 on:
   push:
     branches:
-      - enh/1645/backend-deployment
+      - project/backend-refactor
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
