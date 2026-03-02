@@ -70,13 +70,13 @@ export class ClassAccessControls {
     // ─────────────────────────────────────────────────────────────────────────–––––––
 
     // Path 2: User's org membership → classes on descendant orgs
-    const viaUserOrgToDescendantOrg = this.db
+    const viaUserOrgToDescendantClass = this.db
       .select({ classId: classes.id })
       .from(userOrgs)
       .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
       .innerJoin(classes, isAncestorOrEqual(orgs.orgPath, classes.orgPath))
       .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
 
-    return viaDirectClass.union(viaUserOrgToDescendantOrg);
+    return viaDirectClass.union(viaUserOrgToDescendantClass);
   }
 }
