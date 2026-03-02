@@ -1,14 +1,18 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
+import { logger } from '../../logger';
 import { parseAccessControlFilter, type AccessControlFilter } from '../utils/access-controls.utils';
-import { userClasses, classes } from '../../db/schema';
+import { userClasses, classes, userOrgs, orgs } from '../../db/schema';
+import { isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
+import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
+import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 /**
  * Class Access Controls
  *
  * Builds SQL queries to determine what classes a user can access based on their
- * org/class/group memberships. Used by other repositories to filter query results.
+ * org/class memberships. 
  *
  * ## How Access Works
  *
@@ -17,14 +21,15 @@ import { userClasses, classes } from '../../db/schema';
  * ```
  * User belongs to:          Can see classes assigned to:
  * ─────────────────         ──────────────────────────────────────
- * District                  → That district (and descendants if supervisory)
- * School                    → That school
+ * District                  → That district (and descendants)
+ * School                    → That school (and descendants)
  * Class                     → That class
  * ```
  *
  * ## Access Patterns
  *
- * **Ancestor access (all roles)** — N/A, members can only see assigned classes
+ * **Ancestor access (supervisory roles only)** — Supervisors can see classes assigned to them. 
+ * **Descendant access (supervisory roles only)** — Supervisors can see classes on descendants.
  *
  * ## ltree for Hierarchy Queries
  *
@@ -42,17 +47,36 @@ export class ClassAccessControls {
   buildUserClassIdsQuery(accessControlFilter: AccessControlFilter) {
     const { userId, allowedRoles } = parseAccessControlFilter(accessControlFilter);
 
+    const supervisoryAllowedRoles = filterSupervisoryRoles(allowedRoles);
+
+    if (supervisoryAllowedRoles.length === 0) {
+      logger.debug({ userId, allowedRoles }, 'No supervisory roles provided. Can not list classes.');
+      return [];
+    }
+
     // ─────────────────────────────────────────────────────────────────────────–––––––
-    // ANCESTOR ACCESS: Find administrations on user's entity or ancestors (all roles)
+    // ANCESTOR ACCESS: Find classes on user's entity (supervisory roles only)
     // ─────────────────────────────────────────────────────────────────────────–––––––
 
-    // Path 1: User's class membership → classes assigned directly to that user
+     // Path 1: User's class membership → classes assigned directly to that user
     const viaDirectClass = this.db
       .select({ classId: userClasses.classId })
       .from(userClasses)
       .innerJoin(classes, eq(classes.id, userClasses.classId)) // get the class details for user's membership
-      .where(and(eq(userClasses.userId, userId), inArray(userClasses.role, allowedRoles)));
+      .where(isAuthorizedMembership(userClasses, userId, supervisoryAllowedRoles));
 
-    return viaDirectClass;
+    // ─────────────────────────────────────────────────────────────────────────–––––––
+    // DESCENDANT ACCESS: Find classes on descendants (supervisory roles only)
+    // ─────────────────────────────────────────────────────────────────────────–––––––
+
+    // Path 2: User's org membership → classes on descendant orgs
+    const viaUserOrgToDescendantOrg = this.db
+      .select({ classId: classes.id })
+      .from(userOrgs)
+      .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
+      .innerJoin(classes, isAncestorOrEqual(orgs.orgPath, classes.orgPath))
+      .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
+
+    return viaDirectClass.union(viaUserOrgToDescendantOrg);
   }
 }
