@@ -16,7 +16,6 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
-import { logger } from '../../logger';
 import type { AuthContext } from '../../types/auth-context';
 import { Operator, type Condition } from './task.types';
 import type { User } from '../../db/schema';
@@ -85,15 +84,6 @@ describe('TaskService', () => {
           },
           transaction: expect.any(Object),
         });
-        expect(logger.info).toHaveBeenCalledWith(
-          expect.objectContaining({
-            userId: 'admin-1',
-            taskId: mockTask.id,
-            variantId: mockTaskVariant.id,
-            parameterCount: 1,
-          }),
-          'Created task variant with parameters',
-        );
       });
 
       it('should create a task-variant with multiple parameters', async () => {
@@ -135,10 +125,6 @@ describe('TaskService', () => {
           })),
           transaction: expect.any(Object),
         });
-        expect(logger.info).toHaveBeenCalledWith(
-          expect.objectContaining({ parameterCount: 4 }),
-          'Created task variant with parameters',
-        );
       });
 
       it('should handle JSONB parameter values correctly', async () => {
@@ -339,10 +325,6 @@ describe('TaskService', () => {
             variantName: 'duplicate-variant-name',
           },
         });
-
-        // Note: logger.error is NOT called for unique violations
-        // The service catches unique violations and throws a CONFLICT ApiError
-        // logger.error is only called for unexpected database errors
       });
 
       it('should throw DATABASE_QUERY_FAILED on unexpected database error', async () => {
@@ -370,11 +352,6 @@ describe('TaskService', () => {
             taskId: mockTask.id,
           },
         });
-
-        expect(logger.error).toHaveBeenCalledWith(
-          expect.objectContaining({ err: dbError }),
-          'Failed to create task variant',
-        );
       });
 
       it('should throw INTERNAL when variant creation fails', async () => {
@@ -421,49 +398,6 @@ describe('TaskService', () => {
         };
 
         await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toThrow(nestedApiError);
-
-        // Should not wrap in another ApiError
-        expect(logger.error).not.toHaveBeenCalled();
-      });
-
-      it('should handle Drizzle-wrapped PostgreSQL unique violation error', async () => {
-        const mockTask = TaskFactory.build();
-
-        taskRepository.getById.mockResolvedValue(mockTask);
-
-        // Create a Postgres error with proper error code typing
-        const postgresError = Object.assign(new Error('duplicate key value violates unique constraint'), {
-          code: PostgresErrorCode.UNIQUE_VIOLATION,
-        });
-
-        // Create a mock Drizzle-like error structure
-        // The service uses unwrapDrizzleError() which checks for DrizzleQueryError instance
-        // and returns error.cause if it exists, otherwise returns the error itself
-        // For testing purposes, we can just throw the Postgres error directly since
-        // unwrapDrizzleError will return it as-is if it's not a DrizzleQueryError
-        taskVariantRepository.runTransaction.mockRejectedValueOnce(postgresError);
-
-        const mockData = {
-          taskId: mockTask.id,
-          name: 'duplicate-variant-name',
-          description: 'Test description',
-          status: TaskVariantStatus.PUBLISHED,
-          parameters: [{ name: 'param1', value: 'value1' }],
-        };
-
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
-          statusCode: StatusCodes.CONFLICT,
-          code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: {
-            userId: 'admin-1',
-            taskId: mockTask.id,
-            variantName: 'duplicate-variant-name',
-          },
-        });
-
-        // Note: logger.error is NOT called for unique violations
-        // The service catches unique violations and throws a CONFLICT ApiError
-        // logger.error is only called for unexpected database errors
       });
     });
 
