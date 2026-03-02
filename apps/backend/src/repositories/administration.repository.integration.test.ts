@@ -11,8 +11,12 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
+import { TaskFactory } from '../test-support/factories/task.factory';
+import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
 import { AdministrationRepository } from './administration.repository';
 import { UserRole } from '../enums/user-role.enum';
+import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 
 describe('AdministrationRepository', () => {
   let repository: AdministrationRepository;
@@ -852,6 +856,217 @@ describe('AdministrationRepository', () => {
 
       // Pages should have different items
       expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
+    });
+  });
+
+  describe('getTaskVariantsByAdministrationId', () => {
+    it('returns only published variants when publishedOnly is true', async () => {
+      // Create a task and variants with different statuses
+      const task = await TaskFactory.create();
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Published Variant',
+        status: TaskVariantStatus.PUBLISHED,
+      });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Draft Variant',
+        status: TaskVariantStatus.DRAFT,
+      });
+      const deprecatedVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Deprecated Variant',
+        status: TaskVariantStatus.DEPRECATED,
+      });
+
+      // Create administration and assign all variants
+      const administration = await AdministrationFactory.create({
+        name: 'Task Variant Status Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: publishedVariant.id,
+        orderIndex: 0,
+      });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: draftVariant.id,
+        orderIndex: 1,
+      });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: deprecatedVariant.id,
+        orderIndex: 2,
+      });
+
+      // Query with publishedOnly: true (supervised role behavior)
+      const result = await repository.getTaskVariantsByAdministrationId(
+        administration.id,
+        true, // publishedOnly
+        { page: 1, perPage: 100 },
+      );
+
+      // Should only return the published variant
+      expect(result.totalItems).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.variant.id).toBe(publishedVariant.id);
+      expect(result.items[0]!.variant.status).toBe(TaskVariantStatus.PUBLISHED);
+    });
+
+    it('returns all variants (including draft/deprecated) when publishedOnly is false', async () => {
+      // Create a task and variants with different statuses
+      const task = await TaskFactory.create();
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Published Variant 2',
+        status: TaskVariantStatus.PUBLISHED,
+      });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Draft Variant 2',
+        status: TaskVariantStatus.DRAFT,
+      });
+
+      // Create administration and assign both variants
+      const administration = await AdministrationFactory.create({
+        name: 'Task Variant All Statuses Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: publishedVariant.id,
+        orderIndex: 0,
+      });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: draftVariant.id,
+        orderIndex: 1,
+      });
+
+      // Query with publishedOnly: false (supervisory role behavior)
+      const result = await repository.getTaskVariantsByAdministrationId(
+        administration.id,
+        false, // publishedOnly
+        { page: 1, perPage: 100 },
+      );
+
+      // Should return all variants regardless of status
+      expect(result.totalItems).toBe(2);
+      expect(result.items).toHaveLength(2);
+
+      const variantIds = result.items.map((item) => item.variant.id);
+      expect(variantIds).toContain(publishedVariant.id);
+      expect(variantIds).toContain(draftVariant.id);
+    });
+
+    it('returns all variants when publishedOnly is false', async () => {
+      // Create a task and variants with different statuses
+      const task = await TaskFactory.create();
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Published Variant 3',
+        status: TaskVariantStatus.PUBLISHED,
+      });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Draft Variant 3',
+        status: TaskVariantStatus.DRAFT,
+      });
+
+      // Create administration and assign both variants
+      const administration = await AdministrationFactory.create({
+        name: 'Task Variant Default Behavior Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: publishedVariant.id,
+        orderIndex: 0,
+      });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: draftVariant.id,
+        orderIndex: 1,
+      });
+
+      // Query with publishedOnly: false (same as supervisory role behavior)
+      const result = await repository.getTaskVariantsByAdministrationId(
+        administration.id,
+        false, // publishedOnly
+        { page: 1, perPage: 100 },
+      );
+
+      // Should return all variants (no filtering)
+      expect(result.totalItems).toBe(2);
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('respects pagination and sorting with publishedOnly filter', async () => {
+      // Create a task and multiple published variants
+      const task = await TaskFactory.create();
+      const variantA = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Alpha Variant',
+        status: TaskVariantStatus.PUBLISHED,
+      });
+      const variantB = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Beta Variant',
+        status: TaskVariantStatus.PUBLISHED,
+      });
+      // Draft variant should be excluded
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: task.id,
+        name: 'Draft Should Be Excluded',
+        status: TaskVariantStatus.DRAFT,
+      });
+
+      const administration = await AdministrationFactory.create({
+        name: 'Task Variant Pagination Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: variantA.id,
+        orderIndex: 0,
+      });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: variantB.id,
+        orderIndex: 1,
+      });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: administration.id,
+        taskVariantId: draftVariant.id,
+        orderIndex: 2,
+      });
+
+      // Get first page with publishedOnly: true
+      const page1 = await repository.getTaskVariantsByAdministrationId(
+        administration.id,
+        true, // publishedOnly
+        { page: 1, perPage: 1, orderBy: { field: 'name', direction: 'asc' } },
+      );
+
+      expect(page1.totalItems).toBe(2); // Only 2 published variants
+      expect(page1.items).toHaveLength(1);
+      expect(page1.items[0]!.variant.name).toBe('Alpha Variant');
+
+      // Get second page
+      const page2 = await repository.getTaskVariantsByAdministrationId(
+        administration.id,
+        true, // publishedOnly
+        { page: 2, perPage: 1, orderBy: { field: 'name', direction: 'asc' } },
+      );
+
+      expect(page2.totalItems).toBe(2);
+      expect(page2.items).toHaveLength(1);
+      expect(page2.items[0]!.variant.name).toBe('Beta Variant');
     });
   });
 });

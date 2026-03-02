@@ -90,16 +90,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
 
-    // Resolve sort column
-    const sortField = orderBy?.field as DistrictSortFieldType | undefined;
-    const sortColumn = sortField ? DISTRICT_SORT_COLUMNS[sortField] : orgs.createdAt;
-    const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
-
-    // Delegate to getAll() with array of order expressions (primary sort + secondary sort on ID)
+    // Delegate to getAll() — tiebreaker asc(id) is handled by getAll() itself
     const result = await this.getAll({
       page,
       perPage,
-      orderBy: [sortDirection, asc(orgs.id)],
+      ...(orderBy && { orderBy }),
       ...(where && { where }),
     });
 

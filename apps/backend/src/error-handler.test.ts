@@ -7,12 +7,6 @@ import { ApiError } from './errors/api-error';
 import { ApiErrorCode } from './enums/api-error-code.enum';
 import { logger } from './logger';
 
-vi.mock('./logger', () => ({
-  logger: {
-    error: vi.fn(),
-  },
-}));
-
 describe('errorHandler', () => {
   let mockReq: Partial<Request>;
   let mockRes: Partial<Response>;

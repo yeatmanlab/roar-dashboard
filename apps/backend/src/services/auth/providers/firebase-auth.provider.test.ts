@@ -8,11 +8,6 @@ import { ApiErrorCode } from '../../../enums/api-error-code.enum';
 import { FIREBASE_ERROR_CODES } from '../../../constants/firebase-error-codes';
 
 vi.mock('../../../clients/firebase-auth.clients');
-vi.mock('../../../logger', () => ({
-  logger: {
-    warn: vi.fn(),
-  },
-}));
 
 describe('FirebaseAuthProvider', () => {
   let provider: FirebaseAuthProvider;

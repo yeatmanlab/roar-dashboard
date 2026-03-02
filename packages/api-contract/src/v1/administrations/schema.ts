@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ConditionSchema } from '../common/condition';
 import {
   PaginationQuerySchema,
   createSortQuerySchema,
@@ -313,3 +314,226 @@ export type AdministrationGroup = z.infer<typeof AdministrationGroupSchema>;
 export const AdministrationGroupsListResponseSchema = createPaginatedResponseSchema(AdministrationGroupSchema);
 
 export type AdministrationGroupsListResponse = z.infer<typeof AdministrationGroupsListResponseSchema>;
+
+/**
+ * Allowed sort fields for administration task variants.
+ */
+export const ADMINISTRATION_TASK_VARIANT_SORT_FIELDS = ['orderIndex', 'name'] as const;
+
+/**
+ * Sort field type for administration task variants.
+ */
+export type AdministrationTaskVariantSortFieldType = (typeof ADMINISTRATION_TASK_VARIANT_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationTaskVariantSortField = {
+  ORDER_INDEX: 'orderIndex',
+  NAME: 'name',
+} as const satisfies Record<string, AdministrationTaskVariantSortFieldType>;
+
+/**
+ * Query parameters for listing administration task variants.
+ * Defaults to ascending order (0 → 1 → 2) since orderIndex represents assessment sequence.
+ */
+export const AdministrationTaskVariantsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_TASK_VARIANT_SORT_FIELDS, 'orderIndex'),
+).extend({
+  sortOrder: z.enum(['asc', 'desc']).default('asc'),
+});
+
+export type AdministrationTaskVariantsListQuery = z.infer<typeof AdministrationTaskVariantsListQuerySchema>;
+
+/**
+ * Task information nested within task variant response.
+ */
+export const AdministrationTaskVariantTaskSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  image: z.string().nullable(),
+  tutorialVideo: z.string().nullable(),
+});
+
+/**
+ * Conditions for task variant assignment within an administration.
+ *
+ * The response structure differs based on the user's role:
+ *
+ * ## Supervisory roles (teachers, admins, super admins)
+ *
+ * Returns the raw condition objects for client-side evaluation:
+ * ```json
+ * {
+ *   "conditions": {
+ *     "assigned_if": { "field": "studentData.grade", "op": "GREATER_THAN", "value": 2 },
+ *     "optional_if": { "op": "AND", "conditions": [...] }
+ *   }
+ * }
+ * ```
+ *
+ * ### `assigned_if`
+ * Condition that determines if the task variant is assigned to a user.
+ * - When `null`: variant is assigned to **all** users in the administration
+ * - When condition evaluates to `true`: variant is assigned to that user
+ * - When condition evaluates to `false`: variant is NOT assigned to that user
+ *
+ * ### `optional_if`
+ * Condition that determines if the task variant is optional for an assigned user.
+ * - When `null`: variant is **required** for all assigned users
+ * - When condition evaluates to `true`: variant is **optional** for that user
+ * - When condition evaluates to `false`: variant is **required** for that user
+ *
+ * ## Supervised roles (students, guardians, parents)
+ *
+ * Returns the pre-evaluated result (conditions already applied server-side):
+ * ```json
+ * {
+ *   "conditions": {
+ *     "optional": false
+ *   }
+ * }
+ * ```
+ *
+ * - `optional`: Boolean indicating if this task variant is optional for the current user.
+ *   `false` = required, `true` = optional.
+ *
+ * Note: For supervised roles, variants that don't match the `assigned_if` condition
+ * are filtered out entirely and won't appear in the response.
+ *
+ * ---
+ * **Database column mapping:** The database columns `conditionsAssignment` and
+ * `conditionsRequirements` map to API fields `assigned_if` and `optional_if` respectively.
+ */
+export const AdministrationTaskVariantConditionsSchema = z
+  .object({
+    // Supervisory role fields (raw conditions for client-side evaluation)
+    assigned_if: ConditionSchema.nullable().optional(),
+    optional_if: ConditionSchema.nullable().optional(),
+    // Supervised role field (pre-evaluated result)
+    optional: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasRawConditions = data.assigned_if !== undefined || data.optional_if !== undefined;
+    const hasEvaluatedFlag = data.optional !== undefined;
+
+    // Enforce mutual exclusivity between raw conditions and evaluated flag
+    if (hasRawConditions && hasEvaluatedFlag) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Conditions must contain either raw condition fields (assigned_if/optional_if) OR the evaluated "optional" flag, not both.',
+      });
+    }
+  });
+
+/**
+ * Task variant item for administration task variant assignments.
+ * Includes nested task information for frontend display purposes.
+ */
+export const AdministrationTaskVariantItemSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().nullable(),
+  description: z.string().nullable(),
+  orderIndex: z.number().int(),
+  task: AdministrationTaskVariantTaskSchema,
+  conditions: AdministrationTaskVariantConditionsSchema,
+});
+
+export type AdministrationTaskVariantItem = z.infer<typeof AdministrationTaskVariantItemSchema>;
+
+/**
+ * Paginated response for administration task variants list.
+ */
+export const AdministrationTaskVariantsListResponseSchema = createPaginatedResponseSchema(
+  AdministrationTaskVariantItemSchema,
+);
+
+export type AdministrationTaskVariantsListResponse = z.infer<typeof AdministrationTaskVariantsListResponseSchema>;
+
+/**
+ * Agreement type values for filtering.
+ */
+export const AGREEMENT_TYPE_VALUES = ['tos', 'assent', 'consent'] as const;
+
+/**
+ * Schema for agreement type filter.
+ */
+export const AgreementTypeSchema = z.enum(AGREEMENT_TYPE_VALUES);
+
+export type AgreementType = z.infer<typeof AgreementTypeSchema>;
+
+/**
+ * BCP-47 locale code schema.
+ * Validates ISO 639-1 language code with optional ISO 3166-1 region code.
+ * Examples: "en", "en-US", "es", "es-MX"
+ */
+export const LocaleSchema = z
+  .string()
+  .max(5)
+  .regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'Invalid locale format. Expected BCP-47 format (e.g., "en", "en-US", "es-MX")');
+
+export type Locale = z.infer<typeof LocaleSchema>;
+
+/**
+ * Agreement version schema (current version for requested locale).
+ */
+export const AdministrationAgreementVersionSchema = z.object({
+  id: z.string().uuid(),
+  locale: LocaleSchema,
+  githubFilename: z.string(),
+  githubOrgRepo: z.string(),
+  githubCommitSha: z.string(),
+});
+
+export type AdministrationAgreementVersion = z.infer<typeof AdministrationAgreementVersionSchema>;
+
+/**
+ * Agreement schema for administration agreement assignments.
+ */
+export const AdministrationAgreementSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  agreementType: AgreementTypeSchema,
+  currentVersion: AdministrationAgreementVersionSchema.nullable(),
+});
+
+export type AdministrationAgreement = z.infer<typeof AdministrationAgreementSchema>;
+
+/**
+ * Allowed sort fields for administration agreements.
+ */
+export const ADMINISTRATION_AGREEMENT_SORT_FIELDS = ['name', 'agreementType', 'createdAt'] as const;
+
+/**
+ * Sort field type for administration agreements.
+ */
+export type AdministrationAgreementSortFieldType = (typeof ADMINISTRATION_AGREEMENT_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const AdministrationAgreementSortField = {
+  NAME: 'name',
+  AGREEMENT_TYPE: 'agreementType',
+  CREATED_AT: 'createdAt',
+} as const satisfies Record<string, AdministrationAgreementSortFieldType>;
+
+/**
+ * Query parameters for listing administration agreements.
+ */
+export const AdministrationAgreementsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ADMINISTRATION_AGREEMENT_SORT_FIELDS, 'name'),
+).extend({
+  locale: LocaleSchema.default('en-US'),
+});
+
+export type AdministrationAgreementsListQuery = z.infer<typeof AdministrationAgreementsListQuerySchema>;
+
+/**
+ * Paginated response for administration agreements list.
+ */
+export const AdministrationAgreementsListResponseSchema = createPaginatedResponseSchema(AdministrationAgreementSchema);
+
+export type AdministrationAgreementsListResponse = z.infer<typeof AdministrationAgreementsListResponseSchema>;
