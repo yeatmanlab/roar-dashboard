@@ -4,7 +4,10 @@ export {
   createMockTaskVariantParameterRepository,
   MockTaskVariantParameterRepository,
 } from './task-variant-parameter.repository';
-export { createMockRunRepository, MockRunRepository } from './runs.repository';
+export {
+  createMockRunsRepository as createMockRunRepository,
+  MockRunsRepository as MockRunRepository,
+} from './runs.repository';
 export { createMockRunTrialRepository, MockRunTrialRepository } from './run-trials.repository';
 export {
   createMockRunTrialInteractionsRepository,
