@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PaginationQuerySchema, createPaginatedResponseSchema, createSortQuerySchema } from './query';
-import { MeSchema, UserTypeSchema } from '../me/schema';
+import { UserTypeSchema } from '../me/schema';
 
 export const UserRoleSchema = z.enum([
   'administrator',
@@ -56,7 +56,7 @@ export const USER_SCHOOL_LEVEL_VALUES = ['early_childhood', 'elementary', 'middl
 export const UserSchoolLevelSchema = z.enum(USER_SCHOOL_LEVEL_VALUES);
 
 // Extracted out for clarity (PII), based on run demographics table
-export const UserDemographicSchema = z.object({
+const UserDemographicSchema = z.object({
   statusEll: z.string().nullable(),
   statusFrl: UserStatusFrlSchema.nullable(),
   statusIep: z.string().nullable(),
@@ -66,25 +66,29 @@ export const UserDemographicSchema = z.object({
   homeLanguage: z.string().nullable(),
   grade: UserGradeSchema.nullable(),
   schoolLevel: UserSchoolLevelSchema.nullable(),
+  dob: z.string().datetime().nullable(),
 });
 
-// TODO: should this include nameMiddle?
-export const UserBaseSchema = z.object({
-  id: z.string().uuid(),
-  assessmentPid: z.string(),
-  authProvider: UserAuthProviderSchema,
-  authId: z.string().nullable(), // TODO: there's a todo about whether this is nullable on drawSQL
-  username: z.string().nullable(),
-  email: z.string().email().nullable(),
-  dob: z.string().datetime().nullable(),
+const UserIdentiferSchema = z.object({
   studentId: z.string().nullable(),
   sisId: z.string().nullable(),
   stateId: z.string().nullable(),
   localId: z.string().nullable(),
+})
+
+export const UserBaseSchema = z.object({
+  id: z.string().uuid(),
+  assessmentPid: z.string(),
+  authProvider: UserAuthProviderSchema,
+  authId: z.string().nullable(),
+  nameFirst: z.string().nullable(),
+  nameLast: z.string().nullable(),
+  username: z.string().nullable(),
+  email: z.string().email().nullable(),
+  userType: UserTypeSchema,
 });
 
-export const UserSchema = UserBaseSchema.merge(MeSchema) // Includes id, nameFirst, nameLast, and userType
-  .merge(UserDemographicSchema);
+export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
 
 // TODO: which fields to sort?
 export const USERS_SORT_FIELDS = ['name.last', 'username', 'grade', 'enrollmentStart'] as const;
