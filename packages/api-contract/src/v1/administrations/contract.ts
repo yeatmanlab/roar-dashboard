@@ -12,6 +12,10 @@ import {
   AdministrationClassesListResponseSchema,
   AdministrationGroupsListQuerySchema,
   AdministrationGroupsListResponseSchema,
+  AdministrationTaskVariantsListQuerySchema,
+  AdministrationTaskVariantsListResponseSchema,
+  AdministrationAgreementsListQuerySchema,
+  AdministrationAgreementsListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
@@ -142,6 +146,49 @@ export const AdministrationsContract = c.router(
         'Super admins see all assigned groups. ' +
         'Supervisory users (administrator, teacher) see only groups they are members of. ' +
         'Supervised users (student, guardian, parent, relative) receive 403. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
+    },
+    listTaskVariants: {
+      method: 'GET',
+      path: '/:id/task-variants',
+      pathParams: z.object({ id: z.string().uuid() }),
+      query: AdministrationTaskVariantsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationTaskVariantsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List task variants assigned to an administration',
+      description:
+        'Returns a paginated list of task variants assigned to the specified administration. ' +
+        'Supervisory roles (teachers, admins) see all variants (including draft/deprecated) with raw conditions for client-side evaluation. ' +
+        'Supervised roles (students) see only published variants, filtered by eligibility - ' +
+        'only variants where assigned_if passes are returned, and optional is set based on optional_if. ' +
+        'Returns 403 if the user lacks permission to access the administration. ' +
+        'Returns 404 if the administration does not exist.',
+    },
+    listAgreements: {
+      method: 'GET',
+      path: '/:id/agreements',
+      pathParams: z.object({ id: z.string().uuid() }),
+      query: AdministrationAgreementsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationAgreementsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List agreements assigned to an administration',
+      description:
+        'Returns a paginated list of agreements assigned to the specified administration. ' +
+        'Each agreement includes the current version for the requested locale (default: en-US). ' +
+        'Use ?locale=es or ?locale=es-MX for other locales (BCP-47 format). ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration does not exist.',
     },

@@ -1,21 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import { requestLogger } from './request-logger.middleware';
-
-vi.mock('../../logger', () => {
-  const mockChild = {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  };
-  return {
-    logger: {
-      child: vi.fn(() => mockChild),
-    },
-  };
-});
-
-// Import after mocking to get the mocked version
 import { logger } from '../../logger';
 
 describe('requestLogger', () => {

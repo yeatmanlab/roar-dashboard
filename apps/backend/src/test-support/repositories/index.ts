@@ -10,3 +10,10 @@ export {
   createMockRunTrialInteractionsRepository,
   MockRunTrialInteractionsRepository,
 } from './run-trial-interactions.repository';
+export { createMockAdministrationRepository, MockAdministrationRepository } from './administration.repository';
+export {
+  createMockAdministrationTaskVariantRepository,
+  MockAdministrationTaskVariantRepository,
+} from './administration-task-variant.repository';
+export { createMockUserRepository, MockUserRepository } from './user.repository';
+

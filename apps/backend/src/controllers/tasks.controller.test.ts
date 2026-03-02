@@ -25,6 +25,7 @@ describe('TasksController', () => {
     vi.mocked(TaskService).mockReturnValue({
       createTaskVariant: mockCreateTaskVariant,
       getTaskIdByVariantId: mockGetTaskIdByVariantId,
+      evaluateTaskVariantEligibility: vi.fn(),
     });
   });
 

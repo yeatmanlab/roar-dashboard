@@ -27,36 +27,45 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
   const siteAdmin: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
+    Permissions.Classes.LIST,
+    Permissions.Groups.LIST,
     Permissions.Organizations.LIST,
     Permissions.Organizations.READ,
     Permissions.Profile.READ,
     Permissions.Reports.Progress.ALL,
     Permissions.Reports.Score.ALL,
     Permissions.Reports.Student.ALL,
+    Permissions.TaskVariants.LIST,
     Permissions.Users.LIST,
   ];
 
   const admin: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
+    Permissions.Classes.LIST,
+    Permissions.Groups.LIST,
     Permissions.Organizations.LIST,
     Permissions.Organizations.READ,
     Permissions.Profile.READ,
     Permissions.Reports.Progress.ALL,
     Permissions.Reports.Score.ALL,
     Permissions.Reports.Student.ALL,
+    Permissions.TaskVariants.LIST,
     Permissions.Users.LIST,
   ];
 
   const educator: readonly Permission[] = [
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
+    Permissions.Classes.LIST,
+    Permissions.Groups.LIST,
     Permissions.Organizations.LIST,
     Permissions.Organizations.READ,
     Permissions.Profile.READ,
     Permissions.Reports.Progress.ALL,
     Permissions.Reports.Score.ALL,
     Permissions.Reports.Student.ALL,
+    Permissions.TaskVariants.LIST,
     Permissions.Users.LIST,
   ];
 
@@ -78,6 +87,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Administrations.READ,
     Permissions.Profile.READ,
     Permissions.Runs.CREATE,
+    Permissions.TaskVariants.LIST,
     Permissions.Tasks.LAUNCH,
   ];
 
