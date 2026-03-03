@@ -11,6 +11,7 @@ import { TaskVariantFactory } from '../../test-support/factories/task-variant.fa
 import { AdministrationTaskVariantFactory } from '../../test-support/factories/administration-task-variant.factory';
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
+import { RunFactory } from '../../test-support/factories/run.factory';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
@@ -3613,7 +3614,7 @@ describe('AdministrationService', () => {
     it('should throw conflict error when runs exist for the administration', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockRunsService.getByAdministrationId.mockResolvedValue({ id: 'run-123' }); // A run exists
+      mockRunsService.getByAdministrationId.mockResolvedValue(RunFactory.build({ id: 'run-123' }));
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
