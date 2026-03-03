@@ -41,8 +41,8 @@ jobs:
           artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
           image-name: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
           image-tag-rules: |
-            type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
           dockerfile: apps/backend/Dockerfile
 
   # ––––––––––––––––––––––––––––––––––––– #
