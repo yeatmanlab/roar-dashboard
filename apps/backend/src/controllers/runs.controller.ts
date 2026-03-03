@@ -29,12 +29,12 @@ export const RunsController = {
    */
   create: async (authContext: AuthContext, body: CreateRunRequestBody) => {
     try {
-      const { runId } = await runService.create(authContext, body);
+      const { id } = await runService.create(authContext, body);
 
       return {
         status: StatusCodes.CREATED as const,
         body: {
-          data: { runId },
+          data: { id },
         },
       };
     } catch (error) {

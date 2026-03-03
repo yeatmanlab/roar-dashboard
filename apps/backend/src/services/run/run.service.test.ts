@@ -60,7 +60,7 @@ describe('RunService', () => {
 
       const result = await runsService.create(authContext, validRequestBody);
 
-      expect(result).toEqual({ runId: 'run-uuid-123' });
+      expect(result).toEqual({ id: 'run-uuid-123' });
       expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
         { userId: 'user-123', isSuperAdmin: false },
         '660e8400-e29b-41d4-a716-446655440001',
@@ -114,7 +114,7 @@ describe('RunService', () => {
 
       const result = await runsService.create(superAdminContext, validRequestBody);
 
-      expect(result).toEqual({ runId: 'run-uuid-123' });
+      expect(result).toEqual({ id: 'run-uuid-123' });
       expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
         superAdminContext,
         '660e8400-e29b-41d4-a716-446655440001',

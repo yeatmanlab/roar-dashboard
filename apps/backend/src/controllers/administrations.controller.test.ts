@@ -33,7 +33,7 @@ function expectOkResponse<T>(result: { status: number; body: { data: T } | { err
 describe('AdministrationsController', () => {
   const mockList = vi.fn();
   const mockGet = vi.fn();
-  const mockVerifyAdministrationAccess = vi.fn(); // ✅ ADD THIS
+  const mockVerifyAdministrationAccess = vi.fn();
   const mockListDistricts = vi.fn();
   const mockListSchools = vi.fn();
   const mockListClasses = vi.fn();

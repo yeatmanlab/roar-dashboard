@@ -29,7 +29,7 @@ export type CreateRunRequestBody = z.infer<typeof CreateRunRequestBodySchema>;
  * Response payload for POST /runs
  */
 export const CreateRunResponseSchema = z.object({
-  runId: z.string().uuid(),
+  id: z.string().uuid(),
 });
 
 /**

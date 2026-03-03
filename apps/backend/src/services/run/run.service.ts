@@ -50,13 +50,13 @@ export function RunService({
    *
    * @param authContext - Authentication context with userId and isSuperAdmin flag
    * @param body - Request body containing task_variant_id, task_version, administration_id, and optional metadata
-   * @returns Promise resolving to object with runId
+   * @returns Promise resolving to object with id
    * @throws ApiError with INTERNAL_SERVER_ERROR if taskService not configured
    * @throws ApiError with UNPROCESSABLE_ENTITY if administration_id or task_variant_id are invalid
    * @throws ApiError with FORBIDDEN if user lacks permission to create run
    * @throws ApiError with INTERNAL_SERVER_ERROR if database operation fails
    */
-  async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ runId: string }> {
+  async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
@@ -134,7 +134,7 @@ export function RunService({
       };
 
       const run = await runsRepository.create({ data });
-      return { runId: run.id as string };
+      return { id: run.id as string };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

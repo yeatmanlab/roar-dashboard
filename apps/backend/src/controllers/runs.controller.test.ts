@@ -62,8 +62,8 @@ describe('RunsController', () => {
   });
 
   describe('create', () => {
-    it('should return 201 CREATED with runId on success', async () => {
-      mockCreate.mockResolvedValue({ runId: 'run-uuid-123' });
+    it('should return 201 CREATED with id on success', async () => {
+      mockCreate.mockResolvedValue({ id: 'run-uuid-123' });
 
       const { RunsController } = await import('./runs.controller');
 
@@ -71,12 +71,12 @@ describe('RunsController', () => {
 
       expect(result.status).toBe(StatusCodes.CREATED);
       expect(result.body).toEqual({
-        data: { runId: 'run-uuid-123' },
+        data: { id: 'run-uuid-123' },
       });
     });
 
     it('should pass auth context and body to service', async () => {
-      mockCreate.mockResolvedValue({ runId: 'run-uuid-123' });
+      mockCreate.mockResolvedValue({ id: 'run-uuid-123' });
 
       const { RunsController } = await import('./runs.controller');
 

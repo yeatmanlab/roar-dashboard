@@ -28,7 +28,7 @@ export function registerRunsRoutes(routerInstance: Router) {
             status: 201,
             body: {
               data: {
-                runId: result.body.data.runId,
+                id: result.body.data.id,
               },
             },
           };
