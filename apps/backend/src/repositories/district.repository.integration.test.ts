@@ -402,9 +402,9 @@ describe('DistrictRepository', () => {
     });
   });
 
-  describe('getByIdUnrestricted', () => {
+  describe('getUnrestrictedById', () => {
     it('returns district without access checks', async () => {
-      const result = await repository.getByIdUnrestricted(baseFixture.district.id);
+      const result = await repository.getUnrestrictedById(baseFixture.district.id);
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe(baseFixture.district.id);
@@ -413,20 +413,20 @@ describe('DistrictRepository', () => {
 
     it('filters correctly by orgType=district', async () => {
       // Try to get a school by ID - should return null because it's not a district
-      const result = await repository.getByIdUnrestricted(baseFixture.schoolA.id);
+      const result = await repository.getUnrestrictedById(baseFixture.schoolA.id);
 
       expect(result).toBeNull();
     });
 
     it('returns null for nonexistent district ID', async () => {
-      const result = await repository.getByIdUnrestricted('00000000-0000-0000-0000-000000000000');
+      const result = await repository.getUnrestrictedById('00000000-0000-0000-0000-000000000000');
 
       expect(result).toBeNull();
     });
 
     it('returns district even if user has no access', async () => {
       // This method bypasses access controls
-      const result = await repository.getByIdUnrestricted(baseFixture.districtB.id);
+      const result = await repository.getUnrestrictedById(baseFixture.districtB.id);
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe(baseFixture.districtB.id);

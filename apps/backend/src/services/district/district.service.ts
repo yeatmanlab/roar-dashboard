@@ -112,7 +112,7 @@ export function DistrictService({
       let district;
 
       if (isSuperAdmin) {
-        district = await repo.getByIdUnrestricted(districtId);
+        district = await repo.getUnrestrictedById(districtId);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
         district = await repo.getAuthorizedById(districtId, { userId, allowedRoles });

@@ -25,7 +25,7 @@ describe('DistrictService', () => {
   const mockDistrictRepository: any = {
     listAll: mockListAll,
     listAuthorized: mockListAuthorized,
-    getByIdUnrestricted: mockGetByIdUnrestricted,
+    getUnrestrictedById: mockGetByIdUnrestricted,
     getAuthorizedById: mockGetAuthorizedById,
   };
 
@@ -482,7 +482,7 @@ describe('DistrictService', () => {
       });
     });
 
-    it('should use getByIdUnrestricted for super admins', async () => {
+    it('should use getUnrestrictedById for super admins', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
         id: validUuid,
