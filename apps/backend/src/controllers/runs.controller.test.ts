@@ -246,16 +246,16 @@ describe('RunsController', () => {
     const validRunId = '550e8400-e29b-41d4-a716-446655440000';
     const validEventBody = { type: 'complete' as const };
 
-    it('should return 201 CREATED on success', async () => {
+    it('should return 200 OK on success', async () => {
       mockCompleteRun.mockResolvedValue(undefined);
 
       const { RunsController } = await import('./runs.controller');
 
       const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
 
-      expect(result.status).toBe(StatusCodes.CREATED);
+      expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toEqual({
-        data: { id: validRunId },
+        data: { status: 'ok' },
       });
     });
 
