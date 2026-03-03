@@ -26,12 +26,12 @@ jobs:
     environment: development
     timeout-minutes: 10
     outputs:
-      image-version: ${{ steps.build.outputs.image-version }}
+      image-version: ${{ steps.docker-build.outputs.image-version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Build and push image
-        id: build
+        id: docker-build
         uses: ./.github/actions/build-docker-image
         with:
           gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
@@ -46,7 +46,7 @@ jobs:
           dockerfile: apps/backend/Dockerfile
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # 2. Migrate databases (parallel)
+  # 2. Migrate databases
   # ––––––––––––––––––––––––––––––––––––– #
   core-db-migrations:
     name: Migrate core database
@@ -87,7 +87,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––– #
   deploy:
     name: Deploy backend to Cloud Run
-    needs: [core-db-migrations, assessment-db-migrations]
+    needs: [build, core-db-migrations, assessment-db-migrations]
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 10
