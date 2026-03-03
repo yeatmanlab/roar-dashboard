@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - project/backend-refactor
+      - enh/1645/backend-deployment  # TODO: remove after testing
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -24,10 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: development
     timeout-minutes: 10
+    outputs:
+      image-version: ${{ steps.build.outputs.image-version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Build and push image
+        id: build
         uses: ./.github/actions/build-docker-image
         with:
           gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
@@ -36,8 +40,10 @@ jobs:
           project-id: ${{ secrets.GCP_PROJECT_ID }}
           artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
           image-name: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
+          image-tag-rules: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
           dockerfile: apps/backend/Dockerfile
-          image-tag: ${{ github.sha }}
 
   # ––––––––––––––––––––––––––––––––––––– #
   # 2. Migrate databases (parallel)
@@ -98,4 +104,4 @@ jobs:
           artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
           cloud-run-service: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
           image-name: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
-          image-tag: ${{ github.sha }}
+          image-tag: ${{ needs.build.outputs.image-version }}
