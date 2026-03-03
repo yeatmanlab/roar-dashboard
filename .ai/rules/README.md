@@ -98,7 +98,7 @@ Rules are designed to work with any AI coding tool and for direct human referenc
 
 - **Claude Code**: `CLAUDE.md` at the repo root (symlink to `AGENTS.md`) plus `.claude/rules/` (symlink to `.ai/rules/`).
 - **Cursor**: `.cursor/rules/` (symlink to `.ai/rules/`).
-- **GitHub Copilot**: `.github/copilot-instructions.md` provides a concise summary with links to the full rules. The Copilot coding agent also reads `AGENTS.md` directly.
+- **GitHub Copilot**: The Copilot coding agent reads `AGENTS.md` directly.
 
 **Engineers:** Browse rules by prefix to find conventions for the area you are working in. Each rule is self-contained with incorrect/correct examples and references to canonical implementations.
 
