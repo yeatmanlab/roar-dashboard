@@ -1,12 +1,29 @@
-import { eq } from 'drizzle-orm';
+import { eq, asc, desc, count, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { classes, type Class } from '../db/schema';
+import type { Column } from 'drizzle-orm';
+import { classes, userClasses, users, type Class, type User } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
-import { BaseRepository } from './base.repository';
+import { BaseRepository, type PaginatedResult } from './base.repository';
 import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
+import { isEnrollmentActive } from './utils/enrollment.utils';
+import { UserSortField } from '@roar-dashboard/api-contract';
+import type { UserRole } from '../enums/user-role.enum';
+
+export interface ListUsersByClassOptions {
+  page: number;
+  perPage: number;
+  orderBy?: { field: UserSortField; direction: 'asc' | 'desc' };
+}
+
+// TODO: Check if enrollment start is a sort field
+const USER_SORT_COLUMNS: Record<UserSortField, Column> = {
+  nameLast: users.nameLast,
+  username: users.username,
+  grade: users.grade,
+};
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
   private readonly orgAccessControls: OrgAccessControls;
@@ -51,11 +68,55 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
    * @param classId
    * @returns
    */
-  /*async getUserRolesForClass(userId: string, classId: string): Promise<string[]> {
+  async getUserRolesForClass(userId: string, classId: string): Promise<UserRole[]> {
     return this.classAccessControls.getUserRolesForClass(userId, classId);
   }
 
-  async listUsers(accessControlFilter: AccessControlFilter, classId: string): Promise<User[]> {
-    
-  }*/
+  /**
+   * Get users enrolled in a class.
+   *
+   * Returns all users who have an active enrollment in the specified class.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param classId - The class ID to get users for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with users
+   */
+  async getUsersByClassId(classId: string, options: ListUsersByClassOptions): Promise<PaginatedResult<User>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const whereCondition = and(eq(userClasses.classId, classId), isEnrollmentActive(userClasses));
+
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(userClasses)
+      .innerJoin(users, eq(users.id, userClasses.userId))
+      .where(whereCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const sortField = orderBy?.field as UserSortField | undefined;
+    const sortColumn = sortField ? USER_SORT_COLUMNS[sortField] : users.nameLast;
+    const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ user: users })
+      .from(userClasses)
+      .innerJoin(users, eq(users.id, userClasses.userId))
+      .where(whereCondition)
+      .orderBy(primaryOrder, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.user),
+      totalItems,
+    };
+  }
 }

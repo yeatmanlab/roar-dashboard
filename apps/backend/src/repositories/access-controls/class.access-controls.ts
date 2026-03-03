@@ -5,6 +5,7 @@ import type * as CoreDbSchema from '../../db/schema/core';
 import { userClasses, classes, userOrgs, orgs } from '../../db/schema';
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isEnrollmentActive } from '../utils/enrollment.utils';
+import type { UserRole } from '../../enums/user-role.enum';
 /**
  * Class Access Controls
  *
@@ -41,7 +42,7 @@ import { isEnrollmentActive } from '../utils/enrollment.utils';
 export class ClassAccessControls {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
 
-  async getUserRolesForClass(userId: string, classId: string): Promise<string[]> {
+  async getUserRolesForClass(userId: string, classId: string): Promise<UserRole[]> {
     const rolesViaUserClassToOrg = this.db
       .selectDistinct({
         role: userOrgs.role,

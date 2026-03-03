@@ -187,4 +187,77 @@ describe('ClassRepository', () => {
       });
     });
   });
+
+  describe('getUsersByClassId', () => {
+    it('returns users enrolled in a class', async () => {
+      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBeGreaterThanOrEqual(1);
+      expect(result.items.length).toBeGreaterThanOrEqual(1);
+
+      const userIds = result.items.map((u) => u.id);
+      expect(userIds).toContain(baseFixture.classAStudent.id);
+      expect(userIds).toContain(baseFixture.classATeacher.id);
+    });
+
+    it('returns empty for class with no enrolled users', async () => {
+      // classInSchoolB has no direct class enrollments in base fixture
+      const result = await repository.getUsersByClassId(baseFixture.classInSchoolB.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('respects pagination', async () => {
+      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
+        page: 1,
+        perPage: 1,
+      });
+
+      expect(result.items.length).toBeLessThanOrEqual(1);
+      expect(result.totalItems).toBeGreaterThanOrEqual(1);
+    });
+
+    it('applies sorting by nameLast ascending', async () => {
+      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'nameLast', direction: 'asc' },
+      });
+
+      if (result.items.length > 1) {
+        for (let i = 1; i < result.items.length; i++) {
+          const prev = result.items[i - 1]!.nameLast ?? '';
+          const curr = result.items[i]!.nameLast ?? '';
+          expect(prev.toLowerCase() <= curr.toLowerCase()).toBe(true);
+        }
+      }
+    });
+
+    it('excludes users with expired class enrollment', async () => {
+      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      const userIds = result.items.map((u) => u.id);
+      expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
+    });
+
+    it('returns empty for nonexistent class ID', async () => {
+      const result = await repository.getUsersByClassId('00000000-0000-0000-0000-000000000000', {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+  });
 });
