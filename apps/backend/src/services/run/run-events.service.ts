@@ -228,11 +228,6 @@ export function RunEventsService({
 
     try {
       await assertRunOwnedByUser(runId, authContext.userId);
-
-      await runsRepository.update({
-        id: runId,
-        data: {},
-      });
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
