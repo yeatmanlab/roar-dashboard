@@ -69,4 +69,13 @@ describe('FirebaseAuthProvider', () => {
 
     await expect(provider.verifyToken('test-token')).rejects.toBe(apiError);
   });
+
+  it('should pass checkRevoked parameter as true to Firebase client', async () => {
+    const mockDecodedToken = { uid: 'user-123' };
+    mockVerifyIdToken.mockResolvedValue(mockDecodedToken);
+
+    await provider.verifyToken('test-token');
+
+    expect(mockVerifyIdToken).toHaveBeenCalledWith('test-token', true);
+  });
 });
