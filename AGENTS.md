@@ -39,11 +39,11 @@ npm run test            # Run all tests (unit + integration)
 Backend-specific:
 
 ```bash
-npm run test:unit             # Unit tests only (apps/backend/)
-npm run test:integration      # Integration tests only, requires DB (apps/backend/)
-npm run db:migrate            # Run all pending migrations (core + assessment)
-npm run db:gen:core           # Generate a new core migration from schema changes
-npm run db:gen:assess         # Generate a new assessment migration from schema changes
+npm run test:unit -w apps/backend        # Unit tests only for apps/backend
+npm run test:integration -w apps/backend # Integration tests only, requires DB (apps/backend)
+npm run db:migrate -w apps/backend       # Run all pending migrations (core + assessment)
+npm run db:gen:core -w apps/backend      # Generate a new core migration from schema changes
+npm run db:gen:assess -w apps/backend    # Generate a new assessment migration from schema changes
 ```
 
 ## Boundaries
@@ -88,7 +88,7 @@ apps/dashboard/               # Vue 3 + Vite frontend
   src/
     components/               # Vue components (PascalCase, Pv prefix for PrimeVue)
     composables/              # Vue composables (query, mutation, logic, utility)
-    stores/                   # Pinia stores (client state)
+    store/                    # Pinia stores (client state)
 packages/api-contract/        # ts-rest + Zod contract (shared types)
 packages/assessment-sdk/      # Assessment client SDK
 ```
