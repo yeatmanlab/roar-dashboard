@@ -117,9 +117,11 @@ The `prevent_rostered_entity_delete` trigger blocks DELETE on users, orgs, class
 
 All tables have a `set_updated_at` trigger that automatically sets the `updated_at` timestamp on every modification.
 
-### No soft deletes
+### Soft deletes
 
-The current schema uses physical deletion (with protection triggers), not soft deletes. There is no `deleted_at` column.
+The assessment `runs` table supports soft deletion via `deletedAt` and `deletedBy` columns. A database constraint (`runs_deleted_by_required`) enforces that `deletedBy` is set whenever `deletedAt` is set. Core database tables (orgs, users, classes, groups, administrations) use physical deletion protected by the rostered entity triggers described above.
+
+When querying runs, ensure that soft-deleted records are excluded unless the query explicitly needs them. The `BaseRepository.delete()` method performs a hard delete, so soft deletion of runs requires a separate update setting `deletedAt` and `deletedBy`.
 
 ## Monorepo Package Graph
 
