@@ -111,6 +111,7 @@ packages/assessment-sdk/      # Assessment client SDK
 ## Extended Documentation
 
 - **[.ai/commands.md](.ai/commands.md)**: Complete command reference
+- **[.ai/knowledge-base.md](.ai/knowledge-base.md)**: Domain knowledge (entity hierarchy, roles, databases, auth, gotchas)
 - **[.ai/rules/README.md](.ai/rules/README.md)**: Rules index and category guide
 - **[.ai/rules/](.ai/rules/)**: Individual engineering rules (browse by prefix)
 
