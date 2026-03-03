@@ -283,13 +283,13 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const accessibleOrgs = this.accessControls.buildUserAccessibleOrgIdsQuery(filter).as('accessible_orgs');
 
     const result = await this.db
-      .selectDistinct()
+      .select({ org: orgs })
       .from(orgs)
       .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
       .where(and(eq(orgs.id, districtId), eq(orgs.orgType, 'district')))
       .limit(1);
 
-    return result[0]?.orgs ?? null;
+    return result[0]?.org ?? null;
   }
 
   /**

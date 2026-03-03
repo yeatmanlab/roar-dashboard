@@ -402,6 +402,99 @@ describe('DistrictRepository', () => {
     });
   });
 
+  describe('getByIdUnrestricted', () => {
+    it('returns district without access checks', async () => {
+      const result = await repository.getByIdUnrestricted(baseFixture.district.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.district.id);
+      expect(result!.orgType).toBe(OrgType.DISTRICT);
+    });
+
+    it('filters correctly by orgType=district', async () => {
+      // Try to get a school by ID - should return null because it's not a district
+      const result = await repository.getByIdUnrestricted(baseFixture.schoolA.id);
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for nonexistent district ID', async () => {
+      const result = await repository.getByIdUnrestricted('00000000-0000-0000-0000-000000000000');
+
+      expect(result).toBeNull();
+    });
+
+    it('returns district even if user has no access', async () => {
+      // This method bypasses access controls
+      const result = await repository.getByIdUnrestricted(baseFixture.districtB.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.districtB.id);
+    });
+  });
+
+  describe('getAuthorizedById', () => {
+    it('returns district when user has access', async () => {
+      const result = await repository.getAuthorizedById(baseFixture.district.id, {
+        userId: baseFixture.districtAdmin.id,
+        allowedRoles: [UserRole.ADMINISTRATOR],
+      });
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.district.id);
+    });
+
+    it('returns null when user lacks access', async () => {
+      // District B admin should not have access to District A
+      const result = await repository.getAuthorizedById(baseFixture.district.id, {
+        userId: baseFixture.districtBAdmin.id,
+        allowedRoles: [UserRole.ADMINISTRATOR],
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for nonexistent district ID', async () => {
+      const result = await repository.getAuthorizedById('00000000-0000-0000-0000-000000000000', {
+        userId: baseFixture.districtAdmin.id,
+        allowedRoles: [UserRole.ADMINISTRATOR],
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('returns district for student with access', async () => {
+      // School A student should have access to parent district
+      const result = await repository.getAuthorizedById(baseFixture.district.id, {
+        userId: baseFixture.schoolAStudent.id,
+        allowedRoles: [UserRole.STUDENT],
+      });
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.district.id);
+    });
+
+    it('returns null for student without access to district', async () => {
+      // School A student should NOT have access to District B
+      const result = await repository.getAuthorizedById(baseFixture.districtB.id, {
+        userId: baseFixture.schoolAStudent.id,
+        allowedRoles: [UserRole.STUDENT],
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('filters correctly by orgType=district', async () => {
+      // Try to get a school by ID - should return null even if user has access
+      const result = await repository.getAuthorizedById(baseFixture.schoolA.id, {
+        userId: baseFixture.districtAdmin.id,
+        allowedRoles: [UserRole.ADMINISTRATOR],
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('counts aggregation', () => {
     it('returns accurate user counts', async () => {
       const result = (await repository.listAll({
