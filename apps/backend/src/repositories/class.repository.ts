@@ -9,7 +9,7 @@ import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import { UserSortField } from '@roar-dashboard/api-contract';
+import type { UserSortField } from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
 
 export interface ListUsersByClassOptions {
@@ -23,6 +23,7 @@ const USER_SORT_COLUMNS: Record<UserSortField, Column> = {
   nameLast: users.nameLast,
   username: users.username,
   grade: users.grade,
+  enrollmentStart: users.nameLast, // TODO: This is a placeholder, need to find the correct column
 };
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
