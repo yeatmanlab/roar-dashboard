@@ -1,18 +1,15 @@
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
-import { logger } from '../../logger';
-import { parseAccessControlFilter, type AccessControlFilter } from '../utils/access-controls.utils';
 import { userClasses, classes, userOrgs, orgs } from '../../db/schema';
-import { isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
-import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
+import { isEnrollmentActive } from '../utils/enrollment.utils';
 /**
  * Class Access Controls
  *
  * Builds SQL queries to determine what classes a user can access based on their
- * org/class memberships. 
+ * org/class memberships.
  *
  * ## How Access Works
  *
@@ -28,7 +25,7 @@ import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
  *
  * ## Access Patterns
  *
- * **Ancestor access (supervisory roles only)** — Supervisors can see classes assigned to them. 
+ * **Ancestor access (supervisory roles only)** — Supervisors can see classes assigned to them.
  * **Descendant access (supervisory roles only)** — Supervisors can see classes on descendants.
  *
  * ## ltree for Hierarchy Queries
@@ -44,39 +41,27 @@ import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 export class ClassAccessControls {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
 
-  buildUserClassIdsQuery(accessControlFilter: AccessControlFilter) {
-    const { userId, allowedRoles } = parseAccessControlFilter(accessControlFilter);
-
-    const supervisoryAllowedRoles = filterSupervisoryRoles(allowedRoles);
-
-    if (supervisoryAllowedRoles.length === 0) {
-      logger.debug({ userId, allowedRoles }, 'No supervisory roles provided. Can not list classes.');
-      return [];
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────–––––––
-    // ANCESTOR ACCESS: Find classes on user's entity (supervisory roles only)
-    // ─────────────────────────────────────────────────────────────────────────–––––––
-
-     // Path 1: User's class membership → classes assigned directly to that user
-    const viaDirectClass = this.db
-      .select({ classId: userClasses.classId })
-      .from(userClasses)
-      .innerJoin(classes, eq(classes.id, userClasses.classId)) // get the class details for user's membership
-      .where(isAuthorizedMembership(userClasses, userId, supervisoryAllowedRoles));
-
-    // ─────────────────────────────────────────────────────────────────────────–––––––
-    // DESCENDANT ACCESS: Find classes on descendants (supervisory roles only)
-    // ─────────────────────────────────────────────────────────────────────────–––––––
-
-    // Path 2: User's org membership → classes on descendant orgs
-    const viaUserOrgToDescendantClass = this.db
-      .select({ classId: classes.id })
+  async getUserRolesForClass(userId: string, classId: string): Promise<string[]> {
+    const rolesViaUserClassToOrg = this.db
+      .selectDistinct({
+        role: userOrgs.role,
+      })
       .from(userOrgs)
       .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
-      .innerJoin(classes, isAncestorOrEqual(orgs.orgPath, classes.orgPath))
-      .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
+      .innerJoin(classes, isAncestorOrEqual(orgs.path, classes.orgPath))
+      .where(and(eq(userOrgs.userId, userId), eq(classes.id, classId), isEnrollmentActive(userOrgs)));
 
-    return viaDirectClass.union(viaUserOrgToDescendantClass);
+    const rolesViaDirectClass = this.db
+      .selectDistinct({
+        role: userClasses.role,
+      })
+      .from(userClasses)
+      .where(and(eq(userClasses.userId, userId), eq(userClasses.classId, classId), isEnrollmentActive(userClasses)));
+
+    const roleUnion = rolesViaUserClassToOrg.union(rolesViaDirectClass);
+
+    const result = await this.db.select({ role: roleUnion.as('roles').role }).from(roleUnion.as('roles'));
+
+    return result.map((r) => r.role);
   }
 }
