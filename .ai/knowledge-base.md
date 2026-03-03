@@ -146,7 +146,7 @@ Dependencies: `@ts-rest/core`, `zod`.
 
 ### packages/assessment-sdk
 
-A client SDK for assessment operations. Depends on `api-contract` for shared types. Used by the dashboard and by external assessment tasks.
+A client SDK for assessment operations. Depends on `api-contract` for shared types.
 
 Dependencies: `@ts-rest/core`, `@roar-dashboard/api-contract`.
 
