@@ -4,13 +4,13 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 
 ## Rules Index
 
-### Architecture (CRITICAL)
+### Architecture
 
 | Rule | Impact | Description |
 |------|--------|-------------|
 | [architecture-authorization-model](architecture-authorization-model.md) | CRITICAL | ltree hierarchy, per-entity roles, supervisory/supervised distinction, two-layer authorization |
 
-### Backend (CRITICAL to MEDIUM)
+### Backend
 
 | Rule | Impact | Description |
 |------|--------|-------------|
