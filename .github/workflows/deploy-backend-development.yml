@@ -39,7 +39,7 @@ jobs:
           region: ${{ secrets.GCP_BACKEND_REGION }}
           project-id: ${{ secrets.GCP_PROJECT_ID }}
           artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
-          image-name: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
+          image-name: roar-backend
           image-tag-rules: |
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
@@ -103,5 +103,5 @@ jobs:
           project-id: ${{ secrets.GCP_PROJECT_ID }}
           artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
           cloud-run-service: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
-          image-name: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
+          image-name: roar-backend
           image-tag: ${{ needs.build.outputs.image-version }}
