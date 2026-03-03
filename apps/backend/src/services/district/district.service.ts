@@ -8,6 +8,9 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { AdministrationRepository } from '../../repositories/administration.repository';
+import { RunsRepository } from '../../repositories/runs.repository';
 
 /**
  * Options for listing districts
@@ -51,28 +54,49 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
  */
 export function DistrictService({
   districtRepository = new DistrictRepository(),
+  administrationRepository = new AdministrationRepository(),
+  runsRepository = new RunsRepository(),
 }: {
   districtRepository?: DistrictRepository;
+  administrationRepository?: AdministrationRepository;
+  runsRepository?: RunsRepository;
 } = {}) {
   /**
    * Verify that a district exists and the user has access to it.
    */
-  async function verifyDistrictAccess(districtId: string, authContext: AuthContext): Promise<void> {
-    const { userId } = authContext;
+  async function verifyDistrictAccess(districtId: string, authContext: AuthContext): Promise<District> {
+    const { userId, isSuperAdmin } = authContext;
 
-    const accessControlFilter = {
-      userId,
-      allowedRoles: rolesForPermission(Permissions.Organizations.READ),
-    };
-
-    const district = await districtRepository.getByIdAuthorized(districtId, accessControlFilter);
+    // Look up district first to distinguish between 404 and 403
+    const district = await districtRepository.getById(districtId);
 
     if (!district) {
       throw new ApiError('District not found', {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, districtId },
       });
     }
+
+    // Super admins have unrestricted access
+    if (isSuperAdmin) {
+      return district;
+    }
+
+    // Check access for non-super admin users
+    const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
+    const authorized = await districtRepository.getByIdAuthorized(districtId, { userId, allowedRoles });
+
+    if (!authorized) {
+      logger.warn({ userId, districtId }, 'User attempted to access district without permission');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, districtId },
+      });
+    }
+
+    return authorized;
   }
 
   /**
@@ -206,16 +230,10 @@ export function DistrictService({
     authContext: AuthContext,
     options: GetAdministrationStatsOptions = {},
   ) {
-    // 1. Pull info out from authContext
-    const { userId } = authContext;
-
-    const accessControlFilter = {
-      userId,
-      allowedRoles: rolesForPermission(Permissions.Organizations.LIST),
-    };
-    // 2. Validate that the user has access to the district
-    // 3. Validate that the administration is visible to the user per the org hierarchy rules
-    // 4. Fetch the administration stats
+    // 1. Ensure user has access to the district.
+    const district = verifyDistrictAccess(districtId, authContext);
+    // 2. Validate that the administration is visible to the user per the org hierarchy rules
+    // 3. Fetch the administration stats
   }
 
   return {

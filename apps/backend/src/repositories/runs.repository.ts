@@ -12,6 +12,13 @@ export interface AdministrationRunStats {
   completed: number;
 }
 
+export interface AdministrationTaskRunStats {
+  taskId: string;
+  taskName: string;
+  started: number;
+  completed: number;
+}
+
 /**
  * Runs Repository
  *
@@ -62,4 +69,13 @@ export class RunsRepository {
 
     return statsMap;
   }
+
+  // TODO: Create new function that takes a admin id and array of tasks,
+  //       and returns a map of task id to run stats.
+  // async getRunStatsByAdministrationTaskIds(
+  //   administrationId: string,
+  //   taskIds: string[],
+  // ): Promise<Map<string, AdministrationTaskRunStats>> {
+  //   return {};
+  // }
 }
