@@ -36,6 +36,7 @@ function expectErrorResponse(
 
 describe('DistrictsController', () => {
   const mockList = vi.fn();
+  const mockGetById = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -44,7 +45,9 @@ describe('DistrictsController', () => {
     // Setup the mock service
     vi.mocked(DistrictService).mockReturnValue({
       list: mockList,
-    });
+      getById: mockGetById,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
   });
 
   describe('list', () => {
@@ -330,6 +333,178 @@ describe('DistrictsController', () => {
 
       const data = expectOkResponse(result);
       expect(data.items[0]).not.toHaveProperty('identifiers');
+    });
+  });
+
+  describe('getById', () => {
+    it('should return a district with 200 status', async () => {
+      const mockDistrict = {
+        id: 'district-123',
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-02'),
+      };
+
+      mockGetById.mockResolvedValue(mockDistrict);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'district-123');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data).toMatchObject({
+        id: 'district-123',
+        name: 'Test District',
+        abbreviation: 'TD',
+      });
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'district-123');
+    });
+
+    it('should transform district with location data', async () => {
+      const mockDistrict = {
+        id: 'district-123',
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        locationAddressLine1: '123 Main St',
+        locationCity: 'Test City',
+        locationStateProvince: 'CA',
+        locationPostalCode: '12345',
+        locationCountry: 'USA',
+        locationLatLong: { x: -122.4194, y: 37.7749 },
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-02'),
+      };
+
+      mockGetById.mockResolvedValue(mockDistrict);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'district-123');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data.location).toMatchObject({
+        addressLine1: '123 Main St',
+        city: 'Test City',
+        stateProvince: 'CA',
+        postalCode: '12345',
+        country: 'USA',
+        coordinates: {
+          type: 'Point',
+          coordinates: [-122.4194, 37.7749],
+        },
+      });
+    });
+
+    it('should transform district with identifiers', async () => {
+      const mockDistrict = {
+        id: 'district-123',
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        mdrNumber: 'MDR123',
+        ncesId: 'NCES456',
+        stateId: 'STATE789',
+        schoolNumber: 'SCH001',
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-02'),
+      };
+
+      mockGetById.mockResolvedValue(mockDistrict);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'district-123');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data.identifiers).toMatchObject({
+        mdrNumber: 'MDR123',
+        ncesId: 'NCES456',
+        stateId: 'STATE789',
+        schoolNumber: 'SCH001',
+      });
+    });
+
+    it('should handle rosteringEnded timestamp', async () => {
+      const mockDistrict = {
+        id: 'district-123',
+        name: 'Ended District',
+        abbreviation: 'ED',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        rosteringEnded: new Date('2023-12-31'),
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-02'),
+      };
+
+      mockGetById.mockResolvedValue(mockDistrict);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'district-123');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toHaveProperty('data');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data.rosteringEnded).toBe('2023-12-31T00:00:00.000Z');
+    });
+
+    it('should handle ApiError with 404 Not Found', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError('District not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'district-999');
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toHaveProperty('error');
+      expect((result.body as { error: { message: string } }).error.message).toBeDefined();
+    });
+
+    it('should handle ApiError with 500 Internal Server Error', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError('Database error', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'district-123');
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(result.body).toHaveProperty('error');
+      expect((result.body as { error: { message: string } }).error.message).toBeDefined();
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockGetById.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await expect(Controller.getById(mockAuthContext, 'district-123')).rejects.toThrow('Unexpected error');
     });
   });
 });

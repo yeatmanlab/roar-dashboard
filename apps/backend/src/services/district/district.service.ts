@@ -94,8 +94,59 @@ export function DistrictService({
     return result;
   }
 
+  /**
+   * Get a single district by ID.
+   *
+   * super_admin users can access any district.
+   * Other users can only access districts they're assigned to.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param districtId - UUID of the district to retrieve
+   * @returns The district if found and authorized
+   * @throws {ApiError} 404 if not found or not authorized, 500 on database errors
+   */
+  async function getById(authContext: AuthContext, districtId: string): Promise<District> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      let district;
+
+      if (isSuperAdmin) {
+        district = await repo.getUnrestrictedById(districtId);
+      } else {
+        const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
+        district = await repo.getAuthorizedById(districtId, { userId, allowedRoles });
+      }
+
+      if (!district) {
+        logger.warn({ districtId, userId }, 'District not found or access denied');
+        throw new ApiError('District not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { districtId, userId },
+        });
+      }
+
+      return district;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      logger.error({ err: error, context: { districtId, userId } }, 'Failed to retrieve district');
+
+      throw new ApiError('Failed to retrieve district', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { districtId, userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
+    getById,
   };
 }
 
