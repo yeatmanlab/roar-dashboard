@@ -33,6 +33,7 @@ function expectOkResponse<T>(result: { status: number; body: { data: T } | { err
 describe('AdministrationsController', () => {
   const mockList = vi.fn();
   const mockGet = vi.fn();
+  const mockVerifyAdministrationAccess = vi.fn(); // ✅ ADD THIS
   const mockListDistricts = vi.fn();
   const mockListSchools = vi.fn();
   const mockListClasses = vi.fn();
@@ -46,6 +47,7 @@ describe('AdministrationsController', () => {
 
     // Setup the mock service
     vi.mocked(AdministrationService).mockReturnValue({
+      verifyAdministrationAccess: mockVerifyAdministrationAccess,
       list: mockList,
       getById: mockGet,
       listDistricts: mockListDistricts,
@@ -56,7 +58,6 @@ describe('AdministrationsController', () => {
       listAgreements: mockListAgreements,
     });
   });
-
   describe('list', () => {
     it('should return paginated administrations with 200 status', async () => {
       const mockAdmins = [AdministrationFactory.build(), AdministrationFactory.build()];

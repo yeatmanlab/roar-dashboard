@@ -31,7 +31,12 @@ export function RunEventsService({
   runsRepository?: RunsRepository;
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
-} = {}) {
+} = {}): {
+  completeRun: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
+  abortRun: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
+  writeTrial: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
+  updateEngagement: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
+} {
   /**
    * Verifies that a run exists and is owned by the specified user.
    *
@@ -274,12 +279,9 @@ export function RunEventsService({
     try {
       await assertRunOwnedByUser(runId, authContext.userId);
 
-      const now = new Date();
-
       await runsRepository.update({
         id: runId,
         data: {
-          completedAt: now,
           ...(body.metadata ? { metadata: body.metadata } : {}),
         },
       });

@@ -23,9 +23,21 @@ export function registerRunsRoutes(routerInstance: Router) {
           body,
         );
 
+        if (result.status === 201) {
+          return {
+            status: 201,
+            body: {
+              data: {
+                runId: result.body.data.runId,
+              },
+            },
+          };
+        }
+
         return result;
       },
     },
+
     event: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],

@@ -25,7 +25,7 @@ export const RunsController = {
    *
    * @param authContext - Authentication context with userId and isSuperAdmin
    * @param body - Request body with task_variant_id, task_version, administration_id, and optional metadata
-   * @returns Response with status 201 and run_id on success, or error response on failure
+   * @returns Response with status 201 and runId on success, or error response on failure
    */
   create: async (authContext: AuthContext, body: CreateRunRequestBody) => {
     try {
@@ -34,7 +34,7 @@ export const RunsController = {
       return {
         status: StatusCodes.CREATED as const,
         body: {
-          data: { run_id: runId },
+          data: { runId },
         },
       };
     } catch (error) {
@@ -96,8 +96,8 @@ export const RunsController = {
       }
 
       return {
-        status: StatusCodes.CREATED as const,
-        body: { data: { id: runId } },
+        status: StatusCodes.OK as const,
+        body: { data: { status: 'ok' as const } },
       };
     } catch (error) {
       if (error instanceof ApiError) {

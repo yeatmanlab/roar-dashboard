@@ -61,7 +61,6 @@ describe('RunEventsService', () => {
       expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
       const updateCall = runsRepository.update.mock.calls[0]![0];
       expect(updateCall.id).toBe(validRunId);
-      expect(updateCall.data.completedAt).toBeInstanceOf(Date);
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -115,21 +114,6 @@ describe('RunEventsService', () => {
       }
     });
 
-    it('should set completedAt timestamp', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
-
-      const beforeCall = new Date();
-      await runEventsService.completeRun(authContext, validRunId, validBody);
-      const afterCall = new Date();
-
-      const updateCall = runsRepository.update.mock.calls[0]![0];
-      expect(updateCall.data.completedAt).toBeInstanceOf(Date);
-      expect(updateCall.data.completedAt!.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
-      expect(updateCall.data.completedAt!.getTime()).toBeLessThanOrEqual(afterCall.getTime());
-    });
-
     it('should handle optional metadata in event body', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
       runsRepository.getById.mockResolvedValue(mockRun);
@@ -150,8 +134,7 @@ describe('RunEventsService', () => {
 
   describe('abortRun', () => {
     const validRunId = '550e8400-e29b-41d4-a716-446655440000';
-    const abortedAtTime = new Date('2024-01-15T10:30:00Z');
-    const validBody = { type: 'abort' as const, abortedAt: abortedAtTime };
+    const validBody = { type: 'abort' as const };
 
     it('should abort a run successfully', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
@@ -163,25 +146,6 @@ describe('RunEventsService', () => {
       expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
       const updateCall = runsRepository.update.mock.calls[0]![0];
       expect(updateCall.id).toBe(validRunId);
-      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
-    });
-
-    it('should abort a run with different abortedAt time', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
-
-      const differentTime = new Date('2024-01-15T11:45:00Z');
-      const bodyWithDifferentTime = {
-        type: 'abort' as const,
-        abortedAt: differentTime,
-      };
-
-      await runEventsService.abortRun(authContext, validRunId, bodyWithDifferentTime);
-
-      const updateCall = runsRepository.update.mock.calls[0]![0];
-      expect(updateCall.id).toBe(validRunId);
-      expect(updateCall.data.abortedAt).toBe(differentTime);
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -218,17 +182,6 @@ describe('RunEventsService', () => {
 
       expect(runsRepository.getById).not.toHaveBeenCalled();
       expect(runsRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should set abortedAt timestamp', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
-
-      await runEventsService.abortRun(authContext, validRunId, validBody);
-
-      const updateCall = runsRepository.update.mock.calls[0]![0];
-      expect(updateCall.data.abortedAt).toBe(abortedAtTime);
     });
 
     it('should return 500 when database update fails', async () => {
@@ -466,7 +419,6 @@ describe('RunEventsService', () => {
       expect(runsRepository.update).toHaveBeenCalledWith({
         id: validRunId,
         data: {
-          updatedAt: expect.any(Date),
           engagementFlags: validBody.engagementFlags,
           reliableRun: true,
         },
@@ -525,7 +477,6 @@ describe('RunEventsService', () => {
       expect(runsRepository.update).toHaveBeenCalledWith({
         id: validRunId,
         data: {
-          updatedAt: expect.any(Date),
           engagementFlags: {},
           reliableRun: false,
         },
@@ -553,26 +504,10 @@ describe('RunEventsService', () => {
       expect(runsRepository.update).toHaveBeenCalledWith({
         id: validRunId,
         data: {
-          updatedAt: expect.any(Date),
           engagementFlags: bodyWithMultipleFlags.engagementFlags,
           reliableRun: false,
         },
       });
-    });
-
-    it('should update timestamp when updating engagement', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
-
-      const beforeCall = new Date();
-      await runEventsService.updateEngagement(authContext, validRunId, validBody);
-      const afterCall = new Date();
-
-      const updateCall = runsRepository.update.mock.calls[0]![0];
-      expect(updateCall.data.updatedAt).toBeInstanceOf(Date);
-      expect(updateCall.data.updatedAt!.getTime()).toBeGreaterThanOrEqual(beforeCall.getTime());
-      expect(updateCall.data.updatedAt!.getTime()).toBeLessThanOrEqual(afterCall.getTime());
     });
 
     it('should return 500 when database update fails', async () => {
