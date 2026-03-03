@@ -37,10 +37,10 @@ inputs:
 outputs:
   image-version:
     description: "The primary image version resolved by docker/metadata-action."
-    value: ${{ steps.meta.outputs.version }}
+    value: ${{ steps.export-meta.outputs.version }}
   image-tags:
     description: "All fully-qualified image tags that were pushed."
-    value: ${{ steps.meta.outputs.tags }}
+    value: ${{ steps.export-meta.outputs.tags }}
 
 runs:
   using: composite
@@ -66,6 +66,15 @@ runs:
       with:
         images: ${{ inputs.region }}-docker.pkg.dev/${{ inputs.project-id }}/${{ inputs.artifact-registry-repo }}/${{ inputs.image-name }}
         tags: ${{ inputs.image-tag-rules }}
+
+    - name: Export metadata outputs
+      id: export-meta
+      shell: bash
+      run: |
+        echo "version=${{ steps.meta.outputs.version }}" >> "$GITHUB_OUTPUT"
+        echo "tags<<EOF" >> "$GITHUB_OUTPUT"
+        echo "${{ steps.meta.outputs.tags }}" >> "$GITHUB_OUTPUT"
+        echo "EOF" >> "$GITHUB_OUTPUT"
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
