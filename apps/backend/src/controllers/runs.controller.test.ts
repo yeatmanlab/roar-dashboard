@@ -52,15 +52,6 @@ describe('RunsController', () => {
     });
   });
 
-  it('should export RunsController with create method', async () => {
-    const { RunsController } = await import('./runs.controller');
-
-    expect(RunsController).toBeDefined();
-    expect(RunsController.create).toBeDefined();
-    expect(RunsController.event).toBeDefined();
-    expect(typeof RunsController.create).toBe('function');
-  });
-
   describe('create', () => {
     it('should return 201 CREATED with id on success', async () => {
       mockCreate.mockResolvedValue({ id: 'run-uuid-123' });
