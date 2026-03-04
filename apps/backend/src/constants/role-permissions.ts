@@ -88,6 +88,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
     Permissions.Profile.READ,
+    Permissions.Runs.CREATE,
     Permissions.TaskVariants.LIST,
     Permissions.Tasks.LAUNCH,
   ];

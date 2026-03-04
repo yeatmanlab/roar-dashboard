@@ -16,8 +16,8 @@ export interface AdministrationRunStats {
 /**
  * Runs Repository
  *
- * Provides data access methods for the runs table in the assessment database.
- * Extends BaseRepository for standard CRUD operations, plus custom stats aggregation.
+ * Provides data access methods for the runs table.
+ * Extends BaseRepository for standard CRUD operations.
  */
 export class RunsRepository extends BaseRepository<Run, typeof runs> {
   constructor(db: NodePgDatabase<typeof AssessmentDbSchema> = AssessmentDbClient) {
@@ -55,7 +55,6 @@ export class RunsRepository extends BaseRepository<Run, typeof runs> {
       .groupBy(runs.administrationId);
 
     const statsMap = new Map<string, AdministrationRunStats>();
-
     for (const row of result) {
       statsMap.set(row.administrationId, {
         started: row.started,

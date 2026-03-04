@@ -978,6 +978,7 @@ export function AdministrationService({
   }
 
   return {
+    verifyAdministrationAccess,
     list,
     getById,
     listDistricts,
