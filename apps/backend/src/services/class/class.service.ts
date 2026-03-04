@@ -24,6 +24,19 @@ export function ClassService({
 }: {
   classRepository?: ClassRepository;
 } = {}) {
+  /**
+   * Verify that a class exists and the user has access to it.
+   *
+   * Performs a two-step check:
+   * 1. Verify the class exists (returns 404 if not)
+   * 2. Verify the user has access (returns 403 if not, skipped for super admins)
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param classId - The class ID to verify access for
+   * @returns The class if found and accessible
+   * @throws {ApiError} NOT_FOUND if class doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
   async function verifyClassAccess(authContext: AuthContext, classId: string): Promise<Class> {
     const { userId, isSuperAdmin } = authContext;
 
@@ -56,6 +69,15 @@ export function ClassService({
     return authorized;
   }
 
+  /**
+   * Performs authorization checks for sub-resource listing (supervisory roles only).
+   * Throws if user lacks access or is a supervised user.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param classId - The class ID to verify access for
+   * @throws {ApiError} NOT_FOUND if class doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
+   */
   async function authorizeSubResourceAccess(authContext: AuthContext, classId: string): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
 
@@ -74,6 +96,23 @@ export function ClassService({
     }
   }
 
+  /**
+   * List users assigned to a class with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all users assigned to the class
+   * - Supervisory roles: sees only users if assigned to that class or if they belong to orgs in their accessible org tree
+   *   - Excludes caregiver role
+   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param classId - The class ID to get users for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with users
+   * @throws {ApiError} NOT_FOUND if class doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the class or has supervised role
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
   async function listUsers(
     authContext: AuthContext,
     classId: string,

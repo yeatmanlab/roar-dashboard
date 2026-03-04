@@ -42,6 +42,28 @@ import type { UserRole } from '../../enums/user-role.enum';
 export class ClassAccessControls {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
 
+  /**
+   * Get all distinct roles a user has that grant access to a specific class.
+   *
+   * Queries all membership paths (org, class) that connect the user to the
+   * class and returns the distinct roles from those memberships. This is
+   * useful for determining if a user has any supervisory roles for an class.
+   *
+   * @example
+   * ```ts
+   * const roles = await adminAccessControls.getUserRolesForClass('user-123', 'class-456');
+   * // ['teacher', 'administrator']
+   *
+   * const hasSupervisoryRole = roles.some(role => SUPERVISORY_ROLES.includes(role));
+   * if (!hasSupervisoryRole) {
+   *   throw new ApiError('Supervised users cannot access this resource', ...);
+   * }
+   * ```
+   *
+   * @param userId - The ID of the user to query roles for
+   * @param classId - The ID of the class to check access for
+   * @returns Array of distinct roles the user has for this class
+   */
   async getUserRolesForClass(userId: string, classId: string): Promise<UserRole[]> {
     const rolesViaUserClassToOrg = this.db
       .selectDistinct({
