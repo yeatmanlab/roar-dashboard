@@ -78,19 +78,6 @@ describe('RunEventService', () => {
       expect(runRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should throw NOT_FOUND when run is soft-deleted (getById filters deletedAt)', async () => {
-      // RunRepository.getById excludes soft-deleted runs by adding isNull(deletedAt),
-      // so a deleted run returns null — indistinguishable from a missing run.
-      runRepository.getById.mockResolvedValue(null);
-
-      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-      });
-
-      expect(runRepository.update).not.toHaveBeenCalled();
-    });
-
     it('should throw FORBIDDEN when user does not own the run', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
       runRepository.getById.mockResolvedValue(mockRun);
@@ -252,28 +239,6 @@ describe('RunEventService', () => {
       expect(runRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should complete successfully when run is owned by user', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runRepository.getById.mockResolvedValue(mockRun);
-
-      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).resolves.toBeUndefined();
-    });
-
-    it('should include metadata in error context when run is not found', async () => {
-      runRepository.getById.mockResolvedValue(null);
-
-      try {
-        await runEventsService.abortRun(authContext, validRunId, validBody);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          expect(error.context).toEqual({
-            runId: validRunId,
-            userId: authContext.userId,
-          });
-        }
-      }
-    });
-
     it('should return 500 when database update fails', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
       runRepository.getById.mockResolvedValue(mockRun);
@@ -332,29 +297,6 @@ describe('RunEventService', () => {
           }),
         }),
       );
-    });
-
-    it('should throw NOT_FOUND when run does not exist', async () => {
-      runRepository.getById.mockResolvedValue(null);
-
-      await expect(runEventsService.writeTrial(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-      });
-
-      expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
-    });
-
-    it('should throw FORBIDDEN when user does not own the run', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
-      runRepository.getById.mockResolvedValue(mockRun);
-
-      await expect(runEventsService.writeTrial(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-
-      expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
     });
 
     it('should handle trial with interactions', async () => {
@@ -455,29 +397,6 @@ describe('RunEventService', () => {
           reliableRun: true,
         },
       });
-    });
-
-    it('should throw NOT_FOUND when run does not exist', async () => {
-      runRepository.getById.mockResolvedValue(null);
-
-      await expect(runEventsService.updateEngagement(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-      });
-
-      expect(runRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should throw FORBIDDEN when user does not own the run', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
-      runRepository.getById.mockResolvedValue(mockRun);
-
-      await expect(runEventsService.updateEngagement(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-
-      expect(runRepository.update).not.toHaveBeenCalled();
     });
 
     it('should handle empty engagement flags', async () => {

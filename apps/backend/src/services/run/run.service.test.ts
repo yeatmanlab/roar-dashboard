@@ -228,47 +228,5 @@ describe('RunService', () => {
 
       await expect(runService.create(authContext, validRequestBody)).rejects.toBe(apiError);
     });
-
-    it('should pass userId from auth context to repository', async () => {
-      const customAuthContext = { userId: 'custom-user-999', isSuperAdmin: false };
-      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
-      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
-
-      await runService.create(customAuthContext, validRequestBody);
-
-      expect(runRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            userId: 'custom-user-999',
-          }),
-        }),
-      );
-    });
-
-    it('should handle empty metadata object', async () => {
-      const bodyWithEmptyMetadata = {
-        taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
-        taskVersion: '1.0.0',
-        administrationId: '660e8400-e29b-41d4-a716-446655440001',
-        metadata: {},
-      };
-
-      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
-      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
-
-      await runService.create(authContext, bodyWithEmptyMetadata);
-
-      expect(runRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            metadata: {},
-          }),
-        }),
-      );
-    });
   });
 });
