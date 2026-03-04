@@ -255,6 +255,44 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   }
 
   /**
+   * Get a district by ID without authorization checks.
+   * Used for super admins who have unrestricted access.
+   *
+   * @param districtId - UUID of the district to retrieve
+   * @returns The district if found, null otherwise
+   */
+  async getUnrestrictedById(districtId: string): Promise<District | null> {
+    const result = await this.db
+      .select()
+      .from(orgs)
+      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, 'district')))
+      .limit(1);
+
+    return result[0] ?? null;
+  }
+
+  /**
+   * Get a district by ID with authorization checks.
+   * Only returns the district if the user has access via org/class/group membership.
+   *
+   * @param districtId - UUID of the district to retrieve
+   * @param filter - Access control filter with userId and allowed roles
+   * @returns The district if found and authorized, null otherwise
+   */
+  async getAuthorizedById(districtId: string, filter: AccessControlFilter): Promise<District | null> {
+    const accessibleOrgs = this.accessControls.buildUserAccessibleOrgIdsQuery(filter).as('accessible_orgs');
+
+    const result = await this.db
+      .select({ org: orgs })
+      .from(orgs)
+      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
+      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, 'district')))
+      .limit(1);
+
+    return result[0]?.org ?? null;
+  }
+
+  /**
    * Get child organizations of a district.
    *
    * Returns all organizations that have the given district as their parent.
