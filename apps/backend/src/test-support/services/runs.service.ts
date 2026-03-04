@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
-import type { RunService } from '../../services/runs/run.service';
+import type { RunService } from '../../services/run/run.service';
 
 /**
  * Mock Run Service
