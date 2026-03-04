@@ -1,5 +1,5 @@
 import type { AuthContext } from '../types/auth-context';
-import type { CreateTaskVariantData } from '../services/task/task.service';
+import type { CreateTaskVariantData, UpdateTaskVariantData } from '../services/task/task.service';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';
 import { ApiError } from '../errors/api-error';
@@ -33,6 +33,41 @@ export const TasksController = {
         status: StatusCodes.CREATED as const,
         body: {
           data: id,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          StatusCodes.BAD_REQUEST,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing task-variant for a given task id.
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * All fields in the request are optional - only provided fields will be updated.
+   *
+   * @param authContext - User's authentication context.
+   * @param data - Parameters for UpdateTaskVariantData interface
+   * @returns An object indicating success.
+   *
+   * @see {@link UpdateTaskVariantData} - Parameters for updating a task variant.
+   */
+  updateTaskVariant: async (authContext: AuthContext, data: UpdateTaskVariantData) => {
+    try {
+      const result = await taskService.updateTaskVariant(authContext, data);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
         },
       };
     } catch (error) {

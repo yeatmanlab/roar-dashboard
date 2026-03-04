@@ -81,8 +81,21 @@ export const TaskVariantCreateResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
+export const TaskVariantUpdateRequestSchema = z.object({
+  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+  parameters: TaskVariantParametersArraySchema.optional(),
+  description: z.string().trim().min(1).max(1024).optional(),
+  status: TaskVariantStatusSchema.optional(),
+});
+
+export const TaskVariantUpdateResponseSchema = z.object({
+  success: z.boolean(),
+});
+
 export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
 export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
 export type TaskVariantCreateRequest = z.infer<typeof TaskVariantCreateRequestSchema>;
 export type TaskVariantCreateResponse = z.infer<typeof TaskVariantCreateResponseSchema>;
+export type TaskVariantUpdateRequest = z.infer<typeof TaskVariantUpdateRequestSchema>;
+export type TaskVariantUpdateResponse = z.infer<typeof TaskVariantUpdateResponseSchema>;

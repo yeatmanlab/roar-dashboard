@@ -23,6 +23,7 @@ describe('TasksController', () => {
     // Setup the mock service
     vi.mocked(TaskService).mockReturnValue({
       createTaskVariant: mockCreateTaskVariant,
+      updateTaskVariant: vi.fn(),
       evaluateTaskVariantEligibility: vi.fn(),
     });
   });
