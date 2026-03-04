@@ -65,6 +65,7 @@ export class ClassAccessControls {
    * @returns Array of distinct roles the user has for this class
    */
   async getUserRolesForClass(userId: string, classId: string): Promise<UserRole[]> {
+    // Path 1: User's class membership -> class within user's org tree (supervisory)
     const rolesViaUserClassToOrg = this.db
       .selectDistinct({
         role: userOrgs.role,
@@ -74,6 +75,7 @@ export class ClassAccessControls {
       .innerJoin(classes, isAncestorOrEqual(orgs.path, classes.orgPath))
       .where(and(eq(userOrgs.userId, userId), eq(classes.id, classId), isEnrollmentActive(userOrgs)));
 
+    // Path 2: User's class membership -> class directly assigned to user
     const rolesViaDirectClass = this.db
       .selectDistinct({
         role: userClasses.role,
