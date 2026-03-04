@@ -4,7 +4,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
-import { RunsRepository } from '../../repositories/runs.repository';
+import { RunRepository } from '../../repositories/run.repository';
 import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
 import type { AuthContext } from '../../types/auth-context';
@@ -15,22 +15,22 @@ type RunTrialEventBody = Extract<RunEventBody, { type: 'trial' }>;
 type RunEngagementEventBody = Extract<RunEventBody, { type: 'engagement' }>;
 
 /**
- * RunEventsService
+ * RunEventService
  *
  * Handles business logic for run events.
  * Manages authorization checks and updates to run state.
  *
- * @param runsRepository - Repository for accessing run data (injected for testing)
+ * @param runRepository - Repository for accessing run data (injected for testing)
  * @param runTrialsRepository - Repository for accessing run trials (injected for testing)
  * @param runTrialInteractionsRepository - Repository for accessing run trial interactions (injected for testing)
  * @returns Object with event handling methods
  */
-export function RunEventsService({
-  runsRepository = new RunsRepository(),
+export function RunEventService({
+  runRepository = new RunRepository(),
   runTrialsRepository = new RunTrialsRepository(),
   runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
 }: {
-  runsRepository?: RunsRepository;
+  runRepository?: RunRepository;
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
 } = {}) {
@@ -47,7 +47,7 @@ export function RunEventsService({
    * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
    */
   async function assertRunOwnedByUser(runId: string, userId: string) {
-    const run = await runsRepository.getById({ id: runId });
+    const run = await runRepository.getById({ id: runId });
 
     if (!run) {
       throw new ApiError('Run not found', {
@@ -84,7 +84,7 @@ export function RunEventsService({
     await assertRunOwnedByUser(runId, authContext.userId);
 
     try {
-      await runsRepository.update({
+      await runRepository.update({
         id: runId,
         data: {
           engagementFlags: body.engagementFlags,
@@ -192,7 +192,7 @@ export function RunEventsService({
     await assertRunOwnedByUser(runId, authContext.userId);
 
     try {
-      await runsRepository.update({
+      await runRepository.update({
         id: runId,
         data: {
           abortedAt: new Date(),
@@ -234,7 +234,7 @@ export function RunEventsService({
     await assertRunOwnedByUser(runId, authContext.userId);
 
     try {
-      await runsRepository.update({
+      await runRepository.update({
         id: runId,
         data: {
           completedAt: new Date(),

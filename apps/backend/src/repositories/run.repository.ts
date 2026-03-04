@@ -15,12 +15,12 @@ export interface AdministrationRunStats {
 }
 
 /**
- * Runs Repository
+ * Run Repository
  *
  * Provides data access methods for the runs table.
  * Extends BaseRepository for standard CRUD operations.
  */
-export class RunsRepository extends BaseRepository<Run, typeof runs> {
+export class RunRepository extends BaseRepository<Run, typeof runs> {
   constructor(db: NodePgDatabase<typeof AssessmentDbSchema> = AssessmentDbClient) {
     super(db, runs);
   }

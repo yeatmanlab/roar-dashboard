@@ -9,12 +9,12 @@ import { MockRunRepository, createMockRunRepository } from '../../test-support/r
 
 describe('RunService', () => {
   let authContext: AuthContext;
-  let runsRepository: MockRunRepository;
+  let runRepository: MockRunRepository;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let administrationService: MockedObject<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let administrationAccessControls: MockedObject<any>;
-  let runsService: ReturnType<typeof RunService>;
+  let runService: ReturnType<typeof RunService>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let taskVariantRepository: MockedObject<any>;
 
@@ -29,7 +29,7 @@ describe('RunService', () => {
 
     authContext = { userId: 'user-123', isSuperAdmin: false };
 
-    runsRepository = createMockRunRepository();
+    runRepository = createMockRunRepository();
 
     administrationService = {
       verifyAdministrationAccess: vi.fn(),
@@ -43,8 +43,8 @@ describe('RunService', () => {
       getUserRolesForAdministration: vi.fn(),
     };
 
-    runsService = RunService({
-      runsRepository: runsRepository,
+    runService = RunService({
+      runRepository: runRepository,
       administrationService: administrationService,
       taskVariantRepository: taskVariantRepository,
       administrationAccessControls: administrationAccessControls,
@@ -56,9 +56,9 @@ describe('RunService', () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runsRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+      runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
-      const result = await runsService.create(authContext, validRequestBody);
+      const result = await runService.create(authContext, validRequestBody);
 
       expect(result).toEqual({ id: 'run-uuid-123' });
       expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
@@ -70,7 +70,7 @@ describe('RunService', () => {
         '660e8400-e29b-41d4-a716-446655440001',
       );
       expect(taskVariantRepository.getTaskIdByVariantId).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000');
-      expect(runsRepository.create).toHaveBeenCalledWith({
+      expect(runRepository.create).toHaveBeenCalledWith({
         data: {
           userId: 'user-123',
           taskId: 'task-123',
@@ -89,7 +89,7 @@ describe('RunService', () => {
         }),
       );
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
@@ -100,7 +100,7 @@ describe('RunService', () => {
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['teacher']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
@@ -110,9 +110,9 @@ describe('RunService', () => {
       const superAdminContext = { userId: 'user-123', isSuperAdmin: true };
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runsRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+      runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
-      const result = await runsService.create(superAdminContext, validRequestBody);
+      const result = await runService.create(superAdminContext, validRequestBody);
 
       expect(result).toEqual({ id: 'run-uuid-123' });
       expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
@@ -133,11 +133,11 @@ describe('RunService', () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-789' });
-      runsRepository.create.mockResolvedValue({ id: 'run-uuid-789' });
+      runRepository.create.mockResolvedValue({ id: 'run-uuid-789' });
 
-      await runsService.create(authContext, bodyWithMetadata);
+      await runService.create(authContext, bodyWithMetadata);
 
-      expect(runsRepository.create).toHaveBeenCalledWith({
+      expect(runRepository.create).toHaveBeenCalledWith({
         data: {
           userId: 'user-123',
           taskId: 'task-789',
@@ -151,7 +151,7 @@ describe('RunService', () => {
 
     it('should throw UNPROCESSABLE_ENTITY when taskVariantRepository is not configured', async () => {
       const serviceWithoutTaskVariantRepository = RunService({
-        runsRepository: runsRepository,
+        runRepository: runRepository,
         administrationService: administrationService,
         administrationAccessControls: administrationAccessControls,
       });
@@ -170,7 +170,7 @@ describe('RunService', () => {
         }),
       );
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
@@ -186,7 +186,7 @@ describe('RunService', () => {
         }),
       );
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
@@ -198,7 +198,7 @@ describe('RunService', () => {
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockRejectedValue(dbError);
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
@@ -209,9 +209,9 @@ describe('RunService', () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runsRepository.create.mockRejectedValue(dbError);
+      runRepository.create.mockRejectedValue(dbError);
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
@@ -225,9 +225,9 @@ describe('RunService', () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runsRepository.create.mockRejectedValue(apiError);
+      runRepository.create.mockRejectedValue(apiError);
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toBe(apiError);
+      await expect(runService.create(authContext, validRequestBody)).rejects.toBe(apiError);
     });
 
     it('should pass userId from auth context to repository', async () => {
@@ -235,11 +235,11 @@ describe('RunService', () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runsRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+      runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
-      await runsService.create(customAuthContext, validRequestBody);
+      await runService.create(customAuthContext, validRequestBody);
 
-      expect(runsRepository.create).toHaveBeenCalledWith(
+      expect(runRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             userId: 'custom-user-999',
@@ -259,11 +259,11 @@ describe('RunService', () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runsRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+      runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
-      await runsService.create(authContext, bodyWithEmptyMetadata);
+      await runService.create(authContext, bodyWithEmptyMetadata);
 
-      expect(runsRepository.create).toHaveBeenCalledWith(
+      expect(runRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             metadata: {},

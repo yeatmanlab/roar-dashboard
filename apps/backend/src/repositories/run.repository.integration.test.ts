@@ -1,5 +1,5 @@
 /**
- * Integration tests for RunsRepository.
+ * Integration tests for RunRepository.
  *
  * Tests the `getRunStatsByAdministrationIds` method against the real
  * assessment database. Uses RunFactory to create test runs.
@@ -12,13 +12,13 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { faker } from '@faker-js/faker';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
-import { RunsRepository } from './runs.repository';
+import { RunRepository } from './run.repository';
 
-describe('RunsRepository', () => {
-  let repository: RunsRepository;
+describe('RunRepository', () => {
+  let repository: RunRepository;
 
   beforeAll(() => {
-    repository = new RunsRepository();
+    repository = new RunRepository();
   });
 
   describe('getRunStatsByAdministrationIds', () => {

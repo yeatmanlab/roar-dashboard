@@ -4,18 +4,18 @@ import { RunEventTypeSchema } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';
-import { RunEventsService } from '../services/run/run-events.service';
+import { RunEventService } from '../services/run-event/run-event.service';
 import type { AuthContext } from '../types/auth-context';
 
 const runService = RunService();
-const runEventsService = RunEventsService();
+const runEventsService = RunEventService();
 const RunEventType = RunEventTypeSchema.enum;
 
 /**
  * RunsController
  *
  * Handles HTTP concerns for the /runs endpoint and /runs/:runId/event endpoints.
- * Delegates business logic and authorization to RunService and RunEventsService.
+ * Delegates business logic and authorization to RunService and RunEventService.
  * Maps ApiError status codes to typed error responses via toErrorResponse.
  */
 export const RunsController = {
@@ -53,7 +53,7 @@ export const RunsController = {
   /**
    * Handle a run event (complete, abort, trial, or engagement).
    *
-   * Routes the event to the appropriate RunEventsService method based on event type.
+   * Routes the event to the appropriate RunEventService method based on event type.
    * Supports four event types:
    * - complete: Mark run as complete with optional metadata
    * - abort: Mark run as aborted

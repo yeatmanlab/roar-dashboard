@@ -1,16 +1,15 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
-import type { RunsService } from '../../services/runs/runs.service';
+import type { RunService } from '../../services/runs/run.service';
 
 /**
- * Mock Runs Service
- * Returns a mocked version of RunsService with all methods as vi.fn() mocks.
+ * Mock Run Service
+ * Returns a mocked version of RunService with all methods as vi.fn() mocks.
  */
-export function createMockRunsService(): MockedObject<ReturnType<typeof RunsService>> {
+export function createMockRunService(): MockedObject<ReturnType<typeof RunService>> {
   return {
-    getRunStatsByAdministrationIds: vi.fn(),
-    getByAdministrationId: vi.fn(),
-  } as MockedObject<ReturnType<typeof RunsService>>;
+    create: vi.fn(),
+  } as MockedObject<ReturnType<typeof RunService>>;
 }
 
-export type MockRunsService = ReturnType<typeof createMockRunsService>;
+export type MockRunService = ReturnType<typeof createMockRunService>;
