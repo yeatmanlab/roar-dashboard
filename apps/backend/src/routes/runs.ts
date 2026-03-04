@@ -17,37 +17,15 @@ export function registerRunsRoutes(routerInstance: Router) {
     create: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, body }) => {
-        const result = await RunsController.create(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          body,
-        );
-
-        if (result.status === 201) {
-          return {
-            status: 201,
-            body: {
-              data: {
-                id: result.body.data.id,
-              },
-            },
-          };
-        }
-
-        return result;
-      },
+      handler: async ({ req, body }) =>
+        RunsController.create({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, body),
     },
 
     event: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params, body }) => {
-        return RunsController.event(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          params.runId,
-          body,
-        );
-      },
+      handler: async ({ req, params, body }) =>
+        RunsController.event({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.runId, body),
     },
   });
 

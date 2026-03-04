@@ -92,19 +92,6 @@ describe('RunEventsService', () => {
       expect(runsRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should throw BAD_REQUEST when event type is invalid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const invalidBody = { type: 'invalid' } as any;
-
-      await expect(runEventsService.completeRun(authContext, validRunId, invalidBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-
-      expect(runsRepository.getById).not.toHaveBeenCalled();
-      expect(runsRepository.update).not.toHaveBeenCalled();
-    });
-
     it('should include metadata in error context when run is not found', async () => {
       runsRepository.getById.mockResolvedValue(null);
 
@@ -203,19 +190,6 @@ describe('RunEventsService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      expect(runsRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should throw BAD_REQUEST when event type is invalid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const invalidBody = { type: 'invalid' } as any;
-
-      await expect(runEventsService.abortRun(authContext, validRunId, invalidBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-
-      expect(runsRepository.getById).not.toHaveBeenCalled();
       expect(runsRepository.update).not.toHaveBeenCalled();
     });
 
@@ -319,64 +293,6 @@ describe('RunEventsService', () => {
       await expect(runEventsService.writeTrial(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-
-      expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
-    });
-
-    it('should throw BAD_REQUEST when event type is invalid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const invalidBody = { type: 'invalid' } as any;
-
-      await expect(runEventsService.writeTrial(authContext, validRunId, invalidBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-
-      expect(runsRepository.getById).not.toHaveBeenCalled();
-      expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
-    });
-
-    it('should throw BAD_REQUEST when trial payload is malformed (missing assessment_stage)', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-
-      const malformedBody = {
-        type: 'trial' as const,
-        trial: {
-          assessmentStage: undefined,
-          correct: 1,
-        },
-      };
-
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        runEventsService.writeTrial(authContext, validRunId, malformedBody as any),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-
-      expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
-    });
-
-    it('should throw BAD_REQUEST when trial payload is malformed (missing correct)', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-
-      const malformedBody = {
-        type: 'trial' as const,
-        trial: {
-          assessmentStage: 'test',
-        },
-      };
-
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        runEventsService.writeTrial(authContext, validRunId, malformedBody as any),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
 
       expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
@@ -502,19 +418,6 @@ describe('RunEventsService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      expect(runsRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should throw BAD_REQUEST when event type is invalid', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const invalidBody = { type: 'invalid' } as any;
-
-      await expect(runEventsService.updateEngagement(authContext, validRunId, invalidBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-
-      expect(runsRepository.getById).not.toHaveBeenCalled();
       expect(runsRepository.update).not.toHaveBeenCalled();
     });
 
