@@ -73,6 +73,7 @@ export function RunEventService({
    *
    * Verifies user ownership, and updates the run record.
    *
+   * @note Not idempotent — each call creates a separate update; repeated calls do not deduplicate.
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if ownership/run checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
    */
@@ -183,13 +184,23 @@ export function RunEventService({
   /**
    * Marks a run as aborted.
    *
-   * Verifies user ownership, and updates the run's abort status.
+   * Verifies user ownership and that the run is not already in a terminal state,
+   * then updates the run's abort status.
    *
+   * @throws ApiError with CONFLICT (409) if the run is already completed or aborted
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails or any unexpected error occurs
    */
   async function abortRun(authContext: AuthContext, runId: string, body: RunAbortEventBody): Promise<void> {
-    await assertRunOwnedByUser(runId, authContext.userId);
+    const run = await assertRunOwnedByUser(runId, authContext.userId);
+
+    if (run.completedAt || run.abortedAt) {
+      throw new ApiError('Run is already in a terminal state', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { runId, userId: authContext.userId },
+      });
+    }
 
     try {
       await runRepository.update({
@@ -225,13 +236,23 @@ export function RunEventService({
   /**
    * Marks a run as complete.
    *
-   * Verifies user ownership, and updates the run's completion timestamp.
+   * Verifies user ownership and that the run is not already in a terminal state,
+   * then updates the run's completion timestamp.
    *
+   * @throws ApiError with CONFLICT (409) if the run is already completed or aborted
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails or any unexpected error occurs
    */
   async function completeRun(authContext: AuthContext, runId: string, body: RunCompleteEventBody): Promise<void> {
-    await assertRunOwnedByUser(runId, authContext.userId);
+    const run = await assertRunOwnedByUser(runId, authContext.userId);
+
+    if (run.completedAt || run.abortedAt) {
+      throw new ApiError('Run is already in a terminal state', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { runId, userId: authContext.userId },
+      });
+    }
 
     try {
       await runRepository.update({

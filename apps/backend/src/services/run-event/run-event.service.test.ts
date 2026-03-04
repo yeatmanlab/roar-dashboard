@@ -103,6 +103,30 @@ describe('RunEventService', () => {
       expect(runRepository.update).not.toHaveBeenCalled();
     });
 
+    it('should throw CONFLICT when run is already completed', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', completedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already aborted', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', abortedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
     it('should include metadata in error context when run is not found', async () => {
       runRepository.getById.mockResolvedValue(null);
 
@@ -199,6 +223,30 @@ describe('RunEventService', () => {
       await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already aborted', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', abortedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already completed', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', completedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
       });
 
       expect(runRepository.update).not.toHaveBeenCalled();
