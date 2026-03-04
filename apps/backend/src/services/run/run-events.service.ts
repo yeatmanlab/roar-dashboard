@@ -37,6 +37,9 @@ export function RunEventsService({
   /**
    * Verifies that a run exists and is owned by the specified user.
    *
+   * Ownership is strict — run events are personal session actions tied to the participant's assessment session.
+   * This intentionally deviates from the standard super admin bypass pattern.
+   *
    * @param runId - UUID of the run to verify
    * @param userId - User ID to check ownership against
    * @returns The run object if verification succeeds
