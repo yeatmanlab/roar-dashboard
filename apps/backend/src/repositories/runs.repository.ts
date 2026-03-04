@@ -1,4 +1,4 @@
-import { sql, inArray } from 'drizzle-orm';
+import { sql, inArray, eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AssessmentDbClient } from '../db/clients';
 import { runs, type Run } from '../db/schema/assessment';
@@ -16,8 +16,8 @@ export interface AdministrationRunStats {
 /**
  * Runs Repository
  *
- * Provides data access methods for the runs table in the assessment database.
- * Extends BaseRepository for standard CRUD operations, plus custom stats aggregation.
+ * Provides data access methods for the runs table.
+ * Extends BaseRepository for standard CRUD operations.
  */
 export class RunsRepository extends BaseRepository<Run, typeof runs> {
   constructor(db: NodePgDatabase<typeof AssessmentDbSchema> = AssessmentDbClient) {
@@ -55,7 +55,6 @@ export class RunsRepository extends BaseRepository<Run, typeof runs> {
       .groupBy(runs.administrationId);
 
     const statsMap = new Map<string, AdministrationRunStats>();
-
     for (const row of result) {
       statsMap.set(row.administrationId, {
         started: row.started,
@@ -64,5 +63,20 @@ export class RunsRepository extends BaseRepository<Run, typeof runs> {
     }
 
     return statsMap;
+  }
+
+  /**
+   * Get a run by administration ID.
+   *
+   * Returns the first run found for the given administration, or null if none exist.
+   * Useful for checking existence (null check) or accessing run data.
+   *
+   * @param administrationId - The administration ID to look up
+   * @returns The first run for this administration, or null if none exist
+   */
+  async getByAdministrationId(administrationId: string): Promise<Run | null> {
+    const result = await this.db.select().from(runs).where(eq(runs.administrationId, administrationId)).limit(1);
+
+    return result[0] ?? null;
   }
 }

@@ -28,7 +28,7 @@ describe('Participant: Auth', () => {
 
     // Validate that the participant homepage loaded with assignments.
     cy.get('[data-cy="dropdown-select-administration"]').click();
-    cy.get('[data-cy="dropdown-select-administration"]').find('span').should('contain', 'ROAR Demo Rostering Admin');
+    cy.findAllByTestId('select__option-label').should('contain', 'ROAR Demo Rostering Admin');
   });
 
   it('Shows error state when SSO user has no userType', () => {
