@@ -27,7 +27,7 @@ export const RunsContract = c.router(
       strictStatusCodes: true,
       summary: 'Create run',
       description:
-        'Creates a new run owned by the authenticated user and returns run_id. ' +
+        'Creates a new run owned by the authenticated user and returns the run id. ' +
         'Returns 422 if the provided task variant or administration IDs are invalid or cannot be resolved. ' +
         'Returns 403 if the user lacks access to the provided administration context.',
     },
@@ -46,7 +46,12 @@ export const RunsContract = c.router(
       },
       strictStatusCodes: true,
       summary: 'Post run event',
-      description: 'Currently supports complete, abort, trial, and engagement events. ',
+      description:
+        'Posts an event to an existing run. ' +
+        'Supports four event types: complete (marks run as finished), abort (marks run as aborted), ' +
+        'trial (records a trial with optional interactions), and engagement (updates reliability flags). ' +
+        'Returns 404 if the run does not exist. ' +
+        'Returns 403 if the authenticated user does not own the run.',
     },
   },
   { pathPrefix: '/runs' },
