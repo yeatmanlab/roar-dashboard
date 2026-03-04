@@ -505,6 +505,154 @@ export function TaskService({
   }
 
   /**
+   * Updates an existing task variant.
+   *
+   * Only super admins can update task variants.
+   * All fields in the request are optional - only provided fields will be updated.
+   * When parameters are provided, they replace all existing parameters (not merged).
+   *
+   * @param authContext - User's authentication context
+   * @param data - Fields to update (all optional)
+   * @returns Success indicator
+   * @throws ApiError with FORBIDDEN if user is not a super admin
+   * @throws ApiError with NOT_FOUND if task or variant doesn't exist
+   * @throws ApiError with CONFLICT if name update would create a duplicate
+   */
+  async function updateTaskVariant(
+    authContext: AuthContext,
+    data: UpdateTaskVariantData,
+  ): Promise<{ success: boolean }> {
+    const { userId, isSuperAdmin } = authContext;
+    const { taskId, variantId, name, status, description, parameters } = data;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    try {
+      // Verify the parent task exists
+      const task = await taskRepository.getById({ id: taskId });
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+
+      // Verify the variant exists and belongs to the task
+      const existingVariant = await taskVariantRepository.getById({ id: variantId });
+
+      if (!existingVariant || existingVariant.taskId !== taskId) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId, variantId },
+        });
+      }
+
+      // If name is being updated, check for conflicts
+      if (name !== undefined && name !== existingVariant.name) {
+        const conflictingVariant = await taskVariantRepository.getByTaskIdAndName({ taskId, name });
+
+        if (conflictingVariant && conflictingVariant.id !== variantId) {
+          throw new ApiError(ApiErrorMessage.CONFLICT, {
+            statusCode: StatusCodes.CONFLICT,
+            code: ApiErrorCode.RESOURCE_CONFLICT,
+            context: { userId, taskId, variantId, variantName: name },
+          });
+        }
+      }
+
+      // Build update data object with only provided fields
+      const updateData: Partial<NewTaskVariant> = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (status !== undefined) updateData.status = status;
+
+      // Update variant and parameters in a transaction
+      await taskVariantRepository.runTransaction({
+        fn: async (tx) => {
+          // Update the variant if there are any field updates
+          if (Object.keys(updateData).length > 0) {
+            await taskVariantRepository.update({
+              id: variantId,
+              data: updateData,
+              transaction: tx,
+            });
+          }
+
+          // If parameters are provided, replace all existing parameters
+          if (parameters !== undefined) {
+            // Delete all existing parameters
+            await taskVariantParameterRepository.deleteByTaskVariantId({
+              taskVariantId: variantId,
+              transaction: tx,
+            });
+
+            // Create new parameters
+            if (parameters.length > 0) {
+              const taskVariantParameterData: NewTaskVariantParameter[] = parameters.map(({ name, value }) => ({
+                taskVariantId: variantId,
+                name,
+                value,
+              }));
+
+              await taskVariantParameterRepository.createMany({
+                data: taskVariantParameterData,
+                transaction: tx,
+              });
+            }
+          }
+        },
+      });
+
+      logger.info(
+        {
+          userId,
+          taskId,
+          variantId,
+          updatedFields: Object.keys(updateData),
+          parametersUpdated: parameters !== undefined,
+          parameterCount: parameters?.length ?? 0,
+        },
+        'Updated task variant',
+      );
+
+      return { success: true };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      // Unwrap the Drizzle error to get the underlying database error with SQLSTATE codes
+      const dbError = unwrapDrizzleError(error);
+
+      // Check for Postgres unique constraint violation
+      if (isUniqueViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, taskId, variantId, variantName: name },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, taskId, variantId } }, 'Failed to update task variant');
+
+      throw new ApiError('Failed to update task variant', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId, variantId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Evaluate a condition against user data.
    *
    * Supports three condition types:
