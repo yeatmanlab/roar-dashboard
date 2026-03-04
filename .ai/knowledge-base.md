@@ -54,10 +54,10 @@ The utility `hasSupervisoryRole(roles)` checks whether a user holds any supervis
 
 Role-to-permission mappings live in `apps/backend/src/constants/role-permissions.ts`. The `rolesForPermission()` function returns which roles grant a given permission (e.g., `Permissions.Administrations.LIST`). The main tiers are:
 
-- **System/Site/District admins**: Full read access across administrations, classes, groups, orgs, users, reports, and task variants.
-- **Educators** (principal, counselor, teacher, aide, proctor): Same read access as admins.
-- **Caregivers** (guardian, parent, relative): Read access to administrations and orgs, plus profile, reports, and task launching.
-- **Students**: Read access to administrations and profile, plus task launching and task variant listing.
+- **System/Site/District admins**: Can list/view administrations, classes, groups, orgs, users, reports, and task variants (using LIST permissions and reports.* wildcards where applicable).
+- **Educators** (principal, counselor, teacher, aide, proctor): Same list/view access as admins.
+- **Caregivers** (guardian, parent, relative): Can list/view administrations and orgs, and can access profile, reports, and task launching.
+- **Students**: Can list/view administrations and profile, and can use task launching and task variant listing.
 
 ## Two-Database Architecture
 
@@ -82,7 +82,7 @@ Stores assessment execution data: runs (user assessment sessions), run trials (i
 
 Authentication uses Firebase Admin SDK for JWT validation. The flow:
 
-1. The client sends a Firebase JWT in the Authorization header.
+1. The client sends a Firebase JWT in the `Authorization` header using the `Bearer <token>` format, e.g., `Authorization: Bearer <Firebase JWT>`.
 2. `AuthGuardMiddleware` extracts and validates the token.
 3. The middleware looks up the user in PostgreSQL by their Firebase `authId`.
 4. A minimal `AuthContext` is attached to `req.user`:
