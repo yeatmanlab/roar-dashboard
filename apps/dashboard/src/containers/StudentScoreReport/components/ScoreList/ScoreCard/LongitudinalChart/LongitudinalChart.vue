@@ -11,7 +11,7 @@
             style="width: 1rem; height: 1rem"
             :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ABOVE }"
           ></div>
-          <span>Achieved Skill</span>
+          <span>{{ $t('scoreReports.achievedChartLabel') }}</span>
         </div>
         <div class="flex gap-2 align-items-center">
           <div
@@ -19,7 +19,7 @@
             style="width: 1rem; height: 1rem"
             :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.SOME }"
           ></div>
-          <span>Developing Skill</span>
+          <span>{{ $t('scoreReports.developingChartLabel') }}</span>
         </div>
         <div class="flex gap-2 align-items-center">
           <div
@@ -27,7 +27,7 @@
             style="width: 1rem; height: 1rem"
             :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.BELOW }"
           ></div>
-          <span>Needs Extra Support</span>
+          <span>{{ $t('scoreReports.extraSupportChartLabel') }}</span>
         </div>
       </div>
     </template>
@@ -38,7 +38,7 @@
           style="width: 1rem; height: 1rem"
           :style="{ backgroundColor: SCORE_SUPPORT_LEVEL_COLORS.ASSESSED }"
         ></div>
-        <span>Assessed</span>
+        <span>{{ $t('scoreReports.assessedChartLabel') }}</span>
       </div>
     </template>
   </div>
@@ -46,6 +46,7 @@
 
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
@@ -58,6 +59,8 @@ import {
 
 const canvasRef = ref(null);
 let chartInstance = null;
+
+const { t } = useI18n();
 
 const props = defineProps({
   longitudinalData: { type: Array, required: true },
@@ -93,10 +96,18 @@ const showSupportLevels = computed(() => {
   return !isDisplayTask && hasSupportLevels;
 });
 
+const metricKey = computed(() => {
+  // Decide what the Y-values represent for this task
+  if (seriesLabel.value.includes('percent')) return 'percentCorrect';
+  if (seriesLabel.value.includes('total')) return 'rawScore'; // “total correct” is still a raw score count
+  if (seriesLabel.value.includes('grade')) return 'gradeEstimate'; // only if you have this translation
+  return 'rawScore';
+});
+
 const chartData = computed(() => ({
   datasets: [
     {
-      label: seriesLabel.value,
+      label: t(`scoreReports.${metricKey.value}`),
       data: filteredSeries.value.map((p) => ({ x: p.x, y: p.y })),
       tension: 0.4,
       borderColor: seriesStroke.value,
@@ -156,7 +167,7 @@ const chartOptions = computed(() => ({
       grid: { color: 'rgba(0,0,0,0.1)' },
       title: {
         display: true,
-        text: seriesLabel.value,
+        text: t(`scoreReports.${metricKey.value}`),
         font: {
           size: 12,
         },
