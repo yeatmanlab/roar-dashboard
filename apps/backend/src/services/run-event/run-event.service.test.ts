@@ -78,6 +78,19 @@ describe('RunEventService', () => {
       expect(runRepository.update).not.toHaveBeenCalled();
     });
 
+    it('should throw NOT_FOUND when run is soft-deleted (getById filters deletedAt)', async () => {
+      // RunRepository.getById excludes soft-deleted runs by adding isNull(deletedAt),
+      // so a deleted run returns null — indistinguishable from a missing run.
+      runRepository.getById.mockResolvedValue(null);
+
+      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
     it('should throw FORBIDDEN when user does not own the run', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
       runRepository.getById.mockResolvedValue(mockRun);
