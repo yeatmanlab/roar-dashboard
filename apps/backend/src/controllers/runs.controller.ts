@@ -5,7 +5,6 @@ import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';
 import { RunEventsService } from '../services/run/run-events.service';
-import { ApiErrorCode } from '../enums/api-error-code.enum';
 import type { AuthContext } from '../types/auth-context';
 
 const runService = RunService();
@@ -24,8 +23,8 @@ export const RunsController = {
    * Create a new run (assessment session instance).
    *
    * @param authContext - Authentication context with userId and isSuperAdmin
-   * @param body - Request body with task_variant_id, task_version, administration_id, and optional metadata
-   * @returns Response with status 201 and runId on success, or error response on failure
+   * @param body - Request body with taskVariantId, taskVersion, administrationId, and optional metadata
+   * @returns Response with status 201 and id on success, or error response on failure
    */
   create: async (authContext: AuthContext, body: CreateRunRequestBody) => {
     try {
@@ -57,7 +56,7 @@ export const RunsController = {
    * Routes the event to the appropriate RunEventsService method based on event type.
    * Supports four event types:
    * - complete: Mark run as complete with optional metadata
-   * - abort: Mark run as aborted with optional reason
+   * - abort: Mark run as aborted
    * - trial: Record a trial event with optional interactions
    * - engagement: Update engagement flags and reliability status
    *
@@ -84,15 +83,6 @@ export const RunsController = {
         case RunEventType.engagement:
           await runEventsService.updateEngagement(authContext, runId, body);
           break;
-
-        default: {
-          const eventType = (body as { type?: unknown }).type;
-          throw new ApiError('Invalid event type', {
-            statusCode: StatusCodes.BAD_REQUEST,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { runId, type: eventType },
-          });
-        }
       }
 
       return {

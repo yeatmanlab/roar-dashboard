@@ -270,9 +270,70 @@ describe('RunsController', () => {
       expect(mockCompleteRun).toHaveBeenCalledWith(customAuthContext, validRunId, validEventBody);
     });
 
+    it('should handle abort event type', async () => {
+      const mockAbortRun = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(RunEventsService).mockReturnValue({
+        completeRun: mockCompleteRun,
+        abortRun: mockAbortRun,
+        writeTrial: vi.fn(),
+        updateEngagement: vi.fn(),
+      });
+
+      const { RunsController } = await import('./runs.controller');
+
+      const abortBody = { type: 'abort' as const };
+      const result = await RunsController.event(mockAuthContext, validRunId, abortBody);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(mockAbortRun).toHaveBeenCalledWith(mockAuthContext, validRunId, abortBody);
+    });
+
+    it('should handle trial event type', async () => {
+      const mockWriteTrial = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(RunEventsService).mockReturnValue({
+        completeRun: mockCompleteRun,
+        abortRun: vi.fn(),
+        writeTrial: mockWriteTrial,
+        updateEngagement: vi.fn(),
+      });
+
+      const { RunsController } = await import('./runs.controller');
+
+      const trialBody = {
+        type: 'trial' as const,
+        trial: { assessmentStage: 'test' as const, correct: 1 },
+      };
+      const result = await RunsController.event(mockAuthContext, validRunId, trialBody);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(mockWriteTrial).toHaveBeenCalledWith(mockAuthContext, validRunId, trialBody);
+    });
+
+    it('should handle engagement event type', async () => {
+      const mockUpdateEngagement = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(RunEventsService).mockReturnValue({
+        completeRun: mockCompleteRun,
+        abortRun: vi.fn(),
+        writeTrial: vi.fn(),
+        updateEngagement: mockUpdateEngagement,
+      });
+
+      const { RunsController } = await import('./runs.controller');
+
+      const engagementBody = {
+        type: 'engagement' as const,
+        engagementFlags: { incomplete: 'incomplete' as const },
+        reliableRun: true,
+      };
+      const result = await RunsController.event(mockAuthContext, validRunId, engagementBody);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(mockUpdateEngagement).toHaveBeenCalledWith(mockAuthContext, validRunId, engagementBody);
+    });
+
     it('should return 400 when service throws BAD_REQUEST ApiError', async () => {
       mockCompleteRun.mockRejectedValue(
-        new ApiError('Invalid event type', {
+        new ApiError('Invalid request', {
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         }),
@@ -285,7 +346,7 @@ describe('RunsController', () => {
       expect(result.status).toBe(StatusCodes.BAD_REQUEST);
       expect(result.body).toEqual({
         error: {
-          message: 'Invalid event type',
+          message: 'Invalid request',
           code: 'request/validation-failed',
           traceId: expect.any(String),
         },
