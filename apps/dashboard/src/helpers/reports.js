@@ -523,6 +523,65 @@ export const roamFluencySubskillHeaders = {
   numAttempted: 'Num Attempted',
 };
 
+/**
+ * Threshold for PA subtask skills. A subtask is flagged as "needs work" when
+ * the percentage of correct responses is below (15/19)*100 (~78.9%).
+ */
+export const PA_SKILL_THRESHOLD = (15 / 19) * 100;
+
+/**
+ * Legacy threshold for PA subtask skills when only roarScore is available
+ * (non-adaptive, fixed 19-item assessments).
+ */
+export const PA_SKILL_LEGACY_THRESHOLD = 15;
+
+/**
+ * PA subtask keys used for score lookups and threshold checks.
+ */
+const PA_SUBTASK_KEYS = ['FSM', 'LSM', 'DEL'];
+
+/**
+ * Mapping from PA subtask keys to i18n translation keys.
+ * Callers should use this to translate the keys returned by getPaSkillsToWorkOn.
+ */
+export const PA_SUBTASK_I18N_KEYS = {
+  FSM: 'scoreReports.firstSoundMatching',
+  LSM: 'scoreReports.lastSoundMatching',
+  DEL: 'scoreReports.deletion',
+};
+
+/**
+ * Determines which PA subtask skills need work based on proportion correct.
+ * Uses percentCorrect when available (new adaptive scoring), falling back to
+ * roarScore (legacy fixed-item scoring) for backwards compatibility.
+ *
+ * @param {Object} scores - The computed scores object containing FSM, LSM, DEL subtask data.
+ *   Each subtask may have:
+ *     - percentCorrect {number} (new) – percent correct (0-100), compared against PA_SKILL_THRESHOLD
+ *     - roarScore {number} (legacy) – raw correct count, compared against PA_SKILL_LEGACY_THRESHOLD
+ * @returns {string[]} Array of subtask keys that need work, e.g. ['FSM', 'DEL']
+ */
+export function getPaSkillsToWorkOn(scores) {
+  const skills = [];
+
+  for (const key of PA_SUBTASK_KEYS) {
+    const subtask = scores?.[key];
+
+    let needsWork = false;
+    if (subtask?.percentCorrect != null) {
+      needsWork = subtask.percentCorrect < PA_SKILL_THRESHOLD;
+    } else if (subtask?.roarScore != null) {
+      needsWork = subtask.roarScore < PA_SKILL_LEGACY_THRESHOLD;
+    }
+
+    if (needsWork) {
+      skills.push(key);
+    }
+  }
+
+  return skills;
+}
+
 export const updatedNormVersions = {
   swr: 7,
   'swr-es': 1,
