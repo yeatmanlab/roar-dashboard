@@ -47,7 +47,7 @@ Before marking a PR ready for review:
 1. Re-read the full diff yourself. Don't rely on having "just written it."
 2. Run `npm run lint`, `npm run format:check`, `npm run check-types`, and relevant tests.
 3. Verify the PR description accurately reflects the final state of the code.
-4. Check that no debugging artifacts remain (console.logs, commented-out code, TODO hacks).
+4. Check that no debugging artifacts remain (`console.log` statements, commented-out code, TODO hacks).
 
 ### Incorrect
 

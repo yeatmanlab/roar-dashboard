@@ -25,7 +25,11 @@ When building features, ask yourself: "How does this behave with 1,000 users? 10
 
 ```typescript
 // Incorrect: fetching authorized IDs, then filtering results in a loop
-const authorizedIds = await accessControls.buildUserResourceIdsQuery(filter);
+// Note: buildUserResourceIdsQuery returns a SQL subquery; execute it to materialize IDs.
+// (Pseudocode) `executeSubquery` represents whatever helper you use to run the subquery.
+const authorizedIds = await executeSubquery(
+  accessControls.buildUserResourceIdsQuery(filter),
+);
 const allItems = await repository.listAll(options);
 const filtered = allItems.filter(item => authorizedIds.includes(item.id)); // O(n*m)
 

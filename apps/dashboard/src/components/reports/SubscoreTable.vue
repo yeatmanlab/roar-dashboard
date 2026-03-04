@@ -148,14 +148,14 @@ const columns = computed(() => {
       },
     });
 
-    // Add skills to work on
-    tableColumns.push({
-      field: `scores.${props.taskId}.skillsToWorkOn`,
-      header: 'Skills To Work On',
-      dataType: 'text',
-      sort: false,
-      tooltip: false,
-    });
+    // Hide skills to work on
+    // tableColumns.push({
+    //   field: `scores.${props.taskId}.skillsToWorkOn`,
+    //   header: 'Skills To Work On',
+    //   dataType: 'text',
+    //   sort: false,
+    //   tooltip: false,
+    // });
   }
   if (props.taskId === 'roam-alpaca') {
     const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
@@ -241,7 +241,6 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
     }
-
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
