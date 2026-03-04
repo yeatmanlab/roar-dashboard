@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import type { CreateRunRequestBody, RunEventBody } from '@roar-dashboard/api-contract';
-import { runEventTypeEnum } from '@roar-dashboard/api-contract';
+import { RunEventTypeSchema } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';
@@ -9,7 +9,7 @@ import type { AuthContext } from '../types/auth-context';
 
 const runService = RunService();
 const runEventsService = RunEventsService();
-const RunEventType = runEventTypeEnum.enum;
+const RunEventType = RunEventTypeSchema.enum;
 
 /**
  * RunsController
