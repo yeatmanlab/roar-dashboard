@@ -307,8 +307,8 @@ describe('RunEventService', () => {
           correct: 1,
         },
         interactions: [
-          { event: 'focus' as const, trialId: 0, timeMs: 100 },
-          { event: 'blur' as const, trialId: 0, timeMs: 200 },
+          { event: 'focus' as const, timeMs: 100 },
+          { event: 'blur' as const, timeMs: 200 },
         ],
       };
 
