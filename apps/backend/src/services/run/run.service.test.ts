@@ -1,22 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { MockedObject } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { RunService } from './run.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
-import { MockRunRepository, createMockRunRepository } from '../../test-support/repositories';
+import {
+  type MockRunRepository,
+  createMockRunRepository,
+  type MockTaskVariantRepository,
+  createMockTaskVariantRepository,
+  type MockAdministrationAccessControls,
+  createMockAdministrationAccessControls,
+} from '../../test-support/repositories';
+import { type MockAdministrationService, createMockAdministrationService } from '../../test-support/services';
+import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 
 describe('RunService', () => {
   let authContext: AuthContext;
   let runRepository: MockRunRepository;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let administrationService: MockedObject<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let administrationAccessControls: MockedObject<any>;
+  let administrationService: MockAdministrationService;
+  let administrationAccessControls: MockAdministrationAccessControls;
   let runService: ReturnType<typeof RunService>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let taskVariantRepository: MockedObject<any>;
+  let taskVariantRepository: MockTaskVariantRepository;
 
   const validRequestBody = {
     taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
@@ -31,29 +36,23 @@ describe('RunService', () => {
 
     runRepository = createMockRunRepository();
 
-    administrationService = {
-      verifyAdministrationAccess: vi.fn(),
-    };
+    administrationService = createMockAdministrationService();
 
-    taskVariantRepository = {
-      getTaskIdByVariantId: vi.fn(),
-    };
+    taskVariantRepository = createMockTaskVariantRepository();
 
-    administrationAccessControls = {
-      getUserRolesForAdministration: vi.fn(),
-    };
+    administrationAccessControls = createMockAdministrationAccessControls();
 
     runService = RunService({
-      runRepository: runRepository,
-      administrationService: administrationService,
-      taskVariantRepository: taskVariantRepository,
-      administrationAccessControls: administrationAccessControls,
+      runRepository,
+      administrationService,
+      taskVariantRepository,
+      administrationAccessControls,
     });
   });
 
   describe('create', () => {
     it('should create a run successfully with all parameters', async () => {
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
@@ -96,7 +95,7 @@ describe('RunService', () => {
     });
 
     it('should throw FORBIDDEN when user lacks permission to create run', async () => {
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['teacher']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
 
@@ -108,7 +107,7 @@ describe('RunService', () => {
 
     it('should work for super admin users and bypass permission checks', async () => {
       const superAdminContext = { userId: 'user-123', isSuperAdmin: true };
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
@@ -130,7 +129,7 @@ describe('RunService', () => {
         metadata: { source: 'dashboard', sessionId: 'sess-789' },
       };
 
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-789' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-789' });
@@ -151,12 +150,12 @@ describe('RunService', () => {
 
     it('should throw UNPROCESSABLE_ENTITY when taskVariantRepository is not configured', async () => {
       const serviceWithoutTaskVariantRepository = RunService({
-        runRepository: runRepository,
-        administrationService: administrationService,
-        administrationAccessControls: administrationAccessControls,
+        runRepository,
+        administrationService,
+        administrationAccessControls,
       });
 
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
 
       await expect(serviceWithoutTaskVariantRepository.create(authContext, validRequestBody)).rejects.toThrow();
@@ -177,7 +176,7 @@ describe('RunService', () => {
     });
 
     it('should throw UNPROCESSABLE_ENTITY when task variant does not exist', async () => {
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockRejectedValue(
         new ApiError('Invalid task_variant_id', {
@@ -194,7 +193,7 @@ describe('RunService', () => {
 
     it('should throw INTERNAL_SERVER_ERROR when getTaskIdByVariantId fails with non-ApiError', async () => {
       const dbError = new Error('Database connection failed');
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockRejectedValue(dbError);
 
@@ -206,7 +205,7 @@ describe('RunService', () => {
 
     it('should throw INTERNAL_SERVER_ERROR when create fails', async () => {
       const dbError = new Error('Failed to insert run');
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockRejectedValue(dbError);
@@ -222,7 +221,7 @@ describe('RunService', () => {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockRejectedValue(apiError);
@@ -232,7 +231,7 @@ describe('RunService', () => {
 
     it('should pass userId from auth context to repository', async () => {
       const customAuthContext = { userId: 'custom-user-999', isSuperAdmin: false };
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
@@ -256,7 +255,7 @@ describe('RunService', () => {
         metadata: {},
       };
 
-      administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
+      administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
