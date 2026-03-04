@@ -60,7 +60,7 @@ export function RunService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      await administrationService.verifyAdministrationAccess({ userId, isSuperAdmin }, body.administrationId);
+      await administrationService.verifyAdministrationAccess(authContext, body.administrationId);
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.statusCode === StatusCodes.NOT_FOUND) {
