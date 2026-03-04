@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ScoreReportService from '@/services/ScoreReport.service';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 
-import { getSupportLevel, getRawScoreRange } from '@/helpers/reports';
+import { getSupportLevel, getRawScoreRange, getPaSkillsToWorkOn } from '@/helpers/reports';
 
 // Mock dependencies
 vi.mock('@/helpers/reports', () => ({
@@ -24,6 +24,12 @@ vi.mock('@/helpers/reports', () => ({
   }),
   getSupportLevel: vi.fn(),
   getRawScoreRange: vi.fn(),
+  getPaSkillsToWorkOn: vi.fn().mockReturnValue([]),
+  PA_SUBTASK_I18N_KEYS: {
+    FSM: 'scoreReports.firstSoundMatching',
+    LSM: 'scoreReports.lastSoundMatching',
+    DEL: 'scoreReports.deletion',
+  },
   getDialColor: vi.fn().mockReturnValue('var(--blue-500)'),
   getScoreValue: vi.fn().mockImplementation((scoresObject, taskId, grade, fieldType) => {
     // Return the actual field value from the scores object if it exists
@@ -545,104 +551,85 @@ describe('ScoreReportService', () => {
       });
     });
 
-    it('should handle PA task with special score processing', () => {
+    it('should display legacy roarScore values and translated skills for PA task', () => {
+      getPaSkillsToWorkOn.mockReturnValue(['FSM', 'DEL']);
       const taskData = [
         {
           taskId: 'pa',
           optional: false,
           reliable: true,
           scores: {
-            composite: {
-              rawScore: 20,
-              percentileScore: 65,
-              standardScore: 95,
-            },
-            FSM: { roarScore: 10 }, // Below 15 threshold
-            LSM: { roarScore: 20 }, // Above 15 threshold
-            DEL: { roarScore: 8 }, // Below 15 threshold
+            composite: { rawScore: 20, percentileScore: 65, standardScore: 95 },
+            FSM: { roarScore: 10 },
+            LSM: { roarScore: 20 },
+            DEL: { roarScore: 8 },
           },
         },
       ];
 
       const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n);
-
-      expect(result).toHaveLength(1);
       const task = result[0];
 
-      expect(task.taskId).toBe('pa');
-      expect(task.scoresArray).toBeDefined();
-
-      // Verify that i18n.t was called for PA-specific translations
-      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.firstSoundMatching');
-      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.lastSoundMatching');
-      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.deletion');
-      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.skillsToWorkOn');
+      expect(task.scoresArray).toEqual(
+        expect.arrayContaining([
+          ['scoreReports.firstSoundMatching', 10],
+          ['scoreReports.lastSoundMatching', 20],
+          ['scoreReports.deletion', 8],
+          ['scoreReports.skillsToWorkOn', 'scoreReports.firstSoundMatching, scoreReports.deletion'],
+        ]),
+      );
+      expect(getPaSkillsToWorkOn).toHaveBeenCalledWith(taskData[0].scores);
     });
 
-    it('should handle PA task with all skills above threshold', () => {
+    it('should display percentCorrect as formatted percentages for PA task', () => {
+      getPaSkillsToWorkOn.mockReturnValue(['FSM']);
       const taskData = [
         {
           taskId: 'pa',
           optional: false,
           reliable: true,
           scores: {
-            composite: {
-              rawScore: 25,
-              percentileScore: 85,
-              standardScore: 110,
-            },
-            FSM: { roarScore: 20 }, // Above 15 threshold
-            LSM: { roarScore: 18 }, // Above 15 threshold
-            DEL: { roarScore: 22 }, // Above 15 threshold
+            composite: { rawScore: 20, percentileScore: 65, standardScore: 95 },
+            FSM: { percentCorrect: 75 },
+            LSM: { percentCorrect: 83.3 },
+            DEL: { percentCorrect: 71.4 },
           },
         },
       ];
 
       const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n);
-
-      expect(result).toHaveLength(1);
       const task = result[0];
 
-      expect(task.taskId).toBe('pa');
-      expect(task.scoresArray).toBeDefined();
-
-      // When all skills are above threshold, "skillsToWorkOn" should show "None"
-      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.skillsToWorkOn');
+      expect(task.scoresArray).toEqual(
+        expect.arrayContaining([
+          ['scoreReports.firstSoundMatching', '75%'],
+          ['scoreReports.lastSoundMatching', '83%'],
+          ['scoreReports.deletion', '71%'],
+          ['scoreReports.skillsToWorkOn', 'scoreReports.firstSoundMatching'],
+        ]),
+      );
     });
 
-    it('should handle PA task with LSM skill below threshold', () => {
+    it('should show translated "None" when no PA skills need work', () => {
+      getPaSkillsToWorkOn.mockReturnValue([]);
       const taskData = [
         {
           taskId: 'pa',
           optional: false,
           reliable: true,
           scores: {
-            composite: {
-              rawScore: 20,
-              percentileScore: 65,
-              standardScore: 95,
-            },
-            FSM: { roarScore: 20 }, // Above 15 threshold
-            LSM: { roarScore: 10 }, // Below 15 threshold - this covers line 150
-            DEL: { roarScore: 18 }, // Above 15 threshold
+            composite: { rawScore: 25, percentileScore: 85, standardScore: 110 },
+            FSM: { roarScore: 20 },
+            LSM: { roarScore: 18 },
+            DEL: { roarScore: 22 },
           },
         },
       ];
 
       const result = ScoreReportService.processTaskScores(taskData, 5, mockI18n);
-
-      expect(result).toHaveLength(1);
       const task = result[0];
 
-      expect(task.taskId).toBe('pa');
-      expect(task.scoresArray).toBeDefined();
-
-      // Verify that LSM-specific translations were called
-      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.lastSoundMatching');
-      expect(mockI18n.t).toHaveBeenCalledWith('scoreReports.skillsToWorkOn');
-
-      // Since only LSM is below threshold, skills to work on should include LSM
-      // The actual skills array logic is tested through the i18n calls
+      expect(task.scoresArray).toEqual(expect.arrayContaining([['scoreReports.skillsToWorkOn', 'scoreReports.none']]));
     });
 
     it('should validate complete tags object structure for required and reliable task', () => {
