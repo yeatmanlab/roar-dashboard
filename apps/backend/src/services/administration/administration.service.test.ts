@@ -19,7 +19,6 @@ import type { AssignmentWithOptional, TaskVariantWithAssignment } from '../../re
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
-  createMockRunRepository,
   createMockUserRepository,
 } from '../../test-support/repositories';
 import { createMockRunsService, createMockTaskService } from '../../test-support/services';
@@ -27,7 +26,6 @@ import { createMockRunsService, createMockTaskService } from '../../test-support
 describe('AdministrationService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockAdministrationTaskVariantRepository: ReturnType<typeof createMockAdministrationTaskVariantRepository>;
-  let mockRunsRepository: ReturnType<typeof createMockRunRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockRunsService: ReturnType<typeof createMockRunsService>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
@@ -36,7 +34,6 @@ describe('AdministrationService', () => {
     vi.resetAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
     mockAdministrationTaskVariantRepository = createMockAdministrationTaskVariantRepository();
-    mockRunsRepository = createMockRunRepository();
     mockUserRepository = createMockUserRepository();
     mockRunsService = createMockRunsService();
     mockTaskService = createMockTaskService();

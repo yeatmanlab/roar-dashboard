@@ -8,9 +8,11 @@ import { RunsRepository } from '../../repositories/runs.repository';
 import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
 import type { AuthContext } from '../../types/auth-context';
-import { runEventTypeEnum } from '@roar-dashboard/api-contract';
 
-const RunEventType = runEventTypeEnum.enum;
+type RunCompleteEventBody = Extract<RunEventBody, { type: 'complete' }>;
+type RunAbortEventBody = Extract<RunEventBody, { type: 'abort' }>;
+type RunTrialEventBody = Extract<RunEventBody, { type: 'trial' }>;
+type RunEngagementEventBody = Extract<RunEventBody, { type: 'engagement' }>;
 
 /**
  * RunEventsService
@@ -31,12 +33,7 @@ export function RunEventsService({
   runsRepository?: RunsRepository;
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
-} = {}): {
-  completeRun: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
-  abortRun: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
-  writeTrial: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
-  updateEngagement: (authContext: AuthContext, runId: string, body: RunEventBody) => Promise<void>;
-} {
+} = {}) {
   /**
    * Verifies that a run exists and is owned by the specified user.
    *
@@ -71,24 +68,19 @@ export function RunEventsService({
   /**
    * Updates engagement flags and reliability status for a run.
    *
-   * Validates the event type, verifies user ownership, and updates the run record.
+   * Verifies user ownership, and updates the run record.
    *
-   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if ownership/run checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
    */
-  async function updateEngagement(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
-    if (body.type !== RunEventType.engagement) {
-      throw new ApiError('Invalid event type', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { runId, type: body.type },
-      });
-    }
+  async function updateEngagement(
+    authContext: AuthContext,
+    runId: string,
+    body: RunEngagementEventBody,
+  ): Promise<void> {
+    await assertRunOwnedByUser(runId, authContext.userId);
 
     try {
-      await assertRunOwnedByUser(runId, authContext.userId);
-
       await runsRepository.update({
         id: runId,
         data: {
@@ -105,7 +97,7 @@ export function RunEventsService({
           context: {
             userId: authContext.userId,
             runId,
-            eventType: body.type,
+            event: body,
           },
         },
         'Failed to update engagement',
@@ -123,34 +115,16 @@ export function RunEventsService({
   /**
    * Records a trial event for a run.
    *
-   * Validates the event type, verifies user ownership, and persists trial data
+   * Verifies user ownership, and persists trial data
    * along with optional interaction events in a transaction.
    *
-   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
-   * @throws ApiError with BAD_REQUEST (400) if trial payload is malformed
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database transaction fails or any unexpected error occurs
    */
-  async function writeTrial(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
-    if (body.type !== RunEventType.trial) {
-      throw new ApiError('Invalid event type', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { runId, type: body.type },
-      });
-    }
+  async function writeTrial(authContext: AuthContext, runId: string, body: RunTrialEventBody): Promise<void> {
+    await assertRunOwnedByUser(runId, authContext.userId);
 
     try {
-      await assertRunOwnedByUser(runId, authContext.userId);
-
-      if (!body.trial?.assessmentStage || typeof body.trial.correct !== 'number') {
-        throw new ApiError('Malformed trial payload', {
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { runId },
-        });
-      }
-
       await runTrialsRepository.runTransaction({
         fn: async (tx) => {
           const createdTrial = await runTrialsRepository.create({
@@ -163,20 +137,19 @@ export function RunEventsService({
             transaction: tx,
           });
 
-          // This part is optional
           if (body.interactions && body.interactions.length > 0) {
-            const interactionPromises = body.interactions.map((i) =>
-              runTrialInteractionsRepository.create({
-                data: {
-                  trialId: createdTrial.id,
-                  interactionType: i.event,
-                  timeMs: i.timeMs,
-                },
-                transaction: tx,
-              }),
+            await Promise.all(
+              body.interactions.map((i) =>
+                runTrialInteractionsRepository.create({
+                  data: {
+                    trialId: createdTrial.id,
+                    interactionType: i.event,
+                    timeMs: i.timeMs,
+                  },
+                  transaction: tx,
+                }),
+              ),
             );
-
-            await Promise.all(interactionPromises);
           }
         },
       });
@@ -189,7 +162,7 @@ export function RunEventsService({
           context: {
             userId: authContext.userId,
             runId,
-            eventType: body.type,
+            event: body,
           },
         },
         'Failed to write trial',
@@ -207,27 +180,21 @@ export function RunEventsService({
   /**
    * Marks a run as aborted.
    *
-   * Validates the event type, verifies user ownership, and updates the run's
-   * abort status with the provided abort timestamp. Currently only supports 'abort' event type.
+   * Verifies user ownership, and updates the run's abort status.
    *
-   * @param authContext - Authentication context with userId and isSuperAdmin
-   * @param runId - UUID of the run to abort
-   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
-   * @throws ApiError with NOT_FOUND (404) if run doesn't exist
-   * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
-   * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails
+   * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
+   * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails or any unexpected error occurs
    */
-  async function abortRun(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
-    if (body.type !== RunEventType.abort) {
-      throw new ApiError('Invalid event type', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { runId, type: body.type },
-      });
-    }
+  async function abortRun(authContext: AuthContext, runId: string, body: RunAbortEventBody): Promise<void> {
+    await assertRunOwnedByUser(runId, authContext.userId);
 
     try {
-      await assertRunOwnedByUser(runId, authContext.userId);
+      await runsRepository.update({
+        id: runId,
+        data: {
+          abortedAt: new Date(),
+        },
+      });
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -237,7 +204,7 @@ export function RunEventsService({
           context: {
             userId: authContext.userId,
             runId,
-            eventType: body.type,
+            event: body,
           },
         },
         'Failed to abort run',
@@ -255,28 +222,19 @@ export function RunEventsService({
   /**
    * Marks a run as complete.
    *
-   * Validates the event type, verifies user ownership, and updates the run's
-   * completion timestamp. Currently only supports 'complete' event type.
+   * Verifies user ownership, and updates the run's completion timestamp.
    *
-   * @throws ApiError with BAD_REQUEST (400) if event type is invalid
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails or any unexpected error occurs
    */
-  async function completeRun(authContext: AuthContext, runId: string, body: RunEventBody): Promise<void> {
-    if (body.type !== RunEventType.complete) {
-      throw new ApiError('Invalid event type', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { runId, type: body.type },
-      });
-    }
+  async function completeRun(authContext: AuthContext, runId: string, body: RunCompleteEventBody): Promise<void> {
+    await assertRunOwnedByUser(runId, authContext.userId);
 
     try {
-      await assertRunOwnedByUser(runId, authContext.userId);
-
       await runsRepository.update({
         id: runId,
         data: {
+          completedAt: new Date(),
           ...(body.metadata ? { metadata: body.metadata } : {}),
         },
       });
@@ -289,7 +247,7 @@ export function RunEventsService({
           context: {
             userId: authContext.userId,
             runId,
-            eventType: body.type,
+            event: body,
           },
         },
         'Failed to complete run',

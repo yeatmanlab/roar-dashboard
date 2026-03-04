@@ -59,8 +59,14 @@ describe('RunEventsService', () => {
       await runEventsService.completeRun(authContext, validRunId, validBody);
 
       expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      const updateCall = runsRepository.update.mock.calls[0]![0];
-      expect(updateCall.id).toBe(validRunId);
+      expect(runsRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: validRunId,
+          data: expect.objectContaining({
+            completedAt: expect.any(Date),
+          }),
+        }),
+      );
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -130,6 +136,29 @@ describe('RunEventsService', () => {
       const updateCall = runsRepository.update.mock.calls[0]![0];
       expect(updateCall.data.metadata).toEqual(bodyWithMetadata.metadata);
     });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runsRepository.getById.mockResolvedValue(mockRun);
+      runsRepository.update.mockRejectedValue(new Error('Database connection lost'));
+
+      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError exceptions', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runsRepository.getById.mockResolvedValue(mockRun);
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      runsRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toBe(apiError);
+    });
   });
 
   describe('abortRun', () => {
@@ -139,11 +168,19 @@ describe('RunEventsService', () => {
     it('should abort a run successfully', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
       runsRepository.getById.mockResolvedValue(mockRun);
+      runsRepository.update.mockResolvedValue(undefined);
 
       await runEventsService.abortRun(authContext, validRunId, validBody);
 
       expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(runsRepository.update).not.toHaveBeenCalled();
+      expect(runsRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: validRunId,
+          data: expect.objectContaining({
+            abortedAt: expect.any(Date),
+          }),
+        }),
+      );
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
@@ -202,6 +239,29 @@ describe('RunEventsService', () => {
           });
         }
       }
+    });
+
+    it('should return 500 when database update fails', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runsRepository.getById.mockResolvedValue(mockRun);
+      runsRepository.update.mockRejectedValue(new Error('Database connection lost'));
+
+      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should re-throw ApiError exceptions', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
+      runsRepository.getById.mockResolvedValue(mockRun);
+      const apiError = new ApiError('Custom error', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      runsRepository.update.mockRejectedValue(apiError);
+
+      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toBe(apiError);
     });
   });
 
