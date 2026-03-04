@@ -81,7 +81,7 @@ describe('RunService', () => {
       });
     });
 
-    it('should throw NOT_FOUND when administration does not exist', async () => {
+    it('should throw UNPROCESSABLE_ENTITY when administration does not exist', async () => {
       administrationService.verifyAdministrationAccess.mockRejectedValue(
         new ApiError('Administration not found', {
           statusCode: StatusCodes.NOT_FOUND,
@@ -90,8 +90,8 @@ describe('RunService', () => {
       );
 
       await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
     });
 
@@ -192,13 +192,16 @@ describe('RunService', () => {
       });
     });
 
-    it('should throw error when getTaskIdByVariantId fails with non-ApiError', async () => {
+    it('should throw INTERNAL_SERVER_ERROR when getTaskIdByVariantId fails with non-ApiError', async () => {
       const dbError = new Error('Database connection failed');
       administrationService.verifyAdministrationAccess.mockResolvedValue(undefined);
       administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockRejectedValue(dbError);
 
-      await expect(runsService.create(authContext, validRequestBody)).rejects.toBe(dbError);
+      await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
     });
 
     it('should throw INTERNAL_SERVER_ERROR when create fails', async () => {
@@ -210,7 +213,7 @@ describe('RunService', () => {
 
       await expect(runsService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.INTERNAL,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
     });
 

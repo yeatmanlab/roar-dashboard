@@ -13,6 +13,7 @@ import type { AuthContext } from '../../types/auth-context';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { AdministrationAccessControls } from '../../repositories/access-controls/administration.access-controls';
+import { type UserRole as UserRoleType } from '../../enums/user-role.enum';
 
 /**
  * RunService factory function.
@@ -49,10 +50,9 @@ export function RunService({
    * 5. Creates the run record in the database
    *
    * @param authContext - Authentication context with userId and isSuperAdmin flag
-   * @param body - Request body containing task_variant_id, task_version, administration_id, and optional metadata
+   * @param body - Request body containing taskVariantId, taskVersion, administrationId, and optional metadata
    * @returns Promise resolving to object with id
-   * @throws ApiError with INTERNAL_SERVER_ERROR if taskService not configured
-   * @throws ApiError with UNPROCESSABLE_ENTITY if administration_id or task_variant_id are invalid
+   * @throws ApiError with UNPROCESSABLE_ENTITY if administrationId or taskVariantId are invalid
    * @throws ApiError with FORBIDDEN if user lacks permission to create run
    * @throws ApiError with INTERNAL_SERVER_ERROR if database operation fails
    */
@@ -64,13 +64,14 @@ export function RunService({
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.statusCode === StatusCodes.NOT_FOUND) {
-          throw new ApiError('Administration not found', {
-            statusCode: StatusCodes.NOT_FOUND,
-            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          throw new ApiError('Invalid administration ID', {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
             context: { userId, administrationId: body.administrationId },
             cause: error,
           });
         }
+
         if (error.statusCode === StatusCodes.FORBIDDEN) {
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
@@ -84,12 +85,14 @@ export function RunService({
     }
 
     if (!isSuperAdmin) {
-      const userRoles = await administrationAccessControls.getUserRolesForAdministration(userId, body.administrationId);
+      const userRoles = (await administrationAccessControls.getUserRolesForAdministration(
+        userId,
+        body.administrationId,
+      )) as UserRoleType[];
 
       const allowedRoles = rolesForPermission(Permissions.Runs.CREATE);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hasPermission = userRoles.some((role) => allowedRoles.includes(role as any));
+      const hasPermission = userRoles.some((role) => allowedRoles.includes(role));
 
       if (!hasPermission) {
         throw new ApiError(ApiErrorMessage.FORBIDDEN, {
@@ -100,33 +103,20 @@ export function RunService({
       }
     }
 
-    let taskId: string;
     try {
       const result = await taskVariantRepository.getTaskIdByVariantId(body.taskVariantId);
-      if (!result) {
-        throw new ApiError('Invalid task_variant_id', {
-          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, taskVariantId: body.taskVariantId },
-        });
-      }
-      taskId = result.taskId;
-    } catch (error) {
-      if (error instanceof ApiError && error.statusCode === StatusCodes.UNPROCESSABLE_ENTITY) {
-        throw new ApiError('Invalid task_variant_id', {
-          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, taskVariantId: body.taskVariantId },
-          cause: error,
-        });
-      }
-      throw error;
-    }
 
-    try {
+      if (!result) {
+        throw new ApiError('Invalid task variant ID', {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, taskVariantId: body.taskVariantId },
+        });
+      }
+
       const data: NewRun = {
         userId,
-        taskId,
+        taskId: result.taskId,
         taskVariantId: body.taskVariantId,
         taskVersion: body.taskVersion,
         administrationId: body.administrationId,
@@ -134,7 +124,8 @@ export function RunService({
       };
 
       const run = await runsRepository.create({ data });
-      return { id: run.id as string };
+
+      return { id: run.id };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -143,7 +134,6 @@ export function RunService({
           err: error,
           context: {
             userId,
-            taskId,
             taskVariantId: body.taskVariantId,
             taskVersion: body.taskVersion,
             administrationId: body.administrationId,
@@ -154,7 +144,7 @@ export function RunService({
 
       throw new ApiError('Failed to create run', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.INTERNAL,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
         cause: error,
       });
