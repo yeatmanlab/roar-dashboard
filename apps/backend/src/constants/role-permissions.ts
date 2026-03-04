@@ -25,6 +25,7 @@ import { UserRole, type UserRole as UserRoleType } from '../enums/user-role.enum
 export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() => {
   // ── Permission tiers ────────────────────────────────────────────────
   const siteAdmin: readonly Permission[] = [
+    Permissions.Administrations.DELETE,
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
     Permissions.Classes.LIST,
@@ -40,6 +41,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
   ];
 
   const admin: readonly Permission[] = [
+    Permissions.Administrations.DELETE,
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
     Permissions.Classes.LIST,
@@ -86,6 +88,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Administrations.LIST,
     Permissions.Administrations.READ,
     Permissions.Profile.READ,
+    Permissions.Runs.CREATE,
     Permissions.TaskVariants.LIST,
     Permissions.Tasks.LAUNCH,
   ];

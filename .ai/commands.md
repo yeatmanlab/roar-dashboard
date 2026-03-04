@@ -14,7 +14,7 @@ npm run format:check    # Prettier check (CI uses this)
 npm run check-types     # TypeScript type-check across all packages
 npm run test            # Run all tests (unit + integration)
 npm run test:watch      # Run tests in watch mode
-npm run clean           # Remove build artifacts (dist, node_modules, .turbo)
+npm run clean           # Run Turbo "clean" pipeline (no-op unless workspaces define `clean` scripts)
 ```
 
 ## Backend (`apps/backend/`)
@@ -60,7 +60,7 @@ npx vitest run src/repositories/administration.repository.integration.test.ts --
 Run a specific test by name:
 
 ```bash
-npx vitest run src/services/task/task.service.test.ts --project unit -t "returns 403"
+npx vitest run src/services/task/task.service.test.ts --project unit -t "<partial test name>"
 ```
 
 ### Database
@@ -85,8 +85,8 @@ npm run db:studio:assess  # Open Drizzle Studio for assessment DB
 
 ```bash
 npm run dev             # Start Vite dev server
-npm run build           # Build for production
-npm run preview         # Preview production build locally
+npm run build           # Build (Vite, development mode)
+npm run preview         # Preview build locally
 ```
 
 ### Lint, Format, Types
