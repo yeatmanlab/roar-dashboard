@@ -14,8 +14,6 @@ import {
 } from '../../test-support/repositories';
 import { RunFactory } from '../../test-support/factories/run.factory';
 
-vi.mock('../../logger');
-
 /**
  * RunEventService Tests
  *
