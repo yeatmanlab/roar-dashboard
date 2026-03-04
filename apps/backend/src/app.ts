@@ -11,6 +11,10 @@ const app = express();
 app.use(requestLogger);
 app.use(express.json());
 
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(StatusCodes.OK).json({ status: 'ok' });
+});
+
 registerAllRoutes(app);
 
 // Handle inexistent routes

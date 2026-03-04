@@ -78,8 +78,10 @@ describe('role-classifications', () => {
         const permissions = RolePermissions[role] ?? [];
         const hasBroadPerms = permissions.some(
           (p) =>
-            // Check for create/update/delete permissions (except profile)
-            ((p.includes('.create') || p.includes('.update') || p.includes('.delete')) && !p.startsWith('profile.')) ||
+            // Check for create/update/delete permissions (except profile and runs.create for students)
+            ((p.includes('.create') || p.includes('.update') || p.includes('.delete')) &&
+              !p.startsWith('profile.') &&
+              !(role === 'student' && p === 'runs.create')) ||
             // Check for broad wildcards (except profile.*)
             (p.endsWith('.*') && !p.startsWith('profile.')),
         );

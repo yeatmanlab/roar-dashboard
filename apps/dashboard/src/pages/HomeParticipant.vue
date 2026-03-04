@@ -53,6 +53,7 @@
                   :option-label="getOptionLabel"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
+                  :pt="{ optionLabel: { 'data-testid': 'select__option-label' } }"
                   @change="toggleShowOptionalAssessments"
                 />
                 <label for="dd-assignment" class="mt-4">{{ $t('homeParticipant.selectAssignment') }}</label>

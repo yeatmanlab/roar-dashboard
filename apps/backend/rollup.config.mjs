@@ -29,9 +29,10 @@ export default defineConfig({
         inlineDynamicImports: true,
       },
   plugins: [
-    // Externalize Node deps to keep bundle fast and small. In dev we purposely do not externalize the local workspace
-    // package so that Rollup watches its source and triggers rebuilds automatically.
-    externals({ exclude: isDev ? ['@roar-dashboard/api-contract'] : [] }),
+    // In dev, externalize node_modules (except our workspace package) to keep rebuilds fast.
+    // In production, skip externals entirely so rollup bundles everything into a single server.js — no node_modules
+    // needed at runtime.
+    isDev && externals({ exclude: ['@roar-dashboard/api-contract'] }),
 
     alias({
       entries: [
@@ -40,8 +41,7 @@ export default defineConfig({
 
         // In dev, point the local monorepo package to its src/ instead of dist/. This makes Rollup compile it with
         // esbuild, watch for changes, and restart the server when internal package source files change. In production
-        // we externalize the package so that it is not included in the bundle and is instead loaded from node_modules.
-        // This approach is, somewhat unfortunately, more efficient than using turbo's watch mode.
+        // the package resolves to its built dist/ via normal node resolution, but is still bundled (not externalized).
         ...(isDev
           ? [
               {

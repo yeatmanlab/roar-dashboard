@@ -1,0 +1,48 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/deploy-cloud-run
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Deploy to Cloud Run
+description: Deploys a Docker image from Artifact Registry to Cloud Run.
+
+inputs:
+  gcp-workload-identity-provider:
+    description: "The GCP workload identity provider for authentication."
+    required: true
+  gcp-service-account:
+    description: "The GCP service account email."
+    required: true
+  region:
+    description: "The GCP region for Cloud Run."
+    required: true
+  project-id:
+    description: "The GCP project ID."
+    required: true
+  artifact-registry-repo:
+    description: "The Artifact Registry repository name."
+    required: true
+  cloud-run-service:
+    description: "The Cloud Run service name."
+    required: true
+  image-name:
+    description: "The image name within the repository."
+    required: true
+  image-tag:
+    description: "The tag of the image to deploy."
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+        service_account: ${{ inputs.gcp-service-account }}
+
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: ${{ inputs.cloud-run-service }}
+        region: ${{ inputs.region }}
+        image: ${{ inputs.region }}-docker.pkg.dev/${{ inputs.project-id }}/${{ inputs.artifact-registry-repo }}/${{ inputs.image-name }}:${{ inputs.image-tag }}
