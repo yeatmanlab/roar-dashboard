@@ -14,14 +14,26 @@ describe('generateDatePresets', () => {
   });
 
   const mockDate = (isoDate) => {
-    const mockDate = new Date(isoDate);
-    global.Date = class extends Date {
-      constructor() {
-        super();
-        return mockDate;
+    const mockDateValue = new Date(isoDate);
+    const OriginalDate = global.Date;
+
+    global.Date = class extends OriginalDate {
+      constructor(...args) {
+        // If no arguments, return the mocked date (for new Date())
+        // Otherwise, use the original Date constructor
+        if (args.length === 0) {
+          super(mockDateValue.getTime());
+        } else {
+          super(...args);
+        }
+      }
+
+      static UTC(...args) {
+        return OriginalDate.UTC(...args);
       }
     };
-    return mockDate;
+
+    return mockDateValue;
   };
 
   test('generates correct date ranges for current year when all dates are in future', () => {
@@ -30,26 +42,35 @@ describe('generateDatePresets', () => {
 
     const presets = generateDatePresets();
 
+    // In January, winter is anchored to previous year (2024)
     expect(presets).toEqual({
       summer: {
         label: 'Summer',
         start: new Date('2025-06-16T00:00:00Z'),
         end: new Date('2025-08-01T00:00:00Z'),
+        startDate: '2025-06-16',
+        endDate: '2025-08-01',
       },
       fall: {
         label: 'Fall',
         start: new Date('2025-08-01T00:00:00Z'),
         end: new Date('2025-12-01T00:00:00Z'),
+        startDate: '2025-08-01',
+        endDate: '2025-12-01',
       },
       winter: {
         label: 'Winter',
-        start: new Date('2025-12-01T00:00:00Z'),
-        end: new Date('2026-04-01T00:00:00Z'),
+        start: new Date('2024-12-01T00:00:00Z'),
+        end: new Date('2025-04-01T00:00:00Z'),
+        startDate: '2024-12-01',
+        endDate: '2025-04-01',
       },
       spring: {
         label: 'Spring',
         start: new Date('2025-04-01T00:00:00Z'),
         end: new Date('2025-06-16T00:00:00Z'),
+        startDate: '2025-04-01',
+        endDate: '2025-06-16',
       },
     });
   });
@@ -60,27 +81,35 @@ describe('generateDatePresets', () => {
 
     const presets = generateDatePresets();
 
-    // Summer and spring should be moved to 2026
+    // Summer and spring should stay in 2025, winter anchored to 2025
     expect(presets).toEqual({
       summer: {
         label: 'Summer',
-        start: new Date('2026-06-16T00:00:00Z'),
-        end: new Date('2026-08-01T00:00:00Z'),
+        start: new Date('2025-06-16T00:00:00Z'),
+        end: new Date('2025-08-01T00:00:00Z'),
+        startDate: '2025-06-16',
+        endDate: '2025-08-01',
       },
       fall: {
         label: 'Fall',
         start: new Date('2025-08-01T00:00:00Z'),
         end: new Date('2025-12-01T00:00:00Z'),
+        startDate: '2025-08-01',
+        endDate: '2025-12-01',
       },
       winter: {
         label: 'Winter',
         start: new Date('2025-12-01T00:00:00Z'),
         end: new Date('2026-04-01T00:00:00Z'),
+        startDate: '2025-12-01',
+        endDate: '2026-04-01',
       },
       spring: {
         label: 'Spring',
-        start: new Date('2026-04-01T00:00:00Z'),
-        end: new Date('2026-06-16T00:00:00Z'),
+        start: new Date('2025-04-01T00:00:00Z'),
+        end: new Date('2025-06-16T00:00:00Z'),
+        startDate: '2025-04-01',
+        endDate: '2025-06-16',
       },
     });
   });
@@ -91,27 +120,35 @@ describe('generateDatePresets', () => {
 
     const presets = generateDatePresets();
 
-    // Summer, spring, and fall should be moved to 2026
+    // During winter (Dec-Feb), winter is anchored to current year, others to current year
     expect(presets).toEqual({
       summer: {
         label: 'Summer',
-        start: new Date('2026-06-16T00:00:00Z'),
-        end: new Date('2026-08-01T00:00:00Z'),
+        start: new Date('2025-06-16T00:00:00Z'),
+        end: new Date('2025-08-01T00:00:00Z'),
+        startDate: '2025-06-16',
+        endDate: '2025-08-01',
       },
       fall: {
         label: 'Fall',
-        start: new Date('2026-08-01T00:00:00Z'),
-        end: new Date('2026-12-01T00:00:00Z'),
+        start: new Date('2025-08-01T00:00:00Z'),
+        end: new Date('2025-12-01T00:00:00Z'),
+        startDate: '2025-08-01',
+        endDate: '2025-12-01',
       },
       winter: {
         label: 'Winter',
         start: new Date('2025-12-01T00:00:00Z'),
         end: new Date('2026-04-01T00:00:00Z'),
+        startDate: '2025-12-01',
+        endDate: '2026-04-01',
       },
       spring: {
         label: 'Spring',
-        start: new Date('2026-04-01T00:00:00Z'),
-        end: new Date('2026-06-16T00:00:00Z'),
+        start: new Date('2025-04-01T00:00:00Z'),
+        end: new Date('2025-06-16T00:00:00Z'),
+        startDate: '2025-04-01',
+        endDate: '2025-06-16',
       },
     });
   });
