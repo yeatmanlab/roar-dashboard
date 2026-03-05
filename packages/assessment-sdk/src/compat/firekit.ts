@@ -43,7 +43,12 @@ export function _setTaskInfoForCompat(taskInfo: {
 }
 
 function getCtx(): CommandContext {
-  return getFirekitCompat().getContext();
+  try {
+    return getFirekitCompat().getContext();
+  } catch (err) {
+    if (err instanceof SDKError) throw err;
+    throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
+  }
 }
 
 function getInvokerAndApi() {
@@ -95,6 +100,10 @@ export class FirekitFacade {
    */
   initialize(ctx: CommandContext): void {
     this.ctx = ctx;
+
+    // Reset compat state on re-init to avoid leaking state across tests / consumers
+    _runId = undefined;
+    _taskInfo = undefined;
   }
 
   /**
@@ -185,8 +194,6 @@ export function getFirekitCompat(): FirekitFacade {
  * ```
  */
 export async function startRun(additionalRunMetadata?: Record<string, unknown>): Promise<void> {
-  const { api, invoker } = getInvokerAndApi();
-
   if (!_taskInfo) {
     throw new SDKError('appkit.startRun missing task info (variantId/taskVersion/administrationId).');
   }
@@ -197,6 +204,8 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
     throw new SDKError('appkit.startRun requires administrationId when isAnonymous is false.');
   }
 
+  const { api, invoker } = getInvokerAndApi();
+
   const base = {
     type: 'start' as const,
     variantId: _taskInfo.variantId,
@@ -205,15 +214,8 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
   };
 
   const input: StartRunInput = isAnonymous
-    ? {
-        ...base,
-        isAnonymous: true,
-      }
-    : {
-        ...base,
-        isAnonymous: false,
-        administrationId: _taskInfo.adminId as string,
-      };
+    ? { ...base, isAnonymous: true }
+    : { ...base, isAnonymous: false, administrationId: _taskInfo.adminId as string };
 
   const cmd = new StartRunCommand(api);
   const result = await invoker.run(cmd, input);
