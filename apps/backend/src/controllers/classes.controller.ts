@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { ClassService } from '../services/class/class.service';
-import type { UsersQuery } from '@roar-dashboard/api-contract';
+import type { UsersListQuery } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../types/auth-context';
 
 const classService = ClassService();
@@ -12,7 +12,7 @@ const classService = ClassService();
  * - classId in items? { classId: string, users: User[]} - for other endpoints {schoolId: string} etc?
  */
 export const ClassesController = {
-  listUsers: async (authContext: AuthContext, classId: string, query: UsersQuery) => {
+  listUsers: async (authContext: AuthContext, classId: string, query: UsersListQuery) => {
     try {
       const result = await classService.listUsers(authContext, classId, query);
       return {

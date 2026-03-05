@@ -8,14 +8,14 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
-import type { UserSortField } from '@roar-dashboard/api-contract';
+import type { UsersListSortField } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../../types/auth-context';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 
 export interface ListUserOptions {
   page: number;
   perPage: number;
-  sortBy: UserSortField;
+  sortBy: UsersListSortField;
   sortOrder: 'asc' | 'desc';
 }
 

@@ -91,29 +91,29 @@ export const UserBaseSchema = z.object({
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
 
 // TODO: which fields to sort?
-export const USERS_SORT_FIELDS = ['nameLast', 'username', 'grade', 'enrollmentStart'] as const;
-export type UserSortField = (typeof USERS_SORT_FIELDS)[number];
-export const UsersSortFields = {
+export const USERS_LIST_SORT_FIELDS = ['nameLast', 'username', 'grade', 'enrollmentStart'] as const;
+export type UsersListSortField = (typeof USERS_LIST_SORT_FIELDS)[number];
+export const UsersListSortFields = {
   NAME_LAST: 'nameLast',
   USERNAME: 'username',
   GRADE: 'grade',
   ENROLLMENT_START: 'enrollmentStart',
-} as const satisfies Record<string, UserSortField>;
+} as const satisfies Record<string, UsersListSortField>;
 
-const UserQueryFilterSchema = z.object({
+const UsersListQueryFilterSchema = z.object({
   active: z.boolean().optional(),
   role: UserRoleSchema.optional(),
   userType: UserTypeSchema.optional(),
   grade: UserGradeSchema.optional(),
 });
 
-export type UserQueryFilters = z.infer<typeof UserQueryFilterSchema>;
+export type UsersListQueryFilters = z.infer<typeof UsersListQueryFilterSchema>;
 
-export const UsersQuerySchema = PaginationQuerySchema.merge(createSortQuerySchema(USERS_SORT_FIELDS, 'nameLast')).merge(
-  UserQueryFilterSchema,
-);
+export const UsersListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(USERS_SORT_FIELDS, 'nameLast'),
+).merge(UsersListQueryFilterSchema);
 
-export type UsersQuery = z.infer<typeof UsersQuerySchema>;
+export type UsersListQuery = z.infer<typeof UsersListQuerySchema>;
 
-export const UsersResponseSchema = createPaginatedResponseSchema(UserSchema);
-export type UsersResponse = z.infer<typeof UsersResponseSchema>;
+export const UsersListResponseSchema = createPaginatedResponseSchema(UserSchema);
+export type UsersListResponse = z.infer<typeof UsersListResponseSchema>;

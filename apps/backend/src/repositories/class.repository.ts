@@ -9,17 +9,17 @@ import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import type { UserSortField } from '@roar-dashboard/api-contract';
+import type { UsersListSortField } from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
 
 export interface ListUsersByClassOptions {
   page: number;
   perPage: number;
-  orderBy?: { field: UserSortField; direction: 'asc' | 'desc' };
+  orderBy?: { field: UsersListSortField; direction: 'asc' | 'desc' };
 }
 
 // TODO: Check if enrollment start is a sort field
-const USER_SORT_COLUMNS: Record<UserSortField, Column> = {
+const USER_SORT_COLUMNS: Record<UsersListSortField, Column> = {
   nameLast: users.nameLast,
   username: users.username,
   grade: users.grade,
@@ -102,7 +102,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       return { items: [], totalItems: 0 };
     }
 
-    const sortField = orderBy?.field as UserSortField | undefined;
+    const sortField = orderBy?.field as UsersListSortField | undefined;
     const sortColumn = sortField ? USER_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
