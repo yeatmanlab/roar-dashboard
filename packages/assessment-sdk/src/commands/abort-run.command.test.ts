@@ -19,7 +19,7 @@ describe('AbortRunCommand', () => {
     expect(command.idempotent).toBe(true);
   });
 
-  it('calls api.postRunEvent with abort event', async () => {
+  it('calls api.postRunEvent with event type from input', async () => {
     const input: AbortRunInput = {
       runId: 'run-123',
       type: 'abort',
@@ -30,7 +30,7 @@ describe('AbortRunCommand', () => {
     await command.execute(input);
 
     expect(postRunEvent).toHaveBeenCalledTimes(1);
-    expect(postRunEvent).toHaveBeenCalledWith('run-123', { type: 'abort' });
+    expect(postRunEvent).toHaveBeenCalledWith('run-123', { type: input.type });
   });
 
   it('propagates errors from api.postRunEvent', async () => {

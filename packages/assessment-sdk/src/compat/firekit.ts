@@ -19,6 +19,7 @@ import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
 import { AbortRunCommand } from '../commands/abort-run.command';
+import { RUN_EVENT_ABORT } from '../types/abort-run';
 
 // Module-level state for Firekit compat
 let _runId: string | undefined;
@@ -251,6 +252,7 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
  * Behavior:
  * - If no run has been started (no _runId), the function returns immediately without error
  * - If a run is active, an abort event is posted to the backend asynchronously
+ * - The abort event type is always 'abort' (RUN_EVENT_ABORT constant)
  * - Errors during the abort operation are logged but not thrown (to preserve sync signature)
  * - The function returns immediately; the actual abort may complete later
  *
@@ -271,19 +273,22 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
  * ```
  *
  * @see AbortRunCommand for the underlying command implementation
+ * @see RUN_EVENT_ABORT for the abort event type constant
  * @see postRunEvent for the API method used to send the abort event
  */
 export function abortRun(): void {
-  // If run never started, nothing to abort server-side.
   if (!_runId) return;
 
-  // Fire-and-forget to preserve sync Firekit signature.
   void (async () => {
-    const { api, invoker } = getInvokerAndApi();
+    const ctx = getCtx();
+    const api = new RoarApi(ctx);
+
+    // Best-effort, no-retry abort to avoid keeping processes alive
+    const invoker = new Invoker(ctx, { retries: 0, retryDelayMs: 0 });
+
     const cmd = new AbortRunCommand(api);
-    await invoker.run(cmd, { runId: _runId as string, type: 'abort' });
+    await invoker.run(cmd, { runId: _runId, type: RUN_EVENT_ABORT });
   })().catch((err) => {
-    // Don't throw (sync signature). Log if available.
     const ctx = (() => {
       try {
         return getCtx();

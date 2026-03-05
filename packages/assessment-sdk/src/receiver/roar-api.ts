@@ -146,7 +146,7 @@ export class RoarApi {
    * - No response body parsing required
    *
    * @param runId - The unique identifier of the run to post the event to
-   * @param body - The event payload object containing type and event-specific data
+   * @param body - The event payload object (Record<string, unknown>) containing type and event-specific data
    *
    * @returns Promise<void> - Resolves when the event is successfully posted
    *
@@ -160,7 +160,7 @@ export class RoarApi {
    * await api.postRunEvent('run-123', { type: 'abort' });
    * ```
    */
-  async postRunEvent(runId: string, body: unknown): Promise<void> {
+  async postRunEvent(runId: string, body: Record<string, unknown>): Promise<void> {
     const res = await this.request(`/v1/runs/${runId}/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -1,3 +1,4 @@
+export const RUN_EVENT_ABORT = 'abort' as const;
 /**
  * Input for the AbortRun command.
  *
@@ -6,7 +7,7 @@
  */
 export interface AbortRunInput {
   runId: string;
-  type: 'abort';
+  type: typeof RUN_EVENT_ABORT;
 }
 
 /**

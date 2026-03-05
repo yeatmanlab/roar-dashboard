@@ -65,15 +65,23 @@ describe('firekit compat', () => {
       mockFetch.mockClear();
       mockFetch.mockResolvedValue({ ok: true });
 
-      abortRun();
+      vi.useFakeTimers();
+      try {
+        abortRun();
 
-      // Give fire-and-forget async operation time to complete
-      await new Promise((resolve) => setTimeout(resolve, 50));
+        // Flush the fire-and-forget async operation deterministically
+        await vi.runAllTimersAsync();
+      } finally {
+        vi.useRealTimers();
+      }
 
       expect(mockFetch).toHaveBeenCalled();
       const call = mockFetch.mock.calls[0]!;
       expect(call[0]).toContain('/v1/runs/run-123/events');
       expect(call[1]?.method).toBe('POST');
+      // Verify abort event type is sent
+      const body = JSON.parse(call[1]?.body as string);
+      expect(body.type).toBe('abort');
     });
 
     it('handles API errors gracefully without throwing', async () => {
@@ -126,11 +134,15 @@ describe('firekit compat', () => {
 
       await startRun();
 
-      // abortRun should not throw
-      expect(() => abortRun()).not.toThrow();
+      vi.useFakeTimers();
+      try {
+        // abortRun should not throw
+        expect(() => abortRun()).not.toThrow();
 
-      // Give fire-and-forget async operation time to complete
-      await new Promise((resolve) => setTimeout(resolve, 50));
+        await vi.runAllTimersAsync();
+      } finally {
+        vi.useRealTimers();
+      }
 
       // Verify abort event was posted
       expect(mockFetch).toHaveBeenCalledTimes(2);

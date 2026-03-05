@@ -1,6 +1,7 @@
 import type { Command } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type { AbortRunInput, AbortRunOutput } from '../types/abort-run';
+import { RUN_EVENT_ABORT } from '../types/abort-run';
 
 /**
  * AbortRunCommand implements the Command pattern to abort an active assessment run.
@@ -30,13 +31,13 @@ export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
   constructor(private api: RoarApi) {}
 
   /**
-   * Executes the abort run operation by posting an abort event to the backend.
+   * Executes the abort run operation by posting an event to the backend.
    *
-   * Sends a POST request to the `/v1/runs/{runId}/events` endpoint with an abort event.
-   * The operation is idempotent and safe to retry.
+   * Sends a POST request to the `/v1/runs/{runId}/events` endpoint with the event type
+   * specified in the input. The operation is idempotent and safe to retry.
    *
    * @param input - AbortRunInput containing the runId and event type
-   * @returns Promise<AbortRunOutput> - Resolves when the abort event is successfully posted
+   * @returns Promise<AbortRunOutput> - Resolves when the event is successfully posted
    *
    * @throws Error if the backend API request fails (non-2xx status or network error)
    *
@@ -48,7 +49,7 @@ export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
    */
   async execute(input: AbortRunInput): Promise<AbortRunOutput> {
     await this.api.postRunEvent(input.runId, {
-      type: 'abort',
+      type: RUN_EVENT_ABORT,
     });
   }
 }
