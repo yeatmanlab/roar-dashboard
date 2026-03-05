@@ -24,8 +24,118 @@ import type { CommandContext } from '../command/command';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
-    it('throws SdkError when called', () => {
-      expect(() => abortRun()).toThrow(SDKError);
+    let mockContext: CommandContext;
+
+    beforeEach(() => {
+      mockContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+      initFirekitCompat(mockContext);
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('returns immediately without error when no run is active', () => {
+      expect(() => abortRun()).not.toThrow();
+    });
+
+    it('posts abort event to backend when run is active', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'run-123' }),
+      });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      // Reset mock to track abort call separately
+      mockFetch.mockClear();
+      mockFetch.mockResolvedValue({ ok: true });
+
+      abortRun();
+
+      // Give fire-and-forget async operation time to complete
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(mockFetch).toHaveBeenCalled();
+      const call = mockFetch.mock.calls[0]!;
+      expect(call[0]).toContain('/v1/runs/run-123/events');
+      expect(call[1]?.method).toBe('POST');
+    });
+
+    it('handles API errors gracefully without throwing', async () => {
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ id: 'run-456' }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          text: async () => 'Internal Server Error',
+        });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      // abortRun should not throw even if API fails
+      expect(() => abortRun()).not.toThrow();
+    });
+
+    it('does not throw when run is active and API succeeds', async () => {
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ id: 'run-success' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+        });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      // abortRun should not throw
+      expect(() => abortRun()).not.toThrow();
+
+      // Give fire-and-forget async operation time to complete
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Verify abort event was posted
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      const abortCall = mockFetch.mock.calls[1]!;
+      expect(abortCall[0]).toContain('/v1/runs/run-success/events');
     });
 
     it('matches Firekit signature', () => {

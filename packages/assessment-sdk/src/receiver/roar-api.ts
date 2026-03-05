@@ -130,4 +130,46 @@ export class RoarApi {
 
     return { runId: (data as { id: string }).id };
   }
+
+  /**
+   * Posts an event to an active assessment run.
+   *
+   * This method sends a POST request to the backend API to record an event for a specific run.
+   * Events can include abort signals, trial data, engagement flags, and other run-related updates.
+   *
+   * Request body structure:
+   * - type: The event type (e.g., 'abort', 'trial', 'engagement')
+   * - Additional fields depend on the event type
+   *
+   * Response validation:
+   * - Validates HTTP status is 2xx (res.ok)
+   * - No response body parsing required
+   *
+   * @param runId - The unique identifier of the run to post the event to
+   * @param body - The event payload object containing type and event-specific data
+   *
+   * @returns Promise<void> - Resolves when the event is successfully posted
+   *
+   * @throws Error if:
+   *   - HTTP request fails (non-2xx status)
+   *   - Network error occurs during the request
+   *
+   * @example
+   * ```ts
+   * const api = new RoarApi(context);
+   * await api.postRunEvent('run-123', { type: 'abort' });
+   * ```
+   */
+  async postRunEvent(runId: string, body: unknown): Promise<void> {
+    const res = await this.request(`/v1/runs/${runId}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`postRunEvent failed (${res.status}): ${text}`);
+    }
+  }
 }
