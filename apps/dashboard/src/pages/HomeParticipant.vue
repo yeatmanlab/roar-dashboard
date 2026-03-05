@@ -413,38 +413,14 @@ const studentInfo = computed(() => {
   };
 });
 
-watch(
-  [userData, selectedAdmin, userAssignments],
-  async ([newUserData, isSelectedAdminChanged]) => {
-    // If the assignments are still loading, abort.
-    if (isLoadingAssignments.value || isFetchingAssignments.value || !userAssignments.value?.length) return;
-
-    // If the selected admin changed, ensure consent was given before proceeding.
-    if (!_isEmpty(newUserData) && isSelectedAdminChanged) {
-      showConsent.value = false;
-      await checkConsent();
-    }
-
-    const selectedAdminId = selectedAdmin.value?.id;
-
-    const allAdminIds = userAssignments.value?.map((administration) => administration.id) ?? [];
-
-    // Verify that we have a selected administration and it is in the list of all assigned administrations.
-    if (selectedAdminId && allAdminIds.includes(selectedAdminId)) {
-      // Ensure that the selected administration is a fresh instance of the administration. Whilst this seems redundant,
-      // this is apparently relevant in the case that the game store does not flush properly.
-      selectedAdmin.value = sortedUserAdministrations.value.find(
-        (administration) => administration.id === selectedAdminId,
-      );
-
-      return;
-    }
-
-    // Otherwise, choose the first sorted administration if there is no selected administration.
-    selectedAdmin.value = sortedUserAdministrations.value[0];
-  },
-  { immediate: true },
-);
+// Watch for consent requirements when administration changes
+watch([userData, selectedAdmin], async ([newUserData, isSelectedAdminChanged]) => {
+  // If the selected admin changed, ensure consent was given before proceeding.
+  if (!_isEmpty(newUserData) && isSelectedAdminChanged && selectedAdmin.value) {
+    showConsent.value = false;
+    await checkConsent();
+  }
+});
 </script>
 <style scoped>
 .tabs-container {
