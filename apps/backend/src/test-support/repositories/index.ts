@@ -4,15 +4,16 @@ export {
   createMockTaskVariantParameterRepository,
   MockTaskVariantParameterRepository,
 } from './task-variant-parameter.repository';
-export {
-  createMockRunsRepository as createMockRunRepository,
-  MockRunsRepository as MockRunRepository,
-} from './runs.repository';
+export { createMockRunRepository, MockRunRepository } from './run.repository';
 export { createMockRunTrialRepository, MockRunTrialRepository } from './run-trials.repository';
 export {
   createMockRunTrialInteractionsRepository,
   MockRunTrialInteractionsRepository,
 } from './run-trial-interactions.repository';
+export {
+  createMockAdministrationAccessControls,
+  MockAdministrationAccessControls,
+} from './administration-access-controls.repository';
 export { createMockAdministrationRepository, MockAdministrationRepository } from './administration.repository';
 export {
   createMockAdministrationTaskVariantRepository,

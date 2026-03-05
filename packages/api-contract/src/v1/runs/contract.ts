@@ -42,6 +42,7 @@ export const RunsContract = c.router(
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -51,7 +52,8 @@ export const RunsContract = c.router(
         'Supports four event types: complete (marks run as finished), abort (marks run as aborted), ' +
         'trial (records a trial with optional interactions), and engagement (updates reliability flags). ' +
         'Returns 404 if the run does not exist. ' +
-        'Returns 403 if the authenticated user does not own the run.',
+        'Returns 403 if the authenticated user does not own the run. ' +
+        'Returns 409 if the run is already in a terminal state (completed or aborted).',
     },
   },
   { pathPrefix: '/runs' },

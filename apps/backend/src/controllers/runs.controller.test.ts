@@ -8,13 +8,13 @@ vi.mock('../services/run/run.service', () => ({
   RunService: vi.fn(),
 }));
 
-// Mock the RunEventsService module
-vi.mock('../services/run/run-events.service', () => ({
-  RunEventsService: vi.fn(),
+// Mock the RunEventService module
+vi.mock('../services/run-event/run-event.service', () => ({
+  RunEventService: vi.fn(),
 }));
 
 import { RunService } from '../services/run/run.service';
-import { RunEventsService } from '../services/run/run-events.service';
+import { RunEventService } from '../services/run-event/run-event.service';
 
 /**
  * RunsController Tests
@@ -43,22 +43,13 @@ describe('RunsController', () => {
       create: mockCreate,
     });
 
-    // Setup the mock RunEventsService
-    vi.mocked(RunEventsService).mockReturnValue({
+    // Setup the mock RunEventService
+    vi.mocked(RunEventService).mockReturnValue({
       completeRun: mockCompleteRun,
       abortRun: vi.fn(),
       writeTrial: vi.fn(),
       updateEngagement: vi.fn(),
     });
-  });
-
-  it('should export RunsController with create method', async () => {
-    const { RunsController } = await import('./runs.controller');
-
-    expect(RunsController).toBeDefined();
-    expect(RunsController.create).toBeDefined();
-    expect(RunsController.event).toBeDefined();
-    expect(typeof RunsController.create).toBe('function');
   });
 
   describe('create', () => {
@@ -272,7 +263,7 @@ describe('RunsController', () => {
 
     it('should handle abort event type', async () => {
       const mockAbortRun = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(RunEventsService).mockReturnValue({
+      vi.mocked(RunEventService).mockReturnValue({
         completeRun: vi.fn(),
         abortRun: mockAbortRun,
         writeTrial: vi.fn(),
@@ -290,7 +281,7 @@ describe('RunsController', () => {
 
     it('should handle trial event type', async () => {
       const mockWriteTrial = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(RunEventsService).mockReturnValue({
+      vi.mocked(RunEventService).mockReturnValue({
         completeRun: vi.fn(),
         abortRun: vi.fn(),
         writeTrial: mockWriteTrial,
@@ -311,7 +302,7 @@ describe('RunsController', () => {
 
     it('should handle engagement event type', async () => {
       const mockUpdateEngagement = vi.fn().mockResolvedValue(undefined);
-      vi.mocked(RunEventsService).mockReturnValue({
+      vi.mocked(RunEventService).mockReturnValue({
         completeRun: vi.fn(),
         abortRun: vi.fn(),
         writeTrial: vi.fn(),

@@ -1,5 +1,5 @@
 /**
- * Integration tests for RunsRepository.
+ * Integration tests for RunRepository.
  *
  * Tests the `getRunStatsByAdministrationIds` method against the real
  * assessment database. Uses RunFactory to create test runs.
@@ -12,13 +12,38 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { faker } from '@faker-js/faker';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
-import { RunsRepository } from './runs.repository';
+import { RunRepository } from './run.repository';
 
-describe('RunsRepository', () => {
-  let repository: RunsRepository;
+describe('RunRepository', () => {
+  let repository: RunRepository;
 
   beforeAll(() => {
-    repository = new RunsRepository();
+    repository = new RunRepository();
+  });
+
+  describe('getById', () => {
+    it('returns the run when it exists and is not soft-deleted', async () => {
+      const run = await RunFactory.create();
+
+      const result = await repository.getById({ id: run.id });
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(run.id);
+    });
+
+    it('returns null when the run is soft-deleted', async () => {
+      const run = await RunFactory.create({ deletedAt: new Date(), deletedBy: faker.string.uuid() });
+
+      const result = await repository.getById({ id: run.id });
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when the run does not exist', async () => {
+      const result = await repository.getById({ id: faker.string.uuid() });
+
+      expect(result).toBeNull();
+    });
   });
 
   describe('getRunStatsByAdministrationIds', () => {
@@ -100,6 +125,31 @@ describe('RunsRepository', () => {
       expect(stats!.completed).toBe(0);
     });
 
+    it('excludes soft-deleted runs from stats', async () => {
+      const administrationId = faker.string.uuid();
+      const user1 = faker.string.uuid();
+      const user2 = faker.string.uuid();
+
+      // user1: active completed run
+      await RunFactory.create({ userId: user1, administrationId, completedAt: new Date() });
+
+      // user2: soft-deleted run (should be excluded)
+      await RunFactory.create({
+        userId: user2,
+        administrationId,
+        completedAt: new Date(),
+        deletedAt: new Date(),
+        deletedBy: faker.string.uuid(),
+      });
+
+      const result = await repository.getRunStatsByAdministrationIds([administrationId]);
+
+      const stats = result.get(administrationId);
+      expect(stats).toBeDefined();
+      expect(stats!.started).toBe(1);
+      expect(stats!.completed).toBe(1);
+    });
+
     it('counts distinct users (multiple runs per user count as one)', async () => {
       const administrationId = faker.string.uuid();
       const userId = faker.string.uuid();
@@ -134,6 +184,16 @@ describe('RunsRepository', () => {
 
     it('returns null when no runs exist for the administration', async () => {
       const administrationId = faker.string.uuid();
+
+      const result = await repository.getByAdministrationId(administrationId);
+
+      expect(result).toBeNull();
+    });
+
+    it('excludes soft-deleted runs', async () => {
+      const administrationId = faker.string.uuid();
+
+      await RunFactory.create({ administrationId, deletedAt: new Date(), deletedBy: faker.string.uuid() });
 
       const result = await repository.getByAdministrationId(administrationId);
 

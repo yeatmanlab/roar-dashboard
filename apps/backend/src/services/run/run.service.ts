@@ -4,7 +4,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
-import { RunsRepository } from '../../repositories/runs.repository';
+import { RunRepository } from '../../repositories/run.repository';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
 import { AdministrationService } from '../administration/administration.service';
 import type { NewRun } from '../../db/schema';
@@ -22,19 +22,19 @@ import { type UserRole as UserRoleType } from '../../enums/user-role.enum';
  * Supports dependency injection for testing and flexibility.
  *
  * @param options - Configuration options for the service
- * @param options.runsRepository - Repository for run data access (default: new RunsRepository())
+ * @param options.runRepository - Repository for run data access (default: new RunRepository())
  * @param options.administrationService - Service for administration operations (default: AdministrationService())
  * @param options.taskVariantRepository - Repository for task variant data access (default: new TaskVariantRepository())
  * @param options.administrationAccessControls - Access control service for authorization (default: new AdministrationAccessControls())
  * @returns Object with create method for creating new runs
  */
 export function RunService({
-  runsRepository = new RunsRepository(),
+  runRepository = new RunRepository(),
   administrationService = AdministrationService(),
   taskVariantRepository = new TaskVariantRepository(),
   administrationAccessControls = new AdministrationAccessControls(),
 }: {
-  runsRepository?: RunsRepository;
+  runRepository?: RunRepository;
   administrationService?: ReturnType<typeof AdministrationService>;
   taskVariantRepository?: TaskVariantRepository;
   administrationAccessControls?: AdministrationAccessControls;
@@ -60,7 +60,7 @@ export function RunService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      await administrationService.verifyAdministrationAccess({ userId, isSuperAdmin }, body.administrationId);
+      await administrationService.verifyAdministrationAccess(authContext, body.administrationId);
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.statusCode === StatusCodes.NOT_FOUND) {
@@ -123,7 +123,7 @@ export function RunService({
         ...(body.metadata ? { metadata: body.metadata } : {}),
       };
 
-      const run = await runsRepository.create({ data });
+      const run = await runRepository.create({ data });
 
       return { id: run.id };
     } catch (error) {
