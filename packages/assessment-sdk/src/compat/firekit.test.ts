@@ -78,14 +78,30 @@ describe('firekit compat', () => {
       await expect(startRun()).rejects.toThrow('appkit.startRun requires administrationId when isAnonymous is false.');
     });
 
-    it('successfully starts an anonymous run', async () => {
+    it('resets state on re-initialization', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ runId: 'run-123' }),
+      });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
       _setTaskInfoForCompat({
         variantId: 'variant-123',
         version: '1.0.0',
         isAnonymous: true,
       });
 
-      // Mock the fetch to return a successful response
+      await startRun();
+      expect(_getRunIdForCompat()).toBe('run-123');
+
+      // Re-initialize should reset state
+      initFirekitCompat(mockContext);
+      expect(_getRunIdForCompat()).toBeUndefined();
+    });
+
+    it('successfully starts an anonymous run', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ runId: 'run-anon-123' }),
@@ -94,19 +110,18 @@ describe('firekit compat', () => {
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
       initFirekitCompat(mockContext);
 
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
       await startRun();
 
       expect(_getRunIdForCompat()).toBe('run-anon-123');
     });
 
     it('successfully starts a non-anonymous run with administrationId', async () => {
-      _setTaskInfoForCompat({
-        variantId: 'variant-123',
-        version: '1.0.0',
-        adminId: 'admin-456',
-        isAnonymous: false,
-      });
-
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ runId: 'run-non-anon-789' }),
@@ -115,18 +130,19 @@ describe('firekit compat', () => {
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
       initFirekitCompat(mockContext);
 
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        adminId: 'admin-456',
+        isAnonymous: false,
+      });
+
       await startRun();
 
       expect(_getRunIdForCompat()).toBe('run-non-anon-789');
     });
 
     it('includes additional metadata when provided', async () => {
-      _setTaskInfoForCompat({
-        variantId: 'variant-123',
-        version: '1.0.0',
-        isAnonymous: true,
-      });
-
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ runId: 'run-with-metadata' }),
@@ -135,10 +151,28 @@ describe('firekit compat', () => {
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
       initFirekitCompat(mockContext);
 
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
       const additionalMetadata = { customField: 'value', count: 42 };
       await startRun(additionalMetadata);
 
       expect(_getRunIdForCompat()).toBe('run-with-metadata');
+    });
+
+    it('throws SDKError when Firekit compat is not initialized', async () => {
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      // Don't call initFirekitCompat - simulate uninitialized state
+      // This will cause getCtx() to throw the proper error
+      await expect(startRun()).rejects.toBeInstanceOf(SDKError);
     });
 
     it('matches Firekit signature', () => {
