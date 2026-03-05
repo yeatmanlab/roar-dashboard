@@ -146,7 +146,22 @@ Dependencies: `@ts-rest/core`, `zod`.
 
 ### packages/assessment-sdk
 
-A client SDK for assessment operations. Depends on `api-contract` for shared types.
+A client SDK for assessment operations, structured around the GoF Command pattern. See [sdk-layer-architecture](rules/sdk-layer-architecture.md) for the full layer rules.
+
+**Three layers:**
+
+- **Receiver** (`src/receiver/roar-api.ts`) — thin ts-rest client wrapper. Exposes `api.client` (a typed ts-rest client initialized from `ApiContractV1`) with cross-cutting concerns (auth headers, tracing). No endpoint-specific methods — commands call `api.client.runs.create(...)`, `api.client.administrations.get(...)`, etc.
+- **Commands** (`src/commands/`) — each command owns request construction, response interpretation, and domain errors for a single operation. Commands call the Receiver's typed ts-rest client, never raw `fetch()`.
+- **Compat** (`src/compat/firekit.ts`) — legacy Firekit-compatible standalone functions (`startRun`, `writeTrial`, `finishRun`, `abortRun`). Internally creates commands and runs them via the Invoker.
+
+**Auth-provider-agnostic:** The SDK never loads Firebase or any auth library. It receives `getToken()` / `refreshToken()` callbacks and a `participantId` via `CommandContext`. The host application (dashboard or standalone assessment) handles authentication.
+
+**Key types:**
+
+- `CommandContext` — SDK configuration: environment, participantId, auth callbacks, optional logger
+- `Command<TInput, TOutput>` — interface for all commands (name, idempotent flag, execute method)
+- `Invoker` — runs commands with retry logic (retries only if `idempotent: true`)
+- `SDKError` — structured error type with a `code` field; always use instead of raw `Error`
 
 Dependencies: `@ts-rest/core`, `@roar-dashboard/api-contract`.
 
