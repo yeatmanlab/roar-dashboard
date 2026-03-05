@@ -9,8 +9,8 @@ import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import { AdministrationRepository } from '../../repositories/administration.repository';
 import { RunsRepository } from '../../repositories/runs.repository';
+import { AdministrationService } from '../administration/administration.service';
 
 /**
  * Options for listing districts
@@ -54,12 +54,12 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
  */
 export function DistrictService({
   districtRepository = new DistrictRepository(),
-  administrationRepository = new AdministrationRepository(),
   runsRepository = new RunsRepository(),
+  administrationService = AdministrationService(),
 }: {
   districtRepository?: DistrictRepository;
-  administrationRepository?: AdministrationRepository;
   runsRepository?: RunsRepository;
+  administrationService?: ReturnType<typeof AdministrationService>;
 } = {}) {
   /**
    * Verify that a district exists and the user has access to it.
@@ -230,10 +230,20 @@ export function DistrictService({
     authContext: AuthContext,
     options: GetAdministrationStatsOptions = {},
   ) {
+    const { userId } = authContext;
     // 1. Ensure user has access to the district.
-    const district = verifyDistrictAccess(districtId, authContext);
-    // 2. Validate that the administration is visible to the user per the org hierarchy rules
-    // 3. Fetch the administration stats
+    await verifyDistrictAccess(districtId, authContext);
+
+    // 2. Retrieve the administration stats
+    const administrationStats = await administrationService.fetchStatsByTask(
+      authContext,
+      administrationId,
+      'district',
+      districtId,
+      options.taskId,
+    );
+
+    return;
   }
 
   return {

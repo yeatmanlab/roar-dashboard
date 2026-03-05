@@ -27,7 +27,7 @@ import {
   AdministrationTaskVariantRepository,
   type AdministrationTask,
 } from '../../repositories/administration-task-variant.repository';
-import { RunsRepository } from '../../repositories/runs.repository';
+import { RunsRepository, type AdministrationTaskRunStats } from '../../repositories/runs.repository';
 import type { AuthContext } from '../../types/auth-context';
 
 /**
@@ -260,6 +260,51 @@ export function AdministrationService({
       });
     }
     return statsMap;
+  }
+
+  /**
+   * Fetch stats for an administration scoped to a specific organization. When taskId is provided, only stats for that task are returned.
+   * Otherwise, stats for all tasks are returned.
+   *
+   * @param authContext - User's auth context (id and type)
+   * @param administrationId - The administration ID to get stats for
+   * @param orgType - The type of org to list (district or school)
+   * @param orgId - The ID of the org to get stats for
+   * @param taskId - The task ID to get stats for (optional)
+   * @returns
+   */
+  async function fetchStatsByTask(
+    authContext: AuthContext,
+    administrationId: string,
+    orgType: 'district' | 'school' | 'class' | 'group',
+    orgId: string,
+    taskId?: string,
+  ) {
+    const { userId } = authContext;
+    // 1. Ensure user has access to this administration
+    verifyAdministrationAccess(authContext, administrationId);
+
+    // 2. Gather administration-level stats
+    const administrationStats = await fetchStatsEmbed([administrationId], userId);
+
+    // 3. Gather task-level stats if taskId is provided
+    let statsByTask: Map<string, AdministrationTaskRunStats>;
+    if (taskId) {
+      // Get run stats for the specific task
+      statsByTask = await runsRepository.getRunStatsByAdministrationTaskIds(administrationId, orgId, orgType, [taskId]);
+    } else {
+      // Get list of taskIds for this administration
+      const tasks = await administrationTaskVariantRepository.getByAdministrationIds([administrationId]);
+      const taskIds = tasks.get(administrationId)?.map((t) => t.taskId) ?? [];
+
+      // Get run stats for each task
+      statsByTask = await runsRepository.getRunStatsByAdministrationTaskIds(administrationId, orgId, orgType, taskIds);
+    }
+
+    // TODO: function returns the completed and started counts for each task, but we also need to
+    //  retrieve and embed the number of users assigned to each task.
+
+    return { administrationStats, statsByTask };
   }
 
   /**
@@ -613,5 +658,5 @@ export function AdministrationService({
     }
   }
 
-  return { list, getById, listDistricts, listSchools, listClasses, listGroups };
+  return { list, getById, listDistricts, listSchools, listClasses, listGroups, fetchStatsByTask };
 }
