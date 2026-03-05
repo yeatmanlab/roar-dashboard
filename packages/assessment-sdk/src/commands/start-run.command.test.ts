@@ -21,7 +21,6 @@ describe('StartRunCommand', () => {
 
   it('calls api.createRun and returns result (anonymous)', async () => {
     const input: StartRunInput = {
-      type: 'start',
       variantId: 'variant-123',
       taskVersion: '1.0.0',
       isAnonymous: true,
@@ -39,7 +38,6 @@ describe('StartRunCommand', () => {
 
   it('calls api.createRun and returns result (non-anonymous)', async () => {
     const input: StartRunInput = {
-      type: 'start',
       variantId: 'variant-123',
       taskVersion: '1.0.0',
       isAnonymous: false,
@@ -58,7 +56,6 @@ describe('StartRunCommand', () => {
 
   it('propagates errors from api.createRun', async () => {
     const input: StartRunInput = {
-      type: 'start',
       variantId: 'variant-123',
       taskVersion: '1.0.0',
       isAnonymous: true,

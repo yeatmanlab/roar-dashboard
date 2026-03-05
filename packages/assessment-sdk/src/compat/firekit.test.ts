@@ -81,7 +81,7 @@ describe('firekit compat', () => {
     it('resets state on re-initialization', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ runId: 'run-123' }),
+        json: async () => ({ id: 'run-123' }),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -104,7 +104,7 @@ describe('firekit compat', () => {
     it('successfully starts an anonymous run', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ runId: 'run-anon-123' }),
+        json: async () => ({ id: 'run-anon-123' }),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -124,7 +124,7 @@ describe('firekit compat', () => {
     it('successfully starts a non-anonymous run with administrationId', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ runId: 'run-non-anon-789' }),
+        json: async () => ({ id: 'run-non-anon-789' }),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -145,7 +145,7 @@ describe('firekit compat', () => {
     it('includes additional metadata when provided', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ runId: 'run-with-metadata' }),
+        json: async () => ({ id: 'run-with-metadata' }),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;

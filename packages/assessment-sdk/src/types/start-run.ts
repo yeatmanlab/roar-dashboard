@@ -13,7 +13,6 @@
  * ```ts
  * // Anonymous run - administrationId not allowed
  * const anonInput: StartRunInput = {
- *   type: 'start',
  *   variantId: 'variant-123',
  *   taskVersion: '1.0.0',
  *   isAnonymous: true,
@@ -22,7 +21,6 @@
  *
  * // Authenticated run - administrationId required
  * const authInput: StartRunInput = {
- *   type: 'start',
  *   variantId: 'variant-123',
  *   taskVersion: '1.0.0',
  *   isAnonymous: false,
@@ -32,7 +30,6 @@
  */
 export type StartRunInput =
   | {
-      type: 'start';
       variantId: string;
       taskVersion: string;
       metadata?: Record<string, unknown>;
@@ -40,7 +37,6 @@ export type StartRunInput =
       administrationId?: never; // not allowed when anonymous
     }
   | {
-      type: 'start';
       variantId: string;
       taskVersion: string;
       metadata?: Record<string, unknown>;
