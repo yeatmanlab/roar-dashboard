@@ -70,12 +70,35 @@ export class RunsRepository {
     return statsMap;
   }
 
-  // TODO: Create new function that takes a admin id and array of tasks,
-  //       and returns a map of task id to run stats.
-  // async getRunStatsByAdministrationTaskIds(
-  //   administrationId: string,
-  //   taskIds: string[],
-  // ): Promise<Map<string, AdministrationTaskRunStats>> {
-  //   return {};
-  // }
+  /**
+   * This function returns run statistics for a given task, scoped to a specific organization and administration.
+   *
+   * @param administrationId - Administration ID to get run stats for
+   * @param orgId - Organization ID to get run stats for
+   * @param orgType - Organization type ('district' | 'school' | 'class' | 'group' | 'family')
+   * @param taskId - Task ID to get run stats for
+   * @returns
+   */
+  async getRunStatsByAdministrationTaskIds(
+    administrationId: string,
+    orgId: string,
+    orgType: 'district' | 'school' | 'class' | 'group' | 'family',
+    taskIds: string[],
+  ): Promise<Map<string, AdministrationTaskRunStats>> {
+    if (!taskIds.length) {
+      return new Map();
+    }
+
+    const taskLevelStats = new Map<string, AdministrationTaskRunStats>();
+    // Retrieve run statistics
+    if (orgType === 'district' || orgType === 'school') {
+      // Retrieve runs joined with user_orgs table and filter by orgId and administrationId
+    } else if (orgType === 'class') {
+      // Retrieve runs joined with user_classes table and filter by orgId and administrationId
+    } else if (orgType === 'group') {
+      // Retrieve runs joined with user_groups table and filter by orgId and administrationId
+    }
+
+    return taskLevelStats;
+  }
 }
