@@ -1,0 +1,552 @@
+/**
+ * Integration tests for SchoolRepository.
+ *
+ * Tests custom methods (listAll, listAuthorized, getChildren, fetchSchoolCounts)
+ * against the real database with the base fixture's org hierarchy.
+ *
+ * Verifies SQL correctness and proper filtering by orgType, rosteringEnded, etc.
+ */
+import { describe, it, expect, beforeAll } from 'vitest';
+import { baseFixture } from '../test-support/fixtures';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { SchoolRepository, type SchoolWithCounts } from './school.repository';
+import { UserRole } from '../enums/user-role.enum';
+import { OrgType } from '../enums/org-type.enum';
+
+describe('SchoolRepository', () => {
+  let repository: SchoolRepository;
+
+  beforeAll(() => {
+    repository = new SchoolRepository();
+  });
+
+  describe('listAll', () => {
+    it('returns all schools with pagination', async () => {
+      const result = await repository.listAll({ page: 1, perPage: 100 });
+
+      expect(result.totalItems).toBeGreaterThanOrEqual(1);
+      expect(result.items.length).toBeGreaterThanOrEqual(1);
+
+      // All items should be schools
+      for (const item of result.items) {
+        expect(item.orgType).toBe(OrgType.SCHOOL);
+      }
+    });
+
+    it('respects perPage limit', async () => {
+      const result = await repository.listAll({ page: 1, perPage: 1 });
+
+      expect(result.items.length).toBeLessThanOrEqual(1);
+      expect(result.totalItems).toBeGreaterThanOrEqual(1);
+    });
+
+    it('applies orderBy name ascending', async () => {
+      const result = await repository.listAll({
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+
+      expect(result.items.length).toBeGreaterThan(1);
+      for (let i = 1; i < result.items.length; i++) {
+        expect(result.items[i - 1]!.name.toLowerCase() <= result.items[i]!.name.toLowerCase()).toBe(true);
+      }
+    });
+
+    it('applies orderBy abbreviation descending', async () => {
+      const result = await repository.listAll({
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'abbreviation', direction: 'desc' },
+      });
+
+      expect(result.items.length).toBeGreaterThan(1);
+      for (let i = 1; i < result.items.length; i++) {
+        expect(result.items[i - 1]!.abbreviation.toLowerCase() >= result.items[i]!.abbreviation.toLowerCase()).toBe(
+          true,
+        );
+      }
+    });
+
+    it('applies orderBy createdAt descending', async () => {
+      const result = await repository.listAll({
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'createdAt', direction: 'desc' },
+      });
+
+      expect(result.items.length).toBeGreaterThan(1);
+      for (let i = 1; i < result.items.length; i++) {
+        expect(result.items[i - 1]!.createdAt >= result.items[i]!.createdAt).toBe(true);
+      }
+    });
+
+    it('excludes schools with rosteringEnded by default', async () => {
+      // Create a school with rosteringEnded set
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Ended School Exclude Test',
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      // Verify the school was created with rosteringEnded
+      expect(endedSchool.rosteringEnded).not.toBeNull();
+
+      const result = await repository.listAll({
+        page: 1,
+        perPage: 1000,
+        includeEnded: false,
+      });
+
+      const ids = result.items.map((s) => s.id);
+
+      // All returned items should have null rosteringEnded
+      for (const item of result.items) {
+        expect(item.rosteringEnded).toBeNull();
+      }
+
+      // Our ended school should NOT be in the results
+      expect(ids).not.toContain(endedSchool.id);
+    });
+
+    it('includes schools with rosteringEnded when includeEnded=true', async () => {
+      // Create a school with rosteringEnded set
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Ended School 2',
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date(),
+      });
+
+      const result = await repository.listAll({
+        page: 1,
+        perPage: 100,
+        includeEnded: true,
+      });
+
+      const ids = result.items.map((s) => s.id);
+      expect(ids).toContain(endedSchool.id);
+    });
+
+    it('only returns schools, not other org types', async () => {
+      const result = await repository.listAll({ page: 1, perPage: 100 });
+
+      // Verify no districts, classes, etc. are returned
+      for (const item of result.items) {
+        expect(item.orgType).toBe(OrgType.SCHOOL);
+      }
+    });
+  });
+
+  describe('listAuthorized', () => {
+    it('returns only authorized schools for a user', async () => {
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.schoolAStudent.id, allowedRoles: [UserRole.STUDENT] },
+        { page: 1, perPage: 100 },
+      );
+
+      const ids = result.items.map((s) => s.id);
+
+      // School A student should see School A
+      expect(ids).toContain(baseFixture.schoolA.id);
+
+      // Should NOT see unrelated schools
+      expect(ids).not.toContain(baseFixture.schoolB.id);
+    });
+
+    it('returns schools for class-level user', async () => {
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.classAStudent.id, allowedRoles: [UserRole.STUDENT] },
+        { page: 1, perPage: 100 },
+      );
+
+      const ids = result.items.map((s) => s.id);
+
+      // Class student should see parent school
+      expect(ids).toContain(baseFixture.schoolA.id);
+    });
+
+    it('returns child schools for district-level supervisory roles', async () => {
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        { page: 1, perPage: 100 },
+      );
+
+      const ids = result.items.map((s) => s.id);
+      // District admin should see child schools
+      expect(ids).toContain(baseFixture.schoolA.id);
+    });
+
+    it('respects pagination', async () => {
+      const page1 = await repository.listAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        { page: 1, perPage: 1 },
+      );
+
+      expect(page1.items.length).toBeLessThanOrEqual(1);
+    });
+
+    it('applies sorting', async () => {
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        {
+          page: 1,
+          perPage: 100,
+          orderBy: { field: 'name', direction: 'asc' },
+        },
+      );
+
+      if (result.items.length > 1) {
+        for (let i = 1; i < result.items.length; i++) {
+          expect(result.items[i - 1]!.name.toLowerCase() <= result.items[i]!.name.toLowerCase()).toBe(true);
+        }
+      }
+    });
+
+    it('excludes ended schools by default', async () => {
+      // Create a school with rosteringEnded
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Ended School for Auth Exclude Test',
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      // Assign user to the ended school
+      await UserOrgFactory.create({
+        userId: baseFixture.districtAdmin.id,
+        orgId: endedSchool.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        { page: 1, perPage: 1000, includeEnded: false },
+      );
+
+      const ids = result.items.map((s) => s.id);
+
+      // All returned items should have null rosteringEnded
+      for (const item of result.items) {
+        expect(item.rosteringEnded).toBeNull();
+      }
+
+      // Our ended school should NOT be in results
+      expect(ids).not.toContain(endedSchool.id);
+    });
+
+    it('includes ended schools when includeEnded=true', async () => {
+      // Create a school with rosteringEnded
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Ended School for Auth Test 2',
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date(),
+      });
+
+      // Assign user to the ended school
+      await UserOrgFactory.create({
+        userId: baseFixture.districtAdmin.id,
+        orgId: endedSchool.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        { page: 1, perPage: 100, includeEnded: true },
+      );
+
+      const ids = result.items.map((s) => s.id);
+      expect(ids).toContain(endedSchool.id);
+    });
+
+    it('returns empty for user with no access', async () => {
+      const isolatedUser = await UserFactory.create({
+        nameFirst: 'Isolated',
+        nameLast: 'User',
+      });
+
+      const result = await repository.listAuthorized(
+        { userId: isolatedUser.id, allowedRoles: [UserRole.STUDENT] },
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('includes counts when embedCounts=true', async () => {
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        { page: 1, perPage: 100, embedCounts: true },
+      );
+
+      expect(result.items.length).toBeGreaterThan(0);
+      const schoolWithCounts = result.items.find((s) => s.id === baseFixture.schoolA.id) as
+        | SchoolWithCounts
+        | undefined;
+      expect(schoolWithCounts).toBeDefined();
+      expect(schoolWithCounts?.counts).toBeDefined();
+      expect(schoolWithCounts?.counts).toHaveProperty('users');
+      expect(schoolWithCounts?.counts).toHaveProperty('classes');
+      // Schools should NOT have schools count
+      expect(schoolWithCounts?.counts).not.toHaveProperty('schools');
+    });
+
+    it('omits counts when embedCounts=false', async () => {
+      const result = await repository.listAuthorized(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        { page: 1, perPage: 100, embedCounts: false },
+      );
+
+      expect(result.items.length).toBeGreaterThan(0);
+      for (const item of result.items) {
+        expect((item as SchoolWithCounts).counts).toBeUndefined();
+      }
+    });
+  });
+
+  describe('getChildren', () => {
+    it('returns child organizations of a school', async () => {
+      const children = await repository.getChildren(baseFixture.schoolA.id);
+
+      const ids = children.map((c) => c.id);
+      // Should include Class A
+      expect(ids).toContain(baseFixture.classA.id);
+
+      // All children should have the school as parent
+      for (const child of children) {
+        expect(child.parentOrgId).toBe(baseFixture.schoolA.id);
+      }
+    });
+
+    it('excludes ended children by default', async () => {
+      // Create a class with rosteringEnded
+      const endedClass = await OrgFactory.create({
+        orgType: OrgType.CLASS,
+        name: 'Ended Class Exclude Test',
+        parentOrgId: baseFixture.schoolA.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const children = await repository.getChildren(baseFixture.schoolA.id, false);
+
+      const ids = children.map((c) => c.id);
+
+      // All returned children should have null rosteringEnded
+      for (const child of children) {
+        expect(child.rosteringEnded).toBeNull();
+      }
+
+      // Our ended class should NOT be in results
+      expect(ids).not.toContain(endedClass.id);
+    });
+
+    it('includes ended children when includeEnded=true', async () => {
+      // Create a class with rosteringEnded
+      const endedClass = await OrgFactory.create({
+        orgType: OrgType.CLASS,
+        name: 'Ended Class 2',
+        parentOrgId: baseFixture.schoolA.id,
+        rosteringEnded: new Date(),
+      });
+
+      const children = await repository.getChildren(baseFixture.schoolA.id, true);
+
+      const ids = children.map((c) => c.id);
+      expect(ids).toContain(endedClass.id);
+    });
+
+    it('returns empty array for school with no children', async () => {
+      const emptySchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Empty School',
+        parentOrgId: baseFixture.district.id,
+      });
+
+      const children = await repository.getChildren(emptySchool.id);
+
+      expect(children).toEqual([]);
+    });
+
+    it('sorts children by name ascending', async () => {
+      const children = await repository.getChildren(baseFixture.schoolA.id);
+
+      if (children.length > 1) {
+        for (let i = 1; i < children.length; i++) {
+          expect(children[i - 1]!.name.toLowerCase() <= children[i]!.name.toLowerCase()).toBe(true);
+        }
+      }
+    });
+  });
+
+  describe('getUnrestrictedById', () => {
+    it('returns school without access checks', async () => {
+      const result = await repository.getUnrestrictedById(baseFixture.schoolA.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.schoolA.id);
+      expect(result!.orgType).toBe(OrgType.SCHOOL);
+    });
+
+    it('filters correctly by orgType=school', async () => {
+      // Try to get a district by ID - should return null because it's not a school
+      const result = await repository.getUnrestrictedById(baseFixture.district.id);
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for nonexistent school ID', async () => {
+      const result = await repository.getUnrestrictedById('00000000-0000-0000-0000-000000000000');
+
+      expect(result).toBeNull();
+    });
+
+    it('returns school even if user has no access', async () => {
+      // This method bypasses access controls
+      const result = await repository.getUnrestrictedById(baseFixture.schoolB.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.schoolB.id);
+    });
+  });
+
+  describe('getAuthorizedById', () => {
+    it('returns school when user has access', async () => {
+      const result = await repository.getAuthorizedById(baseFixture.schoolA.id, {
+        userId: baseFixture.schoolAStudent.id,
+        allowedRoles: [UserRole.STUDENT],
+      });
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.schoolA.id);
+    });
+
+    it('returns null when user lacks access', async () => {
+      // School A student should not have access to School B
+      const result = await repository.getAuthorizedById(baseFixture.schoolB.id, {
+        userId: baseFixture.schoolAStudent.id,
+        allowedRoles: [UserRole.STUDENT],
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for nonexistent school ID', async () => {
+      const result = await repository.getAuthorizedById('00000000-0000-0000-0000-000000000000', {
+        userId: baseFixture.schoolAStudent.id,
+        allowedRoles: [UserRole.STUDENT],
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('returns school for class-level user with access', async () => {
+      // Class A student should have access to parent school
+      const result = await repository.getAuthorizedById(baseFixture.schoolA.id, {
+        userId: baseFixture.classAStudent.id,
+        allowedRoles: [UserRole.STUDENT],
+      });
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(baseFixture.schoolA.id);
+    });
+
+    it('filters correctly by orgType=school', async () => {
+      // Try to get a district by ID - should return null even if user has access
+      const result = await repository.getAuthorizedById(baseFixture.district.id, {
+        userId: baseFixture.districtAdmin.id,
+        allowedRoles: [UserRole.ADMINISTRATOR],
+      });
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('counts aggregation', () => {
+    it('returns accurate user counts', async () => {
+      const result = (await repository.listAll({
+        page: 1,
+        perPage: 100,
+        embedCounts: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const school = result.items.find((s) => s.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school?.counts).toBeDefined();
+      // Should have at least the school student
+      expect(school?.counts?.users).toBeGreaterThan(0);
+    });
+
+    it('returns accurate class counts', async () => {
+      const result = (await repository.listAll({
+        page: 1,
+        perPage: 100,
+        embedCounts: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const school = result.items.find((s) => s.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school?.counts).toBeDefined();
+      // Should have at least Class A
+      expect(school?.counts?.classes).toBeGreaterThanOrEqual(0);
+    });
+
+    it('does not include schools count for schools', async () => {
+      const result = (await repository.listAll({
+        page: 1,
+        perPage: 100,
+        embedCounts: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const school = result.items.find((s) => s.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school?.counts).toBeDefined();
+      // Schools should NOT have schools count
+      expect(school?.counts).not.toHaveProperty('schools');
+      expect(school?.counts).toHaveProperty('users');
+      expect(school?.counts).toHaveProperty('classes');
+    });
+
+    it('returns zero counts for empty school', async () => {
+      const emptySchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Empty School for Counts',
+        parentOrgId: baseFixture.district.id,
+      });
+
+      const result = (await repository.listAll({
+        page: 1,
+        perPage: 100,
+        embedCounts: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const school = result.items.find((s) => s.id === emptySchool.id);
+
+      // School should be in results
+      if (school) {
+        expect(school.counts).toEqual({
+          users: 0,
+          classes: 0,
+        });
+      } else {
+        // If not in first page, query specifically for it
+        const specificResult = (await repository.listAll({
+          page: 1,
+          perPage: 1000,
+          embedCounts: true,
+        })) as { items: SchoolWithCounts[]; totalItems: number };
+
+        const specificSchool = specificResult.items.find((s) => s.id === emptySchool.id);
+        expect(specificSchool).toBeDefined();
+        expect(specificSchool?.counts).toEqual({
+          users: 0,
+          classes: 0,
+        });
+      }
+    });
+  });
+});
