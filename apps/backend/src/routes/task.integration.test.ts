@@ -165,4 +165,249 @@ describe('POST /v1/tasks/:taskId/variants', () => {
       expect(second.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PATCH /v1/tasks/:taskId/variants/:variantId
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('PATCH /v1/tasks/:taskId/variants/:variantId', () => {
+    const taskId = () => baseFixture.task.id;
+    const variantId = () => baseFixture.variantForAllGrades.id;
+    const path = () => `/v1/tasks/${taskId()}/variants/${variantId()}`;
+
+    describe('authorization', () => {
+      it('superAdmin tier can update a task variant', async () => {
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated description' });
+
+        expect(res.status).toBe(StatusCodes.OK);
+        expect(res.body.data.success).toBe(true);
+      });
+
+      it('siteAdmin tier is forbidden from updating task variants', async () => {
+        authenticateAs(tiers.siteAdmin);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated description' });
+
+        expect(res.status).toBe(StatusCodes.FORBIDDEN);
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+
+      it('admin tier is forbidden from updating task variants', async () => {
+        authenticateAs(tiers.admin);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated description' });
+
+        expect(res.status).toBe(StatusCodes.FORBIDDEN);
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+
+      it('educator tier is forbidden from updating task variants', async () => {
+        authenticateAs(tiers.educator);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated description' });
+
+        expect(res.status).toBe(StatusCodes.FORBIDDEN);
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+
+      it('student tier is forbidden from updating task variants', async () => {
+        authenticateAs(tiers.student);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated description' });
+
+        expect(res.status).toBe(StatusCodes.FORBIDDEN);
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+
+      it('caregiver tier is forbidden from updating task variants', async () => {
+        authenticateAs(tiers.caregiver);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated description' });
+
+        expect(res.status).toBe(StatusCodes.FORBIDDEN);
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      });
+    });
+
+    describe('partial updates', () => {
+      it('can update only the name', async () => {
+        const uniqueName = `Updated Name ${Date.now()}`;
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ name: uniqueName });
+
+        expect(res.status).toBe(StatusCodes.OK);
+        expect(res.body.data.success).toBe(true);
+      });
+
+      it('can update only the description', async () => {
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Only description changed' });
+
+        expect(res.status).toBe(StatusCodes.OK);
+        expect(res.body.data.success).toBe(true);
+      });
+
+      it('can update only the status', async () => {
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ status: 'published' });
+
+        expect(res.status).toBe(StatusCodes.OK);
+        expect(res.body.data.success).toBe(true);
+      });
+
+      it('can update only the parameters', async () => {
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({ parameters: [{ name: 'newParam', value: 'newValue' }] });
+
+        expect(res.status).toBe(StatusCodes.OK);
+        expect(res.body.data.success).toBe(true);
+      });
+
+      it('can update multiple fields at once', async () => {
+        const uniqueName = `Multi Update ${Date.now()}`;
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app)
+          .patch(path())
+          .set('Authorization', 'Bearer token')
+          .send({
+            name: uniqueName,
+            description: 'Multi-field update',
+            status: 'published',
+            parameters: [{ name: 'multiParam', value: 'multiValue' }],
+          });
+
+        expect(res.status).toBe(StatusCodes.OK);
+        expect(res.body.data.success).toBe(true);
+      });
+    });
+
+    describe('error cases', () => {
+      it('returns 401 when unauthenticated', async () => {
+        const res = await expectRoute('PATCH', path()).unauthenticated().toReturn(401);
+
+        expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+      });
+
+      it('returns 404 when task does not exist', async () => {
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app)
+          .patch(`/v1/tasks/${faker.string.uuid()}/variants/${variantId()}`)
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated' });
+
+        expect(res.status).toBe(StatusCodes.NOT_FOUND);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 404 when variant does not exist', async () => {
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app)
+          .patch(`/v1/tasks/${taskId()}/variants/${faker.string.uuid()}`)
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Updated' });
+
+        expect(res.status).toBe(StatusCodes.NOT_FOUND);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 404 when variant exists but belongs to different task', async () => {
+        // Create a variant for the base task
+        authenticateAs(tiers.superAdmin);
+        const createRes = await request(app)
+          .post(`/v1/tasks/${taskId()}/variants`)
+          .set('Authorization', 'Bearer token')
+          .send(buildVariantBody());
+
+        expect(createRes.status).toBe(StatusCodes.CREATED);
+        const createdVariantId = createRes.body.data.id;
+
+        // Try to update it using a different task ID
+        authenticateAs(tiers.superAdmin);
+        const updateRes = await request(app)
+          .patch(`/v1/tasks/${faker.string.uuid()}/variants/${createdVariantId}`)
+          .set('Authorization', 'Bearer token')
+          .send({ description: 'Should fail' });
+
+        expect(updateRes.status).toBe(StatusCodes.NOT_FOUND);
+        expect(updateRes.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 409 when updating name to duplicate', async () => {
+        const duplicateName = `Duplicate Update ${Date.now()}`;
+
+        // Create first variant with unique name
+        authenticateAs(tiers.superAdmin);
+        const first = await request(app)
+          .post(`/v1/tasks/${taskId()}/variants`)
+          .set('Authorization', 'Bearer token')
+          .send(buildVariantBody({ name: duplicateName }));
+
+        expect(first.status).toBe(StatusCodes.CREATED);
+
+        // Create second variant with different name
+        authenticateAs(tiers.superAdmin);
+        const second = await request(app)
+          .post(`/v1/tasks/${taskId()}/variants`)
+          .set('Authorization', 'Bearer token')
+          .send(buildVariantBody());
+
+        expect(second.status).toBe(StatusCodes.CREATED);
+        const secondVariantId = second.body.data.id;
+
+        // Try to update second variant's name to duplicate first
+        authenticateAs(tiers.superAdmin);
+        const updateRes = await request(app)
+          .patch(`/v1/tasks/${taskId()}/variants/${secondVariantId}`)
+          .set('Authorization', 'Bearer token')
+          .send({ name: duplicateName });
+
+        expect(updateRes.status).toBe(StatusCodes.CONFLICT);
+        expect(updateRes.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+      });
+
+      it('allows updating name to same name (no-op)', async () => {
+        const originalName = `Same Name Update ${Date.now()}`;
+
+        // Create variant
+        authenticateAs(tiers.superAdmin);
+        const createRes = await request(app)
+          .post(`/v1/tasks/${taskId()}/variants`)
+          .set('Authorization', 'Bearer token')
+          .send(buildVariantBody({ name: originalName }));
+
+        expect(createRes.status).toBe(StatusCodes.CREATED);
+        const createdVariantId = createRes.body.data.id;
+
+        // Update to same name should succeed
+        authenticateAs(tiers.superAdmin);
+        const updateRes = await request(app)
+          .patch(`/v1/tasks/${taskId()}/variants/${createdVariantId}`)
+          .set('Authorization', 'Bearer token')
+          .send({ name: originalName });
+
+        expect(updateRes.status).toBe(StatusCodes.OK);
+        expect(updateRes.body.data.success).toBe(true);
+      });
+    });
+  });
 });
