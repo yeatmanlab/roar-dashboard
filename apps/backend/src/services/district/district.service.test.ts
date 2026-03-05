@@ -6,15 +6,6 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
 
-// Mock the logger (used by the service for error handling)
-vi.mock('../../logger', () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-  },
-}));
-
 describe('DistrictService', () => {
   const mockListAll = vi.fn();
   const mockListAuthorized = vi.fn();
