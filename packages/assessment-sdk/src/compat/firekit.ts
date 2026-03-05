@@ -2,7 +2,6 @@ import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import type {
   StartRunInput,
-  StartRunOutput,
   FinishRunInput,
   FinishRunOutput,
   AbortRunOutput,
@@ -17,6 +16,46 @@ import type {
   ComputedScores,
   WriteTrialOutput,
 } from '../types';
+import { Invoker } from '../command/invoker';
+import { RoarApi } from '../receiver/roar-api';
+import { StartRunCommand } from '../commands/start-run.command';
+
+// Module-level state for Firekit compat
+let _runId: string | undefined;
+let _taskInfo:
+  | {
+      variantId: string;
+      version: string;
+      adminId?: string;
+      isAnonymous?: boolean;
+    }
+  | undefined;
+
+// Optional helper if you already have a way to set task info elsewhere.
+// If you already have task info in ctx, ignore this and wire that instead.
+export function _setTaskInfoForCompat(taskInfo: {
+  variantId: string;
+  version: string;
+  adminId?: string;
+  isAnonymous?: boolean;
+}): void {
+  _taskInfo = taskInfo;
+}
+
+function getCtx(): CommandContext {
+  return getFirekitCompat().getContext();
+}
+
+function getInvokerAndApi() {
+  const ctx = getCtx();
+  const api = new RoarApi(ctx);
+  const invoker = new Invoker(ctx);
+  return { api, invoker };
+}
+
+export function _getRunIdForCompat(): string | undefined {
+  return _runId;
+}
 
 /**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
@@ -105,17 +144,81 @@ export function getFirekitCompat(): FirekitFacade {
 }
 
 /**
- * Firekit compatibility stub.
+ * Firekit compatibility method for starting a new assessment run.
  *
- * From @bdelab/roar-firekit:
- * async startRun(additionalRunMetadata?: { [key: string]: string })
+ * This function initiates a new run in the ROAR backend system, supporting both
+ * anonymous and authenticated assessment modes. It serves as a drop-in replacement
+ * for the legacy Firekit `appkit.startRun()` method.
  *
- * @param additionalRunMetadata Optional additional run metadata
- * @returns Promise<void>
+ * The function validates that:
+ * - Task information (variantId, taskVersion) has been set via _setTaskInfoForCompat()
+ * - If isAnonymous is false, administrationId must be provided
+ *
+ * The created runId is stored internally for use by subsequent operations like
+ * writeTrial() and finishRun().
+ *
+ * @param additionalRunMetadata - Optional custom metadata to include with the run.
+ *                                Can contain any key-value pairs for run customization.
+ *
+ * @returns Promise<void> - Resolves when the run is successfully created
+ *
+ * @throws SDKError if task info is not set or if administrationId is required but missing
+ *
+ * @example
+ * ```ts
+ * // Anonymous run
+ * _setTaskInfoForCompat({
+ *   variantId: 'variant-123',
+ *   version: '1.0.0',
+ *   isAnonymous: true
+ * });
+ * await startRun({ sessionId: 'session-456' });
+ *
+ * // Authenticated run
+ * _setTaskInfoForCompat({
+ *   variantId: 'variant-123',
+ *   version: '1.0.0',
+ *   adminId: 'admin-789',
+ *   isAnonymous: false
+ * });
+ * await startRun({ userId: 'user-123' });
+ * ```
  */
-export async function startRun(additionalRunMetadata?: StartRunInput): Promise<StartRunOutput> {
-  void additionalRunMetadata;
-  throw new SDKError('appkit.startRun not yet implemented');
+export async function startRun(additionalRunMetadata?: Record<string, unknown>): Promise<void> {
+  const { api, invoker } = getInvokerAndApi();
+
+  if (!_taskInfo) {
+    throw new SDKError('appkit.startRun missing task info (variantId/taskVersion/administrationId).');
+  }
+
+  const isAnonymous = !!_taskInfo.isAnonymous;
+
+  if (!isAnonymous && !_taskInfo.adminId) {
+    throw new SDKError('appkit.startRun requires administrationId when isAnonymous is false.');
+  }
+
+  const base = {
+    type: 'start' as const,
+    variantId: _taskInfo.variantId,
+    taskVersion: _taskInfo.version,
+    ...(additionalRunMetadata ? { metadata: additionalRunMetadata } : {}),
+  };
+
+  const input: StartRunInput = isAnonymous
+    ? {
+        ...base,
+        isAnonymous: true,
+      }
+    : {
+        ...base,
+        isAnonymous: false,
+        administrationId: _taskInfo.adminId as string,
+      };
+
+  const cmd = new StartRunCommand(api);
+  const result = await invoker.run(cmd, input);
+
+  _runId = result.runId;
 }
 
 /**
