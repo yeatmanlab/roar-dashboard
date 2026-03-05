@@ -1,4 +1,4 @@
-import { describe, it, expect, expectTypeOf, vi } from 'vitest';
+import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
 import {
   startRun,
   finishRun,
@@ -7,6 +7,9 @@ import {
   addInteraction,
   updateUser,
   writeTrial,
+  _setTaskInfoForCompat,
+  _getRunIdForCompat,
+  initFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
 import type {
@@ -17,6 +20,7 @@ import type {
   RawScores,
   ComputedScores,
 } from '../types';
+import type { CommandContext } from '../command/command';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
@@ -43,14 +47,137 @@ describe('firekit compat', () => {
   });
 
   describe('startRun', () => {
-    it('throws SDKError when called', async () => {
+    let mockContext: CommandContext;
+
+    beforeEach(() => {
+      mockContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+      initFirekitCompat(mockContext);
+    });
+
+    afterEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('throws SDKError when task info is not set', async () => {
       await expect(startRun()).rejects.toBeInstanceOf(SDKError);
       await expect(startRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
     });
 
+    it('throws SDKError when administrationId is required but missing', async () => {
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: false,
+      });
+
+      await expect(startRun()).rejects.toThrow('appkit.startRun requires administrationId when isAnonymous is false.');
+    });
+
+    it('resets state on re-initialization', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'run-123' }),
+      });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+      expect(_getRunIdForCompat()).toBe('run-123');
+
+      // Re-initialize should reset state
+      initFirekitCompat(mockContext);
+      expect(_getRunIdForCompat()).toBeUndefined();
+    });
+
+    it('successfully starts an anonymous run', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'run-anon-123' }),
+      });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      expect(_getRunIdForCompat()).toBe('run-anon-123');
+    });
+
+    it('successfully starts a non-anonymous run with administrationId', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'run-non-anon-789' }),
+      });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        adminId: 'admin-456',
+        isAnonymous: false,
+      });
+
+      await startRun();
+
+      expect(_getRunIdForCompat()).toBe('run-non-anon-789');
+    });
+
+    it('includes additional metadata when provided', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'run-with-metadata' }),
+      });
+
+      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
+      initFirekitCompat(mockContext);
+
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      const additionalMetadata = { customField: 'value', count: 42 };
+      await startRun(additionalMetadata);
+
+      expect(_getRunIdForCompat()).toBe('run-with-metadata');
+    });
+
+    it('throws SDKError when Firekit compat is not initialized', async () => {
+      _setTaskInfoForCompat({
+        variantId: 'variant-123',
+        version: '1.0.0',
+        isAnonymous: true,
+      });
+
+      // Don't call initFirekitCompat - simulate uninitialized state
+      // This will cause getCtx() to throw the proper error
+      await expect(startRun()).rejects.toBeInstanceOf(SDKError);
+    });
+
     it('matches Firekit signature', () => {
       expect(typeof startRun).toBe('function');
-      expectTypeOf(startRun).toEqualTypeOf<(additionalRunMetadata?: { [key: string]: string }) => Promise<void>>();
+      expectTypeOf(startRun).toEqualTypeOf<(additionalRunMetadata?: Record<string, unknown>) => Promise<void>>();
     });
   });
 
