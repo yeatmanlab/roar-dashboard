@@ -60,11 +60,16 @@ export class RoarApi {
    * It handles both anonymous and authenticated run modes by conditionally including
    * the administrationId in the request body.
    *
-   * The request body includes:
+   * Request body structure:
    * - taskVariantId: The variant of the task being assessed
    * - taskVersion: The version of the task
    * - administrationId: (optional) The administration ID for non-anonymous runs
    * - metadata: (optional) Custom metadata for run customization
+   *
+   * Response validation:
+   * - Validates HTTP status is 2xx (res.ok)
+   * - Validates response JSON contains a string 'id' field
+   * - Maps backend 'id' field to SDK 'runId' field
    *
    * @param input - StartRunInput containing run configuration
    *                - variantId: Task variant identifier
@@ -75,7 +80,10 @@ export class RoarApi {
    *
    * @returns Promise<StartRunOutput> containing the newly created runId
    *
-   * @throws Error if the API request fails, with details about the HTTP status and response
+   * @throws Error if:
+   *   - HTTP request fails (non-2xx status)
+   *   - Response JSON is missing or invalid
+   *   - Response JSON is missing a string 'id' field
    *
    * @example
    * ```ts
@@ -113,7 +121,13 @@ export class RoarApi {
       throw new Error(`createRun failed (${res.status}): ${text}`);
     }
 
-    const data = (await res.json()) as { runId: string };
-    return { runId: data.runId };
+    const data: unknown = await res.json();
+
+    // Backend contract is: { id: string }
+    if (!data || typeof data !== 'object' || typeof (data as { id?: unknown }).id !== 'string') {
+      throw new Error(`createRun failed: response JSON missing 'id' (got ${JSON.stringify(data)})`);
+    }
+
+    return { runId: (data as { id: string }).id };
   }
 }
