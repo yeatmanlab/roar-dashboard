@@ -110,7 +110,7 @@ const UsersListQueryFilterSchema = z.object({
 export type UsersListQueryFilters = z.infer<typeof UsersListQueryFilterSchema>;
 
 export const UsersListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(USERS_SORT_FIELDS, 'nameLast'),
+  createSortQuerySchema(USERS_LIST_SORT_FIELDS, 'nameLast'),
 ).merge(UsersListQueryFilterSchema);
 
 export type UsersListQuery = z.infer<typeof UsersListQuerySchema>;
