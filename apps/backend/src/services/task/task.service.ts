@@ -35,7 +35,10 @@ export interface CreateTaskVariantData {
 
 /**
  * Data for updating an existing task variant.
- * All fields are optional - only provided fields will be updated.
+ * taskId and variantId are required path parameters.
+ * The remaining fields are optional - only provided fields will be updated.
+ *
+ * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
  */
 export interface UpdateTaskVariantData {
   taskId: string;

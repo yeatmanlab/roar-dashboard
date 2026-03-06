@@ -18,7 +18,7 @@ export const TasksController = {
   /**
    * Create a new task-variant for a given task id.
    *
-   * Delegates to TaskService for authoirzation and business logic.
+   * Delegates to TaskService for authorization and business logic.
    *
    * @param authContext - User's authentication context.
    * @param data - Parameters for CreateTaskVariantData interface

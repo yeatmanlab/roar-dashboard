@@ -70,9 +70,6 @@ export class TaskVariantParameterRepository extends BaseRepository<TaskVariantPa
   /**
    * Deletes all parameters for a given task variant.
    *
-   * Used when updating a task variant's parameters - the old parameters are deleted
-   * and replaced with the new set.
-   *
    * @param params - Object containing taskVariantId and optional transaction
    * @param params.taskVariantId - The UUID of the task variant
    * @param params.transaction - Optional transaction object for atomic operations

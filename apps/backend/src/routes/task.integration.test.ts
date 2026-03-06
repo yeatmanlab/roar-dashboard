@@ -354,6 +354,44 @@ describe('POST /v1/tasks/:taskId/variants', () => {
         expect(updatedVariant!.taskId).toBe(variantBeforeUpdate!.taskId);
       });
 
+      it('can delete all parameters by sending empty array', async () => {
+        // Capture current state before update
+        const variantBeforeUpdate = await taskVariantRepository.getById({ id: variantId() });
+        expect(variantBeforeUpdate).not.toBeNull();
+
+        // First, ensure there are some parameters
+        const parametersBefore = await taskVariantParameterRepository.getByTaskVariantId(variantId());
+        // If there are no parameters, add some first
+        if (parametersBefore.length === 0) {
+          authenticateAs(tiers.superAdmin);
+          await request(app)
+            .patch(path())
+            .set('Authorization', 'Bearer token')
+            .send({ parameters: [{ name: 'tempParam', value: 'tempValue' }] });
+        }
+
+        // Now delete all parameters by sending empty array
+        authenticateAs(tiers.superAdmin);
+        const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ parameters: [] });
+
+        expect(res.status).toBe(StatusCodes.OK);
+        expect(res.body.data.success).toBe(true);
+
+        // Verify database state
+        const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+        expect(updatedVariant).not.toBeNull();
+
+        // Verify all parameters were deleted
+        const updatedParameters = await taskVariantParameterRepository.getByTaskVariantId(variantId());
+        expect(updatedParameters).toHaveLength(0);
+
+        // Verify other fields were not changed
+        expect(updatedVariant!.name).toBe(variantBeforeUpdate!.name);
+        expect(updatedVariant!.description).toBe(variantBeforeUpdate!.description);
+        expect(updatedVariant!.status).toBe(variantBeforeUpdate!.status);
+        expect(updatedVariant!.taskId).toBe(variantBeforeUpdate!.taskId);
+      });
+
       it('can update multiple fields at once', async () => {
         const uniqueName = `Multi Update ${Date.now()}`;
         const newDescription = 'Multi-field update';

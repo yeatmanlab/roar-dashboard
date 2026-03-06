@@ -57,7 +57,10 @@ const TaskVariantParameterSchema = z.object({
  * Task Variant Parameters Array Schema
  *
  * An array of parameter objects that configure a task variant.
- * At least one parameter is required. Parameters can have null values if optional.
+ * Can be empty to indicate a variant with no configuration parameters.
+ *
+ * When used in PATCH requests, omitting this field preserves existing parameters,
+ * while providing an empty array clears all parameters.
  *
  * @example
  * [
@@ -68,11 +71,21 @@ const TaskVariantParameterSchema = z.object({
  *   { "name": "stimuli", "value": ["word1", "word2", "word3"] }
  * ]
  */
-const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema).min(1);
+const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema);
 
+/**
+ * Task Variant Create Request Schema
+ *
+ * Creates a new task variant with the specified configuration.
+ *
+ * @property name - Unique name for this variant within the parent task
+ * @property parameters - Configuration parameters (defaults to empty array if omitted)
+ * @property description - Human-readable description of the variant
+ * @property status - Publication status of the variant
+ */
 export const TaskVariantCreateRequestSchema = z.object({
   name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES),
-  parameters: TaskVariantParametersArraySchema,
+  parameters: TaskVariantParametersArraySchema.default([]),
   description: z.string().trim().min(1).max(1024),
   status: TaskVariantStatusSchema,
 });
@@ -81,12 +94,36 @@ export const TaskVariantCreateResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
-export const TaskVariantUpdateRequestSchema = z.object({
-  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
-  parameters: TaskVariantParametersArraySchema.optional(),
-  description: z.string().trim().min(1).max(1024).optional(),
-  status: TaskVariantStatusSchema.optional(),
-});
+/**
+ * Task Variant Update Request Schema
+ *
+ * Updates an existing task variant. All fields are optional - only provided fields will be updated.
+ *
+ * @property name - New name for the variant (must remain unique within parent task)
+ * @property description - New description for the variant
+ * @property status - New publication status
+ * @property parameters - New parameters array (omit to keep existing, provide empty array to clear all)
+ *
+ * @remarks
+ * At least one field must be provided. When updating parameters, the entire array replaces
+ * the existing parameters - this is not a merge operation.
+ */
+export const TaskVariantUpdateRequestSchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    description: z.string().trim().min(1).max(1024).optional(),
+    status: TaskVariantStatusSchema.optional(),
+    parameters: TaskVariantParametersArraySchema.optional(),
+  })
+  .superRefine((payload, ctx) => {
+    const updateRequestFields = Object.keys(payload);
+    if (updateRequestFields.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'At least one of name, description, status, or parameters must be provided.',
+      });
+    }
+  });
 
 export const TaskVariantUpdateResponseSchema = z.object({
   success: z.boolean(),

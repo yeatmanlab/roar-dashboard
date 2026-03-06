@@ -26,10 +26,7 @@ export function registerTasksRoutes(routerInstance: Router) {
           {
             taskId: params.taskId,
             variantId: params.variantId,
-            name: body.name,
-            description: body.description,
-            status: body.status,
-            parameters: body.parameters,
+            ...body,
           },
         ),
     },
