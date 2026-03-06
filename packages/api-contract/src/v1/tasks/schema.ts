@@ -159,6 +159,7 @@ export const TaskSchema = z.object({
   description: z.string().nullable(),
   image: z.string().nullable(),
   tutorialVideo: z.string().nullable(),
+  taskConfig: JsonValue,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

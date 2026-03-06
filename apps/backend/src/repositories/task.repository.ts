@@ -14,6 +14,7 @@ import { SortOrder } from '@roar-dashboard/api-contract';
  */
 const TASK_SORT_COLUMNS: Record<TaskSortFieldType, Column> = {
   createdAt: tasks.createdAt,
+  updatedAt: tasks.updatedAt,
   name: tasks.name,
   slug: tasks.slug,
 };
