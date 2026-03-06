@@ -7,9 +7,8 @@ const classService = ClassService();
 
 /**
  * TODO:
- * - handleSubResourceResponse - extract to separate reusable function for other endpoints?
- * - What fields to return, sort
- * - classId in items? { classId: string, users: User[]} - for other endpoints {schoolId: string} etc?
+ * - handleSubResourceResponse - administration
+ *   - extract to separate reusable function for other users endpoints?
  */
 export const ClassesController = {
   listUsers: async (authContext: AuthContext, classId: string, query: UsersListQuery) => {

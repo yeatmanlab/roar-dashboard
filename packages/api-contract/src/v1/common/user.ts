@@ -55,17 +55,9 @@ export type UserGrade = z.infer<typeof UserGradeSchema>;
 export const USER_SCHOOL_LEVEL_VALUES = ['early_childhood', 'elementary', 'middle', 'high', 'postsecondary'] as const;
 export const UserSchoolLevelSchema = z.enum(USER_SCHOOL_LEVEL_VALUES);
 
-// Extracted out for clarity (PII), based on run demographics table
 const UserDemographicSchema = z.object({
-  statusEll: z.string().nullable(),
-  statusFrl: UserStatusFrlSchema.nullable(),
-  statusIep: z.string().nullable(),
   gender: z.string().nullable(),
-  race: z.array(z.string()).nullable(),
-  hispanicEthnicity: z.boolean().nullable(),
-  homeLanguage: z.string().nullable(),
   grade: UserGradeSchema.nullable(),
-  schoolLevel: UserSchoolLevelSchema.nullable(),
   dob: z.string().datetime().nullable(),
 });
 
@@ -79,25 +71,22 @@ const UserIdentiferSchema = z.object({
 export const UserBaseSchema = z.object({
   id: z.string().uuid(),
   assessmentPid: z.string(),
-  authProvider: UserAuthProviderSchema,
-  authId: z.string().nullable(),
   nameFirst: z.string().nullable(),
   nameLast: z.string().nullable(),
   username: z.string().nullable(),
   email: z.string().email().nullable(),
-  userType: UserTypeSchema,
+  userType: UserTypeSchema, // Return user role
 });
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
 
 // TODO: which fields to sort?
-export const USERS_LIST_SORT_FIELDS = ['nameLast', 'username', 'grade', 'enrollmentStart'] as const;
+export const USERS_LIST_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type UsersListSortField = (typeof USERS_LIST_SORT_FIELDS)[number];
 export const UsersListSortFields = {
   NAME_LAST: 'nameLast',
   USERNAME: 'username',
   GRADE: 'grade',
-  ENROLLMENT_START: 'enrollmentStart',
 } as const satisfies Record<string, UsersListSortField>;
 
 const UsersListQueryFilterSchema = z.object({

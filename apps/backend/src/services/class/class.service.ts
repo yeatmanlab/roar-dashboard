@@ -54,7 +54,7 @@ export function ClassService({
       return classEntity;
     }
 
-    const allowedRoles = rolesForPermission(Permissions.Classes.LIST);
+    const allowedRoles = rolesForPermission(Permissions.Classes.LIST); // Introduce class.read into permissions, same as classes.list
     const authorized = await classRepository.getAuthorizedById({ userId, allowedRoles }, classId);
 
     if (!authorized) {
@@ -132,15 +132,17 @@ export function ClassService({
         },
       };
 
-      if (!isSuperAdmin) {
-        const allowedRoles = rolesForPermission(Permissions.Users.LIST);
-        const userRoles = await classRepository.getUserRolesForClass(userId, classId);
-        if (!userRoles.some((role) => allowedRoles.includes(role))) {
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-          });
-        }
+      if (isSuperAdmin) {
+        return await classRepository.getUsersByClassId(classId, queryParams);
+      }
+
+      const allowedRoles = rolesForPermission(Permissions.Users.LIST);
+      const userRoles = await classRepository.getUserRolesForClass(userId, classId);
+      if (!userRoles.some((role) => allowedRoles.includes(role))) {
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
       }
 
       return await classRepository.getUsersByClassId(classId, queryParams);

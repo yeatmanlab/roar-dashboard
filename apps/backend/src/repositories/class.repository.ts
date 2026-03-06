@@ -23,7 +23,6 @@ const USER_SORT_COLUMNS: Record<UsersListSortField, Column> = {
   nameLast: users.nameLast,
   username: users.username,
   grade: users.grade,
-  enrollmentStart: users.nameLast, // TODO: This is a placeholder, need to find the correct column
 };
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
