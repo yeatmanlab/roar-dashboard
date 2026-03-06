@@ -540,8 +540,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(null);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
@@ -556,7 +555,7 @@ describe('TaskService', () => {
 
         const result = await taskService.updateTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ success: true });
+        expect(result).toBeUndefined();
         expect(taskVariantRepository.update).toHaveBeenCalledWith({
           id: mockTaskVariant.id,
           data: { name: 'Updated Name' },
@@ -569,8 +568,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -584,7 +582,7 @@ describe('TaskService', () => {
 
         const result = await taskService.updateTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ success: true });
+        expect(result).toBeUndefined();
         expect(taskVariantRepository.update).toHaveBeenCalledWith({
           id: mockTaskVariant.id,
           data: { description: 'Updated description' },
@@ -596,8 +594,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: TaskVariantStatus.DRAFT });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -611,7 +608,7 @@ describe('TaskService', () => {
 
         const result = await taskService.updateTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ success: true });
+        expect(result).toBeUndefined();
         expect(taskVariantRepository.update).toHaveBeenCalledWith({
           id: mockTaskVariant.id,
           data: { status: TaskVariantStatus.PUBLISHED },
@@ -623,8 +620,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -640,7 +636,7 @@ describe('TaskService', () => {
 
         const result = await taskService.updateTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ success: true });
+        expect(result).toBeUndefined();
         expect(taskVariantParameterRepository.deleteByTaskVariantId).toHaveBeenCalledWith({
           taskVariantId: mockTaskVariant.id,
           transaction: expect.any(Object),
@@ -662,8 +658,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(null);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
@@ -683,7 +678,7 @@ describe('TaskService', () => {
 
         const result = await taskService.updateTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ success: true });
+        expect(result).toBeUndefined();
         expect(taskVariantRepository.update).toHaveBeenCalledWith({
           id: mockTaskVariant.id,
           data: {
@@ -701,8 +696,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Same Name' });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(mockTaskVariant);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
@@ -717,7 +711,7 @@ describe('TaskService', () => {
 
         const result = await taskService.updateTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ success: true });
+        expect(result).toBeUndefined();
         expect(taskVariantRepository.update).toHaveBeenCalled();
       });
 
@@ -725,8 +719,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -740,7 +733,7 @@ describe('TaskService', () => {
 
         const result = await taskService.updateTaskVariant(authContext, mockData);
 
-        expect(result).toEqual({ success: true });
+        expect(result).toBeUndefined();
         expect(taskVariantParameterRepository.deleteByTaskVariantId).toHaveBeenCalledWith({
           taskVariantId: mockTaskVariant.id,
           transaction: expect.any(Object),
@@ -774,7 +767,7 @@ describe('TaskService', () => {
 
     describe('not found errors', () => {
       it('should throw NOT_FOUND when task does not exist', async () => {
-        taskRepository.getById.mockResolvedValueOnce(null);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce(null);
 
         const mockData = {
           taskId: 'nonexistent-task-id',
@@ -797,8 +790,7 @@ describe('TaskService', () => {
       it('should throw NOT_FOUND when variant does not exist', async () => {
         const mockTask = TaskFactory.build();
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(null);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce(null);
 
         const mockData = {
           taskId: mockTask.id,
@@ -847,46 +839,11 @@ describe('TaskService', () => {
     });
 
     describe('conflict errors', () => {
-      it('should throw CONFLICT when updating name to duplicate', async () => {
-        const mockTask = TaskFactory.build();
-        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
-        const conflictingVariant = TaskVariantFactory.build({
-          taskId: mockTask.id,
-          name: 'Duplicate Name',
-          id: 'different-id',
-        });
-
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
-        taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(conflictingVariant);
-
-        const mockData = {
-          taskId: mockTask.id,
-          variantId: mockTaskVariant.id,
-          name: 'Duplicate Name',
-        };
-
-        await expect(taskService.updateTaskVariant(authContext, mockData)).rejects.toMatchObject({
-          statusCode: StatusCodes.CONFLICT,
-          code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: {
-            userId: 'admin-1',
-            taskId: mockTask.id,
-            variantId: mockTaskVariant.id,
-            variantName: 'Duplicate Name',
-          },
-        });
-
-        expect(taskVariantRepository.runTransaction).not.toHaveBeenCalled();
-      });
-
       it('should throw CONFLICT on unique constraint violation during transaction', async () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
-        taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(null);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
 
         const uniqueViolationError = Object.assign(new Error('duplicate key value violates unique constraint'), {
           code: PostgresErrorCode.UNIQUE_VIOLATION,
@@ -918,8 +875,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
 
         const dbError = new Error('Connection timeout');
         taskVariantRepository.runTransaction.mockRejectedValueOnce(dbError);
@@ -946,8 +902,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
 
         const nestedApiError = new ApiError('Custom validation error', {
           statusCode: StatusCodes.BAD_REQUEST,
@@ -969,10 +924,9 @@ describe('TaskService', () => {
     describe('edge cases', () => {
       it('should skip name conflict check when name is not being updated', async () => {
         const mockTask = TaskFactory.build();
-        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Existing Name' });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -993,8 +947,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
-        taskRepository.getById.mockResolvedValueOnce(mockTask);
-        taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -1019,8 +972,7 @@ describe('TaskService', () => {
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
         for (const status of [TaskVariantStatus.DRAFT, TaskVariantStatus.PUBLISHED, TaskVariantStatus.DEPRECATED]) {
-          taskRepository.getById.mockResolvedValueOnce(mockTask);
-          taskVariantRepository.getById.mockResolvedValueOnce(mockTaskVariant);
+          taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
           taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
             return await fn({});
           });
@@ -1034,7 +986,7 @@ describe('TaskService', () => {
 
           const result = await taskService.updateTaskVariant(authContext, mockData);
 
-          expect(result).toEqual({ success: true });
+          expect(result).toBeUndefined();
           expect(taskVariantRepository.update).toHaveBeenCalledWith(
             expect.objectContaining({
               data: { status },
