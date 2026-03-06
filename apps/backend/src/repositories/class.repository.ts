@@ -18,8 +18,7 @@ export interface ListUsersByClassOptions {
   orderBy?: { field: UsersListSortField; direction: 'asc' | 'desc' };
 }
 
-// TODO: Check if enrollment start is a sort field
-const USER_SORT_COLUMNS: Record<UsersListSortField, Column> = {
+const USERS_LIST_SORT_COLUMNS: Record<UsersListSortField, Column> = {
   nameLast: users.nameLast,
   username: users.username,
   grade: users.grade,
@@ -39,7 +38,6 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   }
 
   /**
-   * Used in verifiedClass
    * Get a single class by ID, only if the user is authorized to access it.
    *
    * @param accessControlFilter - User ID and allowed roles
@@ -102,13 +100,73 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     }
 
     const sortField = orderBy?.field as UsersListSortField | undefined;
-    const sortColumn = sortField ? USER_SORT_COLUMNS[sortField] : users.nameLast;
+    const sortColumn = sortField ? USERS_LIST_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ user: users })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
+      .where(whereCondition)
+      .orderBy(primaryOrder, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => row.user),
+      totalItems,
+    };
+  }
+
+  /**
+   * Get users enrolled in a class if class is found in the user's accessible orgs.
+   *
+   * Returns all users who have an active enrollment in the specified class.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param accessControlFilter - User ID and allowed roles
+   * @param classId - The class ID to get users for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with users
+   */
+  async getAuthorizedUsersByClassId(
+    accessControlFilter: AccessControlFilter,
+    classId: string,
+    options: ListUsersByClassOptions,
+  ): Promise<PaginatedResult<User>> {
+    const accessibleClasses = this.orgAccessControls
+      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
+      .as('accessible_classes');
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const whereCondition = and(eq(userClasses.classId, classId), isEnrollmentActive(userClasses));
+
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(userClasses)
+      .innerJoin(users, eq(users.id, userClasses.userId))
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
+      .innerJoin(accessibleClasses, eq(accessibleClasses.orgId, classes.schoolId))
+      .where(whereCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const sortField = orderBy?.field as UsersListSortField | undefined;
+    const sortColumn = sortField ? USERS_LIST_SORT_COLUMNS[sortField] : users.nameLast;
+    const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })
+      .from(userClasses)
+      .innerJoin(users, eq(users.id, userClasses.userId))
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
+      .innerJoin(accessibleClasses, eq(accessibleClasses.orgId, classes.schoolId))
       .where(whereCondition)
       .orderBy(primaryOrder, asc(users.id))
       .limit(perPage)

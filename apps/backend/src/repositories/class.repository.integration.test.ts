@@ -23,6 +23,9 @@ import { baseFixture } from '../test-support/fixtures';
 import { ClassRepository } from './class.repository';
 import { CoreDbClient } from '../test-support/db';
 import { UserRole } from '../enums/user-role.enum';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
 
 describe('ClassRepository', () => {
   let repository: ClassRepository;
@@ -189,18 +192,26 @@ describe('ClassRepository', () => {
   });
 
   describe('getUsersByClassId', () => {
-    it('returns users enrolled in a class', async () => {
+    // baseFixture.classInSchoolA has exactly 2 active users:
+    // - classAStudent (student)
+    // - classATeacher (teacher)
+    // - expiredClassStudent is excluded due to expired enrollment
+
+    it('returns all enrolled users for a class', async () => {
       const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
         page: 1,
         perPage: 100,
       });
 
-      expect(result.totalItems).toBeGreaterThanOrEqual(1);
-      expect(result.items.length).toBeGreaterThanOrEqual(1);
+      // Exactly 2 active users in classInSchoolA
+      expect(result.totalItems).toBe(2);
+      expect(result.items).toHaveLength(2);
 
       const userIds = result.items.map((u) => u.id);
       expect(userIds).toContain(baseFixture.classAStudent.id);
       expect(userIds).toContain(baseFixture.classATeacher.id);
+      // Expired enrollment should be excluded
+      expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
     it('returns empty for class with no enrolled users', async () => {
@@ -215,38 +226,116 @@ describe('ClassRepository', () => {
     });
 
     it('respects pagination', async () => {
-      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
+      // classInSchoolA has 2 users, request 1 per page
+      const page1 = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
         page: 1,
         perPage: 1,
       });
 
-      expect(result.items.length).toBeLessThanOrEqual(1);
-      expect(result.totalItems).toBeGreaterThanOrEqual(1);
-    });
+      expect(page1.items).toHaveLength(1);
+      expect(page1.totalItems).toBe(2);
 
-    it('applies sorting by nameLast ascending', async () => {
-      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
-        page: 1,
-        perPage: 100,
-        orderBy: { field: 'nameLast', direction: 'asc' },
+      const page2 = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
+        page: 2,
+        perPage: 1,
       });
 
-      if (result.items.length > 1) {
-        for (let i = 1; i < result.items.length; i++) {
-          const prev = result.items[i - 1]!.nameLast ?? '';
-          const curr = result.items[i]!.nameLast ?? '';
-          expect(prev.toLowerCase() <= curr.toLowerCase()).toBe(true);
-        }
-      }
+      expect(page2.items).toHaveLength(1);
+      expect(page2.totalItems).toBe(2);
+
+      // Pages should have different users
+      expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
+    });
+
+    it('applies default sorting by nameLast ascending when no orderBy specified', async () => {
+      // Create a class with users having known lastNames for precise sorting verification
+      const sortTestClass = await ClassFactory.create({
+        name: 'getUsersByClassId Sort Test Class',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+      const studentZ = await UserFactory.create({ nameLast: 'Zulu' });
+      const studentA = await UserFactory.create({ nameLast: 'Alpha' });
+      const studentM = await UserFactory.create({ nameLast: 'Mike' });
+      await UserClassFactory.create({ userId: studentZ.id, classId: sortTestClass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: studentA.id, classId: sortTestClass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: studentM.id, classId: sortTestClass.id, role: UserRole.STUDENT });
+
+      const result = await repository.getUsersByClassId(sortTestClass.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items).toHaveLength(3);
+      expect(result.items[0]!.nameLast).toBe('Alpha');
+      expect(result.items[1]!.nameLast).toBe('Mike');
+      expect(result.items[2]!.nameLast).toBe('Zulu');
+    });
+
+    it('applies sorting by username descending', async () => {
+      // Create a class with users having known usernames for precise sorting verification
+      const usernameTestClass = await ClassFactory.create({
+        name: 'getUsersByClassId Username Sort Test',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+      const userA = await UserFactory.create({ username: 'aaa_user' });
+      const userZ = await UserFactory.create({ username: 'zzz_user' });
+      const userM = await UserFactory.create({ username: 'mmm_user' });
+      await UserClassFactory.create({ userId: userA.id, classId: usernameTestClass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: userZ.id, classId: usernameTestClass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: userM.id, classId: usernameTestClass.id, role: UserRole.STUDENT });
+
+      const result = await repository.getUsersByClassId(usernameTestClass.id, {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'username', direction: 'desc' },
+      });
+
+      expect(result.items).toHaveLength(3);
+      expect(result.items[0]!.username).toBe('zzz_user');
+      expect(result.items[1]!.username).toBe('mmm_user');
+      expect(result.items[2]!.username).toBe('aaa_user');
+    });
+
+    it('applies sorting by grade ascending', async () => {
+      // Create a class with users having known grades for precise sorting verification
+      const gradeTestClass = await ClassFactory.create({
+        name: 'getUsersByClassId Grade Sort Test',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+      const student12 = await UserFactory.create({ nameLast: 'Senior', grade: '12' });
+      const student3 = await UserFactory.create({ nameLast: 'Third', grade: '3' });
+      const student7 = await UserFactory.create({ nameLast: 'Seventh', grade: '7' });
+      await UserClassFactory.create({ userId: student12.id, classId: gradeTestClass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: student3.id, classId: gradeTestClass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: student7.id, classId: gradeTestClass.id, role: UserRole.STUDENT });
+
+      const result = await repository.getUsersByClassId(gradeTestClass.id, {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'grade', direction: 'asc' },
+      });
+
+      expect(result.items).toHaveLength(3);
+      // Grades are enums sorted by definition order (numeric)
+      expect(result.items[0]!.grade).toBe('3');
+      expect(result.items[1]!.grade).toBe('7');
+      expect(result.items[2]!.grade).toBe('12');
     });
 
     it('excludes users with expired class enrollment', async () => {
+      // baseFixture.expiredClassStudent has expired enrollment in classInSchoolA
       const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
         page: 1,
         perPage: 100,
       });
 
+      expect(result.totalItems).toBe(2); // Only active users
       const userIds = result.items.map((u) => u.id);
+      expect(userIds).toContain(baseFixture.classAStudent.id);
+      expect(userIds).toContain(baseFixture.classATeacher.id);
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
@@ -255,6 +344,273 @@ describe('ClassRepository', () => {
         page: 1,
         perPage: 100,
       });
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+  });
+
+  describe('getAuthorizedUsersByClassId', () => {
+    // baseFixture.classInSchoolA has exactly 2 active users:
+    // - classAStudent (student)
+    // - classATeacher (teacher)
+    // - expiredClassStudent is excluded due to expired enrollment
+
+    describe('returns users when requester has access', () => {
+      it('district admin can list users in class within their district', async () => {
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+
+        // Exactly 2 active users in classInSchoolA
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(baseFixture.classAStudent.id);
+        expect(userIds).toContain(baseFixture.classATeacher.id);
+        // Expired enrollment should be excluded
+        expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
+      });
+
+      it('school teacher can list users in class within their school', async () => {
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.TEACHER] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(baseFixture.classAStudent.id);
+        expect(userIds).toContain(baseFixture.classATeacher.id);
+      });
+
+      it('class teacher can list users in their assigned class', async () => {
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.classATeacher.id, allowedRoles: [UserRole.TEACHER] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(baseFixture.classAStudent.id);
+        expect(userIds).toContain(baseFixture.classATeacher.id);
+      });
+    });
+
+    describe('returns empty when requester lacks access', () => {
+      it('district B admin cannot list users in class in district A', async () => {
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.items).toEqual([]);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('school A teacher cannot list users in class in school B', async () => {
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.TEACHER] },
+          baseFixture.classInSchoolB.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.items).toEqual([]);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('unassigned user cannot list users in any class', async () => {
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.unassignedUser.id, allowedRoles: [UserRole.STUDENT] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.items).toEqual([]);
+        expect(result.totalItems).toBe(0);
+      });
+    });
+
+    describe('cross-district isolation', () => {
+      it('district admin can list users in classes across all schools in their district', async () => {
+        // District admin should see users in classInSchoolA (2 active users)
+        const resultA = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+        expect(resultA.totalItems).toBe(2);
+        expect(resultA.items).toHaveLength(2);
+
+        // District admin should also see classInSchoolB (no users in baseFixture)
+        const resultB = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolB.id,
+          { page: 1, perPage: 100 },
+        );
+        expect(resultB.totalItems).toBe(0);
+        expect(resultB.items).toHaveLength(0);
+      });
+
+      it('district B admin cannot access classes in district A', async () => {
+        // District B admin CANNOT access classInSchoolA (in district A)
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+        expect(result.items).toEqual([]);
+        expect(result.totalItems).toBe(0);
+      });
+    });
+
+    describe('pagination and sorting', () => {
+      it('respects pagination with baseFixture data', async () => {
+        // classInSchoolA has 2 users, request 1 per page
+        const page1 = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 1 },
+        );
+
+        expect(page1.items).toHaveLength(1);
+        expect(page1.totalItems).toBe(2);
+
+        const page2 = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 2, perPage: 1 },
+        );
+
+        expect(page2.items).toHaveLength(1);
+        expect(page2.totalItems).toBe(2);
+
+        // Pages should have different users
+        expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
+      });
+
+      it('applies default sorting by nameLast ascending', async () => {
+        // Create a class with users having known lastNames for precise sorting verification
+        const sortTestClass = await ClassFactory.create({
+          name: 'Sort Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const studentZ = await UserFactory.create({ nameLast: 'Zebra' });
+        const studentA = await UserFactory.create({ nameLast: 'Apple' });
+        const studentM = await UserFactory.create({ nameLast: 'Mango' });
+        await UserClassFactory.create({ userId: studentZ.id, classId: sortTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: studentA.id, classId: sortTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: studentM.id, classId: sortTestClass.id, role: UserRole.STUDENT });
+
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          sortTestClass.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.items).toHaveLength(3);
+        expect(result.items[0]!.nameLast).toBe('Apple');
+        expect(result.items[1]!.nameLast).toBe('Mango');
+        expect(result.items[2]!.nameLast).toBe('Zebra');
+      });
+
+      it('applies sorting by username descending', async () => {
+        // Create a class with users having known usernames for precise sorting verification
+        const usernameTestClass = await ClassFactory.create({
+          name: 'Username Sort Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const userAlpha = await UserFactory.create({ username: 'alpha_user' });
+        const userZeta = await UserFactory.create({ username: 'zeta_user' });
+        const userMid = await UserFactory.create({ username: 'mid_user' });
+        await UserClassFactory.create({ userId: userAlpha.id, classId: usernameTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: userZeta.id, classId: usernameTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: userMid.id, classId: usernameTestClass.id, role: UserRole.STUDENT });
+
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          usernameTestClass.id,
+          { page: 1, perPage: 100, orderBy: { field: 'username', direction: 'desc' } },
+        );
+
+        expect(result.items).toHaveLength(3);
+        expect(result.items[0]!.username).toBe('zeta_user');
+        expect(result.items[1]!.username).toBe('mid_user');
+        expect(result.items[2]!.username).toBe('alpha_user');
+      });
+    });
+
+    describe('enrollment boundaries', () => {
+      it('excludes users with expired class enrollment', async () => {
+        // baseFixture.expiredClassStudent has expired enrollment in classInSchoolA
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.totalItems).toBe(2); // Only active users
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(baseFixture.classAStudent.id);
+        expect(userIds).toContain(baseFixture.classATeacher.id);
+        expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
+      });
+
+      it('excludes users with future enrollment start', async () => {
+        // Create a class with a future enrollment user
+        const futureTestClass = await ClassFactory.create({
+          name: 'Future Enrollment Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const activeStudent = await UserFactory.create({ nameLast: 'ActiveNow' });
+        const futureStudent = await UserFactory.create({ nameLast: 'FutureStudent' });
+
+        const futureDate = new Date();
+        futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+        await UserClassFactory.create({
+          userId: activeStudent.id,
+          classId: futureTestClass.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: new Date('2020-01-01'),
+          enrollmentEnd: null,
+        });
+        await UserClassFactory.create({
+          userId: futureStudent.id,
+          classId: futureTestClass.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: futureDate,
+          enrollmentEnd: null,
+        });
+
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          futureTestClass.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.totalItems).toBe(1);
+        expect(result.items[0]!.id).toBe(activeStudent.id);
+      });
+    });
+
+    it('returns empty for nonexistent class ID', async () => {
+      const result = await repository.getAuthorizedUsersByClassId(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        '00000000-0000-0000-0000-000000000000',
+        { page: 1, perPage: 100 },
+      );
 
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
