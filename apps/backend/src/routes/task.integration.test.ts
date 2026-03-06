@@ -27,6 +27,8 @@ import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } fro
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { TaskVariantRepository } from '../repositories/task-variant.repository';
+import { TaskVariantParameterRepository } from '../repositories/task-variant-parameter.repository';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -35,6 +37,8 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 let app: express.Application;
 let expectRoute: ReturnType<typeof createRouteHelper>;
 let tiers: TierUsers;
+let taskVariantRepository: TaskVariantRepository;
+let taskVariantParameterRepository: TaskVariantParameterRepository;
 
 beforeAll(async () => {
   // Route modules must be imported dynamically — they instantiate services at
@@ -45,6 +49,8 @@ beforeAll(async () => {
   app = createTestApp(registerTasksRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+  taskVariantRepository = new TaskVariantRepository();
+  taskVariantParameterRepository = new TaskVariantParameterRepository();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -245,59 +251,138 @@ describe('POST /v1/tasks/:taskId/variants', () => {
 
     describe('partial updates', () => {
       it('can update only the name', async () => {
+        // Capture current state before update
+        const variantBeforeUpdate = await taskVariantRepository.getById({ id: variantId() });
+        expect(variantBeforeUpdate).not.toBeNull();
+
         const uniqueName = `Updated Name ${Date.now()}`;
         authenticateAs(tiers.superAdmin);
         const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ name: uniqueName });
 
         expect(res.status).toBe(StatusCodes.OK);
         expect(res.body.data.success).toBe(true);
+
+        // Verify database state
+        const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+        expect(updatedVariant).not.toBeNull();
+        expect(updatedVariant!.name).toBe(uniqueName);
+
+        // Verify other fields were not changed
+        expect(updatedVariant!.description).toBe(variantBeforeUpdate!.description);
+        expect(updatedVariant!.status).toBe(variantBeforeUpdate!.status);
+        expect(updatedVariant!.taskId).toBe(variantBeforeUpdate!.taskId);
       });
 
       it('can update only the description', async () => {
+        // Capture current state before update
+        const variantBeforeUpdate = await taskVariantRepository.getById({ id: variantId() });
+        expect(variantBeforeUpdate).not.toBeNull();
+
+        const newDescription = 'Only description changed';
         authenticateAs(tiers.superAdmin);
         const res = await request(app)
           .patch(path())
           .set('Authorization', 'Bearer token')
-          .send({ description: 'Only description changed' });
+          .send({ description: newDescription });
 
         expect(res.status).toBe(StatusCodes.OK);
         expect(res.body.data.success).toBe(true);
+
+        // Verify database state
+        const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+        expect(updatedVariant).not.toBeNull();
+        expect(updatedVariant!.description).toBe(newDescription);
+
+        // Verify other fields were not changed
+        expect(updatedVariant!.name).toBe(variantBeforeUpdate!.name);
+        expect(updatedVariant!.status).toBe(variantBeforeUpdate!.status);
+        expect(updatedVariant!.taskId).toBe(variantBeforeUpdate!.taskId);
       });
 
       it('can update only the status', async () => {
+        // Capture current state before update
+        const variantBeforeUpdate = await taskVariantRepository.getById({ id: variantId() });
+        expect(variantBeforeUpdate).not.toBeNull();
+
+        const newStatus = 'published';
         authenticateAs(tiers.superAdmin);
-        const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ status: 'published' });
+        const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ status: newStatus });
 
         expect(res.status).toBe(StatusCodes.OK);
         expect(res.body.data.success).toBe(true);
+
+        // Verify database state
+        const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+        expect(updatedVariant).not.toBeNull();
+        expect(updatedVariant!.status).toBe(newStatus);
+
+        // Verify other fields were not changed
+        expect(updatedVariant!.name).toBe(variantBeforeUpdate!.name);
+        expect(updatedVariant!.description).toBe(variantBeforeUpdate!.description);
+        expect(updatedVariant!.taskId).toBe(variantBeforeUpdate!.taskId);
       });
 
       it('can update only the parameters', async () => {
+        // Capture current state before update
+        const variantBeforeUpdate = await taskVariantRepository.getById({ id: variantId() });
+        expect(variantBeforeUpdate).not.toBeNull();
+
+        const newParameters = [{ name: 'newParam', value: 'newValue' }];
         authenticateAs(tiers.superAdmin);
         const res = await request(app)
           .patch(path())
           .set('Authorization', 'Bearer token')
-          .send({ parameters: [{ name: 'newParam', value: 'newValue' }] });
+          .send({ parameters: newParameters });
 
         expect(res.status).toBe(StatusCodes.OK);
         expect(res.body.data.success).toBe(true);
+
+        // Verify database state
+        const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+        expect(updatedVariant).not.toBeNull();
+
+        // Verify parameters were updated
+        const updatedParameters = await taskVariantParameterRepository.getByTaskVariantId(variantId());
+        expect(updatedParameters).toHaveLength(1);
+        expect(updatedParameters[0]!.name).toBe('newParam');
+        expect(updatedParameters[0]!.value).toBe('newValue');
+
+        // Verify other fields were not changed
+        expect(updatedVariant!.name).toBe(variantBeforeUpdate!.name);
+        expect(updatedVariant!.description).toBe(variantBeforeUpdate!.description);
+        expect(updatedVariant!.status).toBe(variantBeforeUpdate!.status);
+        expect(updatedVariant!.taskId).toBe(variantBeforeUpdate!.taskId);
       });
 
       it('can update multiple fields at once', async () => {
         const uniqueName = `Multi Update ${Date.now()}`;
+        const newDescription = 'Multi-field update';
+        const newStatus = 'published';
+        const newParameters = [{ name: 'multiParam', value: 'multiValue' }];
+
         authenticateAs(tiers.superAdmin);
-        const res = await request(app)
-          .patch(path())
-          .set('Authorization', 'Bearer token')
-          .send({
-            name: uniqueName,
-            description: 'Multi-field update',
-            status: 'published',
-            parameters: [{ name: 'multiParam', value: 'multiValue' }],
-          });
+        const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({
+          name: uniqueName,
+          description: newDescription,
+          status: newStatus,
+          parameters: newParameters,
+        });
 
         expect(res.status).toBe(StatusCodes.OK);
         expect(res.body.data.success).toBe(true);
+
+        // Verify database state
+        const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+        expect(updatedVariant).not.toBeNull();
+        expect(updatedVariant!.name).toBe(uniqueName);
+        expect(updatedVariant!.description).toBe(newDescription);
+        expect(updatedVariant!.status).toBe(newStatus);
+
+        // Verify parameters were updated
+        const updatedParameters = await taskVariantParameterRepository.getByTaskVariantId(variantId());
+        expect(updatedParameters).toHaveLength(1);
+        expect(updatedParameters[0]!.name).toBe('multiParam');
+        expect(updatedParameters[0]!.value).toBe('multiValue');
       });
     });
 
