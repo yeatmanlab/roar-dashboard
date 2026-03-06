@@ -125,9 +125,13 @@ export const TaskVariantUpdateRequestSchema = z
     }
   });
 
-export const TaskVariantUpdateResponseSchema = z.object({
-  success: z.boolean(),
-});
+/**
+ * Task Variant Update Response Schema
+ *
+ * Returns 204 No Content on successful update.
+ * The response body is empty - use a GET request if you need the updated resource.
+ */
+export const TaskVariantUpdateResponseSchema = z.undefined();
 
 export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;

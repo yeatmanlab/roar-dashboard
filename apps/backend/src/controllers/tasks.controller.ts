@@ -57,18 +57,16 @@ export const TasksController = {
    *
    * @param authContext - User's authentication context.
    * @param data - Parameters for UpdateTaskVariantData interface
-   * @returns An object indicating success.
+   * @returns 204 No Content on success.
    *
    * @see {@link UpdateTaskVariantData} - Parameters for updating a task variant.
    */
   updateTaskVariant: async (authContext: AuthContext, data: UpdateTaskVariantData) => {
     try {
-      const result = await taskService.updateTaskVariant(authContext, data);
+      await taskService.updateTaskVariant(authContext, data);
       return {
-        status: StatusCodes.OK as const,
-        body: {
-          data: result,
-        },
+        status: StatusCodes.NO_CONTENT as const,
+        body: undefined,
       };
     } catch (error) {
       if (error instanceof ApiError) {

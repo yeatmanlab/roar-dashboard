@@ -189,8 +189,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
           .set('Authorization', 'Bearer token')
           .send({ description: 'Updated description' });
 
-        expect(res.status).toBe(StatusCodes.OK);
-        expect(res.body.data.success).toBe(true);
+        expect(res.status).toBe(StatusCodes.NO_CONTENT);
       });
 
       it('siteAdmin tier is forbidden from updating task variants', async () => {
@@ -259,8 +258,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
         authenticateAs(tiers.superAdmin);
         const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ name: uniqueName });
 
-        expect(res.status).toBe(StatusCodes.OK);
-        expect(res.body.data.success).toBe(true);
+        expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
         // Verify database state
         const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
@@ -285,8 +283,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
           .set('Authorization', 'Bearer token')
           .send({ description: newDescription });
 
-        expect(res.status).toBe(StatusCodes.OK);
-        expect(res.body.data.success).toBe(true);
+        expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
         // Verify database state
         const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
@@ -308,8 +305,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
         authenticateAs(tiers.superAdmin);
         const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ status: newStatus });
 
-        expect(res.status).toBe(StatusCodes.OK);
-        expect(res.body.data.success).toBe(true);
+        expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
         // Verify database state
         const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
@@ -334,8 +330,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
           .set('Authorization', 'Bearer token')
           .send({ parameters: newParameters });
 
-        expect(res.status).toBe(StatusCodes.OK);
-        expect(res.body.data.success).toBe(true);
+        expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
         // Verify database state
         const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
@@ -374,8 +369,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
         authenticateAs(tiers.superAdmin);
         const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ parameters: [] });
 
-        expect(res.status).toBe(StatusCodes.OK);
-        expect(res.body.data.success).toBe(true);
+        expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
         // Verify database state
         const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
@@ -406,8 +400,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
           parameters: newParameters,
         });
 
-        expect(res.status).toBe(StatusCodes.OK);
-        expect(res.body.data.success).toBe(true);
+        expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
         // Verify database state
         const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
@@ -528,8 +521,7 @@ describe('POST /v1/tasks/:taskId/variants', () => {
           .set('Authorization', 'Bearer token')
           .send({ name: originalName });
 
-        expect(updateRes.status).toBe(StatusCodes.OK);
-        expect(updateRes.body.data.success).toBe(true);
+        expect(updateRes.status).toBe(StatusCodes.NO_CONTENT);
       });
     });
   });

@@ -51,7 +51,7 @@ export const TasksContract = c.router(
       contentType: 'application/json',
       body: TaskVariantUpdateRequestSchema,
       responses: {
-        200: SuccessEnvelopeSchema(TaskVariantUpdateResponseSchema),
+        204: TaskVariantUpdateResponseSchema,
         400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
@@ -65,7 +65,7 @@ export const TasksContract = c.router(
         'Update an existing task variant for a given task. ' +
         'All fields are optional - only provided fields will be updated. ' +
         'When updating parameters, the entire parameters array must be provided (it replaces existing parameters). ' +
-        'Returns 200 upon successful update. ' +
+        'Returns 204 No Content upon successful update. ' +
         'Returns 404 if the task or variant does not exist. ' +
         'Returns 409 if updating the name would conflict with an existing variant name for the same task.',
     },
