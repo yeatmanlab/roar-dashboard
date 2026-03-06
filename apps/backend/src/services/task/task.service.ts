@@ -518,10 +518,7 @@ export function TaskService({
    * @throws ApiError with NOT_FOUND if task or variant doesn't exist
    * @throws ApiError with CONFLICT if name update would create a duplicate
    */
-  async function updateTaskVariant(
-    authContext: AuthContext,
-    data: UpdateTaskVariantData,
-  ): Promise<{ success: boolean }> {
+  async function updateTaskVariant(authContext: AuthContext, data: UpdateTaskVariantData): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
     const { taskId, variantId, name, status, description, parameters } = data;
 
@@ -589,8 +586,6 @@ export function TaskService({
         },
         'Updated task variant',
       );
-
-      return { success: true };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

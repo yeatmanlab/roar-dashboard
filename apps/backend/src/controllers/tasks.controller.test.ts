@@ -440,9 +440,8 @@ describe('TasksController', () => {
   });
 
   describe('updateTaskVariant', () => {
-    it('should return 200 with success on successful update', async () => {
-      const mockResult = { success: true };
-      mockUpdateTaskVariant.mockResolvedValue(mockResult);
+    it('should return 204 No Content on successful update', async () => {
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
 
       const data: UpdateTaskVariantData = {
         taskId: 'task-123',
@@ -455,19 +454,16 @@ describe('TasksController', () => {
       const result = await Controller.updateTaskVariant(mockAuthContext, data);
 
       expect(result).toEqual({
-        status: StatusCodes.OK,
-        body: {
-          data: mockResult,
-        },
+        status: StatusCodes.NO_CONTENT,
+        body: undefined,
       });
 
       expect(mockUpdateTaskVariant).toHaveBeenCalledWith(mockAuthContext, data);
       expect(mockUpdateTaskVariant).toHaveBeenCalledTimes(1);
     });
 
-    it('should return 200 when updating only name', async () => {
-      const mockResult = { success: true };
-      mockUpdateTaskVariant.mockResolvedValue(mockResult);
+    it('should return 204 when updating only name', async () => {
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
 
       const data: UpdateTaskVariantData = {
         taskId: 'task-123',
@@ -478,15 +474,11 @@ describe('TasksController', () => {
       const { TasksController: Controller } = await import('./tasks.controller');
       const result = await Controller.updateTaskVariant(mockAuthContext, data);
 
-      expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data).toEqual(mockResult);
-      }
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
     });
 
-    it('should return 200 when updating only parameters', async () => {
-      const mockResult = { success: true };
-      mockUpdateTaskVariant.mockResolvedValue(mockResult);
+    it('should return 204 when updating only parameters', async () => {
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
 
       const data: UpdateTaskVariantData = {
         taskId: 'task-123',
@@ -497,10 +489,7 @@ describe('TasksController', () => {
       const { TasksController: Controller } = await import('./tasks.controller');
       const result = await Controller.updateTaskVariant(mockAuthContext, data);
 
-      expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.success).toBe(true);
-      }
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
     });
 
     it('should return 403 when service throws FORBIDDEN error', async () => {
@@ -645,8 +634,7 @@ describe('TasksController', () => {
     });
 
     it('should handle updating multiple fields', async () => {
-      const mockResult = { success: true };
-      mockUpdateTaskVariant.mockResolvedValue(mockResult);
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
 
       const data: UpdateTaskVariantData = {
         taskId: 'task-123',
@@ -656,18 +644,14 @@ describe('TasksController', () => {
         status: TaskVariantStatus.PUBLISHED,
         parameters: [
           { name: 'param1', value: 'value1' },
-          { name: 'param2', value: 42 },
+          { name: 'param2', value: 'value2' },
         ],
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
       const result = await Controller.updateTaskVariant(mockAuthContext, data);
 
-      expect(result.status).toBe(StatusCodes.OK);
-      if (result.status === StatusCodes.OK) {
-        expect(result.body.data.success).toBe(true);
-      }
-      expect(mockUpdateTaskVariant).toHaveBeenCalledWith(mockAuthContext, data);
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
     });
   });
 });
