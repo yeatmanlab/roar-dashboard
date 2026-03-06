@@ -101,7 +101,7 @@ export function ClassService({
    *
    * Authorization behavior:
    * - Super admin: sees all users assigned to the class
-   * - Supervisory roles: sees only users if assigned to that class or if they belong to orgs in their accessible org tree
+   * - Supervisory roles: sees only users if assigned to that class or if the class is in their accessible org tree
    *   - Excludes caregiver role
    * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
    *
@@ -137,15 +137,7 @@ export function ClassService({
       }
 
       const allowedRoles = rolesForPermission(Permissions.Users.LIST);
-      const userRoles = await classRepository.getUserRolesForClass(userId, classId);
-      if (!userRoles.some((role) => allowedRoles.includes(role))) {
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        });
-      }
-
-      return await classRepository.getUsersByClassId(classId, queryParams);
+      return await classRepository.getAuthorizedUsersByClassId({ userId, allowedRoles }, classId, queryParams);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
