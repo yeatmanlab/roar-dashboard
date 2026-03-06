@@ -14,6 +14,7 @@ import { TaskService } from './task.service';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
@@ -215,7 +216,7 @@ describe('TaskService', () => {
         };
 
         await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
-          message: 'At least one parameter required',
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         });
