@@ -4,7 +4,6 @@ import type {
   StartRunInput,
   FinishRunInput,
   FinishRunOutput,
-  AbortRunOutput,
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
   AddInteractionInput,
@@ -19,6 +18,8 @@ import type {
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
+import { AbortRunCommand } from '../commands/abort-run.command';
+import { RUN_EVENT_ABORT } from '../types/abort-run';
 
 // Module-level state for Firekit compat
 let _runId: string | undefined;
@@ -239,16 +240,64 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
 }
 
 /**
- * Firekit compatibility stub.
+ * Firekit compatibility method for aborting an active assessment run.
+ *
+ * This function provides a drop-in replacement for the legacy Firekit `appkit.abortRun()` method.
+ * It sends an abort event to the ROAR backend to terminate the current assessment run.
+ *
+ * The function maintains the original Firekit synchronous signature while performing the
+ * abort operation asynchronously in the background (fire-and-forget pattern). This ensures
+ * backward compatibility with existing assessments that expect a synchronous call.
+ *
+ * Behavior:
+ * - If no run has been started (no _runId), the function returns immediately without error
+ * - If a run is active, an abort event is posted to the backend asynchronously
+ * - The abort event type is always 'abort' (RUN_EVENT_ABORT constant)
+ * - Errors during the abort operation are logged but not thrown (to preserve sync signature)
+ * - The function returns immediately; the actual abort may complete later
  *
  * From @bdelab/roar-firekit:
+ * ```ts
  * abortRun() { […] }
+ * ```
  *
- * @returns void
- * @throws SDKError - Always, until implemented.
+ * @returns void - Returns immediately; abort operation completes asynchronously
+ *
+ * @example
+ * ```ts
+ * // Start a run
+ * await startRun();
+ *
+ * // Later, abort the run
+ * abortRun(); // Returns immediately, abort happens in background
+ * ```
+ *
+ * @see AbortRunCommand for the underlying command implementation
+ * @see RUN_EVENT_ABORT for the abort event type constant
+ * @see postRunEvent for the API method used to send the abort event
  */
-export function abortRun(): AbortRunOutput {
-  throw new SDKError('firekit.abortRun not yet implemented');
+export function abortRun(): void {
+  if (!_runId) return;
+
+  void (async () => {
+    const ctx = getCtx();
+    const api = new RoarApi(ctx);
+
+    // Best-effort, no-retry abort to avoid keeping processes alive
+    const invoker = new Invoker(ctx, { retries: 0, retryDelayMs: 0 });
+
+    const cmd = new AbortRunCommand(api);
+    await invoker.run(cmd, { runId: _runId, type: RUN_EVENT_ABORT });
+  })().catch((err) => {
+    const ctx = (() => {
+      try {
+        return getCtx();
+      } catch {
+        return undefined;
+      }
+    })();
+    ctx?.logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
+  });
 }
 
 /**
