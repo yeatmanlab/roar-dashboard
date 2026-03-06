@@ -311,11 +311,18 @@ describe('SchoolRepository', () => {
 
   describe('getChildren', () => {
     it('returns child organizations of a school', async () => {
+      // Create a department under the school
+      const department = await OrgFactory.create({
+        orgType: OrgType.DEPARTMENT,
+        name: 'Test Department',
+        parentOrgId: baseFixture.schoolA.id,
+      });
+
       const children = await repository.getChildren(baseFixture.schoolA.id);
 
       const ids = children.map((c) => c.id);
-      // Should include Class A
-      expect(ids).toContain(baseFixture.classA.id);
+      // Should include the department
+      expect(ids).toContain(department.id);
 
       // All children should have the school as parent
       for (const child of children) {
@@ -324,10 +331,10 @@ describe('SchoolRepository', () => {
     });
 
     it('excludes ended children by default', async () => {
-      // Create a class with rosteringEnded
-      const endedClass = await OrgFactory.create({
-        orgType: OrgType.CLASS,
-        name: 'Ended Class Exclude Test',
+      // Create a department with rosteringEnded
+      const endedDepartment = await OrgFactory.create({
+        orgType: OrgType.DEPARTMENT,
+        name: 'Ended Department Exclude Test',
         parentOrgId: baseFixture.schoolA.id,
         rosteringEnded: new Date('2020-01-01'),
       });
@@ -341,15 +348,15 @@ describe('SchoolRepository', () => {
         expect(child.rosteringEnded).toBeNull();
       }
 
-      // Our ended class should NOT be in results
-      expect(ids).not.toContain(endedClass.id);
+      // Our ended department should NOT be in results
+      expect(ids).not.toContain(endedDepartment.id);
     });
 
     it('includes ended children when includeEnded=true', async () => {
-      // Create a class with rosteringEnded
-      const endedClass = await OrgFactory.create({
-        orgType: OrgType.CLASS,
-        name: 'Ended Class 2',
+      // Create a department with rosteringEnded
+      const endedDepartment = await OrgFactory.create({
+        orgType: OrgType.DEPARTMENT,
+        name: 'Ended Department 2',
         parentOrgId: baseFixture.schoolA.id,
         rosteringEnded: new Date(),
       });
@@ -357,7 +364,7 @@ describe('SchoolRepository', () => {
       const children = await repository.getChildren(baseFixture.schoolA.id, true);
 
       const ids = children.map((c) => c.id);
-      expect(ids).toContain(endedClass.id);
+      expect(ids).toContain(endedDepartment.id);
     });
 
     it('returns empty array for school with no children', async () => {

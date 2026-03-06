@@ -224,7 +224,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
         classes: sql<number>`(
           SELECT COUNT(DISTINCT ${classes.id})
           FROM app.classes
-          WHERE ${classes.orgId} = ${orgs.id}
+          WHERE ${classes.schoolId} = ${orgs.id}
         )`.as('classes'),
       })
       .from(orgs)
