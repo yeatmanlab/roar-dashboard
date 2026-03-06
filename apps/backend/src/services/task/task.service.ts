@@ -534,19 +534,8 @@ export function TaskService({
     }
 
     try {
-      // Verify the parent task exists
-      const task = await taskRepository.getById({ id: taskId });
-
-      if (!task) {
-        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, taskId },
-        });
-      }
-
-      // Verify the variant exists and belongs to the task
-      const existingVariant = await taskVariantRepository.getById({ id: variantId });
+      // Verify that the variant exists and belongs to the task
+      const existingVariant = await taskVariantRepository.getTaskIdByVariantId(variantId);
 
       if (!existingVariant || existingVariant.taskId !== taskId) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
@@ -556,26 +545,12 @@ export function TaskService({
         });
       }
 
-      // If name is being updated, check for conflicts
-      if (name !== undefined && name !== existingVariant.name) {
-        const conflictingVariant = await taskVariantRepository.getByTaskIdAndName({ taskId, name });
-
-        if (conflictingVariant && conflictingVariant.id !== variantId) {
-          throw new ApiError(ApiErrorMessage.CONFLICT, {
-            statusCode: StatusCodes.CONFLICT,
-            code: ApiErrorCode.RESOURCE_CONFLICT,
-            context: { userId, taskId, variantId, variantName: name },
-          });
-        }
-      }
-
       // Build update data object with only provided fields
       const updateData: Partial<NewTaskVariant> = {};
       if (name !== undefined) updateData.name = name;
       if (description !== undefined) updateData.description = description;
       if (status !== undefined) updateData.status = status;
 
-      // Update variant and parameters in a transaction
       await taskVariantRepository.runTransaction({
         fn: async (tx) => {
           // Update the variant if there are any field updates
@@ -587,24 +562,15 @@ export function TaskService({
             });
           }
 
-          // If parameters are provided, replace all existing parameters
           if (parameters !== undefined) {
-            // Delete all existing parameters
             await taskVariantParameterRepository.deleteByTaskVariantId({
               taskVariantId: variantId,
               transaction: tx,
             });
 
-            // Create new parameters
             if (parameters.length > 0) {
-              const taskVariantParameterData: NewTaskVariantParameter[] = parameters.map(({ name, value }) => ({
-                taskVariantId: variantId,
-                name,
-                value,
-              }));
-
               await taskVariantParameterRepository.createMany({
-                data: taskVariantParameterData,
+                data: parameters.map(({ name, value }) => ({ taskVariantId: variantId, name, value })),
                 transaction: tx,
               });
             }
