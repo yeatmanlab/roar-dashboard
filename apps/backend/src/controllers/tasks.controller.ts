@@ -1,9 +1,33 @@
 import type { AuthContext } from '../types/auth-context';
 import type { CreateTaskVariantRequestBody, UpdateTaskVariantRequestBody } from '@roar-dashboard/api-contract';
+import type { TasksListQuery, Task as ContractTask } from '@roar-dashboard/api-contract';
+import type { Task } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
+
+/**
+ * Maps a database Task entity to the API schema.
+ * Converts Date fields to ISO strings.
+ *
+ * @param task - The database Task entity
+ * @returns The API-formatted task object
+ */
+function transformTask(task: Task): ContractTask {
+  return {
+    id: task.id,
+    slug: task.slug,
+    name: task.name,
+    nameSimple: task.nameSimple,
+    nameTechnical: task.nameTechnical,
+    description: task.description,
+    image: task.image,
+    tutorialVideo: task.tutorialVideo,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: (task.updatedAt ?? task.createdAt).toISOString(),
+  };
+}
 
 const taskService = TaskService();
 
@@ -16,7 +40,49 @@ const taskService = TaskService();
  */
 export const TasksController = {
   /**
-   * Create a new task-variant for a given task.
+   * List all tasks with optional filtering and sorting.
+   *
+   * Delegates to TaskService for business logic.
+   *
+   * @param authContext - User's authentication context
+   * @param query - Query parameters for pagination, sorting, and filtering
+   * @returns Paginated list of tasks
+   */
+  list: async (authContext: AuthContext, query: TasksListQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder, slug, search } = query;
+      const result = await taskService.list(authContext, {
+        page,
+        perPage,
+        orderBy: { field: sortBy, direction: sortOrder },
+        ...(slug && { slug }),
+        ...(search && { search }),
+      });
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items: result.items.map(transformTask),
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new task-variant for a given task id.
    *
    * Delegates to TaskService for authorization and business logic.
    * Requires super admin privileges. The variant and all its parameters

@@ -1,11 +1,12 @@
-import type { NewTaskVariant, NewTaskVariantParameter, User } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter, User, Task } from '../../db/schema';
 import type { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
+import type { PaginatedResult } from '../../repositories/base.repository';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../logger';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
-import { TaskRepository } from '../../repositories/task.repository';
+import { TaskRepository, type ListTasksOptions } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -625,7 +626,38 @@ export function TaskService({
     return evaluateCondition(userData, condition);
   }
 
+  /**
+   * List all tasks with optional filtering and sorting.
+   *
+   * Tasks are global resources (not tied to org hierarchy), so all authenticated
+   * users can view all tasks. No authorization filtering is applied.
+   *
+   * @param authContext - User's authentication context (used for logging)
+   * @param options - Pagination, sorting, and filter options
+   * @returns Paginated result with tasks
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function list(authContext: AuthContext, options: ListTasksOptions): Promise<PaginatedResult<Task>> {
+    const { userId } = authContext;
+
+    try {
+      return await taskRepository.listAll(options);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to list tasks');
+
+      throw new ApiError('Failed to list tasks', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
+    list,
     createTaskVariant,
     updateTaskVariant,
     evaluateTaskVariantEligibility,
