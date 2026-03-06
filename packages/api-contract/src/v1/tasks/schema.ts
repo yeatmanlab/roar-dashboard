@@ -168,7 +168,7 @@ export type Task = z.infer<typeof TaskSchema>;
 /**
  * Allowed sort fields for tasks.
  */
-export const TASK_SORT_FIELDS = ['createdAt', 'name', 'slug'] as const;
+export const TASK_SORT_FIELDS = ['createdAt', 'name', 'slug', 'updatedAt'] as const;
 
 /**
  * Sort field type for tasks.
@@ -182,6 +182,7 @@ export const TaskSortField = {
   CREATED_AT: 'createdAt',
   NAME: 'name',
   SLUG: 'slug',
+  UPDATED_AT: 'updatedAt',
 } as const satisfies Record<string, TaskSortFieldType>;
 
 /**
