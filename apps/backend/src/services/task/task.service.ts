@@ -35,14 +35,12 @@ export interface CreateTaskVariantData {
 
 /**
  * Data for updating an existing task variant.
- * taskId and variantId are required path parameters.
- * The remaining fields are optional - only provided fields will be updated.
+ * All fields are optional - only provided fields will be updated.
  *
+ * NOTE: taskId and variantId are passed separately as path parameters.
  * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
  */
 export interface UpdateTaskVariantData {
-  taskId: string;
-  variantId: string;
   name?: string | undefined;
   description?: string | undefined;
   status?: TaskVariantStatus | undefined;
@@ -398,9 +396,14 @@ export function TaskService({
    * @throws ApiError with NOT_FOUND if task or variant doesn't exist
    * @throws ApiError with CONFLICT if name update would create a duplicate
    */
-  async function updateTaskVariant(authContext: AuthContext, data: UpdateTaskVariantData): Promise<void> {
+  async function updateTaskVariant(
+    authContext: AuthContext,
+    params: { taskId: string; variantId: string },
+    body: UpdateTaskVariantData,
+  ): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
-    const { taskId, variantId, name, status, description, parameters } = data;
+    const { taskId, variantId } = params;
+    const { name, status, description, parameters } = body;
 
     if (!isSuperAdmin) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {

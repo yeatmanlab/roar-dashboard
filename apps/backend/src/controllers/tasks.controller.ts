@@ -1,5 +1,5 @@
 import type { AuthContext } from '../types/auth-context';
-import type { CreateTaskVariantData, UpdateTaskVariantData } from '../services/task/task.service';
+import type { CreateTaskVariantRequestBody, UpdateTaskVariantRequestBody } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';
 import { ApiError } from '../errors/api-error';
@@ -21,12 +21,12 @@ export const TasksController = {
    * Delegates to TaskService for authorization and business logic.
    *
    * @param authContext - User's authentication context.
-   * @param data - Parameters for CreateTaskVariantData interface
+   * @param data - Parameters for TaskVariantCreateRequest interface
    * @returns An object containing the newly created task variant's UUID.
    *
-   * @see {@link CreateTaskVariantData} - Parameters for creating a new task variant.
+   * @see {@link CreateTaskVariantRequestBody} - Parameters for creating a new task variant.
    */
-  createTaskVariant: async (authContext: AuthContext, data: CreateTaskVariantData) => {
+  createTaskVariant: async (authContext: AuthContext, data: CreateTaskVariantRequestBody & { taskId: string }) => {
     try {
       const id = await taskService.createTaskVariant(authContext, data);
       return {
@@ -56,14 +56,18 @@ export const TasksController = {
    * All fields in the request are optional - only provided fields will be updated.
    *
    * @param authContext - User's authentication context.
-   * @param data - Parameters for UpdateTaskVariantData interface
+   * @param data - Parameters for TaskVariantUpdateRequest interface
    * @returns 204 No Content on success.
    *
-   * @see {@link UpdateTaskVariantData} - Parameters for updating a task variant.
+   * @see {@link UpdateTaskVariantRequest} - Parameters for updating a task variant.
    */
-  updateTaskVariant: async (authContext: AuthContext, data: UpdateTaskVariantData) => {
+  updateTaskVariant: async (
+    authContext: AuthContext,
+    params: { taskId: string; variantId: string },
+    body: UpdateTaskVariantRequestBody,
+  ) => {
     try {
-      await taskService.updateTaskVariant(authContext, data);
+      await taskService.updateTaskVariant(authContext, params, body);
       return {
         status: StatusCodes.NO_CONTENT as const,
         body: undefined,

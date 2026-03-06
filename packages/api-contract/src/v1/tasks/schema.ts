@@ -83,14 +83,14 @@ const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema);
  * @property description - Human-readable description of the variant
  * @property status - Publication status of the variant
  */
-export const TaskVariantCreateRequestSchema = z.object({
+export const CreateTaskVariantRequestBodySchema = z.object({
   name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES),
   parameters: TaskVariantParametersArraySchema.default([]),
   description: z.string().trim().min(1).max(1024),
   status: TaskVariantStatusSchema,
 });
 
-export const TaskVariantCreateResponseSchema = z.object({
+export const CreateTaskVariantResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
@@ -108,7 +108,7 @@ export const TaskVariantCreateResponseSchema = z.object({
  * At least one field must be provided. When updating parameters, the entire array replaces
  * the existing parameters - this is not a merge operation.
  */
-export const TaskVariantUpdateRequestSchema = z
+export const UpdateTaskVariantRequestBodySchema = z
   .object({
     name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
     description: z.string().trim().min(1).max(1024).optional(),
@@ -131,12 +131,12 @@ export const TaskVariantUpdateRequestSchema = z
  * Returns 204 No Content on successful update.
  * The response body is empty - use a GET request if you need the updated resource.
  */
-export const TaskVariantUpdateResponseSchema = z.undefined();
+export const UpdateTaskVariantResponseBodySchema = z.undefined();
 
 export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
 export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
-export type TaskVariantCreateRequest = z.infer<typeof TaskVariantCreateRequestSchema>;
-export type TaskVariantCreateResponse = z.infer<typeof TaskVariantCreateResponseSchema>;
-export type TaskVariantUpdateRequest = z.infer<typeof TaskVariantUpdateRequestSchema>;
-export type TaskVariantUpdateResponse = z.infer<typeof TaskVariantUpdateResponseSchema>;
+export type CreateTaskVariantRequestBody = z.infer<typeof CreateTaskVariantRequestBodySchema>;
+export type CreateTaskVariantResponse = z.infer<typeof CreateTaskVariantResponseSchema>;
+export type UpdateTaskVariantRequestBody = z.infer<typeof UpdateTaskVariantRequestBodySchema>;
+export type UpdateTaskVariantResponse = z.infer<typeof UpdateTaskVariantResponseBodySchema>;

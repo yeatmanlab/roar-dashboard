@@ -23,11 +23,8 @@ export function registerTasksRoutes(routerInstance: Router) {
       handler: async ({ req, params, body }) =>
         TasksController.updateTaskVariant(
           { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          {
-            taskId: params.taskId,
-            variantId: params.variantId,
-            ...body,
-          },
+          { taskId: params.taskId, variantId: params.variantId },
+          body,
         ),
     },
   });

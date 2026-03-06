@@ -2,10 +2,10 @@ import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import {
-  TaskVariantCreateRequestSchema,
-  TaskVariantCreateResponseSchema,
-  TaskVariantUpdateRequestSchema,
-  TaskVariantUpdateResponseSchema,
+  CreateTaskVariantRequestBodySchema,
+  CreateTaskVariantResponseSchema,
+  UpdateTaskVariantRequestBodySchema,
+  UpdateTaskVariantResponseBodySchema,
 } from './schema';
 
 const c = initContract();
@@ -23,9 +23,9 @@ export const TasksContract = c.router(
         taskId: z.string().uuid(),
       }),
       contentType: 'application/json',
-      body: TaskVariantCreateRequestSchema,
+      body: CreateTaskVariantRequestBodySchema,
       responses: {
-        201: SuccessEnvelopeSchema(TaskVariantCreateResponseSchema),
+        201: SuccessEnvelopeSchema(CreateTaskVariantResponseSchema),
         400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
@@ -49,9 +49,9 @@ export const TasksContract = c.router(
         variantId: z.string().uuid(),
       }),
       contentType: 'application/json',
-      body: TaskVariantUpdateRequestSchema,
+      body: UpdateTaskVariantRequestBodySchema,
       responses: {
-        204: TaskVariantUpdateResponseSchema,
+        204: UpdateTaskVariantResponseBodySchema,
         400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
