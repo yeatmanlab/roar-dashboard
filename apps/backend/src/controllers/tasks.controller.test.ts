@@ -15,6 +15,7 @@ import { TaskService } from '../services/task/task.service';
 
 describe('TasksController', () => {
   const mockAuthContext: AuthContext = { userId: 'admin-1', isSuperAdmin: true };
+  const mockList = vi.fn();
   const mockCreateTaskVariant = vi.fn();
   const mockUpdateTaskVariant = vi.fn();
 
@@ -23,6 +24,7 @@ describe('TasksController', () => {
 
     // Setup the mock service
     vi.mocked(TaskService).mockReturnValue({
+      list: mockList,
       createTaskVariant: mockCreateTaskVariant,
       updateTaskVariant: mockUpdateTaskVariant,
       evaluateTaskVariantEligibility: vi.fn(),
