@@ -24,13 +24,28 @@ export interface CreateTaskVariantParameterData {
 
 /**
  * Data required to create a new task variant.
+ *
+ * NOTE: taskId is passed separately as a path parameter.
  */
 export interface CreateTaskVariantData {
-  taskId: string;
   name: string;
   description: string;
   status: TaskVariantStatus;
   parameters: CreateTaskVariantParameterData[];
+}
+
+/**
+ * Data for updating an existing task variant.
+ * All fields are optional - only provided fields will be updated.
+ *
+ * NOTE: taskId and variantId are passed separately as path parameters.
+ * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
+ */
+export interface UpdateTaskVariantData {
+  name?: string | undefined;
+  description?: string | undefined;
+  status?: TaskVariantStatus | undefined;
+  parameters?: CreateTaskVariantParameterData[] | undefined;
 }
 
 /**
@@ -248,9 +263,13 @@ export function TaskService({
    * });
    * ```
    */
-  async function createTaskVariant(authContext: AuthContext, data: CreateTaskVariantData): Promise<{ id: string }> {
+  async function createTaskVariant(
+    authContext: AuthContext,
+    taskId: string,
+    body: CreateTaskVariantData,
+  ): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
-    const { taskId, name, status, description } = data;
+    const { name, status, description } = body;
 
     if (!isSuperAdmin) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
@@ -262,22 +281,22 @@ export function TaskService({
 
     try {
       // Verify the parent task exists
-      const task = await taskRepository.getById({ id: data.taskId });
+      const task = await taskRepository.getById({ id: taskId });
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, taskId: data.taskId },
+          context: { userId, taskId },
         });
       }
 
       // Validate parameters before starting transaction to prevent creating orphaned variants
-      if (data.parameters.length === 0) {
-        throw new ApiError('At least one parameter required', {
+      if (body.parameters.length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, isSuperAdmin, taskId: data.taskId },
+          context: { userId, isSuperAdmin, taskId },
         });
       }
 
@@ -300,13 +319,13 @@ export function TaskService({
             throw new ApiError('Failed to create task variant', {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.INTERNAL,
-              context: { userId, isSuperAdmin, taskId: data.taskId },
+              context: { userId, isSuperAdmin, taskId },
             });
           }
 
           const { id: taskVariantId } = newVariant;
 
-          const taskVariantParameterData: NewTaskVariantParameter[] = data.parameters.map(({ name, value }) => ({
+          const taskVariantParameterData: NewTaskVariantParameter[] = body.parameters.map(({ name, value }) => ({
             taskVariantId,
             name,
             value,
@@ -336,7 +355,7 @@ export function TaskService({
       });
 
       logger.info(
-        { userId, taskId: data.taskId, variantId: variant.id, parameterCount: data.parameters.length },
+        { userId, taskId, variantId: variant.id, parameterCount: body.parameters.length },
         'Created task variant with parameters',
       );
 
@@ -352,17 +371,131 @@ export function TaskService({
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { userId, taskId: data.taskId, variantName: data.name },
+          context: { userId, taskId, variantName: body.name },
           cause: error,
         });
       }
 
-      logger.error({ err: error, context: { userId, taskId: data.taskId } }, 'Failed to create task variant');
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to create task variant');
 
       throw new ApiError('Failed to create task variant', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, taskId: data.taskId },
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Updates an existing task variant.
+   *
+   * Only super admins can update task variants.
+   * All fields in the request are optional - only provided fields will be updated.
+   * When parameters are provided, they replace all existing parameters (not merged).
+   *
+   * @param authContext - User's authentication context
+   * @param data - Fields to update (all optional)
+   * @returns Success indicator
+   * @throws ApiError with FORBIDDEN if user is not a super admin
+   * @throws ApiError with NOT_FOUND if task or variant doesn't exist
+   * @throws ApiError with CONFLICT if name update would create a duplicate
+   */
+  async function updateTaskVariant(
+    authContext: AuthContext,
+    params: { taskId: string; variantId: string },
+    body: UpdateTaskVariantData,
+  ): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+    const { taskId, variantId } = params;
+    const { name, status, description, parameters } = body;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    try {
+      // Verify that the variant exists and belongs to the task
+      const existingVariant = await taskVariantRepository.getTaskIdByVariantId(variantId);
+
+      if (!existingVariant || existingVariant.taskId !== taskId) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId, variantId },
+        });
+      }
+
+      // Build update data object with only provided fields
+      const updateData: Partial<NewTaskVariant> = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (status !== undefined) updateData.status = status;
+
+      await taskVariantRepository.runTransaction({
+        fn: async (tx) => {
+          // Update the variant if there are any field updates
+          if (Object.keys(updateData).length > 0) {
+            await taskVariantRepository.update({
+              id: variantId,
+              data: updateData,
+              transaction: tx,
+            });
+          }
+
+          if (parameters !== undefined) {
+            await taskVariantParameterRepository.deleteByTaskVariantId({
+              taskVariantId: variantId,
+              transaction: tx,
+            });
+
+            if (parameters.length > 0) {
+              await taskVariantParameterRepository.createMany({
+                data: parameters.map(({ name, value }) => ({ taskVariantId: variantId, name, value })),
+                transaction: tx,
+              });
+            }
+          }
+        },
+      });
+
+      logger.info(
+        {
+          userId,
+          taskId,
+          variantId,
+          updatedFields: Object.keys(updateData),
+          parametersUpdated: parameters !== undefined,
+          parameterCount: parameters?.length ?? 0,
+        },
+        'Updated task variant',
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      // Unwrap the Drizzle error to get the underlying database error with SQLSTATE codes
+      const dbError = unwrapDrizzleError(error);
+
+      // Check for Postgres unique constraint violation
+      if (isUniqueViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, taskId, variantId, variantName: name },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, taskId, variantId } }, 'Failed to update task variant');
+
+      throw new ApiError('Failed to update task variant', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId, variantId },
         cause: error,
       });
     }
@@ -486,6 +619,7 @@ export function TaskService({
 
   return {
     createTaskVariant,
+    updateTaskVariant,
     evaluateTaskVariantEligibility,
   };
 }
