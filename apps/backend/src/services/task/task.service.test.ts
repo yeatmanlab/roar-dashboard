@@ -895,7 +895,7 @@ describe('TaskService', () => {
     describe('edge cases', () => {
       it('should update only description when name is not being updated', async () => {
         const mockTask = TaskFactory.build();
-        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Existing Name' });
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
