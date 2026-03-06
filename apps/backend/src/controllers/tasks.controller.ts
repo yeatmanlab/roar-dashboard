@@ -1,6 +1,6 @@
 import type { AuthContext } from '../types/auth-context';
 import type { CreateTaskVariantRequestBody, UpdateTaskVariantRequestBody } from '@roar-dashboard/api-contract';
-import type { TasksListQuery, Task as ContractTask } from '@roar-dashboard/api-contract';
+import type { TasksListQuery, Task as ContractTask, Json } from '@roar-dashboard/api-contract';
 import type { Task } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';
@@ -24,6 +24,7 @@ function transformTask(task: Task): ContractTask {
     description: task.description,
     image: task.image,
     tutorialVideo: task.tutorialVideo,
+    taskConfig: task.taskConfig as Json,
     createdAt: task.createdAt.toISOString(),
     updatedAt: (task.updatedAt ?? task.createdAt).toISOString(),
   };
