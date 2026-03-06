@@ -3,6 +3,7 @@ import { registerMeRoutes } from './me';
 import { registerAdministrationsRoutes } from './administrations';
 import { registerRunsRoutes } from './runs';
 import { registerDistrictsRoutes } from './districts';
+import { registerSchoolsRoutes } from './schools';
 import { registerGroupsRoutes } from './groups';
 import { registerTasksRoutes } from './task';
 import { API_VERSION } from '../constants/api';
@@ -30,6 +31,7 @@ export function registerAllRoutes(app: Express) {
   registerAdministrationsRoutes(router);
   registerRunsRoutes(router);
   registerDistrictsRoutes(router);
+  registerSchoolsRoutes(router);
   registerGroupsRoutes(router);
   registerTasksRoutes(router);
 
