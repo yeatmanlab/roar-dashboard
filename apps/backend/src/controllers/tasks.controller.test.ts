@@ -34,8 +34,8 @@ describe('TasksController', () => {
       const mockVariantId = { id: 'variant-123' };
       mockCreateTaskVariant.mockResolvedValue(mockVariantId);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -46,7 +46,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result).toEqual({
         status: StatusCodes.CREATED,
@@ -55,7 +55,7 @@ describe('TasksController', () => {
         },
       });
 
-      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, data);
+      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, taskId, body);
       expect(mockCreateTaskVariant).toHaveBeenCalledTimes(1);
     });
 
@@ -67,8 +67,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(forbiddenError);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -76,7 +76,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toHaveProperty('error');
@@ -90,8 +90,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(notFoundError);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'nonexistent-task',
+      const taskId = 'nonexistent-task';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -99,7 +99,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
       expect(result.body).toHaveProperty('error');
@@ -113,8 +113,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(conflictError);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'duplicate-variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -122,7 +122,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.CONFLICT);
       expect(result.body).toHaveProperty('error');
@@ -136,8 +136,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(badRequestError);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -145,7 +145,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.BAD_REQUEST);
       expect(result.body).toHaveProperty('error');
@@ -159,8 +159,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(internalError);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -168,7 +168,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(result.body).toHaveProperty('error');
@@ -179,8 +179,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(unexpectedError);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -188,7 +188,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      await expect(Controller.createTaskVariant(mockAuthContext, data)).rejects.toThrow(unexpectedError);
+      await expect(Controller.createTaskVariant(mockAuthContext, taskId, body)).rejects.toThrow(unexpectedError);
     });
 
     it('should handle multiple parameter types in success case', async () => {
@@ -196,8 +196,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockResolvedValue(mockVariantId);
 
-      const data: CreateTaskVariantRequestBody & { taskId: string } = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Complex Variant',
         description: 'Test with various parameter types',
         status: TaskVariantStatus.DRAFT,
@@ -212,13 +212,13 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.CREATED);
       if (result.status === StatusCodes.CREATED) {
         expect(result.body.data).toEqual(mockVariantId);
       }
-      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, data);
+      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, taskId, body);
     });
   });
 

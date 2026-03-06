@@ -65,14 +65,14 @@ describe('TaskService', () => {
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockTaskVariantParameterReturnValue);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: mockTaskVariantParameterData,
         };
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskRepository.getById).toHaveBeenCalledWith({ id: mockTask.id });
@@ -107,15 +107,15 @@ describe('TaskService', () => {
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockParameterReturnValues);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Multi-param Variant',
           description: 'Variant with multiple parameters',
           status: TaskVariantStatus.PUBLISHED,
           parameters: mockParameters,
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -148,15 +148,15 @@ describe('TaskService', () => {
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Complex Variant',
           description: 'Variant with complex JSONB',
           status: TaskVariantStatus.DRAFT,
           parameters: [complexParameter],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -176,15 +176,15 @@ describe('TaskService', () => {
       it('should throw FORBIDDEN error when user is not super admin', async () => {
         const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
 
-        const mockData = {
-          taskId: 'task-1',
+        const taskId = 'task-1';
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(nonAdminContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(nonAdminContext, taskId, body)).rejects.toMatchObject({
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
           context: { userId: 'user-1', isSuperAdmin: false },
@@ -207,15 +207,15 @@ describe('TaskService', () => {
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Invalid Variant',
           description: 'No parameters',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [], // Empty array - should fail
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
@@ -235,8 +235,8 @@ describe('TaskService', () => {
         // Only 1 parameter created instead of 3
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Partial Variant',
           description: 'Should fail',
           status: TaskVariantStatus.PUBLISHED,
@@ -247,7 +247,7 @@ describe('TaskService', () => {
           ],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           message: 'Failed to create all task variant parameters',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
@@ -265,15 +265,15 @@ describe('TaskService', () => {
       it('should throw NOT_FOUND when parent task does not exist', async () => {
         taskRepository.getById.mockResolvedValue(null);
 
-        const mockData = {
-          taskId: 'nonexistent-task-id',
+        const taskId = 'nonexistent-task-id';
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: {
@@ -311,15 +311,15 @@ describe('TaskService', () => {
 
         taskVariantRepository.runTransaction.mockRejectedValueOnce(uniqueViolationError);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'duplicate-variant-name',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
           context: {
@@ -338,15 +338,15 @@ describe('TaskService', () => {
         const dbError = new Error('Connection timeout');
         taskVariantRepository.runTransaction.mockRejectedValueOnce(dbError);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           message: 'Failed to create task variant',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -365,15 +365,15 @@ describe('TaskService', () => {
           return await fn({});
         });
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Failed Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           message: 'Failed to create task variant',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
@@ -392,15 +392,15 @@ describe('TaskService', () => {
 
         taskVariantRepository.runTransaction.mockRejectedValueOnce(nestedApiError);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toThrow(nestedApiError);
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toThrow(nestedApiError);
       });
     });
 
@@ -416,15 +416,15 @@ describe('TaskService', () => {
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Deprecated Variant',
           description: 'Old variant',
           status: TaskVariantStatus.DEPRECATED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
@@ -445,15 +445,15 @@ describe('TaskService', () => {
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Draft Variant',
           description: 'Work in progress',
           status: TaskVariantStatus.DRAFT,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
@@ -474,15 +474,15 @@ describe('TaskService', () => {
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Null Param Variant',
           description: 'Test null handling',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'optionalConfig', value: null }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -509,15 +509,15 @@ describe('TaskService', () => {
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
         const arrayValue = ['option1', 'option2', 'option3'];
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Array Param Variant',
           description: 'Test array handling',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'choices', value: arrayValue }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({

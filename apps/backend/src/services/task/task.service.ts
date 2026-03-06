@@ -24,9 +24,10 @@ export interface CreateTaskVariantParameterData {
 
 /**
  * Data required to create a new task variant.
+ *
+ * NOTE: taskId is passed separately as a path parameter.
  */
 export interface CreateTaskVariantData {
-  taskId: string;
   name: string;
   description: string;
   status: TaskVariantStatus;
@@ -262,9 +263,13 @@ export function TaskService({
    * });
    * ```
    */
-  async function createTaskVariant(authContext: AuthContext, data: CreateTaskVariantData): Promise<{ id: string }> {
+  async function createTaskVariant(
+    authContext: AuthContext,
+    taskId: string,
+    body: CreateTaskVariantData,
+  ): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
-    const { taskId, name, status, description } = data;
+    const { name, status, description } = body;
 
     if (!isSuperAdmin) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
@@ -276,22 +281,22 @@ export function TaskService({
 
     try {
       // Verify the parent task exists
-      const task = await taskRepository.getById({ id: data.taskId });
+      const task = await taskRepository.getById({ id: taskId });
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, taskId: data.taskId },
+          context: { userId, taskId },
         });
       }
 
       // Validate parameters before starting transaction to prevent creating orphaned variants
-      if (data.parameters.length === 0) {
+      if (body.parameters.length === 0) {
         throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, isSuperAdmin, taskId: data.taskId },
+          context: { userId, isSuperAdmin, taskId },
         });
       }
 
@@ -314,13 +319,13 @@ export function TaskService({
             throw new ApiError('Failed to create task variant', {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.INTERNAL,
-              context: { userId, isSuperAdmin, taskId: data.taskId },
+              context: { userId, isSuperAdmin, taskId },
             });
           }
 
           const { id: taskVariantId } = newVariant;
 
-          const taskVariantParameterData: NewTaskVariantParameter[] = data.parameters.map(({ name, value }) => ({
+          const taskVariantParameterData: NewTaskVariantParameter[] = body.parameters.map(({ name, value }) => ({
             taskVariantId,
             name,
             value,
@@ -350,7 +355,7 @@ export function TaskService({
       });
 
       logger.info(
-        { userId, taskId: data.taskId, variantId: variant.id, parameterCount: data.parameters.length },
+        { userId, taskId, variantId: variant.id, parameterCount: body.parameters.length },
         'Created task variant with parameters',
       );
 
@@ -366,17 +371,17 @@ export function TaskService({
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { userId, taskId: data.taskId, variantName: data.name },
+          context: { userId, taskId, variantName: body.name },
           cause: error,
         });
       }
 
-      logger.error({ err: error, context: { userId, taskId: data.taskId } }, 'Failed to create task variant');
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to create task variant');
 
       throw new ApiError('Failed to create task variant', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, taskId: data.taskId },
+        context: { userId, taskId },
         cause: error,
       });
     }

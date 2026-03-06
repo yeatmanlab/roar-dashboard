@@ -21,14 +21,15 @@ export const TasksController = {
    * Delegates to TaskService for authorization and business logic.
    *
    * @param authContext - User's authentication context.
-   * @param data - Parameters for TaskVariantCreateRequest interface
+   * @param taskId - Path parameter containing the task ID
+   * @param body - Request body with variant details
    * @returns An object containing the newly created task variant's UUID.
    *
    * @see {@link CreateTaskVariantRequestBody} - Parameters for creating a new task variant.
    */
-  createTaskVariant: async (authContext: AuthContext, data: CreateTaskVariantRequestBody & { taskId: string }) => {
+  createTaskVariant: async (authContext: AuthContext, taskId: string, body: CreateTaskVariantRequestBody) => {
     try {
-      const id = await taskService.createTaskVariant(authContext, data);
+      const id = await taskService.createTaskVariant(authContext, taskId, body);
       return {
         status: StatusCodes.CREATED as const,
         body: {

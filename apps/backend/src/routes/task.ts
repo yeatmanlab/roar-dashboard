@@ -14,7 +14,8 @@ export function registerTasksRoutes(routerInstance: Router) {
       handler: async ({ req, params, body }) =>
         TasksController.createTaskVariant(
           { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          { ...body, taskId: params.taskId },
+          params.taskId,
+          body,
         ),
     },
     updateTaskVariant: {
