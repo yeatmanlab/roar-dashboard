@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { PaginationQuerySchema, createPaginatedResponseSchema, createSortQuerySchema } from './query';
-import { UserTypeSchema } from '../me/schema';
 
 export const UserRoleSchema = z.enum([
   'administrator',
@@ -75,7 +74,7 @@ export const UserBaseSchema = z.object({
   nameLast: z.string().nullable(),
   username: z.string().nullable(),
   email: z.string().email().nullable(),
-  userType: UserTypeSchema, // Return user role
+  userRole: UserRoleSchema, // Return user role
 });
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
@@ -90,9 +89,7 @@ export const UsersListSortFields = {
 } as const satisfies Record<string, UsersListSortField>;
 
 const UsersListQueryFilterSchema = z.object({
-  active: z.boolean().optional(),
   role: UserRoleSchema.optional(),
-  userType: UserTypeSchema.optional(),
   grade: UserGradeSchema.optional(),
 });
 
