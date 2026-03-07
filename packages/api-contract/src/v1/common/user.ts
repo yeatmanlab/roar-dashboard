@@ -74,11 +74,13 @@ export const UserBaseSchema = z.object({
   nameLast: z.string().nullable(),
   username: z.string().nullable(),
   email: z.string().email().nullable(),
-  userRole: UserRoleSchema,
 });
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
-
+export const UserListSchema = UserSchema.extend({
+  userRole: UserRoleSchema,
+  enrollmentStart: z.string().datetime(),
+});
 // TODO: which fields to sort?
 export const USERS_LIST_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type UsersListSortField = (typeof USERS_LIST_SORT_FIELDS)[number];
@@ -101,5 +103,5 @@ export const UsersListQuerySchema = PaginationQuerySchema.merge(
 
 export type UsersListQuery = z.infer<typeof UsersListQuerySchema>;
 
-export const UsersListResponseSchema = createPaginatedResponseSchema(UserSchema);
+export const UsersListResponseSchema = createPaginatedResponseSchema(UserListSchema);
 export type UsersListResponse = z.infer<typeof UsersListResponseSchema>;
