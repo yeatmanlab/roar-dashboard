@@ -56,10 +56,26 @@ const chartOptions = computed(() => ({
       grid: { color: 'rgba(0,0,0,0.15)' },
     },
     x: {
-      type: 'timeseries',
-      time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
-      ticks: { color: '#000', maxRotation: 0, autoSkip: true, autoSkipPadding: 8 },
+      type: 'time',
+      time: {
+        unit: series.value.length === 1 ? 'day' : 'month',
+        displayFormats: { month: 'MMM yyyy', day: 'MMM d, yyyy' },
+      },
+      ticks: {
+        color: '#000',
+        maxRotation: 0,
+        autoSkip: true,
+        autoSkipPadding: 2,
+        maxTicksLimit: series.value.length <= 5 ? series.value.length : 8,
+        ...(series.value.length === 1 ? { source: 'data' } : {}),
+      },
       grid: { display: false },
+      ...(series.value.length === 1 && series.value[0]
+        ? {
+            min: new Date(series.value[0].x).getTime() - 7 * 24 * 60 * 60 * 1000, // 7 days before
+            max: new Date(series.value[0].x).getTime() + 7 * 24 * 60 * 60 * 1000, // 7 days after
+          }
+        : {}),
     },
   },
 }));
