@@ -74,7 +74,7 @@ export const UserBaseSchema = z.object({
   nameLast: z.string().nullable(),
   username: z.string().nullable(),
   email: z.string().email().nullable(),
-  userRole: UserRoleSchema, // Return user role
+  userRole: UserRoleSchema,
 });
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
