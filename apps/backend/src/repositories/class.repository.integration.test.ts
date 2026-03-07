@@ -348,6 +348,133 @@ describe('ClassRepository', () => {
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
     });
+
+    describe('filters', () => {
+      it('filters by role', async () => {
+        // Create a class with users having different roles
+        const filterTestClass = await ClassFactory.create({
+          name: 'Filter Role Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const student1 = await UserFactory.create({ nameLast: 'FilterStudent1' });
+        const student2 = await UserFactory.create({ nameLast: 'FilterStudent2' });
+        const teacher = await UserFactory.create({ nameLast: 'FilterTeacher' });
+        await UserClassFactory.create({ userId: student1.id, classId: filterTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: student2.id, classId: filterTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: teacher.id, classId: filterTestClass.id, role: UserRole.TEACHER });
+
+        const result = await repository.getUsersByClassId(filterTestClass.id, {
+          page: 1,
+          perPage: 100,
+          filters: { role: UserRole.STUDENT },
+        });
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(student1.id);
+        expect(userIds).toContain(student2.id);
+        expect(userIds).not.toContain(teacher.id);
+      });
+
+      it('filters by grade', async () => {
+        // Create a class with users having different grades
+        const filterGradeClass = await ClassFactory.create({
+          name: 'Filter Grade Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const grade3Student = await UserFactory.create({ nameLast: 'Grade3', grade: '3' });
+        const grade5Student = await UserFactory.create({ nameLast: 'Grade5', grade: '5' });
+        const grade5Student2 = await UserFactory.create({ nameLast: 'Grade5Second', grade: '5' });
+        await UserClassFactory.create({
+          userId: grade3Student.id,
+          classId: filterGradeClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Student.id,
+          classId: filterGradeClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Student2.id,
+          classId: filterGradeClass.id,
+          role: UserRole.STUDENT,
+        });
+
+        const result = await repository.getUsersByClassId(filterGradeClass.id, {
+          page: 1,
+          perPage: 100,
+          filters: { grade: '5' },
+        });
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(grade5Student.id);
+        expect(userIds).toContain(grade5Student2.id);
+        expect(userIds).not.toContain(grade3Student.id);
+      });
+
+      it('filters by both role and grade', async () => {
+        // Create a class with users having different roles and grades
+        const filterBothClass = await ClassFactory.create({
+          name: 'Filter Both Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const grade3Student = await UserFactory.create({ nameLast: 'G3Student', grade: '3' });
+        const grade5Student = await UserFactory.create({ nameLast: 'G5Student', grade: '5' });
+        const grade5Teacher = await UserFactory.create({ nameLast: 'G5Teacher', grade: '5' });
+        await UserClassFactory.create({
+          userId: grade3Student.id,
+          classId: filterBothClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Student.id,
+          classId: filterBothClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Teacher.id,
+          classId: filterBothClass.id,
+          role: UserRole.TEACHER,
+        });
+
+        const result = await repository.getUsersByClassId(filterBothClass.id, {
+          page: 1,
+          perPage: 100,
+          filters: { role: UserRole.STUDENT, grade: '5' },
+        });
+
+        expect(result.totalItems).toBe(1);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(grade5Student.id);
+      });
+
+      it('returns empty when no users match filter', async () => {
+        // Create a class with only students
+        const noMatchClass = await ClassFactory.create({
+          name: 'No Match Filter Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const student = await UserFactory.create({ nameLast: 'OnlyStudent' });
+        await UserClassFactory.create({ userId: student.id, classId: noMatchClass.id, role: UserRole.STUDENT });
+
+        const result = await repository.getUsersByClassId(noMatchClass.id, {
+          page: 1,
+          perPage: 100,
+          filters: { role: UserRole.ADMINISTRATOR },
+        });
+
+        expect(result.totalItems).toBe(0);
+        expect(result.items).toEqual([]);
+      });
+    });
   });
 
   describe('getAuthorizedUsersByClassId', () => {
@@ -614,6 +741,133 @@ describe('ClassRepository', () => {
 
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
+    });
+
+    describe('filters', () => {
+      it('filters by role', async () => {
+        // Create a class with users having different roles
+        const filterTestClass = await ClassFactory.create({
+          name: 'Authorized Filter Role Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const student1 = await UserFactory.create({ nameLast: 'AuthFilterStudent1' });
+        const student2 = await UserFactory.create({ nameLast: 'AuthFilterStudent2' });
+        const teacher = await UserFactory.create({ nameLast: 'AuthFilterTeacher' });
+        await UserClassFactory.create({ userId: student1.id, classId: filterTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: student2.id, classId: filterTestClass.id, role: UserRole.STUDENT });
+        await UserClassFactory.create({ userId: teacher.id, classId: filterTestClass.id, role: UserRole.TEACHER });
+
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          filterTestClass.id,
+          { page: 1, perPage: 100, filters: { role: UserRole.STUDENT } },
+        );
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(student1.id);
+        expect(userIds).toContain(student2.id);
+        expect(userIds).not.toContain(teacher.id);
+      });
+
+      it('filters by grade', async () => {
+        // Create a class with users having different grades
+        const filterGradeClass = await ClassFactory.create({
+          name: 'Authorized Filter Grade Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const grade3Student = await UserFactory.create({ nameLast: 'AuthGrade3', grade: '3' });
+        const grade5Student = await UserFactory.create({ nameLast: 'AuthGrade5', grade: '5' });
+        const grade5Student2 = await UserFactory.create({ nameLast: 'AuthGrade5Second', grade: '5' });
+        await UserClassFactory.create({
+          userId: grade3Student.id,
+          classId: filterGradeClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Student.id,
+          classId: filterGradeClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Student2.id,
+          classId: filterGradeClass.id,
+          role: UserRole.STUDENT,
+        });
+
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          filterGradeClass.id,
+          { page: 1, perPage: 100, filters: { grade: '5' } },
+        );
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(grade5Student.id);
+        expect(userIds).toContain(grade5Student2.id);
+        expect(userIds).not.toContain(grade3Student.id);
+      });
+
+      it('filters by both role and grade', async () => {
+        // Create a class with users having different roles and grades
+        const filterBothClass = await ClassFactory.create({
+          name: 'Authorized Filter Both Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const grade3Student = await UserFactory.create({ nameLast: 'AuthG3Student', grade: '3' });
+        const grade5Student = await UserFactory.create({ nameLast: 'AuthG5Student', grade: '5' });
+        const grade5Teacher = await UserFactory.create({ nameLast: 'AuthG5Teacher', grade: '5' });
+        await UserClassFactory.create({
+          userId: grade3Student.id,
+          classId: filterBothClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Student.id,
+          classId: filterBothClass.id,
+          role: UserRole.STUDENT,
+        });
+        await UserClassFactory.create({
+          userId: grade5Teacher.id,
+          classId: filterBothClass.id,
+          role: UserRole.TEACHER,
+        });
+
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          filterBothClass.id,
+          { page: 1, perPage: 100, filters: { role: UserRole.STUDENT, grade: '5' } },
+        );
+
+        expect(result.totalItems).toBe(1);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(grade5Student.id);
+      });
+
+      it('returns empty when no users match filter', async () => {
+        // Create a class with only students
+        const noMatchClass = await ClassFactory.create({
+          name: 'Authorized No Match Filter Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const student = await UserFactory.create({ nameLast: 'AuthOnlyStudent' });
+        await UserClassFactory.create({ userId: student.id, classId: noMatchClass.id, role: UserRole.STUDENT });
+
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          noMatchClass.id,
+          { page: 1, perPage: 100, filters: { role: UserRole.ADMINISTRATOR } },
+        );
+
+        expect(result.totalItems).toBe(0);
+        expect(result.items).toEqual([]);
+      });
     });
   });
 });

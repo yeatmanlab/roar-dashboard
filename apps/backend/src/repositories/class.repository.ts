@@ -1,6 +1,5 @@
 import { eq, asc, desc, count, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { Column } from 'drizzle-orm';
 import { classes, userClasses, users, type Class, type User } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -11,18 +10,8 @@ import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 import type { UsersListSortField } from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
+import { ListUsersOptions, getUsersListFilterConditions, USERS_LIST_SORT_COLUMNS } from './utils/handle-users-list';
 
-export interface ListUsersByClassOptions {
-  page: number;
-  perPage: number;
-  orderBy?: { field: UsersListSortField; direction: 'asc' | 'desc' };
-}
-
-const USERS_LIST_SORT_COLUMNS: Record<UsersListSortField, Column> = {
-  nameLast: users.nameLast,
-  username: users.username,
-  grade: users.grade,
-};
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
   private readonly orgAccessControls: OrgAccessControls;
@@ -60,7 +49,6 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   }
 
   /**
-   * Changed
    * User in service to check if has supervisory role
    * @param userId
    * @param classId
@@ -78,14 +66,18 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
    * enrollment_end is null or >= now).
    *
    * @param classId - The class ID to get users for
-   * @param options - Pagination and sorting options
+   * @param options - Pagination, sorting, and filtering options
    * @returns Paginated result with users
    */
-  async getUsersByClassId(classId: string, options: ListUsersByClassOptions): Promise<PaginatedResult<User>> {
-    const { page, perPage, orderBy } = options;
+  async getUsersByClassId(classId: string, options: ListUsersOptions): Promise<PaginatedResult<User>> {
+    const { page, perPage, orderBy, filters } = options;
     const offset = (page - 1) * perPage;
 
-    const whereCondition = and(eq(userClasses.classId, classId), isEnrollmentActive(userClasses));
+    const whereCondition = and(
+      eq(userClasses.classId, classId),
+      isEnrollmentActive(userClasses),
+      ...getUsersListFilterConditions(filters),
+    );
 
     const countResult = await this.db
       .select({ count: count() })
@@ -133,15 +125,19 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   async getAuthorizedUsersByClassId(
     accessControlFilter: AccessControlFilter,
     classId: string,
-    options: ListUsersByClassOptions,
+    options: ListUsersOptions,
   ): Promise<PaginatedResult<User>> {
     const accessibleClasses = this.orgAccessControls
       .buildUserAccessibleOrgIdsQuery(accessControlFilter)
       .as('accessible_classes');
-    const { page, perPage, orderBy } = options;
+    const { page, perPage, orderBy, filters } = options;
     const offset = (page - 1) * perPage;
 
-    const whereCondition = and(eq(userClasses.classId, classId), isEnrollmentActive(userClasses));
+    const whereCondition = and(
+      eq(userClasses.classId, classId),
+      isEnrollmentActive(userClasses),
+      ...getUsersListFilterConditions(filters),
+    );
 
     const countResult = await this.db
       .select({ count: count() })
