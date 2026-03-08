@@ -1,6 +1,6 @@
 ## Assessment SDK layer architecture
 
-The assessment SDK (`packages/assessment-sdk/`) follows the GoF Command pattern with three layers: Receiver, Command, and Compat. Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
+The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three layers: Receiver, Command, and Compat. Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
 
 ### The 3 layers
 
@@ -49,7 +49,7 @@ import { ApiContractV1 } from '@roar-dashboard/api-contract';
 import type { CommandContext } from '../command/command';
 
 export class RoarApi {
-  public readonly client: ReturnType<typeof initClient<typeof ApiContractV1>>;
+  public readonly client;
 
   constructor(private ctx: CommandContext) {
     this.client = initClient(ApiContractV1, {
@@ -57,11 +57,15 @@ export class RoarApi {
       baseHeaders: {},
       api: async (args) => {
         const token = await ctx.auth.getToken();
-        args.headers = {
+        const mergedHeaders = {
           ...args.headers,
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
-        return tsRestFetchApi(args);
+        const nextArgs = {
+          ...args,
+          headers: mergedHeaders,
+        };
+        return tsRestFetchApi(nextArgs);
       },
     });
   }
