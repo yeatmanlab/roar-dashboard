@@ -41,9 +41,28 @@ BEGIN
 END
 \$\$;
 
-CREATE USER MAPPING IF NOT EXISTS FOR $PG_USER
-  SERVER assessment_server
-  OPTIONS (user '$PG_USER');
+DO \$\$
+DECLARE
+  _options text := 'user ''$PG_USER''';
+BEGIN
+  -- Include password in mapping options when PGPASSWORD is set (CI/password-auth environments).
+  -- Omitted for local-dev trust-auth setups where no password is needed.
+  IF '${PGPASSWORD:-}' <> '' THEN
+    _options := _options || ', password ''${PGPASSWORD:-}''';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_user_mappings
+    WHERE srvname = 'assessment_server' AND usename = '$PG_USER'
+  ) THEN
+    EXECUTE format('CREATE USER MAPPING FOR %I SERVER assessment_server OPTIONS (%s)', '$PG_USER', _options);
+  ELSE
+    -- Drop and recreate to ensure options (especially password) are up-to-date.
+    EXECUTE format('DROP USER MAPPING FOR %I SERVER assessment_server', '$PG_USER');
+    EXECUTE format('CREATE USER MAPPING FOR %I SERVER assessment_server OPTIONS (%s)', '$PG_USER', _options);
+  END IF;
+END
+\$\$;
 SQL
 
 echo "FDW prerequisites provisioned. Now run Drizzle migrations:"

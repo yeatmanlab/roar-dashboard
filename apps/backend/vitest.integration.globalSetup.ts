@@ -9,7 +9,11 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { resolve } from 'node:path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default async function globalSetup() {
   // Fail fast if required env vars are missing.
@@ -24,8 +28,9 @@ export default async function globalSetup() {
   // Reuses the same shell script used for local dev setup.
   const coreUrl = new URL(process.env.CORE_DATABASE_URL!);
   const assessmentUrl = new URL(process.env.ASSESSMENT_DATABASE_URL!);
+  const password = coreUrl.password ? decodeURIComponent(coreUrl.password) : '';
 
-  execFileSync(resolve(__dirname, '../../scripts/setup-fdw-local.sh'), {
+  execFileSync(path.resolve(__dirname, '../../scripts/setup-fdw-local.sh'), {
     env: {
       ...process.env,
       CORE_DB: coreUrl.pathname.slice(1),
@@ -33,7 +38,7 @@ export default async function globalSetup() {
       PG_HOST: coreUrl.hostname,
       PG_PORT: coreUrl.port || '5432',
       PG_USER: coreUrl.username,
-      PGPASSWORD: decodeURIComponent(coreUrl.password),
+      ...(password ? { PGPASSWORD: password } : {}),
     },
     stdio: 'pipe',
   });
