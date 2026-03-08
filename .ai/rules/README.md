@@ -94,7 +94,11 @@ Each rule file follows the naming convention `{prefix}{rule-name}.md` (e.g., `ba
 
 Rules are designed to work with any AI coding tool and for direct human reference.
 
-**AI tools:** A symlink at `.cursor/rules/` points to this directory so Cursor auto-discovers rules. Claude Code reads rules via `CLAUDE.md` references. GitHub Copilot picks up rules via `.github/copilot-instructions.md`. No manual configuration needed.
+**AI tools:** Each tool discovers rules through its own convention. No manual configuration is needed.
+
+- **Claude Code**: `CLAUDE.md` at the repo root (symlink to `AGENTS.md`) plus `.claude/rules/` (symlink to `.ai/rules/`).
+- **Cursor**: `.cursor/rules/` (symlink to `.ai/rules/`).
+- **GitHub Copilot**: The Copilot coding agent reads `AGENTS.md` directly.
 
 **Engineers:** Browse rules by prefix to find conventions for the area you are working in. Each rule is self-contained with incorrect/correct examples and references to canonical implementations.
 
