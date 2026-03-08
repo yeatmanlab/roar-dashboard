@@ -8,7 +8,7 @@
  * Env vars are loaded in vitest.config.ts and merged into process.env.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 export default async function globalSetup() {
@@ -25,7 +25,7 @@ export default async function globalSetup() {
   const coreUrl = new URL(process.env.CORE_DATABASE_URL!);
   const assessmentUrl = new URL(process.env.ASSESSMENT_DATABASE_URL!);
 
-  execSync(resolve(__dirname, '../../scripts/setup-fdw-local.sh'), {
+  execFileSync(resolve(__dirname, '../../scripts/setup-fdw-local.sh'), {
     env: {
       ...process.env,
       CORE_DB: coreUrl.pathname.slice(1),
@@ -33,6 +33,7 @@ export default async function globalSetup() {
       PG_HOST: coreUrl.hostname,
       PG_PORT: coreUrl.port || '5432',
       PG_USER: coreUrl.username,
+      PGPASSWORD: decodeURIComponent(coreUrl.password),
     },
     stdio: 'pipe',
   });
