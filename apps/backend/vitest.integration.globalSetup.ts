@@ -2,20 +2,40 @@
  * Global Setup for Integration Tests
  *
  * Runs once before any test files are loaded.
+ * - Provisions FDW prerequisites via the shared shell script
  * - Runs migrations once (schema setup)
  *
  * Env vars are loaded in vitest.config.ts and merged into process.env.
  */
 
+import { execSync } from 'node:child_process';
+import { resolve } from 'node:path';
+
 export default async function globalSetup() {
   // Fail fast if required env vars are missing.
-  // (Optional but strongly recommended)
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
   for (const key of required) {
     if (!process.env[key]) {
       throw new Error(`[globalSetup] Missing required env var: ${key}`);
     }
   }
+
+  // Provision FDW prerequisites before migrations (superuser-only operations).
+  // Reuses the same shell script used for local dev setup.
+  const coreUrl = new URL(process.env.CORE_DATABASE_URL!);
+  const assessmentUrl = new URL(process.env.ASSESSMENT_DATABASE_URL!);
+
+  execSync(resolve(__dirname, '../../scripts/setup-fdw-local.sh'), {
+    env: {
+      ...process.env,
+      CORE_DB: coreUrl.pathname.slice(1),
+      ASSESSMENT_DB: assessmentUrl.pathname.slice(1),
+      PG_HOST: coreUrl.hostname,
+      PG_PORT: coreUrl.port || '5432',
+      PG_USER: coreUrl.username,
+    },
+    stdio: 'pipe',
+  });
 
   // Initialize database pools before running migrations
   const { initializeDatabasePools, closeDatabasePools } = await import('./src/db/clients');

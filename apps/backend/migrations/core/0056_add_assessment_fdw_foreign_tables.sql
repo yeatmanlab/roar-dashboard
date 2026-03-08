@@ -1,5 +1,5 @@
 -- Custom SQL migration file, put your code below! --
--- Create the app_assessment_fdw schema, foreign tables, and grants.
+-- Create the app_assessment_fdw schema and foreign tables.
 -- Foreign tables reference the assessment_server created by the bootstrap (ticket #03).
 -- Enums are mapped as text since PostgreSQL enums are database-local.
 
