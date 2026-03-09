@@ -5,11 +5,17 @@ import type { Json } from '@roar-dashboard/api-contract';
  * of the relationship between isAnonymous and administrationId.
  *
  * This type ensures type-safe handling of two distinct run modes:
- * 1. Anonymous runs: No administrationId is allowed or required
- * 2. Authenticated runs: administrationId is required
+ * 1. Anonymous runs (isAnonymous: true): administrationId is not allowed
+ * 2. Authenticated runs (isAnonymous: false): administrationId is required
  *
  * Using a discriminated union prevents invalid state combinations at compile time,
  * ensuring that administrationId can only be provided when isAnonymous is false.
+ *
+ * @property variantId - Unique identifier for the assessment variant
+ * @property taskVersion - Version of the task being run
+ * @property metadata - Optional custom metadata for the run
+ * @property isAnonymous - Whether the run is anonymous (true) or authenticated (false)
+ * @property administrationId - Required when isAnonymous is false; not allowed when isAnonymous is true
  *
  * @example
  * ```ts
@@ -25,8 +31,8 @@ import type { Json } from '@roar-dashboard/api-contract';
  * const authInput: StartRunInput = {
  *   variantId: 'variant-123',
  *   taskVersion: '1.0.0',
- *   isAnonymous: false,
- *   administrationId: 'admin-789'
+ *   administrationId: 'admin-789',
+ *   isAnonymous: false
  * };
  * ```
  */
@@ -36,14 +42,13 @@ export type StartRunInput =
       taskVersion: string;
       metadata?: Json;
       isAnonymous: true;
-      administrationId?: never; // not allowed when anonymous
     }
   | {
       variantId: string;
       taskVersion: string;
       metadata?: Json;
-      isAnonymous?: false; // default false
-      administrationId: string; // required when isAnonymous is false
+      isAnonymous: false;
+      administrationId: string;
     };
 
 /**
