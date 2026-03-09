@@ -1,9 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
 import { DistrictService, type DistrictWithEmbeds } from '../services/district/district.service';
 import type { DistrictsListQuery, DistrictDetail as ApiDistrict } from '@roar-dashboard/api-contract';
+import { DistrictEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
+
+/**
+ * PostgreSQL Point type representation
+ */
+type PostgreSQLPoint = { x: number; y: number };
 
 const districtService = DistrictService();
 
@@ -15,7 +21,7 @@ function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
   if (district.locationLatLong) {
-    const point = district.locationLatLong as unknown as { x: number; y: number };
+    const point = district.locationLatLong as PostgreSQLPoint;
     coordinates = {
       type: 'Point',
       coordinates: [point.x, point.y], // [longitude, latitude]
@@ -49,10 +55,6 @@ function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
     parentOrgId: district.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
-    dates: {
-      created: district.createdAt.toISOString(),
-      updated: district.updatedAt?.toISOString() ?? district.createdAt.toISOString(),
-    },
     isRosteringRootOrg: district.isRosteringRootOrg,
     ...(district.rosteringEnded && { rosteringEnded: district.rosteringEnded.toISOString() }),
   };
@@ -92,7 +94,7 @@ export const DistrictsController = {
       const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
 
       // Check if counts embed is requested
-      const embedCounts = embed?.includes('counts') ?? false;
+      const embedCounts = embed?.includes(DistrictEmbedOption.COUNTS) ?? false;
 
       const result = await districtService.list(authContext, {
         page,
@@ -150,7 +152,11 @@ export const DistrictsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }

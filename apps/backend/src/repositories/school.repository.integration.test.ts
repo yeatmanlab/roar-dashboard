@@ -1,7 +1,7 @@
 /**
  * Integration tests for SchoolRepository.
  *
- * Tests custom methods (listAll, listAuthorized, getChildren, fetchSchoolCounts)
+ * Tests custom methods (listAll, listAuthorized, fetchSchoolCounts)
  * against the real database with the base fixture's org hierarchy.
  *
  * Verifies SQL correctness and proper filtering by orgType, rosteringEnded, etc.
@@ -423,10 +423,13 @@ describe('SchoolRepository', () => {
 
   describe('getAuthorizedById', () => {
     it('returns school when user has access', async () => {
-      const result = await repository.getAuthorizedById(baseFixture.schoolA.id, {
-        userId: baseFixture.schoolAStudent.id,
-        allowedRoles: [UserRole.STUDENT],
-      });
+      const result = await repository.getAuthorizedById(
+        {
+          userId: baseFixture.schoolAStudent.id,
+          allowedRoles: [UserRole.STUDENT],
+        },
+        baseFixture.schoolA.id,
+      );
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe(baseFixture.schoolA.id);
@@ -434,29 +437,38 @@ describe('SchoolRepository', () => {
 
     it('returns null when user lacks access', async () => {
       // School A student should not have access to School B
-      const result = await repository.getAuthorizedById(baseFixture.schoolB.id, {
-        userId: baseFixture.schoolAStudent.id,
-        allowedRoles: [UserRole.STUDENT],
-      });
+      const result = await repository.getAuthorizedById(
+        {
+          userId: baseFixture.schoolAStudent.id,
+          allowedRoles: [UserRole.STUDENT],
+        },
+        baseFixture.schoolB.id,
+      );
 
       expect(result).toBeNull();
     });
 
     it('returns null for nonexistent school ID', async () => {
-      const result = await repository.getAuthorizedById('00000000-0000-0000-0000-000000000000', {
-        userId: baseFixture.schoolAStudent.id,
-        allowedRoles: [UserRole.STUDENT],
-      });
+      const result = await repository.getAuthorizedById(
+        {
+          userId: baseFixture.schoolAStudent.id,
+          allowedRoles: [UserRole.STUDENT],
+        },
+        '00000000-0000-0000-0000-000000000000',
+      );
 
       expect(result).toBeNull();
     });
 
     it('returns school for class-level user with access', async () => {
       // Class A student should have access to parent school
-      const result = await repository.getAuthorizedById(baseFixture.schoolA.id, {
-        userId: baseFixture.classAStudent.id,
-        allowedRoles: [UserRole.STUDENT],
-      });
+      const result = await repository.getAuthorizedById(
+        {
+          userId: baseFixture.classAStudent.id,
+          allowedRoles: [UserRole.STUDENT],
+        },
+        baseFixture.schoolA.id,
+      );
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe(baseFixture.schoolA.id);
@@ -464,10 +476,13 @@ describe('SchoolRepository', () => {
 
     it('filters correctly by orgType=school', async () => {
       // Try to get a district by ID - should return null even if user has access
-      const result = await repository.getAuthorizedById(baseFixture.district.id, {
-        userId: baseFixture.districtAdmin.id,
-        allowedRoles: [UserRole.ADMINISTRATOR],
-      });
+      const result = await repository.getAuthorizedById(
+        {
+          userId: baseFixture.districtAdmin.id,
+          allowedRoles: [UserRole.ADMINISTRATOR],
+        },
+        baseFixture.district.id,
+      );
 
       expect(result).toBeNull();
     });
@@ -531,29 +546,13 @@ describe('SchoolRepository', () => {
         embedCounts: true,
       })) as { items: SchoolWithCounts[]; totalItems: number };
 
+      // Newly created school should be in first page (sorted by createdAt desc)
       const school = result.items.find((s) => s.id === emptySchool.id);
-
-      // School should be in results
-      if (school) {
-        expect(school.counts).toEqual({
-          users: 0,
-          classes: 0,
-        });
-      } else {
-        // If not in first page, query specifically for it
-        const specificResult = (await repository.listAll({
-          page: 1,
-          perPage: 1000,
-          embedCounts: true,
-        })) as { items: SchoolWithCounts[]; totalItems: number };
-
-        const specificSchool = specificResult.items.find((s) => s.id === emptySchool.id);
-        expect(specificSchool).toBeDefined();
-        expect(specificSchool?.counts).toEqual({
-          users: 0,
-          classes: 0,
-        });
-      }
+      expect(school).toBeDefined();
+      expect(school?.counts).toEqual({
+        users: 0,
+        classes: 0,
+      });
     });
   });
 });

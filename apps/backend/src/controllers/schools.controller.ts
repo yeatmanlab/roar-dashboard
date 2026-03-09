@@ -1,9 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
 import { SchoolService, type SchoolWithEmbeds } from '../services/school/school.service';
 import type { SchoolsListQuery, SchoolDetail as ApiSchool } from '@roar-dashboard/api-contract';
+import { SchoolEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
+
+/**
+ * PostgreSQL Point type representation
+ */
+type PostgreSQLPoint = { x: number; y: number };
 
 const schoolService = SchoolService();
 
@@ -15,7 +21,7 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
   if (school.locationLatLong) {
-    const point = school.locationLatLong as unknown as { x: number; y: number };
+    const point = school.locationLatLong as PostgreSQLPoint;
     coordinates = {
       type: 'Point',
       coordinates: [point.x, point.y], // [longitude, latitude]
@@ -49,10 +55,6 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
     parentOrgId: school.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
-    dates: {
-      created: school.createdAt.toISOString(),
-      updated: school.updatedAt?.toISOString() ?? school.createdAt.toISOString(),
-    },
     isRosteringRootOrg: school.isRosteringRootOrg,
     ...(school.rosteringEnded && { rosteringEnded: school.rosteringEnded.toISOString() }),
   };
@@ -92,7 +94,7 @@ export const SchoolsController = {
       const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
 
       // Check if counts embed is requested
-      const embedCounts = embed?.includes('counts') ?? false;
+      const embedCounts = embed?.includes(SchoolEmbedOption.COUNTS) ?? false;
 
       const result = await schoolService.list(authContext, {
         page,
@@ -150,7 +152,11 @@ export const SchoolsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }

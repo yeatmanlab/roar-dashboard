@@ -47,7 +47,7 @@ export interface ListAuthorizedOptions {
   page: number;
   perPage: number;
   orderBy?: {
-    field: string;
+    field: DistrictSortFieldType;
     direction: 'asc' | 'desc';
   };
   includeEnded?: boolean;
@@ -168,8 +168,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     }
 
     // Resolve sort column
-    const sortField = orderBy?.field as DistrictSortFieldType | undefined;
-    const sortColumn = sortField ? DISTRICT_SORT_COLUMNS[sortField] : orgs.createdAt;
+    const sortColumn = orderBy?.field ? DISTRICT_SORT_COLUMNS[orderBy.field] : orgs.createdAt;
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join districts with the accessible IDs subquery
@@ -275,11 +274,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * Get a district by ID with authorization checks.
    * Only returns the district if the user has access via org/class/group membership.
    *
-   * @param districtId - UUID of the district to retrieve
    * @param filter - Access control filter with userId and allowed roles
+   * @param districtId - UUID of the district to retrieve
    * @returns The district if found and authorized, null otherwise
    */
-  async getAuthorizedById(districtId: string, filter: AccessControlFilter): Promise<District | null> {
+  async getAuthorizedById(filter: AccessControlFilter, districtId: string): Promise<District | null> {
     const accessibleOrgs = this.accessControls.buildUserAccessibleOrgIdsQuery(filter).as('accessible_orgs');
 
     const result = await this.db
@@ -290,27 +289,5 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .limit(1);
 
     return result[0]?.org ?? null;
-  }
-
-  /**
-   * Get child organizations of a district.
-   *
-   * Returns all organizations that have the given district as their parent.
-   * By default, excludes organizations with rosteringEnded timestamp.
-   *
-   * @param districtId - District ID to get children for
-   * @param includeEnded - Whether to include organizations with rosteringEnded timestamp
-   * @returns Array of child organizations sorted by name ascending
-   */
-  async getChildren(districtId: string, includeEnded = false): Promise<Org[]> {
-    const whereConditions: SQL[] = [eq(orgs.parentOrgId, districtId)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
-
-    return this.db.select().from(orgs).where(where).orderBy(asc(orgs.name));
   }
 }

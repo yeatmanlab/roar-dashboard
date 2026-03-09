@@ -4,6 +4,7 @@ import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
@@ -38,7 +39,7 @@ export function DistrictService({
 }: {
   districtRepository?: DistrictRepository;
 } = {}) {
-  // Lazy initialize repository to avoid creating it before database is initialized
+  // Use injected repository or create default instance.
   const repo = districtRepository ?? new DistrictRepository();
   /**
    * List districts accessible to a user with pagination and sorting.
@@ -103,31 +104,38 @@ export function DistrictService({
    * @param authContext - User's auth context (id and super admin flag)
    * @param districtId - UUID of the district to retrieve
    * @returns The district if found and authorized
-   * @throws {ApiError} 404 if not found or not authorized, 500 on database errors
+   * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
    */
   async function getById(authContext: AuthContext, districtId: string): Promise<District> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      let district;
-
-      if (isSuperAdmin) {
-        district = await repo.getUnrestrictedById(districtId);
-      } else {
-        const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-        district = await repo.getAuthorizedById(districtId, { userId, allowedRoles });
-      }
-
+      // 1. Look up unrestricted first — distinguishes 404 from 403
+      const district = await repo.getUnrestrictedById(districtId);
       if (!district) {
-        logger.warn({ districtId, userId }, 'District not found or access denied');
-        throw new ApiError('District not found', {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { districtId, userId },
+          context: { userId, districtId },
         });
       }
 
-      return district;
+      // 2. Super admins bypass access checks
+      if (isSuperAdmin) return district;
+
+      // 3. Check access via org hierarchy joins
+      const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
+      const authorized = await repo.getAuthorizedById({ userId, allowedRoles }, districtId);
+      if (!authorized) {
+        logger.warn({ userId, districtId }, 'User attempted to access district without permission');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, districtId },
+        });
+      }
+
+      return authorized;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

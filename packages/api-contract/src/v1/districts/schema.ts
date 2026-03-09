@@ -39,16 +39,6 @@ export const DistrictIdentifiersSchema = z.object({
 export type DistrictIdentifiers = z.infer<typeof DistrictIdentifiersSchema>;
 
 /**
- * District dates schema.
- */
-export const DistrictDatesSchema = z.object({
-  created: z.string().datetime(),
-  updated: z.string().datetime(),
-});
-
-export type DistrictDates = z.infer<typeof DistrictDatesSchema>;
-
-/**
  * District counts schema (embedded via ?embed=counts).
  */
 export const DistrictCountsSchema = z.object({
@@ -70,7 +60,6 @@ export const DistrictDetailBaseSchema = z.object({
   parentOrgId: z.string().uuid().nullable(),
   location: DistrictLocationSchema.optional(),
   identifiers: DistrictIdentifiersSchema.optional(),
-  dates: DistrictDatesSchema,
   isRosteringRootOrg: z.boolean(),
   rosteringEnded: z.string().datetime().optional(),
 });

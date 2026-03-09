@@ -5,20 +5,10 @@ import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
+import { createMockDistrictRepository } from '../../test-support/repositories';
 
 describe('DistrictService', () => {
-  const mockListAll = vi.fn();
-  const mockListAuthorized = vi.fn();
-  const mockGetByIdUnrestricted = vi.fn();
-  const mockGetAuthorizedById = vi.fn();
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockDistrictRepository: any = {
-    listAll: mockListAll,
-    listAuthorized: mockListAuthorized,
-    getUnrestrictedById: mockGetByIdUnrestricted,
-    getAuthorizedById: mockGetAuthorizedById,
-  };
+  const mockDistrictRepository = createMockDistrictRepository();
 
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
   const mockSuperAdminContext = { userId: 'admin-123', isSuperAdmin: true };
@@ -30,7 +20,7 @@ describe('DistrictService', () => {
   describe('list', () => {
     it('should return all districts for super admins (unrestricted)', async () => {
       const mockDistricts = OrgFactory.buildList(3, { orgType: OrgType.DISTRICT });
-      mockListAll.mockResolvedValue({
+      mockDistrictRepository.listAll.mockResolvedValue({
         items: mockDistricts,
         totalItems: 3,
       });
@@ -49,14 +39,14 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAll).toHaveBeenCalledWith({
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith({
         page: 1,
         perPage: 25,
         orderBy: { field: 'createdAt', direction: 'desc' },
         includeEnded: false,
         embedCounts: false,
       });
-      expect(mockListAuthorized).not.toHaveBeenCalled();
+      expect(mockDistrictRepository.listAuthorized).not.toHaveBeenCalled();
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
     });
@@ -64,7 +54,7 @@ describe('DistrictService', () => {
     it('should use listAuthorized for non-super admin users', async () => {
       const mockDistricts = OrgFactory.buildList(2, { orgType: OrgType.DISTRICT });
 
-      mockListAuthorized.mockResolvedValue({
+      mockDistrictRepository.listAuthorized.mockResolvedValue({
         items: mockDistricts,
         totalItems: 2,
       });
@@ -83,7 +73,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAuthorized).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
         {
           userId: 'user-123',
           allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
@@ -96,13 +86,13 @@ describe('DistrictService', () => {
           embedCounts: false,
         },
       );
-      expect(mockListAll).not.toHaveBeenCalled();
+      expect(mockDistrictRepository.listAll).not.toHaveBeenCalled();
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
     });
 
     it('should pass includeEnded parameter to repository', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -119,7 +109,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAll).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
           includeEnded: true,
         }),
@@ -127,7 +117,7 @@ describe('DistrictService', () => {
     });
 
     it('should pass embedCounts parameter to repository', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -144,7 +134,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAll).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
           embedCounts: true,
         }),
@@ -152,7 +142,7 @@ describe('DistrictService', () => {
     });
 
     it('should default includeEnded to false when not provided', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -168,7 +158,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAuthorized).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
         expect.any(Object),
         expect.objectContaining({
           includeEnded: false,
@@ -177,7 +167,7 @@ describe('DistrictService', () => {
     });
 
     it('should default embedCounts to false when not provided', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -193,7 +183,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAuthorized).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
         expect.any(Object),
         expect.objectContaining({
           embedCounts: false,
@@ -202,7 +192,7 @@ describe('DistrictService', () => {
     });
 
     it('should map sortBy "name" to database column "name"', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -218,7 +208,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAll).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { field: 'name', direction: 'asc' },
         }),
@@ -226,7 +216,7 @@ describe('DistrictService', () => {
     });
 
     it('should map sortBy "abbreviation" to database column "abbreviation"', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -242,7 +232,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAll).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { field: 'abbreviation', direction: 'desc' },
         }),
@@ -250,7 +240,7 @@ describe('DistrictService', () => {
     });
 
     it('should map sortBy "createdAt" to database column "createdAt"', async () => {
-      mockListAll.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -266,7 +256,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAll).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { field: 'createdAt', direction: 'desc' },
         }),
@@ -274,7 +264,7 @@ describe('DistrictService', () => {
     });
 
     it('should return empty results when user has no accessible districts', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -295,7 +285,7 @@ describe('DistrictService', () => {
     });
 
     it('should pass pagination options correctly', async () => {
-      mockListAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -311,7 +301,7 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockListAuthorized).toHaveBeenCalledWith(
+      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
         expect.any(Object),
         expect.objectContaining({
           page: 3,
@@ -325,7 +315,7 @@ describe('DistrictService', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
-      mockListAll.mockRejectedValue(error);
+      mockDistrictRepository.listAll.mockRejectedValue(error);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -346,7 +336,7 @@ describe('DistrictService', () => {
 
     it('should wrap non-ApiError in ApiError with DATABASE_QUERY_FAILED code', async () => {
       const error = new Error('Unexpected database error');
-      mockListAll.mockRejectedValue(error);
+      mockDistrictRepository.listAll.mockRejectedValue(error);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -391,7 +381,7 @@ describe('DistrictService', () => {
         },
       }));
 
-      mockListAll.mockResolvedValue({
+      mockDistrictRepository.listAll.mockResolvedValue({
         items: mockDistrictsWithCounts,
         totalItems: 2,
       });
@@ -434,7 +424,7 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -443,7 +433,7 @@ describe('DistrictService', () => {
       const result = await service.getById(mockAuthContext, validUuid);
 
       expect(result).toEqual(mockDistrict);
-      expect(mockGetByIdUnrestricted).not.toHaveBeenCalled();
+      expect(mockDistrictRepository.getUnrestrictedById).not.toHaveBeenCalled();
     });
 
     it('should build access control filter for regular users', async () => {
@@ -459,7 +449,7 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -467,10 +457,13 @@ describe('DistrictService', () => {
 
       await service.getById(mockAuthContext, validUuid);
 
-      expect(mockGetAuthorizedById).toHaveBeenCalledWith(validUuid, {
-        userId: 'user-123',
-        allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-      });
+      expect(mockDistrictRepository.getAuthorizedById).toHaveBeenCalledWith(
+        {
+          userId: 'user-123',
+          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
+        },
+        validUuid,
+      );
     });
 
     it('should use getUnrestrictedById for super admins', async () => {
@@ -486,7 +479,7 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockGetByIdUnrestricted.mockResolvedValue(mockDistrict);
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -495,13 +488,13 @@ describe('DistrictService', () => {
       await service.getById(mockSuperAdminContext, validUuid);
 
       // Super admins should use unrestricted method, not the authorized one
-      expect(mockGetByIdUnrestricted).toHaveBeenCalledWith(validUuid);
-      expect(mockGetAuthorizedById).not.toHaveBeenCalled();
+      expect(mockDistrictRepository.getUnrestrictedById).toHaveBeenCalledWith(validUuid);
+      expect(mockDistrictRepository.getAuthorizedById).not.toHaveBeenCalled();
     });
 
     it('should throw 404 when district not found', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      mockGetAuthorizedById.mockResolvedValue(null);
+      mockDistrictRepository.getAuthorizedById.mockResolvedValue(null);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -521,7 +514,7 @@ describe('DistrictService', () => {
 
     it('should throw 404 when user lacks access (security - no distinction)', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      mockGetAuthorizedById.mockResolvedValue(null);
+      mockDistrictRepository.getAuthorizedById.mockResolvedValue(null);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -542,7 +535,7 @@ describe('DistrictService', () => {
     it('should wrap database errors in ApiError with DATABASE_QUERY_FAILED code', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const dbError = new Error('Database connection lost');
-      mockGetAuthorizedById.mockRejectedValue(dbError);
+      mockDistrictRepository.getAuthorizedById.mockRejectedValue(dbError);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,

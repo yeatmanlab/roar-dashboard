@@ -39,16 +39,6 @@ export const SchoolIdentifiersSchema = z.object({
 export type SchoolIdentifiers = z.infer<typeof SchoolIdentifiersSchema>;
 
 /**
- * School dates schema.
- */
-export const SchoolDatesSchema = z.object({
-  created: z.string().datetime(),
-  updated: z.string().datetime(),
-});
-
-export type SchoolDates = z.infer<typeof SchoolDatesSchema>;
-
-/**
  * School counts schema (embedded via ?embed=counts).
  * Note: Schools only count users and classes (not schools like districts do).
  */
@@ -70,7 +60,6 @@ export const SchoolDetailBaseSchema = z.object({
   parentOrgId: z.string().uuid().nullable(),
   location: SchoolLocationSchema.optional(),
   identifiers: SchoolIdentifiersSchema.optional(),
-  dates: SchoolDatesSchema,
   isRosteringRootOrg: z.boolean(),
   rosteringEnded: z.string().datetime().optional(),
 });

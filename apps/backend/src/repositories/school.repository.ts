@@ -47,7 +47,7 @@ export interface ListAuthorizedOptions {
   page: number;
   perPage: number;
   orderBy?: {
-    field: string;
+    field: SchoolSortFieldType;
     direction: 'asc' | 'desc';
   };
   includeEnded?: boolean;
@@ -88,14 +88,14 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       whereConditions.push(isNull(orgs.rosteringEnded));
     }
 
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+    const whereClause = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
 
     // Delegate to getAll() — tiebreaker asc(id) is handled by getAll() itself
     const result = await this.getAll({
       page,
       perPage,
       ...(orderBy && { orderBy }),
-      ...(where && { where }),
+      ...(whereClause && { where: whereClause }),
     });
 
     // Fetch and attach counts if requested
@@ -167,8 +167,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     }
 
     // Resolve sort column
-    const sortField = orderBy?.field as SchoolSortFieldType | undefined;
-    const sortColumn = sortField ? SCHOOL_SORT_COLUMNS[sortField] : orgs.createdAt;
+    const sortColumn = orderBy?.field ? SCHOOL_SORT_COLUMNS[orderBy.field] : orgs.createdAt;
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join schools with the accessible IDs subquery
@@ -263,11 +262,11 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
    * Get a school by ID with authorization checks.
    * Only returns the school if the user has access via org/class/group membership.
    *
-   * @param schoolId - UUID of the school to retrieve
    * @param filter - Access control filter with userId and allowed roles
+   * @param schoolId - UUID of the school to retrieve
    * @returns The school if found and authorized, null otherwise
    */
-  async getAuthorizedById(schoolId: string, filter: AccessControlFilter): Promise<School | null> {
+  async getAuthorizedById(filter: AccessControlFilter, schoolId: string): Promise<School | null> {
     const accessibleOrgs = this.accessControls.buildUserAccessibleOrgIdsQuery(filter).as('accessible_orgs');
 
     const result = await this.db
@@ -278,27 +277,5 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .limit(1);
 
     return result[0]?.org ?? null;
-  }
-
-  /**
-   * Get child organizations of a school.
-   *
-   * Returns all organizations that have the given school as their parent.
-   * By default, excludes organizations with rosteringEnded timestamp.
-   *
-   * @param schoolId - School ID to get children for
-   * @param includeEnded - Whether to include organizations with rosteringEnded timestamp
-   * @returns Array of child organizations sorted by name ascending
-   */
-  async getChildren(schoolId: string, includeEnded = false): Promise<Org[]> {
-    const whereConditions: SQL[] = [eq(orgs.parentOrgId, schoolId)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
-
-    return this.db.select().from(orgs).where(where).orderBy(asc(orgs.name));
   }
 }

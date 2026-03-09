@@ -38,6 +38,7 @@ export const SchoolsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(SchoolDetailSchema),
         401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
