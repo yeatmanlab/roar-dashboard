@@ -4,6 +4,7 @@ import { AdministrationsContract } from './administrations/index';
 import { DistrictsContract } from './districts/index';
 import { GroupsContract } from './groups/index';
 import { TasksContract } from './tasks/index';
+import { ClassesContract } from './classes/index';
 export * from './response';
 export * from './common/index';
 
@@ -15,6 +16,7 @@ export const ApiContractV1 = c.router({
   districts: DistrictsContract,
   groups: GroupsContract,
   tasks: TasksContract,
+  classes: ClassesContract,
 });
 
 export * from './me/index';
