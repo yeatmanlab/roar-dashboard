@@ -28,7 +28,21 @@ export default async function globalSetup() {
   // Reuses the same shell script used for local dev setup.
   const coreUrl = new URL(process.env.CORE_DATABASE_URL!);
   const assessmentUrl = new URL(process.env.ASSESSMENT_DATABASE_URL!);
-  const password = coreUrl.password ? decodeURIComponent(coreUrl.password) : '';
+
+  // The setup script uses a single PG_HOST/PG_PORT for both psql connections and
+  // the FDW server definition. Fail fast if the databases are on different hosts.
+  const coreHost = coreUrl.hostname;
+  const corePort = coreUrl.port || '5432';
+  const assessHost = assessmentUrl.hostname;
+  const assessPort = assessmentUrl.port || '5432';
+  if (coreHost !== assessHost || corePort !== assessPort) {
+    throw new Error(
+      `[globalSetup] CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL must share the same host:port. ` +
+        `Got core=${coreHost}:${corePort}, assessment=${assessHost}:${assessPort}`,
+    );
+  }
+
+  const password = coreUrl.password || '';
 
   execFileSync(path.resolve(__dirname, '../../scripts/setup-fdw-local.sh'), {
     env: {
