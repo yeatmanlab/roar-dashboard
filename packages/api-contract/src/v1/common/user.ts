@@ -78,7 +78,7 @@ export const UserBaseSchema = z.object({
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
 export const UsersListSchema = UserSchema.extend({
-  userRole: UserRoleSchema,
+  role: UserRoleSchema,
   enrollmentStart: z.string().datetime(),
 });
 
