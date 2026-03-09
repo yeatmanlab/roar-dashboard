@@ -35,7 +35,7 @@ import {
 } from '../../repositories/administration-task-variant.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
-import { RunsService } from '../runs/runs.service';
+import { RunRepository } from '../../repositories/run.repository';
 import { TaskService } from '../task/task.service';
 import type { Condition } from '../task/task.types';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
@@ -98,13 +98,13 @@ export interface ListAgreementsOptions extends ListOrgsOptions<AdministrationAgr
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
-  runsService = RunsService(),
+  runRepository = new RunRepository(),
   userRepository = new UserRepository(),
   taskService = TaskService(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
-  runsService?: ReturnType<typeof RunsService>;
+  runRepository?: RunRepository;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
 } = {}) {
@@ -265,7 +265,7 @@ export function AdministrationService({
           cause: err,
         });
       }),
-      runsService.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
+      runRepository.getRunStatsByAdministrationIds(administrationIds).catch((err) => {
         throw new ApiError('Failed to fetch administration stats', {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -952,7 +952,7 @@ export function AdministrationService({
 
       // Check if runs exist in the assessment database
       // Since runs are in a separate DB without FK constraints, we must check explicitly
-      const run = await runsService.getByAdministrationId(administrationId);
+      const run = await runRepository.getByAdministrationId(administrationId);
       if (run) {
         throw new ApiError('Cannot delete administration with existing assessment runs', {
           statusCode: StatusCodes.CONFLICT,

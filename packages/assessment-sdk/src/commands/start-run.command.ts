@@ -1,52 +1,46 @@
+import { StatusCodes } from 'http-status-codes';
 import type { Command } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type { StartRunInput, StartRunOutput } from '../types/start-run';
+import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
+import { SDKError } from '../errors/sdk-error';
 
 /**
- * StartRunCommand implements the Command pattern for initiating a new assessment run.
+ * StartRunCommand creates a new assessment run.
  *
- * This command is responsible for creating a new run in the ROAR backend system.
- * It encapsulates the logic for starting an assessment session, either anonymously
- * or with an associated administration ID.
+ * This command enforces type-safe handling of anonymous and authenticated runs
+ * through a discriminated union input type that prevents invalid state combinations.
  *
- * Key characteristics:
- * - Non-idempotent: Each execution creates a new run (no retries on failure)
- * - Delegates API communication to RoarApi.createRun()
- * - Supports both anonymous and authenticated run modes
- * - Includes optional metadata for run customization
- *
- * @example
- * ```ts
- * const api = new RoarApi(context);
- * const command = new StartRunCommand(api);
- * const result = await invoker.run(command, {
- *   type: 'start',
- *   variantId: 'variant-123',
- *   taskVersion: '1.0.0',
- *   isAnonymous: true
- * });
- * console.log(result.runId); // 'run-xyz'
- * ```
+ * Responsibilities:
+ * - Validate the discriminated union input (anonymous vs authenticated)
+ * - Build the request body for the create-run endpoint
+ * - Call the typed ts-rest client
+ * - Interpret the HTTP response
+ * - Throw SDKError on failure
  */
 export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
   readonly name = 'StartRun';
   readonly idempotent = false;
 
-  /**
-   * Creates a new StartRunCommand instance.
-   *
-   * @param api - RoarApi instance for making backend API calls
-   */
   constructor(private api: RoarApi) {}
 
-  /**
-   * Executes the StartRun command by calling the backend API to create a new run.
-   *
-   * @param input - StartRunInput containing variant ID, task version, and optional metadata
-   * @returns Promise<StartRunOutput> containing the newly created run ID
-   * @throws Error if the API request fails
-   */
   async execute(input: StartRunInput): Promise<StartRunOutput> {
-    return this.api.createRun(input);
+    const body: CreateRunRequestBody = {
+      taskVariantId: input.variantId,
+      taskVersion: input.taskVersion,
+      isAnonymous: input.isAnonymous,
+      ...(input.isAnonymous ? {} : { administrationId: input.administrationId }),
+      ...(input.metadata ? { metadata: input.metadata } : {}),
+    };
+
+    const result = await this.api.client.runs.create({ body });
+
+    if (result.status === StatusCodes.CREATED) {
+      return { runId: result.body.data.id };
+    }
+
+    throw new SDKError(`Failed to start run with status ${result.status}`, {
+      code: 'CREATE_RUN_FAILED',
+    });
   }
 }

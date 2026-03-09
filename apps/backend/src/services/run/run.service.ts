@@ -4,7 +4,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
-import { RunsRepository } from '../../repositories/runs.repository';
+import { RunRepository } from '../../repositories/run.repository';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
 import { AdministrationService } from '../administration/administration.service';
 import type { NewRun } from '../../db/schema';
@@ -14,6 +14,7 @@ import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { AdministrationAccessControls } from '../../repositories/access-controls/administration.access-controls';
 import { type UserRole as UserRoleType } from '../../enums/user-role.enum';
+import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 
 /**
  * RunService factory function.
@@ -22,19 +23,19 @@ import { type UserRole as UserRoleType } from '../../enums/user-role.enum';
  * Supports dependency injection for testing and flexibility.
  *
  * @param options - Configuration options for the service
- * @param options.runsRepository - Repository for run data access (default: new RunsRepository())
+ * @param options.runRepository - Repository for run data access (default: new RunRepository())
  * @param options.administrationService - Service for administration operations (default: AdministrationService())
  * @param options.taskVariantRepository - Repository for task variant data access (default: new TaskVariantRepository())
  * @param options.administrationAccessControls - Access control service for authorization (default: new AdministrationAccessControls())
  * @returns Object with create method for creating new runs
  */
 export function RunService({
-  runsRepository = new RunsRepository(),
+  runRepository = new RunRepository(),
   administrationService = AdministrationService(),
   taskVariantRepository = new TaskVariantRepository(),
   administrationAccessControls = new AdministrationAccessControls(),
 }: {
-  runsRepository?: RunsRepository;
+  runRepository?: RunRepository;
   administrationService?: ReturnType<typeof AdministrationService>;
   taskVariantRepository?: TaskVariantRepository;
   administrationAccessControls?: AdministrationAccessControls;
@@ -58,48 +59,51 @@ export function RunService({
    */
   async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
+    const isAnonymous = body.isAnonymous === true;
 
-    try {
-      await administrationService.verifyAdministrationAccess({ userId, isSuperAdmin }, body.administrationId);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        if (error.statusCode === StatusCodes.NOT_FOUND) {
-          throw new ApiError('Invalid administration ID', {
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { userId, administrationId: body.administrationId },
-            cause: error,
-          });
+    if (!isAnonymous) {
+      try {
+        await administrationService.verifyAdministrationAccess(authContext, body.administrationId!);
+      } catch (error) {
+        if (error instanceof ApiError) {
+          if (error.statusCode === StatusCodes.NOT_FOUND) {
+            throw new ApiError('Invalid administration ID', {
+              statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, administrationId: body.administrationId },
+              cause: error,
+            });
+          }
+
+          if (error.statusCode === StatusCodes.FORBIDDEN) {
+            throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId, administrationId: body.administrationId },
+              cause: error,
+            });
+          }
         }
+        throw error;
+      }
 
-        if (error.statusCode === StatusCodes.FORBIDDEN) {
+      if (!isSuperAdmin) {
+        const userRoles = (await administrationAccessControls.getUserRolesForAdministration(
+          userId,
+          body.administrationId!,
+        )) as UserRoleType[];
+
+        const allowedRoles = rolesForPermission(Permissions.Runs.CREATE);
+
+        const hasPermission = userRoles.some((role) => allowedRoles.includes(role));
+
+        if (!hasPermission) {
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
             code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId: body.administrationId },
-            cause: error,
+            context: { userId, administrationId: body.administrationId, userRoles, allowedRoles },
           });
         }
-      }
-      throw error;
-    }
-
-    if (!isSuperAdmin) {
-      const userRoles = (await administrationAccessControls.getUserRolesForAdministration(
-        userId,
-        body.administrationId,
-      )) as UserRoleType[];
-
-      const allowedRoles = rolesForPermission(Permissions.Runs.CREATE);
-
-      const hasPermission = userRoles.some((role) => allowedRoles.includes(role));
-
-      if (!hasPermission) {
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, administrationId: body.administrationId, userRoles, allowedRoles },
-        });
       }
     }
 
@@ -119,11 +123,12 @@ export function RunService({
         taskId: result.taskId,
         taskVariantId: body.taskVariantId,
         taskVersion: body.taskVersion,
-        administrationId: body.administrationId,
+        administrationId: isAnonymous ? ANONYMOUS_RUN_ADMINISTRATION_ID : body.administrationId!,
+        isAnonymous,
         ...(body.metadata ? { metadata: body.metadata } : {}),
       };
 
-      const run = await runsRepository.create({ data });
+      const run = await runRepository.create({ data });
 
       return { id: run.id };
     } catch (error) {
@@ -137,6 +142,7 @@ export function RunService({
             taskVariantId: body.taskVariantId,
             taskVersion: body.taskVersion,
             administrationId: body.administrationId,
+            isAnonymous,
           },
         },
         'Failed to create run',

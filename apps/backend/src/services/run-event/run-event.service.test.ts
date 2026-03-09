@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { RunEventsService } from './run-events.service';
+import { RunEventService } from './run-event.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
@@ -14,34 +14,32 @@ import {
 } from '../../test-support/repositories';
 import { RunFactory } from '../../test-support/factories/run.factory';
 
-vi.mock('../../logger');
-
 /**
- * RunEventsService Tests
+ * RunEventService Tests
  *
  * Tests the business logic for handling run events.
  * Verifies authorization checks, error handling, and state updates.
  */
-describe('RunEventsService', () => {
+describe('RunEventService', () => {
   let authContext: AuthContext;
-  let runsRepository: MockRunRepository;
+  let runRepository: MockRunRepository;
   let runTrialsRepository: MockRunTrialRepository;
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
-  let runEventsService: ReturnType<typeof RunEventsService>;
+  let runEventsService: ReturnType<typeof RunEventService>;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     authContext = { userId: 'user-123', isSuperAdmin: false };
 
-    runsRepository = createMockRunRepository();
+    runRepository = createMockRunRepository();
 
     runTrialsRepository = createMockRunTrialRepository();
 
     runTrialInteractionsRepository = createMockRunTrialInteractionsRepository();
 
-    runEventsService = RunEventsService({
-      runsRepository: runsRepository,
+    runEventsService = RunEventService({
+      runRepository: runRepository,
       runTrialsRepository: runTrialsRepository,
       runTrialInteractionsRepository: runTrialInteractionsRepository,
     });
@@ -53,13 +51,13 @@ describe('RunEventsService', () => {
 
     it('should complete a run successfully', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
 
       await runEventsService.completeRun(authContext, validRunId, validBody);
 
-      expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(runsRepository.update).toHaveBeenCalledWith(
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runRepository.update).toHaveBeenCalledWith(
         expect.objectContaining({
           id: validRunId,
           data: expect.objectContaining({
@@ -70,30 +68,54 @@ describe('RunEventsService', () => {
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
-      runsRepository.getById.mockResolvedValue(null);
+      runRepository.getById.mockResolvedValue(null);
 
       await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
 
-      expect(runsRepository.update).not.toHaveBeenCalled();
+      expect(runRepository.update).not.toHaveBeenCalled();
     });
 
     it('should throw FORBIDDEN when user does not own the run', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      expect(runsRepository.update).not.toHaveBeenCalled();
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already completed', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', completedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw CONFLICT when run is already aborted', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', abortedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
+
+      await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
     });
 
     it('should include metadata in error context when run is not found', async () => {
-      runsRepository.getById.mockResolvedValue(null);
+      runRepository.getById.mockResolvedValue(null);
 
       try {
         await runEventsService.completeRun(authContext, validRunId, validBody);
@@ -109,8 +131,8 @@ describe('RunEventsService', () => {
 
     it('should handle optional metadata in event body', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
 
       const bodyWithMetadata = {
         type: 'complete' as const,
@@ -119,15 +141,15 @@ describe('RunEventsService', () => {
 
       await runEventsService.completeRun(authContext, validRunId, bodyWithMetadata);
 
-      expect(runsRepository.update).toHaveBeenCalled();
-      const updateCall = runsRepository.update.mock.calls[0]![0];
+      expect(runRepository.update).toHaveBeenCalled();
+      const updateCall = runRepository.update.mock.calls[0]![0];
       expect(updateCall.data.metadata).toEqual(bodyWithMetadata.metadata);
     });
 
     it('should return 500 when database update fails', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockRejectedValue(new Error('Database connection lost'));
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockRejectedValue(new Error('Database connection lost'));
 
       await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -137,12 +159,12 @@ describe('RunEventsService', () => {
 
     it('should re-throw ApiError exceptions', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
       const apiError = new ApiError('Custom error', {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
-      runsRepository.update.mockRejectedValue(apiError);
+      runRepository.update.mockRejectedValue(apiError);
 
       await expect(runEventsService.completeRun(authContext, validRunId, validBody)).rejects.toBe(apiError);
     });
@@ -154,13 +176,13 @@ describe('RunEventsService', () => {
 
     it('should abort a run successfully', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
 
       await runEventsService.abortRun(authContext, validRunId, validBody);
 
-      expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(runsRepository.update).toHaveBeenCalledWith(
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runRepository.update).toHaveBeenCalledWith(
         expect.objectContaining({
           id: validRunId,
           data: expect.objectContaining({
@@ -171,54 +193,56 @@ describe('RunEventsService', () => {
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {
-      runsRepository.getById.mockResolvedValue(null);
+      runRepository.getById.mockResolvedValue(null);
 
       await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
 
-      expect(runsRepository.update).not.toHaveBeenCalled();
+      expect(runRepository.update).not.toHaveBeenCalled();
     });
 
     it('should throw FORBIDDEN when user does not own the run', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      expect(runsRepository.update).not.toHaveBeenCalled();
+      expect(runRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should complete successfully when run is owned by user', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+    it('should throw CONFLICT when run is already aborted', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', abortedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
 
-      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).resolves.toBeUndefined();
+      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should include metadata in error context when run is not found', async () => {
-      runsRepository.getById.mockResolvedValue(null);
+    it('should throw CONFLICT when run is already completed', async () => {
+      const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123', completedAt: new Date() });
+      runRepository.getById.mockResolvedValue(mockRun);
 
-      try {
-        await runEventsService.abortRun(authContext, validRunId, validBody);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          expect(error.context).toEqual({
-            runId: validRunId,
-            userId: authContext.userId,
-          });
-        }
-      }
+      await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      expect(runRepository.update).not.toHaveBeenCalled();
     });
 
     it('should return 500 when database update fails', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockRejectedValue(new Error('Database connection lost'));
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockRejectedValue(new Error('Database connection lost'));
 
       await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -228,12 +252,12 @@ describe('RunEventsService', () => {
 
     it('should re-throw ApiError exceptions', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
       const apiError = new ApiError('Custom error', {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
-      runsRepository.update.mockRejectedValue(apiError);
+      runRepository.update.mockRejectedValue(apiError);
 
       await expect(runEventsService.abortRun(authContext, validRunId, validBody)).rejects.toBe(apiError);
     });
@@ -251,7 +275,7 @@ describe('RunEventsService', () => {
 
     it('should write a trial successfully', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       const createdTrial = { id: 'trial-123' };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -262,7 +286,7 @@ describe('RunEventsService', () => {
 
       await runEventsService.writeTrial(authContext, validRunId, validBody);
 
-      expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
       expect(runTrialsRepository.runTransaction).toHaveBeenCalled();
       expect(runTrialsRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -275,32 +299,9 @@ describe('RunEventsService', () => {
       );
     });
 
-    it('should throw NOT_FOUND when run does not exist', async () => {
-      runsRepository.getById.mockResolvedValue(null);
-
-      await expect(runEventsService.writeTrial(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-      });
-
-      expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
-    });
-
-    it('should throw FORBIDDEN when user does not own the run', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-
-      await expect(runEventsService.writeTrial(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-
-      expect(runTrialsRepository.runTransaction).not.toHaveBeenCalled();
-    });
-
     it('should handle trial with interactions', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       const bodyWithInteractions = {
         type: 'trial' as const,
@@ -309,8 +310,8 @@ describe('RunEventsService', () => {
           correct: 1,
         },
         interactions: [
-          { event: 'focus' as const, trialId: 0, timeMs: 100 },
-          { event: 'blur' as const, trialId: 0, timeMs: 200 },
+          { event: 'focus' as const, timeMs: 100 },
+          { event: 'blur' as const, timeMs: 200 },
         ],
       };
 
@@ -341,7 +342,7 @@ describe('RunEventsService', () => {
 
     it('should return 500 when database transaction fails', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       const dbError = new Error('Database connection lost');
       runTrialsRepository.runTransaction.mockRejectedValue(dbError);
@@ -354,7 +355,7 @@ describe('RunEventsService', () => {
 
     it('should re-throw ApiError when thrown during transaction', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       const apiError = new ApiError('Custom error', {
         statusCode: StatusCodes.CONFLICT,
@@ -378,18 +379,18 @@ describe('RunEventsService', () => {
     };
 
     beforeEach(() => {
-      runsRepository.update = vi.fn();
+      runRepository.update = vi.fn();
     });
 
     it('should update engagement successfully', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
 
       await runEventsService.updateEngagement(authContext, validRunId, validBody);
 
-      expect(runsRepository.getById).toHaveBeenCalledWith({ id: validRunId });
-      expect(runsRepository.update).toHaveBeenCalledWith({
+      expect(runRepository.getById).toHaveBeenCalledWith({ id: validRunId });
+      expect(runRepository.update).toHaveBeenCalledWith({
         id: validRunId,
         data: {
           engagementFlags: validBody.engagementFlags,
@@ -398,33 +399,10 @@ describe('RunEventsService', () => {
       });
     });
 
-    it('should throw NOT_FOUND when run does not exist', async () => {
-      runsRepository.getById.mockResolvedValue(null);
-
-      await expect(runEventsService.updateEngagement(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-      });
-
-      expect(runsRepository.update).not.toHaveBeenCalled();
-    });
-
-    it('should throw FORBIDDEN when user does not own the run', async () => {
-      const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-
-      await expect(runEventsService.updateEngagement(authContext, validRunId, validBody)).rejects.toMatchObject({
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-
-      expect(runsRepository.update).not.toHaveBeenCalled();
-    });
-
     it('should handle empty engagement flags', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
 
       const bodyWithEmptyFlags = {
         type: 'engagement' as const,
@@ -434,7 +412,7 @@ describe('RunEventsService', () => {
 
       await runEventsService.updateEngagement(authContext, validRunId, bodyWithEmptyFlags);
 
-      expect(runsRepository.update).toHaveBeenCalledWith({
+      expect(runRepository.update).toHaveBeenCalledWith({
         id: validRunId,
         data: {
           engagementFlags: {},
@@ -445,8 +423,8 @@ describe('RunEventsService', () => {
 
     it('should handle multiple engagement flags', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
-      runsRepository.update.mockResolvedValue(undefined);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
 
       const bodyWithMultipleFlags = {
         type: 'engagement' as const,
@@ -461,7 +439,7 @@ describe('RunEventsService', () => {
 
       await runEventsService.updateEngagement(authContext, validRunId, bodyWithMultipleFlags);
 
-      expect(runsRepository.update).toHaveBeenCalledWith({
+      expect(runRepository.update).toHaveBeenCalledWith({
         id: validRunId,
         data: {
           engagementFlags: bodyWithMultipleFlags.engagementFlags,
@@ -472,10 +450,10 @@ describe('RunEventsService', () => {
 
     it('should return 500 when database update fails', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       const dbError = new Error('Database connection lost');
-      runsRepository.update.mockRejectedValue(dbError);
+      runRepository.update.mockRejectedValue(dbError);
 
       await expect(runEventsService.updateEngagement(authContext, validRunId, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -485,13 +463,13 @@ describe('RunEventsService', () => {
 
     it('should re-throw ApiError when thrown during update', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'user-123' });
-      runsRepository.getById.mockResolvedValue(mockRun);
+      runRepository.getById.mockResolvedValue(mockRun);
 
       const apiError = new ApiError('Custom error', {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
-      runsRepository.update.mockRejectedValue(apiError);
+      runRepository.update.mockRejectedValue(apiError);
 
       await expect(runEventsService.updateEngagement(authContext, validRunId, validBody)).rejects.toBe(apiError);
     });

@@ -15,33 +15,21 @@ import type {
   ComputedScores,
   WriteTrialOutput,
 } from '../types';
+import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
-import { AbortRunCommand } from '../commands/abort-run.command';
-import { RUN_EVENT_ABORT } from '../types/abort-run';
+
+type CompatTaskInfo = {
+  variantId: string;
+  taskVersion: string;
+  administrationId?: string;
+  isAnonymous?: boolean;
+};
 
 // Module-level state for Firekit compat
 let _runId: string | undefined;
-let _taskInfo:
-  | {
-      variantId: string;
-      version: string;
-      adminId?: string;
-      isAnonymous?: boolean;
-    }
-  | undefined;
-
-// Optional helper if you already have a way to set task info elsewhere.
-// If you already have task info in ctx, ignore this and wire that instead.
-export function _setTaskInfoForCompat(taskInfo: {
-  variantId: string;
-  version: string;
-  adminId?: string;
-  isAnonymous?: boolean;
-}): void {
-  _taskInfo = taskInfo;
-}
+let _taskInfo: CompatTaskInfo | undefined;
 
 function getCtx(): CommandContext {
   try {
@@ -96,15 +84,15 @@ export class FirekitFacade {
   /**
    * Initializes the facade with SDK configuration.
    * Called by initFirekitCompat() to set up the CommandContext.
-   *
-   * @param ctx - CommandContext with baseUrl, auth, and other SDK config
+   * @param {CommandContext} ctx - CommandContext with baseUrl, auth, and other SDK config
+   * @param {CompatTaskInfo} taskInfo - Task information including variantId, taskVersion, and administrationId
    */
-  initialize(ctx: CommandContext): void {
+  initialize(ctx: CommandContext, taskInfo: CompatTaskInfo): void {
     this.ctx = ctx;
 
     // Reset compat state on re-init to avoid leaking state across tests / consumers
     _runId = undefined;
-    _taskInfo = undefined;
+    _taskInfo = taskInfo;
   }
 
   /**
@@ -127,19 +115,28 @@ export class FirekitFacade {
  * Should be called once by the host application with the SDK configuration.
  *
  * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
+ * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous
  * @returns FirekitFacade singleton instance
  *
  * Example:
  * ```
- * const firekit = initFirekitCompat({
- *   baseUrl: 'https://api.example.com',
- *   auth: { getToken: () => Promise.resolve(token) }
- * });
+ * const firekit = initFirekitCompat(
+ *   {
+ *     baseUrl: 'https://api.example.com',
+ *     auth: { getToken: () => Promise.resolve(token) }
+ *   },
+ *   {
+ *     variantId: 'variant-123',
+ *     taskVersion: '1.0.0',
+ *     administrationId: 'admin-456',
+ *     isAnonymous: false
+ *   }
+ * );
  * ```
  */
-export function initFirekitCompat(ctx: CommandContext): FirekitFacade {
+export function initFirekitCompat(ctx: CommandContext, taskInfo: CompatTaskInfo): FirekitFacade {
   const facade = FirekitFacade.getInstance();
-  facade.initialize(ctx);
+  facade.initialize(ctx, taskInfo);
   return facade;
 }
 
@@ -161,7 +158,7 @@ export function getFirekitCompat(): FirekitFacade {
  * for the legacy Firekit `appkit.startRun()` method.
  *
  * The function validates that:
- * - Task information (variantId, taskVersion) has been set via _setTaskInfoForCompat()
+ * - Task information (variantId, taskVersion) has been set via initFirekitCompat()
  * - If isAnonymous is false, administrationId must be provided
  *
  * The created runId is stored internally for use by subsequent operations like
@@ -177,20 +174,27 @@ export function getFirekitCompat(): FirekitFacade {
  * @example
  * ```ts
  * // Anonymous run
- * _setTaskInfoForCompat({
- *   variantId: 'variant-123',
- *   version: '1.0.0',
- *   isAnonymous: true
- * });
+ * initFirekitCompat(
+ *   { baseUrl: 'https://api.example.com', auth: { getToken: () => Promise.resolve(token) } },
+ *   {
+ *     variantId: 'variant-123',
+ *     taskVersion: '1.0.0',
+ *     administrationId: 'admin-123',
+ *     isAnonymous: true
+ *   }
+ * );
  * await startRun({ sessionId: 'session-456' });
  *
  * // Authenticated run
- * _setTaskInfoForCompat({
- *   variantId: 'variant-123',
- *   version: '1.0.0',
- *   adminId: 'admin-789',
- *   isAnonymous: false
- * });
+ * initFirekitCompat(
+ *   { baseUrl: 'https://api.example.com', auth: { getToken: () => Promise.resolve(token) } },
+ *   {
+ *     variantId: 'variant-123',
+ *     taskVersion: '1.0.0',
+ *     administrationId: 'admin-789',
+ *     isAnonymous: false
+ *   }
+ * );
  * await startRun({ userId: 'user-123' });
  * ```
  */
@@ -199,24 +203,28 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
     throw new SDKError('appkit.startRun missing task info (variantId/taskVersion/administrationId).');
   }
 
-  const isAnonymous = !!_taskInfo.isAnonymous;
+  const isAnonymous = _taskInfo.isAnonymous === true;
 
-  if (!isAnonymous && !_taskInfo.adminId) {
+  if (!isAnonymous && !_taskInfo.administrationId) {
     throw new SDKError('appkit.startRun requires administrationId when isAnonymous is false.');
   }
 
   const { api, invoker } = getInvokerAndApi();
 
-  const base = {
-    type: 'start' as const,
-    variantId: _taskInfo.variantId,
-    taskVersion: _taskInfo.version,
-    ...(additionalRunMetadata ? { metadata: additionalRunMetadata } : {}),
-  };
-
   const input: StartRunInput = isAnonymous
-    ? { ...base, isAnonymous: true }
-    : { ...base, isAnonymous: false, administrationId: _taskInfo.adminId as string };
+    ? {
+        variantId: _taskInfo.variantId,
+        taskVersion: _taskInfo.taskVersion,
+        ...(additionalRunMetadata ? { metadata: additionalRunMetadata as Json } : {}),
+        isAnonymous: true,
+      }
+    : {
+        variantId: _taskInfo.variantId,
+        taskVersion: _taskInfo.taskVersion,
+        administrationId: _taskInfo.administrationId as string,
+        ...(additionalRunMetadata ? { metadata: additionalRunMetadata as Json } : {}),
+        isAnonymous: false,
+      };
 
   const cmd = new StartRunCommand(api);
   const result = await invoker.run(cmd, input);
