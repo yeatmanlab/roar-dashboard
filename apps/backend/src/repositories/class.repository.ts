@@ -1,6 +1,6 @@
 import { eq, asc, desc, count, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { classes, userClasses, users, type Class, type User } from '../db/schema';
+import { classes, userClasses, users, type Class } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository, type PaginatedResult } from './base.repository';
@@ -10,7 +10,12 @@ import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 import type { UsersListSortField } from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
-import { ListUsersOptions, getUsersListFilterConditions, USERS_LIST_SORT_COLUMNS } from './utils/handle-users-list';
+import {
+  ListUsersOptions,
+  getUsersListFilterConditions,
+  USERS_LIST_SORT_COLUMNS,
+  EnrolledUserEntity,
+} from './utils/handle-users-list';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
@@ -69,14 +74,14 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
    * @param options - Pagination, sorting, and filtering options
    * @returns Paginated result with users
    */
-  async getUsersByClassId(classId: string, options: ListUsersOptions): Promise<PaginatedResult<User>> {
-    const { page, perPage, orderBy, filters } = options;
+  async getUsersByClassId(classId: string, options: ListUsersOptions): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
-      ...getUsersListFilterConditions(filters),
+      ...getUsersListFilterConditions(options),
     );
 
     const countResult = await this.db
@@ -96,7 +101,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users })
+      .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
       .where(whereCondition)
@@ -105,7 +110,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => row.user),
+      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
       totalItems,
     };
   }
@@ -126,17 +131,17 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     accessControlFilter: AccessControlFilter,
     classId: string,
     options: ListUsersOptions,
-  ): Promise<PaginatedResult<User>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const accessibleClasses = this.orgAccessControls
       .buildUserAccessibleOrgIdsQuery(accessControlFilter)
       .as('accessible_classes');
-    const { page, perPage, orderBy, filters } = options;
+    const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
-      ...getUsersListFilterConditions(filters),
+      ...getUsersListFilterConditions(options),
     );
 
     const countResult = await this.db
@@ -169,7 +174,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => row.user),
+      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
       totalItems,
     };
   }

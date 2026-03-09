@@ -3,20 +3,14 @@ import { users, userClasses, type User } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
-import type {
-  UsersListSortField,
-  UsersListQueryFilters,
-  SortQuery,
-  PaginationQuery,
-  User as ContractUser,
-  UserRole,
-} from '@roar-dashboard/api-contract';
+import type { EnrolledUser, UsersListSortField, UserRole, UserGrade } from '@roar-dashboard/api-contract';
 
 export interface ListUsersOptions {
   page: number;
   perPage: number;
   orderBy?: { field: UsersListSortField; direction: 'asc' | 'desc' };
-  filters?: UsersListQueryFilters;
+  grade?: UserGrade;
+  role?: UserRole;
 }
 
 export const USERS_LIST_SORT_COLUMNS: Record<UsersListSortField, Column> = {
@@ -25,22 +19,21 @@ export const USERS_LIST_SORT_COLUMNS: Record<UsersListSortField, Column> = {
   grade: users.grade,
 };
 
-export type UsersListQueryOptions = PaginationQuery &
-  SortQuery<UsersListSortField> & { filters?: UsersListQueryFilters };
-
-export const getUsersListFilterConditions = (filters: UsersListQueryFilters | undefined): SQL[] => {
-  if (!filters) {
+export const getUsersListFilterConditions = (options: ListUsersOptions): SQL[] => {
+  if (!options) {
     return [];
   }
 
   const conditions: SQL[] = [];
-  if (filters.grade) {
-    conditions.push(eq(users.grade, filters.grade));
+
+  if (options.grade) {
+    conditions.push(eq(users.grade, options.grade));
   }
 
-  if (filters.role) {
-    conditions.push(eq(userClasses.role, filters.role));
+  if (options.role) {
+    conditions.push(eq(userClasses.role, options.role));
   }
+
   return conditions;
 };
 
@@ -51,12 +44,12 @@ export function handleSubResourceError(error: unknown) {
   throw error;
 }
 
-export type UserWithRole = User & { userRole: UserRole; enrollmentStart: Date };
+export type EnrolledUserEntity = User & { role: UserRole; enrollmentStart: Date };
 
 /**
- * Maps a database User entity with role to the API contract User schema.
+ * Maps a database User entity with role to the API contract EnrolledUser schema.
  */
-function toContractUser(user: UserWithRole): ContractUser & { enrollmentStart: string } {
+function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
   return {
     id: user.id,
     assessmentPid: user.assessmentPid,
@@ -64,7 +57,7 @@ function toContractUser(user: UserWithRole): ContractUser & { enrollmentStart: s
     nameLast: user.nameLast,
     username: user.username,
     email: user.email,
-    userRole: user.userRole,
+    role: user.role,
     gender: user.gender,
     grade: user.grade,
     dob: user.dob,
@@ -77,23 +70,22 @@ function toContractUser(user: UserWithRole): ContractUser & { enrollmentStart: s
 }
 
 /**
- * TODO: Refactor
  * Builds a paginated response for user listing endpoints.
  */
 export function handleSubResourceResponse(
-  result: { items: UserWithRole[]; totalItems: number },
+  result: { items: EnrolledUserEntity[]; totalItems: number },
   page: number,
   perPage: number,
 ): {
   status: typeof StatusCodes.OK;
   body: {
     data: {
-      items: (ContractUser & { enrollmentStart: string })[];
+      items: EnrolledUser[];
       pagination: { page: number; perPage: number; totalItems: number; totalPages: number };
     };
   };
 } {
-  const items = result.items.map(toContractUser);
+  const items = result.items.map(toContractEnrolledUser);
   const totalPages = Math.ceil(result.totalItems / perPage);
 
   return {

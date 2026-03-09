@@ -48,6 +48,7 @@ export const UserGradeSchema = z.enum([
   'PostGraduate',
   'Ungraded',
   'Other',
+  '',
 ]);
 export type UserGrade = z.infer<typeof UserGradeSchema>;
 
@@ -77,10 +78,11 @@ export const UserBaseSchema = z.object({
 });
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
-export const UsersListSchema = UserSchema.extend({
+export const EnrolledUserSchema = UserSchema.extend({
   role: UserRoleSchema,
   enrollmentStart: z.string().datetime(),
 });
+export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
 
 export const USERS_LIST_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type UsersListSortField = (typeof USERS_LIST_SORT_FIELDS)[number];
@@ -103,5 +105,5 @@ export const UsersListQuerySchema = PaginationQuerySchema.merge(
 
 export type UsersListQuery = z.infer<typeof UsersListQuerySchema>;
 
-export const UsersListResponseSchema = createPaginatedResponseSchema(UsersListSchema);
+export const UsersListResponseSchema = createPaginatedResponseSchema(EnrolledUserSchema);
 export type UsersListResponse = z.infer<typeof UsersListResponseSchema>;

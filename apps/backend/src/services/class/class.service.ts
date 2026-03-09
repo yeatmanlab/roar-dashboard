@@ -7,17 +7,9 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
-import type { PaginatedResult } from '../../repositories/base.repository';
-import type { UsersListSortField } from '@roar-dashboard/api-contract';
+import type { PaginatedResult, UsersListQuery } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../../types/auth-context';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-
-export interface ListUserOptions {
-  page: number;
-  perPage: number;
-  sortBy: UsersListSortField;
-  sortOrder: 'asc' | 'desc';
-}
 
 export function ClassService({
   classRepository = new ClassRepository(),
@@ -116,7 +108,7 @@ export function ClassService({
   async function listUsers(
     authContext: AuthContext,
     classId: string,
-    options: ListUserOptions,
+    options: UsersListQuery,
   ): Promise<PaginatedResult<User>> {
     const { userId, isSuperAdmin } = authContext;
 
@@ -130,6 +122,8 @@ export function ClassService({
           field: options.sortBy,
           direction: options.sortOrder,
         },
+        ...(options.grade && { grade: options.grade }),
+        ...(options.role && { role: options.role }),
       };
 
       if (isSuperAdmin) {

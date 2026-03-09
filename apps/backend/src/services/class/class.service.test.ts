@@ -26,7 +26,11 @@ describe('ClassService', () => {
 
     it('should return users for super admin (unrestricted)', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(3);
+      const mockUsers = UserFactory.buildList(3).map((user) => ({
+        ...user,
+        role: UserRole.STUDENT,
+        enrollmentStart: new Date(),
+      }));
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getUsersByClassId.mockResolvedValue({
         items: mockUsers,
@@ -51,7 +55,11 @@ describe('ClassService', () => {
 
     it('should check authorization for non-super admin users with supervisory role', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(2);
+      const mockUsers = UserFactory.buildList(2).map((user) => ({
+        ...user,
+        role: UserRole.STUDENT,
+        enrollmentStart: new Date(),
+      }));
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER]);
@@ -75,7 +83,11 @@ describe('ClassService', () => {
 
     it('should allow administrator role to list users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(5);
+      const mockUsers = UserFactory.buildList(5).map((user) => ({
+        ...user,
+        role: UserRole.STUDENT,
+        enrollmentStart: new Date(),
+      }));
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.ADMINISTRATOR]);
@@ -99,7 +111,11 @@ describe('ClassService', () => {
 
     it('should allow site_administrator role to list users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(4);
+      const mockUsers = UserFactory.buildList(4).map((user) => ({
+        ...user,
+        role: UserRole.STUDENT,
+        enrollmentStart: new Date(),
+      }));
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.SITE_ADMINISTRATOR]);
@@ -123,7 +139,11 @@ describe('ClassService', () => {
 
     it('should allow user with teacher role for class but admin role for school to list users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(3);
+      const mockUsers = UserFactory.buildList(3).map((user) => ({
+        ...user,
+        role: UserRole.STUDENT,
+        enrollmentStart: new Date(),
+      }));
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER, UserRole.ADMINISTRATOR]);
