@@ -167,7 +167,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     }
 
     // Resolve sort column
-    const sortColumn = orderBy?.field ? SCHOOL_SORT_COLUMNS[orderBy.field] : orgs.createdAt;
+    const sortColumn = SCHOOL_SORT_COLUMNS[orderBy?.field ?? 'createdAt'];
     const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join schools with the accessible IDs subquery

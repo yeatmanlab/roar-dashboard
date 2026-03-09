@@ -4,6 +4,7 @@ import { OrgFactory } from '../../test-support/factories/org.factory';
 import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { createMockSchoolRepository } from '../../test-support/repositories';
 
@@ -494,7 +495,7 @@ describe('SchoolService', () => {
 
     it('should throw 404 when school not found', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(null);
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(null);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
@@ -508,12 +509,25 @@ describe('SchoolService', () => {
         expect(error).toBeInstanceOf(ApiError);
         expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
         expect((error as ApiError).code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-        expect((error as ApiError).message).toBe('School not found');
+        expect((error as ApiError).message).toBe(ApiErrorMessage.NOT_FOUND);
       }
     });
 
-    it('should throw 404 when user lacks access (security - no distinction)', async () => {
+    it('should throw 403 when user lacks access', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockSchool = {
+        id: validUuid,
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: 'school',
+        parentOrgId: 'district-id',
+        isRosteringRootOrg: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      // School exists (unrestricted lookup succeeds)
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      // But user lacks access (authorized lookup fails)
       mockSchoolRepository.getAuthorizedById.mockResolvedValue(null);
 
       const service = SchoolService({
@@ -526,9 +540,9 @@ describe('SchoolService', () => {
         await service.getById(mockAuthContext, validUuid);
       } catch (error) {
         expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
-        // Should not distinguish between "not found" and "no access" for security
-        expect((error as ApiError).message).toBe('School not found');
+        expect((error as ApiError).statusCode).toBe(StatusCodes.FORBIDDEN);
+        expect((error as ApiError).code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
       }
     });
 
