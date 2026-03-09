@@ -16,16 +16,18 @@ const taskService = TaskService();
  */
 export const TasksController = {
   /**
-   * Create a new task-variant for a given task id.
+   * Create a new task-variant for a given task.
    *
    * Delegates to TaskService for authorization and business logic.
+   * Requires super admin privileges. The variant and all its parameters
+   * are created atomically within a database transaction.
    *
-   * @param authContext - User's authentication context.
-   * @param taskId - Path parameter containing the task ID
-   * @param body - Request body with variant details
-   * @returns An object containing the newly created task variant's UUID.
+   * @param authContext - User's authentication context (requires super admin)
+   * @param taskId - Path parameter containing the parent task's UUID
+   * @param body - Request body with variant details (name, description, status, parameters)
+   * @returns Response with status 201 and the newly created task variant's UUID
    *
-   * @see {@link CreateTaskVariantRequestBody} - Parameters for creating a new task variant.
+   * @see {@link CreateTaskVariantRequestBody} - Schema for creating a new task variant
    */
   createTaskVariant: async (authContext: AuthContext, taskId: string, body: CreateTaskVariantRequestBody) => {
     try {
@@ -51,16 +53,19 @@ export const TasksController = {
   },
 
   /**
-   * Update an existing task-variant for a given task id.
+   * Update an existing task-variant for a given task.
    *
    * Delegates to TaskService for authorization and business logic.
-   * All fields in the request are optional - only provided fields will be updated.
+   * Requires super admin privileges. All fields in the request body are optional -
+   * only provided fields will be updated. When parameters are provided, they replace
+   * all existing parameters (not merged).
    *
-   * @param authContext - User's authentication context.
-   * @param data - Parameters for TaskVariantUpdateRequest interface
-   * @returns 204 No Content on success.
+   * @param authContext - User's authentication context (requires super admin)
+   * @param params - Object containing taskId and variantId path parameters
+   * @param body - Request body with optional fields to update (name, description, status, parameters)
+   * @returns Response with status 204 No Content on success
    *
-   * @see {@link UpdateTaskVariantRequest} - Parameters for updating a task variant.
+   * @see {@link UpdateTaskVariantRequestBody} - Schema for updating a task variant
    */
   updateTaskVariant: async (
     authContext: AuthContext,

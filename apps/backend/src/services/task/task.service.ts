@@ -240,27 +240,33 @@ export function TaskService({
    * ensuring referential integrity.
    *
    * @param authContext - User's auth context (requires super admin privileges)
-   * @param data - Task variant data including taskId, name, description, status, and required parameters array
-   * @returns The created task variant (without full parameter details)
+   * @param taskId - The UUID of the parent task
+   * @param body - Task variant data including name, description, status, and required parameters array
+   * @returns An object containing the created task variant's UUID
    * @throws {ApiError} FORBIDDEN if user is not a super admin
    * @throws {ApiError} BAD_REQUEST if parameters array is empty
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
+   * @throws {ApiError} CONFLICT if a variant with the same name already exists for this task
    * @throws {ApiError} INTERNAL if variant or any parameter creation fails
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    *
    * @example
    * ```typescript
-   * const variant = await taskService.createTaskVariant(authContext, {
-   *   taskId: 'task-uuid',
-   *   name: 'easy-mode',
-   *   description: 'Easy difficulty configuration',
-   *   status: 'published',
-   *   parameters: [
-   *     { name: 'difficulty', value: 'easy' },
-   *     { name: 'timeLimit', value: 120 },
-   *     { name: 'hintsEnabled', value: true }
-   *   ]
-   * });
+   * const result = await taskService.createTaskVariant(
+   *   authContext,
+   *   'task-uuid',
+   *   {
+   *     name: 'easy-mode',
+   *     description: 'Easy difficulty configuration',
+   *     status: 'published',
+   *     parameters: [
+   *       { name: 'difficulty', value: 'easy' },
+   *       { name: 'timeLimit', value: 120 },
+   *       { name: 'hintsEnabled', value: true }
+   *     ]
+   *   }
+   * );
+   * console.log(result.id); // 'variant-uuid'
    * ```
    */
   async function createTaskVariant(
@@ -395,11 +401,13 @@ export function TaskService({
    * When parameters are provided, they replace all existing parameters (not merged).
    *
    * @param authContext - User's authentication context
-   * @param data - Fields to update (all optional)
-   * @returns Success indicator
-   * @throws ApiError with FORBIDDEN if user is not a super admin
-   * @throws ApiError with NOT_FOUND if task or variant doesn't exist
-   * @throws ApiError with CONFLICT if name update would create a duplicate
+   * @param params - Object containing taskId and variantId path parameters
+   * @param body - Fields to update (all optional: name, description, status, parameters)
+   * @returns Promise that resolves when update is complete
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} NOT_FOUND if task or variant doesn't exist, or if variant belongs to different task
+   * @throws {ApiError} CONFLICT if name update would create a duplicate
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
   async function updateTaskVariant(
     authContext: AuthContext,
