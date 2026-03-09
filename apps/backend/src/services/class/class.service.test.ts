@@ -55,7 +55,7 @@ describe('ClassService', () => {
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER]);
-      mockClassRepository.getUsersByClassId.mockResolvedValue({
+      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
         items: mockUsers,
         totalItems: 2,
       });
@@ -79,7 +79,7 @@ describe('ClassService', () => {
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.ADMINISTRATOR]);
-      mockClassRepository.getUsersByClassId.mockResolvedValue({
+      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
         items: mockUsers,
         totalItems: 5,
       });
@@ -103,7 +103,7 @@ describe('ClassService', () => {
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.SITE_ADMINISTRATOR]);
-      mockClassRepository.getUsersByClassId.mockResolvedValue({
+      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
         items: mockUsers,
         totalItems: 4,
       });
@@ -127,7 +127,7 @@ describe('ClassService', () => {
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER, UserRole.ADMINISTRATOR]);
-      mockClassRepository.getUsersByClassId.mockResolvedValue({
+      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
         items: mockUsers,
         totalItems: 3,
       });

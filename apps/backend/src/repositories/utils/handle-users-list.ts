@@ -28,7 +28,7 @@ export const USERS_LIST_SORT_COLUMNS: Record<UsersListSortField, Column> = {
 export type UsersListQueryOptions = PaginationQuery &
   SortQuery<UsersListSortField> & { filters?: UsersListQueryFilters };
 
-export const getUsersListFilterConditions = (filters: UsersListQueryFilters): SQL[] => {
+export const getUsersListFilterConditions = (filters: UsersListQueryFilters | undefined): SQL[] => {
   if (!filters) {
     return [];
   }
