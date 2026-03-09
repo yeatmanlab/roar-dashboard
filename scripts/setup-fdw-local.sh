@@ -41,6 +41,20 @@ BEGIN
 END
 \$\$;
 
+-- Upsert helper: creates or replaces a user mapping for the given role.
+CREATE OR REPLACE FUNCTION pg_temp.upsert_user_mapping(_role text, _options text)
+RETURNS void LANGUAGE plpgsql AS \$func\$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_user_mappings
+    WHERE srvname = 'assessment_server' AND usename = _role
+  ) THEN
+    EXECUTE format('DROP USER MAPPING FOR %I SERVER assessment_server', _role);
+  END IF;
+  EXECUTE format('CREATE USER MAPPING FOR %I SERVER assessment_server OPTIONS (%s)', _role, _options);
+END
+\$func\$;
+
 DO \$\$
 DECLARE
   _options text := 'user ''$PG_USER''';
@@ -48,18 +62,16 @@ BEGIN
   -- Include password in mapping options when PGPASSWORD is set (CI/password-auth environments).
   -- Omitted for local-dev trust-auth setups where no password is needed.
   IF '${PGPASSWORD:-}' <> '' THEN
-    _options := _options || ', password ''${PGPASSWORD:-}''';
+    _options := _options || format(', password %L', '${PGPASSWORD:-}');
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_user_mappings
-    WHERE srvname = 'assessment_server' AND usename = '$PG_USER'
-  ) THEN
-    EXECUTE format('CREATE USER MAPPING FOR %I SERVER assessment_server OPTIONS (%s)', '$PG_USER', _options);
-  ELSE
-    -- Drop and recreate to ensure options (especially password) are up-to-date.
-    EXECUTE format('DROP USER MAPPING FOR %I SERVER assessment_server', '$PG_USER');
-    EXECUTE format('CREATE USER MAPPING FOR %I SERVER assessment_server OPTIONS (%s)', '$PG_USER', _options);
+  -- Always create a mapping for PG_USER (the explicit connection user).
+  PERFORM pg_temp.upsert_user_mapping('$PG_USER', _options);
+
+  -- Also map CURRENT_USER when it differs from PG_USER (e.g., local dev where
+  -- the OS user connects via peer/trust auth but PG_USER defaults to postgres).
+  IF current_user <> '$PG_USER' THEN
+    PERFORM pg_temp.upsert_user_mapping(current_user, _options);
   END IF;
 END
 \$\$;
