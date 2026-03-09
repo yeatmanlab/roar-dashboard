@@ -12,6 +12,7 @@ export function createMockTaskRepository(): MockedObject<TaskRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
     getBySlug: vi.fn(),
+    listAll: vi.fn(),
   } as MockedObject<TaskRepository>;
 }
 
