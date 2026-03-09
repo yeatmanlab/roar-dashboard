@@ -7,7 +7,6 @@ import {
   addInteraction,
   updateUser,
   writeTrial,
-  _setTaskInfoForCompat,
   _getRunIdForCompat,
   initFirekitCompat,
 } from './firekit';
@@ -56,7 +55,12 @@ describe('firekit compat', () => {
           getToken: vi.fn().mockResolvedValue('test-token'),
         },
       };
-      initFirekitCompat(mockContext);
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        administrationId: 'admin-123',
+        isAnonymous: true,
+      });
     });
 
     afterEach(() => {
@@ -69,9 +73,9 @@ describe('firekit compat', () => {
     });
 
     it('throws SDKError when administrationId is required but missing', async () => {
-      _setTaskInfoForCompat({
+      initFirekitCompat(mockContext, {
         variantId: 'variant-123',
-        version: '1.0.0',
+        taskVersion: '1.0.0',
         isAnonymous: false,
       });
 
@@ -85,11 +89,10 @@ describe('firekit compat', () => {
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
-      initFirekitCompat(mockContext);
-
-      _setTaskInfoForCompat({
+      initFirekitCompat(mockContext, {
         variantId: 'variant-123',
-        version: '1.0.0',
+        taskVersion: '1.0.0',
+        administrationId: 'admin-123',
         isAnonymous: true,
       });
 
@@ -97,7 +100,12 @@ describe('firekit compat', () => {
       expect(_getRunIdForCompat()).toBe('run-123');
 
       // Re-initialize should reset state
-      initFirekitCompat(mockContext);
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        administrationId: 'admin-123',
+        isAnonymous: true,
+      });
       expect(_getRunIdForCompat()).toBeUndefined();
     });
 
@@ -108,11 +116,10 @@ describe('firekit compat', () => {
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
-      initFirekitCompat(mockContext);
-
-      _setTaskInfoForCompat({
+      initFirekitCompat(mockContext, {
         variantId: 'variant-123',
-        version: '1.0.0',
+        taskVersion: '1.0.0',
+        administrationId: 'admin-123',
         isAnonymous: true,
       });
 
@@ -128,12 +135,10 @@ describe('firekit compat', () => {
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
-      initFirekitCompat(mockContext);
-
-      _setTaskInfoForCompat({
+      initFirekitCompat(mockContext, {
         variantId: 'variant-123',
-        version: '1.0.0',
-        adminId: 'admin-456',
+        taskVersion: '1.0.0',
+        administrationId: 'admin-456',
         isAnonymous: false,
       });
 
@@ -149,11 +154,10 @@ describe('firekit compat', () => {
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
-      initFirekitCompat(mockContext);
-
-      _setTaskInfoForCompat({
+      initFirekitCompat(mockContext, {
         variantId: 'variant-123',
-        version: '1.0.0',
+        taskVersion: '1.0.0',
+        administrationId: 'admin-123',
         isAnonymous: true,
       });
 
@@ -164,12 +168,6 @@ describe('firekit compat', () => {
     });
 
     it('throws SDKError when Firekit compat is not initialized', async () => {
-      _setTaskInfoForCompat({
-        variantId: 'variant-123',
-        version: '1.0.0',
-        isAnonymous: true,
-      });
-
       // Don't call initFirekitCompat - simulate uninitialized state
       // This will cause getCtx() to throw the proper error
       await expect(startRun()).rejects.toBeInstanceOf(SDKError);

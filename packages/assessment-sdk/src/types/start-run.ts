@@ -1,3 +1,5 @@
+import type { Json } from '@roar-dashboard/api-contract';
+
 /**
  * StartRunInput is a discriminated union type that enforces strict validation
  * of the relationship between isAnonymous and administrationId.
@@ -32,14 +34,14 @@ export type StartRunInput =
   | {
       variantId: string;
       taskVersion: string;
-      metadata?: Record<string, unknown>;
+      metadata?: Json;
       isAnonymous: true;
       administrationId?: never; // not allowed when anonymous
     }
   | {
       variantId: string;
       taskVersion: string;
-      metadata?: Record<string, unknown>;
+      metadata?: Json;
       isAnonymous?: false; // default false
       administrationId: string; // required when isAnonymous is false
     };
