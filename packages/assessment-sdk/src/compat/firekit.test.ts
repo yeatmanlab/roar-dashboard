@@ -84,8 +84,9 @@ describe('firekit compat', () => {
 
     it('resets state on re-initialization', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'run-123' }),
+        status: 201,
+        json: async () => ({ data: { id: 'run-123' } }),
+        headers: new Map([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -111,8 +112,9 @@ describe('firekit compat', () => {
 
     it('successfully starts an anonymous run', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'run-anon-123' }),
+        status: 201,
+        json: async () => ({ data: { id: 'run-anon-123' } }),
+        headers: new Map([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -130,8 +132,9 @@ describe('firekit compat', () => {
 
     it('successfully starts a non-anonymous run with administrationId', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'run-non-anon-789' }),
+        status: 201,
+        json: async () => ({ data: { id: 'run-non-anon-789' } }),
+        headers: new Map([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -149,8 +152,9 @@ describe('firekit compat', () => {
 
     it('includes additional metadata when provided', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: 'run-with-metadata' }),
+        status: 201,
+        json: async () => ({ data: { id: 'run-with-metadata' } }),
+        headers: new Map([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;

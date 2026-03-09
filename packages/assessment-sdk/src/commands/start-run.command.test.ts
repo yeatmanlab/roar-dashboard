@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StartRunCommand } from './start-run.command';
+import { StatusCodes } from 'http-status-codes';
 import type { RoarApi } from '../receiver/roar-api';
 import type { StartRunInput, StartRunOutput } from '../types/start-run';
 
@@ -10,7 +11,13 @@ describe('StartRunCommand', () => {
 
   beforeEach(() => {
     createRun = vi.fn();
-    mockApi = { createRun } as unknown as RoarApi;
+    mockApi = {
+      client: {
+        runs: {
+          create: createRun,
+        },
+      },
+    } as unknown as RoarApi;
     command = new StartRunCommand(mockApi);
   });
 
@@ -27,12 +34,21 @@ describe('StartRunCommand', () => {
     };
 
     const expected: StartRunOutput = { runId: 'run-456' };
-    createRun.mockResolvedValue(expected);
+    createRun.mockResolvedValue({
+      status: StatusCodes.CREATED,
+      body: { data: { id: 'run-456' } },
+    });
 
     const result = await command.execute(input);
 
     expect(createRun).toHaveBeenCalledTimes(1);
-    expect(createRun).toHaveBeenCalledWith(input);
+    expect(createRun).toHaveBeenCalledWith({
+      body: {
+        taskVariantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      },
+    });
     expect(result).toEqual(expected);
   });
 
@@ -45,12 +61,22 @@ describe('StartRunCommand', () => {
     };
 
     const expected: StartRunOutput = { runId: 'run-999' };
-    createRun.mockResolvedValue(expected);
+    createRun.mockResolvedValue({
+      status: StatusCodes.CREATED,
+      body: { data: { id: 'run-999' } },
+    });
 
     const result = await command.execute(input);
 
     expect(createRun).toHaveBeenCalledTimes(1);
-    expect(createRun).toHaveBeenCalledWith(input);
+    expect(createRun).toHaveBeenCalledWith({
+      body: {
+        taskVariantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: false,
+        administrationId: 'admin-456',
+      },
+    });
     expect(result).toEqual(expected);
   });
 
