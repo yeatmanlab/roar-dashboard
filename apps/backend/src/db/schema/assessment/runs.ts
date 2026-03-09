@@ -1,6 +1,7 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { timestamps } from '../common';
+import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../../constants/run';
 
 const db = p.pgSchema('app');
 
@@ -70,7 +71,7 @@ export const runs = db.table(
     // - Ensure anonymous runs use the sentinel administration ID and vice versa
     p.check(
       'runs_anonymous_administration_id',
-      sql`(${table.isAnonymous} = true AND ${table.administrationId} = '00000000-0000-0000-0000-000000000000'::uuid) OR (${table.isAnonymous} = false AND ${table.administrationId} != '00000000-0000-0000-0000-000000000000'::uuid)`,
+      sql`(${table.isAnonymous} = true AND ${table.administrationId} = ${sql.raw(`'${ANONYMOUS_RUN_ADMINISTRATION_ID}'`)}::uuid) OR (${table.isAnonymous} = false AND ${table.administrationId} != ${sql.raw(`'${ANONYMOUS_RUN_ADMINISTRATION_ID}'`)}::uuid)`,
     ),
   ],
 );
