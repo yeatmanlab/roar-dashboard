@@ -17,7 +17,7 @@ PG_PORT="${PG_PORT:-5432}"
 PG_USER="${PG_USER:-postgres}"
 
 # Assessment side: create app_fdw schema (views come from Drizzle migrations)
-psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$ASSESSMENT_DB" <<'SQL'
+psql -v ON_ERROR_STOP=1 -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$ASSESSMENT_DB" <<'SQL'
 CREATE SCHEMA IF NOT EXISTS app_fdw;
 SQL
 
@@ -25,7 +25,7 @@ SQL
 # Creates the server if missing, or updates connection options if it already exists.
 # DROP CASCADE is avoided because it would destroy foreign tables that Drizzle migrations
 # won't recreate.
-psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$CORE_DB" <<SQL
+psql -v ON_ERROR_STOP=1 -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$CORE_DB" <<SQL
 CREATE EXTENSION IF NOT EXISTS postgres_fdw;
 
 DO \$\$
