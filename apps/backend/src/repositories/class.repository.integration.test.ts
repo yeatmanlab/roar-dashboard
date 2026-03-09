@@ -214,6 +214,23 @@ describe('ClassRepository', () => {
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
+    it('returns enrollmentStart and role for each user', async () => {
+      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items).toHaveLength(2);
+
+      const student = result.items.find((u) => u.id === baseFixture.classAStudent.id);
+      const teacher = result.items.find((u) => u.id === baseFixture.classATeacher.id);
+
+      expect(student?.role).toBe(UserRole.STUDENT);
+      expect(student?.enrollmentStart).toBeInstanceOf(Date);
+      expect(teacher?.role).toBe(UserRole.TEACHER);
+      expect(teacher?.enrollmentStart).toBeInstanceOf(Date);
+    });
+
     it('returns empty for class with no enrolled users', async () => {
       // classInSchoolB has no direct class enrollments in base fixture
       const result = await repository.getUsersByClassId(baseFixture.classInSchoolB.id, {
@@ -376,6 +393,11 @@ describe('ClassRepository', () => {
         expect(userIds).toContain(student1.id);
         expect(userIds).toContain(student2.id);
         expect(userIds).not.toContain(teacher.id);
+
+        // Verify all returned users have the filtered role in EnrolledUserEntity
+        for (const user of result.items) {
+          expect(user.role).toBe(UserRole.STUDENT);
+        }
       });
 
       it('filters by grade', async () => {
@@ -529,6 +551,24 @@ describe('ClassRepository', () => {
         const userIds = result.items.map((u) => u.id);
         expect(userIds).toContain(baseFixture.classAStudent.id);
         expect(userIds).toContain(baseFixture.classATeacher.id);
+      });
+
+      it('returns enrollmentStart and role for each user', async () => {
+        const result = await repository.getAuthorizedUsersByClassId(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          baseFixture.classInSchoolA.id,
+          { page: 1, perPage: 100 },
+        );
+
+        expect(result.items).toHaveLength(2);
+
+        const student = result.items.find((u) => u.id === baseFixture.classAStudent.id);
+        const teacher = result.items.find((u) => u.id === baseFixture.classATeacher.id);
+
+        expect(student?.role).toBe(UserRole.STUDENT);
+        expect(student?.enrollmentStart).toBeInstanceOf(Date);
+        expect(teacher?.role).toBe(UserRole.TEACHER);
+        expect(teacher?.enrollmentStart).toBeInstanceOf(Date);
       });
     });
 
@@ -771,6 +811,11 @@ describe('ClassRepository', () => {
         expect(userIds).toContain(student1.id);
         expect(userIds).toContain(student2.id);
         expect(userIds).not.toContain(teacher.id);
+
+        // Verify all returned users have the filtered role in EnrolledUserEntity
+        for (const user of result.items) {
+          expect(user.role).toBe(UserRole.STUDENT);
+        }
       });
 
       it('filters by grade', async () => {
