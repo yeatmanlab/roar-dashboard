@@ -54,7 +54,7 @@ export default async function globalSetup() {
       PG_USER: coreUrl.username,
       ...(password ? { PGPASSWORD: password } : {}),
     },
-    stdio: 'pipe',
+    stdio: 'inherit',
   });
 
   // Initialize database pools before running migrations
