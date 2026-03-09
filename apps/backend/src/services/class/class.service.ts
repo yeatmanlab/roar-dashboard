@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { ClassRepository } from '../../repositories/class.repository';
-import type { User, Class } from '../../db/schema';
+import type { Class } from '../../db/schema';
+import type { EnrolledUserEntity } from '../../repositories/utils/handle-users-list';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
@@ -109,7 +110,7 @@ export function ClassService({
     authContext: AuthContext,
     classId: string,
     options: UsersListQuery,
-  ): Promise<PaginatedResult<User>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
