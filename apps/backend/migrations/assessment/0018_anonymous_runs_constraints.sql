@@ -1,0 +1,2 @@
+ALTER TABLE "app"."runs" ALTER COLUMN "is_anonymous" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "app"."runs" ADD CONSTRAINT "runs_anonymous_administration_id" CHECK (("app"."runs"."is_anonymous" = true AND "app"."runs"."administration_id" = '00000000-0000-0000-0000-000000000000'::uuid) OR ("app"."runs"."is_anonymous" = false AND "app"."runs"."administration_id" != '00000000-0000-0000-0000-000000000000'::uuid));

@@ -14,6 +14,7 @@ import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { AdministrationAccessControls } from '../../repositories/access-controls/administration.access-controls';
 import { type UserRole as UserRoleType } from '../../enums/user-role.enum';
+import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 
 /**
  * RunService factory function.
@@ -58,48 +59,51 @@ export function RunService({
    */
   async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
+    const isAnonymous = body.isAnonymous === true;
 
-    try {
-      await administrationService.verifyAdministrationAccess(authContext, body.administrationId);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        if (error.statusCode === StatusCodes.NOT_FOUND) {
-          throw new ApiError('Invalid administration ID', {
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { userId, administrationId: body.administrationId },
-            cause: error,
-          });
+    if (!isAnonymous) {
+      try {
+        await administrationService.verifyAdministrationAccess(authContext, body.administrationId!);
+      } catch (error) {
+        if (error instanceof ApiError) {
+          if (error.statusCode === StatusCodes.NOT_FOUND) {
+            throw new ApiError('Invalid administration ID', {
+              statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, administrationId: body.administrationId },
+              cause: error,
+            });
+          }
+
+          if (error.statusCode === StatusCodes.FORBIDDEN) {
+            throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId, administrationId: body.administrationId },
+              cause: error,
+            });
+          }
         }
+        throw error;
+      }
 
-        if (error.statusCode === StatusCodes.FORBIDDEN) {
+      if (!isSuperAdmin) {
+        const userRoles = (await administrationAccessControls.getUserRolesForAdministration(
+          userId,
+          body.administrationId!,
+        )) as UserRoleType[];
+
+        const allowedRoles = rolesForPermission(Permissions.Runs.CREATE);
+
+        const hasPermission = userRoles.some((role) => allowedRoles.includes(role));
+
+        if (!hasPermission) {
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
             code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId: body.administrationId },
-            cause: error,
+            context: { userId, administrationId: body.administrationId, userRoles, allowedRoles },
           });
         }
-      }
-      throw error;
-    }
-
-    if (!isSuperAdmin) {
-      const userRoles = (await administrationAccessControls.getUserRolesForAdministration(
-        userId,
-        body.administrationId,
-      )) as UserRoleType[];
-
-      const allowedRoles = rolesForPermission(Permissions.Runs.CREATE);
-
-      const hasPermission = userRoles.some((role) => allowedRoles.includes(role));
-
-      if (!hasPermission) {
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, administrationId: body.administrationId, userRoles, allowedRoles },
-        });
       }
     }
 
@@ -119,7 +123,8 @@ export function RunService({
         taskId: result.taskId,
         taskVariantId: body.taskVariantId,
         taskVersion: body.taskVersion,
-        administrationId: body.administrationId,
+        administrationId: isAnonymous ? ANONYMOUS_RUN_ADMINISTRATION_ID : body.administrationId!,
+        isAnonymous,
         ...(body.metadata ? { metadata: body.metadata } : {}),
       };
 
@@ -137,6 +142,7 @@ export function RunService({
             taskVariantId: body.taskVariantId,
             taskVersion: body.taskVersion,
             administrationId: body.administrationId,
+            isAnonymous,
           },
         },
         'Failed to create run',
