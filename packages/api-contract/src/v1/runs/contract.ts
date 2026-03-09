@@ -28,6 +28,7 @@ export const RunsContract = c.router(
       summary: 'Create run',
       description:
         'Creates a new run owned by the authenticated user and returns the run id. ' +
+        'Supports anonymous runs which skip administration validation. ' +
         'Returns 422 if the provided task variant or administration IDs are invalid or cannot be resolved. ' +
         'Returns 403 if the user lacks access to the provided administration context.',
     },

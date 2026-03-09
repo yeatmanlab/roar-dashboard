@@ -14,6 +14,7 @@ import {
 } from '../../test-support/repositories';
 import { type MockAdministrationService, createMockAdministrationService } from '../../test-support/services';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
+import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 
 describe('RunService', () => {
   let authContext: AuthContext;
@@ -76,6 +77,7 @@ describe('RunService', () => {
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
           administrationId: '660e8400-e29b-41d4-a716-446655440001',
+          isAnonymous: false,
         },
       });
     });
@@ -143,6 +145,7 @@ describe('RunService', () => {
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
           administrationId: '660e8400-e29b-41d4-a716-446655440001',
+          isAnonymous: false,
           metadata: { source: 'dashboard', sessionId: 'sess-789' },
         },
       });
@@ -214,6 +217,55 @@ describe('RunService', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
+    });
+
+    it('should create an anonymous run successfully without administrationId', async () => {
+      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+      runRepository.create.mockResolvedValue({ id: 'run-anon-123' });
+
+      const result = await runService.create(authContext, {
+        taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      expect(result).toEqual({ id: 'run-anon-123' });
+      expect(runRepository.create).toHaveBeenCalledWith({
+        data: {
+          userId: 'user-123',
+          taskId: 'task-123',
+          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVersion: '1.0.0',
+          administrationId: ANONYMOUS_RUN_ADMINISTRATION_ID,
+          isAnonymous: true,
+        },
+      });
+    });
+
+    it('should skip administration access verification for anonymous runs', async () => {
+      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+      runRepository.create.mockResolvedValue({ id: 'run-anon-123' });
+
+      await runService.create(authContext, {
+        taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      expect(administrationService.verifyAdministrationAccess).not.toHaveBeenCalled();
+    });
+
+    it('should skip role permission check for anonymous runs', async () => {
+      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+      runRepository.create.mockResolvedValue({ id: 'run-anon-123' });
+
+      await runService.create(authContext, {
+        taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      expect(administrationAccessControls.getUserRolesForAdministration).not.toHaveBeenCalled();
     });
 
     it('should re-throw ApiError from create without wrapping', async () => {
