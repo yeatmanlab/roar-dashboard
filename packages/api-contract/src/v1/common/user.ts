@@ -87,6 +87,13 @@ export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
 export const ENROLLED_USERS_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type EnrolledUsersSortFieldType = (typeof ENROLLED_USERS_SORT_FIELDS)[number];
 
+export const GradeFilterSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.split(',').map((g) => g.trim()))
+  .pipe(z.array(UserGradeSchema))
+  .optional();
+
 export const EnrolledUsersQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ENROLLED_USERS_SORT_FIELDS, 'nameLast'),
 ).extend({

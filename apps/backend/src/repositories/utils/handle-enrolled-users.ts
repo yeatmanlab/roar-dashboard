@@ -3,19 +3,13 @@ import { users, userClasses, type User } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
-import {
-  EnrolledUser,
-  EnrolledUsersSortFieldType,
-  UserRole,
-  UserGrade,
-  UserGradeSchema,
-} from '@roar-dashboard/api-contract';
+import { EnrolledUser, EnrolledUsersSortFieldType, UserRole, UserGrade } from '@roar-dashboard/api-contract';
 
 export interface ListEnrolledUsersOptions {
   page: number;
   perPage: number;
   orderBy?: { field: EnrolledUsersSortFieldType; direction: 'asc' | 'desc' };
-  grade?: string;
+  grade?: UserGrade[];
   role?: UserRole;
 }
 
@@ -32,12 +26,8 @@ export const getEnrolledUsersFilterConditions = (options: ListEnrolledUsersOptio
 
   const conditions: SQL[] = [];
 
-  if (options.grade) {
-    const validGradeFilters = options.grade
-      .split(',')
-      .map((g) => g.trim())
-      .filter((t): t is UserGrade => UserGradeSchema.options.includes(t as UserGrade));
-    conditions.push(inArray(users.grade, validGradeFilters));
+  if (options.grade && options.grade.length > 0) {
+    conditions.push(inArray(users.grade, options.grade));
   }
 
   if (options.role) {
