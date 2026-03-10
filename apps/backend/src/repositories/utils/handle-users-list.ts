@@ -1,15 +1,21 @@
-import { eq, type SQL, Column } from 'drizzle-orm';
+import { eq, inArray, type SQL, Column } from 'drizzle-orm';
 import { users, userClasses, type User } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
-import type { EnrolledUser, EnrolledUsersSortFieldType, UserRole, UserGrade } from '@roar-dashboard/api-contract';
+import {
+  EnrolledUser,
+  EnrolledUsersSortFieldType,
+  UserRole,
+  UserGrade,
+  UserGradeSchema,
+} from '@roar-dashboard/api-contract';
 
 export interface ListEnrolledUsersOptions {
   page: number;
   perPage: number;
   orderBy?: { field: EnrolledUsersSortFieldType; direction: 'asc' | 'desc' };
-  grade?: UserGrade;
+  grade?: string;
   role?: UserRole;
 }
 
@@ -27,7 +33,11 @@ export const getEnrolledUsersFilterConditions = (options: ListEnrolledUsersOptio
   const conditions: SQL[] = [];
 
   if (options.grade) {
-    conditions.push(eq(users.grade, options.grade));
+    const validGradeFilters = options.grade
+      .split(',')
+      .map((g) => g.trim())
+      .filter((t): t is UserGrade => UserGradeSchema.options.includes(t as UserGrade));
+    conditions.push(inArray(users.grade, validGradeFilters));
   }
 
   if (options.role) {

@@ -91,7 +91,7 @@ export const EnrolledUsersQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ENROLLED_USERS_SORT_FIELDS, 'nameLast'),
 ).extend({
   role: UserRoleSchema.optional(),
-  grade: UserGradeSchema.optional(),
+  grade: z.string().optional(),
 });
 
 export type EnrolledUsersQuery = z.infer<typeof EnrolledUsersQuerySchema>;
