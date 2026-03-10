@@ -3,17 +3,17 @@ import { users, userClasses, type User } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
-import type { EnrolledUser, UsersListSortField, UserRole, UserGrade } from '@roar-dashboard/api-contract';
+import type { EnrolledUser, UsersListSortFieldType, UserRole, UserGrade } from '@roar-dashboard/api-contract';
 
 export interface ListUsersOptions {
   page: number;
   perPage: number;
-  orderBy?: { field: UsersListSortField; direction: 'asc' | 'desc' };
+  orderBy?: { field: UsersListSortFieldType; direction: 'asc' | 'desc' };
   grade?: UserGrade;
   role?: UserRole;
 }
 
-export const USERS_LIST_SORT_COLUMNS: Record<UsersListSortField, Column> = {
+export const USERS_LIST_SORT_COLUMNS: Record<UsersListSortFieldType, Column> = {
   nameLast: users.nameLast,
   username: users.username,
   grade: users.grade,

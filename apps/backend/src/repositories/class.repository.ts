@@ -8,7 +8,7 @@ import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import type { UsersListSortField } from '@roar-dashboard/api-contract';
+import type { UsersListSortFieldType } from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
 import {
   ListUsersOptions,
@@ -96,7 +96,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       return { items: [], totalItems: 0 };
     }
 
-    const sortField = orderBy?.field as UsersListSortField | undefined;
+    const sortField = orderBy?.field as UsersListSortFieldType | undefined;
     const sortColumn = sortField ? USERS_LIST_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
@@ -158,7 +158,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       return { items: [], totalItems: 0 };
     }
 
-    const sortField = orderBy?.field as UsersListSortField | undefined;
+    const sortField = orderBy?.field as UsersListSortFieldType | undefined;
     const sortColumn = sortField ? USERS_LIST_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
