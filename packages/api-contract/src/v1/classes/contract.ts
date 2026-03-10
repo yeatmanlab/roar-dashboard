@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { initContract } from '@ts-rest/core';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
-import { UsersListQuerySchema } from '../common/user';
-import { ClassUsersResponseSchema } from './schema';
+import { UsersListQuerySchema, UsersListResponseSchema } from '../common/user';
 
 const c = initContract();
 
@@ -12,16 +11,17 @@ const c = initContract();
  */
 export const ClassesContract = c.router(
   {
-    get: {
+    listUsers: {
       method: 'GET',
       path: '/:classId/users',
       pathParams: z.object({ classId: z.string().uuid() }),
       query: UsersListQuerySchema,
       responses: {
-        200: SuccessEnvelopeSchema(ClassUsersResponseSchema),
+        200: SuccessEnvelopeSchema(UsersListResponseSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'Get class users by classId',
