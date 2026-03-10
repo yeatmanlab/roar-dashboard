@@ -84,8 +84,8 @@ describe('TasksController', () => {
         // Verify date transformation
         expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
         expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
-        // Verify null updatedAt falls back to createdAt
-        expect(result.body.data.items[1]!.updatedAt).toBe('2024-01-03T00:00:00.000Z');
+        // Verify null updatedAt returns null
+        expect(result.body.data.items[1]!.updatedAt).toBeNull();
       }
 
       expect(mockList).toHaveBeenCalledWith(mockAuthContext, {
