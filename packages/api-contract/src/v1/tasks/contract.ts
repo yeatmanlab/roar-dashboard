@@ -24,15 +24,18 @@ export const TasksContract = c.router(
       query: TasksListQuerySchema,
       responses: {
         200: SuccessEnvelopeSchema(TasksListResponseSchema),
-        401: ErrorEnvelopeSchema,
+        400: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'List tasks',
       description:
         'Returns a paginated list of tasks. ' +
-        'Supports filtering by exact slug match and searching by name or description. ' +
-        'Results can be sorted by createdAt, name, or slug.',
+        'Supports pagination (page, perPage), filtering by exact slug match, and searching by name or description. ' +
+        'Results can be sorted by createdAt (default), name, slug, or updatedAt in ascending or descending order. ' +
+        'Returns 200 with paginated results on success. ' +
+        'Returns 400 if the request parameters are invalid. ' +
+        'Returns 500 if a server error occurs.',
     },
     createTaskVariant: {
       method: 'POST',

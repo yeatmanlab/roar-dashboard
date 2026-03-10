@@ -161,7 +161,7 @@ export const TaskSchema = z.object({
   tutorialVideo: z.string().nullable(),
   taskConfig: JsonValue,
   createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
 });
 
 export type Task = z.infer<typeof TaskSchema>;

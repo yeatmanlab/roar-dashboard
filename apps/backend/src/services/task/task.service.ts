@@ -756,7 +756,7 @@ export function TaskService({
 
       logger.error({ err: error, context: { userId } }, 'Failed to list tasks');
 
-      throw new ApiError('Failed to list tasks', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
