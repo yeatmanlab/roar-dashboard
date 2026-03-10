@@ -429,7 +429,7 @@ describe('ClassRepository', () => {
         const result = await repository.getUsersByClassId(filterGradeClass.id, {
           page: 1,
           perPage: 100,
-          grade: '5',
+          grade: ['5'],
         });
 
         expect(result.totalItems).toBe(2);
@@ -470,7 +470,7 @@ describe('ClassRepository', () => {
           page: 1,
           perPage: 100,
           role: UserRole.STUDENT,
-          grade: '5',
+          grade: ['5'],
         });
 
         expect(result.totalItems).toBe(1);
@@ -847,7 +847,7 @@ describe('ClassRepository', () => {
         const result = await repository.getAuthorizedUsersByClassId(
           { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
           filterGradeClass.id,
-          { page: 1, perPage: 100, grade: '5' },
+          { page: 1, perPage: 100, grade: ['5'] },
         );
 
         expect(result.totalItems).toBe(2);
@@ -887,7 +887,7 @@ describe('ClassRepository', () => {
         const result = await repository.getAuthorizedUsersByClassId(
           { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
           filterBothClass.id,
-          { page: 1, perPage: 100, role: UserRole.STUDENT, grade: '5' },
+          { page: 1, perPage: 100, role: UserRole.STUDENT, grade: ['5'] },
         );
 
         expect(result.totalItems).toBe(1);

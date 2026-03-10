@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { ClassRepository } from '../../repositories/class.repository';
 import type { Class } from '../../db/schema';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../repositories/utils/handle-enrolled-users';
+import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../utils/handle-enrolled-users';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';

@@ -4,7 +4,7 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserRole } from '../enums/user-role.enum';
-import type { EnrolledUserEntity } from '../repositories/utils/handle-enrolled-users';
+import type { EnrolledUserEntity } from '../utils/handle-enrolled-users';
 import type { User } from '../db/schema';
 
 // Mock the ClassService module
