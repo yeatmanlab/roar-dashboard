@@ -11,7 +11,7 @@ import { isEnrollmentActive } from './utils/enrollment.utils';
 import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
 import {
-  ListUsersOptions,
+  ListEnrolledUsersOptions,
   getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
   EnrolledUserEntity,
@@ -74,7 +74,10 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
    * @param options - Pagination, sorting, and filtering options
    * @returns Paginated result with users
    */
-  async getUsersByClassId(classId: string, options: ListUsersOptions): Promise<PaginatedResult<EnrolledUserEntity>> {
+  async getUsersByClassId(
+    classId: string,
+    options: ListEnrolledUsersOptions,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
@@ -130,7 +133,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   async getAuthorizedUsersByClassId(
     accessControlFilter: AccessControlFilter,
     classId: string,
-    options: ListUsersOptions,
+    options: ListEnrolledUsersOptions,
   ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const accessibleClasses = this.orgAccessControls
       .buildUserAccessibleOrgIdsQuery(accessControlFilter)

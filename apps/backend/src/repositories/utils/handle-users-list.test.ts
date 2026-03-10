@@ -10,7 +10,7 @@ import {
   handleSubResourceResponse,
   ENROLLED_USERS_SORT_COLUMNS,
   type EnrolledUserEntity,
-  type ListUsersOptions,
+  type ListEnrolledUsersOptions,
 } from './handle-users-list';
 import { users } from '../../db/schema';
 
@@ -31,25 +31,25 @@ describe('handle-users-list', () => {
 
   describe('getEnrolledUsersFilterConditions', () => {
     it('returns empty array when no filters provided', () => {
-      const options: ListUsersOptions = { page: 1, perPage: 10 };
+      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10 };
       const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toEqual([]);
     });
 
     it('returns grade condition when grade filter provided', () => {
-      const options: ListUsersOptions = { page: 1, perPage: 10, grade: '5' };
+      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: '5' };
       const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(1);
     });
 
     it('returns role condition when role filter provided', () => {
-      const options: ListUsersOptions = { page: 1, perPage: 10, role: UserRole.STUDENT };
+      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, role: UserRole.STUDENT };
       const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(1);
     });
 
     it('returns both conditions when grade and role filters provided', () => {
-      const options: ListUsersOptions = { page: 1, perPage: 10, grade: '5', role: UserRole.STUDENT };
+      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: '5', role: UserRole.STUDENT };
       const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(2);
     });

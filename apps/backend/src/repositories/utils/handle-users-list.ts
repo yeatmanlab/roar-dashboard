@@ -5,7 +5,7 @@ import { toErrorResponse } from '../../utils/to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
 import type { EnrolledUser, EnrolledUsersSortFieldType, UserRole, UserGrade } from '@roar-dashboard/api-contract';
 
-export interface ListUsersOptions {
+export interface ListEnrolledUsersOptions {
   page: number;
   perPage: number;
   orderBy?: { field: EnrolledUsersSortFieldType; direction: 'asc' | 'desc' };
@@ -19,7 +19,7 @@ export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Col
   grade: users.grade,
 };
 
-export const getEnrolledUsersFilterConditions = (options: ListUsersOptions): SQL[] => {
+export const getEnrolledUsersFilterConditions = (options: ListEnrolledUsersOptions): SQL[] => {
   if (!options) {
     return [];
   }
