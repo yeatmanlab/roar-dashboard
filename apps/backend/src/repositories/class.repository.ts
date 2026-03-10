@@ -8,12 +8,12 @@ import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import type { UsersListSortFieldType } from '@roar-dashboard/api-contract';
+import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import type { UserRole } from '../enums/user-role.enum';
 import {
   ListUsersOptions,
-  getUsersListFilterConditions,
-  USERS_LIST_SORT_COLUMNS,
+  getEnrolledUsersFilterConditions,
+  ENROLLED_USERS_SORT_COLUMNS,
   EnrolledUserEntity,
 } from './utils/handle-users-list';
 
@@ -81,7 +81,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
-      ...getUsersListFilterConditions(options),
+      ...getEnrolledUsersFilterConditions(options),
     );
 
     const countResult = await this.db
@@ -96,8 +96,8 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       return { items: [], totalItems: 0 };
     }
 
-    const sortField = orderBy?.field as UsersListSortFieldType | undefined;
-    const sortColumn = sortField ? USERS_LIST_SORT_COLUMNS[sortField] : users.nameLast;
+    const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
+    const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
@@ -141,7 +141,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
-      ...getUsersListFilterConditions(options),
+      ...getEnrolledUsersFilterConditions(options),
     );
 
     const countResult = await this.db
@@ -158,8 +158,8 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       return { items: [], totalItems: 0 };
     }
 
-    const sortField = orderBy?.field as UsersListSortFieldType | undefined;
-    const sortColumn = sortField ? USERS_LIST_SORT_COLUMNS[sortField] : users.nameLast;
+    const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
+    const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db

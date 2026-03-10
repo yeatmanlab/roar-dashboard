@@ -84,17 +84,17 @@ export const EnrolledUserSchema = UserSchema.extend({
 });
 export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
 
-export const USERS_LIST_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
-export type UsersListSortFieldType = (typeof USERS_LIST_SORT_FIELDS)[number];
+export const ENROLLED_USERS_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
+export type EnrolledUsersSortFieldType = (typeof ENROLLED_USERS_SORT_FIELDS)[number];
 
-export const UsersListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(USERS_LIST_SORT_FIELDS, 'nameLast'),
+export const EnrolledUsersQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(ENROLLED_USERS_SORT_FIELDS, 'nameLast'),
 ).extend({
   role: UserRoleSchema.optional(),
   grade: UserGradeSchema.optional(),
 });
 
-export type UsersListQuery = z.infer<typeof UsersListQuerySchema>;
+export type EnrolledUsersQuery = z.infer<typeof EnrolledUsersQuerySchema>;
 
-export const UsersListResponseSchema = createPaginatedResponseSchema(EnrolledUserSchema);
-export type UsersListResponse = z.infer<typeof UsersListResponseSchema>;
+export const EnrolledUsersResponseSchema = createPaginatedResponseSchema(EnrolledUserSchema);
+export type EnrolledUsersResponse = z.infer<typeof EnrolledUsersResponseSchema>;

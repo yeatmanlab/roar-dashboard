@@ -3,23 +3,23 @@ import { users, userClasses, type User } from '../../db/schema';
 import { ApiError } from '../../errors/api-error';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
-import type { EnrolledUser, UsersListSortFieldType, UserRole, UserGrade } from '@roar-dashboard/api-contract';
+import type { EnrolledUser, EnrolledUsersSortFieldType, UserRole, UserGrade } from '@roar-dashboard/api-contract';
 
 export interface ListUsersOptions {
   page: number;
   perPage: number;
-  orderBy?: { field: UsersListSortFieldType; direction: 'asc' | 'desc' };
+  orderBy?: { field: EnrolledUsersSortFieldType; direction: 'asc' | 'desc' };
   grade?: UserGrade;
   role?: UserRole;
 }
 
-export const USERS_LIST_SORT_COLUMNS: Record<UsersListSortFieldType, Column> = {
+export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Column> = {
   nameLast: users.nameLast,
   username: users.username,
   grade: users.grade,
 };
 
-export const getUsersListFilterConditions = (options: ListUsersOptions): SQL[] => {
+export const getEnrolledUsersFilterConditions = (options: ListUsersOptions): SQL[] => {
   if (!options) {
     return [];
   }

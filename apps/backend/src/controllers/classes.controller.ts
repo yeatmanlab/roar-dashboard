@@ -1,5 +1,5 @@
 import { ClassService } from '../services/class/class.service';
-import type { UsersListQuery } from '@roar-dashboard/api-contract';
+import type { EnrolledUsersQuery } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../types/auth-context';
 import { handleSubResourceResponse, handleSubResourceError } from '../repositories/utils/handle-users-list';
 
@@ -13,7 +13,7 @@ export const ClassesController = {
    * @param query The query parameters for listing users.
    * @returns The list of users in the class.
    */
-  listUsers: async (authContext: AuthContext, classId: string, query: UsersListQuery) => {
+  listUsers: async (authContext: AuthContext, classId: string, query: EnrolledUsersQuery) => {
     try {
       const result = await classService.listUsers(authContext, classId, query);
       return handleSubResourceResponse(result, query.page, query.perPage);

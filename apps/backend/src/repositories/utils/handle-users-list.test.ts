@@ -5,52 +5,52 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import {
-  getUsersListFilterConditions,
+  getEnrolledUsersFilterConditions,
   handleSubResourceError,
   handleSubResourceResponse,
-  USERS_LIST_SORT_COLUMNS,
+  ENROLLED_USERS_SORT_COLUMNS,
   type EnrolledUserEntity,
   type ListUsersOptions,
 } from './handle-users-list';
 import { users } from '../../db/schema';
 
 describe('handle-users-list', () => {
-  describe('USERS_LIST_SORT_COLUMNS', () => {
+  describe('ENROLLED_USERS_SORT_COLUMNS', () => {
     it('maps nameLast to users.nameLast column', () => {
-      expect(USERS_LIST_SORT_COLUMNS.nameLast).toBe(users.nameLast);
+      expect(ENROLLED_USERS_SORT_COLUMNS.nameLast).toBe(users.nameLast);
     });
 
     it('maps username to users.username column', () => {
-      expect(USERS_LIST_SORT_COLUMNS.username).toBe(users.username);
+      expect(ENROLLED_USERS_SORT_COLUMNS.username).toBe(users.username);
     });
 
     it('maps grade to users.grade column', () => {
-      expect(USERS_LIST_SORT_COLUMNS.grade).toBe(users.grade);
+      expect(ENROLLED_USERS_SORT_COLUMNS.grade).toBe(users.grade);
     });
   });
 
-  describe('getUsersListFilterConditions', () => {
+  describe('getEnrolledUsersFilterConditions', () => {
     it('returns empty array when no filters provided', () => {
       const options: ListUsersOptions = { page: 1, perPage: 10 };
-      const conditions = getUsersListFilterConditions(options);
+      const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toEqual([]);
     });
 
     it('returns grade condition when grade filter provided', () => {
       const options: ListUsersOptions = { page: 1, perPage: 10, grade: '5' };
-      const conditions = getUsersListFilterConditions(options);
+      const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(1);
     });
 
     it('returns role condition when role filter provided', () => {
       const options: ListUsersOptions = { page: 1, perPage: 10, role: UserRole.STUDENT };
-      const conditions = getUsersListFilterConditions(options);
+      const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(1);
     });
 
     it('returns both conditions when grade and role filters provided', () => {
       const options: ListUsersOptions = { page: 1, perPage: 10, grade: '5', role: UserRole.STUDENT };
-      const conditions = getUsersListFilterConditions(options);
+      const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(2);
     });
   });

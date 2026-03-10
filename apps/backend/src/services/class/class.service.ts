@@ -8,7 +8,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
-import type { PaginatedResult, UsersListQuery } from '@roar-dashboard/api-contract';
+import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../../types/auth-context';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 
@@ -109,7 +109,7 @@ export function ClassService({
   async function listUsers(
     authContext: AuthContext,
     classId: string,
-    options: UsersListQuery,
+    options: EnrolledUsersQuery,
   ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
 

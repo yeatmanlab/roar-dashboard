@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { initContract } from '@ts-rest/core';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
-import { UsersListQuerySchema, UsersListResponseSchema } from '../common/user';
+import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
 
 const c = initContract();
 
@@ -15,9 +15,9 @@ export const ClassesContract = c.router(
       method: 'GET',
       path: '/:classId/users',
       pathParams: z.object({ classId: z.string().uuid() }),
-      query: UsersListQuerySchema,
+      query: EnrolledUsersQuerySchema,
       responses: {
-        200: SuccessEnvelopeSchema(UsersListResponseSchema),
+        200: SuccessEnvelopeSchema(EnrolledUsersResponseSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
