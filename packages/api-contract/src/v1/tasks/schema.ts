@@ -131,7 +131,7 @@ export const UpdateTaskVariantRequestBodySchema = z
  * Returns 204 No Content on successful update.
  * The response body is empty - use a GET request if you need the updated resource.
  */
-export const UpdateTaskVariantResponseBodySchema = z.undefined();
+export const UpdateTaskVariantResponseSchema = z.undefined();
 
 export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
@@ -139,4 +139,4 @@ export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArr
 export type CreateTaskVariantRequestBody = z.infer<typeof CreateTaskVariantRequestBodySchema>;
 export type CreateTaskVariantResponse = z.infer<typeof CreateTaskVariantResponseSchema>;
 export type UpdateTaskVariantRequestBody = z.infer<typeof UpdateTaskVariantRequestBodySchema>;
-export type UpdateTaskVariantResponse = z.infer<typeof UpdateTaskVariantResponseBodySchema>;
+export type UpdateTaskVariantResponse = z.infer<typeof UpdateTaskVariantResponseSchema>;

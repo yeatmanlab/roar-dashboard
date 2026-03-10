@@ -5,7 +5,7 @@ import {
   CreateTaskVariantRequestBodySchema,
   CreateTaskVariantResponseSchema,
   UpdateTaskVariantRequestBodySchema,
-  UpdateTaskVariantResponseBodySchema,
+  UpdateTaskVariantResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -51,7 +51,7 @@ export const TasksContract = c.router(
       contentType: 'application/json',
       body: UpdateTaskVariantRequestBodySchema,
       responses: {
-        204: UpdateTaskVariantResponseBodySchema,
+        204: UpdateTaskVariantResponseSchema,
         400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
