@@ -47,11 +47,11 @@ export function ClassService({
       return classEntity;
     }
 
-    const allowedRoles = rolesForPermission(Permissions.Classes.LIST); // Introduce class.read into permissions, same as classes.list
+    const allowedRoles = rolesForPermission(Permissions.Classes.LIST);
     const authorized = await classRepository.getAuthorizedById({ userId, allowedRoles }, classId);
 
     if (!authorized) {
-      logger.warn({ userId, classId }, 'User attempted to access administration without permission');
+      logger.warn({ userId, classId }, 'User attempted to access class resource without permission');
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,

@@ -26,8 +26,8 @@ export const ClassesContract = c.router(
       strictStatusCodes: true,
       summary: 'Get class users by classId',
       description:
-        'Returns a paginated list of users in a class. ' +
-        'Filters users by active status (default true to only include active users), userType, role, and grade if provided. ' +
+        'Returns a paginated list of active users in a class. ' +
+        'Filters users by role and grade if provided. ' +
         'Returns 403 if the user lacks permission to access the class. ' +
         'Returns 404 if the class does not exist.',
     },

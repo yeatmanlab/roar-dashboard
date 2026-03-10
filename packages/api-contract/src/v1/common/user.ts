@@ -61,7 +61,7 @@ const UserDemographicSchema = z.object({
   dob: z.string().datetime().nullable(),
 });
 
-const UserIdentiferSchema = z.object({
+const UserIdentifierSchema = z.object({
   studentId: z.string().nullable(),
   sisId: z.string().nullable(),
   stateId: z.string().nullable(),
@@ -77,7 +77,7 @@ export const UserBaseSchema = z.object({
   email: z.string().email().nullable(),
 });
 
-export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentiferSchema);
+export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentifierSchema);
 export const EnrolledUserSchema = UserSchema.extend({
   role: UserRoleSchema,
   enrollmentStart: z.string().datetime(),
