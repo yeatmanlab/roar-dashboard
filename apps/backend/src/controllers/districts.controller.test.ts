@@ -129,10 +129,6 @@ describe('DistrictsController', () => {
           postalCode: '62701',
           country: 'USA',
         },
-        dates: {
-          created: '2023-06-15T10:30:00.000Z',
-          updated: '2023-06-16T11:00:00.000Z',
-        },
         isRosteringRootOrg: true,
       });
     });

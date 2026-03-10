@@ -7,6 +7,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { createMockSchoolRepository } from '../../test-support/repositories';
+import type { School } from '../../repositories/school.repository';
 
 describe('SchoolService', () => {
   const mockSchoolRepository = createMockSchoolRepository();
@@ -425,7 +426,10 @@ describe('SchoolService', () => {
         updatedAt: new Date(),
       };
 
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(mockSchool);
+      // Step 1: unrestricted lookup succeeds
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
+      // Step 3: authorized lookup succeeds
+      mockSchoolRepository.getAuthorizedById.mockResolvedValue(mockSchool as School);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
@@ -434,7 +438,6 @@ describe('SchoolService', () => {
       const result = await service.getById(mockAuthContext, validUuid);
 
       expect(result).toEqual(mockSchool);
-      expect(mockSchoolRepository.getUnrestrictedById).not.toHaveBeenCalled();
     });
 
     it('should build access control filter for regular users', async () => {
@@ -450,7 +453,10 @@ describe('SchoolService', () => {
         updatedAt: new Date(),
       };
 
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(mockSchool);
+      // Step 1: unrestricted lookup succeeds
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
+      // Step 3: authorized lookup succeeds
+      mockSchoolRepository.getAuthorizedById.mockResolvedValue(mockSchool as School);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
@@ -480,7 +486,7 @@ describe('SchoolService', () => {
         updatedAt: new Date(),
       };
 
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
@@ -526,7 +532,7 @@ describe('SchoolService', () => {
         updatedAt: new Date(),
       };
       // School exists (unrestricted lookup succeeds)
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
       // But user lacks access (authorized lookup fails)
       mockSchoolRepository.getAuthorizedById.mockResolvedValue(null);
 

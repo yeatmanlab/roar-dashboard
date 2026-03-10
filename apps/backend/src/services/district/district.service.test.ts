@@ -7,6 +7,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { createMockDistrictRepository } from '../../test-support/repositories';
+import type { District } from '../../repositories/district.repository';
 
 describe('DistrictService', () => {
   const mockDistrictRepository = createMockDistrictRepository();
@@ -425,7 +426,10 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict);
+      // Step 1: unrestricted lookup succeeds
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      // Step 3: authorized lookup succeeds
+      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict as District);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -434,7 +438,6 @@ describe('DistrictService', () => {
       const result = await service.getById(mockAuthContext, validUuid);
 
       expect(result).toEqual(mockDistrict);
-      expect(mockDistrictRepository.getUnrestrictedById).not.toHaveBeenCalled();
     });
 
     it('should build access control filter for regular users', async () => {
@@ -450,7 +453,10 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict);
+      // Step 1: unrestricted lookup succeeds
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      // Step 3: authorized lookup succeeds
+      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict as District);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -480,7 +486,7 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
@@ -526,7 +532,7 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
       // District exists (unrestricted lookup succeeds)
-      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
       // But user lacks access (authorized lookup fails)
       mockDistrictRepository.getAuthorizedById.mockResolvedValue(null);
 
