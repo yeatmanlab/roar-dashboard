@@ -26,7 +26,7 @@ function transformTask(task: Task): ContractTask {
     tutorialVideo: task.tutorialVideo,
     taskConfig: task.taskConfig as Json,
     createdAt: task.createdAt.toISOString(),
-    updatedAt: (task.updatedAt ?? task.createdAt).toISOString(),
+    updatedAt: task.updatedAt?.toISOString() ?? null,
   };
 }
 
@@ -76,7 +76,7 @@ export const TasksController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [StatusCodes.BAD_REQUEST, StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }

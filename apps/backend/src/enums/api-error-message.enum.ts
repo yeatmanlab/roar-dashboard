@@ -27,4 +27,7 @@ export enum ApiErrorMessage {
 
   /** Generic unauthorized error - use for authentication failures */
   UNAUTHORIZED = 'Authentication required',
+
+  /** Generic internal server error - use for unexpected errors */
+  INTERNAL_SERVER_ERROR = 'An internal server error occurred',
 }
