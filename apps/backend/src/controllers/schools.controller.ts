@@ -21,7 +21,7 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
   if (school.locationLatLong) {
-    const point = school.locationLatLong as PostgreSQLPoint;
+    const point = school.locationLatLong as unknown as PostgreSQLPoint;
     coordinates = {
       type: 'Point',
       coordinates: [point.x, point.y], // [longitude, latitude]
