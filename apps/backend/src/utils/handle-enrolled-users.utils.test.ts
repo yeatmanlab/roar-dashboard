@@ -37,7 +37,7 @@ describe('handle-enrolled-users', () => {
     });
 
     it('returns grade condition when grade filter provided', () => {
-      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: '5' };
+      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: ['5'] };
       const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(1);
     });
@@ -49,7 +49,7 @@ describe('handle-enrolled-users', () => {
     });
 
     it('returns both conditions when grade and role filters provided', () => {
-      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: '5', role: UserRole.STUDENT };
+      const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: ['5'], role: UserRole.STUDENT };
       const conditions = getEnrolledUsersFilterConditions(options);
       expect(conditions).toHaveLength(2);
     });
