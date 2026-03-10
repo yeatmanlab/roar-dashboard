@@ -1565,10 +1565,11 @@ describe('TaskService', () => {
         const options = { page: 1, perPage: 25 };
 
         await expect(taskService.list(authContext, options)).rejects.toMatchObject({
-          message: 'Failed to list tasks',
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
           context: { userId: 'admin-1' },
+          cause: dbError,
         });
       });
 
