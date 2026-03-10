@@ -15,7 +15,7 @@ import {
   getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
   EnrolledUserEntity,
-} from './utils/handle-users-list';
+} from './utils/handle-enrolled-users';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;

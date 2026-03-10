@@ -7,7 +7,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { createMockClassRepository } from '../../test-support/repositories';
-import { EnrolledUserEntity } from '../../repositories/utils/handle-users-list';
+import { EnrolledUserEntity } from '../../repositories/utils/handle-enrolled-users';
 import type { User } from '../../db/schema';
 
 const createMockEnrolledUser = (user: User, overrides: Partial<EnrolledUserEntity> = {}): EnrolledUserEntity => ({

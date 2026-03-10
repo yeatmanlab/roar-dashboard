@@ -11,10 +11,10 @@ import {
   ENROLLED_USERS_SORT_COLUMNS,
   type EnrolledUserEntity,
   type ListEnrolledUsersOptions,
-} from './handle-users-list';
+} from './handle-enrolled-users';
 import { users } from '../../db/schema';
 
-describe('handle-users-list', () => {
+describe('handle-enrolled-users', () => {
   describe('ENROLLED_USERS_SORT_COLUMNS', () => {
     it('maps nameLast to users.nameLast column', () => {
       expect(ENROLLED_USERS_SORT_COLUMNS.nameLast).toBe(users.nameLast);
