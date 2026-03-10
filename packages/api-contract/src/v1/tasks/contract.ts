@@ -32,7 +32,7 @@ export const TasksContract = c.router(
       description:
         'Returns a paginated list of tasks. ' +
         'Supports pagination (page, perPage), filtering by exact slug match, and searching by name or description. ' +
-        'Results can be sorted by createdAt (default), name, slug, or updatedAt in ascending or descending order. ' +
+        'Results can be sorted by name (default), slug, createdAt, or updatedAt in ascending or descending order. ' +
         'Returns 200 with paginated results on success. ' +
         'Returns 400 if the request parameters are invalid. ' +
         'Returns 500 if a server error occurs.',

@@ -190,7 +190,7 @@ export const TaskSortField = {
  * Query parameters for listing tasks.
  * Supports pagination, sorting, exact slug match, and search (name/description).
  */
-export const TasksListQuerySchema = PaginationQuerySchema.merge(createSortQuerySchema(TASK_SORT_FIELDS, 'createdAt'))
+export const TasksListQuerySchema = PaginationQuerySchema.merge(createSortQuerySchema(TASK_SORT_FIELDS, 'name', 'asc'))
   .merge(SearchQuerySchema)
   .extend({
     slug: z.string().optional(),
