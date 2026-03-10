@@ -52,6 +52,14 @@ export function _getRunIdForCompat(): string | undefined {
 }
 
 /**
+ * Test-only function to reset the Firekit compat singleton state.
+ * @internal
+ */
+export function _resetFirekitCompat(): void {
+  FirekitFacade._resetInstance();
+}
+
+/**
  * FirekitFacade provides backward compatibility with legacy Firekit-based assessments.
  *
  * This is a Singleton pattern implementation that allows existing assessments
@@ -107,6 +115,17 @@ export class FirekitFacade {
       throw new Error('FirekitFacade not initialized. Call initFirekitCompat() first.');
     }
     return this.ctx;
+  }
+
+  /**
+   * Test-only method to reset the singleton instance.
+   * Used in tests to ensure clean state between test cases.
+   * @internal
+   */
+  static _resetInstance(): void {
+    FirekitFacade.instance = undefined;
+    _runId = undefined;
+    _taskInfo = undefined;
   }
 }
 
@@ -179,7 +198,6 @@ export function getFirekitCompat(): FirekitFacade {
  *   {
  *     variantId: 'variant-123',
  *     taskVersion: '1.0.0',
- *     administrationId: 'admin-123',
  *     isAnonymous: true
  *   }
  * );
@@ -200,7 +218,9 @@ export function getFirekitCompat(): FirekitFacade {
  */
 export async function startRun(additionalRunMetadata?: Record<string, unknown>): Promise<void> {
   if (!_taskInfo) {
-    throw new SDKError('appkit.startRun missing task info (variantId/taskVersion/administrationId).');
+    throw new SDKError(
+      'appkit.startRun missing task info (variantId/taskVersion). administrationId is required only when isAnonymous is false.',
+    );
   }
 
   const isAnonymous = _taskInfo.isAnonymous === true;

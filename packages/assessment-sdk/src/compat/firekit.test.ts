@@ -8,6 +8,7 @@ import {
   updateUser,
   writeTrial,
   _getRunIdForCompat,
+  _resetFirekitCompat,
   initFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
@@ -177,19 +178,15 @@ describe('firekit compat', () => {
           getToken: vi.fn().mockResolvedValue('test-token'),
         },
       };
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        administrationId: 'admin-123',
-        isAnonymous: true,
-      });
     });
 
     afterEach(() => {
       vi.clearAllMocks();
+      _resetFirekitCompat();
     });
 
     it('throws SDKError when task info is not set', async () => {
+      // Don't initialize - test against truly uninitialized state
       await expect(startRun()).rejects.toBeInstanceOf(SDKError);
       await expect(startRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
     });
@@ -230,6 +227,12 @@ describe('firekit compat', () => {
         isAnonymous: true,
       });
       expect(_getRunIdForCompat()).toBeUndefined();
+    });
+
+    it('throws SDKError when Firekit compat is not initialized', async () => {
+      // Don't call initFirekitCompat - simulate uninitialized state
+      // This will cause getCtx() to throw the proper error
+      await expect(startRun()).rejects.toBeInstanceOf(SDKError);
     });
 
     it('successfully starts an anonymous run', async () => {
@@ -291,12 +294,6 @@ describe('firekit compat', () => {
       await startRun(additionalMetadata);
 
       expect(_getRunIdForCompat()).toBe('run-with-metadata');
-    });
-
-    it('throws SDKError when Firekit compat is not initialized', async () => {
-      // Don't call initFirekitCompat - simulate uninitialized state
-      // This will cause getCtx() to throw the proper error
-      await expect(startRun()).rejects.toBeInstanceOf(SDKError);
     });
 
     it('matches Firekit signature', () => {
