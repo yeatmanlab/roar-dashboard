@@ -297,15 +297,6 @@ export function TaskService({
         });
       }
 
-      // Validate parameters before starting transaction to prevent creating orphaned variants
-      if (body.parameters.length === 0) {
-        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, isSuperAdmin, taskId },
-        });
-      }
-
       // Create the task variant and parameters within a transaction to prevent orphaned data
       const variant = await taskVariantRepository.runTransaction({
         fn: async (tx) => {
@@ -331,29 +322,32 @@ export function TaskService({
 
           const { id: taskVariantId } = newVariant;
 
-          const taskVariantParameterData: NewTaskVariantParameter[] = body.parameters.map(({ name, value }) => ({
-            taskVariantId,
-            name,
-            value,
-          }));
+          // Only create parameters if any were provided
+          if (body.parameters.length > 0) {
+            const taskVariantParameterData: NewTaskVariantParameter[] = body.parameters.map(({ name, value }) => ({
+              taskVariantId,
+              name,
+              value,
+            }));
 
-          const newTaskVariantParameters = await taskVariantParameterRepository.createMany({
-            data: taskVariantParameterData,
-            transaction: tx,
-          });
-
-          // Verify all parameters were created successfully
-          if (newTaskVariantParameters.length !== taskVariantParameterData.length) {
-            throw new ApiError('Failed to create all task variant parameters', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.INTERNAL,
-              context: {
-                userId,
-                isSuperAdmin,
-                expected: taskVariantParameterData.length,
-                created: newTaskVariantParameters.length,
-              },
+            const newTaskVariantParameters = await taskVariantParameterRepository.createMany({
+              data: taskVariantParameterData,
+              transaction: tx,
             });
+
+            // Verify all parameters were created successfully
+            if (newTaskVariantParameters.length !== taskVariantParameterData.length) {
+              throw new ApiError('Failed to create all task variant parameters', {
+                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+                code: ApiErrorCode.INTERNAL,
+                context: {
+                  userId,
+                  isSuperAdmin,
+                  expected: taskVariantParameterData.length,
+                  created: newTaskVariantParameters.length,
+                },
+              });
+            }
           }
 
           return newVariant;
