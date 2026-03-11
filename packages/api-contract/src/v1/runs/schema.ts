@@ -26,7 +26,7 @@ export const CreateRunRequestBodySchema = z
     taskVariantId: z.string().uuid(),
     taskVersion: z.string(),
     administrationId: z.string().uuid().optional(),
-    isAnonymous: z.boolean().optional(),
+    isAnonymous: z.boolean().default(false),
     metadata: JsonValue.optional().superRefine((metadata, ctx) => {
       if (!metadata) return;
       parseJsonB(metadata, ctx);
