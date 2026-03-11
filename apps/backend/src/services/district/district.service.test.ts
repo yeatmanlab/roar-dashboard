@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DistrictService } from './district.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { OrgType } from '../../enums/org-type.enum';
+import { SortOrder } from '../../enums/sort-order.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -44,7 +45,7 @@ describe('DistrictService', () => {
       expect(mockDistrictRepository.listAll).toHaveBeenCalledWith({
         page: 1,
         perPage: 25,
-        orderBy: { field: 'createdAt', direction: 'desc' },
+        orderBy: { field: 'createdAt', direction: SortOrder.DESC },
         includeEnded: false,
         embedCounts: false,
       });
@@ -83,7 +84,7 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          orderBy: { field: 'name', direction: 'asc' },
+          orderBy: { field: 'name', direction: SortOrder.ASC },
           includeEnded: false,
           embedCounts: false,
         },
@@ -212,7 +213,7 @@ describe('DistrictService', () => {
 
       expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: { field: 'name', direction: 'asc' },
+          orderBy: { field: 'name', direction: SortOrder.ASC },
         }),
       );
     });
@@ -236,7 +237,7 @@ describe('DistrictService', () => {
 
       expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: { field: 'abbreviation', direction: 'desc' },
+          orderBy: { field: 'abbreviation', direction: SortOrder.DESC },
         }),
       );
     });
@@ -260,7 +261,7 @@ describe('DistrictService', () => {
 
       expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: { field: 'createdAt', direction: 'desc' },
+          orderBy: { field: 'createdAt', direction: SortOrder.DESC },
         }),
       );
     });
@@ -419,7 +420,7 @@ describe('DistrictService', () => {
         id: validUuid,
         name: 'Test District',
         abbreviation: 'TD',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         createdAt: new Date(),
@@ -446,7 +447,7 @@ describe('DistrictService', () => {
         id: validUuid,
         name: 'Test District',
         abbreviation: 'TD',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         createdAt: new Date(),
@@ -479,7 +480,7 @@ describe('DistrictService', () => {
         id: validUuid,
         name: 'Test District',
         abbreviation: 'TD',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         createdAt: new Date(),
@@ -525,7 +526,7 @@ describe('DistrictService', () => {
         id: validUuid,
         name: 'Test District',
         abbreviation: 'TD',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         createdAt: new Date(),
