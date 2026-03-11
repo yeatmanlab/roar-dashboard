@@ -14,7 +14,6 @@ import { TaskService } from './task.service';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
@@ -196,8 +195,8 @@ describe('TaskService', () => {
       });
     });
 
-    describe('validation errors', () => {
-      it('should throw BAD_REQUEST when parameters array is empty', async () => {
+    describe('successful creation with edge cases', () => {
+      it('should create a variant without parameters (empty array)', async () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
@@ -209,19 +208,30 @@ describe('TaskService', () => {
 
         const taskId = mockTask.id;
         const body = {
-          name: 'Invalid Variant',
-          description: 'No parameters',
+          name: 'No Params Variant',
+          description: 'Variant with no parameters',
           status: TaskVariantStatus.PUBLISHED,
-          parameters: [], // Empty array - should fail
+          parameters: [], // Empty array is now allowed
         };
 
-        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
-          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        });
-      });
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
+        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(taskVariantRepository.create).toHaveBeenCalledWith({
+          data: {
+            taskId: mockTask.id,
+            status: TaskVariantStatus.PUBLISHED,
+            name: 'No Params Variant',
+            description: 'Variant with no parameters',
+          },
+          transaction: expect.any(Object),
+        });
+        // createMany should not be called when parameters array is empty
+        expect(taskVariantParameterRepository.createMany).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('validation errors', () => {
       it('should throw INTERNAL when not all parameters are created', async () => {
         const mockTask = TaskFactory.build();
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
@@ -696,7 +706,11 @@ describe('TaskService', () => {
         const result = await taskService.updateTaskVariant(authContext, params, body);
 
         expect(result).toBeUndefined();
-        expect(taskVariantRepository.update).toHaveBeenCalled();
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: { name: 'Same Name' },
+          transaction: expect.any(Object),
+        });
       });
 
       it('should handle empty parameters array (deletes all parameters)', async () => {
@@ -881,9 +895,9 @@ describe('TaskService', () => {
     });
 
     describe('edge cases', () => {
-      it('should skip name conflict check when name is not being updated', async () => {
+      it('should update only description when name is not being updated', async () => {
         const mockTask = TaskFactory.build();
-        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Existing Name' });
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
@@ -892,11 +906,15 @@ describe('TaskService', () => {
         taskVariantRepository.update.mockResolvedValueOnce();
 
         const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
-        const body = { description: 'Only description changed' };
+        const body = { description: 'New description' };
 
         await taskService.updateTaskVariant(authContext, params, body);
 
-        expect(taskVariantRepository.getByTaskIdAndName).not.toHaveBeenCalled();
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: { description: 'New description' },
+          transaction: expect.any(Object),
+        });
       });
 
       it('should skip variant update when only parameters are provided', async () => {
