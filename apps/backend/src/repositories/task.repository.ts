@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { Column } from 'drizzle-orm';
+import type { Column, SQL } from 'drizzle-orm';
 import { eq, and, or, ilike, asc, desc, count } from 'drizzle-orm';
 import { tasks, type Task } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
@@ -83,7 +83,7 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
     const offset = (page - 1) * perPage;
 
     // Build where conditions
-    const conditions = [];
+    const conditions: SQL[] = [];
 
     // Exact slug match filter
     if (slug) {
@@ -98,7 +98,7 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
         value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
       const escapedSearch = escapeLikePattern(search);
       const searchPattern = `%${escapedSearch}%`;
-      conditions.push(or(ilike(tasks.name, searchPattern), ilike(tasks.description, searchPattern)));
+      conditions.push(or(ilike(tasks.name, searchPattern), ilike(tasks.description, searchPattern)) as SQL);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
