@@ -312,7 +312,7 @@ describe('TaskRepository', () => {
       it('handles special characters in search', async () => {
         const task = await TaskFactory.create({
           slug: 'special-char-task-test',
-          name: 'Test (Special Characters)',
+          name: 'Test % and _',
           description: 'Has % and _ characters',
         });
 
@@ -320,7 +320,7 @@ describe('TaskRepository', () => {
         const result = await repository.listAll({
           page: 1,
           perPage: 100,
-          search: '(Special Characters)',
+          search: '% and _',
         });
 
         expect(result.items.some((t) => t.id === task.id)).toBe(true);
