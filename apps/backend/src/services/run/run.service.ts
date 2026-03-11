@@ -44,14 +44,15 @@ export function RunService({
    * Creates a new run (assessment session instance).
    *
    * Performs the following validations and operations:
-   * 1. Validates that taskService is configured
-   * 2. Validates that the administration exists and user has access
-   * 3. For non-super-admin users, checks if they have Runs.CREATE permission
+   * 1. Rejects anonymous runs that include an administrationId
+   * 2. For non-anonymous runs, validates that the administration exists and user has access
+   * 3. For non-anonymous, non-super-admin users, checks if they have Runs.CREATE permission
    * 4. Resolves the taskId from the provided taskVariantId
-   * 5. Creates the run record in the database
+   * 5. Creates the run record (anonymous runs use the sentinel administration ID)
    *
    * @param authContext - Authentication context with userId and isSuperAdmin flag
-   * @param body - Request body containing taskVariantId, taskVersion, administrationId, and optional metadata
+   * @param body - Request body containing taskVariantId, taskVersion, optional isAnonymous flag,
+   *   administrationId (required for non-anonymous runs), and optional metadata
    * @returns Promise resolving to object with id
    * @throws ApiError with UNPROCESSABLE_ENTITY if administrationId or taskVariantId are invalid
    * @throws ApiError with FORBIDDEN if user lacks permission to create run
@@ -59,7 +60,15 @@ export function RunService({
    */
   async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
-    const isAnonymous = body.isAnonymous === true;
+    const { isAnonymous } = body;
+
+    if (isAnonymous && body.administrationId) {
+      throw new ApiError('administrationId must not be provided for anonymous runs', {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId },
+      });
+    }
 
     if (!isAnonymous) {
       try {

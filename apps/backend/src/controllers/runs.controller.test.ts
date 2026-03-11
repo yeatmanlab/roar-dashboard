@@ -33,6 +33,7 @@ describe('RunsController', () => {
     taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
     taskVersion: '1.0.0',
     administrationId: '660e8400-e29b-41d4-a716-446655440001',
+    isAnonymous: false as const,
   };
 
   beforeEach(() => {
