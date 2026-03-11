@@ -77,7 +77,7 @@ const orgId = computed(() => {
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
 
-const { data: userData } = useUserDataQuery(null, {
+const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery(null, {
   enabled: initialized,
 });
 
@@ -85,10 +85,6 @@ const { data: userData } = useUserDataQuery(null, {
 const childrenUids = computed(() => {
   const uids = userData.value?.childrenUids || [];
   return uids;
-});
-
-const isLoadingUserData = computed(() => {
-  return !userData.value && initialized.value;
 });
 
 const registrationError = ref(null);

@@ -21,7 +21,9 @@
     <div v-else-if="registrationError" class="p-3">
       <PvMessage severity="error">
         <div class="text-lg font-bold text-gray-600">Error while completing registration:</div>
-        <div class="text-sm font-light text-gray-800">{{ registrationError }}</div>
+        <div class="text-sm font-light text-gray-800">
+          {{ registrationError instanceof Error ? registrationError.message : String(registrationError) }}
+        </div>
       </PvMessage>
     </div>
 
@@ -117,7 +119,6 @@ defineProps({
   },
   childrenUids: {
     type: Array,
-    required: true,
     default: () => [],
   },
   orgType: {
