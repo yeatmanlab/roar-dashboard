@@ -60,7 +60,7 @@ export function RunService({
    */
   async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
-    const isAnonymous = body.isAnonymous;
+    const { isAnonymous } = body;
 
     if (isAnonymous && body.administrationId) {
       throw new ApiError('administrationId must not be provided for anonymous runs', {
