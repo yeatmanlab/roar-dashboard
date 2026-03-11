@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { AuthContext } from '../types/auth-context';
-import type { CreateTaskVariantData } from '../services/task/task.service';
+import type { CreateTaskVariantRequestBody, UpdateTaskVariantRequestBody } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 import { ApiError } from '../errors/api-error';
@@ -16,6 +16,7 @@ import { TaskService } from '../services/task/task.service';
 describe('TasksController', () => {
   const mockAuthContext: AuthContext = { userId: 'admin-1', isSuperAdmin: true };
   const mockCreateTaskVariant = vi.fn();
+  const mockUpdateTaskVariant = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -23,6 +24,7 @@ describe('TasksController', () => {
     // Setup the mock service
     vi.mocked(TaskService).mockReturnValue({
       createTaskVariant: mockCreateTaskVariant,
+      updateTaskVariant: mockUpdateTaskVariant,
       evaluateTaskVariantEligibility: vi.fn(),
     });
   });
@@ -32,8 +34,8 @@ describe('TasksController', () => {
       const mockVariantId = { id: 'variant-123' };
       mockCreateTaskVariant.mockResolvedValue(mockVariantId);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -44,7 +46,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result).toEqual({
         status: StatusCodes.CREATED,
@@ -53,7 +55,7 @@ describe('TasksController', () => {
         },
       });
 
-      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, data);
+      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, taskId, body);
       expect(mockCreateTaskVariant).toHaveBeenCalledTimes(1);
     });
 
@@ -65,8 +67,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(forbiddenError);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -74,7 +76,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toHaveProperty('error');
@@ -88,8 +90,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(notFoundError);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'nonexistent-task',
+      const taskId = 'nonexistent-task';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -97,7 +99,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
       expect(result.body).toHaveProperty('error');
@@ -111,8 +113,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(conflictError);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'duplicate-variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -120,7 +122,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.CONFLICT);
       expect(result.body).toHaveProperty('error');
@@ -134,8 +136,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(badRequestError);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -143,7 +145,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.BAD_REQUEST);
       expect(result.body).toHaveProperty('error');
@@ -157,8 +159,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(internalError);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -166,7 +168,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(result.body).toHaveProperty('error');
@@ -177,8 +179,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockRejectedValue(unexpectedError);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Test Variant',
         description: 'Test description',
         status: TaskVariantStatus.PUBLISHED,
@@ -186,7 +188,7 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      await expect(Controller.createTaskVariant(mockAuthContext, data)).rejects.toThrow(unexpectedError);
+      await expect(Controller.createTaskVariant(mockAuthContext, taskId, body)).rejects.toThrow(unexpectedError);
     });
 
     it('should handle multiple parameter types in success case', async () => {
@@ -194,8 +196,8 @@ describe('TasksController', () => {
 
       mockCreateTaskVariant.mockResolvedValue(mockVariantId);
 
-      const data: CreateTaskVariantData = {
-        taskId: 'task-123',
+      const taskId = 'task-123';
+      const body: CreateTaskVariantRequestBody = {
         name: 'Complex Variant',
         description: 'Test with various parameter types',
         status: TaskVariantStatus.DRAFT,
@@ -210,13 +212,230 @@ describe('TasksController', () => {
       };
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.createTaskVariant(mockAuthContext, data);
+      const result = await Controller.createTaskVariant(mockAuthContext, taskId, body);
 
       expect(result.status).toBe(StatusCodes.CREATED);
       if (result.status === StatusCodes.CREATED) {
         expect(result.body.data).toEqual(mockVariantId);
       }
-      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, data);
+      expect(mockCreateTaskVariant).toHaveBeenCalledWith(mockAuthContext, taskId, body);
+    });
+  });
+
+  describe('updateTaskVariant', () => {
+    it('should return 204 No Content on successful update', async () => {
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+        description: 'Updated description',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result).toEqual({
+        status: StatusCodes.NO_CONTENT,
+        body: undefined,
+      });
+
+      expect(mockUpdateTaskVariant).toHaveBeenCalledWith(mockAuthContext, params, body);
+      expect(mockUpdateTaskVariant).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return 204 when updating only name', async () => {
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
+    });
+
+    it('should return 204 when updating only parameters', async () => {
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        parameters: [{ name: 'newParam', value: 'newValue' }],
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
+    });
+
+    it('should return 403 when service throws FORBIDDEN error', async () => {
+      const forbiddenError = new ApiError('Forbidden', {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      mockUpdateTaskVariant.mockRejectedValue(forbiddenError);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      if (result.status === StatusCodes.FORBIDDEN) {
+        expect(result.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      }
+    });
+
+    it('should return 404 when service throws NOT_FOUND error for task', async () => {
+      const notFoundError = new ApiError('Task not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      mockUpdateTaskVariant.mockRejectedValue(notFoundError);
+
+      const params = { taskId: 'nonexistent-task', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      if (result.status === StatusCodes.NOT_FOUND) {
+        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      }
+    });
+
+    it('should return 404 when service throws NOT_FOUND error for variant', async () => {
+      const notFoundError = new ApiError('Variant not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      mockUpdateTaskVariant.mockRejectedValue(notFoundError);
+
+      const params = { taskId: 'task-123', variantId: 'nonexistent-variant' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      if (result.status === StatusCodes.NOT_FOUND) {
+        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      }
+    });
+
+    it('should return 409 when service throws CONFLICT error', async () => {
+      const conflictError = new ApiError('Variant name already exists', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      mockUpdateTaskVariant.mockRejectedValue(conflictError);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Duplicate Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      if (result.status === StatusCodes.CONFLICT) {
+        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+      }
+    });
+
+    it('should return 400 when service throws BAD_REQUEST error', async () => {
+      const badRequestError = new ApiError('Invalid update data', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+
+      mockUpdateTaskVariant.mockRejectedValue(badRequestError);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+      if (result.status === StatusCodes.BAD_REQUEST) {
+        expect(result.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+      }
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const internalError = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      mockUpdateTaskVariant.mockRejectedValue(internalError);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
+        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      }
+    });
+
+    it('should re-throw non-ApiError errors', async () => {
+      const unexpectedError = new Error('Unexpected error');
+
+      mockUpdateTaskVariant.mockRejectedValue(unexpectedError);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Updated Name',
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await expect(Controller.updateTaskVariant(mockAuthContext, params, body)).rejects.toThrow(unexpectedError);
+    });
+
+    it('should handle updating multiple fields', async () => {
+      mockUpdateTaskVariant.mockResolvedValue(undefined);
+
+      const params = { taskId: 'task-123', variantId: 'variant-123' };
+      const body: UpdateTaskVariantRequestBody = {
+        name: 'Multi Update',
+        description: 'Updated description',
+        status: TaskVariantStatus.PUBLISHED,
+        parameters: [
+          { name: 'param1', value: 'value1' },
+          { name: 'param2', value: 'value2' },
+        ],
+      };
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.updateTaskVariant(mockAuthContext, params, body);
+
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
     });
   });
 });
