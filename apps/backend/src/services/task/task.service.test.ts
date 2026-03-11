@@ -551,7 +551,6 @@ describe('TaskService', () => {
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
-        taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(null);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -657,7 +656,6 @@ describe('TaskService', () => {
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
-        taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(null);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
@@ -694,7 +692,6 @@ describe('TaskService', () => {
         const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Same Name' });
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
-        taskVariantRepository.getByTaskIdAndName.mockResolvedValueOnce(mockTaskVariant);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });

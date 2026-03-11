@@ -432,29 +432,30 @@ export function TaskService({
         });
       }
 
-      // Build update data object with only provided fields
-      const updateData: Partial<NewTaskVariant> = {};
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
-      if (status !== undefined) updateData.status = status;
+      // Check for early return condition where no updates are needed
+      const hasFieldUpdates = name !== undefined || description !== undefined || status !== undefined;
+      const hasParameterUpdates = parameters !== undefined;
+      if (!hasFieldUpdates && !hasParameterUpdates) return;
 
+      // Update task variant and parameters if needed
       await taskVariantRepository.runTransaction({
         fn: async (tx) => {
-          // Update the variant if there are any field updates
-          if (Object.keys(updateData).length > 0) {
+          if (hasFieldUpdates) {
             await taskVariantRepository.update({
               id: variantId,
-              data: updateData,
+              data: {
+                ...(name !== undefined && { name }),
+                ...(description !== undefined && { description }),
+                ...(status !== undefined && { status }),
+              },
               transaction: tx,
             });
           }
-
-          if (parameters !== undefined) {
+          if (hasParameterUpdates) {
             await taskVariantParameterRepository.deleteByTaskVariantId({
               taskVariantId: variantId,
               transaction: tx,
             });
-
             if (parameters.length > 0) {
               await taskVariantParameterRepository.createMany({
                 data: parameters.map(({ name, value }) => ({ taskVariantId: variantId, name, value })),
@@ -470,7 +471,7 @@ export function TaskService({
           userId,
           taskId,
           variantId,
-          updatedFields: Object.keys(updateData),
+          hasFieldUpdates,
           parametersUpdated: parameters !== undefined,
           parameterCount: parameters?.length ?? 0,
         },
