@@ -28,6 +28,7 @@ describe('RunService', () => {
     taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
     taskVersion: '1.0.0',
     administrationId: '660e8400-e29b-41d4-a716-446655440001',
+    isAnonymous: false as const,
   };
 
   beforeEach(() => {
@@ -128,6 +129,7 @@ describe('RunService', () => {
         taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
         taskVersion: '1.0.0',
         administrationId: '660e8400-e29b-41d4-a716-446655440001',
+        isAnonymous: false as const,
         metadata: { source: 'dashboard', sessionId: 'sess-789' },
       };
 
@@ -253,6 +255,20 @@ describe('RunService', () => {
       });
 
       expect(administrationService.verifyAdministrationAccess).not.toHaveBeenCalled();
+    });
+
+    it('should throw UNPROCESSABLE_ENTITY when isAnonymous is true and administrationId is provided', async () => {
+      await expect(
+        runService.create(authContext, {
+          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVersion: '1.0.0',
+          isAnonymous: true,
+          administrationId: '660e8400-e29b-41d4-a716-446655440001',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
     });
 
     it('should skip role permission check for anonymous runs', async () => {
