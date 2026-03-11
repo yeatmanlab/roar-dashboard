@@ -47,7 +47,7 @@ export const createSortQuerySchema = <T extends readonly [string, ...string[]]>(
 ) =>
   z.object({
     sortBy: z.enum(sortFields).default(defaultField),
-    sortOrder: z.enum(['asc', 'desc']).default(defaultOrder),
+    sortOrder: SortOrderSchema.default(defaultOrder),
   });
 
 // Template schema to extract sort query structure
