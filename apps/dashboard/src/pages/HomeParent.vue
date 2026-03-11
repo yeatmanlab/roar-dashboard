@@ -22,9 +22,9 @@
 
     <HomeParentStudentView
       v-if="currentParentView.name === VIEWS.BY_STUDENT"
-      :is-loading="isLoadingAdministrations || isLoadingChildrenAssignments"
+      :is-loading="isLoadingUserData"
       :parent-registration-complete="parentRegistrationComplete"
-      :children-assignments="childrenAssignments || []"
+      :children-uids="childrenUids"
       :org-type="orgType"
       :org-id="orgId"
       :registration-error="registrationError"
@@ -39,7 +39,6 @@
 
 <script setup>
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useMultipleUserAssignmentsQuery from '@/composables/queries/useMultipleUserAssignmentsQuery';
 import { useTimeoutPoll } from '@vueuse/core';
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { pluralizeFirestoreCollection } from '@/helpers';
@@ -75,26 +74,18 @@ const orgId = computed(() => {
   return orgTypeOrganizations[0] ?? null;
 });
 
-const orgIds = computed(() => (orgId.value ? [orgId.value] : []));
-
 // TODO: Set this dynamically in cases where this component is used for non-family adminstrators
 const orgType = ref(SINGULAR_ORG_TYPES.FAMILIES);
 
-const { data: userData } = useUserDataQuery(null, {
+const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery(null, {
   enabled: initialized,
 });
 
-// Get assignments for all children
+// Get children UIDs from user data
 const childrenUids = computed(() => {
   const uids = userData.value?.childrenUids || [];
   return uids;
 });
-
-const { data: childrenAssignments, isLoading: isLoadingChildrenAssignments } = useMultipleUserAssignmentsQuery(
-  childrenUids,
-  orgType,
-  orgIds,
-);
 
 const registrationError = ref(null);
 const registrationRetryCount = ref(0);
