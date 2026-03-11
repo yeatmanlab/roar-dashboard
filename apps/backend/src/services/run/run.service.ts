@@ -62,6 +62,14 @@ export function RunService({
     const { userId, isSuperAdmin } = authContext;
     const isAnonymous = body.isAnonymous === true;
 
+    if (isAnonymous && body.administrationId) {
+      throw new ApiError('administrationId must not be provided for anonymous runs', {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId },
+      });
+    }
+
     if (!isAnonymous) {
       try {
         await administrationService.verifyAdministrationAccess(authContext, body.administrationId!);
