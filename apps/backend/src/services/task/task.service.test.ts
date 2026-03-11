@@ -20,6 +20,7 @@ import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { Operator, type Condition } from './task.types';
 import type { User } from '../../db/schema';
+import { SortOrder, TaskSortField } from '@roar-dashboard/api-contract';
 
 describe('TaskService', () => {
   let authContext: AuthContext;
@@ -1486,7 +1487,7 @@ describe('TaskService', () => {
         const options = {
           page: 1,
           perPage: 10,
-          orderBy: { field: 'name', direction: 'asc' as const },
+          orderBy: { field: TaskSortField.NAME, direction: SortOrder.ASC },
         };
         const result = await taskService.list(authContext, options);
 

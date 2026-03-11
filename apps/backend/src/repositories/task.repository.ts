@@ -26,8 +26,8 @@ export interface ListTasksOptions {
   page: number;
   perPage: number;
   orderBy?: {
-    field: string;
-    direction: 'asc' | 'desc';
+    field: TaskSortFieldType;
+    direction: SortOrder;
   };
   slug?: string;
   search?: string;
@@ -115,8 +115,8 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
     // Use explicit column mapping for type safety
     // Cast is safe because API contract validates the sort field before reaching repository
     const sortField = orderBy?.field as TaskSortFieldType | undefined;
-    const sortColumn = (sortField && TASK_SORT_COLUMNS[sortField]) ?? tasks.createdAt;
-    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
+    const sortColumn = (sortField && TASK_SORT_COLUMNS[sortField]) ?? tasks.name;
+    const sortDirection = (orderBy?.direction ?? SortOrder.ASC) === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query
     const dataResult = await this.db
