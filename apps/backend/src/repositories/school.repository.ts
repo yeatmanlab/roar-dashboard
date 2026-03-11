@@ -8,6 +8,8 @@ import type * as CoreDbSchema from '../db/schema/core';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
+import { OrgType } from '../enums/org-type.enum';
+import { SortOrder } from '../enums/sort-order.enum';
 
 /**
  * School-specific type (Org with orgType = 'school')
@@ -82,7 +84,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
     // Build where clause for school type and rostering status
-    const whereConditions: SQL[] = [eq(orgs.orgType, 'school')];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
@@ -142,7 +144,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .as('accessible_orgs');
 
     // Build where conditions
-    const whereConditions: SQL[] = [eq(orgs.orgType, 'school')];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
@@ -167,8 +169,9 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     }
 
     // Resolve sort column
-    const sortColumn = SCHOOL_SORT_COLUMNS[orderBy?.field ?? 'createdAt'];
-    const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+    const sortField = orderBy?.field as SchoolSortFieldType | undefined;
+    const sortColumn = sortField ? SCHOOL_SORT_COLUMNS[sortField] : orgs.createdAt;
+    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join schools with the accessible IDs subquery
     const dataResult = await this.db
@@ -176,7 +179,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .from(orgs)
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause)
-      .orderBy(sortDirection, orgs.id)
+      .orderBy(sortDirection, asc(orgs.id))
       .limit(perPage)
       .offset(offset);
 
@@ -227,7 +230,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
         )`.as('classes'),
       })
       .from(orgs)
-      .where(and(eq(orgs.orgType, 'school'), inArray(orgs.id, schoolIds)));
+      .where(and(eq(orgs.orgType, OrgType.SCHOOL), inArray(orgs.id, schoolIds)));
 
     // Convert to Map for efficient lookup
     const countsMap = new Map<string, SchoolCounts>();
@@ -252,7 +255,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     const result = await this.db
       .select()
       .from(orgs)
-      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, 'school')))
+      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, OrgType.SCHOOL)))
       .limit(1);
 
     return result[0] ?? null;
@@ -273,7 +276,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .select({ org: orgs })
       .from(orgs)
       .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
-      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, 'school')))
+      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, OrgType.SCHOOL)))
       .limit(1);
 
     return result[0]?.org ?? null;

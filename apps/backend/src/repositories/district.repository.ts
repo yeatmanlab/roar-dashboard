@@ -8,6 +8,8 @@ import type * as CoreDbSchema from '../db/schema/core';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
+import { OrgType } from '../enums/org-type.enum';
+import { SortOrder } from '../enums/sort-order.enum';
 
 /**
  * District-specific type (Org with orgType = 'district')
@@ -82,7 +84,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
     // Build where clause for district type and rostering status
-    const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
@@ -143,7 +145,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .as('accessible_orgs');
 
     // Build where conditions
-    const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
@@ -168,8 +170,9 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     }
 
     // Resolve sort column
-    const sortColumn = orderBy?.field ? DISTRICT_SORT_COLUMNS[orderBy.field] : orgs.createdAt;
-    const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+    const sortField = orderBy?.field as DistrictSortFieldType | undefined;
+    const sortColumn = sortField ? DISTRICT_SORT_COLUMNS[sortField] : orgs.createdAt;
+    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join districts with the accessible IDs subquery
     const dataResult = await this.db
@@ -177,7 +180,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .from(orgs)
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause)
-      .orderBy(sortDirection, orgs.id)
+      .orderBy(sortDirection, asc(orgs.id))
       .limit(perPage)
       .offset(offset);
 
@@ -228,7 +231,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
           SELECT COUNT(DISTINCT id)
           FROM app.orgs
           WHERE parent_org_id = ${orgs.id}
-            AND org_type = 'school'
+            AND org_type = ${OrgType.SCHOOL}
             ${includeEnded ? sql`` : sql`AND rostering_ended IS NULL`}
         )`.as('schools'),
         classes: sql<number>`(
@@ -238,7 +241,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
         )`.as('classes'),
       })
       .from(orgs)
-      .where(and(eq(orgs.orgType, 'district'), inArray(orgs.id, districtIds)));
+      .where(and(eq(orgs.orgType, OrgType.DISTRICT), inArray(orgs.id, districtIds)));
 
     // Convert to Map for efficient lookup
     const countsMap = new Map<string, DistrictCounts>();
@@ -264,7 +267,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const result = await this.db
       .select()
       .from(orgs)
-      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, 'district')))
+      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, OrgType.DISTRICT)))
       .limit(1);
 
     return result[0] ?? null;
@@ -285,7 +288,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .select({ org: orgs })
       .from(orgs)
       .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
-      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, 'district')))
+      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, OrgType.DISTRICT)))
       .limit(1);
 
     return result[0]?.org ?? null;

@@ -5,11 +5,7 @@ import { DistrictEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
-
-/**
- * PostgreSQL Point type representation
- */
-type PostgreSQLPoint = { x: number; y: number };
+import type { PostgreSQLPoint } from '../types/postgres';
 
 const districtService = DistrictService();
 
