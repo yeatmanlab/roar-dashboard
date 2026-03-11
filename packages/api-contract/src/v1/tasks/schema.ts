@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
-import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
+import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES, TASK_SLUG } from '../common/regex';
 import {
   PaginationQuerySchema,
   SearchQuerySchema,
@@ -152,7 +152,7 @@ export type UpdateTaskVariantResponse = z.infer<typeof UpdateTaskVariantResponse
  */
 export const TaskSchema = z.object({
   id: z.string().uuid(),
-  slug: z.string(),
+  slug: z.string().max(32).regex(TASK_SLUG),
   name: z.string(),
   nameSimple: z.string(),
   nameTechnical: z.string(),
@@ -193,7 +193,7 @@ export const TaskSortField = {
 export const TasksListQuerySchema = PaginationQuerySchema.merge(createSortQuerySchema(TASK_SORT_FIELDS, 'name', 'asc'))
   .merge(SearchQuerySchema)
   .extend({
-    slug: z.string().optional(),
+    slug: z.string().max(32).regex(TASK_SLUG).optional(),
   });
 
 export type TasksListQuery = z.infer<typeof TasksListQuerySchema>;
