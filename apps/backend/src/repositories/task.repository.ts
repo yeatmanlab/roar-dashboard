@@ -92,7 +92,12 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
 
     // Search filter (name or description)
     if (search) {
-      const searchPattern = `%${search}%`;
+      // Escape LIKE metacharacters in the user-supplied search term so that
+      // any '%' and '_' characters are treated as literals, not wildcards.
+      const escapeLikePattern = (value: string): string =>
+        value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const escapedSearch = escapeLikePattern(search);
+      const searchPattern = `%${escapedSearch}%`;
       conditions.push(or(ilike(tasks.name, searchPattern), ilike(tasks.description, searchPattern)));
     }
 
