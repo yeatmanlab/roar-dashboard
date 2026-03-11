@@ -26,7 +26,7 @@
                   <PvButton
                     v-if="orgType !== 'district'"
                     class="flex flex-row p-2 text-sm text-white border-none bg-primary border-round h-2rem hover:bg-red-900"
-                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                    :icon="!csvExportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     label="Export Combined Reports"
                     @click="exportData({ includeProgress: true })"
                   />
@@ -319,20 +319,15 @@
           <div class="text-sm font-light text-gray-600 uppercase">Loading Task Reports</div>
         </div>
         <template v-if="!isLoadingAssignments && !isLoadingTasksDictionary && !isLoadingDistrictSupportCategories">
-          <PvTabs v-model:value="activeTabValue">
+          <PvTabs v-model:value="activeTabIndex">
             <PvTabList>
-              <PvTab
-                v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds"
-                :key="taskId"
-                :value="String(i)"
-                class="text-base"
-              >
+              <PvTab v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i" class="text-base">
                 {{ tasksDictionary[taskId]?.publicName ?? taskId }}
               </PvTab>
             </PvTabList>
 
             <PvTabPanels>
-              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="String(i)">
+              <PvTabPanel v-for="(taskId, i) in sortedAndFilteredSubscoreTaskIds" :key="taskId" :value="i">
                 <div :id="'tab-view-' + taskId">
                   <TaskReport
                     v-if="taskId"
@@ -461,7 +456,10 @@ import {
   getTagColor,
   roamFluencyTasks,
   roamFluencySubskillHeaders,
+  getPaSkillsToWorkOn,
+  PA_SUBTASK_I18N_KEYS,
 } from '@/helpers/reports';
+import { i18n } from '@/translations/i18n';
 import { SCORE_SUPPORT_LEVEL_COLORS, SCORE_REPORT_NEXT_STEPS_DOCUMENT_PATH } from '@/constants/scores';
 import RoarDataTable from '@/components/RoarDataTable';
 import useDistrictSupportCategoriesQuery from '@/composables/queries/useDistrictSupportCategoriesQuery';
@@ -480,8 +478,6 @@ let TaskReport, DistributionChartOverview;
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-
-const activeTabValue = ref('0');
 
 const props = defineProps({
   administrationId: {
@@ -550,6 +546,7 @@ const handleViewChange = () => {
 };
 
 const exportLoading = ref(false);
+const csvExportLoading = ref(false);
 const bulkPdfExportLoading = ref(false);
 
 // Export progress tracking
@@ -1211,18 +1208,20 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
         }
         if (taskId === 'pa' && assessment.scores) {
-          const first = _get(assessment, 'scores.computed.FSM.roarScore');
-          const last = _get(assessment, 'scores.computed.LSM.roarScore');
-          const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
-          let skills = [];
-          if (first < 15) skills.push('First Sound Matching');
-          if (last < 15) skills.push('Last sound matching');
-          if (deletion < 15) skills.push('Deletion');
-          currRowScores[taskId].firstSound = first;
-          currRowScores[taskId].lastSound = last;
-          currRowScores[taskId].deletion = deletion;
-          currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
-          currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
+          const computedScores = _get(assessment, 'scores.computed');
+          const skillKeys = getPaSkillsToWorkOn(computedScores);
+          const translatedSkills = skillKeys.map((key) => i18n.global.t(PA_SUBTASK_I18N_KEYS[key]));
+          const formatPaSubtaskScore = (subtaskKey) => {
+            const pct = _get(computedScores, `${subtaskKey}.percentCorrect`);
+            if (pct != null) return `${Math.floor(pct)}%`;
+            return _get(computedScores, `${subtaskKey}.roarScore`);
+          };
+          currRowScores[taskId].firstSound = formatPaSubtaskScore('FSM');
+          currRowScores[taskId].lastSound = formatPaSubtaskScore('LSM');
+          currRowScores[taskId].deletion = formatPaSubtaskScore('DEL');
+          currRowScores[taskId].total = _get(computedScores, 'composite.roarScore');
+          currRowScores[taskId].skills =
+            translatedSkills.length > 0 ? translatedSkills.join(', ') : i18n.global.t('scoreReports.none');
         }
         if (tasksToDisplayGradeEstimate.includes(taskId)) {
           const isNewScoring = _has(assessment, 'scores.computed.composite.roarScore');
@@ -1563,6 +1562,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
  * @param {boolean} options.includeProgress - Determines if progress columns should be included in the export.
  */
 const exportData = async ({ selectedRows = null, includeProgress = false }) => {
+  csvExportLoading.value = true;
   const rows = selectedRows || computeAssignmentAndRunData.value.assignmentTableData;
   let exportData = createExportData({ rows, includeProgress });
 
@@ -1647,6 +1647,7 @@ const exportData = async ({ selectedRows = null, includeProgress = false }) => {
 
   // Export CSV
   exportCsv(exportData, fileName);
+  csvExportLoading.value = false;
 };
 
 const refreshing = ref(false);

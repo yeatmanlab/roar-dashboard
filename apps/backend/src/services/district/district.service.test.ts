@@ -6,24 +6,22 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
 
-// Mock the logger (used by the service for error handling)
-vi.mock('../../logger', () => ({
-  logger: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-  },
-}));
-
 describe('DistrictService', () => {
   const mockListAll = vi.fn();
   const mockListAuthorized = vi.fn();
+  const mockGetByIdUnrestricted = vi.fn();
+  const mockGetAuthorizedById = vi.fn();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockDistrictRepository: any = {
     listAll: mockListAll,
     listAuthorized: mockListAuthorized,
+    getUnrestrictedById: mockGetByIdUnrestricted,
+    getAuthorizedById: mockGetAuthorizedById,
   };
+
+  const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+  const mockSuperAdminContext = { userId: 'admin-123', isSuperAdmin: true };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -419,6 +417,146 @@ describe('DistrictService', () => {
         schools: 5,
         classes: 20,
       });
+    });
+  });
+
+  describe('getById', () => {
+    it('should fetch district by ID for regular users', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+      });
+
+      const result = await service.getById(mockAuthContext, validUuid);
+
+      expect(result).toEqual(mockDistrict);
+      expect(mockGetByIdUnrestricted).not.toHaveBeenCalled();
+    });
+
+    it('should build access control filter for regular users', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetAuthorizedById.mockResolvedValue(mockDistrict);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+      });
+
+      await service.getById(mockAuthContext, validUuid);
+
+      expect(mockGetAuthorizedById).toHaveBeenCalledWith(validUuid, {
+        userId: 'user-123',
+        allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
+      });
+    });
+
+    it('should use getUnrestrictedById for super admins', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const mockDistrict = {
+        id: validUuid,
+        name: 'Test District',
+        abbreviation: 'TD',
+        orgType: 'district',
+        parentOrgId: null,
+        isRosteringRootOrg: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetByIdUnrestricted.mockResolvedValue(mockDistrict);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+      });
+
+      await service.getById(mockSuperAdminContext, validUuid);
+
+      // Super admins should use unrestricted method, not the authorized one
+      expect(mockGetByIdUnrestricted).toHaveBeenCalledWith(validUuid);
+      expect(mockGetAuthorizedById).not.toHaveBeenCalled();
+    });
+
+    it('should throw 404 when district not found', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      mockGetAuthorizedById.mockResolvedValue(null);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
+
+      try {
+        await service.getById(mockAuthContext, validUuid);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
+        expect((error as ApiError).code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+        expect((error as ApiError).message).toBe('District not found');
+      }
+    });
+
+    it('should throw 404 when user lacks access (security - no distinction)', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      mockGetAuthorizedById.mockResolvedValue(null);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
+
+      try {
+        await service.getById(mockAuthContext, validUuid);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
+        // Should not distinguish between "not found" and "no access" for security
+        expect((error as ApiError).message).toBe('District not found');
+      }
+    });
+
+    it('should wrap database errors in ApiError with DATABASE_QUERY_FAILED code', async () => {
+      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const dbError = new Error('Database connection lost');
+      mockGetAuthorizedById.mockRejectedValue(dbError);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
+
+      try {
+        await service.getById(mockAuthContext, validUuid);
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        expect((error as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+        expect((error as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      }
     });
   });
 });
