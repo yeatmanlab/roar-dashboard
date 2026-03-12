@@ -116,6 +116,7 @@ describe('ClassesController', () => {
 
       const { ClassesController: Controller } = await import('./classes.controller');
 
+      // While grade query param is string, the schema validates and transforms it to an array
       await Controller.listUsers(mockAuthContext, 'class-456', {
         page: 2,
         perPage: 50,
