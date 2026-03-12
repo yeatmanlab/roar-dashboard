@@ -15,7 +15,7 @@ import type { AuthContext } from '../../types/auth-context';
 export interface ListOptions {
   page: number;
   perPage: number;
-  sortBy: 'name' | 'abbreviation' | 'createdAt' | 'updatedAt';
+  sortBy: 'name' | 'abbreviation';
   sortOrder: 'asc' | 'desc';
   includeEnded?: boolean;
   embedCounts?: boolean;

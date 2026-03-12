@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DistrictService } from './district.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { OrgType } from '../../enums/org-type.enum';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder, DistrictDetailSortField } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -37,15 +37,15 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'createdAt',
-          sortOrder: 'desc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.DESC,
         },
       );
 
       expect(mockDistrictRepository.listAll).toHaveBeenCalledWith({
         page: 1,
         perPage: 25,
-        orderBy: { field: 'createdAt', direction: SortOrder.DESC },
+        orderBy: { field: 'name', direction: SortOrder.DESC },
         includeEnded: false,
         embedCounts: false,
       });
@@ -71,8 +71,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
         },
       );
 
@@ -106,8 +106,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
           includeEnded: true,
         },
       );
@@ -131,8 +131,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
           embedCounts: true,
         },
       );
@@ -156,8 +156,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
         },
       );
 
@@ -181,8 +181,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
         },
       );
 
@@ -206,8 +206,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
         },
       );
 
@@ -230,38 +230,14 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'abbreviation',
-          sortOrder: 'desc',
+          sortBy: DistrictDetailSortField.ABBREVIATION,
+          sortOrder: SortOrder.DESC,
         },
       );
 
       expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: { field: 'abbreviation', direction: SortOrder.DESC },
-        }),
-      );
-    });
-
-    it('should map sortBy "createdAt" to database column "createdAt"', async () => {
-      mockDistrictRepository.listAll.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const service = DistrictService({
-        districtRepository: mockDistrictRepository,
-      });
-
-      await service.list(
-        { userId: 'admin-123', isSuperAdmin: true },
-        {
-          page: 1,
-          perPage: 25,
-          sortBy: 'createdAt',
-          sortOrder: 'desc',
-        },
-      );
-
-      expect(mockDistrictRepository.listAll).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderBy: { field: 'createdAt', direction: SortOrder.DESC },
         }),
       );
     });
@@ -278,8 +254,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
         },
       );
 
@@ -299,8 +275,8 @@ describe('DistrictService', () => {
         {
           page: 3,
           perPage: 50,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
         },
       );
 
@@ -398,8 +374,8 @@ describe('DistrictService', () => {
         {
           page: 1,
           perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
+          sortBy: DistrictDetailSortField.NAME,
+          sortOrder: SortOrder.ASC,
           embedCounts: true,
         },
       );

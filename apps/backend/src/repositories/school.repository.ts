@@ -38,8 +38,6 @@ export interface SchoolWithCounts extends School {
 const SCHOOL_SORT_COLUMNS = {
   name: orgs.name,
   abbreviation: orgs.abbreviation,
-  createdAt: orgs.createdAt,
-  updatedAt: orgs.updatedAt,
 } as const satisfies Record<SchoolSortFieldType, Column>;
 
 /**
@@ -169,8 +167,8 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     }
 
     // Resolve sort column
-    const sortField = orderBy?.field as SchoolSortFieldType | undefined;
-    const sortColumn = sortField ? SCHOOL_SORT_COLUMNS[sortField] : orgs.createdAt;
+    const sortColumn =
+      (orderBy?.field && SCHOOL_SORT_COLUMNS[orderBy.field as keyof typeof SCHOOL_SORT_COLUMNS]) ?? orgs.name;
     const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join schools with the accessible IDs subquery

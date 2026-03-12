@@ -39,7 +39,6 @@ export interface DistrictWithCounts extends District {
 const DISTRICT_SORT_COLUMNS = {
   name: orgs.name,
   abbreviation: orgs.abbreviation,
-  createdAt: orgs.createdAt,
 } as const satisfies Record<DistrictSortFieldType, Column>;
 
 /**
@@ -170,8 +169,8 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     }
 
     // Resolve sort column
-    const sortField = orderBy?.field as DistrictSortFieldType | undefined;
-    const sortColumn = sortField ? DISTRICT_SORT_COLUMNS[sortField] : orgs.createdAt;
+    const sortColumn =
+      (orderBy?.field && DISTRICT_SORT_COLUMNS[orderBy.field as keyof typeof DISTRICT_SORT_COLUMNS]) ?? orgs.name;
     const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join districts with the accessible IDs subquery
