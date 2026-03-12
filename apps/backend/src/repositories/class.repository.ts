@@ -1,21 +1,21 @@
 import { eq, asc, desc, count, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { classes, userClasses, users, type Class } from '../db/schema';
+import { EnrolledUsersSortFieldType, SortOrder } from '@roar-dashboard/api-contract';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
-import { BaseRepository, type PaginatedResult } from './base.repository';
-import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
+import { classes, userClasses, users, type Class } from '../db/schema';
+import type { UserRole } from '../enums/user-role.enum';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
-import type { UserRole } from '../enums/user-role.enum';
 import {
   ListEnrolledUsersOptions,
   getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
   EnrolledUserEntity,
 } from '../utils/handle-enrolled-users';
+import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
+import { BaseRepository, type PaginatedResult } from './base.repository';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
@@ -101,7 +101,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
 
     const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
     const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
-    const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })
@@ -163,7 +163,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
 
     const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
     const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
-    const primaryOrder = orderBy?.direction === 'desc' ? desc(sortColumn) : asc(sortColumn);
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
       .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })

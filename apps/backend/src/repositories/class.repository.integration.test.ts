@@ -19,13 +19,14 @@
  * ```
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { baseFixture } from '../test-support/fixtures';
-import { ClassRepository } from './class.repository';
-import { CoreDbClient } from '../test-support/db';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { UserRole } from '../enums/user-role.enum';
+import { CoreDbClient } from '../test-support/db';
+import { ClassFactory } from '../test-support/factories/class.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
-import { ClassFactory } from '../test-support/factories/class.factory';
+import { baseFixture } from '../test-support/fixtures';
+import { ClassRepository } from './class.repository';
 
 describe('ClassRepository', () => {
   let repository: ClassRepository;
@@ -249,7 +250,7 @@ describe('ClassRepository', () => {
       const result = await repository.getUsersByClassId(usernameTestClass.id, {
         page: 1,
         perPage: 100,
-        orderBy: { field: 'username', direction: 'desc' },
+        orderBy: { field: 'username', direction: SortOrder.DESC },
       });
 
       expect(result.items).toHaveLength(3);
