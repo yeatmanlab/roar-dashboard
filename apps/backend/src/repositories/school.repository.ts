@@ -8,8 +8,8 @@ import type * as CoreDbSchema from '../db/schema/core';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { OrgType } from '../enums/org-type.enum';
-import { SortOrder } from '../enums/sort-order.enum';
 
 /**
  * School-specific type (Org with orgType = 'school')
