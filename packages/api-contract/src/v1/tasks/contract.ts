@@ -25,6 +25,7 @@ export const TasksContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(TasksListResponseSchema),
         400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
