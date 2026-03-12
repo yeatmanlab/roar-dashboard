@@ -58,7 +58,7 @@ export const UserSchoolLevelSchema = z.enum(USER_SCHOOL_LEVEL_VALUES);
 const UserDemographicSchema = z.object({
   gender: z.string().nullable(),
   grade: UserGradeSchema.nullable(),
-  dob: z.string().datetime().nullable(),
+  dob: z.string().date().nullable(),
 });
 
 const UserIdentifierSchema = z.object({
@@ -91,14 +91,24 @@ export const GradeFilterSchema = z
   .string()
   .trim()
   .transform((v) => v.split(',').map((g) => g.trim()))
+  .superRefine((v, ctx) => {
+    if (v.some((grade) => !UserGradeSchema.safeParse(grade).success)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid grade value',
+      });
+    }
+  })
   .pipe(z.array(UserGradeSchema))
   .optional();
+
+export type GradeFilter = z.infer<typeof GradeFilterSchema>;
 
 export const EnrolledUsersQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ENROLLED_USERS_SORT_FIELDS, 'nameLast'),
 ).extend({
   role: UserRoleSchema.optional(),
-  grade: z.string().optional(),
+  grade: GradeFilterSchema,
 });
 
 export type EnrolledUsersQuery = z.infer<typeof EnrolledUsersQuerySchema>;

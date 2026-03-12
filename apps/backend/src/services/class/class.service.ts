@@ -11,7 +11,7 @@ import { logger } from '../../logger';
 import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../../types/auth-context';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-import { GradeFilterSchema } from '@roar-dashboard/api-contract';
+
 export function ClassService({
   classRepository = new ClassRepository(),
 }: {
@@ -124,21 +124,8 @@ export function ClassService({
           direction: options.sortOrder,
         },
         ...(options.role && { role: options.role }),
+        ...(options.grade && { grade: options.grade }),
       };
-
-      // Handle grade filtering, enforces multiple grades filters are valid
-      if (options.grade) {
-        const parsedGrade = GradeFilterSchema.safeParse(options.grade);
-        if (!parsedGrade.success) {
-          throw new ApiError('Invalid grade filter', {
-            statusCode: StatusCodes.BAD_REQUEST,
-            code: ApiErrorCode.REQUEST_INVALID,
-          });
-        }
-        if (parsedGrade.data) {
-          queryParams.grade = parsedGrade.data;
-        }
-      }
 
       if (isSuperAdmin) {
         return await classRepository.getUsersByClassId(classId, queryParams);

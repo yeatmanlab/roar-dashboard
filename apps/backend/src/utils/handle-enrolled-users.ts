@@ -3,13 +3,13 @@ import { users, userClasses, type User } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from './to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
-import { EnrolledUser, EnrolledUsersSortFieldType, UserRole, UserGrade } from '@roar-dashboard/api-contract';
+import { EnrolledUser, EnrolledUsersSortFieldType, UserRole, GradeFilter } from '@roar-dashboard/api-contract';
 
 export interface ListEnrolledUsersOptions {
   page: number;
   perPage: number;
   orderBy?: { field: EnrolledUsersSortFieldType; direction: 'asc' | 'desc' };
-  grade?: UserGrade[];
+  grade?: GradeFilter;
   role?: UserRole;
 }
 
