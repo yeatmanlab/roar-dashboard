@@ -57,30 +57,40 @@ describe('GET /v1/schools', () => {
       // Super admin sees schools from ALL org trees
       expect(ids).toContain(baseFixture.schoolA.id);
       expect(ids).toContain(baseFixture.schoolB.id);
+      expect(ids).toContain(baseFixture.schoolInDistrictB.id);
     });
 
     it('siteAdmin tier can list schools scoped to their org tree', async () => {
       const res = await expectRoute('GET', '/v1/schools').as(tiers.siteAdmin).toReturn(200);
 
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      // siteAdmin at district level sees both schoolA and schoolB (same district)
       expect(ids).toContain(baseFixture.schoolA.id);
-      expect(ids).not.toContain(baseFixture.schoolB.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+      // But NOT schools from other districts
+      expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
     });
 
     it('admin tier can list schools scoped to their org tree', async () => {
       const res = await expectRoute('GET', '/v1/schools').as(tiers.admin).toReturn(200);
 
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      // admin at district level sees both schoolA and schoolB (same district)
       expect(ids).toContain(baseFixture.schoolA.id);
-      expect(ids).not.toContain(baseFixture.schoolB.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+      // But NOT schools from other districts
+      expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
     });
 
     it('educator tier can list schools scoped to their org tree', async () => {
       const res = await expectRoute('GET', '/v1/schools').as(tiers.educator).toReturn(200);
 
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      // educator at district level sees both schoolA and schoolB (same district)
       expect(ids).toContain(baseFixture.schoolA.id);
-      expect(ids).not.toContain(baseFixture.schoolB.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+      // But NOT schools from other districts
+      expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
     });
 
     it('student tier sees empty list (no Organizations.LIST permission)', async () => {
@@ -92,12 +102,12 @@ describe('GET /v1/schools', () => {
       expect(res.body.data.pagination.totalItems).toBe(0);
     });
 
-    it('caregiver tier can list schools scoped to their org tree', async () => {
+    it('caregiver tier sees empty list (no Organizations.LIST permission)', async () => {
       const res = await expectRoute('GET', '/v1/schools').as(tiers.caregiver).toReturn(200);
 
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.schoolA.id);
-      expect(ids).not.toContain(baseFixture.schoolB.id);
+      // Caregivers (guardians) don't have Organizations.LIST permission
+      expect(res.body.data.items).toHaveLength(0);
+      expect(res.body.data.pagination.totalItems).toBe(0);
     });
   });
 
@@ -149,10 +159,12 @@ describe('GET /v1/schools', () => {
 describe('GET /v1/schools/:id', () => {
   describe('authorization', () => {
     it('superAdmin tier can access any school by ID', async () => {
-      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolB.id}`).as(tiers.superAdmin).toReturn(200);
+      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolInDistrictB.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
 
-      expect(res.body.data.id).toBe(baseFixture.schoolB.id);
-      expect(res.body.data.name).toBe(baseFixture.schoolB.name);
+      expect(res.body.data.id).toBe(baseFixture.schoolInDistrictB.id);
+      expect(res.body.data.name).toBe(baseFixture.schoolInDistrictB.name);
     });
 
     it('siteAdmin tier can access schools in their org tree', async () => {
@@ -173,16 +185,16 @@ describe('GET /v1/schools/:id', () => {
       expect(res.body.data.id).toBe(baseFixture.schoolA.id);
     });
 
-    it('student tier can access their own school', async () => {
-      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolA.id}`).as(tiers.student).toReturn(200);
+    it('student tier cannot access schools (no Organizations.READ permission)', async () => {
+      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolA.id}`).as(tiers.student).toReturn(403);
 
-      expect(res.body.data.id).toBe(baseFixture.schoolA.id);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('caregiver tier can access schools in their org tree', async () => {
-      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolA.id}`).as(tiers.caregiver).toReturn(200);
+    it('caregiver tier cannot access schools (no Organizations.READ permission)', async () => {
+      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolA.id}`).as(tiers.caregiver).toReturn(403);
 
-      expect(res.body.data.id).toBe(baseFixture.schoolA.id);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
 
@@ -194,8 +206,10 @@ describe('GET /v1/schools/:id', () => {
     });
 
     it('returns 403 when user lacks access to the school', async () => {
-      // siteAdmin from District A trying to access School B (from District B)
-      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolB.id}`).as(tiers.siteAdmin).toReturn(403);
+      // siteAdmin from District A trying to access schoolInDistrictB (from District B)
+      const res = await expectRoute('GET', `/v1/schools/${baseFixture.schoolInDistrictB.id}`)
+        .as(tiers.siteAdmin)
+        .toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
