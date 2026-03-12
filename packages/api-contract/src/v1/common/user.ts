@@ -18,14 +18,6 @@ export const UserRoleSchema = z.enum([
 ]);
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
-export const UserAuthProviderSchema = z.array(
-  z.enum(['password', 'google', 'oidc.clever', 'oidc.classlink', 'oidc.nycps']),
-);
-export type UserAuthProvider = z.infer<typeof UserAuthProviderSchema>;
-
-export const UserStatusFrlSchema = z.enum(['Free', 'Reduced', 'Paid']);
-export type UserStatusFrl = z.infer<typeof UserStatusFrlSchema>;
-
 export const UserGradeSchema = z.enum([
   '1',
   '2',
@@ -51,9 +43,6 @@ export const UserGradeSchema = z.enum([
   '',
 ]);
 export type UserGrade = z.infer<typeof UserGradeSchema>;
-
-export const USER_SCHOOL_LEVEL_VALUES = ['early_childhood', 'elementary', 'middle', 'high', 'postsecondary'] as const;
-export const UserSchoolLevelSchema = z.enum(USER_SCHOOL_LEVEL_VALUES);
 
 const UserDemographicSchema = z.object({
   gender: z.string().nullable(),
