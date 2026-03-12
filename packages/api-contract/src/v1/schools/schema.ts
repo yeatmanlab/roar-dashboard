@@ -78,7 +78,7 @@ export type SchoolDetail = z.infer<typeof SchoolDetailSchema>;
 /**
  * Allowed sort fields for school details.
  */
-export const SCHOOL_DETAIL_SORT_FIELDS = ['name', 'abbreviation', 'createdAt', 'updatedAt'] as const;
+export const SCHOOL_DETAIL_SORT_FIELDS = ['name', 'abbreviation'] as const;
 
 /**
  * Sort field type for schools.
@@ -91,8 +91,6 @@ export type SchoolSortFieldType = (typeof SCHOOL_DETAIL_SORT_FIELDS)[number];
 export const SchoolDetailSortField = {
   NAME: 'name',
   ABBREVIATION: 'abbreviation',
-  CREATED_AT: 'createdAt',
-  UPDATED_AT: 'updatedAt',
 } as const satisfies Record<string, (typeof SCHOOL_DETAIL_SORT_FIELDS)[number]>;
 
 /**
@@ -111,7 +109,7 @@ export const SchoolEmbedOption = {
  * Query parameters for listing schools.
  */
 export const SchoolsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(SCHOOL_DETAIL_SORT_FIELDS, 'createdAt'),
+  createSortQuerySchema(SCHOOL_DETAIL_SORT_FIELDS, 'name'),
 )
   .merge(createEmbedQuerySchema(SCHOOL_EMBED_OPTIONS))
   .extend({

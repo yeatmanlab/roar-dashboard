@@ -162,7 +162,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause);
 
-    const totalItems = countResult[0]?.count ?? 0;
+    const totalItems = Number(countResult[0]?.count ?? 0);
 
     if (totalItems === 0) {
       return { items: [], totalItems: 0 };
@@ -209,27 +209,45 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
    * - users: COUNT of active users in school (from userOrgs where enrollmentEnd IS NULL)
    * - classes: COUNT of classes in school (from classes table)
    *
+   * Uses pre-aggregated subqueries with left joins for better performance at scale
+   * instead of correlated subqueries (O(n) vs O(n*m)).
+   *
    * @param schoolIds - Array of school IDs to fetch counts for
    * @returns Map of school ID to counts
    */
   async fetchSchoolCounts(schoolIds: string[]): Promise<Map<string, SchoolCounts>> {
-    // Query to get counts for all schools in one go
+    // Pre-aggregate user counts per school
+    const userCounts = this.db
+      .select({
+        schoolId: userOrgs.orgId,
+        users: countDistinct(userOrgs.userId).as('users'),
+      })
+      .from(userOrgs)
+      .where(and(inArray(userOrgs.orgId, schoolIds), isNull(userOrgs.enrollmentEnd)))
+      .groupBy(userOrgs.orgId)
+      .as('user_counts');
+
+    // Pre-aggregate class counts per school
+    const classCounts = this.db
+      .select({
+        schoolId: classes.schoolId,
+        classes: countDistinct(classes.id).as('classes'),
+      })
+      .from(classes)
+      .where(inArray(classes.schoolId, schoolIds))
+      .groupBy(classes.schoolId)
+      .as('class_counts');
+
+    // Query to get counts for all schools using left joins to the aggregates
     const results = await this.db
       .select({
         schoolId: orgs.id,
-        users: sql<number>`(
-          SELECT COUNT(DISTINCT ${userOrgs.userId})
-          FROM app.user_orgs
-          WHERE ${userOrgs.orgId} = ${orgs.id}
-            AND ${userOrgs.enrollmentEnd} IS NULL
-        )`.as('users'),
-        classes: sql<number>`(
-          SELECT COUNT(DISTINCT ${classes.id})
-          FROM app.classes
-          WHERE ${classes.schoolId} = ${orgs.id}
-        )`.as('classes'),
+        users: sql<number>`COALESCE(${userCounts.users}, 0)`.as('users'),
+        classes: sql<number>`COALESCE(${classCounts.classes}, 0)`.as('classes'),
       })
       .from(orgs)
+      .leftJoin(userCounts, eq(orgs.id, userCounts.schoolId))
+      .leftJoin(classCounts, eq(orgs.id, classCounts.schoolId))
       .where(and(eq(orgs.orgType, OrgType.SCHOOL), inArray(orgs.id, schoolIds)));
 
     // Convert to Map for efficient lookup

@@ -56,7 +56,7 @@ export function SchoolService({
   async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<SchoolWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    let result;
+    let result: PaginatedResult<SchoolWithEmbeds>;
 
     try {
       // Transform API contract format to repository format

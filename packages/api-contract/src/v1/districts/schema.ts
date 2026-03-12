@@ -78,7 +78,7 @@ export type DistrictDetail = z.infer<typeof DistrictDetailSchema>;
 /**
  * Allowed sort fields for district details.
  */
-export const DISTRICT_DETAIL_SORT_FIELDS = ['name', 'abbreviation', 'createdAt'] as const;
+export const DISTRICT_DETAIL_SORT_FIELDS = ['name', 'abbreviation'] as const;
 
 /**
  * Sort field type for districts.
@@ -91,7 +91,6 @@ export type DistrictSortFieldType = (typeof DISTRICT_DETAIL_SORT_FIELDS)[number]
 export const DistrictDetailSortField = {
   NAME: 'name',
   ABBREVIATION: 'abbreviation',
-  CREATED_AT: 'createdAt',
 } as const satisfies Record<string, (typeof DISTRICT_DETAIL_SORT_FIELDS)[number]>;
 
 /**
@@ -110,7 +109,7 @@ export const DistrictEmbedOption = {
  * Query parameters for listing districts.
  */
 export const DistrictsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(DISTRICT_DETAIL_SORT_FIELDS, 'createdAt'),
+  createSortQuerySchema(DISTRICT_DETAIL_SORT_FIELDS, 'name'),
 )
   .merge(createEmbedQuerySchema(DISTRICT_EMBED_OPTIONS))
   .extend({

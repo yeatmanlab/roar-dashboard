@@ -55,7 +55,7 @@ export function DistrictService({
   async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<DistrictWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    let result;
+    let result: PaginatedResult<DistrictWithEmbeds>;
 
     try {
       // Transform API contract format to repository format

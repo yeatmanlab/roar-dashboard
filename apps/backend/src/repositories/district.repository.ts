@@ -163,7 +163,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause);
 
-    const totalItems = countResult[0]?.count ?? 0;
+    const totalItems = Number(countResult[0]?.count ?? 0);
 
     if (totalItems === 0) {
       return { items: [], totalItems: 0 };
@@ -211,36 +211,63 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * - schools: COUNT of schools where parentOrgId = district.id and rosteringEnded IS NULL
    * - classes: COUNT of classes in district schools (via classes joined through schools)
    *
+   * Uses pre-aggregated subqueries with left joins for better performance at scale
+   * instead of correlated subqueries (O(n) vs O(n*m)).
+   *
    * @param districtIds - Array of district IDs to fetch counts for
    * @param includeEnded - Whether to include ended organizations in school counts
    * @returns Map of district ID to counts
    */
   async fetchDistrictCounts(districtIds: string[], includeEnded: boolean): Promise<Map<string, DistrictCounts>> {
-    // Query to get counts for all districts in one go
-    // We use separate subqueries for each count to handle the different join conditions
+    // Pre-aggregate user counts per district
+    const userCounts = this.db
+      .select({
+        districtId: userOrgs.orgId,
+        users: countDistinct(userOrgs.userId).as('users'),
+      })
+      .from(userOrgs)
+      .where(and(inArray(userOrgs.orgId, districtIds), isNull(userOrgs.enrollmentEnd)))
+      .groupBy(userOrgs.orgId)
+      .as('user_counts');
+
+    // Pre-aggregate school counts per district
+    const schoolCountsWhere = includeEnded
+      ? and(inArray(orgs.parentOrgId, districtIds), eq(orgs.orgType, OrgType.SCHOOL))
+      : and(inArray(orgs.parentOrgId, districtIds), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded));
+
+    const schoolCounts = this.db
+      .select({
+        districtId: orgs.parentOrgId,
+        schools: countDistinct(orgs.id).as('schools'),
+      })
+      .from(orgs)
+      .where(schoolCountsWhere)
+      .groupBy(orgs.parentOrgId)
+      .as('school_counts');
+
+    // Pre-aggregate class counts per district
+    const classCounts = this.db
+      .select({
+        districtId: classes.districtId,
+        classes: countDistinct(classes.id).as('classes'),
+      })
+      .from(classes)
+      .where(inArray(classes.districtId, districtIds))
+      .groupBy(classes.districtId)
+      .as('class_counts');
+
+    // Query to get counts for all districts using left joins to the aggregates
     const results = await this.db
       .select({
         districtId: orgs.id,
-        users: sql<number>`(
-          SELECT COUNT(DISTINCT ${userOrgs.userId})
-          FROM app.user_orgs
-          WHERE ${userOrgs.orgId} = ${orgs.id}
-            AND ${userOrgs.enrollmentEnd} IS NULL
-        )`.as('users'),
-        schools: sql<number>`(
-          SELECT COUNT(DISTINCT id)
-          FROM app.orgs
-          WHERE parent_org_id = ${orgs.id}
-            AND org_type = ${OrgType.SCHOOL}
-            ${includeEnded ? sql`` : sql`AND rostering_ended IS NULL`}
-        )`.as('schools'),
-        classes: sql<number>`(
-          SELECT COUNT(DISTINCT ${classes.id})
-          FROM app.classes
-          WHERE ${classes.districtId} = ${orgs.id}
-        )`.as('classes'),
+        users: sql<number>`COALESCE(${userCounts.users}, 0)`.as('users'),
+        schools: sql<number>`COALESCE(${schoolCounts.schools}, 0)`.as('schools'),
+        classes: sql<number>`COALESCE(${classCounts.classes}, 0)`.as('classes'),
       })
       .from(orgs)
+      .leftJoin(userCounts, eq(orgs.id, userCounts.districtId))
+      .leftJoin(schoolCounts, eq(orgs.id, schoolCounts.districtId))
+      .leftJoin(classCounts, eq(orgs.id, classCounts.districtId))
       .where(and(eq(orgs.orgType, OrgType.DISTRICT), inArray(orgs.id, districtIds)));
 
     // Convert to Map for efficient lookup
