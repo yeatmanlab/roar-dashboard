@@ -205,7 +205,7 @@ describe('firekit compat', () => {
       const mockFetch = vi.fn().mockResolvedValue({
         status: 201,
         json: async () => ({ data: { id: 'run-123' } }),
-        headers: new Map([['content-type', 'application/json']]),
+        headers: new Headers([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -239,7 +239,7 @@ describe('firekit compat', () => {
       const mockFetch = vi.fn().mockResolvedValue({
         status: 201,
         json: async () => ({ data: { id: 'run-anon-123' } }),
-        headers: new Map([['content-type', 'application/json']]),
+        headers: new Headers([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -259,7 +259,7 @@ describe('firekit compat', () => {
       const mockFetch = vi.fn().mockResolvedValue({
         status: 201,
         json: async () => ({ data: { id: 'run-non-anon-789' } }),
-        headers: new Map([['content-type', 'application/json']]),
+        headers: new Headers([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
@@ -279,7 +279,7 @@ describe('firekit compat', () => {
       const mockFetch = vi.fn().mockResolvedValue({
         status: 201,
         json: async () => ({ data: { id: 'run-with-metadata' } }),
-        headers: new Map([['content-type', 'application/json']]),
+        headers: new Headers([['content-type', 'application/json']]),
       });
 
       mockContext.fetchImpl = mockFetch as unknown as typeof fetch;

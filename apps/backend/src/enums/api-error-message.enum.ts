@@ -23,6 +23,8 @@ export enum ApiErrorMessage {
   /** Generic not found error - use when a resource doesn't exist */
   NOT_FOUND = 'The requested resource was not found',
 
+  REQUEST_VALIDATION_FAILED = 'Failed to validate request',
+
   /** Generic unauthorized error - use for authentication failures */
   UNAUTHORIZED = 'Authentication required',
 }
