@@ -32,24 +32,29 @@ type CompatTaskInfo = {
 let _runId: string | undefined;
 let _taskInfo: CompatTaskInfo | undefined;
 
-function getCtx(): CommandContext {
+export function _getRunIdForCompat(): string | undefined {
+  return _runId;
+}
+
+/**
+ * Internal helper to retrieve the initialized API and Invoker instances.
+ * Ensures that the Firekit compat facade has been properly initialized.
+ *
+ * @returns Object containing initialized RoarApi and Invoker instances
+ * @throws SDKError if facade has not been initialized via initFirekitCompat()
+ * @internal
+ */
+function getInvokerAndApi() {
   try {
-    return getFirekitCompat().getContext();
+    const facade = getFirekitCompat();
+    return {
+      api: facade.getApi(),
+      invoker: facade.getInvoker(),
+    };
   } catch (err) {
     if (err instanceof SDKError) throw err;
     throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
   }
-}
-
-function getInvokerAndApi() {
-  const ctx = getCtx();
-  const api = new RoarApi(ctx);
-  const invoker = new Invoker(ctx);
-  return { api, invoker };
-}
-
-export function _getRunIdForCompat(): string | undefined {
-  return _runId;
 }
 
 /**
@@ -76,6 +81,8 @@ export function _resetFirekitCompat(): void {
 export class FirekitFacade {
   private static instance: FirekitFacade | undefined;
   private ctx: CommandContext | undefined;
+  private api: RoarApi | undefined;
+  private invoker: Invoker | undefined;
 
   private constructor() {}
 
@@ -93,11 +100,15 @@ export class FirekitFacade {
   /**
    * Initializes the facade with SDK configuration.
    * Called by initFirekitCompat() to set up the CommandContext.
-   * @param {CommandContext} ctx - CommandContext with baseUrl, auth, and other SDK config
-   * @param {CompatTaskInfo} taskInfo - Task information including variantId, taskVersion, and administrationId
+   * Resets module-level state on re-initialization to prevent state leakage.
+   *
+   * @param ctx - CommandContext with baseUrl, auth, and other SDK config
+   * @param taskInfo - Task information including variantId, taskVersion, and administrationId
    */
   initialize(ctx: CommandContext, taskInfo: CompatTaskInfo): void {
     this.ctx = ctx;
+    this.api = new RoarApi(ctx);
+    this.invoker = new Invoker(ctx);
 
     // Reset compat state on re-init to avoid leaking state across tests / consumers
     _runId = undefined;
@@ -116,6 +127,34 @@ export class FirekitFacade {
       throw new Error('FirekitFacade not initialized. Call initFirekitCompat() first.');
     }
     return this.ctx;
+  }
+
+  /**
+   * Returns the initialized RoarApi instance.
+   * Throws if initialize() has not been called.
+   *
+   * @returns RoarApi instance for making API requests
+   * @throws Error if facade not initialized
+   */
+  getApi(): RoarApi {
+    if (!this.api) {
+      throw new Error('FirekitFacade not initialized. Call initFirekitCompat() first.');
+    }
+    return this.api;
+  }
+
+  /**
+   * Returns the initialized Invoker instance.
+   * Throws if initialize() has not been called.
+   *
+   * @returns Invoker instance for executing commands
+   * @throws Error if facade not initialized
+   */
+  getInvoker(): Invoker {
+    if (!this.invoker) {
+      throw new Error('FirekitFacade not initialized. Call initFirekitCompat() first.');
+    }
+    return this.invoker;
   }
 
   /**

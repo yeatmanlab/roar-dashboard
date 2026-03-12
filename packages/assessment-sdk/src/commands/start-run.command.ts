@@ -39,7 +39,8 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
       return { runId: result.body.data.id };
     }
 
-    throw new SDKError(`Failed to start run with status ${result.status}`, {
+    const errorBody = result.body as { error?: { message?: string } };
+    throw new SDKError(errorBody?.error?.message ?? `Failed to start run with status ${result.status}`, {
       code: 'CREATE_RUN_FAILED',
     });
   }
