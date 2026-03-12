@@ -66,4 +66,24 @@ export class TaskVariantParameterRepository extends BaseRepository<TaskVariantPa
     // Return taskVariantId as id to maintain interface typing, or empty string if not provided
     return params.data.map((p) => ({ id: p.taskVariantId ?? '' }));
   }
+
+  /**
+   * Deletes all parameters for a given task variant.
+   *
+   * @param params - Object containing taskVariantId and optional transaction
+   * @param params.taskVariantId - The UUID of the task variant
+   * @param params.transaction - Optional transaction object for atomic operations
+   *
+   * @example
+   * ```typescript
+   * await repository.deleteByTaskVariantId({ taskVariantId: 'variant-uuid', transaction: tx });
+   * ```
+   */
+  async deleteByTaskVariantId(params: {
+    taskVariantId: string;
+    transaction?: NodePgDatabase<typeof CoreDbSchema>;
+  }): Promise<void> {
+    const db = params.transaction ?? this.db;
+    await db.delete(taskVariantParameters).where(eq(taskVariantParameters.taskVariantId, params.taskVariantId));
+  }
 }
