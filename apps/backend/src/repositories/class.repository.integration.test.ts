@@ -23,8 +23,8 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import { UserRole } from '../enums/user-role.enum';
 import { CoreDbClient } from '../test-support/db';
 import { ClassFactory } from '../test-support/factories/class.factory';
-import { UserFactory } from '../test-support/factories/user.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { UserFactory } from '../test-support/factories/user.factory';
 import { baseFixture } from '../test-support/fixtures';
 import { ClassRepository } from './class.repository';
 

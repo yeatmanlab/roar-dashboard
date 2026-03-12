@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
-import { UserFactory } from '../test-support/factories/user.factory';
-import { ApiError } from '../errors/api-error';
+import type { User } from '../db/schema';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserRole } from '../enums/user-role.enum';
+import { ApiError } from '../errors/api-error';
+import { UserFactory } from '../test-support/factories/user.factory';
 import type { EnrolledUserEntity } from '../utils/handle-enrolled-users';
-import type { User } from '../db/schema';
 
 // Mock the ClassService module
 vi.mock('../services/class/class.service', () => ({
@@ -73,7 +74,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const data = expectOkResponse(result);
@@ -120,7 +121,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const data = expectOkResponse(result);
@@ -161,7 +162,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const data = expectOkResponse(result);
@@ -184,7 +185,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const data = expectOkResponse(result);
@@ -206,7 +207,7 @@ describe('ClassesController', () => {
         page: 2,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const data = expectOkResponse(result);
@@ -225,7 +226,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const data = expectOkResponse(result);
@@ -246,8 +247,8 @@ describe('ClassesController', () => {
         page: 2,
         perPage: 50,
         sortBy: 'username',
-        sortOrder: 'desc',
-        grade: '5',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
         role: UserRole.STUDENT,
       });
 
@@ -255,8 +256,8 @@ describe('ClassesController', () => {
         page: 2,
         perPage: 50,
         sortBy: 'username',
-        sortOrder: 'desc',
-        grade: '5',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
         role: UserRole.STUDENT,
       });
     });
@@ -274,7 +275,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const data = expectOkResponse(result);
@@ -304,7 +305,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
@@ -324,7 +325,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
@@ -344,7 +345,7 @@ describe('ClassesController', () => {
         page: 1,
         perPage: 25,
         sortBy: 'nameLast',
-        sortOrder: 'asc',
+        sortOrder: SortOrder.ASC,
       });
 
       const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -362,7 +363,7 @@ describe('ClassesController', () => {
           page: 1,
           perPage: 25,
           sortBy: 'nameLast',
-          sortOrder: 'asc',
+          sortOrder: SortOrder.ASC,
         }),
       ).rejects.toThrow('Unexpected error');
     });

@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { ClassService } from './class.service';
-import { ClassFactory } from '../../test-support/factories/class.factory';
-import { UserFactory } from '../../test-support/factories/user.factory';
+import { SortOrder } from '@roar-dashboard/api-contract';
+import type { User } from '../../db/schema';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
+import { ClassFactory } from '../../test-support/factories/class.factory';
+import { UserFactory } from '../../test-support/factories/user.factory';
 import { createMockClassRepository } from '../../test-support/repositories';
 import { EnrolledUserEntity } from '../../utils/handle-enrolled-users';
-import type { User } from '../../db/schema';
+import { ClassService } from './class.service';
 
 const createMockEnrolledUser = (user: User, overrides: Partial<EnrolledUserEntity> = {}): EnrolledUserEntity => ({
   ...user,
@@ -30,7 +31,7 @@ describe('ClassService', () => {
       page: 1,
       perPage: 25,
       sortBy: 'nameLast' as const,
-      sortOrder: 'asc' as const,
+      sortOrder: SortOrder.ASC,
     };
 
     it('should return users for super admin (unrestricted)', async () => {
@@ -52,7 +53,7 @@ describe('ClassService', () => {
       expect(mockClassRepository.getUsersByClassId).toHaveBeenCalledWith('class-123', {
         page: 1,
         perPage: 25,
-        orderBy: { field: 'nameLast', direction: 'asc' },
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
       });
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);

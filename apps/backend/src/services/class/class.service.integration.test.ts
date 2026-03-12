@@ -14,14 +14,14 @@
  * - expiredClassStudent is excluded due to expired enrollment
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ClassService } from './class.service';
-import { baseFixture } from '../../test-support/fixtures';
-import { ClassFactory } from '../../test-support/factories/class.factory';
-import { UserFactory } from '../../test-support/factories/user.factory';
-import { UserClassFactory } from '../../test-support/factories/user-class.factory';
-import { UserRole } from '../../enums/user-role.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { UserRole } from '../../enums/user-role.enum';
 import { ApiError } from '../../errors/api-error';
+import { ClassFactory } from '../../test-support/factories/class.factory';
+import { UserClassFactory } from '../../test-support/factories/user-class.factory';
+import { UserFactory } from '../../test-support/factories/user.factory';
+import { baseFixture } from '../../test-support/fixtures';
+import { ClassService } from './class.service';
 
 describe('ClassService (integration)', () => {
   let service: ReturnType<typeof ClassService>;

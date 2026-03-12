@@ -1,15 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
-import { ClassRepository } from '../../repositories/class.repository';
-import type { Class } from '../../db/schema';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../utils/handle-enrolled-users';
-import { rolesForPermission } from '../../constants/role-permissions';
+import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
 import { Permissions } from '../../constants/permissions';
-import { ApiError } from '../../errors/api-error';
+import { rolesForPermission } from '../../constants/role-permissions';
+import type { Class } from '../../db/schema';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
-import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
+import { ClassRepository } from '../../repositories/class.repository';
 import type { AuthContext } from '../../types/auth-context';
+import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../utils/handle-enrolled-users';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 
 export function ClassService({
