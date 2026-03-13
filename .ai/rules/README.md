@@ -25,6 +25,12 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | [backend-testing-unit-vs-integration](backend-testing-unit-vs-integration.md) | MEDIUM | Separate Vitest projects, vi.mock for controllers, DI for services |
 | [backend-testing-factory-usage](backend-testing-factory-usage.md) | MEDIUM | build() vs create(), baseFixture, Fishery factories |
 
+### SDK
+
+| Rule | Impact | Description |
+|------|--------|-------------|
+| [sdk-layer-architecture](sdk-layer-architecture.md) | HIGH | Receiver/Command/Compat pattern, ts-rest client usage, auth-agnostic design |
+
 ### Frontend
 
 | Rule | Impact | Description |
@@ -75,6 +81,7 @@ Rules use a flat structure with prefix-based categories:
 |--------|-------|
 | `architecture-` | System design and structural decisions |
 | `backend-` | Express/TypeScript backend (`apps/backend/`) |
+| `sdk-` | Assessment SDK (`packages/assessment-sdk/`) |
 | `frontend-` | Vue 3 dashboard (`apps/dashboard/`) |
 | `quality-` | TypeScript strictness and code quality |
 | `testing-` | Test conventions (unit and integration) |
