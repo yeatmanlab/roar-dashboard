@@ -70,16 +70,16 @@ describe('DistrictRepository', () => {
       }
     });
 
-    it('applies orderBy createdAt descending', async () => {
+    it('applies orderBy name descending', async () => {
       const result = await repository.listAll({
         page: 1,
         perPage: 100,
-        orderBy: { field: 'createdAt', direction: 'desc' },
+        orderBy: { field: 'name', direction: 'desc' },
       });
 
       expect(result.items.length).toBeGreaterThan(1);
       for (let i = 1; i < result.items.length; i++) {
-        expect(result.items[i - 1]!.createdAt >= result.items[i]!.createdAt).toBe(true);
+        expect(result.items[i - 1]!.name.toLowerCase() >= result.items[i]!.name.toLowerCase()).toBe(true);
       }
     });
 

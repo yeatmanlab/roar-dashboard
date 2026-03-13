@@ -67,7 +67,7 @@ describe('SchoolsController', () => {
       const result = await Controller.list(mockAuthContext, {
         page: 1,
         perPage: 25,
-        sortBy: 'createdAt',
+        sortBy: 'name',
         sortOrder: 'desc',
         embed: [],
       });
