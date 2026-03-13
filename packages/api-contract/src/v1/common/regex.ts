@@ -28,3 +28,11 @@ export const IDENTIFIER_WITH_HYPHENS = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
  * Examples: "difficulty", "timeLimit", "max_attempts", "level1"
  */
 export const IDENTIFIER_WITH_UNDERSCORES = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+
+/**
+ * Matches valid task slug format:
+ * - Lowercase alphanumeric segments separated by hyphens
+ * - Must start and end with alphanumeric character
+ * - Examples: "swr", "letter-task", "phoneme-2-0"
+ */
+export const TASK_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;

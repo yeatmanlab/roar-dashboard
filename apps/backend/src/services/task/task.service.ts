@@ -12,6 +12,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import { isValidUuid } from '../../utils/is-valid-uuid.util';
 import { Operator, type Condition, type FieldCondition, type CompositeCondition } from './task.types';
 
 /**

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
-import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
+import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES, TASK_SLUG_PATTERN } from '../common/regex';
 import {
   PaginationQuerySchema,
   SearchQuerySchema,
