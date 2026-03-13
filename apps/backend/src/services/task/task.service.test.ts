@@ -1604,16 +1604,17 @@ describe('TaskService', () => {
     });
   });
 
-  describe('getBySlug', () => {
-    describe('successful retrieval', () => {
+  describe('getBySlugOrId', () => {
+    describe('successful retrieval by slug', () => {
       it('should return task when found by slug', async () => {
         const mockTask = TaskFactory.build({ slug: 'swr' });
         taskRepository.getBySlug.mockResolvedValue(mockTask);
 
-        const result = await taskService.getBySlug(authContext, 'swr');
+        const result = await taskService.getBySlugOrId(authContext, 'swr');
 
         expect(result).toEqual(mockTask);
         expect(taskRepository.getBySlug).toHaveBeenCalledWith('swr');
+        expect(taskRepository.getById).not.toHaveBeenCalled();
       });
 
       it('should allow non-super-admin users to get task by slug', async () => {
@@ -1621,7 +1622,7 @@ describe('TaskService', () => {
         const mockTask = TaskFactory.build({ slug: 'swr' });
         taskRepository.getBySlug.mockResolvedValue(mockTask);
 
-        const result = await taskService.getBySlug(nonAdminContext, 'swr');
+        const result = await taskService.getBySlugOrId(nonAdminContext, 'swr');
 
         // Tasks are global resources - all authenticated users can view them
         expect(result).toEqual(mockTask);
@@ -1629,15 +1630,44 @@ describe('TaskService', () => {
       });
     });
 
-    describe('not found', () => {
-      it('should throw NOT_FOUND when task does not exist', async () => {
+    describe('successful retrieval by ID (fallback)', () => {
+      it('should return task when not found by slug but found by ID', async () => {
+        const taskId = '123e4567-e89b-12d3-a456-426614174000';
+        const mockTask = TaskFactory.build({ id: taskId, slug: 'swr' });
         taskRepository.getBySlug.mockResolvedValue(null);
+        taskRepository.getById.mockResolvedValue(mockTask);
 
-        await expect(taskService.getBySlug(authContext, 'nonexistent')).rejects.toMatchObject({
+        const result = await taskService.getBySlugOrId(authContext, taskId);
+
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith(taskId);
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: taskId });
+      });
+
+      it('should allow non-super-admin users to get task by ID', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+        const taskId = '123e4567-e89b-12d3-a456-426614174000';
+        const mockTask = TaskFactory.build({ id: taskId });
+        taskRepository.getBySlug.mockResolvedValue(null);
+        taskRepository.getById.mockResolvedValue(mockTask);
+
+        const result = await taskService.getBySlugOrId(nonAdminContext, taskId);
+
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: taskId });
+      });
+    });
+
+    describe('not found', () => {
+      it('should throw NOT_FOUND when task does not exist by slug or ID', async () => {
+        taskRepository.getBySlug.mockResolvedValue(null);
+        taskRepository.getById.mockResolvedValue(null);
+
+        await expect(taskService.getBySlugOrId(authContext, 'nonexistent')).rejects.toMatchObject({
           message: ApiErrorMessage.NOT_FOUND,
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId: 'admin-1', slug: 'nonexistent' },
+          context: { userId: 'admin-1', taskIdentifier: 'nonexistent' },
         });
       });
     });
@@ -1647,11 +1677,11 @@ describe('TaskService', () => {
         const dbError = new Error('Connection timeout');
         taskRepository.getBySlug.mockRejectedValue(dbError);
 
-        await expect(taskService.getBySlug(authContext, 'swr')).rejects.toMatchObject({
+        await expect(taskService.getBySlugOrId(authContext, 'swr')).rejects.toMatchObject({
           message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
-          context: { userId: 'admin-1', slug: 'swr' },
+          context: { userId: 'admin-1', taskIdentifier: 'swr' },
           cause: dbError,
         });
       });
@@ -1663,7 +1693,7 @@ describe('TaskService', () => {
         });
         taskRepository.getBySlug.mockRejectedValue(apiError);
 
-        await expect(taskService.getBySlug(authContext, 'swr')).rejects.toThrow(apiError);
+        await expect(taskService.getBySlugOrId(authContext, 'swr')).rejects.toThrow(apiError);
       });
     });
   });
