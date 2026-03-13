@@ -6,6 +6,8 @@ import {
   CreateTaskVariantResponseSchema,
   UpdateTaskVariantRequestBodySchema,
   UpdateTaskVariantResponseSchema,
+  TasksListQuerySchema,
+  TasksListResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -16,6 +18,26 @@ const c = initContract();
  */
 export const TasksContract = c.router(
   {
+    list: {
+      method: 'GET',
+      path: '/',
+      query: TasksListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(TasksListResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List tasks',
+      description:
+        'Returns a paginated list of tasks. ' +
+        'Supports pagination (page, perPage), filtering by exact slug match, and searching by name or description. ' +
+        'Results can be sorted by name (default), slug, createdAt, or updatedAt in ascending or descending order. ' +
+        'Returns 200 with paginated results on success. ' +
+        'Returns 400 if the request parameters are invalid. ' +
+        'Returns 500 if a server error occurs.',
+    },
     createTaskVariant: {
       method: 'POST',
       path: '/:taskId/variants',
