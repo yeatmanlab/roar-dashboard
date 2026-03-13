@@ -1,7 +1,7 @@
 /**
  * Integration tests for TaskRepository.
  *
- * Tests custom methods (getById, listAll) against the real database
+ * Tests custom methods (listAll) against the real database
  * with the base fixture's task and any additional tasks created during tests.
  *
  * Base CRUD operations are covered by BaseRepository tests.
@@ -16,38 +16,6 @@ describe('TaskRepository', () => {
 
   beforeAll(() => {
     repository = new TaskRepository();
-  });
-
-  describe('getById', () => {
-    it('returns task from base fixture when ID exists', async () => {
-      const result = await repository.getById({ id: baseFixture.task.id });
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(baseFixture.task.id);
-      expect(result!.name).toBe(baseFixture.task.name);
-      expect(result!.slug).toBe(baseFixture.task.slug);
-    });
-
-    it('returns null when ID does not exist', async () => {
-      const nonExistentId = '00000000-0000-0000-0000-000000000000';
-      const result = await repository.getById({ id: nonExistentId });
-
-      expect(result).toBeNull();
-    });
-
-    it('returns correct task when multiple tasks exist', async () => {
-      const task1 = await TaskFactory.create({ slug: 'task-alpha-id' });
-      const task2 = await TaskFactory.create({ slug: 'task-beta-id' });
-      const task3 = await TaskFactory.create({ slug: 'task-gamma-id' });
-
-      const result = await repository.getById({ id: task2.id });
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(task2.id);
-      expect(result!.slug).toBe('task-beta-id');
-      expect(result!.id).not.toBe(task1.id);
-      expect(result!.id).not.toBe(task3.id);
-    });
   });
 
   describe('listAll', () => {
