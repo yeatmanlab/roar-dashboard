@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
-import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES, UUID_REGEX } from '../common/regex';
+import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
 import {
   PaginationQuerySchema,
   SearchQuerySchema,
@@ -13,7 +13,7 @@ import {
  * Validates the ID format matches database constraints.
  */
 export const TaskIdParamSchema = z.object({
-  taskId: z.string().min(1).regex(UUID_REGEX, 'Task ID must be a valid UUID'),
+  taskId: z.string().uuid({ message: 'Task ID must be a valid UUID' }),
 });
 
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
