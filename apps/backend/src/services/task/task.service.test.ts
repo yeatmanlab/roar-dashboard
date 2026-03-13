@@ -14,11 +14,13 @@ import { TaskService } from './task.service';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { Operator, type Condition } from './task.types';
 import type { User } from '../../db/schema';
+import { SortOrder, TaskSortField } from '@roar-dashboard/api-contract';
 
 describe('TaskService', () => {
   let authContext: AuthContext;
@@ -1452,6 +1454,152 @@ describe('TaskService', () => {
         };
         const result = taskService.evaluateTaskVariantEligibility(user, conditionsAssignment, conditionsRequirements);
         expect(result).toEqual({ isAssigned: false, isOptional: false });
+      });
+    });
+  });
+
+  describe('list', () => {
+    describe('successful listing', () => {
+      it('should return paginated tasks with default options', async () => {
+        const mockTasks = [TaskFactory.build(), TaskFactory.build()];
+        taskRepository.listAll.mockResolvedValue({
+          items: mockTasks,
+          totalItems: 2,
+        });
+
+        const options = { page: 1, perPage: 25 };
+        const result = await taskService.list(authContext, options);
+
+        expect(result).toEqual({
+          items: mockTasks,
+          totalItems: 2,
+        });
+        expect(taskRepository.listAll).toHaveBeenCalledWith(options);
+      });
+
+      it('should pass sorting options to repository', async () => {
+        const mockTasks = [TaskFactory.build()];
+        taskRepository.listAll.mockResolvedValue({
+          items: mockTasks,
+          totalItems: 1,
+        });
+
+        const options = {
+          page: 1,
+          perPage: 10,
+          orderBy: { field: TaskSortField.NAME, direction: SortOrder.ASC },
+        };
+        const result = await taskService.list(authContext, options);
+
+        expect(result.items).toHaveLength(1);
+        expect(taskRepository.listAll).toHaveBeenCalledWith(options);
+      });
+
+      it('should pass slug filter to repository', async () => {
+        const mockTask = TaskFactory.build({ slug: 'swr' });
+        taskRepository.listAll.mockResolvedValue({
+          items: [mockTask],
+          totalItems: 1,
+        });
+
+        const options = { page: 1, perPage: 25, slug: 'swr' };
+        const result = await taskService.list(authContext, options);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]?.slug).toBe('swr');
+        expect(taskRepository.listAll).toHaveBeenCalledWith(options);
+      });
+
+      it('should pass search filter to repository', async () => {
+        const mockTasks = [
+          TaskFactory.build({ name: 'Single Word Reading' }),
+          TaskFactory.build({ name: 'Phonological Reading' }),
+        ];
+        taskRepository.listAll.mockResolvedValue({
+          items: mockTasks,
+          totalItems: 2,
+        });
+
+        const options = { page: 1, perPage: 25, search: 'Reading' };
+        const result = await taskService.list(authContext, options);
+
+        expect(result.items).toHaveLength(2);
+        expect(taskRepository.listAll).toHaveBeenCalledWith(options);
+      });
+
+      it('should return empty list when no tasks match', async () => {
+        taskRepository.listAll.mockResolvedValue({
+          items: [],
+          totalItems: 0,
+        });
+
+        const options = { page: 1, perPage: 25, slug: 'nonexistent' };
+        const result = await taskService.list(authContext, options);
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('should handle pagination correctly', async () => {
+        const mockTasks = [TaskFactory.build()];
+        taskRepository.listAll.mockResolvedValue({
+          items: mockTasks,
+          totalItems: 100,
+        });
+
+        const options = { page: 5, perPage: 10 };
+        const result = await taskService.list(authContext, options);
+
+        expect(result.items).toHaveLength(1);
+        expect(result.totalItems).toBe(100);
+        expect(taskRepository.listAll).toHaveBeenCalledWith({ page: 5, perPage: 10 });
+      });
+    });
+
+    describe('authorization', () => {
+      it('should allow non-super-admin users to list tasks', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+        const mockTasks = [TaskFactory.build()];
+        taskRepository.listAll.mockResolvedValue({
+          items: mockTasks,
+          totalItems: 1,
+        });
+
+        const options = { page: 1, perPage: 25 };
+        const result = await taskService.list(nonAdminContext, options);
+
+        // Tasks are global resources - all authenticated users can view them
+        expect(result.items).toHaveLength(1);
+        expect(taskRepository.listAll).toHaveBeenCalled();
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap database errors in ApiError', async () => {
+        const dbError = new Error('Connection timeout');
+        taskRepository.listAll.mockRejectedValue(dbError);
+
+        const options = { page: 1, perPage: 25 };
+
+        await expect(taskService.list(authContext, options)).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: 'admin-1' },
+          cause: dbError,
+        });
+      });
+
+      it('should propagate existing ApiErrors', async () => {
+        const apiError = new ApiError('Custom error', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+        taskRepository.listAll.mockRejectedValue(apiError);
+
+        const options = { page: 1, perPage: 25 };
+
+        await expect(taskService.list(authContext, options)).rejects.toThrow(apiError);
       });
     });
   });

@@ -1,9 +1,37 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
-import { eq } from 'drizzle-orm';
+import type { Column, SQL } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, desc, count } from 'drizzle-orm';
 import { tasks, type Task } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
-import { BaseRepository } from './base.repository';
+import { BaseRepository, type PaginatedResult } from './base.repository';
+import type { TaskSortFieldType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
+
+/**
+ * Explicit mapping from API sort field names to task table columns.
+ * This ensures only valid columns are used for sorting, even if API validation is bypassed.
+ */
+const TASK_SORT_COLUMNS: Record<TaskSortFieldType, Column> = {
+  createdAt: tasks.createdAt,
+  updatedAt: tasks.updatedAt,
+  name: tasks.name,
+  slug: tasks.slug,
+};
+
+/**
+ * Options for listing tasks.
+ */
+export interface ListTasksOptions {
+  page: number;
+  perPage: number;
+  orderBy?: {
+    field: TaskSortFieldType;
+    direction: SortOrder;
+  };
+  slug?: string;
+  search?: string;
+}
 
 /**
  * Repository for task-related database operations.
@@ -39,5 +67,69 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
     });
 
     return results[0] ?? null;
+  }
+
+  /**
+   * List all tasks with optional filtering and sorting.
+   *
+   * Tasks are global resources (not tied to org hierarchy), so there is no
+   * authorization filtering. All authenticated users can view all tasks.
+   *
+   * @param options - Pagination, sorting, and filter options
+   * @returns Paginated result with tasks
+   */
+  async listAll(options: ListTasksOptions): Promise<PaginatedResult<Task>> {
+    const { page, perPage, orderBy, slug, search } = options;
+    const offset = (page - 1) * perPage;
+
+    // Build where conditions
+    const conditions: SQL[] = [];
+
+    // Exact slug match filter
+    if (slug) {
+      conditions.push(eq(tasks.slug, slug));
+    }
+
+    // Search filter (name or description)
+    if (search) {
+      // Escape LIKE metacharacters in the user-supplied search term so that
+      // any '%' and '_' characters are treated as literals, not wildcards.
+      const escapeLikePattern = (value: string): string =>
+        value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const escapedSearch = escapeLikePattern(search);
+      const searchPattern = `%${escapedSearch}%`;
+      conditions.push(or(ilike(tasks.name, searchPattern), ilike(tasks.description, searchPattern)) as SQL);
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Count query
+    const countResult = await this.db.select({ count: count() }).from(tasks).where(whereClause);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Use explicit column mapping for type safety
+    // Cast is safe because API contract validates the sort field before reaching repository
+    const sortField = orderBy?.field as TaskSortFieldType | undefined;
+    const sortColumn = (sortField && TASK_SORT_COLUMNS[sortField]) ?? tasks.name;
+    const sortDirection = (orderBy?.direction ?? SortOrder.ASC) === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
+
+    // Data query
+    const dataResult = await this.db
+      .select()
+      .from(tasks)
+      .where(whereClause)
+      .orderBy(sortDirection, asc(tasks.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult,
+      totalItems,
+    };
   }
 }
