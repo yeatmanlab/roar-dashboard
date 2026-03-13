@@ -96,9 +96,9 @@ export const TasksController = {
    * @param slug - The unique slug identifier for the task
    * @returns The task with the given slug
    */
-  get: async (authContext: AuthContext, slug: string) => {
+  get: async (authContext: AuthContext, taskIdentifier: string) => {
     try {
-      const task = await taskService.getBySlug(authContext, slug);
+      const task = await taskService.getBySlugOrId(authContext, taskIdentifier);
 
       return {
         status: StatusCodes.OK as const,

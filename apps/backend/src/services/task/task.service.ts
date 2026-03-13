@@ -652,28 +652,37 @@ export function TaskService({
   }
 
   /**
-   * Get a task by its slug.
+   * Get a task by its slug or ID.
+   *
+   * Searches by slug first, then falls back to searching by task ID (UUID) if no
+   * slug match is found. This allows the endpoint to accept either identifier.
    *
    * Tasks are global resources (not tied to org hierarchy), so all authenticated
    * users can view any task. No authorization filtering is applied.
    *
    * @param authContext - User's authentication context (used for logging)
-   * @param slug - The unique slug identifier for the task
-   * @returns The task with the given slug
-   * @throws {ApiError} NOT_FOUND if no task exists with the given slug
+   * @param taskIdentifier - The task slug or UUID to search for
+   * @returns The task with the given slug or ID
+   * @throws {ApiError} NOT_FOUND if no task exists with the given slug or ID
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
-  async function getBySlug(authContext: AuthContext, slug: string): Promise<Task> {
+  async function getBySlugOrId(authContext: AuthContext, taskIdentifier: string): Promise<Task> {
     const { userId } = authContext;
 
     try {
-      const task = await taskRepository.getBySlug(slug);
+      // First, try to find by slug
+      let task = await taskRepository.getBySlug(taskIdentifier);
+
+      // If not found by slug, try to find by ID
+      if (!task) {
+        task = await taskRepository.getById({ id: taskIdentifier });
+      }
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, slug },
+          context: { userId, taskIdentifier },
         });
       }
 
@@ -681,12 +690,12 @@ export function TaskService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId, slug } }, 'Failed to get task by slug');
+      logger.error({ err: error, context: { userId, taskIdentifier } }, 'Failed to get task by slug or ID');
 
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, slug },
+        context: { userId, taskIdentifier },
         cause: error,
       });
     }
@@ -694,7 +703,7 @@ export function TaskService({
 
   return {
     list,
-    getBySlug,
+    getBySlugOrId,
     createTaskVariant,
     updateTaskVariant,
     evaluateTaskVariantEligibility,
