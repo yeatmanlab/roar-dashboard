@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
-import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
+import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES, TASK_SLUG_PATTERN } from '../common/regex';
 import {
   PaginationQuerySchema,
   SearchQuerySchema,
@@ -9,22 +9,15 @@ import {
 } from '../common/query';
 
 /**
- * Matches valid task slug format:
- * - Lowercase alphanumeric segments separated by hyphens
- * - Must start and end with alphanumeric character
- * - Examples: "swr", "letter-task", "phoneme-2-0"
- */
-export const TASK_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-
-/**
  * Schema for task slug path parameter.
  * Validates the slug format matches database constraints.
+ * Max length is 36 characters (UUID format).
  */
 export const TaskSlugParamSchema = z.object({
   taskId: z
     .string()
     .min(1)
-    .max(32)
+    .max(36)
     .regex(TASK_SLUG_PATTERN, 'Task slug must be lowercase alphanumeric with optional hyphens'),
 });
 
