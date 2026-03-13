@@ -1,3 +1,15 @@
+---
+title: Assessment SDK layer architecture
+description: Enforces a clear separation between Receiver, Command, Compat, and Invoker layers in the assessment SDK, keeping the SDK auth-provider-agnostic and contract-driven.
+impact: Violations blur layer responsibilities, reduce type safety, and make the assessment SDK harder to maintain and evolve safely.
+scope: packages/assessment-sdk/**
+tags:
+  - architecture
+  - sdk
+  - layering
+  - assessment
+---
+
 ## Assessment SDK layer architecture
 
 The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three core layers — Receiver, Command, and Compat — plus an Invoker that provides cross-cutting execution infrastructure (logging, retry, idempotency). Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
