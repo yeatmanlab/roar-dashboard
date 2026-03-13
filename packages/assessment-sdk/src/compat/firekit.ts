@@ -4,7 +4,6 @@ import type {
   StartRunInput,
   FinishRunInput,
   FinishRunOutput,
-  AbortRunOutput,
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
   AddInteractionInput,
@@ -318,13 +317,35 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
  * Firekit compatibility stub for aborting a run.
  *
  * From @bdelab/roar-firekit:
+ * ```ts
  * abortRun() { […] }
+ * ```
  *
  * @returns void
  * @throws {SDKError} Always, until implemented.
  */
-export function abortRun(): AbortRunOutput {
-  throw new SDKError('firekit.abortRun not yet implemented');
+export function abortRun(): void {
+  if (!_runId) return;
+
+  void (async () => {
+    const ctx = getCtx();
+    const api = new RoarApi(ctx);
+
+    // Best-effort, no-retry abort to avoid keeping processes alive
+    const invoker = new Invoker(ctx, { retries: 0, retryDelayMs: 0 });
+
+    const cmd = new AbortRunCommand(api);
+    await invoker.run(cmd, { runId: _runId, type: RUN_EVENT_ABORT });
+  })().catch((err) => {
+    const ctx = (() => {
+      try {
+        return getCtx();
+      } catch {
+        return undefined;
+      }
+    })();
+    ctx?.logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
+  });
 }
 
 /**
