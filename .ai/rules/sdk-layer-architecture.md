@@ -1,14 +1,15 @@
 ## Assessment SDK layer architecture
 
-The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three layers: Receiver, Command, and Compat. Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
+The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three core layers — Receiver, Command, and Compat — plus an Invoker that provides cross-cutting execution infrastructure (logging, retry, idempotency). Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
 
-### The 3 layers
+### The 3 layers + Invoker
 
 | # | Layer | Location | Responsibility |
 |---|-------|----------|----------------|
 | 1 | Receiver | `src/receiver/roar-api.ts` | Expose a typed ts-rest client with cross-cutting concerns (auth headers, tracing). **No endpoint-specific methods.** |
 | 2 | Command | `src/commands/<name>.command.ts` | Request construction, response interpretation, domain errors. Calls `api.client.<resource>.<method>(...)`. |
 | 3 | Compat | `src/compat/firekit.ts` | Legacy Firekit-compatible standalone functions. Internally creates commands and runs them via the Invoker. |
+| — | Invoker | `src/command/invoker.ts` | Cross-cutting execution wrapper. Runs commands with logging, retry, and idempotency checks. Not a layer in the data flow — it wraps command execution. |
 
 ### Receiver — thin ts-rest client wrapper
 
@@ -48,8 +49,11 @@ import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-dashboard/api-contract';
 import type { CommandContext } from '../command/command';
 
+// Type alias for the inferred ts-rest client — used for the public property type
+type RoarApiClient = ReturnType<typeof initClient<typeof ApiContractV1>>;
+
 export class RoarApi {
-  public readonly client;
+  public readonly client: RoarApiClient;
 
   constructor(private ctx: CommandContext) {
     this.client = initClient(ApiContractV1, {
@@ -135,10 +139,13 @@ Every future command follows the same shape: call the typed contract endpoint, i
 
 ### Compat — legacy Firekit bridge
 
-The compat layer exposes standalone functions (`startRun`, `writeTrial`, `finishRun`, `abortRun`) that match the legacy Firekit API. Internally, each function creates the appropriate command and runs it via the Invoker. Assessments import these directly — no invoker, no commands, no API client visible:
+The compat layer exposes standalone functions (`startRun`, `writeTrial`, `finishRun`, `abortRun`) that match the legacy Firekit API. Internally, each function creates the appropriate command and runs it via the Invoker. Assessments must call `initFirekitCompat` first, then use the standalone functions:
 
 ```typescript
-import { startRun, writeTrial, finishRun, abortRun } from '@roar-dashboard/assessment-sdk/compat/firekit';
+import { initFirekitCompat, startRun, writeTrial, finishRun, abortRun } from '@roar-dashboard/assessment-sdk/compat/firekit';
+
+// Initialize once — creates the RoarApi client and Invoker internally
+initFirekitCompat(ctx, { variantId: 'abc', version: '1.0' });
 
 await startRun({ sessionId: 'abc' });
 await writeTrial({ correct: 1, rt: 450, stimulus: 'cat' });
@@ -162,17 +169,18 @@ export function initFirekitCompat(
 
 The SDK never loads Firebase or any auth library. It receives `getToken()` and `refreshToken()` callbacks via `CommandContext`. The host application (dashboard or standalone assessment) is responsible for authentication:
 
-- **Dashboard mode:** The dashboard already has a signed-in Firebase user. It passes auth callbacks and the ROAR user `participantId` into the assessment, which passes them to the SDK.
+- **Dashboard mode:** The dashboard already has a signed-in Firebase user. It passes auth callbacks into the assessment, which passes them to the SDK.
 - **Standalone mode:** The assessment loads Firebase Auth itself, does an anonymous sign-in, resolves the ROAR user ID (e.g., via `GET /me`), and provides everything to the SDK.
 
 ```typescript
 export interface CommandContext {
-  environment: Environment;
-  participantId: string;
+  baseUrl: string;
   auth: {
     getToken(): Promise<string | undefined>;
     refreshToken?(): Promise<string | undefined>;
   };
+  requestId?: () => string;
+  fetchImpl?: typeof fetch;
   logger?: Logger;
 }
 ```
@@ -193,4 +201,4 @@ throw new SDKError(`Failed to start run with status ${result.status}`, {
 
 ### The principle
 
-The Receiver is a thin infrastructure layer — it knows how to talk to the API but not what to say. Commands are the domain layer — they know what to say but not how to send it. This separation means the Receiver never changes when new endpoints are added (commands just call `api.client.<resource>.<method>`), and commands never change when infrastructure concerns evolve (auth strategy, retry logic, tracing). The ts-rest client is the critical link: it ensures that request/response shapes match the contract at compile time, eliminating an entire class of runtime bugs.
+The Receiver is a thin infrastructure layer — it knows how to talk to the API but not what to say. Commands are the domain layer — they know what to say but not how to send it. This separation means the Receiver typically does not change when new endpoints are added (commands just call `api.client.<resource>.<method>`), and commands typically don't change when infrastructure concerns evolve (auth strategy, retry logic, tracing). The ts-rest typed client is what makes this work in practice: because both the Receiver and Commands operate against the same `ApiContractV1`, request/response shape mismatches become compile-time errors rather than runtime bugs. This compile-time validation is the critical safety net — it ensures that every SDK call stays in sync with the API contract without manual verification.
