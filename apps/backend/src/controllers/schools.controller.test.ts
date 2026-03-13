@@ -5,12 +5,12 @@ import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { OrgType } from '../enums/org-type.enum';
 
-// Mock the DistrictService module
-vi.mock('../services/district/district.service', () => ({
-  DistrictService: vi.fn(),
+// Mock the SchoolService module
+vi.mock('../services/school/school.service', () => ({
+  SchoolService: vi.fn(),
 }));
 
-import { DistrictService } from '../services/district/district.service';
+import { SchoolService } from '../services/school/school.service';
 
 /**
  * Type-safe assertion helper for success responses.
@@ -34,7 +34,7 @@ function expectErrorResponse(
   return (result.body as { error: unknown }).error;
 }
 
-describe('DistrictsController', () => {
+describe('SchoolsController', () => {
   const mockList = vi.fn();
   const mockGetById = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
@@ -43,7 +43,7 @@ describe('DistrictsController', () => {
     vi.clearAllMocks();
 
     // Setup the mock service
-    vi.mocked(DistrictService).mockReturnValue({
+    vi.mocked(SchoolService).mockReturnValue({
       list: mockList,
       getById: mockGetById,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,18 +51,18 @@ describe('DistrictsController', () => {
   });
 
   describe('list', () => {
-    it('should return paginated districts with 200 status', async () => {
-      const mockDistricts = [
-        OrgFactory.build({ orgType: OrgType.DISTRICT }),
-        OrgFactory.build({ orgType: OrgType.DISTRICT }),
+    it('should return paginated schools with 200 status', async () => {
+      const mockSchools = [
+        OrgFactory.build({ orgType: OrgType.SCHOOL }),
+        OrgFactory.build({ orgType: OrgType.SCHOOL }),
       ];
       mockList.mockResolvedValue({
-        items: mockDistricts,
+        items: mockSchools,
         totalItems: 2,
       });
 
       // Re-import to pick up the mock
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 1,
@@ -82,28 +82,28 @@ describe('DistrictsController', () => {
       });
     });
 
-    it('should transform district fields to API response format', async () => {
-      const mockDistrict = OrgFactory.build({
-        id: 'district-uuid-123',
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: OrgType.DISTRICT,
-        parentOrgId: null,
-        locationAddressLine1: '123 Main St',
+    it('should transform school fields to API response format', async () => {
+      const mockSchool = OrgFactory.build({
+        id: 'school-uuid-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: 'district-uuid-456',
+        locationAddressLine1: '456 School St',
         locationCity: 'Springfield',
         locationStateProvince: 'IL',
         locationPostalCode: '62701',
         locationCountry: 'USA',
         createdAt: new Date('2023-06-15T10:30:00Z'),
         updatedAt: new Date('2023-06-16T11:00:00Z'),
-        isRosteringRootOrg: true,
+        isRosteringRootOrg: false,
       });
       mockList.mockResolvedValue({
-        items: [mockDistrict],
+        items: [mockSchool],
         totalItems: 1,
       });
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 1,
@@ -114,44 +114,43 @@ describe('DistrictsController', () => {
       });
 
       const data = expectOkResponse(result);
-      const district = data.items[0];
+      const school = data.items[0];
 
-      expect(district).toMatchObject({
-        id: 'district-uuid-123',
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: OrgType.DISTRICT,
-        parentOrgId: null,
+      expect(school).toMatchObject({
+        id: 'school-uuid-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: 'district-uuid-456',
         location: {
-          addressLine1: '123 Main St',
+          addressLine1: '456 School St',
           city: 'Springfield',
           stateProvince: 'IL',
           postalCode: '62701',
           country: 'USA',
         },
-        isRosteringRootOrg: true,
+        isRosteringRootOrg: false,
       });
     });
 
     it('should include counts when embed=counts is requested', async () => {
-      const mockDistrict = OrgFactory.build({
-        orgType: OrgType.DISTRICT,
+      const mockSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
       });
-      const mockDistrictWithCounts = {
-        ...mockDistrict,
+      const mockSchoolWithCounts = {
+        ...mockSchool,
         counts: {
-          users: 150,
-          schools: 10,
-          classes: 45,
+          users: 50,
+          classes: 10,
         },
       };
 
       mockList.mockResolvedValue({
-        items: [mockDistrictWithCounts],
+        items: [mockSchoolWithCounts],
         totalItems: 1,
       });
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 1,
@@ -163,20 +162,19 @@ describe('DistrictsController', () => {
 
       const data = expectOkResponse(result);
       expect(data.items[0]!.counts).toEqual({
-        users: 150,
-        schools: 10,
-        classes: 45,
+        users: 50,
+        classes: 10,
       });
     });
 
     it('should calculate totalPages correctly', async () => {
-      const mockDistricts = OrgFactory.buildList(3, { orgType: OrgType.DISTRICT });
+      const mockSchools = OrgFactory.buildList(3, { orgType: OrgType.SCHOOL });
       mockList.mockResolvedValue({
-        items: mockDistricts,
+        items: mockSchools,
         totalItems: 53,
       });
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 2,
@@ -196,7 +194,7 @@ describe('DistrictsController', () => {
         totalItems: 0,
       });
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       await Controller.list(mockAuthContext, {
         page: 1,
@@ -222,7 +220,7 @@ describe('DistrictsController', () => {
       });
       mockList.mockRejectedValue(error);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 1,
@@ -243,7 +241,7 @@ describe('DistrictsController', () => {
       });
       mockList.mockRejectedValue(error);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 1,
@@ -261,7 +259,7 @@ describe('DistrictsController', () => {
       const error = new Error('Unexpected error');
       mockList.mockRejectedValue(error);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       await expect(
         Controller.list(mockAuthContext, {
@@ -275,8 +273,8 @@ describe('DistrictsController', () => {
     });
 
     it('should omit location when all location fields are null', async () => {
-      const mockDistrict = OrgFactory.build({
-        orgType: OrgType.DISTRICT,
+      const mockSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
         locationAddressLine1: null,
         locationAddressLine2: null,
         locationCity: null,
@@ -286,11 +284,11 @@ describe('DistrictsController', () => {
         locationLatLong: null,
       });
       mockList.mockResolvedValue({
-        items: [mockDistrict],
+        items: [mockSchool],
         totalItems: 1,
       });
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 1,
@@ -305,19 +303,19 @@ describe('DistrictsController', () => {
     });
 
     it('should omit identifiers when all identifier fields are null', async () => {
-      const mockDistrict = OrgFactory.build({
-        orgType: OrgType.DISTRICT,
+      const mockSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
         mdrNumber: null,
         ncesId: null,
         stateId: null,
         schoolNumber: null,
       });
       mockList.mockResolvedValue({
-        items: [mockDistrict],
+        items: [mockSchool],
         totalItems: 1,
       });
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
       const result = await Controller.list(mockAuthContext, {
         page: 1,
@@ -333,43 +331,44 @@ describe('DistrictsController', () => {
   });
 
   describe('getById', () => {
-    it('should return a district with 200 status', async () => {
-      const mockDistrict = {
-        id: 'district-123',
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: OrgType.DISTRICT,
-        parentOrgId: null,
-        isRosteringRootOrg: true,
+    it('should return a school with 200 status', async () => {
+      const mockSchool = {
+        id: 'school-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: 'district-456',
+        isRosteringRootOrg: false,
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-02'),
       };
 
-      mockGetById.mockResolvedValue(mockDistrict);
+      mockGetById.mockResolvedValue(mockSchool);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
-      const result = await Controller.getById(mockAuthContext, 'district-123');
+      const result = await Controller.getById(mockAuthContext, 'school-123');
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toHaveProperty('data');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((result.body as { data: any }).data).toMatchObject({
-        id: 'district-123',
-        name: 'Test District',
-        abbreviation: 'TD',
+        id: 'school-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        parentOrgId: 'district-456',
       });
-      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'district-123');
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'school-123');
     });
 
-    it('should transform district with location data', async () => {
-      const mockDistrict = {
-        id: 'district-123',
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: OrgType.DISTRICT,
-        parentOrgId: null,
-        isRosteringRootOrg: true,
+    it('should transform school with location data', async () => {
+      const mockSchool = {
+        id: 'school-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: 'district-456',
+        isRosteringRootOrg: false,
         locationAddressLine1: '123 Main St',
         locationCity: 'Test City',
         locationStateProvince: 'CA',
@@ -380,11 +379,11 @@ describe('DistrictsController', () => {
         updatedAt: new Date('2024-01-02'),
       };
 
-      mockGetById.mockResolvedValue(mockDistrict);
+      mockGetById.mockResolvedValue(mockSchool);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
-      const result = await Controller.getById(mockAuthContext, 'district-123');
+      const result = await Controller.getById(mockAuthContext, 'school-123');
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toHaveProperty('data');
@@ -402,14 +401,14 @@ describe('DistrictsController', () => {
       });
     });
 
-    it('should transform district with identifiers', async () => {
-      const mockDistrict = {
-        id: 'district-123',
-        name: 'Test District',
-        abbreviation: 'TD',
-        orgType: OrgType.DISTRICT,
-        parentOrgId: null,
-        isRosteringRootOrg: true,
+    it('should transform school with identifiers', async () => {
+      const mockSchool = {
+        id: 'school-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: 'district-456',
+        isRosteringRootOrg: false,
         mdrNumber: 'MDR123',
         ncesId: 'NCES456',
         stateId: 'STATE789',
@@ -418,11 +417,11 @@ describe('DistrictsController', () => {
         updatedAt: new Date('2024-01-02'),
       };
 
-      mockGetById.mockResolvedValue(mockDistrict);
+      mockGetById.mockResolvedValue(mockSchool);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
-      const result = await Controller.getById(mockAuthContext, 'district-123');
+      const result = await Controller.getById(mockAuthContext, 'school-123');
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toHaveProperty('data');
@@ -436,23 +435,23 @@ describe('DistrictsController', () => {
     });
 
     it('should handle rosteringEnded timestamp', async () => {
-      const mockDistrict = {
-        id: 'district-123',
-        name: 'Ended District',
-        abbreviation: 'ED',
-        orgType: OrgType.DISTRICT,
-        parentOrgId: null,
-        isRosteringRootOrg: true,
+      const mockSchool = {
+        id: 'school-123',
+        name: 'Ended School',
+        abbreviation: 'ES',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: 'district-456',
+        isRosteringRootOrg: false,
         rosteringEnded: new Date('2023-12-31'),
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-02'),
       };
 
-      mockGetById.mockResolvedValue(mockDistrict);
+      mockGetById.mockResolvedValue(mockSchool);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
-      const result = await Controller.getById(mockAuthContext, 'district-123');
+      const result = await Controller.getById(mockAuthContext, 'school-123');
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toHaveProperty('data');
@@ -462,17 +461,34 @@ describe('DistrictsController', () => {
 
     it('should handle ApiError with 404 Not Found', async () => {
       mockGetById.mockRejectedValue(
-        new ApiError('District not found', {
+        new ApiError('School not found', {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
         }),
       );
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
-      const result = await Controller.getById(mockAuthContext, 'district-999');
+      const result = await Controller.getById(mockAuthContext, 'school-999');
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toHaveProperty('error');
+      expect((result.body as { error: { message: string } }).error.message).toBeDefined();
+    });
+
+    it('should handle ApiError with 403 Forbidden', async () => {
+      mockGetById.mockRejectedValue(
+        new ApiError('Access denied', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'school-123');
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toHaveProperty('error');
       expect((result.body as { error: { message: string } }).error.message).toBeDefined();
     });
@@ -485,9 +501,9 @@ describe('DistrictsController', () => {
         }),
       );
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
-      const result = await Controller.getById(mockAuthContext, 'district-123');
+      const result = await Controller.getById(mockAuthContext, 'school-123');
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(result.body).toHaveProperty('error');
@@ -498,9 +514,32 @@ describe('DistrictsController', () => {
       const error = new Error('Unexpected error');
       mockGetById.mockRejectedValue(error);
 
-      const { DistrictsController: Controller } = await import('./districts.controller');
+      const { SchoolsController: Controller } = await import('./schools.controller');
 
-      await expect(Controller.getById(mockAuthContext, 'district-123')).rejects.toThrow('Unexpected error');
+      await expect(Controller.getById(mockAuthContext, 'school-123')).rejects.toThrow('Unexpected error');
+    });
+
+    it('should include parentOrgId in response', async () => {
+      const mockSchool = {
+        id: 'school-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: 'district-456',
+        isRosteringRootOrg: false,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-02'),
+      };
+
+      mockGetById.mockResolvedValue(mockSchool);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'school-123');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((result.body as { data: any }).data.parentOrgId).toBe('district-456');
     });
   });
 });

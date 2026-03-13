@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { DistrictRepository, type District, type DistrictWithCounts } from '../../repositories/district.repository';
+import { SchoolRepository, type School, type SchoolWithCounts } from '../../repositories/school.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
@@ -10,7 +10,7 @@ import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 
 /**
- * Options for listing districts
+ * Options for listing schools
  */
 export interface ListOptions {
   page: number;
@@ -22,40 +22,41 @@ export interface ListOptions {
 }
 
 /**
- * District with optional embeds
+ * School with optional embeds
  */
-export interface DistrictWithEmbeds extends DistrictWithCounts {
-  children?: District[];
+export interface SchoolWithEmbeds extends SchoolWithCounts {
+  children?: School[];
 }
 
 /**
- * District Service
+ * School Service
  *
- * Business logic layer for district operations.
+ * Business logic layer for school operations.
  * Handles authorization (super admin vs regular user) and delegates to repository.
  */
-export function DistrictService({
-  districtRepository,
+export function SchoolService({
+  schoolRepository,
 }: {
-  districtRepository?: DistrictRepository;
+  schoolRepository?: SchoolRepository;
 } = {}) {
   // Use injected repository or create default instance.
-  const repo = districtRepository ?? new DistrictRepository();
+  const repo = schoolRepository ?? new SchoolRepository();
+
   /**
-   * List districts accessible to a user with pagination and sorting.
+   * List schools accessible to a user with pagination and sorting.
    *
-   * super_admin users have unrestricted access to all districts.
-   * Other users only see districts they're assigned to via org/class/group membership.
+   * super_admin users have unrestricted access to all schools.
+   * Other users only see schools they're assigned to via org/class/group membership.
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param options - Query options including pagination and sorting
-   * @returns Paginated result with districts
+   * @returns Paginated result with schools
    * @throws {ApiError} If the database query fails
    */
-  async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<DistrictWithEmbeds>> {
+  async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<SchoolWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    let result: PaginatedResult<DistrictWithEmbeds>;
+    let result: PaginatedResult<SchoolWithEmbeds>;
 
     try {
       // Transform API contract format to repository format
@@ -70,7 +71,7 @@ export function DistrictService({
         embedCounts: options.embedCounts ?? false,
       };
 
-      // Fetch districts based on user role and authorization
+      // Fetch schools based on user role and authorization
       if (isSuperAdmin) {
         result = await repo.listAll(queryParams);
       } else {
@@ -82,9 +83,9 @@ export function DistrictService({
         throw error;
       }
 
-      logger.error({ err: error, context: { userId } }, 'Failed to list districts');
+      logger.error({ err: error, context: { userId } }, 'Failed to list schools');
 
-      throw new ApiError('Failed to retrieve districts', {
+      throw new ApiError('Failed to retrieve schools', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
@@ -96,42 +97,42 @@ export function DistrictService({
   }
 
   /**
-   * Get a single district by ID.
+   * Get a single school by ID.
    *
-   * super_admin users can access any district.
-   * Other users can only access districts they're assigned to.
+   * super_admin users can access any school.
+   * Other users can only access schools they're assigned to.
    *
    * @param authContext - User's auth context (id and super admin flag)
-   * @param districtId - UUID of the district to retrieve
-   * @returns The district if found and authorized
+   * @param schoolId - UUID of the school to retrieve
+   * @returns The school if found and authorized
    * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
    */
-  async function getById(authContext: AuthContext, districtId: string): Promise<District> {
+  async function getById(authContext: AuthContext, schoolId: string): Promise<School> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
       // 1. Look up unrestricted first — distinguishes 404 from 403
-      const district = await repo.getUnrestrictedById(districtId);
-      if (!district) {
+      const school = await repo.getUnrestrictedById(schoolId);
+      if (!school) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, districtId },
+          context: { userId, schoolId },
         });
       }
 
       // 2. Super admins bypass access checks
-      if (isSuperAdmin) return district;
+      if (isSuperAdmin) return school;
 
       // 3. Check access via org hierarchy joins
       const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-      const authorized = await repo.getAuthorizedById({ userId, allowedRoles }, districtId);
+      const authorized = await repo.getAuthorizedById({ userId, allowedRoles }, schoolId);
       if (!authorized) {
-        logger.warn({ userId, districtId }, 'User attempted to access district without permission');
+        logger.warn({ userId, schoolId }, 'User attempted to access school without permission');
         throw new ApiError(ApiErrorMessage.FORBIDDEN, {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, districtId },
+          context: { userId, schoolId },
         });
       }
 
@@ -141,12 +142,12 @@ export function DistrictService({
         throw error;
       }
 
-      logger.error({ err: error, context: { districtId, userId } }, 'Failed to retrieve district');
+      logger.error({ err: error, context: { schoolId, userId } }, 'Failed to retrieve school');
 
-      throw new ApiError('Failed to retrieve district', {
+      throw new ApiError('Failed to retrieve school', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { districtId, userId },
+        context: { schoolId, userId },
         cause: error,
       });
     }
@@ -158,4 +159,4 @@ export function DistrictService({
   };
 }
 
-export type IDistrictService = ReturnType<typeof DistrictService>;
+export type ISchoolService = ReturnType<typeof SchoolService>;
