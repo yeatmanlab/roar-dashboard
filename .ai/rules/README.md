@@ -4,13 +4,13 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 
 ## Rules Index
 
-### Architecture (CRITICAL)
+### Architecture
 
 | Rule | Impact | Description |
 |------|--------|-------------|
 | [architecture-authorization-model](architecture-authorization-model.md) | CRITICAL | ltree hierarchy, per-entity roles, supervisory/supervised distinction, two-layer authorization |
 
-### Backend (CRITICAL to MEDIUM)
+### Backend
 
 | Rule | Impact | Description |
 |------|--------|-------------|
@@ -25,13 +25,13 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | [backend-testing-unit-vs-integration](backend-testing-unit-vs-integration.md) | MEDIUM | Separate Vitest projects, vi.mock for controllers, DI for services |
 | [backend-testing-factory-usage](backend-testing-factory-usage.md) | MEDIUM | build() vs create(), baseFixture, Fishery factories |
 
-### SDK (HIGH)
+### SDK
 
 | Rule | Impact | Description |
 |------|--------|-------------|
 | [sdk-layer-architecture](sdk-layer-architecture.md) | HIGH | Receiver/Command/Compat pattern, ts-rest client usage, auth-agnostic design |
 
-### Frontend (HIGH to MEDIUM)
+### Frontend
 
 | Rule | Impact | Description |
 |------|--------|-------------|
@@ -39,7 +39,7 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | [frontend-state-management](frontend-state-management.md) | HIGH | Pinia for client state, TanStack Query for server state |
 | [frontend-composable-patterns](frontend-composable-patterns.md) | MEDIUM | Query, mutation, logic, and utility composables |
 
-### Quality (HIGH to MEDIUM)
+### Quality
 
 | Rule | Impact | Description |
 |------|--------|-------------|
@@ -49,25 +49,25 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | [quality-pr-creation](quality-pr-creation.md) | MEDIUM | Branch naming, commit messages, draft mode, PR description |
 | [quality-typescript-strictness](quality-typescript-strictness.md) | MEDIUM | as const, @ts-expect-error, avoid as any |
 
-### Testing (HIGH)
+### Testing
 
 | Rule | Impact | Description |
 |------|--------|-------------|
 | [testing-coverage-expectations](testing-coverage-expectations.md) | HIGH | Risk-tiered coverage targets, behavior-focused testing |
 
-### Performance (HIGH)
+### Performance
 
 | Rule | Impact | Description |
 |------|--------|-------------|
 | [performance-avoid-quadratic](performance-avoid-quadratic.md) | HIGH | Avoid O(n^2) in access control, embed resolution, and pagination |
 
-### CI/CD (HIGH)
+### CI/CD
 
 | Rule | Impact | Description |
 |------|--------|-------------|
 | [ci-check-failures](ci-check-failures.md) | HIGH | Focus on failures related to your changes, run checks locally first |
 
-### Culture (HIGH)
+### Culture
 
 | Rule | Impact | Description |
 |------|--------|-------------|

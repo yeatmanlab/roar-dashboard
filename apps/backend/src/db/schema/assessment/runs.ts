@@ -1,6 +1,7 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { timestamps } from '../common';
+import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../../constants/run';
 
 const db = p.pgSchema('app');
 
@@ -39,7 +40,7 @@ export const runs = db.table(
     engagementFlags: p.jsonb(),
     metadata: p.jsonb(),
 
-    isAnonymous: p.boolean().default(false),
+    isAnonymous: p.boolean().notNull().default(false),
 
     completedAt: p.timestamp({ withTimezone: true }),
     abortedAt: p.timestamp({ withTimezone: true }),
@@ -66,6 +67,12 @@ export const runs = db.table(
     // Constraints
     // - Ensure deletedBy is set when deletedAt is set
     p.check('runs_deleted_by_required', sql`${table.deletedAt} IS NULL OR ${table.deletedBy} IS NOT NULL`),
+
+    // - Ensure anonymous runs use the sentinel administration ID and vice versa
+    p.check(
+      'runs_anonymous_administration_id',
+      sql`(${table.isAnonymous} = true AND ${table.administrationId} = ${sql.raw(`'${ANONYMOUS_RUN_ADMINISTRATION_ID}'`)}::uuid) OR (${table.isAnonymous} = false AND ${table.administrationId} != ${sql.raw(`'${ANONYMOUS_RUN_ADMINISTRATION_ID}'`)}::uuid)`,
+    ),
   ],
 );
 

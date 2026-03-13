@@ -1,6 +1,6 @@
 ---
 title: Authorization Model
-description: How our authorization model works — per-entity roles, org hierarchy via ltree, and the supervisory/supervised distinction.
+description: Authorization uses per-entity roles, org hierarchy via ltree, and a supervisory/supervised distinction — not global role assignments.
 impact: CRITICAL
 scope: all
 tags: authorization, rbac, security, architecture, ltree, roles, oneroster

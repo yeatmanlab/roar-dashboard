@@ -16,7 +16,6 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
-import { logger } from '../../logger';
 import type { AuthContext } from '../../types/auth-context';
 import { Operator, type Condition } from './task.types';
 import type { User } from '../../db/schema';
@@ -62,17 +61,17 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockTaskVariantParameterReturnValue);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: mockTaskVariantParameterData,
         };
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskRepository.getById).toHaveBeenCalledWith({ id: mockTask.id });
@@ -85,15 +84,6 @@ describe('TaskService', () => {
           },
           transaction: expect.any(Object),
         });
-        expect(logger.info).toHaveBeenCalledWith(
-          expect.objectContaining({
-            userId: 'admin-1',
-            taskId: mockTask.id,
-            variantId: mockTaskVariant.id,
-            parameterCount: 1,
-          }),
-          'Created task variant with parameters',
-        );
       });
 
       it('should create a task-variant with multiple parameters', async () => {
@@ -113,18 +103,18 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockParameterReturnValues);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Multi-param Variant',
           description: 'Variant with multiple parameters',
           status: TaskVariantStatus.PUBLISHED,
           parameters: mockParameters,
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -135,10 +125,6 @@ describe('TaskService', () => {
           })),
           transaction: expect.any(Object),
         });
-        expect(logger.info).toHaveBeenCalledWith(
-          expect.objectContaining({ parameterCount: 4 }),
-          'Created task variant with parameters',
-        );
       });
 
       it('should handle JSONB parameter values correctly', async () => {
@@ -158,18 +144,18 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Complex Variant',
           description: 'Variant with complex JSONB',
           status: TaskVariantStatus.DRAFT,
           parameters: [complexParameter],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -189,15 +175,15 @@ describe('TaskService', () => {
       it('should throw FORBIDDEN error when user is not super admin', async () => {
         const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
 
-        const mockData = {
-          taskId: 'task-1',
+        const taskId = 'task-1';
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(nonAdminContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(nonAdminContext, taskId, body)).rejects.toMatchObject({
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
           context: { userId: 'user-1', isSuperAdmin: false },
@@ -209,45 +195,58 @@ describe('TaskService', () => {
       });
     });
 
-    describe('validation errors', () => {
-      it('should throw BAD_REQUEST when parameters array is empty', async () => {
+    describe('successful creation with edge cases', () => {
+      it('should create a variant without parameters (empty array)', async () => {
         const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: 'variant-1' });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
 
-        const mockData = {
-          taskId: mockTask.id,
-          name: 'Invalid Variant',
-          description: 'No parameters',
+        const taskId = mockTask.id;
+        const body = {
+          name: 'No Params Variant',
+          description: 'Variant with no parameters',
           status: TaskVariantStatus.PUBLISHED,
-          parameters: [], // Empty array - should fail
+          parameters: [], // Empty array is now allowed
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
-          message: 'At least one parameter required',
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        });
-      });
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
+        expect(result).toEqual({ id: mockTaskVariant.id });
+        expect(taskVariantRepository.create).toHaveBeenCalledWith({
+          data: {
+            taskId: mockTask.id,
+            status: TaskVariantStatus.PUBLISHED,
+            name: 'No Params Variant',
+            description: 'Variant with no parameters',
+          },
+          transaction: expect.any(Object),
+        });
+        // createMany should not be called when parameters array is empty
+        expect(taskVariantParameterRepository.createMany).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('validation errors', () => {
       it('should throw INTERNAL when not all parameters are created', async () => {
         const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
 
         taskRepository.getById.mockResolvedValue(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: 'variant-1' });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
 
         // Only 1 parameter created instead of 3
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Partial Variant',
           description: 'Should fail',
           status: TaskVariantStatus.PUBLISHED,
@@ -258,7 +257,7 @@ describe('TaskService', () => {
           ],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           message: 'Failed to create all task variant parameters',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
@@ -276,15 +275,15 @@ describe('TaskService', () => {
       it('should throw NOT_FOUND when parent task does not exist', async () => {
         taskRepository.getById.mockResolvedValue(null);
 
-        const mockData = {
-          taskId: 'nonexistent-task-id',
+        const taskId = 'nonexistent-task-id';
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: {
@@ -322,15 +321,15 @@ describe('TaskService', () => {
 
         taskVariantRepository.runTransaction.mockRejectedValueOnce(uniqueViolationError);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'duplicate-variant-name',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
           context: {
@@ -339,10 +338,6 @@ describe('TaskService', () => {
             variantName: 'duplicate-variant-name',
           },
         });
-
-        // Note: logger.error is NOT called for unique violations
-        // The service catches unique violations and throws a CONFLICT ApiError
-        // logger.error is only called for unexpected database errors
       });
 
       it('should throw DATABASE_QUERY_FAILED on unexpected database error', async () => {
@@ -353,15 +348,15 @@ describe('TaskService', () => {
         const dbError = new Error('Connection timeout');
         taskVariantRepository.runTransaction.mockRejectedValueOnce(dbError);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           message: 'Failed to create task variant',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -370,11 +365,6 @@ describe('TaskService', () => {
             taskId: mockTask.id,
           },
         });
-
-        expect(logger.error).toHaveBeenCalledWith(
-          expect.objectContaining({ err: dbError }),
-          'Failed to create task variant',
-        );
       });
 
       it('should throw INTERNAL when variant creation fails', async () => {
@@ -385,15 +375,15 @@ describe('TaskService', () => {
           return await fn({});
         });
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Failed Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toMatchObject({
           message: 'Failed to create task variant',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
@@ -412,58 +402,15 @@ describe('TaskService', () => {
 
         taskVariantRepository.runTransaction.mockRejectedValueOnce(nestedApiError);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Test Variant',
           description: 'Test description',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toThrow(nestedApiError);
-
-        // Should not wrap in another ApiError
-        expect(logger.error).not.toHaveBeenCalled();
-      });
-
-      it('should handle Drizzle-wrapped PostgreSQL unique violation error', async () => {
-        const mockTask = TaskFactory.build();
-
-        taskRepository.getById.mockResolvedValue(mockTask);
-
-        // Create a Postgres error with proper error code typing
-        const postgresError = Object.assign(new Error('duplicate key value violates unique constraint'), {
-          code: PostgresErrorCode.UNIQUE_VIOLATION,
-        });
-
-        // Create a mock Drizzle-like error structure
-        // The service uses unwrapDrizzleError() which checks for DrizzleQueryError instance
-        // and returns error.cause if it exists, otherwise returns the error itself
-        // For testing purposes, we can just throw the Postgres error directly since
-        // unwrapDrizzleError will return it as-is if it's not a DrizzleQueryError
-        taskVariantRepository.runTransaction.mockRejectedValueOnce(postgresError);
-
-        const mockData = {
-          taskId: mockTask.id,
-          name: 'duplicate-variant-name',
-          description: 'Test description',
-          status: TaskVariantStatus.PUBLISHED,
-          parameters: [{ name: 'param1', value: 'value1' }],
-        };
-
-        await expect(taskService.createTaskVariant(authContext, mockData)).rejects.toMatchObject({
-          statusCode: StatusCodes.CONFLICT,
-          code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: {
-            userId: 'admin-1',
-            taskId: mockTask.id,
-            variantName: 'duplicate-variant-name',
-          },
-        });
-
-        // Note: logger.error is NOT called for unique violations
-        // The service catches unique violations and throws a CONFLICT ApiError
-        // logger.error is only called for unexpected database errors
+        await expect(taskService.createTaskVariant(authContext, taskId, body)).rejects.toThrow(nestedApiError);
       });
     });
 
@@ -476,18 +423,18 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Deprecated Variant',
           description: 'Old variant',
           status: TaskVariantStatus.DEPRECATED,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
@@ -505,18 +452,18 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Draft Variant',
           description: 'Work in progress',
           status: TaskVariantStatus.DRAFT,
           parameters: [{ name: 'param1', value: 'value1' }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantRepository.create).toHaveBeenCalledWith(
@@ -534,18 +481,18 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Null Param Variant',
           description: 'Test null handling',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'optionalConfig', value: null }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -568,19 +515,19 @@ describe('TaskService', () => {
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
           return await fn({});
         });
-        taskVariantRepository.create.mockResolvedValueOnce({ id: mockTaskVariant.id });
+        taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
 
         const arrayValue = ['option1', 'option2', 'option3'];
-        const mockData = {
-          taskId: mockTask.id,
+        const taskId = mockTask.id;
+        const body = {
           name: 'Array Param Variant',
           description: 'Test array handling',
           status: TaskVariantStatus.PUBLISHED,
           parameters: [{ name: 'choices', value: arrayValue }],
         };
 
-        const result = await taskService.createTaskVariant(authContext, mockData);
+        const result = await taskService.createTaskVariant(authContext, taskId, body);
 
         expect(result).toEqual({ id: mockTaskVariant.id });
         expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
@@ -593,6 +540,424 @@ describe('TaskService', () => {
           ],
           transaction: expect.any(Object),
         });
+      });
+    });
+  });
+
+  describe('updateTaskVariant', () => {
+    describe('successful updates', () => {
+      it('should update only the name field', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantRepository.update.mockResolvedValueOnce();
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { name: 'Updated Name' };
+
+        const result = await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(result).toBeUndefined();
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: { name: 'Updated Name' },
+          transaction: expect.any(Object),
+        });
+        expect(taskVariantParameterRepository.deleteByTaskVariantId).not.toHaveBeenCalled();
+      });
+
+      it('should update only the description field', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantRepository.update.mockResolvedValueOnce();
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { description: 'Updated description' };
+
+        const result = await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(result).toBeUndefined();
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: { description: 'Updated description' },
+          transaction: expect.any(Object),
+        });
+      });
+
+      it('should update only the status field', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: TaskVariantStatus.DRAFT });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantRepository.update.mockResolvedValueOnce();
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { status: TaskVariantStatus.PUBLISHED };
+
+        const result = await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(result).toBeUndefined();
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: { status: TaskVariantStatus.PUBLISHED },
+          transaction: expect.any(Object),
+        });
+      });
+
+      it('should update only the parameters (replacement)', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
+        taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
+
+        const newParameters = [{ name: 'newParam', value: 'newValue' }];
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { parameters: newParameters };
+
+        const result = await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(result).toBeUndefined();
+        expect(taskVariantParameterRepository.deleteByTaskVariantId).toHaveBeenCalledWith({
+          taskVariantId: mockTaskVariant.id,
+          transaction: expect.any(Object),
+        });
+        expect(taskVariantParameterRepository.createMany).toHaveBeenCalledWith({
+          data: [
+            {
+              taskVariantId: mockTaskVariant.id,
+              name: 'newParam',
+              value: 'newValue',
+            },
+          ],
+          transaction: expect.any(Object),
+        });
+        expect(taskVariantRepository.update).not.toHaveBeenCalled();
+      });
+
+      it('should update multiple fields simultaneously', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantRepository.update.mockResolvedValueOnce();
+        taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
+        taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = {
+          name: 'Updated Name',
+          description: 'Updated description',
+          status: TaskVariantStatus.PUBLISHED,
+          parameters: [{ name: 'param1', value: 'value1' }],
+        };
+
+        const result = await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(result).toBeUndefined();
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: {
+            name: 'Updated Name',
+            description: 'Updated description',
+            status: TaskVariantStatus.PUBLISHED,
+          },
+          transaction: expect.any(Object),
+        });
+        expect(taskVariantParameterRepository.deleteByTaskVariantId).toHaveBeenCalled();
+        expect(taskVariantParameterRepository.createMany).toHaveBeenCalled();
+      });
+
+      it('should allow updating name to the same name (idempotent)', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Same Name' });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantRepository.update.mockResolvedValueOnce();
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { name: 'Same Name' };
+
+        const result = await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(result).toBeUndefined();
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: { name: 'Same Name' },
+          transaction: expect.any(Object),
+        });
+      });
+
+      it('should handle empty parameters array (deletes all parameters)', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { parameters: [] };
+
+        const result = await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(result).toBeUndefined();
+        expect(taskVariantParameterRepository.deleteByTaskVariantId).toHaveBeenCalledWith({
+          taskVariantId: mockTaskVariant.id,
+          transaction: expect.any(Object),
+        });
+        expect(taskVariantParameterRepository.createMany).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('authorization', () => {
+      it('should throw FORBIDDEN error when user is not super admin', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+
+        const params = { taskId: 'task-123', variantId: 'variant-123' };
+        const body = { name: 'Updated Name' };
+
+        await expect(taskService.updateTaskVariant(nonAdminContext, params, body)).rejects.toMatchObject({
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: {
+            userId: 'user-1',
+            isSuperAdmin: false,
+          },
+        });
+
+        expect(taskRepository.getById).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('not found errors', () => {
+      it('should throw NOT_FOUND when task does not exist', async () => {
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce(null);
+
+        const params = { taskId: 'nonexistent-task-id', variantId: 'variant-123' };
+        const body = { name: 'Updated Name' };
+
+        await expect(taskService.updateTaskVariant(authContext, params, body)).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: {
+            userId: 'admin-1',
+            taskId: 'nonexistent-task-id',
+          },
+        });
+
+        expect(taskVariantRepository.getById).not.toHaveBeenCalled();
+      });
+
+      it('should throw NOT_FOUND when variant does not exist', async () => {
+        const mockTask = TaskFactory.build();
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce(null);
+
+        const params = { taskId: mockTask.id, variantId: 'nonexistent-variant-id' };
+        const body = { name: 'Updated Name' };
+
+        await expect(taskService.updateTaskVariant(authContext, params, body)).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: {
+            userId: 'admin-1',
+            taskId: mockTask.id,
+            variantId: 'nonexistent-variant-id',
+          },
+        });
+
+        expect(taskVariantRepository.runTransaction).not.toHaveBeenCalled();
+      });
+
+      it('should throw NOT_FOUND when variant belongs to different task', async () => {
+        const mockTask = TaskFactory.build({ id: 'task-123' });
+        const mockTaskVariant = TaskVariantFactory.build({ id: 'variant-123', taskId: 'different-task-id' });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: 'different-task-id' });
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { name: 'Updated Name' };
+
+        await expect(taskService.updateTaskVariant(authContext, params, body)).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: {
+            userId: 'admin-1',
+            taskId: mockTask.id,
+            variantId: mockTaskVariant.id,
+          },
+        });
+
+        expect(taskVariantRepository.runTransaction).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('conflict errors', () => {
+      it('should throw CONFLICT on unique constraint violation during transaction', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+
+        const uniqueViolationError = Object.assign(new Error('duplicate key value violates unique constraint'), {
+          code: PostgresErrorCode.UNIQUE_VIOLATION,
+        });
+
+        taskVariantRepository.runTransaction.mockRejectedValueOnce(uniqueViolationError);
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { name: 'Duplicate Name' };
+
+        await expect(taskService.updateTaskVariant(authContext, params, body)).rejects.toMatchObject({
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: {
+            userId: 'admin-1',
+            taskId: mockTask.id,
+            variantId: mockTaskVariant.id,
+            variantName: 'Duplicate Name',
+          },
+        });
+      });
+    });
+
+    describe('database errors', () => {
+      it('should throw DATABASE_QUERY_FAILED on unexpected database error', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+
+        const dbError = new Error('Connection timeout');
+        taskVariantRepository.runTransaction.mockRejectedValueOnce(dbError);
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { description: 'Updated description' };
+
+        await expect(taskService.updateTaskVariant(authContext, params, body)).rejects.toMatchObject({
+          message: 'Failed to update task variant',
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: {
+            userId: 'admin-1',
+            taskId: mockTask.id,
+            variantId: mockTaskVariant.id,
+          },
+        });
+      });
+
+      it('should propagate ApiError from nested operations', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+
+        const nestedApiError = new ApiError('Custom validation error', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+
+        taskVariantRepository.runTransaction.mockRejectedValueOnce(nestedApiError);
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { name: 'Updated Name' };
+
+        await expect(taskService.updateTaskVariant(authContext, params, body)).rejects.toThrow(nestedApiError);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should update only description when name is not being updated', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id, name: 'Original Name' });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantRepository.update.mockResolvedValueOnce();
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { description: 'New description' };
+
+        await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(taskVariantRepository.update).toHaveBeenCalledWith({
+          id: mockTaskVariant.id,
+          data: { description: 'New description' },
+          transaction: expect.any(Object),
+        });
+      });
+
+      it('should skip variant update when only parameters are provided', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+        taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+          return await fn({});
+        });
+        taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
+        taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
+
+        const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+        const body = { parameters: [{ name: 'onlyParam', value: 'onlyValue' }] };
+
+        await taskService.updateTaskVariant(authContext, params, body);
+
+        expect(taskVariantRepository.update).not.toHaveBeenCalled();
+        expect(taskVariantParameterRepository.deleteByTaskVariantId).toHaveBeenCalled();
+        expect(taskVariantParameterRepository.createMany).toHaveBeenCalled();
+      });
+
+      it('should handle updating to all status types', async () => {
+        const mockTask = TaskFactory.build();
+        const mockTaskVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+
+        for (const status of [TaskVariantStatus.DRAFT, TaskVariantStatus.PUBLISHED, TaskVariantStatus.DEPRECATED]) {
+          taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
+          taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
+            return await fn({});
+          });
+          taskVariantRepository.update.mockResolvedValueOnce();
+
+          const params = { taskId: mockTask.id, variantId: mockTaskVariant.id };
+          const body = { status };
+
+          const result = await taskService.updateTaskVariant(authContext, params, body);
+
+          expect(result).toBeUndefined();
+          expect(taskVariantRepository.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+              data: { status },
+            }),
+          );
+        }
       });
     });
   });

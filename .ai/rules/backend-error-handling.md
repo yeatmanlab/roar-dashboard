@@ -8,6 +8,9 @@ tags: errors, architecture, layers
 
 ## Backend error handling
 
+> [!TIP]
+> See `backend-error-message-security.md` for rules on what goes in error messages vs. what stays in logs.
+
 Each layer has a specific role in error handling. Services own the try/catch and error wrapping. Controllers translate `ApiError` into typed ts-rest responses. The global error handler is the safety net for anything that slips through.
 
 ### Service layer
