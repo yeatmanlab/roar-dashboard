@@ -1603,4 +1603,84 @@ describe('TaskService', () => {
       });
     });
   });
+
+  describe('getById', () => {
+    const validTaskId = '123e4567-e89b-12d3-a456-426614174000';
+
+    describe('successful retrieval', () => {
+      it('should return task when found by valid UUID', async () => {
+        const mockTask = TaskFactory.build({ id: validTaskId });
+        taskRepository.getById.mockResolvedValue(mockTask);
+
+        const result = await taskService.getById(authContext, validTaskId);
+
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: validTaskId });
+      });
+
+      it('should allow non-super-admin users to get task by ID', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+        const mockTask = TaskFactory.build({ id: validTaskId });
+        taskRepository.getById.mockResolvedValue(mockTask);
+
+        const result = await taskService.getById(nonAdminContext, validTaskId);
+
+        // Tasks are global resources - all authenticated users can view them
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: validTaskId });
+      });
+    });
+
+    describe('not found', () => {
+      it('should throw NOT_FOUND when task does not exist', async () => {
+        taskRepository.getById.mockResolvedValue(null);
+
+        await expect(taskService.getById(authContext, validTaskId)).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: 'admin-1', taskId: validTaskId },
+        });
+      });
+
+      it('should throw NOT_FOUND when taskId is not a valid UUID', async () => {
+        const invalidTaskId = 'not-a-valid-uuid';
+
+        await expect(taskService.getById(authContext, invalidTaskId)).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: 'admin-1', taskId: invalidTaskId },
+        });
+
+        // Should not attempt to query the database with an invalid UUID
+        expect(taskRepository.getById).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap database errors in ApiError', async () => {
+        const dbError = new Error('Connection timeout');
+        taskRepository.getById.mockRejectedValue(dbError);
+
+        await expect(taskService.getById(authContext, validTaskId)).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: 'admin-1', taskId: validTaskId },
+          cause: dbError,
+        });
+      });
+
+      it('should propagate existing ApiErrors', async () => {
+        const apiError = new ApiError('Custom error', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+        taskRepository.getById.mockRejectedValue(apiError);
+
+        await expect(taskService.getById(authContext, validTaskId)).rejects.toThrow(apiError);
+      });
+    });
+  });
 });

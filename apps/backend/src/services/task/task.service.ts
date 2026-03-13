@@ -12,6 +12,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import { isValidUuid } from '../../utils/is-valid-uuid.util';
 import { Operator, type Condition, type FieldCondition, type CompositeCondition } from './task.types';
 
 /**
@@ -651,8 +652,56 @@ export function TaskService({
     }
   }
 
+  /**
+   * Get a task by ID.
+   *
+   * Searches by task ID (UUID).
+   *
+   * Tasks are global resources (not tied to org hierarchy), so all authenticated
+   * users can view any task. No authorization filtering is applied.
+   *
+   * @param authContext - User's authentication context (used for logging)
+   * @param taskId - The task ID (UUID) to search for
+   * @returns The task with the given ID
+   * @throws {ApiError} NOT_FOUND if no task exists with the given ID
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function getById(authContext: AuthContext, taskId: string): Promise<Task> {
+    const { userId } = authContext;
+
+    try {
+      let task: Task | null = null;
+      // If it's a valid UUID, try to find by ID
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
+      }
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+
+      return task;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to get task by ID');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
+    getById,
     createTaskVariant,
     updateTaskVariant,
     evaluateTaskVariantEligibility,

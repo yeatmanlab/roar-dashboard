@@ -8,6 +8,14 @@ import {
   createPaginatedResponseSchema,
 } from '../common/query';
 
+/**
+ * Schema for task ID path parameter.
+ * Validates the ID format matches database constraints.
+ */
+export const TaskIdParamSchema = z.object({
+  taskId: z.string().uuid({ message: 'Task ID must be a valid UUID' }),
+});
+
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
 
 /**
@@ -204,3 +212,5 @@ export type TasksListQuery = z.infer<typeof TasksListQuerySchema>;
 export const TasksListResponseSchema = createPaginatedResponseSchema(TaskSchema);
 
 export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
+
+export type TaskIdParam = z.infer<typeof TaskIdParamSchema>;

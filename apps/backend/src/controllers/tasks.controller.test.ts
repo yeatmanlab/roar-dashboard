@@ -16,6 +16,7 @@ import { TaskService } from '../services/task/task.service';
 describe('TasksController', () => {
   const mockAuthContext: AuthContext = { userId: 'admin-1', isSuperAdmin: true };
   const mockList = vi.fn();
+  const mockGetById = vi.fn();
   const mockCreateTaskVariant = vi.fn();
   const mockUpdateTaskVariant = vi.fn();
 
@@ -25,6 +26,7 @@ describe('TasksController', () => {
     // Setup the mock service
     vi.mocked(TaskService).mockReturnValue({
       list: mockList,
+      getById: mockGetById,
       createTaskVariant: mockCreateTaskVariant,
       updateTaskVariant: mockUpdateTaskVariant,
       evaluateTaskVariantEligibility: vi.fn(),
@@ -212,6 +214,109 @@ describe('TasksController', () => {
       expect(result.status).toBe(StatusCodes.OK);
       if (result.status === StatusCodes.OK) {
         expect(result.body.data.items[0]!.taskConfig).toEqual({ difficulty: 'easy' });
+      }
+    });
+  });
+
+  describe('get', () => {
+    const mockTask = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      slug: 'swr',
+      name: 'Single Word Reading',
+      nameSimple: 'SWR',
+      nameTechnical: 'Single Word Reading Technical',
+      description: 'A reading assessment',
+      image: null,
+      tutorialVideo: null,
+      taskConfig: { difficulty: 'easy' },
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+      updatedAt: new Date('2024-01-02T00:00:00Z'),
+    };
+
+    it('should return 200 with task on success', async () => {
+      mockGetById.mockResolvedValue(mockTask);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        expect(result.body.data.id).toBe('123e4567-e89b-12d3-a456-426614174000');
+        expect(result.body.data.slug).toBe('swr');
+        expect(result.body.data.name).toBe('Single Word Reading');
+        expect(result.body.data.createdAt).toBe('2024-01-01T00:00:00.000Z');
+        expect(result.body.data.updatedAt).toBe('2024-01-02T00:00:00.000Z');
+      }
+
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+    });
+
+    it('should return 200 with null updatedAt when task has no updatedAt', async () => {
+      const taskWithNullUpdatedAt = { ...mockTask, updatedAt: null };
+      mockGetById.mockResolvedValue(taskWithNullUpdatedAt);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        expect(result.body.data.updatedAt).toBeNull();
+      }
+    });
+
+    it('should return 404 when service throws NOT_FOUND error', async () => {
+      const notFoundError = new ApiError('Task not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      mockGetById.mockRejectedValue(notFoundError);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      if (result.status === StatusCodes.NOT_FOUND) {
+        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      }
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const internalError = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      mockGetById.mockRejectedValue(internalError);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
+        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      }
+    });
+
+    it('should re-throw non-ApiError errors', async () => {
+      const unexpectedError = new Error('Unexpected error');
+      mockGetById.mockRejectedValue(unexpectedError);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await expect(Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000')).rejects.toThrow(
+        unexpectedError,
+      );
+    });
+
+    it('should transform taskConfig correctly', async () => {
+      mockGetById.mockResolvedValue(mockTask);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        expect(result.body.data.taskConfig).toEqual({ difficulty: 'easy' });
       }
     });
   });
