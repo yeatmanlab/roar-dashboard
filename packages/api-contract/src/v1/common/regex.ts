@@ -30,9 +30,7 @@ export const IDENTIFIER_WITH_HYPHENS = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 export const IDENTIFIER_WITH_UNDERSCORES = /^[a-zA-Z][a-zA-Z0-9_]*$/;
 
 /**
- * Matches valid task slug format:
- * - Lowercase alphanumeric segments separated by hyphens
- * - Must start and end with alphanumeric character
- * - Examples: "swr", "letter-task", "phoneme-2-0"
+ * UUID v4 regex pattern.
+ * Matches standard UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
  */
-export const TASK_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

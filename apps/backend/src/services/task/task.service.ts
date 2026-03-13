@@ -662,28 +662,26 @@ export function TaskService({
    * users can view any task. No authorization filtering is applied.
    *
    * @param authContext - User's authentication context (used for logging)
-   * @param taskIdentifier - The task slug or UUID to search for
-   * @returns The task with the given slug or ID
-   * @throws {ApiError} NOT_FOUND if no task exists with the given slug or ID
+   * @param taskId - The task ID (UUID) to search for
+   * @returns The task with the given ID
+   * @throws {ApiError} NOT_FOUND if no task exists with the given ID
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
-  async function getBySlugOrId(authContext: AuthContext, taskIdentifier: string): Promise<Task> {
+  async function getById(authContext: AuthContext, taskId: string): Promise<Task> {
     const { userId } = authContext;
 
     try {
-      // First, try to find by slug
-      let task = await taskRepository.getBySlug(taskIdentifier);
-
-      // If not found by slug, try to find by ID (only if it's a valid UUID)
-      if (!task && isValidUuid(taskIdentifier)) {
-        task = await taskRepository.getById({ id: taskIdentifier });
+      let task: Task | null = null;
+      // If it's a valid UUID, try to find by ID
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
       }
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, taskIdentifier },
+          context: { userId, taskId },
         });
       }
 
@@ -691,12 +689,12 @@ export function TaskService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId, taskIdentifier } }, 'Failed to get task by slug or ID');
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to get task by ID');
 
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, taskIdentifier },
+        context: { userId, taskId },
         cause: error,
       });
     }
@@ -704,7 +702,7 @@ export function TaskService({
 
   return {
     list,
-    getBySlugOrId,
+    getById,
     createTaskVariant,
     updateTaskVariant,
     evaluateTaskVariantEligibility,

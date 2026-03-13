@@ -8,7 +8,7 @@ import {
   UpdateTaskVariantResponseSchema,
   TasksListQuerySchema,
   TasksListResponseSchema,
-  TaskSlugParamSchema,
+  TaskIdParamSchema,
   TaskSchema,
 } from './schema';
 
@@ -43,7 +43,7 @@ export const TasksContract = c.router(
     get: {
       method: 'GET',
       path: '/:taskId',
-      pathParams: TaskSlugParamSchema,
+      pathParams: TaskIdParamSchema,
       responses: {
         200: SuccessEnvelopeSchema(TaskSchema),
         400: ErrorEnvelopeSchema,
@@ -52,13 +52,13 @@ export const TasksContract = c.router(
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
-      summary: 'Get a task by slug',
+      summary: 'Get a task by ID',
       description:
-        'Returns a single task by its slug identifier. ' +
-        'The taskId path parameter must be a valid task slug (lowercase alphanumeric with optional hyphens). ' +
+        'Returns a single task by its UUID. ' +
+        'The taskId path parameter must be a valid UUID. ' +
         'Returns 200 with the task on success. ' +
-        'Returns 400 if the slug format is invalid. ' +
-        'Returns 404 if no task exists with the given slug. ' +
+        'Returns 400 if the ID is invalid. ' +
+        'Returns 404 if no task exists with the given ID. ' +
         'Returns 500 if a server error occurs.',
     },
     createTaskVariant: {
