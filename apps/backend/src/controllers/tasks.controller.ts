@@ -88,13 +88,13 @@ export const TasksController = {
   },
 
   /**
-   * Get a single task by its slug.
+   * Get a single task by its ID.
    *
    * Delegates to TaskService for business logic.
    *
    * @param authContext - User's authentication context
-   * @param slug - The unique slug identifier for the task
-   * @returns The task with the given slug
+   * @param taskId - The unique ID identifier for the task
+   * @returns The task with the given ID
    */
   get: async (authContext: AuthContext, taskId: string) => {
     try {

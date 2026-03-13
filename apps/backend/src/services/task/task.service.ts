@@ -653,10 +653,9 @@ export function TaskService({
   }
 
   /**
-   * Get a task by its slug or ID.
+   * Get a task by ID.
    *
-   * Searches by slug first, then falls back to searching by task ID (UUID) if no
-   * slug match is found. This allows the endpoint to accept either identifier.
+   * Searches by task ID (UUID).
    *
    * Tasks are global resources (not tied to org hierarchy), so all authenticated
    * users can view any task. No authorization filtering is applied.
