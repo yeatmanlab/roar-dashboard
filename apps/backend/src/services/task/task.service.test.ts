@@ -1642,6 +1642,20 @@ describe('TaskService', () => {
           context: { userId: 'admin-1', taskId: validTaskId },
         });
       });
+
+      it('should throw NOT_FOUND when taskId is not a valid UUID', async () => {
+        const invalidTaskId = 'not-a-valid-uuid';
+
+        await expect(taskService.getById(authContext, invalidTaskId)).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: 'admin-1', taskId: invalidTaskId },
+        });
+
+        // Should not attempt to query the database with an invalid UUID
+        expect(taskRepository.getById).not.toHaveBeenCalled();
+      });
     });
 
     describe('error handling', () => {
