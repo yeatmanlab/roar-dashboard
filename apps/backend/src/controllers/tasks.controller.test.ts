@@ -16,7 +16,7 @@ import { TaskService } from '../services/task/task.service';
 describe('TasksController', () => {
   const mockAuthContext: AuthContext = { userId: 'admin-1', isSuperAdmin: true };
   const mockList = vi.fn();
-  const mockGetBySlugOrId = vi.fn();
+  const mockGetById = vi.fn();
   const mockCreateTaskVariant = vi.fn();
   const mockUpdateTaskVariant = vi.fn();
 
@@ -26,7 +26,7 @@ describe('TasksController', () => {
     // Setup the mock service
     vi.mocked(TaskService).mockReturnValue({
       list: mockList,
-      getBySlugOrId: mockGetBySlugOrId,
+      getById: mockGetById,
       createTaskVariant: mockCreateTaskVariant,
       updateTaskVariant: mockUpdateTaskVariant,
       evaluateTaskVariantEligibility: vi.fn(),
@@ -220,7 +220,7 @@ describe('TasksController', () => {
 
   describe('get', () => {
     const mockTask = {
-      id: 'task-1',
+      id: '123e4567-e89b-12d3-a456-426614174000',
       slug: 'swr',
       name: 'Single Word Reading',
       nameSimple: 'SWR',
@@ -234,29 +234,29 @@ describe('TasksController', () => {
     };
 
     it('should return 200 with task on success', async () => {
-      mockGetBySlugOrId.mockResolvedValue(mockTask);
+      mockGetById.mockResolvedValue(mockTask);
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.get(mockAuthContext, 'swr');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.OK);
       if (result.status === StatusCodes.OK) {
-        expect(result.body.data.id).toBe('task-1');
+        expect(result.body.data.id).toBe('123e4567-e89b-12d3-a456-426614174000');
         expect(result.body.data.slug).toBe('swr');
         expect(result.body.data.name).toBe('Single Word Reading');
         expect(result.body.data.createdAt).toBe('2024-01-01T00:00:00.000Z');
         expect(result.body.data.updatedAt).toBe('2024-01-02T00:00:00.000Z');
       }
 
-      expect(mockGetBySlugOrId).toHaveBeenCalledWith(mockAuthContext, 'swr');
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
     });
 
     it('should return 200 with null updatedAt when task has no updatedAt', async () => {
       const taskWithNullUpdatedAt = { ...mockTask, updatedAt: null };
-      mockGetBySlugOrId.mockResolvedValue(taskWithNullUpdatedAt);
+      mockGetById.mockResolvedValue(taskWithNullUpdatedAt);
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.get(mockAuthContext, 'swr');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.OK);
       if (result.status === StatusCodes.OK) {
@@ -270,10 +270,10 @@ describe('TasksController', () => {
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
 
-      mockGetBySlugOrId.mockRejectedValue(notFoundError);
+      mockGetById.mockRejectedValue(notFoundError);
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.get(mockAuthContext, 'nonexistent');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
       if (result.status === StatusCodes.NOT_FOUND) {
@@ -287,10 +287,10 @@ describe('TasksController', () => {
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
 
-      mockGetBySlugOrId.mockRejectedValue(internalError);
+      mockGetById.mockRejectedValue(internalError);
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.get(mockAuthContext, 'swr');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
@@ -300,17 +300,19 @@ describe('TasksController', () => {
 
     it('should re-throw non-ApiError errors', async () => {
       const unexpectedError = new Error('Unexpected error');
-      mockGetBySlugOrId.mockRejectedValue(unexpectedError);
+      mockGetById.mockRejectedValue(unexpectedError);
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      await expect(Controller.get(mockAuthContext, 'swr')).rejects.toThrow(unexpectedError);
+      await expect(Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000')).rejects.toThrow(
+        unexpectedError,
+      );
     });
 
     it('should transform taskConfig correctly', async () => {
-      mockGetBySlugOrId.mockResolvedValue(mockTask);
+      mockGetById.mockResolvedValue(mockTask);
 
       const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.get(mockAuthContext, 'swr');
+      const result = await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
 
       expect(result.status).toBe(StatusCodes.OK);
       if (result.status === StatusCodes.OK) {

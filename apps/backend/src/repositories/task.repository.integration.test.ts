@@ -1,7 +1,7 @@
 /**
  * Integration tests for TaskRepository.
  *
- * Tests custom methods (getBySlug, listAll) against the real database
+ * Tests custom methods (getById, listAll) against the real database
  * with the base fixture's task and any additional tasks created during tests.
  *
  * Base CRUD operations are covered by BaseRepository tests.
@@ -18,45 +18,35 @@ describe('TaskRepository', () => {
     repository = new TaskRepository();
   });
 
-  describe('getBySlug', () => {
-    it('returns task from base fixture when slug exists', async () => {
-      const result = await repository.getBySlug(baseFixture.task.slug);
+  describe('getById', () => {
+    it('returns task from base fixture when ID exists', async () => {
+      const result = await repository.getById({ id: baseFixture.task.id });
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe(baseFixture.task.id);
       expect(result!.name).toBe(baseFixture.task.name);
+      expect(result!.slug).toBe(baseFixture.task.slug);
     });
 
-    it('returns null when slug does not exist', async () => {
-      const result = await repository.getBySlug('nonexistent-slug-12345');
+    it('returns null when ID does not exist', async () => {
+      const nonExistentId = '00000000-0000-0000-0000-000000000000';
+      const result = await repository.getById({ id: nonExistentId });
 
       expect(result).toBeNull();
     });
 
     it('returns correct task when multiple tasks exist', async () => {
-      const task1 = await TaskFactory.create({ slug: 'task-alpha' });
-      const task2 = await TaskFactory.create({ slug: 'task-beta' });
-      const task3 = await TaskFactory.create({ slug: 'task-gamma' });
+      const task1 = await TaskFactory.create({ slug: 'task-alpha-id' });
+      const task2 = await TaskFactory.create({ slug: 'task-beta-id' });
+      const task3 = await TaskFactory.create({ slug: 'task-gamma-id' });
 
-      const result = await repository.getBySlug('task-beta');
+      const result = await repository.getById({ id: task2.id });
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe(task2.id);
-      expect(result!.slug).toBe('task-beta');
+      expect(result!.slug).toBe('task-beta-id');
       expect(result!.id).not.toBe(task1.id);
       expect(result!.id).not.toBe(task3.id);
-    });
-
-    it('is case-sensitive for slug matching', async () => {
-      const task = await TaskFactory.create({ slug: 'lowercase-slug' });
-
-      const result = await repository.getBySlug('LOWERCASE-SLUG');
-
-      expect(result).toBeNull();
-
-      // Verify the lowercase version works
-      const correctResult = await repository.getBySlug(task.slug);
-      expect(correctResult).not.toBeNull();
     });
   });
 
