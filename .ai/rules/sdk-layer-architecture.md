@@ -12,7 +12,7 @@ tags:
 
 ## Assessment SDK layer architecture
 
-The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three core layers — Receiver, Command, and Compat — plus an Invoker that provides cross-cutting execution infrastructure (logging, retry, idempotency). Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
+The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) Command pattern with three core layers — Receiver, Command, and Compat — plus an Invoker that provides cross-cutting execution infrastructure (logging, retry for idempotent commands). Each layer has a strict responsibility boundary. The SDK is auth-provider-agnostic — it receives authentication callbacks, never loads Firebase or any auth library itself.
 
 ### The 3 layers + Invoker
 
@@ -21,7 +21,7 @@ The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) C
 | 1 | Receiver | `src/receiver/roar-api.ts` | Expose a typed ts-rest client with cross-cutting concerns (auth headers, tracing). **No endpoint-specific methods.** |
 | 2 | Command | `src/commands/<name>.command.ts` | Request construction, response interpretation, domain errors. Calls `api.client.<resource>.<method>(...)`. |
 | 3 | Compat | `src/compat/firekit.ts` | Legacy Firekit-compatible standalone functions. Internally creates commands and runs them via the Invoker. |
-| — | Invoker | `src/command/invoker.ts` | Cross-cutting execution wrapper. Runs commands with logging, retry, and idempotency checks. Not a layer in the data flow — it wraps command execution. |
+| — | Invoker | `src/command/invoker.ts` | Cross-cutting execution wrapper. Runs commands with logging and retry for idempotent commands. Not a layer in the data flow — it wraps command execution. |
 
 ### Receiver — thin ts-rest client wrapper
 
