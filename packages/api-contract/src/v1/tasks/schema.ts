@@ -8,6 +8,26 @@ import {
   createPaginatedResponseSchema,
 } from '../common/query';
 
+/**
+ * Matches valid task slug format:
+ * - Lowercase alphanumeric segments separated by hyphens
+ * - Must start and end with alphanumeric character
+ * - Examples: "swr", "letter-task", "phoneme-2-0"
+ */
+export const TASK_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * Schema for task slug path parameter.
+ * Validates the slug format matches database constraints.
+ */
+export const TaskSlugParamSchema = z.object({
+  taskId: z
+    .string()
+    .min(1)
+    .max(32)
+    .regex(TASK_SLUG_PATTERN, 'Task slug must be lowercase alphanumeric with optional hyphens'),
+});
+
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
 
 /**
@@ -204,3 +224,5 @@ export type TasksListQuery = z.infer<typeof TasksListQuerySchema>;
 export const TasksListResponseSchema = createPaginatedResponseSchema(TaskSchema);
 
 export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
+
+export type TaskSlugParam = z.infer<typeof TaskSlugParamSchema>;

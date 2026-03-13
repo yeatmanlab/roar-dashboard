@@ -88,6 +88,33 @@ export const TasksController = {
   },
 
   /**
+   * Get a single task by its slug.
+   *
+   * Delegates to TaskService for business logic.
+   *
+   * @param authContext - User's authentication context
+   * @param slug - The unique slug identifier for the task
+   * @returns The task with the given slug
+   */
+  get: async (authContext: AuthContext, slug: string) => {
+    try {
+      const task = await taskService.getBySlug(authContext, slug);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformTask(task),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Create a new task-variant for a given task id.
    *
    * Delegates to TaskService for authorization and business logic.

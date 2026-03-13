@@ -651,8 +651,50 @@ export function TaskService({
     }
   }
 
+  /**
+   * Get a task by its slug.
+   *
+   * Tasks are global resources (not tied to org hierarchy), so all authenticated
+   * users can view any task. No authorization filtering is applied.
+   *
+   * @param authContext - User's authentication context (used for logging)
+   * @param slug - The unique slug identifier for the task
+   * @returns The task with the given slug
+   * @throws {ApiError} NOT_FOUND if no task exists with the given slug
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function getBySlug(authContext: AuthContext, slug: string): Promise<Task> {
+    const { userId } = authContext;
+
+    try {
+      const task = await taskRepository.getBySlug(slug);
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, slug },
+        });
+      }
+
+      return task;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, slug } }, 'Failed to get task by slug');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, slug },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
+    getBySlug,
     createTaskVariant,
     updateTaskVariant,
     evaluateTaskVariantEligibility,

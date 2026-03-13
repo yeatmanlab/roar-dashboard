@@ -1603,4 +1603,68 @@ describe('TaskService', () => {
       });
     });
   });
+
+  describe('getBySlug', () => {
+    describe('successful retrieval', () => {
+      it('should return task when found by slug', async () => {
+        const mockTask = TaskFactory.build({ slug: 'swr' });
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+
+        const result = await taskService.getBySlug(authContext, 'swr');
+
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith('swr');
+      });
+
+      it('should allow non-super-admin users to get task by slug', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+        const mockTask = TaskFactory.build({ slug: 'swr' });
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+
+        const result = await taskService.getBySlug(nonAdminContext, 'swr');
+
+        // Tasks are global resources - all authenticated users can view them
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith('swr');
+      });
+    });
+
+    describe('not found', () => {
+      it('should throw NOT_FOUND when task does not exist', async () => {
+        taskRepository.getBySlug.mockResolvedValue(null);
+
+        await expect(taskService.getBySlug(authContext, 'nonexistent')).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: 'admin-1', slug: 'nonexistent' },
+        });
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap database errors in ApiError', async () => {
+        const dbError = new Error('Connection timeout');
+        taskRepository.getBySlug.mockRejectedValue(dbError);
+
+        await expect(taskService.getBySlug(authContext, 'swr')).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: 'admin-1', slug: 'swr' },
+          cause: dbError,
+        });
+      });
+
+      it('should propagate existing ApiErrors', async () => {
+        const apiError = new ApiError('Custom error', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+        taskRepository.getBySlug.mockRejectedValue(apiError);
+
+        await expect(taskService.getBySlug(authContext, 'swr')).rejects.toThrow(apiError);
+      });
+    });
+  });
 });
