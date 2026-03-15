@@ -5,6 +5,7 @@ import { registerRunsRoutes } from './runs';
 import { registerDistrictsRoutes } from './districts';
 import { registerGroupsRoutes } from './groups';
 import { registerTasksRoutes } from './task';
+import { registerClassesRoutes } from './classes';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
@@ -32,6 +33,7 @@ export function registerAllRoutes(app: Express) {
   registerDistrictsRoutes(router);
   registerGroupsRoutes(router);
   registerTasksRoutes(router);
+  registerClassesRoutes(router);
 
   app.use(`/${API_VERSION.V1}`, router);
 }
