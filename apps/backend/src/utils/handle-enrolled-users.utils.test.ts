@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { ApiError } from '../errors/api-error';
-import { ApiErrorCode } from '../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../enums/api-error-message.enum';
-import { UserRole } from '../enums/user-role.enum';
-import { UserFactory } from '../test-support/factories/user.factory';
 import {
   getEnrolledUsersFilterConditions,
   handleSubResourceError,
@@ -14,6 +9,11 @@ import {
   type ListEnrolledUsersOptions,
 } from './handle-enrolled-users';
 import { users } from '../db/schema';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
+import { UserRole } from '../enums/user-role.enum';
+import { ApiError } from '../errors/api-error';
+import { UserFactory } from '../test-support/factories/user.factory';
 
 describe('handle-enrolled-users', () => {
   describe('ENROLLED_USERS_SORT_COLUMNS', () => {

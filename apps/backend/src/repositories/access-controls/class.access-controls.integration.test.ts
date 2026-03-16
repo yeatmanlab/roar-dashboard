@@ -27,12 +27,12 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { ClassAccessControls } from './class.access-controls';
+import { UserRole } from '../../enums/user-role.enum';
 import { CoreDbClient } from '../../test-support/db';
 import { baseFixture } from '../../test-support/fixtures';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { UserOrgFactory } from '../../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../../test-support/factories/user-class.factory';
-import { UserRole } from '../../enums/user-role.enum';
 
 describe('ClassAccessControls', () => {
   let accessControls: ClassAccessControls;

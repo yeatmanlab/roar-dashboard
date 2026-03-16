@@ -1,7 +1,4 @@
 import { eq, inArray, type SQL, Column } from 'drizzle-orm';
-import { users, userClasses, type User } from '../db/schema';
-import { ApiError } from '../errors/api-error';
-import { toErrorResponse } from './to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
 import type {
   EnrolledUser,
@@ -10,6 +7,9 @@ import type {
   GradeFilter,
   SortOrder,
 } from '@roar-dashboard/api-contract';
+import { toErrorResponse } from './to-error-response.util';
+import { users, userClasses, type User } from '../db/schema';
+import { ApiError } from '../errors/api-error';
 
 export interface ListEnrolledUsersOptions {
   page: number;

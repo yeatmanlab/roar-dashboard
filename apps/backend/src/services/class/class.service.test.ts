@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import { ClassService } from './class.service';
 import type { User } from '../../db/schema';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -9,7 +10,6 @@ import { ClassFactory } from '../../test-support/factories/class.factory';
 import { UserFactory } from '../../test-support/factories/user.factory';
 import { createMockClassRepository } from '../../test-support/repositories';
 import { EnrolledUserEntity } from '../../utils/handle-enrolled-users';
-import { ClassService } from './class.service';
 
 const createMockEnrolledUser = (user: User, overrides: Partial<EnrolledUserEntity> = {}): EnrolledUserEntity => ({
   ...user,

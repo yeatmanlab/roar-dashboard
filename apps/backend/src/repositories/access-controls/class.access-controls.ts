@@ -1,10 +1,10 @@
 import { eq, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
+import { isEnrollmentActive } from '../utils/enrollment.utils';
 import { CoreDbClient } from '../../db/clients';
 import type * as CoreDbSchema from '../../db/schema/core';
 import { userClasses, classes, userOrgs, orgs } from '../../db/schema';
-import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
-import { isEnrollmentActive } from '../utils/enrollment.utils';
 import type { UserRole } from '../../enums/user-role.enum';
 /**
  * Class Access Controls

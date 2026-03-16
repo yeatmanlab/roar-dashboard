@@ -3,9 +3,9 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { User } from '../db/schema';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { ApiError } from '../errors/api-error';
-import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import type { EnrolledUserEntity } from '../utils/handle-enrolled-users';
 // Mock the ClassService module
