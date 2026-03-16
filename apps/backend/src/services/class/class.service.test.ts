@@ -2,21 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { ClassService } from './class.service';
-import type { User } from '../../db/schema';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { ClassFactory } from '../../test-support/factories/class.factory';
-import { UserFactory } from '../../test-support/factories/user.factory';
+import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 import { createMockClassRepository } from '../../test-support/repositories';
-import { EnrolledUserEntity } from '../../utils/handle-enrolled-users';
-
-const createMockEnrolledUser = (user: User, overrides: Partial<EnrolledUserEntity> = {}): EnrolledUserEntity => ({
-  ...user,
-  role: UserRole.STUDENT,
-  enrollmentStart: new Date('2024-01-01T00:00:00Z'),
-  ...overrides,
-});
 
 describe('ClassService', () => {
   let mockClassRepository: ReturnType<typeof createMockClassRepository>;
@@ -36,7 +27,7 @@ describe('ClassService', () => {
 
     it('should return users for super admin (unrestricted)', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(3).map((user) => createMockEnrolledUser(user));
+      const mockUsers = EnrolledUserFactory.buildList(3);
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getUsersByClassId.mockResolvedValue({
         items: mockUsers,
@@ -61,7 +52,7 @@ describe('ClassService', () => {
 
     it('should check authorization for non-super admin users with supervisory role', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(2).map((user) => createMockEnrolledUser(user));
+      const mockUsers = EnrolledUserFactory.buildList(2);
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER]);
@@ -85,7 +76,7 @@ describe('ClassService', () => {
 
     it('should allow administrator role to list users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(5).map((user) => createMockEnrolledUser(user));
+      const mockUsers = EnrolledUserFactory.buildList(5);
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.ADMINISTRATOR]);
@@ -109,7 +100,7 @@ describe('ClassService', () => {
 
     it('should allow site_administrator role to list users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(4).map((user) => createMockEnrolledUser(user));
+      const mockUsers = EnrolledUserFactory.buildList(4);
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.SITE_ADMINISTRATOR]);
@@ -133,7 +124,7 @@ describe('ClassService', () => {
 
     it('should allow user with teacher role for class but admin role for school to list users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = UserFactory.buildList(3).map((user) => createMockEnrolledUser(user));
+      const mockUsers = EnrolledUserFactory.buildList(3);
       mockClassRepository.getById.mockResolvedValue(mockClass);
       mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER, UserRole.ADMINISTRATOR]);
