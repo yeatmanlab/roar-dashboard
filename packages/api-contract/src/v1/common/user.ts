@@ -42,6 +42,17 @@ export const UserGradeSchema = z.enum([
   'Other',
   '',
 ]);
+
+/**
+ * Schema for the authentication provider of a user
+ */
+export const AuthProviderSchema = z.enum(['password', 'google', 'oidc.clever', 'oidc.classlink', 'oidc.nycps']);
+
+/**
+ * Schema for user type
+ */
+export const UserTypeSchema = z.enum(['student', 'educator', 'caregiver', 'admin']);
+
 export type UserGrade = z.infer<typeof UserGradeSchema>;
 
 const UserDemographicSchema = z.object({
@@ -104,3 +115,20 @@ export type EnrolledUsersQuery = z.infer<typeof EnrolledUsersQuerySchema>;
 
 export const EnrolledUsersResponseSchema = createPaginatedResponseSchema(EnrolledUserSchema);
 export type EnrolledUsersResponse = z.infer<typeof EnrolledUsersResponseSchema>;
+
+/**
+ * Schema for school levels
+ */
+export const SchoolLevelSchema = z.enum(['early_childhood', 'elementary', 'middle', 'high', 'postsecondary']);
+
+/**
+ * Schema for free/reduced lunch status
+ */
+export const FreeReducedLunchStatusSchema = z.enum(['Free', 'Reduced', 'Paid']);
+
+// Export types for individual schemas
+export type AuthProvider = z.infer<typeof AuthProviderSchema>;
+export type UserType = z.infer<typeof UserTypeSchema>;
+export type Grade = z.infer<typeof UserGradeSchema>;
+export type SchoolLevel = z.infer<typeof SchoolLevelSchema>;
+export type FreeReducedLunchStatus = z.infer<typeof FreeReducedLunchStatusSchema>;
