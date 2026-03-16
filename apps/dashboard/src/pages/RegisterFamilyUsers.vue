@@ -70,7 +70,6 @@ const authStore = useAuthStore();
 const initialized = ref(false);
 const spinner = ref(false);
 
- 
 const props = defineProps({
   code: { type: String, default: null },
 });
@@ -113,8 +112,7 @@ async function handleParentSubmit(data) {
         last: data.lastName,
       },
       canContactForFutureStudies: data.canContactForFutureStudies || false,
-      // Store invitation codes for later use when adding children
-      invitationCodes: props.code ? [props.code] : [],
+      invitationCodes: props.code ? [props.code] : [], // Now supported by CreateParentInput interface
     };
 
     // Create parent account only (no children)
@@ -132,24 +130,6 @@ async function handleParentSubmit(data) {
       email: data.ParentEmail,
       password: data.password,
     });
-
-    // Update parent user document to ensure invitationCodes are stored
-    // roarfirekit.createNewFamily() has a fixed schema and doesn't preserve custom fields
-    // so we need to update the user document separately after creation
-    if (props.code) {
-      try {
-        const currentUser = authStore.roarfirekit.app.auth.currentUser;
-        if (currentUser) {
-          await authStore.roarfirekit.updateUserData({
-            uid: currentUser.uid,
-            userData: { invitationCodes: [props.code] },
-          });
-        }
-      } catch (error) {
-        console.error('Failed to save invitation code:', error);
-        // Don't block the flow if this fails - parent can still add codes manually
-      }
-    }
 
     spinner.value = false;
     dialogHeader.value = 'Success!';
