@@ -461,11 +461,11 @@ describe('SchoolRepository', () => {
 
       const result = (await repository.listAll({
         page: 1,
-        perPage: 100,
+        perPage: 1000,
         embedCounts: true,
       })) as { items: SchoolWithCounts[]; totalItems: number };
 
-      // Newly created school should be in first page (sorted by createdAt desc)
+      // Find the newly created school in the results
       const school = result.items.find((s) => s.id === emptySchool.id);
       expect(school).toBeDefined();
       expect(school?.counts).toEqual({

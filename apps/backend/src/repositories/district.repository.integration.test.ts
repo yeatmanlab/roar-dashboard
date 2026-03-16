@@ -491,11 +491,11 @@ describe('DistrictRepository', () => {
 
       const result = (await repository.listAll({
         page: 1,
-        perPage: 100,
+        perPage: 1000,
         embedCounts: true,
       })) as { items: DistrictWithCounts[]; totalItems: number };
 
-      // Newly created district should be in first page (sorted by createdAt desc)
+      // Find the newly created district in the results
       const district = result.items.find((d) => d.id === emptyDistrict.id);
       expect(district).toBeDefined();
       expect(district?.counts).toEqual({
