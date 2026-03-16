@@ -13,7 +13,35 @@
               <div class="flex gap-2 justify-content-between">
                 <label for="activationCode">Activation code <span class="required">*</span></label>
               </div>
-              <PvInputGroup v-if="!student.noActivationCode" data-cy="activation-code-group">
+
+              <!-- Show dropdown if parent has invitation codes -->
+              <div v-if="invitationCodes.length > 0 && !student.useManualCode" class="flex gap-2 mb-2 flex-column">
+                <PvSelect
+                  v-model="student.activationCode"
+                  :options="invitationCodes"
+                  placeholder="Select an invitation code"
+                  data-cy="invitation-code-dropdown"
+                  class="w-full"
+                />
+                <div class="flex gap-2">
+                  <PvButton
+                    class="flex-1 text-sm text-white bg-primary hover:bg-red-900"
+                    label="Validate"
+                    :disabled="!student.activationCode"
+                    @click="validateCode(student.activationCode, outerIndex)"
+                  />
+                  <PvButton
+                    class="flex-1 text-sm"
+                    label="Enter Manually"
+                    severity="secondary"
+                    outlined
+                    @click="student.useManualCode = true"
+                  />
+                </div>
+              </div>
+
+              <!-- Manual entry (shown if no codes or user chooses manual) -->
+              <PvInputGroup v-else-if="!student.noActivationCode" data-cy="activation-code-group">
                 <PvInputText
                   v-model="student.activationCode"
                   name="activationCode"
@@ -31,6 +59,18 @@
                   @click="validateCode(student.activationCode, outerIndex)"
                 />
               </PvInputGroup>
+              <PvButton
+                v-if="invitationCodes.length > 0 && student.useManualCode"
+                class="mt-2 text-sm"
+                label="Use Saved Code"
+                severity="secondary"
+                outlined
+                size="small"
+                @click="
+                  student.useManualCode = false;
+                  student.activationCode = '';
+                "
+              />
             </div>
             <span
               v-if="
@@ -432,6 +472,7 @@ const props = defineProps({
   code: { type: String, default: null },
   consent: { type: Object, default: null },
   submitting: { type: Boolean, default: false },
+  invitationCodes: { type: Array, default: () => [] },
 });
 
 const isDialogVisible = ref(false);
@@ -505,6 +546,7 @@ const state = reactive({
       yearOnlyCheck: yearOnlyCheckRef.value,
       orgName: '',
       accept: false,
+      useManualCode: false, // Toggle between dropdown and manual entry
     },
   ],
 });

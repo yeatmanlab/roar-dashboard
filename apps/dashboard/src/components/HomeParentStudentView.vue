@@ -86,7 +86,11 @@
         data-cy="enrollment-modal"
         pt:header:data-testid="dialog__header"
       >
-        <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
+        <RegisterChildren
+          :submitting="isSubmitting"
+          :invitation-codes="invitationCodes"
+          @submit="handleStudentEnrollment"
+        />
       </PvDialog>
     </div>
   </div>
@@ -133,6 +137,10 @@ defineProps({
     type: [String, Error],
     required: false,
     default: null,
+  },
+  invitationCodes: {
+    type: Array,
+    default: () => [],
   },
 });
 

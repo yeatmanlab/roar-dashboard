@@ -28,6 +28,7 @@
       :org-type="orgType"
       :org-id="orgId"
       :registration-error="registrationError"
+      :invitation-codes="userData?.invitationCodes || []"
       @refresh-registration="handleRefreshRegistration"
     />
 
