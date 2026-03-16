@@ -185,7 +185,7 @@ describe('ClassService', () => {
       await expect(
         service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
       ).rejects.toMatchObject({
-        message: 'Class not found',
+        message: ApiErrorMessage.NOT_FOUND,
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
@@ -225,6 +225,7 @@ describe('ClassService', () => {
         message: ApiErrorMessage.FORBIDDEN,
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId: 'user-123', classId: 'class-123', userRoles: [UserRole.STUDENT] },
       });
     });
 
@@ -244,6 +245,7 @@ describe('ClassService', () => {
         message: ApiErrorMessage.FORBIDDEN,
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId: 'caregiver-123', classId: 'class-123', userRoles: [UserRole.GUARDIAN] },
       });
 
       // Also verify parent and relative roles are rejected
@@ -254,6 +256,7 @@ describe('ClassService', () => {
         message: ApiErrorMessage.FORBIDDEN,
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId: 'parent-123', classId: 'class-123', userRoles: [UserRole.PARENT] },
       });
 
       mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.RELATIVE]);
@@ -263,6 +266,7 @@ describe('ClassService', () => {
         message: ApiErrorMessage.FORBIDDEN,
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId: 'relative-123', classId: 'class-123', userRoles: [UserRole.RELATIVE] },
       });
     });
 

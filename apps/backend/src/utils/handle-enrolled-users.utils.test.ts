@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import {
@@ -57,7 +58,7 @@ describe('handle-enrolled-users', () => {
 
   describe('handleSubResourceError', () => {
     it('returns error response for ApiError with NOT_FOUND status', () => {
-      const error = new ApiError('Not found', {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
@@ -69,7 +70,7 @@ describe('handle-enrolled-users', () => {
     });
 
     it('returns error response for ApiError with FORBIDDEN status', () => {
-      const error = new ApiError('Forbidden', {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });

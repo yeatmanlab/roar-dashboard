@@ -1,6 +1,7 @@
 import { eq, asc, desc, count, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { EnrolledUsersSortFieldType, SortOrder } from '@roar-dashboard/api-contract';
+import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { classes, userClasses, users, type Class } from '../db/schema';
@@ -8,13 +9,9 @@ import type { UserRole } from '../enums/user-role.enum';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import {
-  ListEnrolledUsersOptions,
-  getEnrolledUsersFilterConditions,
-  ENROLLED_USERS_SORT_COLUMNS,
-  EnrolledUserEntity,
-} from '../utils/handle-enrolled-users';
-import { AccessControlFilter } from './utils/parse-access-control-filter.utils';
+import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../utils/handle-enrolled-users';
+import { getEnrolledUsersFilterConditions, ENROLLED_USERS_SORT_COLUMNS } from '../utils/handle-enrolled-users';
+import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
@@ -54,10 +51,14 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   }
 
   /**
-   * User in service to check if has supervisory role
-   * @param userId
-   * @param classId
-   * @returns
+   * Get the distinct roles a user holds for a specific class.
+   *
+   * Queries both direct class memberships and org memberships in ancestor
+   * orgs to determine all roles the user has that grant access to this class.
+   *
+   * @param userId - The user ID to query roles for
+   * @param classId - The class ID to check access for
+   * @returns Array of distinct roles the user has for the class
    */
   async getUserRolesForClass(userId: string, classId: string): Promise<UserRole[]> {
     return this.classAccessControls.getUserRolesForClass(userId, classId);

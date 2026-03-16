@@ -36,7 +36,7 @@ export function ClassService({
     const classEntity = await classRepository.getById({ id: classId });
 
     if (!classEntity) {
-      throw new ApiError('Class not found', {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
         context: { userId, classId },
@@ -85,6 +85,7 @@ export function ClassService({
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, classId, userRoles },
       });
     }
   }

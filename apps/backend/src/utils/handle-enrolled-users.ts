@@ -3,7 +3,7 @@ import { users, userClasses, type User } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from './to-error-response.util';
 import { StatusCodes } from 'http-status-codes';
-import {
+import type {
   EnrolledUser,
   EnrolledUsersSortFieldType,
   UserRole,

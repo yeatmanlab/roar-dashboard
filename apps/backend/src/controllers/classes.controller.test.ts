@@ -5,9 +5,9 @@ import type { User } from '../db/schema';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { ApiError } from '../errors/api-error';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import type { EnrolledUserEntity } from '../utils/handle-enrolled-users';
-
 // Mock the ClassService module
 vi.mock('../services/class/class.service', () => ({
   ClassService: vi.fn(),
@@ -137,7 +137,7 @@ describe('ClassesController', () => {
     });
 
     it('should handle ApiError with 404 Not Found', async () => {
-      const error = new ApiError('Class not found', {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
