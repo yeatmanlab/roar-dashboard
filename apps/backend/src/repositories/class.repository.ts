@@ -5,14 +5,14 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
+import { getEnrolledUsersFilterConditions, ENROLLED_USERS_SORT_COLUMNS } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { classes, userClasses, users, type Class } from '../db/schema';
 import type { UserRole } from '../enums/user-role.enum';
-import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../utils/handle-enrolled-users';
-import { getEnrolledUsersFilterConditions, ENROLLED_USERS_SORT_COLUMNS } from '../utils/handle-enrolled-users';
+import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;

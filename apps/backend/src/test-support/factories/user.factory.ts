@@ -7,7 +7,7 @@ import { users } from '../../db/schema/core';
 import { AuthProvider } from '../../enums/auth-provider.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
-import type { EnrolledUserEntity } from '../../utils/handle-enrolled-users';
+import type { EnrolledUserEntity } from '../../types/user';
 
 /**
  * Factory for creating User test objects.

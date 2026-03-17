@@ -1,4 +1,4 @@
-import { eq, inArray, type SQL, Column } from 'drizzle-orm';
+import { Column } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
 import type {
   EnrolledUser,
@@ -8,7 +8,7 @@ import type {
   SortOrder,
 } from '@roar-dashboard/api-contract';
 import { toErrorResponse } from './to-error-response.util';
-import { users, userClasses, type User } from '../db/schema';
+import { users, type User } from '../db/schema';
 import { ApiError } from '../errors/api-error';
 
 export interface ListEnrolledUsersOptions {
@@ -23,24 +23,6 @@ export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Col
   nameLast: users.nameLast,
   username: users.username,
   grade: users.grade,
-};
-
-export const getEnrolledUsersFilterConditions = (options: ListEnrolledUsersOptions): SQL[] => {
-  if (!options) {
-    return [];
-  }
-
-  const conditions: SQL[] = [];
-
-  if (options.grade && options.grade.length > 0) {
-    conditions.push(inArray(users.grade, options.grade));
-  }
-
-  if (options.role) {
-    conditions.push(eq(userClasses.role, options.role));
-  }
-
-  return conditions;
 };
 
 export function handleSubResourceError(error: unknown) {

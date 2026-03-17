@@ -9,7 +9,7 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { ClassRepository } from '../../repositories/class.repository';
 import type { AuthContext } from '../../types/auth-context';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../utils/handle-enrolled-users';
+import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 
 export function ClassService({
