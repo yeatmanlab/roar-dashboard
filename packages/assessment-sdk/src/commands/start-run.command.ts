@@ -11,8 +11,11 @@ import { SDKError } from '../errors/sdk-error';
  * This command enforces type-safe handling of anonymous and authenticated runs
  * through a discriminated union input type that prevents invalid state combinations.
  *
+ * Normalizes `isAnonymous` to `false` when omitted (authenticated run mode).
+ *
  * Responsibilities:
  * - Validate the discriminated union input (anonymous vs authenticated)
+ * - Normalize isAnonymous flag for request body
  * - Build the request body for the create-run endpoint
  * - Call the typed ts-rest client
  * - Interpret the HTTP response
@@ -25,11 +28,12 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
   constructor(private api: RoarApi) {}
 
   async execute(input: StartRunInput): Promise<StartRunOutput> {
+    const isAnonymous = input.isAnonymous ?? false;
     const body: CreateRunRequestBody = {
       taskVariantId: input.variantId,
       taskVersion: input.taskVersion,
-      isAnonymous: input.isAnonymous,
-      ...(input.isAnonymous ? {} : { administrationId: input.administrationId }),
+      isAnonymous,
+      ...(isAnonymous ? {} : { administrationId: (input as { administrationId: string }).administrationId }),
       ...(input.metadata ? { metadata: input.metadata } : {}),
     };
 

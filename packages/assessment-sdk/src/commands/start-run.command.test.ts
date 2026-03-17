@@ -1,23 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { StartRunCommand } from './start-run.command';
 import { StatusCodes } from 'http-status-codes';
-import type { RoarApi } from '../receiver/roar-api';
+import { createMockRoarApi } from '../test-support';
 import type { StartRunInput, StartRunOutput } from '../types/start-run';
 
 describe('StartRunCommand', () => {
   let command: StartRunCommand;
-  let mockApi: RoarApi;
-  let createRun: ReturnType<typeof vi.fn>;
+  let mockApi: ReturnType<typeof createMockRoarApi>;
+  let createRun: Mock;
 
   beforeEach(() => {
-    createRun = vi.fn();
-    mockApi = {
-      client: {
-        runs: {
-          create: createRun,
-        },
-      },
-    } as unknown as RoarApi;
+    mockApi = createMockRoarApi();
+    createRun = mockApi.client.runs.create as Mock;
     command = new StartRunCommand(mockApi);
   });
 

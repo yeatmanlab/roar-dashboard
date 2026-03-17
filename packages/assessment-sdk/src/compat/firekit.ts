@@ -27,12 +27,8 @@ type CompatTaskInfo = {
   isAnonymous?: boolean;
 };
 
-// Module-level state for Firekit compat
-let _runId: string | undefined;
-let _taskInfo: CompatTaskInfo | undefined;
-
 export function _getRunIdForCompat(): string | undefined {
-  return _runId;
+  return FirekitFacade.getInstance()._getRunId();
 }
 
 /**
@@ -86,6 +82,8 @@ export class FirekitFacade {
   private ctx: CommandContext | undefined;
   private api: RoarApi | undefined;
   private invoker: Invoker | undefined;
+  private runId: string | undefined;
+  private taskInfo: CompatTaskInfo | undefined;
 
   private constructor() {}
 
@@ -105,7 +103,7 @@ export class FirekitFacade {
   /**
    * Initializes the facade with SDK configuration.
    * Called by initFirekitCompat() to set up the CommandContext.
-   * Resets module-level state on re-initialization to prevent state leakage between tests or consumers.
+   * Resets instance state on re-initialization to prevent state leakage between tests or consumers.
    *
    * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
    * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous flag
@@ -116,8 +114,8 @@ export class FirekitFacade {
     this.invoker = new Invoker(ctx);
 
     // Reset compat state on re-init to avoid leaking state across tests / consumers
-    _runId = undefined;
-    _taskInfo = taskInfo;
+    this.runId = undefined;
+    this.taskInfo = taskInfo;
   }
 
   /**
@@ -169,8 +167,30 @@ export class FirekitFacade {
    */
   static _resetInstance(): void {
     FirekitFacade.instance = undefined;
-    _runId = undefined;
-    _taskInfo = undefined;
+  }
+
+  /**
+   * Internal getter for the current runId.
+   * @internal
+   */
+  _getRunId(): string | undefined {
+    return this.runId;
+  }
+
+  /**
+   * Internal setter for the runId.
+   * @internal
+   */
+  _setRunId(runId: string): void {
+    this.runId = runId;
+  }
+
+  /**
+   * Internal getter for task info.
+   * @internal
+   */
+  _getTaskInfo(): CompatTaskInfo | undefined {
+    return this.taskInfo;
   }
 }
 
@@ -205,11 +225,11 @@ export function initFirekitCompat(ctx: CommandContext, taskInfo: CompatTaskInfo)
 }
 
 /**
- * Retrieves the initialized Firekit facade instance.
- * Can be called from anywhere in the application after initFirekitCompat().
+ * Retrieves the Firekit facade singleton instance.
+ * Can be called from anywhere in the application. The instance is created on first call
+ * if it doesn't exist, but will not be properly initialized until initFirekitCompat() is called.
  *
  * @returns FirekitFacade singleton instance
- * @throws {Error} If facade has not been initialized
  */
 export function getFirekitCompat(): FirekitFacade {
   return FirekitFacade.getInstance();
@@ -222,56 +242,57 @@ export function getFirekitCompat(): FirekitFacade {
  * anonymous and authenticated assessment modes. It serves as a drop-in replacement
  * for the legacy Firekit `appkit.startRun()` method.
  *
- * **Validation:**
- * - Task information (variantId, taskVersion) must be set via initFirekitCompat()
- * - If isAnonymous is false, administrationId must be provided
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
  *
- * The created runId is stored internally for use by subsequent operations like
- * writeTrial() and finishRun().
+ * **Validation:**
+ * - If `isAnonymous` is false, `administrationId` must be provided
+ *
+ * The created `runId` is stored internally on the facade for use by subsequent
+ * operations like `writeTrial()` and `finishRun()`.
  *
  * @param additionalRunMetadata - Optional custom metadata to include with the run.
  *                                Can contain any key-value pairs for run customization.
  *
  * @returns Promise<void> - Resolves when the run is successfully created
  *
- * @throws {SDKError} If task info is not set or if administrationId is required but missing
+ * @throws {SDKError}
+ * - If the facade has not been initialized via `initFirekitCompat()`
+ * - If `administrationId` is required but missing
  *
  * @example
  * ```ts
  * // Anonymous run
- * initFirekitCompat(
- *   { baseUrl: 'https://api.example.com', auth: { getToken: () => Promise.resolve(token) } },
- *   {
- *     variantId: 'variant-123',
- *     taskVersion: '1.0.0',
- *     isAnonymous: true
- *   }
- * );
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
  * await startRun({ sessionId: 'session-456' });
  *
  * // Authenticated run
- * initFirekitCompat(
- *   { baseUrl: 'https://api.example.com', auth: { getToken: () => Promise.resolve(token) } },
- *   {
- *     variantId: 'variant-123',
- *     taskVersion: '1.0.0',
- *     administrationId: 'admin-789',
- *     isAnonymous: false
- *   }
- * );
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   administrationId: 'admin-789',
+ *   isAnonymous: false
+ * });
+ *
  * await startRun({ userId: 'user-123' });
  * ```
  */
 export async function startRun(additionalRunMetadata?: Record<string, unknown>): Promise<void> {
-  if (!_taskInfo) {
-    throw new SDKError(
-      'appkit.startRun missing task info (variantId/taskVersion). administrationId is required only when isAnonymous is false.',
-    );
+  const facade = getFirekitCompat();
+  const taskInfo = facade._getTaskInfo();
+
+  if (!taskInfo) {
+    throw new SDKError('appkit.startRun requires initialization. Call initFirekitCompat() first.');
   }
 
-  const isAnonymous = _taskInfo.isAnonymous === true;
+  const isAnonymous = taskInfo.isAnonymous === true;
 
-  if (!isAnonymous && !_taskInfo.administrationId) {
+  if (!isAnonymous && !taskInfo.administrationId) {
     throw new SDKError('appkit.startRun requires administrationId when isAnonymous is false.');
   }
 
@@ -279,15 +300,15 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
 
   const input: StartRunInput = isAnonymous
     ? {
-        variantId: _taskInfo.variantId,
-        taskVersion: _taskInfo.taskVersion,
+        variantId: taskInfo.variantId,
+        taskVersion: taskInfo.taskVersion,
         ...(additionalRunMetadata ? { metadata: additionalRunMetadata as Json } : {}),
         isAnonymous: true,
       }
     : {
-        variantId: _taskInfo.variantId,
-        taskVersion: _taskInfo.taskVersion,
-        administrationId: _taskInfo.administrationId as string,
+        variantId: taskInfo.variantId,
+        taskVersion: taskInfo.taskVersion,
+        administrationId: taskInfo.administrationId as string,
         ...(additionalRunMetadata ? { metadata: additionalRunMetadata as Json } : {}),
         isAnonymous: false,
       };
@@ -295,7 +316,7 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
   const cmd = new StartRunCommand(api);
   const result = await invoker.run(cmd, input);
 
-  _runId = result.runId;
+  facade._setRunId(result.runId);
 }
 
 /**
