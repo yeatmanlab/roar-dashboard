@@ -193,7 +193,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
 
       schools = schools.map((school) => ({
         ...school,
-        counts: countsMap.get(school.id),
+        counts: countsMap.get(school.id) ?? { users: 0, classes: 0 },
       }));
     }
 
@@ -208,7 +208,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
    *
    * Computes:
    * - users: COUNT of active users in school (from userOrgs where enrollmentEnd IS NULL)
-   * - classes: COUNT of classes in school (from classes table)
+   * - classes: COUNT of active classes in school (from classes where rosteringEnded IS NULL)
    *
    * Uses pre-aggregated subqueries with left joins for better performance at scale
    * instead of correlated subqueries (O(n) vs O(n*m)).
@@ -228,14 +228,14 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .groupBy(userOrgs.orgId)
       .as('user_counts');
 
-    // Pre-aggregate class counts per school
+    // Pre-aggregate class counts per school (only active classes)
     const classCounts = this.db
       .select({
         schoolId: classes.schoolId,
         classes: countDistinct(classes.id).as('classes'),
       })
       .from(classes)
-      .where(inArray(classes.schoolId, schoolIds))
+      .where(and(inArray(classes.schoolId, schoolIds), isNull(classes.rosteringEnded)))
       .groupBy(classes.schoolId)
       .as('class_counts');
 
