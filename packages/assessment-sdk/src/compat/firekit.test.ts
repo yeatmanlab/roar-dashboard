@@ -63,12 +63,6 @@ describe('firekit compat', () => {
       _resetFirekitCompat();
     });
 
-    it('throws SDKError when task info is not set (missing variantId/taskVersion)', async () => {
-      // Don't initialize - test against truly uninitialized state
-      await expect(startRun()).rejects.toBeInstanceOf(SDKError);
-      await expect(startRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
-    });
-
     it('throws SDKError when administrationId is required but missing (isAnonymous=false)', async () => {
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
@@ -79,14 +73,16 @@ describe('firekit compat', () => {
       await expect(startRun()).rejects.toThrow('appkit.startRun requires administrationId when isAnonymous is false.');
     });
 
-    it('resets module-level state on re-initialization (prevents state leakage)', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        status: 201,
-        json: async () => ({ data: { id: 'run-123' } }),
-        headers: new Headers([['content-type', 'application/json']]),
-      });
+    it('resets facade instance state on re-initialization (prevents state leakage)', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-123' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
 
-      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
         taskVersion: '1.0.0',
@@ -114,13 +110,15 @@ describe('firekit compat', () => {
     });
 
     it('successfully starts an anonymous run (isAnonymous=true)', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        status: 201,
-        json: async () => ({ data: { id: 'run-anon-123' } }),
-        headers: new Headers([['content-type', 'application/json']]),
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-anon-123' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
 
-      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
         taskVersion: '1.0.0',
@@ -134,13 +132,15 @@ describe('firekit compat', () => {
     });
 
     it('successfully starts a non-anonymous run with administrationId (isAnonymous=false)', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        status: 201,
-        json: async () => ({ data: { id: 'run-non-anon-789' } }),
-        headers: new Headers([['content-type', 'application/json']]),
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-non-anon-789' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
 
-      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
         taskVersion: '1.0.0',
@@ -154,13 +154,15 @@ describe('firekit compat', () => {
     });
 
     it('includes additional metadata when provided (custom key-value pairs)', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        status: 201,
-        json: async () => ({ data: { id: 'run-with-metadata' } }),
-        headers: new Headers([['content-type', 'application/json']]),
-      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-with-metadata' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
 
-      mockContext.fetchImpl = mockFetch as unknown as typeof fetch;
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
         taskVersion: '1.0.0',

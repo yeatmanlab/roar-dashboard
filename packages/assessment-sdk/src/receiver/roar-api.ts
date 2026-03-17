@@ -8,8 +8,9 @@ import type { CommandContext } from '../command/command';
  * The client automatically injects:
  * - Authorization header with Bearer token (when available)
  * - x-request-id header for request tracing (when requestId is defined)
+ * - Custom fetch implementation (if provided in context)
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
+ * @param ctx - CommandContext with baseUrl, auth callbacks, optional logger, and optional custom fetch
  * @returns Initialized ts-rest client for ApiContractV1
  */
 function createClient(ctx: CommandContext) {
@@ -26,27 +27,10 @@ function createClient(ctx: CommandContext) {
         ...(requestId ? { 'x-request-id': requestId } : {}),
       };
 
-      // Use custom fetch implementation if provided, otherwise use ts-rest's default
-      if (ctx.fetchImpl) {
-        const response = await ctx.fetchImpl(args.path, {
-          method: args.method,
-          headers: args.headers,
-          ...(args.body !== undefined && { body: args.body }),
-        });
-
-        const contentType = response.headers.get('content-type') ?? '';
-        const body = contentType.includes('application/json')
-          ? await response.json().catch(() => undefined)
-          : await response.text().catch(() => undefined);
-
-        return {
-          status: response.status,
-          body,
-          headers: response.headers,
-        };
-      }
-
-      return tsRestFetchApi(args);
+      return tsRestFetchApi({
+        ...args,
+        ...(ctx.fetchImpl ? { fetchApi: ctx.fetchImpl } : {}),
+      });
     },
   });
 }
