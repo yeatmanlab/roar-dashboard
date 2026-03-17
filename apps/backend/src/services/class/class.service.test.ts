@@ -75,20 +75,6 @@ describe('ClassService', () => {
       expect(result.totalItems).toBe(3);
     });
 
-    it('should not return users for class with rosteringEnded != null for any non-super admin supervisor user', async () => {
-      const mockClass = ClassFactory.build({ id: 'class-456', rosteringEnded: new Date() });
-      mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.ADMINISTRATOR]);
-
-      const service = ClassService({
-        classRepository: mockClassRepository,
-      });
-
-      await expect(
-        service.listUsers({ userId: 'admin-123', isSuperAdmin: false }, 'class-123', defaultOptions),
-      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
-    });
-
     it('should check authorization for non-super admin users with supervisory role', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
       const mockUsers = EnrolledUserFactory.buildList(2);

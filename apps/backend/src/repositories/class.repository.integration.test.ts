@@ -123,6 +123,27 @@ describe('ClassRepository', () => {
 
         expect(result).toBeNull();
       });
+
+      it('returns null when rostering has ended', async () => {
+        const classWithRosteringEnded = await ClassFactory.create({
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+          rosteringEnded: new Date(),
+        });
+
+        await UserClassFactory.create({
+          userId: baseFixture.districtAdmin.id,
+          classId: classWithRosteringEnded.id,
+          role: UserRole.ADMINISTRATOR,
+        });
+
+        const result = await repository.getAuthorizedById(
+          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+          classWithRosteringEnded.id,
+        );
+
+        expect(result).toBeNull();
+      });
     });
 
     it('returns null for nonexistent class ID', async () => {

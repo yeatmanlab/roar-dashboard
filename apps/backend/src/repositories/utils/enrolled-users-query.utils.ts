@@ -1,7 +1,7 @@
 import { SQL, inArray, eq, Column } from 'drizzle-orm';
-import { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import { users, userClasses } from '../../db/schema';
-import { ListEnrolledUsersOptions } from '../../types/user';
+import type { ListEnrolledUsersOptions } from '../../types/user';
 
 export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Column> = {
   nameLast: users.nameLast,
@@ -10,18 +10,15 @@ export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Col
 };
 
 export const getEnrolledUsersFilterConditions = (options: ListEnrolledUsersOptions): SQL[] => {
-  if (!options) {
-    return [];
-  }
-
+  const { grade, role } = options;
   const conditions: SQL[] = [];
 
-  if (options.grade && options.grade.length > 0) {
-    conditions.push(inArray(users.grade, options.grade));
+  if (grade?.length) {
+    conditions.push(inArray(users.grade, grade));
   }
 
-  if (options.role) {
-    conditions.push(eq(userClasses.role, options.role));
+  if (role) {
+    conditions.push(eq(userClasses.role, role));
   }
 
   return conditions;

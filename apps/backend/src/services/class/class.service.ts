@@ -47,15 +47,6 @@ export function ClassService({
       return classEntity;
     }
 
-    // If rostering has ended, the class should not be accessible for non-super admins
-    if (classEntity.rosteringEnded) {
-      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { userId, classId },
-      });
-    }
-
     const allowedRoles = rolesForPermission(Permissions.Classes.READ);
     const authorized = await classRepository.getAuthorizedById({ userId, allowedRoles }, classId);
 

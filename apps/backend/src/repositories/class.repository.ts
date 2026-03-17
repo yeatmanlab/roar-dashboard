@@ -1,4 +1,4 @@
-import { eq, asc, desc, count, and } from 'drizzle-orm';
+import { eq, asc, desc, count, and, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
@@ -29,7 +29,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   }
 
   /**
-   * Get a single class by ID, only if the user is authorized to access it.
+   * Get a single class by ID, only if the user is authorized to access it and rosteringEnded is null.
    *
    * @param accessControlFilter - User ID and allowed roles
    * @param classId - The class ID to retrieve
@@ -44,7 +44,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       .select({ class: classes })
       .from(classes)
       .innerJoin(accessibleClasses, eq(classes.schoolId, accessibleClasses.orgId))
-      .where(eq(classes.id, classId))
+      .where(and(eq(classes.id, classId), isNull(classes.rosteringEnded)))
       .limit(1);
 
     return result[0]?.class ?? null;
