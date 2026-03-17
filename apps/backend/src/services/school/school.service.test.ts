@@ -3,18 +3,13 @@ import { SchoolService } from './school.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { OrgType } from '../../enums/org-type.enum';
 import { SortOrder, SchoolDetailSortField } from '@roar-dashboard/api-contract';
+import { createMockSchoolRepository } from '../../test-support/repositories';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
-import { createMockSchoolRepository } from '../../test-support/repositories';
-import type { School } from '../../repositories/school.repository';
 
 describe('SchoolService', () => {
   const mockSchoolRepository = createMockSchoolRepository();
-
-  const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
-  const mockSuperAdminContext = { userId: 'admin-123', isSuperAdmin: true };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -386,167 +381,6 @@ describe('SchoolService', () => {
       });
       // Schools should NOT have schools count
       expect(result.items[0]!.counts).not.toHaveProperty('schools');
-    });
-  });
-
-  describe('getById', () => {
-    it('should fetch school by ID for regular users', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const mockSchool = {
-        id: validUuid,
-        name: 'Test School',
-        abbreviation: 'TS',
-        orgType: OrgType.SCHOOL,
-        parentOrgId: 'district-id',
-        isRosteringRootOrg: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      // Step 1: unrestricted lookup succeeds
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
-      // Step 3: authorized lookup succeeds
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(mockSchool as School);
-
-      const service = SchoolService({
-        schoolRepository: mockSchoolRepository,
-      });
-
-      const result = await service.getById(mockAuthContext, validUuid);
-
-      expect(result).toEqual(mockSchool);
-    });
-
-    it('should build access control filter for regular users', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const mockSchool = {
-        id: validUuid,
-        name: 'Test School',
-        abbreviation: 'TS',
-        orgType: OrgType.SCHOOL,
-        parentOrgId: 'district-id',
-        isRosteringRootOrg: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      // Step 1: unrestricted lookup succeeds
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
-      // Step 3: authorized lookup succeeds
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(mockSchool as School);
-
-      const service = SchoolService({
-        schoolRepository: mockSchoolRepository,
-      });
-
-      await service.getById(mockAuthContext, validUuid);
-
-      expect(mockSchoolRepository.getAuthorizedById).toHaveBeenCalledWith(
-        {
-          userId: 'user-123',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        validUuid,
-      );
-    });
-
-    it('should use getUnrestrictedById for super admins', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const mockSchool = {
-        id: validUuid,
-        name: 'Test School',
-        abbreviation: 'TS',
-        orgType: OrgType.SCHOOL,
-        parentOrgId: 'district-id',
-        isRosteringRootOrg: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
-
-      const service = SchoolService({
-        schoolRepository: mockSchoolRepository,
-      });
-
-      await service.getById(mockSuperAdminContext, validUuid);
-
-      // Super admins should use unrestricted method, not the authorized one
-      expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith(validUuid);
-      expect(mockSchoolRepository.getAuthorizedById).not.toHaveBeenCalled();
-    });
-
-    it('should throw 404 when school not found', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(null);
-
-      const service = SchoolService({
-        schoolRepository: mockSchoolRepository,
-      });
-
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
-        expect((error as ApiError).code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-        expect((error as ApiError).message).toBe(ApiErrorMessage.NOT_FOUND);
-      }
-    });
-
-    it('should throw 403 when user lacks access', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const mockSchool = {
-        id: validUuid,
-        name: 'Test School',
-        abbreviation: 'TS',
-        orgType: OrgType.SCHOOL,
-        parentOrgId: 'district-id',
-        isRosteringRootOrg: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      // School exists (unrestricted lookup succeeds)
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool as School);
-      // But user lacks access (authorized lookup fails)
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(null);
-
-      const service = SchoolService({
-        schoolRepository: mockSchoolRepository,
-      });
-
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.FORBIDDEN);
-        expect((error as ApiError).code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
-      }
-    });
-
-    it('should wrap database errors in ApiError with DATABASE_QUERY_FAILED code', async () => {
-      const validUuid = '123e4567-e89b-12d3-a456-426614174000';
-      const dbError = new Error('Database connection lost');
-      mockSchoolRepository.getAuthorizedById.mockRejectedValue(dbError);
-
-      const service = SchoolService({
-        schoolRepository: mockSchoolRepository,
-      });
-
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      }
     });
   });
 });

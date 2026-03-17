@@ -127,34 +127,4 @@ export const SchoolsController = {
       throw error;
     }
   },
-
-  /**
-   * Get a single school by ID.
-   *
-   * Delegates to SchoolService for authorization and retrieval.
-   *
-   * @param authContext - User's authentication context
-   * @param schoolId - UUID of the school to retrieve
-   */
-  getById: async (authContext: AuthContext, schoolId: string) => {
-    try {
-      const school = await schoolService.getById(authContext, schoolId);
-
-      return {
-        status: StatusCodes.OK as const,
-        body: {
-          data: transformSchool(school),
-        },
-      };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        return toErrorResponse(error, [
-          StatusCodes.FORBIDDEN,
-          StatusCodes.NOT_FOUND,
-          StatusCodes.INTERNAL_SERVER_ERROR,
-        ]);
-      }
-      throw error;
-    }
-  },
 };
