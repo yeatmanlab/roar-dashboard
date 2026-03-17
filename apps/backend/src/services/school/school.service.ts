@@ -4,6 +4,7 @@ import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
@@ -95,8 +96,66 @@ export function SchoolService({
     return result;
   }
 
+  /**
+   * Get a single school by ID.
+   *
+   * super_admin users can access any school.
+   * Other users can only access schools they're assigned to.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - UUID of the school to retrieve
+   * @returns The school if found and authorized
+   * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
+   */
+  async function getById(authContext: AuthContext, schoolId: string): Promise<School> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Look up unrestricted first — distinguishes 404 from 403
+      const school = await repo.getUnrestrictedById(schoolId);
+      if (!school) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      // 2. Super admins bypass access checks
+      if (isSuperAdmin) return school;
+
+      // 3. Check access via org hierarchy joins
+      const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
+      const authorized = await repo.getAuthorizedById({ userId, allowedRoles }, schoolId);
+      if (!authorized) {
+        logger.warn({ userId, schoolId }, 'User attempted to access school without permission');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, schoolId },
+        });
+      }
+
+      return authorized;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      logger.error({ err: error, context: { schoolId, userId } }, 'Failed to retrieve school');
+
+      throw new ApiError('Failed to retrieve school', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { schoolId, userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
+    getById,
   };
 }
 

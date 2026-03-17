@@ -262,4 +262,42 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
 
     return countsMap;
   }
+
+  /**
+   * Get a school by ID without authorization checks.
+   * Used for super admins who have unrestricted access.
+   *
+   * @param schoolId - UUID of the school to retrieve
+   * @returns The school if found, null otherwise
+   */
+  async getUnrestrictedById(schoolId: string): Promise<School | null> {
+    const result = await this.db
+      .select()
+      .from(orgs)
+      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, OrgType.SCHOOL)))
+      .limit(1);
+
+    return result[0] ?? null;
+  }
+
+  /**
+   * Get a school by ID with authorization checks.
+   * Only returns the school if the user has access via org/class/group membership.
+   *
+   * @param filter - Access control filter with userId and allowed roles
+   * @param schoolId - UUID of the school to retrieve
+   * @returns The school if found and authorized, null otherwise
+   */
+  async getAuthorizedById(filter: AccessControlFilter, schoolId: string): Promise<School | null> {
+    const accessibleOrgs = this.accessControls.buildUserAccessibleOrgIdsQuery(filter).as('accessible_orgs');
+
+    const result = await this.db
+      .select({ org: orgs })
+      .from(orgs)
+      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
+      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, OrgType.SCHOOL)))
+      .limit(1);
+
+    return result[0]?.org ?? null;
+  }
 }
