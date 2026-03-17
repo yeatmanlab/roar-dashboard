@@ -56,7 +56,7 @@ export function ClassService({
       });
     }
 
-    const allowedRoles = rolesForPermission(Permissions.Classes.LIST);
+    const allowedRoles = rolesForPermission(Permissions.Classes.READ);
     const authorized = await classRepository.getAuthorizedById({ userId, allowedRoles }, classId);
 
     if (!authorized) {
