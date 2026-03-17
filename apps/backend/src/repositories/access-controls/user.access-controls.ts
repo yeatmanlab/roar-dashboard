@@ -104,10 +104,10 @@ export class UserAccessControls {
     const caretakerAllowedRoles = filterCaretakerRoles(allowedRoles);
     const hierarchicalUserAccessRoles = filterHierarchicalUserAccessRoles(allowedRoles);
 
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
     // NON-SUPERVISORY, NON-CARETAKER ACCESS: Return empty result set
     // Self-access is handled at the service layer
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
     if (supervisoryAllowedRoles.length === 0 && caretakerAllowedRoles.length === 0) {
       // Return a query that matches no users (service layer handles self-access)
       return this.db
@@ -116,10 +116,10 @@ export class UserAccessControls {
         .where(sql`false`);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
     // SUPERVISORY/CARETAKER ACCESS: Multiple paths through memberships
     // Note: Self-access is handled at service layer, not in these queries
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
 
     let query;
 
