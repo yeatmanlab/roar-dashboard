@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { handleSubResourceError, handleSubResourceResponse, type EnrolledUserEntity } from './handle-enrolled-users';
-import { ApiErrorCode } from '../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../enums/api-error-message.enum';
-import { UserRole } from '../enums/user-role.enum';
-import { ApiError } from '../errors/api-error';
-import { UserFactory } from '../test-support/factories/user.factory';
+import { handleSubResourceError, handleSubResourceResponse } from './enrolled-users.transform';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { UserRole } from '../../enums/user-role.enum';
+import { ApiError } from '../../errors/api-error';
+import { UserFactory } from '../../test-support/factories/user.factory';
+import { EnrolledUserEntity } from '../../types/user';
 
 describe('handle-enrolled-users', () => {
   describe('handleSubResourceError', () => {

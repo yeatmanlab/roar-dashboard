@@ -1,7 +1,7 @@
 import type { EnrolledUsersQuery } from '@roar-dashboard/api-contract';
 import { ClassService } from '../services/class/class.service';
 import type { AuthContext } from '../types/auth-context';
-import { handleSubResourceResponse, handleSubResourceError } from '../utils/handle-enrolled-users';
+import { handleSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
 
 const classService = ClassService();
 

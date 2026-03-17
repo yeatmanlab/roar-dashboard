@@ -1,20 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
-import type { EnrolledUser, UserRole } from '@roar-dashboard/api-contract';
-import { toErrorResponse } from './to-error-response.util';
-import { type User } from '../db/schema';
-import { ApiError } from '../errors/api-error';
-
-export function handleSubResourceError(error: unknown) {
-  if (error instanceof ApiError) {
-    return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
-  }
-  throw error;
-}
-
-export type EnrolledUserEntity = User & { role: UserRole; enrollmentStart: Date };
+import type { EnrolledUser } from '@roar-dashboard/api-contract';
+import { ApiError } from '../../errors/api-error';
+import type { EnrolledUserEntity } from '../../types/user';
+import { toErrorResponse } from '../../utils/to-error-response.util';
 
 /**
  * Maps a database User entity with role to the API contract EnrolledUser schema.
+ * Returns select values from User and their associated role and enrollment start date
+ * in organization context.
+ * @param user - The user entity to map.
+ * @returns The mapped EnrolledUser.
  */
 function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
   return {
@@ -38,6 +33,10 @@ function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
 
 /**
  * Builds a paginated response for user listing endpoints.
+ * @param result - The result from the database query.
+ * @param page - The current page number.
+ * @param perPage - The number of items per page.
+ * @returns The paginated response.
  */
 export function handleSubResourceResponse(
   result: { items: EnrolledUserEntity[]; totalItems: number },
@@ -69,4 +68,16 @@ export function handleSubResourceResponse(
       },
     },
   };
+}
+
+/**
+ * Handles errors for sub-resource endpoints.
+ * @param error - The error to handle.
+ * @returns The error response.
+ */
+export function handleSubResourceError(error: unknown) {
+  if (error instanceof ApiError) {
+    return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+  }
+  throw error;
 }
