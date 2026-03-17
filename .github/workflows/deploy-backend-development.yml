@@ -3,8 +3,8 @@ name: Deploy Backend to Dev
 on:
   push:
     branches:
-      # TODO: revert to project/backend-refactor after testing
-      - enh/1645/backend-staging-deployment
+      - project/backend-refactor
+      - main
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
