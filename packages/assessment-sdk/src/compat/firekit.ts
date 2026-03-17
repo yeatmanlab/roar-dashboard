@@ -243,43 +243,43 @@ export function getFirekitCompat(): FirekitFacade {
  * anonymous and authenticated assessment modes. It serves as a drop-in replacement
  * for the legacy Firekit `appkit.startRun()` method.
  *
- * **Validation:**
- * - Task information (variantId, taskVersion) must be set via initFirekitCompat()
- * - If isAnonymous is false, administrationId must be provided
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
  *
- * The created runId is stored internally for use by subsequent operations like
- * writeTrial() and finishRun().
+ * **Validation:**
+ * - If `isAnonymous` is false, `administrationId` must be provided
+ *
+ * The created `runId` is stored internally on the facade for use by subsequent
+ * operations like `writeTrial()` and `finishRun()`.
  *
  * @param additionalRunMetadata - Optional custom metadata to include with the run.
  *                                Can contain any key-value pairs for run customization.
  *
  * @returns Promise<void> - Resolves when the run is successfully created
  *
- * @throws {SDKError} If task info is not set or if administrationId is required but missing
+ * @throws {SDKError}
+ * - If the facade has not been initialized via `initFirekitCompat()`
+ * - If `administrationId` is required but missing
  *
  * @example
  * ```ts
  * // Anonymous run
- * initFirekitCompat(
- *   { baseUrl: 'https://api.example.com', auth: { getToken: () => Promise.resolve(token) } },
- *   {
- *     variantId: 'variant-123',
- *     taskVersion: '1.0.0',
- *     isAnonymous: true
- *   }
- * );
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
  * await startRun({ sessionId: 'session-456' });
  *
  * // Authenticated run
- * initFirekitCompat(
- *   { baseUrl: 'https://api.example.com', auth: { getToken: () => Promise.resolve(token) } },
- *   {
- *     variantId: 'variant-123',
- *     taskVersion: '1.0.0',
- *     administrationId: 'admin-789',
- *     isAnonymous: false
- *   }
- * );
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   administrationId: 'admin-789',
+ *   isAnonymous: false
+ * });
+ *
  * await startRun({ userId: 'user-123' });
  * ```
  */

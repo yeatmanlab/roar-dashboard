@@ -1,4 +1,4 @@
-import { initClient } from '@ts-rest/core';
+import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-dashboard/api-contract';
 import type { CommandContext } from '../command/command';
 
@@ -8,9 +8,8 @@ import type { CommandContext } from '../command/command';
  * The client automatically injects:
  * - Authorization header with Bearer token (when available)
  * - x-request-id header for request tracing (when requestId is defined)
- * - Custom fetch implementation (if provided in context)
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, and optional fetch implementation
+ * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
  * @returns Initialized ts-rest client for ApiContractV1
  */
 function createClient(ctx: CommandContext) {
@@ -21,30 +20,33 @@ function createClient(ctx: CommandContext) {
       const token = await ctx.auth.getToken();
       const requestId = ctx.requestId?.();
 
-      const headers = {
+      args.headers = {
         ...args.headers,
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(requestId ? { 'x-request-id': requestId } : {}),
       };
 
-      const fetchImpl = ctx.fetchImpl ?? fetch;
+      // Use custom fetch implementation if provided, otherwise use ts-rest's default
+      if (ctx.fetchImpl) {
+        const response = await ctx.fetchImpl(args.path, {
+          method: args.method,
+          headers: args.headers,
+          ...(args.body !== undefined && { body: args.body }),
+        });
 
-      const response = await fetchImpl(args.path, {
-        method: args.method,
-        headers,
-        ...(args.body !== undefined && { body: args.body }),
-      });
+        const contentType = response.headers.get('content-type') ?? '';
+        const body = contentType.includes('application/json')
+          ? await response.json().catch(() => undefined)
+          : await response.text().catch(() => undefined);
 
-      const contentType = response.headers.get('content-type') ?? '';
-      const body = contentType.includes('application/json')
-        ? await response.json().catch(() => undefined)
-        : await response.text().catch(() => undefined);
+        return {
+          status: response.status,
+          body,
+          headers: response.headers,
+        };
+      }
 
-      return {
-        status: response.status,
-        body,
-        headers: response.headers,
-      };
+      return tsRestFetchApi(args);
     },
   });
 }
