@@ -23,8 +23,8 @@ export function registerSchoolsRoutes(routerInstance: Router) {
     getById: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params }) =>
-        SchoolsController.getById({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
+      handler: async ({ req, params, query }) =>
+        SchoolsController.getById({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.id, query),
     },
   });
 

@@ -100,14 +100,20 @@ export function SchoolService({
    * Get a single school by ID.
    *
    * super_admin users can access any school.
-   * Other users can only access schools they're assigned to.
+   * Other users can only access schools they have active membership in via pg_user_orgs
+   * (resolved through org hierarchy joins for org/class/group membership).
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param schoolId - UUID of the school to retrieve
+   * @param options - Optional embed options (embedChildren)
    * @returns The school if found and authorized
    * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
    */
-  async function getById(authContext: AuthContext, schoolId: string): Promise<School> {
+  async function getById(
+    authContext: AuthContext,
+    schoolId: string,
+    options?: { embedChildren?: boolean },
+  ): Promise<SchoolWithEmbeds> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
@@ -122,7 +128,13 @@ export function SchoolService({
       }
 
       // 2. Super admins bypass access checks
-      if (isSuperAdmin) return school;
+      if (isSuperAdmin) {
+        const result: SchoolWithEmbeds = school;
+        if (options?.embedChildren) {
+          result.children = [];
+        }
+        return result;
+      }
 
       // 3. Check access via org hierarchy joins
       const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
@@ -136,7 +148,13 @@ export function SchoolService({
         });
       }
 
-      return authorized;
+      // 4. Attach children if requested (typically empty for schools)
+      const result: SchoolWithEmbeds = authorized;
+      if (options?.embedChildren) {
+        result.children = [];
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

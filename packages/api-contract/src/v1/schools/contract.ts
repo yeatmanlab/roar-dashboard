@@ -1,7 +1,8 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { SchoolsListQuerySchema, SchoolsListResponseSchema, SchoolDetailSchema } from './schema';
+import { SchoolsListQuerySchema, SchoolsListResponseSchema, SchoolDetailSchema, SCHOOL_EMBED_OPTIONS } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
+import { createEmbedQuerySchema } from '../common/query';
 
 const c = initContract();
 
@@ -35,6 +36,7 @@ export const SchoolsContract = c.router(
       pathParams: z.object({
         id: z.string().uuid(),
       }),
+      query: createEmbedQuerySchema(SCHOOL_EMBED_OPTIONS),
       responses: {
         200: SuccessEnvelopeSchema(SchoolDetailSchema),
         401: ErrorEnvelopeSchema,
@@ -46,7 +48,9 @@ export const SchoolsContract = c.router(
       summary: 'Get school by ID',
       description:
         'Returns a single school by ID. ' +
-        'Super admins can access any school. Regular users can only access schools they belong to.',
+        'Returns 403 if the user lacks permission to access the school. ' +
+        'Returns 404 if the school does not exist. ' +
+        'Use ?embed=children to include child organizations (typically empty for schools).',
     },
   },
   { pathPrefix: '/schools' },
