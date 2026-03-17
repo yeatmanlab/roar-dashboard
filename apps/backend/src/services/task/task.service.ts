@@ -12,7 +12,6 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
-import { isValidUuid } from '../../utils/is-valid-uuid.util';
 import { Operator, type Condition, type FieldCondition, type CompositeCondition } from './task.types';
 
 /**
@@ -670,11 +669,7 @@ export function TaskService({
     const { userId } = authContext;
 
     try {
-      let task: Task | null = null;
-      // If it's a valid UUID, try to find by ID
-      if (isValidUuid(taskId)) {
-        task = await taskRepository.getById({ id: taskId });
-      }
+      const task = await taskRepository.getById({ id: taskId });
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
