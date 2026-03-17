@@ -1,29 +1,8 @@
-import { Column } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
-import type {
-  EnrolledUser,
-  EnrolledUsersSortFieldType,
-  UserRole,
-  GradeFilter,
-  SortOrder,
-} from '@roar-dashboard/api-contract';
+import type { EnrolledUser, UserRole } from '@roar-dashboard/api-contract';
 import { toErrorResponse } from './to-error-response.util';
-import { users, type User } from '../db/schema';
+import { type User } from '../db/schema';
 import { ApiError } from '../errors/api-error';
-
-export interface ListEnrolledUsersOptions {
-  page: number;
-  perPage: number;
-  orderBy?: { field: EnrolledUsersSortFieldType; direction: SortOrder };
-  grade?: GradeFilter;
-  role?: UserRole;
-}
-
-export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Column> = {
-  nameLast: users.nameLast,
-  username: users.username,
-  grade: users.grade,
-};
 
 export function handleSubResourceError(error: unknown) {
   if (error instanceof ApiError) {
