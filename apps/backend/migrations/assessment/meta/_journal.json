@@ -127,6 +127,20 @@
       "when": 1772830749995,
       "tag": "0017_add_fdw_views",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1773066520214,
+      "tag": "0018_anonymous_runs_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1773244800000,
+      "tag": "0019_enable_uuid_ossp",
+      "breakpoints": true
     }
   ]
 }

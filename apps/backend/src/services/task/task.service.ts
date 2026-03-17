@@ -1,11 +1,12 @@
-import type { NewTaskVariant, NewTaskVariantParameter, User } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter, User, Task } from '../../db/schema';
 import type { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
+import type { PaginatedResult } from '../../repositories/base.repository';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../logger';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
-import { TaskRepository } from '../../repositories/task.repository';
+import { TaskRepository, type ListTasksOptions } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -24,13 +25,28 @@ export interface CreateTaskVariantParameterData {
 
 /**
  * Data required to create a new task variant.
+ *
+ * NOTE: taskId is passed separately as a path parameter.
  */
 export interface CreateTaskVariantData {
-  taskId: string;
   name: string;
   description: string;
   status: TaskVariantStatus;
   parameters: CreateTaskVariantParameterData[];
+}
+
+/**
+ * Data for updating an existing task variant.
+ * All fields are optional - only provided fields will be updated.
+ *
+ * NOTE: taskId and variantId are passed separately as path parameters.
+ * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
+ */
+export interface UpdateTaskVariantData {
+  name?: string | undefined;
+  description?: string | undefined;
+  status?: TaskVariantStatus | undefined;
+  parameters?: CreateTaskVariantParameterData[] | undefined;
 }
 
 /**
@@ -225,32 +241,42 @@ export function TaskService({
    * ensuring referential integrity.
    *
    * @param authContext - User's auth context (requires super admin privileges)
-   * @param data - Task variant data including taskId, name, description, status, and required parameters array
-   * @returns The created task variant (without full parameter details)
+   * @param taskId - The UUID of the parent task
+   * @param body - Task variant data including name, description, status, and required parameters array
+   * @returns An object containing the created task variant's UUID
    * @throws {ApiError} FORBIDDEN if user is not a super admin
    * @throws {ApiError} BAD_REQUEST if parameters array is empty
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
+   * @throws {ApiError} CONFLICT if a variant with the same name already exists for this task
    * @throws {ApiError} INTERNAL if variant or any parameter creation fails
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    *
    * @example
    * ```typescript
-   * const variant = await taskService.createTaskVariant(authContext, {
-   *   taskId: 'task-uuid',
-   *   name: 'easy-mode',
-   *   description: 'Easy difficulty configuration',
-   *   status: 'published',
-   *   parameters: [
-   *     { name: 'difficulty', value: 'easy' },
-   *     { name: 'timeLimit', value: 120 },
-   *     { name: 'hintsEnabled', value: true }
-   *   ]
-   * });
+   * const result = await taskService.createTaskVariant(
+   *   authContext,
+   *   'task-uuid',
+   *   {
+   *     name: 'easy-mode',
+   *     description: 'Easy difficulty configuration',
+   *     status: 'published',
+   *     parameters: [
+   *       { name: 'difficulty', value: 'easy' },
+   *       { name: 'timeLimit', value: 120 },
+   *       { name: 'hintsEnabled', value: true }
+   *     ]
+   *   }
+   * );
+   * console.log(result.id); // 'variant-uuid'
    * ```
    */
-  async function createTaskVariant(authContext: AuthContext, data: CreateTaskVariantData): Promise<{ id: string }> {
+  async function createTaskVariant(
+    authContext: AuthContext,
+    taskId: string,
+    body: CreateTaskVariantData,
+  ): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
-    const { taskId, name, status, description } = data;
+    const { name, status, description } = body;
 
     if (!isSuperAdmin) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
@@ -262,22 +288,13 @@ export function TaskService({
 
     try {
       // Verify the parent task exists
-      const task = await taskRepository.getById({ id: data.taskId });
+      const task = await taskRepository.getById({ id: taskId });
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, taskId: data.taskId },
-        });
-      }
-
-      // Validate parameters before starting transaction to prevent creating orphaned variants
-      if (data.parameters.length === 0) {
-        throw new ApiError('At least one parameter required', {
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, isSuperAdmin, taskId: data.taskId },
+          context: { userId, taskId },
         });
       }
 
@@ -300,35 +317,38 @@ export function TaskService({
             throw new ApiError('Failed to create task variant', {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.INTERNAL,
-              context: { userId, isSuperAdmin, taskId: data.taskId },
+              context: { userId, isSuperAdmin, taskId },
             });
           }
 
           const { id: taskVariantId } = newVariant;
 
-          const taskVariantParameterData: NewTaskVariantParameter[] = data.parameters.map(({ name, value }) => ({
-            taskVariantId,
-            name,
-            value,
-          }));
+          // Only create parameters if any were provided
+          if (body.parameters.length > 0) {
+            const taskVariantParameterData: NewTaskVariantParameter[] = body.parameters.map(({ name, value }) => ({
+              taskVariantId,
+              name,
+              value,
+            }));
 
-          const newTaskVariantParameters = await taskVariantParameterRepository.createMany({
-            data: taskVariantParameterData,
-            transaction: tx,
-          });
-
-          // Verify all parameters were created successfully
-          if (newTaskVariantParameters.length !== taskVariantParameterData.length) {
-            throw new ApiError('Failed to create all task variant parameters', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.INTERNAL,
-              context: {
-                userId,
-                isSuperAdmin,
-                expected: taskVariantParameterData.length,
-                created: newTaskVariantParameters.length,
-              },
+            const newTaskVariantParameters = await taskVariantParameterRepository.createMany({
+              data: taskVariantParameterData,
+              transaction: tx,
             });
+
+            // Verify all parameters were created successfully
+            if (newTaskVariantParameters.length !== taskVariantParameterData.length) {
+              throw new ApiError('Failed to create all task variant parameters', {
+                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+                code: ApiErrorCode.INTERNAL,
+                context: {
+                  userId,
+                  isSuperAdmin,
+                  expected: taskVariantParameterData.length,
+                  created: newTaskVariantParameters.length,
+                },
+              });
+            }
           }
 
           return newVariant;
@@ -336,7 +356,7 @@ export function TaskService({
       });
 
       logger.info(
-        { userId, taskId: data.taskId, variantId: variant.id, parameterCount: data.parameters.length },
+        { userId, taskId, variantId: variant.id, parameterCount: body.parameters.length },
         'Created task variant with parameters',
       );
 
@@ -352,17 +372,134 @@ export function TaskService({
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { userId, taskId: data.taskId, variantName: data.name },
+          context: { userId, taskId, variantName: body.name },
           cause: error,
         });
       }
 
-      logger.error({ err: error, context: { userId, taskId: data.taskId } }, 'Failed to create task variant');
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to create task variant');
 
       throw new ApiError('Failed to create task variant', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, taskId: data.taskId },
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Updates an existing task variant.
+   *
+   * Only super admins can update task variants.
+   * All fields in the request are optional - only provided fields will be updated.
+   * When parameters are provided, they replace all existing parameters (not merged).
+   *
+   * @param authContext - User's authentication context
+   * @param params - Object containing taskId and variantId path parameters
+   * @param body - Fields to update (all optional: name, description, status, parameters)
+   * @returns Promise that resolves when update is complete
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} NOT_FOUND if task or variant doesn't exist, or if variant belongs to different task
+   * @throws {ApiError} CONFLICT if name update would create a duplicate
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function updateTaskVariant(
+    authContext: AuthContext,
+    params: { taskId: string; variantId: string },
+    body: UpdateTaskVariantData,
+  ): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+    const { taskId, variantId } = params;
+    const { name, status, description, parameters } = body;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    try {
+      // Verify that the variant exists and belongs to the task
+      const existingVariant = await taskVariantRepository.getTaskIdByVariantId(variantId);
+
+      if (!existingVariant || existingVariant.taskId !== taskId) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId, variantId },
+        });
+      }
+
+      // Check for early return condition where no updates are needed
+      const hasFieldUpdates = name !== undefined || description !== undefined || status !== undefined;
+      const hasParameterUpdates = parameters !== undefined;
+      if (!hasFieldUpdates && !hasParameterUpdates) return;
+
+      // Update task variant and parameters if needed
+      await taskVariantRepository.runTransaction({
+        fn: async (tx) => {
+          if (hasFieldUpdates) {
+            await taskVariantRepository.update({
+              id: variantId,
+              data: {
+                ...(name !== undefined && { name }),
+                ...(description !== undefined && { description }),
+                ...(status !== undefined && { status }),
+              },
+              transaction: tx,
+            });
+          }
+          if (hasParameterUpdates) {
+            await taskVariantParameterRepository.deleteByTaskVariantId({
+              taskVariantId: variantId,
+              transaction: tx,
+            });
+            if (parameters.length > 0) {
+              await taskVariantParameterRepository.createMany({
+                data: parameters.map(({ name, value }) => ({ taskVariantId: variantId, name, value })),
+                transaction: tx,
+              });
+            }
+          }
+        },
+      });
+
+      logger.info(
+        {
+          userId,
+          taskId,
+          variantId,
+          hasFieldUpdates,
+          parametersUpdated: parameters !== undefined,
+          parameterCount: parameters?.length ?? 0,
+        },
+        'Updated task variant',
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      // Unwrap the Drizzle error to get the underlying database error with SQLSTATE codes
+      const dbError = unwrapDrizzleError(error);
+
+      // Check for Postgres unique constraint violation
+      if (isUniqueViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, taskId, variantId, variantName: name },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, taskId, variantId } }, 'Failed to update task variant');
+
+      throw new ApiError('Failed to update task variant', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId, variantId },
         cause: error,
       });
     }
@@ -484,8 +621,40 @@ export function TaskService({
     return evaluateCondition(userData, condition);
   }
 
+  /**
+   * List all tasks with optional filtering and sorting.
+   *
+   * Tasks are global resources (not tied to org hierarchy), so all authenticated
+   * users can view all tasks. No authorization filtering is applied.
+   *
+   * @param authContext - User's authentication context (used for logging)
+   * @param options - Pagination, sorting, and filter options
+   * @returns Paginated result with tasks
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function list(authContext: AuthContext, options: ListTasksOptions): Promise<PaginatedResult<Task>> {
+    const { userId } = authContext;
+
+    try {
+      return await taskRepository.listAll(options);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to list tasks');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
+    list,
     createTaskVariant,
+    updateTaskVariant,
     evaluateTaskVariantEligibility,
   };
 }

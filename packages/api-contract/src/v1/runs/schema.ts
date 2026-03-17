@@ -16,16 +16,39 @@ export const RunTrialInteractionEventSchema = z.enum(['blur', 'focus', 'fullscre
 
 /**
  * Request body for POST /runs
+ *
+ * Supports two modes:
+ * - **Standard run:** `administrationId` is required, `isAnonymous` is omitted or false.
+ * - **Anonymous run:** `isAnonymous` is true, `administrationId` must not be provided.
  */
-export const CreateRunRequestBodySchema = z.object({
-  taskVariantId: z.string().uuid(),
-  taskVersion: z.string(),
-  administrationId: z.string().uuid(),
-  metadata: JsonValue.optional().superRefine((metadata, ctx) => {
-    if (!metadata) return;
-    parseJsonB(metadata, ctx);
-  }),
-});
+export const CreateRunRequestBodySchema = z
+  .object({
+    taskVariantId: z.string().uuid(),
+    taskVersion: z.string(),
+    administrationId: z.string().uuid().optional(),
+    isAnonymous: z.boolean().default(false),
+    metadata: JsonValue.optional().superRefine((metadata, ctx) => {
+      if (!metadata) return;
+      parseJsonB(metadata, ctx);
+    }),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.isAnonymous && !data.administrationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['administrationId'],
+        message: 'administrationId is required for non-anonymous runs',
+      });
+    }
+
+    if (data.isAnonymous && data.administrationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['administrationId'],
+        message: 'administrationId must not be provided for anonymous runs',
+      });
+    }
+  });
 
 export type CreateRunRequestBody = z.infer<typeof CreateRunRequestBodySchema>;
 

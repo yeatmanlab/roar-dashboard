@@ -38,14 +38,16 @@ export const SortOrder = {
  * Creates a sort query schema with a specific set of allowed sort fields.
  * @param sortFields - The allowed sort field values
  * @param defaultField - The default sort field
+ * @param defaultOrder - The default sort order (defaults to 'desc')
  */
 export const createSortQuerySchema = <T extends readonly [string, ...string[]]>(
   sortFields: T,
   defaultField: T[number],
+  defaultOrder: SortOrder = 'desc',
 ) =>
   z.object({
     sortBy: z.enum(sortFields).default(defaultField),
-    sortOrder: SortOrderSchema,
+    sortOrder: SortOrderSchema.default(defaultOrder),
   });
 
 // Template schema to extract sort query structure
