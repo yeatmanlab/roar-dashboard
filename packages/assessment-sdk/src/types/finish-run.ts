@@ -1,7 +1,11 @@
-/**
- * Firekit-compatible input for appkit.finishRun
- * Matches: finishingMetaData: { [key: string]: unknown } = {}
- */
-export type FinishRunInput = { [key: string]: unknown };
+export const RUN_EVENT_COMPLETE = 'complete' as const;
 
-export type FinishRunOutput = void;
+import type { Json } from '@roar-dashboard/api-contract';
+
+export interface FinishRunInput {
+  runId: string;
+  type: typeof RUN_EVENT_COMPLETE;
+  metadata?: Json;
+}
+
+export type FinishRunOutput = Record<string, never>;

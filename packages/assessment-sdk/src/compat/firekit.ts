@@ -3,7 +3,6 @@ import { SDKError } from '../errors/sdk-error';
 import type {
   StartRunInput,
   FinishRunInput,
-  FinishRunOutput,
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
   AddInteractionInput,
@@ -16,11 +15,13 @@ import type {
   WriteTrialOutput,
 } from '../types';
 import { RUN_EVENT_ABORT } from '../types/abort-run';
+import { RUN_EVENT_COMPLETE } from '../types/finish-run';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
 import { AbortRunCommand } from '../commands/abort-run.command';
+import { FinishRunCommand } from '../commands/finish-run.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -301,19 +302,25 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
   facade._setRunId(result.runId);
 }
 
-/**
- * Firekit compatibility stub for finishing a run.
- *
- * From @bdelab/roar-firekit:
- * async finishRun(finishingMetaData: { [key: string]: unknown } = {}) { […] }
- *
- * @param finishingMetaData - Optional finishing metadata for the run.
- * @returns Promise<void>
- * @throws {SDKError} Always, until implemented.
- */
-export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise<FinishRunOutput> {
-  void finishingMetaData;
-  throw new SDKError('appkit.finishRun not yet implemented');
+export async function finishRun(finishingMetadata?: Record<string, unknown>): Promise<void> {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.finishRun requires an active run. Call appkit.startRun() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const input: FinishRunInput = {
+    runId,
+    type: RUN_EVENT_COMPLETE,
+    ...(finishingMetadata ? { metadata: finishingMetadata as Json } : {}),
+  };
+
+  const cmd = new FinishRunCommand(api);
+  await invoker.run(cmd, input);
 }
 
 /**
