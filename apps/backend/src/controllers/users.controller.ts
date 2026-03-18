@@ -1,10 +1,50 @@
+import type { AuthContext } from '../types/auth-context';
+import type { User } from '../db/schema';
+import type { UserResponse } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
-import type { AuthContext } from '../types/auth-context';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
-
 const userService = UserService();
+
+/**
+ * Transform a User database record into a UserResponse API schema.
+ * Converts Date objects to ISO datetime strings as required by the API contract.
+ *
+ * @param user - User record from the database
+ * @returns UserResponse with Date fields converted to strings
+ */
+function toUserResponse(user: User): UserResponse {
+  return {
+    id: user.id,
+    assessmentPid: user.assessmentPid,
+    authProvider: user.authProvider,
+    nameFirst: user.nameFirst,
+    nameMiddle: user.nameMiddle,
+    nameLast: user.nameLast,
+    username: user.username,
+    email: user.email,
+    userType: user.userType,
+    dob: user.dob, // Already a date string (YYYY-MM-DD) from the database
+    grade: user.grade,
+    schoolLevel: user.schoolLevel,
+    statusEll: user.statusEll,
+    statusFrl: user.statusFrl,
+    statusIep: user.statusIep,
+    studentId: user.studentId,
+    sisId: user.sisId,
+    stateId: user.stateId,
+    localId: user.localId,
+    gender: user.gender,
+    race: user.race,
+    hispanicEthnicity: user.hispanicEthnicity,
+    homeLanguage: user.homeLanguage,
+    rosteringEnded: user.rosteringEnded?.toISOString() ?? null,
+    isSuperAdmin: user.isSuperAdmin,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt?.toISOString() ?? null,
+  };
+}
 
 /**
  * Handles HTTP concerns for the /users endpoints.
@@ -28,7 +68,7 @@ export const UsersController = {
       return {
         status: StatusCodes.OK as const,
         body: {
-          data: user,
+          data: toUserResponse(user),
         },
       };
     } catch (error) {

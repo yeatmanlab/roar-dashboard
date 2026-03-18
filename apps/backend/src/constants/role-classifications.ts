@@ -41,3 +41,11 @@ export const SUPERVISORY_ROLES: UserRole[] = [
  * They cannot see administrations assigned to sibling or child entities.
  */
 export const SUPERVISED_ROLES: UserRole[] = ['student', 'guardian', 'parent', 'relative'];
+
+/**
+ * Roles that are caretakers within a family context.
+ *
+ * These roles can only see all users within their family, but not other users
+ * that are in their children's organizations or classes
+ */
+export const CARETAKER_ROLES: UserRole[] = ['guardian', 'parent', 'relative'];

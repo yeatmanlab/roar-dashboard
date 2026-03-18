@@ -11,7 +11,7 @@ import { isActiveInFamily, isEnrollmentActive } from '../utils/enrollment.utils'
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isAuthorizedFamily, isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
 import { parseAccessControlFilter } from '../utils/parse-access-control-filter.utils';
-import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
+import { filterSupervisoryRoles, filterCaretakerRoles } from '../utils/supervisory-roles.utils';
 
 /**
  * User Access Controls
@@ -93,6 +93,7 @@ export class UserAccessControls {
 
     const usersTable = alias(users, 'users_table');
     const supervisoryAllowedRoles = filterSupervisoryRoles(allowedRoles);
+    const caretakerAllowedRoles = filterCaretakerRoles(allowedRoles);
 
     // ─────────────────────────────────────────────────────────────────────────–––––––
     // NON-SUPERVISORY ACCESS: Users without supervisory roles see only themselves
@@ -180,7 +181,10 @@ export class UserAccessControls {
       .from(requesterUserFamilies)
       .innerJoin(userFamilies, eq(requesterUserFamilies.familyId, userFamilies.familyId))
       .where(
-        and(isAuthorizedFamily(requesterUserFamilies, requestingUserId, allowedRoles), isActiveInFamily(userFamilies)),
+        and(
+          isAuthorizedFamily(requesterUserFamilies, requestingUserId, caretakerAllowedRoles),
+          isActiveInFamily(userFamilies),
+        ),
       );
 
     // ─────────────────────────────────────────────────────────────────────────–––––––

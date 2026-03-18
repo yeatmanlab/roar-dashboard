@@ -22,7 +22,7 @@ export const UserResponseSchema = z.object({
   username: z.string().nullable(),
   email: z.string().email().nullable(),
   userType: UserTypeSchema,
-  dob: z.string().datetime().nullable(),
+  dob: z.string().date().nullable(),
   grade: UserGradeSchema.nullable(),
   schoolLevel: SchoolLevelSchema.nullable(),
   statusEll: z.string().nullable(),
