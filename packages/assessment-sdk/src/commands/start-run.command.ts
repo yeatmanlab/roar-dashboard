@@ -34,7 +34,7 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
       taskVariantId: input.variantId,
       taskVersion: input.taskVersion,
       isAnonymous,
-      ...(isAnonymous ? {} : { administrationId: (input as { administrationId: string }).administrationId }),
+      ...(input.isAnonymous !== true ? { administrationId: input.administrationId } : {}),
       ...(input.metadata ? { metadata: input.metadata } : {}),
     };
 

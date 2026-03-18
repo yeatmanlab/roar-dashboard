@@ -28,27 +28,6 @@ type CompatTaskInfo = {
   isAnonymous?: boolean;
 };
 
-export function _getRunIdForCompat(): string | undefined {
-  return FirekitFacade.getInstance()._getRunId();
-}
-
-/**
- * Internal helper to retrieve the initialized API and Invoker instances.
- * Ensures that the Firekit compat facade has been properly initialized.
- *
- * @returns Object containing initialized RoarApi and Invoker instances
- * @throws {SDKError} If facade has not been initialized via initFirekitCompat()
- * @internal
- */
-function getInvokerAndApi(): { api: RoarApi; invoker: Invoker } {
-  const facade = getFirekitCompat();
-
-  return {
-    api: facade.getApi(),
-    invoker: facade.getInvoker(),
-  };
-}
-
 /**
  * Test-only function to reset the Firekit compat singleton state.
  * Clears the singleton instance and module-level state variables.
@@ -297,7 +276,8 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
     throw new SDKError('appkit.startRun requires administrationId when isAnonymous is false.');
   }
 
-  const { api, invoker } = getInvokerAndApi();
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
 
   const input: StartRunInput = isAnonymous
     ? {
