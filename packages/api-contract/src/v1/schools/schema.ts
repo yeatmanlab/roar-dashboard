@@ -56,10 +56,11 @@ export const SchoolDetailBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   abbreviation: z.string(),
-  orgType: z.literal('school'),
+  orgType: z.string(),
   parentOrgId: z.string().uuid().nullable(),
   location: SchoolLocationSchema.optional(),
   identifiers: SchoolIdentifiersSchema.optional(),
+  isRosteringRootOrg: z.boolean(),
 });
 
 export type SchoolDetailBase = z.infer<typeof SchoolDetailBaseSchema>;
