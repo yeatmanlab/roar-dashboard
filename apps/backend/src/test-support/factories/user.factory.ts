@@ -91,11 +91,11 @@ export const AuthContextFactory = Factory.define<AuthContext>(() => ({
   isSuperAdmin: faker.datatype.boolean(),
 }));
 
-export const EnrolledUserFactory = Factory.define<EnrolledUserEntity>(({ transientParams }) => {
+export const EnrolledUserFactory = Factory.define<EnrolledUserEntity>(({ params }) => {
   return {
     ...UserFactory.build(),
-    role: transientParams?.role ?? UserRole.STUDENT,
-    enrollmentStart: transientParams?.enrollmentStart ?? new Date('2024-01-01T00:00:00Z'),
-    ...transientParams,
+    role: params?.role ?? UserRole.STUDENT,
+    enrollmentStart: params?.enrollmentStart ?? new Date('2024-01-01T00:00:00Z'),
+    ...params,
   };
 });

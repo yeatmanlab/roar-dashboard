@@ -145,6 +145,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
+      isNull(classes.rosteringEnded),
       ...getEnrolledUsersFilterConditions(options),
     );
 

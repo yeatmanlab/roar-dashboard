@@ -47,7 +47,7 @@ export class ClassAccessControls {
    *
    * Queries all membership paths (org, class) that connect the user to the
    * class and returns the distinct roles from those memberships. This is
-   * useful for determining if a user has any supervisory roles for an class.
+   * useful for determining if a user has any supervisory roles for a class.
    *
    * @example
    * ```ts

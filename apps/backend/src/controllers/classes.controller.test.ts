@@ -145,7 +145,7 @@ describe('ClassesController', () => {
     });
 
     it('should handle ApiError with 403 Forbidden', async () => {
-      const error = new ApiError('Access denied', {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
