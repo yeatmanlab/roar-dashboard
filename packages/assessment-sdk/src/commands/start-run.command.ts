@@ -4,6 +4,7 @@ import type { RoarApi } from '../receiver/roar-api';
 import type { StartRunInput, StartRunOutput } from '../types/start-run';
 import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
 import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums';
 
 /**
  * StartRunCommand creates a new assessment run.
@@ -45,7 +46,7 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
 
     const errorBody = result.body as { error?: { message?: string } };
     throw new SDKError(errorBody?.error?.message ?? `Failed to start run with status ${result.status}`, {
-      code: 'CREATE_RUN_FAILED',
+      code: SdkErrorCode.START_RUN_FAILED,
     });
   }
 }
