@@ -43,3 +43,7 @@ export function isEnrollmentActive(table: { enrollmentStart: AnyColumn; enrollme
     or(gte(table.enrollmentEnd, sql`NOW()`), isNull(table.enrollmentEnd)),
   );
 }
+
+export function isActiveInFamily(table: { joinedOn: AnyColumn; leftOn: AnyColumn }) {
+  return (and(lte(table.joinedOn, sql`NOW()`)), or(gte(table.leftOn, sql`NOW()`), isNull(table.leftOn)));
+}

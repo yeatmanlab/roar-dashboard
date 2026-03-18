@@ -1,5 +1,5 @@
 import { and, eq, inArray, type AnyColumn } from 'drizzle-orm';
-import { isEnrollmentActive } from './enrollment.utils';
+import { isEnrollmentActive, isActiveInFamily } from './enrollment.utils';
 
 /**
  * Builds a condition to filter user memberships by userId, allowed roles, and active enrollment.
@@ -26,9 +26,22 @@ import { isEnrollmentActive } from './enrollment.utils';
  * @returns Drizzle SQL condition combining user, role, and enrollment checks
  */
 export function isAuthorizedMembership(
-  table: { userId: AnyColumn; role: AnyColumn; enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
+  table: {
+    userId: AnyColumn;
+    role: AnyColumn;
+    enrollmentStart: AnyColumn;
+    enrollmentEnd: AnyColumn;
+  },
   userId: string,
   allowedRoles: string[],
 ) {
   return and(eq(table.userId, userId), inArray(table.role, allowedRoles), isEnrollmentActive(table));
+}
+
+export function isAuthorizedFamily(
+  table: { userId: AnyColumn; role: AnyColumn; joinedOn: AnyColumn; leftOn: AnyColumn },
+  userId: string,
+  allowedRoles: string[],
+) {
+  return and(eq(table.userId, userId), inArray(table.role, allowedRoles), isActiveInFamily(table));
 }

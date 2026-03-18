@@ -73,7 +73,7 @@ export function UserService({
 
     // Check access for non-super admin users
     const allowedRoles = rolesForPermission(permission);
-    logger.log(allowedRoles);
+    logger.debug(allowedRoles);
     return user;
   }
 
@@ -111,7 +111,7 @@ export function UserService({
    * @returns The user record if found, null otherwise.
    * @throws {ApiError} If the database query fails.
    */
-  async function getById(authContext: AuthContext, userId: string): Promise<User | null> {}
+  // async function getById(authContext: AuthContext, userId: string): Promise<User | null> {}
 
-  return { verifySupervisoryAccess, findByAuthId, getById };
+  return { verifySupervisoryAccess, findByAuthId };
 }
