@@ -10,8 +10,8 @@ import {
   TasksListResponseSchema,
   TaskIdParamSchema,
   TaskSchema,
-  TaskVariantsListQuerySchema,
-  TaskVariantsListResponseSchema,
+  ListTaskVariantsQuerySchema,
+  ListTaskVariantsResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -62,6 +62,26 @@ export const TasksContract = c.router(
         'Returns 400 if the ID is invalid. ' +
         'Returns 404 if no task exists with the given ID. ' +
         'Returns 500 if a server error occurs.',
+    },
+    listTaskVariants: {
+      method: 'GET',
+      path: '/:taskId/variants',
+      pathParams: TaskIdParamSchema,
+      query: ListTaskVariantsQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(ListTaskVariantsResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List variants for a task',
+      description:
+        'Returns a paginated list of variants for the specified task. ' +
+        'All users can see published variants. Super admins can see all variants (draft, published, deprecated). ' +
+        'Supports pagination (page, perPage), searching by name or description, and sorting by name, createdAt, or updatedAt. ' +
+        'Returns 404 if the task does not exist.',
     },
     createTaskVariant: {
       method: 'POST',
@@ -115,26 +135,6 @@ export const TasksContract = c.router(
         'Returns 204 No Content upon successful update. ' +
         'Returns 404 if the task or variant does not exist. ' +
         'Returns 409 if updating the name would conflict with an existing variant name for the same task.',
-    },
-    listVariants: {
-      method: 'GET',
-      path: '/:taskId/variants',
-      pathParams: TaskIdParamSchema,
-      query: TaskVariantsListQuerySchema,
-      responses: {
-        200: SuccessEnvelopeSchema(TaskVariantsListResponseSchema),
-        400: ErrorEnvelopeSchema,
-        401: ErrorEnvelopeSchema,
-        404: ErrorEnvelopeSchema,
-        500: ErrorEnvelopeSchema,
-      },
-      strictStatusCodes: true,
-      summary: 'List variants for a task',
-      description:
-        'Returns a paginated list of variants for the specified task. ' +
-        'All users can see published variants. Super admins can see all variants (draft, published, deprecated). ' +
-        'Supports pagination (page, perPage), searching by name or description, and sorting by name, createdAt, or updatedAt. ' +
-        'Returns 404 if the task does not exist.',
     },
   },
   { pathPrefix: '/tasks' },

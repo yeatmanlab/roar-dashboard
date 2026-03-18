@@ -88,6 +88,53 @@ const TaskVariantParameterSchema = z.object({
 const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema);
 
 /**
+ * Schema for a task variant in list responses.
+ */
+export const TaskVariantSchema = z.object({
+  id: z.string().uuid(),
+  taskId: z.string().uuid(),
+  name: z.string().nullable(),
+  description: z.string().nullable(),
+  status: TaskVariantStatusSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
+});
+
+export type TaskVariant = z.infer<typeof TaskVariantSchema>;
+
+/**
+ * Allowed sort fields for task variants.
+ */
+export const TASK_VARIANT_SORT_FIELDS = ['createdAt', 'name', 'updatedAt'] as const;
+
+/**
+ * Sort field type for task variants.
+ */
+export type TaskVariantSortFieldType = (typeof TASK_VARIANT_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const TaskVariantSortField = {
+  CREATED_AT: 'createdAt',
+  NAME: 'name',
+  UPDATED_AT: 'updatedAt',
+} as const satisfies Record<string, TaskVariantSortFieldType>;
+
+/**
+ * Query parameters for listing task variants.
+ * Supports pagination, sorting, and search (name/description).
+ */
+export const ListTaskVariantsQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(TASK_VARIANT_SORT_FIELDS, 'name', 'asc'),
+).merge(SearchQuerySchema);
+
+/**
+ * Paginated response for task variants list.
+ */
+export const ListTaskVariantsResponseSchema = createPaginatedResponseSchema(TaskVariantSchema);
+
+/**
  * Task Variant Create Request Schema
  *
  * Creates a new task variant with the specified configuration.
@@ -150,6 +197,8 @@ export const UpdateTaskVariantResponseSchema = z.undefined();
 export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
 export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
+export type ListTaskVariantsQuery = z.infer<typeof ListTaskVariantsQuerySchema>;
+export type ListTaskVariantsResponse = z.infer<typeof ListTaskVariantsResponseSchema>;
 export type CreateTaskVariantRequestBody = z.infer<typeof CreateTaskVariantRequestBodySchema>;
 export type CreateTaskVariantResponse = z.infer<typeof CreateTaskVariantResponseSchema>;
 export type UpdateTaskVariantRequestBody = z.infer<typeof UpdateTaskVariantRequestBodySchema>;
@@ -214,54 +263,3 @@ export const TasksListResponseSchema = createPaginatedResponseSchema(TaskSchema)
 export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
 
 export type TaskIdParam = z.infer<typeof TaskIdParamSchema>;
-
-/**
- * Schema for a task variant in list responses.
- */
-export const TaskVariantSchema = z.object({
-  id: z.string().uuid(),
-  taskId: z.string().uuid(),
-  name: z.string().nullable(),
-  description: z.string().nullable(),
-  status: TaskVariantStatusSchema,
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime().nullable(),
-});
-
-export type TaskVariant = z.infer<typeof TaskVariantSchema>;
-
-/**
- * Allowed sort fields for task variants.
- */
-export const TASK_VARIANT_SORT_FIELDS = ['createdAt', 'name', 'updatedAt'] as const;
-
-/**
- * Sort field type for task variants.
- */
-export type TaskVariantSortFieldType = (typeof TASK_VARIANT_SORT_FIELDS)[number];
-
-/**
- * Sort field constants for type-safe access.
- */
-export const TaskVariantSortField = {
-  CREATED_AT: 'createdAt',
-  NAME: 'name',
-  UPDATED_AT: 'updatedAt',
-} as const satisfies Record<string, TaskVariantSortFieldType>;
-
-/**
- * Query parameters for listing task variants.
- * Supports pagination, sorting, and search (name/description).
- */
-export const TaskVariantsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(TASK_VARIANT_SORT_FIELDS, 'name', 'asc'),
-).merge(SearchQuerySchema);
-
-export type TaskVariantsListQuery = z.infer<typeof TaskVariantsListQuerySchema>;
-
-/**
- * Paginated response for task variants list.
- */
-export const TaskVariantsListResponseSchema = createPaginatedResponseSchema(TaskVariantSchema);
-
-export type TaskVariantsListResponse = z.infer<typeof TaskVariantsListResponseSchema>;

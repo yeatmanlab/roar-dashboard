@@ -231,6 +231,55 @@ export function TaskService({
   taskVariantParameterRepository?: TaskVariantParameterRepository;
 } = {}) {
   /**
+   * List task variants for a given task.
+   *
+   * Authorization:
+   * - Super admins see all variants (draft, published, deprecated)
+   * - Regular users see only published variants
+   *
+   * @param authContext - User's authentication context
+   * @param taskId - The UUID of the parent task
+   * @param options - Pagination, sorting, and search options
+   * @returns Paginated result with task variants
+   * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function listTaskVariants(
+    authContext: AuthContext,
+    taskId: string,
+    options: ListTaskVariantsOptions,
+  ): Promise<PaginatedResult<TaskVariant>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Verify the parent task exists (404 before any data access)
+      const task = await taskRepository.getById({ id: taskId });
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+
+      // Super admins see all statuses, regular users see only published
+      return await taskVariantRepository.listByTaskId({ taskId, includeAllStatuses: isSuperAdmin }, options);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to list task variants');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Creates a new task variant with its required parameters.
    *
    * Task variants require at least one parameter to be valid. The variant and all its
@@ -694,61 +743,12 @@ export function TaskService({
     }
   }
 
-  /**
-   * List task variants for a given task.
-   *
-   * Authorization:
-   * - Super admins see all variants (draft, published, deprecated)
-   * - Regular users see only published variants
-   *
-   * @param authContext - User's authentication context
-   * @param taskId - The UUID of the parent task
-   * @param options - Pagination, sorting, and search options
-   * @returns Paginated result with task variants
-   * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
-   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
-   */
-  async function listVariants(
-    authContext: AuthContext,
-    taskId: string,
-    options: ListTaskVariantsOptions,
-  ): Promise<PaginatedResult<TaskVariant>> {
-    const { userId, isSuperAdmin } = authContext;
-
-    try {
-      // Verify the parent task exists (404 before any data access)
-      const task = await taskRepository.getById({ id: taskId });
-
-      if (!task) {
-        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, taskId },
-        });
-      }
-
-      // Super admins see all statuses, regular users see only published
-      return await taskVariantRepository.listByTaskId({ taskId, includeAllStatuses: isSuperAdmin }, options);
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-
-      logger.error({ err: error, context: { userId, taskId } }, 'Failed to list task variants');
-
-      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, taskId },
-        cause: error,
-      });
-    }
-  }
-
   return {
     list,
     getById,
+    listTaskVariants,
     createTaskVariant,
     updateTaskVariant,
-    listVariants,
     evaluateTaskVariantEligibility,
   };
 }

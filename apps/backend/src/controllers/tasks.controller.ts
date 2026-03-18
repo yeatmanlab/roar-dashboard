@@ -1,9 +1,9 @@
 import type { AuthContext } from '../types/auth-context';
 import type {
+  ListTaskVariantsQuery,
   CreateTaskVariantRequestBody,
   UpdateTaskVariantRequestBody,
   TasksListQuery,
-  TaskVariantsListQuery,
   Task as ContractTask,
   TaskVariant as ContractTaskVariant,
   Json,
@@ -136,6 +136,49 @@ export const TasksController = {
   },
 
   /**
+   * List variants for a given task.
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Super admins see all variants; regular users see only published variants.
+   *
+   * @param authContext - User's authentication context
+   * @param taskId - The UUID of the parent task
+   * @param query - Query parameters for pagination, sorting, and searching
+   * @returns Paginated list of task variants
+   */
+  listTaskVariants: async (authContext: AuthContext, taskId: string, query: ListTaskVariantsQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder, search } = query;
+      const result = await taskService.listTaskVariants(authContext, taskId, {
+        page,
+        perPage,
+        orderBy: { field: sortBy, direction: sortOrder },
+        ...(search && { search }),
+      });
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items: result.items.map(transformTaskVariant),
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Create a new task-variant for a given task id.
    *
    * Delegates to TaskService for authorization and business logic.
@@ -207,49 +250,6 @@ export const TasksController = {
           StatusCodes.INTERNAL_SERVER_ERROR,
           StatusCodes.BAD_REQUEST,
         ]);
-      }
-      throw error;
-    }
-  },
-
-  /**
-   * List variants for a given task.
-   *
-   * Delegates to TaskService for authorization and business logic.
-   * Super admins see all variants; regular users see only published variants.
-   *
-   * @param authContext - User's authentication context
-   * @param taskId - The UUID of the parent task
-   * @param query - Query parameters for pagination, sorting, and searching
-   * @returns Paginated list of task variants
-   */
-  listVariants: async (authContext: AuthContext, taskId: string, query: TaskVariantsListQuery) => {
-    try {
-      const { page, perPage, sortBy, sortOrder, search } = query;
-      const result = await taskService.listVariants(authContext, taskId, {
-        page,
-        perPage,
-        orderBy: { field: sortBy, direction: sortOrder },
-        ...(search && { search }),
-      });
-
-      return {
-        status: StatusCodes.OK as const,
-        body: {
-          data: {
-            items: result.items.map(transformTaskVariant),
-            pagination: {
-              page,
-              perPage,
-              totalItems: result.totalItems,
-              totalPages: Math.ceil(result.totalItems / perPage),
-            },
-          },
-        },
-      };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }
