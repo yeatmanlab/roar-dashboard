@@ -8,11 +8,12 @@ import { SdkErrorCode } from '../enums';
 /**
  * AbortRunCommand aborts an active assessment run.
  *
- * This command is idempotent, allowing the Invoker to retry on transient failures.
+ * This command is non-idempotent; the Invoker will execute it exactly once.
+ * 409 Conflict is treated as success since the run is already in a terminal state.
  *
  * Responsibilities:
  * - Call the ts-rest client to post a run abort event
- * - Interpret the HTTP response (200 OK = success)
+ * - Interpret the HTTP response (200 OK or 409 Conflict = success)
  * - Throw SDKError with appropriate error code on failure
  *
  * @implements {Command<AbortRunInput, AbortRunOutput>}

@@ -43,14 +43,28 @@ describe('firekit compat', () => {
         },
       };
 
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          status: 201,
-          json: async () => ({ data: { id: 'run-abort-test' } }),
-          headers: new Headers([['content-type', 'application/json']]),
-        }),
-      );
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        // Return 201 for startRun (POST /runs)
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-abort-test' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        // Return 200 for abortRun (POST /runs/:runId/event)
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
 
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
@@ -61,6 +75,18 @@ describe('firekit compat', () => {
       await startRun();
 
       expect(() => abortRun()).not.toThrow();
+
+      // Wait a tick for the async abort to complete
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Verify fetch was called with the abort event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-abort-test/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('abort'),
+        }),
+      );
     });
 
     it('matches Firekit signature', () => {
