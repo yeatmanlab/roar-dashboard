@@ -108,7 +108,7 @@ describe('firekit compat', () => {
 
     it('throws SDKError when Firekit compat is not initialized (no task info)', async () => {
       // Don't call initFirekitCompat - simulate uninitialized state
-      // This will cause getInvokerAndApi() to throw the proper error
+      // Throws because taskInfo is null - facade was never initialized
       await expect(startRun()).rejects.toBeInstanceOf(SDKError);
     });
 
