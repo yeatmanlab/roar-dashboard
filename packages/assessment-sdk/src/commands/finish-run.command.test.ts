@@ -23,7 +23,7 @@ describe('FinishRunCommand', () => {
     expect(command.idempotent).toBe(false);
   });
 
-  it('calls api.client.runs.event with correct parameters and returns empty object on success', async () => {
+  it('calls api.client.runs.event with correct parameters and returns status on success', async () => {
     const input: FinishRunInput = {
       runId: 'run-123',
       type: RUN_EVENT_COMPLETE,
@@ -41,7 +41,7 @@ describe('FinishRunCommand', () => {
       params: { runId: 'run-123' },
       body: { type: RUN_EVENT_COMPLETE },
     });
-    expect(result).toEqual({});
+    expect(result).toEqual({ status: 'ok' });
   });
 
   it('calls api.client.runs.event with metadata when provided', async () => {
@@ -64,7 +64,24 @@ describe('FinishRunCommand', () => {
       params: { runId: 'run-456' },
       body: { type: RUN_EVENT_COMPLETE, metadata },
     });
-    expect(result).toEqual({});
+    expect(result).toEqual({ status: 'ok' });
+  });
+
+  it('treats 409 Conflict as success (run already finished)', async () => {
+    const input: FinishRunInput = {
+      runId: 'run-789',
+      type: RUN_EVENT_COMPLETE,
+    };
+
+    eventMock.mockResolvedValue({
+      status: StatusCodes.CONFLICT,
+      body: { error: { message: 'Run already in terminal state' } },
+    });
+
+    const result = await command.execute(input);
+
+    expect(eventMock).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ status: 'ok' });
   });
 
   it('throws SDKError with error message from response body', async () => {

@@ -302,6 +302,42 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
   facade._setRunId(result.runId);
 }
 
+/**
+ * Firekit compatibility method for finishing an assessment run.
+ *
+ * This function marks a run as complete in the ROAR backend system, serving as a drop-in
+ * replacement for the legacy Firekit `appkit.finishRun()` method.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ * - `startRun()` must be called to create an active run
+ *
+ * The run is marked with a completion event and any provided metadata is included
+ * in the backend request.
+ *
+ * @param finishingMetadata - Optional custom metadata to include with the completion event.
+ *                            Can contain any key-value pairs for run customization.
+ *
+ * @returns Promise<void> - Resolves when the run is successfully marked as complete
+ *
+ * @throws {SDKError}
+ * - If the facade has not been initialized via `initFirekitCompat()`
+ * - If no active run exists (i.e., `startRun()` has not been called)
+ * - If the backend request fails
+ *
+ * @example
+ * ```ts
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
+ * await startRun();
+ * // ... assessment logic ...
+ * await finishRun({ totalScore: 85, timeSpent: 300 });
+ * ```
+ */
 export async function finishRun(finishingMetadata?: Record<string, unknown>): Promise<void> {
   const facade = getFirekitCompat();
   const runId = facade._getRunId();

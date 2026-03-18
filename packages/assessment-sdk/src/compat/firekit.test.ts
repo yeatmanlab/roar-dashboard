@@ -96,9 +96,115 @@ describe('firekit compat', () => {
   });
 
   describe('finishRun', () => {
-    it('throws SDKError when called (stub not yet implemented)', async () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when called without an active run', async () => {
       await expect(finishRun()).rejects.toBeInstanceOf(SDKError);
       await expect(finishRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('successfully finishes an active run', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        // Return 201 for startRun (POST /runs)
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-finish-test' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        // Return 200 for finishRun (POST /runs/:runId/event)
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+      await expect(finishRun()).resolves.toBeUndefined();
+
+      // Verify fetch was called with the finish event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-finish-test/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('complete'),
+        }),
+      );
+    });
+
+    it('includes metadata when provided', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-finish-metadata' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+      await expect(finishRun({ customField: 'value', count: 42 })).resolves.toBeUndefined();
+
+      // Verify metadata was included in the request
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-finish-metadata/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('customField'),
+        }),
+      );
     });
 
     it('matches Firekit signature', () => {
