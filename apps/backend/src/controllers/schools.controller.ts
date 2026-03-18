@@ -51,6 +51,7 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
     parentOrgId: school.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
+    isRosteringRootOrg: school.isRosteringRootOrg,
   };
 }
 
