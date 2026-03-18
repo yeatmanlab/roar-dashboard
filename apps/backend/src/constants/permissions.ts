@@ -34,6 +34,7 @@ export const Permissions = {
   Classes: {
     ALL: 'classes.*',
     LIST: 'classes.list',
+    READ: 'classes.read',
   },
   Groups: {
     ALL: 'groups.*',
