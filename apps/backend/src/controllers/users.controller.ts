@@ -5,7 +5,6 @@ import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
-
 const userService = UserService();
 
 /**
