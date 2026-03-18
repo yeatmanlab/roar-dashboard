@@ -15,10 +15,12 @@ import type {
   ComputedScores,
   WriteTrialOutput,
 } from '../types';
+import { RUN_EVENT_ABORT } from '../types/abort-run';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
+import { AbortRunCommand } from '../commands/abort-run.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -322,30 +324,26 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
  * abortRun() { […] }
  * ```
  *
+ * Preserves the legacy Firekit synchronous signature while issuing a best-effort
+ * asynchronous abort request to the backend when a run is active.
+ *
  * @returns void
- * @throws {SDKError} Always, until implemented.
  */
 export function abortRun(): void {
-  if (!_runId) return;
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  // No active run: preserve Firekit-like no-op behavior
+  if (!runId) return;
 
   void (async () => {
-    const ctx = getCtx();
-    const api = new RoarApi(ctx);
-
-    // Best-effort, no-retry abort to avoid keeping processes alive
-    const invoker = new Invoker(ctx, { retries: 0, retryDelayMs: 0 });
+    const api = facade.getApi();
+    const invoker = facade.getInvoker();
 
     const cmd = new AbortRunCommand(api);
-    await invoker.run(cmd, { runId: _runId, type: RUN_EVENT_ABORT });
+    await invoker.run(cmd, { runId, type: RUN_EVENT_ABORT });
   })().catch((err) => {
-    const ctx = (() => {
-      try {
-        return getCtx();
-      } catch {
-        return undefined;
-      }
-    })();
-    ctx?.logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
+    facade.getContext().logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
   });
 }
 

@@ -1,16 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { AbortRunCommand } from './abort-run.command';
-import type { RoarApi } from '../receiver/roar-api';
+import { StatusCodes } from 'http-status-codes';
+import { createMockRoarApi } from '../test-support';
 import type { AbortRunInput } from '../types/abort-run';
 
 describe('AbortRunCommand', () => {
   let command: AbortRunCommand;
-  let mockApi: RoarApi;
-  let postRunEvent: ReturnType<typeof vi.fn>;
+  let mockApi: ReturnType<typeof createMockRoarApi>;
+  let eventMock: Mock;
 
   beforeEach(() => {
-    postRunEvent = vi.fn();
-    mockApi = { postRunEvent } as unknown as RoarApi;
+    mockApi = createMockRoarApi();
+    eventMock = mockApi.client.runs.event as Mock;
     command = new AbortRunCommand(mockApi);
   });
 
@@ -19,28 +21,63 @@ describe('AbortRunCommand', () => {
     expect(command.idempotent).toBe(true);
   });
 
-  it('calls api.postRunEvent with event type from input', async () => {
+  it('calls api.client.runs.event with correct parameters and returns empty object on success', async () => {
     const input: AbortRunInput = {
       runId: 'run-123',
       type: 'abort',
     };
 
-    postRunEvent.mockResolvedValue(undefined);
+    eventMock.mockResolvedValue({
+      status: StatusCodes.OK,
+      body: {},
+    });
 
-    await command.execute(input);
+    const result = await command.execute(input);
 
-    expect(postRunEvent).toHaveBeenCalledTimes(1);
-    expect(postRunEvent).toHaveBeenCalledWith('run-123', { type: input.type });
+    expect(eventMock).toHaveBeenCalledTimes(1);
+    expect(eventMock).toHaveBeenCalledWith({
+      params: { runId: 'run-123' },
+      body: { type: 'abort' },
+    });
+    expect(result).toEqual({});
   });
 
-  it('propagates errors from api.postRunEvent', async () => {
+  it('throws SDKError with error message from response body', async () => {
     const input: AbortRunInput = {
       runId: 'run-123',
       type: 'abort',
     };
 
-    postRunEvent.mockRejectedValue(new Error('API request failed'));
+    eventMock.mockResolvedValue({
+      status: StatusCodes.BAD_REQUEST,
+      body: { error: { message: 'Run not found' } },
+    });
 
-    await expect(command.execute(input)).rejects.toThrow('API request failed');
+    await expect(command.execute(input)).rejects.toThrow('Run not found');
+  });
+
+  it('throws SDKError with status code message when error details are missing', async () => {
+    const input: AbortRunInput = {
+      runId: 'run-123',
+      type: 'abort',
+    };
+
+    eventMock.mockResolvedValue({
+      status: StatusCodes.INTERNAL_SERVER_ERROR,
+      body: {},
+    });
+
+    await expect(command.execute(input)).rejects.toThrow('Failed to abort run with status 500');
+  });
+
+  it('propagates errors from api.client.runs.event', async () => {
+    const input: AbortRunInput = {
+      runId: 'run-123',
+      type: 'abort',
+    };
+
+    eventMock.mockRejectedValue(new Error('Network error'));
+
+    await expect(command.execute(input)).rejects.toThrow('Network error');
   });
 });

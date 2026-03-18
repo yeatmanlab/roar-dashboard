@@ -23,8 +23,40 @@ import type { CommandContext } from '../command/command';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
-    it('throws SDKError when called (stub not yet implemented)', () => {
-      expect(() => abortRun()).toThrow(SDKError);
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('is a no-op when no active run (preserves Firekit behavior)', () => {
+      expect(() => abortRun()).not.toThrow();
+    });
+
+    it('issues best-effort async abort request when run is active', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-abort-test' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      expect(() => abortRun()).not.toThrow();
     });
 
     it('matches Firekit signature', () => {

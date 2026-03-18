@@ -12,6 +12,6 @@ export interface AbortRunInput {
 
 /**
  * Output from the AbortRun command.
- * Returns void as the abort operation has no return value.
+ * Returns an empty object as the abort operation has no return value.
  */
-export type AbortRunOutput = void;
+export type AbortRunOutput = Record<string, never>;
