@@ -94,8 +94,7 @@ export const AuthContextFactory = Factory.define<AuthContext>(() => ({
 export const EnrolledUserFactory = Factory.define<EnrolledUserEntity>(({ params }) => {
   return {
     ...UserFactory.build(),
-    role: params?.role ?? UserRole.STUDENT,
-    enrollmentStart: params?.enrollmentStart ?? new Date('2024-01-01T00:00:00Z'),
-    ...params,
+    role: params.role ?? UserRole.STUDENT,
+    enrollmentStart: params.enrollmentStart ?? new Date('2024-01-01T00:00:00Z'),
   };
 });
