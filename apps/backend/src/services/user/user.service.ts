@@ -120,13 +120,17 @@ export function UserService({
    * @returns The user record if found, null otherwise.
    * @throws {ApiError} If the database query fails.
    */
-  async function getById(id: string): Promise<User | null> {
+  async function getById(authContext: AuthContext, id: string): Promise<User> {
+    const { userId } = authContext;
+
     try {
-      return await userRepository.getById({ id });
+      return await verifySupervisoryAccess(authContext, id);
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      logger.error({ err: error, context: { userId: id } }, 'Failed to get user by ID');
-      throw new ApiError('Failed to retrieve user', {
+
+      logger.error({ err: error, context: { userId } }, 'Failed to get user by ID');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: id },
@@ -134,5 +138,6 @@ export function UserService({
       });
     }
   }
+
   return { verifySupervisoryAccess, findByAuthId, getById };
 }
