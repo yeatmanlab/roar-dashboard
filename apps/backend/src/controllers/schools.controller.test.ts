@@ -127,7 +127,6 @@ describe('SchoolsController', () => {
           postalCode: '62701',
           country: 'USA',
         },
-        isRosteringRootOrg: false,
       });
     });
 
