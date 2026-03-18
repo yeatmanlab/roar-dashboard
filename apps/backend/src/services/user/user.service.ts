@@ -56,7 +56,7 @@ export function UserService({
     const { userId, isSuperAdmin } = authContext;
 
     // Look up the user first to distinguish between not found and permission issues
-    const user = await userRepository.get({ id });
+    const user = await userRepository.getById({ id });
 
     if (!user) {
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
@@ -73,8 +73,17 @@ export function UserService({
 
     // Check access for non-super admin users
     const allowedRoles = rolesForPermission(permission);
-    logger.debug(allowedRoles);
-    return user;
+    const authorized = await userRepository.getAuthorizedById({ userId, allowedRoles }, id);
+
+    if (!authorized) {
+      logger.warn({ userId, id }, 'User attempted to access another user without permission');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, id },
+      });
+    }
+    return authorized;
   }
 
   /**
