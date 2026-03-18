@@ -1,10 +1,10 @@
-import type { NewTaskVariant, NewTaskVariantParameter, User, Task } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter, User, Task, TaskVariant } from '../../db/schema';
 import type { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../logger';
-import { TaskVariantRepository } from '../../repositories/task-variant.repository';
+import { TaskVariantRepository, type ListTaskVariantsOptions } from '../../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
 import { TaskRepository, type ListTasksOptions } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
@@ -694,11 +694,61 @@ export function TaskService({
     }
   }
 
+  /**
+   * List task variants for a given task.
+   *
+   * Authorization:
+   * - Super admins see all variants (draft, published, deprecated)
+   * - Regular users see only published variants
+   *
+   * @param authContext - User's authentication context
+   * @param taskId - The UUID of the parent task
+   * @param options - Pagination, sorting, and search options
+   * @returns Paginated result with task variants
+   * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function listVariants(
+    authContext: AuthContext,
+    taskId: string,
+    options: ListTaskVariantsOptions,
+  ): Promise<PaginatedResult<TaskVariant>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Verify the parent task exists (404 before any data access)
+      const task = await taskRepository.getById({ id: taskId });
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+
+      // Super admins see all statuses, regular users see only published
+      return await taskVariantRepository.listByTaskId({ taskId, includeAllStatuses: isSuperAdmin }, options);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to list task variants');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
     createTaskVariant,
     updateTaskVariant,
+    listVariants,
     evaluateTaskVariantEligibility,
   };
 }

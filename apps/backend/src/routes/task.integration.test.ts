@@ -29,6 +29,8 @@ import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { TaskVariantRepository } from '../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../repositories/task-variant-parameter.repository';
+import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
+import { TaskFactory } from '../test-support/factories/task.factory';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -638,6 +640,339 @@ describe('POST /v1/tasks/:taskId/variants', () => {
 
         expect(updateRes.status).toBe(StatusCodes.NO_CONTENT);
       });
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/tasks/:taskId/variants
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/tasks/:taskId/variants', () => {
+  const taskId = () => baseFixture.task.id;
+  const path = () => `/v1/tasks/${taskId()}/variants`;
+
+  describe('authorization and status filtering', () => {
+    it('superAdmin tier can see all variants including draft and deprecated', async () => {
+      // Create variants with different statuses for this test
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: taskId(),
+        name: `Draft Variant ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: taskId(),
+        name: `Published Variant ${Date.now()}`,
+        status: 'published',
+      });
+      const deprecatedVariant = await TaskVariantFactory.create({
+        taskId: taskId(),
+        name: `Deprecated Variant ${Date.now()}`,
+        status: 'deprecated',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const variantIds = res.body.data.items.map((v: { id: string }) => v.id);
+      expect(variantIds).toContain(draftVariant.id);
+      expect(variantIds).toContain(publishedVariant.id);
+      expect(variantIds).toContain(deprecatedVariant.id);
+    });
+
+    it('siteAdmin tier can only see published variants', async () => {
+      // Create a task with known variants for this test
+      const testTask = await TaskFactory.create({ slug: `site-admin-test-${Date.now()}` });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const variantIds = res.body.data.items.map((v: { id: string }) => v.id);
+      expect(variantIds).toContain(publishedVariant.id);
+      expect(variantIds).not.toContain(draftVariant.id);
+    });
+
+    it('admin tier can only see published variants', async () => {
+      const testTask = await TaskFactory.create({ slug: `admin-test-${Date.now()}` });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.admin);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const variantIds = res.body.data.items.map((v: { id: string }) => v.id);
+      expect(variantIds).toContain(publishedVariant.id);
+      expect(variantIds).not.toContain(draftVariant.id);
+    });
+
+    it('educator tier can only see published variants', async () => {
+      const testTask = await TaskFactory.create({ slug: `educator-test-${Date.now()}` });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.educator);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const variantIds = res.body.data.items.map((v: { id: string }) => v.id);
+      expect(variantIds).toContain(publishedVariant.id);
+      expect(variantIds).not.toContain(draftVariant.id);
+    });
+
+    it('student tier can only see published variants', async () => {
+      const testTask = await TaskFactory.create({ slug: `student-test-${Date.now()}` });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.student);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const variantIds = res.body.data.items.map((v: { id: string }) => v.id);
+      expect(variantIds).toContain(publishedVariant.id);
+      expect(variantIds).not.toContain(draftVariant.id);
+    });
+
+    it('caregiver tier can only see published variants', async () => {
+      const testTask = await TaskFactory.create({ slug: `caregiver-test-${Date.now()}` });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.caregiver);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const variantIds = res.body.data.items.map((v: { id: string }) => v.id);
+      expect(variantIds).toContain(publishedVariant.id);
+      expect(variantIds).not.toContain(draftVariant.id);
+    });
+  });
+
+  describe('response structure', () => {
+    it('returns paginated response with correct structure', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+      expect(res.body.data.pagination).toHaveProperty('page');
+      expect(res.body.data.pagination).toHaveProperty('perPage');
+      expect(res.body.data.pagination).toHaveProperty('totalItems');
+      expect(res.body.data.pagination).toHaveProperty('totalPages');
+    });
+
+    it('returns all expected variant fields', async () => {
+      const testTask = await TaskFactory.create({ slug: `fields-test-${Date.now()}` });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Fields Test ${Date.now()}`,
+        description: 'Test description',
+        status: 'published',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const variant = res.body.data.items[0];
+      expect(variant).toHaveProperty('id');
+      expect(variant).toHaveProperty('taskId');
+      expect(variant).toHaveProperty('name');
+      expect(variant).toHaveProperty('description');
+      expect(variant).toHaveProperty('status');
+      expect(variant).toHaveProperty('createdAt');
+      expect(variant).toHaveProperty('updatedAt');
+    });
+  });
+
+  describe('pagination', () => {
+    it('respects perPage limit', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).query({ perPage: 2 }).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeLessThanOrEqual(2);
+      expect(res.body.data.pagination.perPage).toBe(2);
+    });
+
+    it('returns correct page', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).query({ page: 1, perPage: 1 }).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.pagination.page).toBe(1);
+    });
+  });
+
+  describe('search', () => {
+    it('searches by variant name', async () => {
+      const uniqueName = `UniqueSearchName${Date.now()}`;
+      const testTask = await TaskFactory.create({ slug: `search-name-test-${Date.now()}` });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: uniqueName,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ search: uniqueName })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      expect(res.body.data.items.some((v: { name: string }) => v.name === uniqueName)).toBe(true);
+    });
+
+    it('searches by variant description', async () => {
+      const uniqueDescription = `UniqueSearchDescription${Date.now()}`;
+      const testTask = await TaskFactory.create({ slug: `search-desc-test-${Date.now()}` });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Variant ${Date.now()}`,
+        description: uniqueDescription,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ search: uniqueDescription })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      expect(res.body.data.items.some((v: { description: string }) => v.description === uniqueDescription)).toBe(true);
+    });
+
+    it('search is case-insensitive', async () => {
+      const uniqueName = `CaseInsensitiveTest${Date.now()}`;
+      const testTask = await TaskFactory.create({ slug: `case-test-${Date.now()}` });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: uniqueName,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ search: uniqueName.toLowerCase() })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.some((v: { name: string }) => v.name === uniqueName)).toBe(true);
+    });
+  });
+
+  describe('sorting', () => {
+    it('sorts by name ascending by default', async () => {
+      const testTask = await TaskFactory.create({ slug: `sort-test-${Date.now()}` });
+      await TaskVariantFactory.create({ taskId: testTask.id, name: 'ZZZ Variant', status: 'published' });
+      await TaskVariantFactory.create({ taskId: testTask.id, name: 'AAA Variant', status: 'published' });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThanOrEqual(2);
+      // First item should be alphabetically before or equal to second
+      const names = res.body.data.items.map((v: { name: string }) => v.name);
+      for (let i = 1; i < names.length; i++) {
+        expect(names[i - 1].toLowerCase() <= names[i].toLowerCase()).toBe(true);
+      }
+    });
+
+    it('sorts by createdAt descending when specified', async () => {
+      const testTask = await TaskFactory.create({ slug: `sort-created-test-${Date.now()}` });
+      await TaskVariantFactory.create({ taskId: testTask.id, name: 'First Created', status: 'published' });
+      await TaskVariantFactory.create({ taskId: testTask.id, name: 'Second Created', status: 'published' });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ sortBy: 'createdAt', sortOrder: 'desc' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThanOrEqual(2);
+      const createdAts = res.body.data.items.map((v: { createdAt: string }) => new Date(v.createdAt).getTime());
+      for (let i = 1; i < createdAts.length; i++) {
+        expect(createdAts[i - 1] >= createdAts[i]).toBe(true);
+      }
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when task does not exist', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${faker.string.uuid()}/variants`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 when taskId is not a valid UUID', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get('/v1/tasks/not-a-valid-uuid/variants').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
   });
 });
