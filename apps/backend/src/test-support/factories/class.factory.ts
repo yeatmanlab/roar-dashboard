@@ -37,6 +37,7 @@ export const ClassFactory = Factory.define<Class>(({ onCreate }) => {
       subjects: classObj.subjects,
       location: classObj.location,
       grades: classObj.grades,
+      rosteringEnded: classObj.rosteringEnded,
     };
 
     const [inserted] = await CoreDbClient.insert(classes).values(insertData).returning();
