@@ -12,6 +12,8 @@ export interface AbortRunInput {
 
 /**
  * Output from the AbortRun command.
- * Returns an empty object as the abort operation has no return value.
+ * Returns the response body from the server.
  */
-export type AbortRunOutput = Record<string, never>;
+export interface AbortRunOutput {
+  status: 'ok';
+}

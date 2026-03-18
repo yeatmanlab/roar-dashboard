@@ -23,6 +23,10 @@ import type { CommandContext } from '../command/command';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
     afterEach(() => {
       _resetFirekitCompat();
     });

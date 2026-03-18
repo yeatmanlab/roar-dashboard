@@ -19,7 +19,7 @@ import { SdkErrorCode } from '../enums';
  */
 export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
   readonly name = 'AbortRun';
-  readonly idempotent = true;
+  readonly idempotent = false;
 
   constructor(private api: RoarApi) {}
 
@@ -36,8 +36,8 @@ export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
       body: { type: input.type },
     });
 
-    if (result.status === StatusCodes.OK) {
-      return {};
+    if (result.status === StatusCodes.OK || result.status === StatusCodes.CONFLICT) {
+      return { status: 'ok' };
     }
 
     const errorBody = result.body as { error?: { message?: string } };
