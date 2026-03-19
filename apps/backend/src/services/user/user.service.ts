@@ -43,7 +43,7 @@ export function UserService({
    * @param authContext - User's auth context (id and super admin flag)
    * @param id - The user's ID to verify
    * @param permission - The permission to check (default: Permissions.Users.READ)
-   * @returns The user record if access is granted, null otherwise
+   * @returns {Promise<User>} The user record if access is granted.
    * @throws {ApiError} NOT_FOUND if user doesn't exist
    * @throws {ApiError} FORBIDDEN if user doesn't have the required permission
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
