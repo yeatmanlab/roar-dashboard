@@ -411,14 +411,128 @@ describe('firekit compat', () => {
   });
 
   describe('writeTrial', () => {
-    it('throws SDKError when called (stub not yet implemented)', async () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when called without an active run', async () => {
       const trialData: TrialData = { response: 'correct', rt: 500 };
       await expect(writeTrial(trialData)).rejects.toBeInstanceOf(SDKError);
+    });
 
+    it('throws SDKError when called with callback but no active run', async () => {
+      const trialData: TrialData = { response: 'correct', rt: 500 };
       const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
         return { computed: rawScores };
       };
       await expect(writeTrial(trialData, callback)).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('successfully submits trial data when run is active', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        // Return 201 for startRun (POST /runs)
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-trial-test' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        // Return 200 for writeTrial (POST /runs/:runId/event)
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify fetch was called with the trial event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-trial-test/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('trial'),
+        }),
+      );
+    });
+
+    it('accepts optional computed score callback', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url: string) => {
+          if (url.includes('/runs') && !url.includes('/event')) {
+            return Promise.resolve({
+              status: 201,
+              json: async () => ({ data: { id: 'run-trial-callback' } }),
+              headers: new Headers([['content-type', 'application/json']]),
+            });
+          }
+          if (url.includes('/event')) {
+            return Promise.resolve({
+              status: 200,
+              json: async () => ({ data: { status: 'ok' } }),
+              headers: new Headers([['content-type', 'application/json']]),
+            });
+          }
+          return Promise.reject(new Error('Unexpected fetch call'));
+        }),
+      );
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      const trialData: TrialData = { response: 'correct', rt: 500 };
+      const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
+        return { computed: rawScores };
+      };
+
+      await expect(writeTrial(trialData, callback)).resolves.toBeUndefined();
     });
 
     it('matches Firekit signature (with optional computed score callback)', () => {

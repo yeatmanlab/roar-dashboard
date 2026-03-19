@@ -16,12 +16,14 @@ import type {
 } from '../types';
 import { RUN_EVENT_ABORT } from '../types/abort-run';
 import { RUN_EVENT_COMPLETE } from '../types/finish-run';
+import { RUN_EVENT_TRIAL } from '../types/write-trial';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
 import { AbortRunCommand } from '../commands/abort-run.command';
 import { FinishRunCommand } from '../commands/finish-run.command';
+import { WriteTrialCommand } from '../commands/write-trial.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -452,23 +454,58 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
 }
 
 /**
- * Firekit compatibility stub for writing trial data.
+ * Firekit compatibility method for writing trial data.
  *
  * From @bdelab/roar-firekit:
  * async writeTrial(trialData: TrialData, computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>) { […] }
  *
- * Writes trial data to the backend and optionally computes scores via callback.
+ * Records a trial event for the active run.
+ *
+ * Firekit-compatible wrapper that submits trial data to the assessment backend.
+ * The trial data is transformed and sent as a WriteTrial command event.
  *
  * @param trialData - Trial data object containing assessment-specific trial information
- * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores
- * @returns Promise<void>
- * @throws {SDKError} Always, until implemented.
+ * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores (not yet implemented)
+ * @returns Promise<void> - Resolves when the trial event has been successfully submitted
+ * @throws {SDKError} If no active run exists. Call appkit.startRun() first.
+ *
+ * @example
+ * ```typescript
+ * const trialData = {
+ *   assessmentStage: 'test',
+ *   correct: 1,
+ *   response: 'A',
+ *   rt: 1500
+ * };
+ * await writeTrial(trialData);
+ * ```
  */
 export async function writeTrial(
   trialData: TrialData,
   computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
-  void trialData;
   void computedScoreCallback;
-  throw new SDKError('appkit.writeTrial not yet implemented');
+
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.writeTrial requires an active run. Call appkit.startRun() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const cmd = new WriteTrialCommand(api);
+
+  await invoker.run(cmd, {
+    runId,
+    type: RUN_EVENT_TRIAL,
+    trial: trialData as {
+      assessmentStage: 'practice' | 'test' | 'practice_response' | 'test_response';
+      correct: number;
+      payload?: Json;
+      [key: string]: unknown;
+    },
+  });
 }
