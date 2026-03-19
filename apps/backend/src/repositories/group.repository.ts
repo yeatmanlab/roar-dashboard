@@ -1,12 +1,15 @@
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and, isNull, asc, count, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseRepository } from './base.repository';
+import { SortOrder, type EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import { BaseRepository, type PaginatedResult } from './base.repository';
+import { isEnrollmentActive } from './utils/enrollment.utils';
+import { getEnrolledUsersFilterConditions, ENROLLED_USERS_SORT_COLUMNS } from './utils/enrolled-users-query.utils';
+import { isAuthorizedMembership } from './utils/is-authorized-membership.utils';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { CoreDbClient } from '../db/clients';
+import { groups, userGroups, users, type Group } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
-import { groups, userGroups, type Group } from '../db/schema';
-import { isAuthorizedMembership } from './utils/is-authorized-membership.utils';
-
+import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, groups);
@@ -36,5 +39,122 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .limit(1);
 
     return result[0]?.groups ?? null;
+  }
+
+  /**
+   * Get users enrolled in a group.
+   *
+   * Returns all users who have an active enrollment in the specified group.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param groupId - The group ID to get users for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with users
+   */
+  async getUsersByGroupId(
+    groupId: string,
+    options: ListEnrolledUsersOptions,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const whereCondition = and(
+      eq(groups.id, groupId),
+      isEnrollmentActive(userGroups),
+      ...getEnrolledUsersFilterConditions(options),
+    );
+
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(userGroups)
+      .innerJoin(users, eq(users.id, userGroups.userId))
+      .where(whereCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
+    const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ user: users, enrollmentStart: userGroups.enrollmentStart, role: userGroups.role })
+      .from(userGroups)
+      .innerJoin(users, eq(users.id, userGroups.userId))
+      .where(whereCondition)
+      .orderBy(primaryOrder, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      totalItems,
+    };
+  }
+
+  /**
+   * Get users enrolled in a group if group is accessible.
+   *
+   * Returns all users who have an active enrollment in the specified group.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param accessControlFilter - User ID and allowed roles
+   * @param groupId - The group ID to get users for
+   * @param options - Pagination and sorting options
+   * @returns Paginated result with users
+   */
+  async getAuthorizedUsersByGroupId(
+    accessControlFilter: AccessControlFilter,
+    groupId: string,
+    options: ListEnrolledUsersOptions,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+    const { userId, allowedRoles } = accessControlFilter;
+
+    const whereCondition = and(
+      eq(groups.id, groupId),
+      isEnrollmentActive(userGroups),
+      isNull(groups.rosteringEnded),
+      isAuthorizedMembership(userGroups, userId, allowedRoles),
+      ...getEnrolledUsersFilterConditions(options),
+    );
+
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(userGroups)
+      .innerJoin(users, eq(users.id, userGroups.userId))
+      .innerJoin(groups, eq(groups.id, userGroups.groupId))
+      .where(whereCondition);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
+    const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({ user: users, enrollmentStart: userGroups.enrollmentStart, role: userGroups.role })
+      .from(userGroups)
+      .innerJoin(users, eq(users.id, userGroups.userId))
+      .innerJoin(groups, eq(groups.id, userGroups.groupId))
+      .where(whereCondition)
+      .orderBy(primaryOrder, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      totalItems,
+    };
   }
 }
