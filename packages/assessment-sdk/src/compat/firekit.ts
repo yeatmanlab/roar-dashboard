@@ -568,6 +568,7 @@ export async function writeTrial(
     },
     interactions: facade._getInteractionBuffer().map((interaction) => ({
       ...interaction,
+      // trial field required by WriteTrialInteractionCommandInput but stripped by WriteTrialCommand before sending to backend
       trial: 1,
     })),
   });
