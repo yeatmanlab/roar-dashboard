@@ -484,6 +484,7 @@ export async function writeTrial(
   trialData: TrialData,
   computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
+  // TODO: Invoke callback with raw scores once score computation is implemented
   void computedScoreCallback;
 
   const facade = getFirekitCompat();
@@ -495,6 +496,11 @@ export async function writeTrial(
 
   const api = facade.getApi();
   const invoker = facade.getInvoker();
+
+  // Validate required fields to prevent silent failures
+  if (typeof (trialData as Record<string, unknown>)['assessmentStage'] !== 'string') {
+    throw new SDKError('writeTrial requires assessmentStage in trial data.');
+  }
 
   const cmd = new WriteTrialCommand(api);
 

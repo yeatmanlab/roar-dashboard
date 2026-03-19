@@ -119,6 +119,7 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
               interactions: input.interactions.map((interaction) => ({
                 event: normalizeInteractionEvent(interaction.event),
                 timeMs: interaction.time,
+                // interaction.trial is not forwarded to backend as it's redundant with the trial context
               })),
             }
           : {}),
