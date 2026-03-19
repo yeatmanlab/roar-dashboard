@@ -653,8 +653,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
   const path = () => `/v1/tasks/${taskId()}/variants`;
 
   describe('authorization and status filtering', () => {
-    it('superAdmin tier can see all variants including draft and deprecated', async () => {
-      // Create variants with different statuses for this test
+    it('super admin can see all variants regardless of status', async () => {
       const draftVariant = await TaskVariantFactory.create({
         taskId: taskId(),
         name: `Draft Variant ${Date.now()}`,
@@ -679,6 +678,84 @@ describe('GET /v1/tasks/:taskId/variants', () => {
       expect(variantIds).toContain(draftVariant.id);
       expect(variantIds).toContain(publishedVariant.id);
       expect(variantIds).toContain(deprecatedVariant.id);
+    });
+
+    it('super admin can filter by status query param', async () => {
+      const testTask = await TaskFactory.create({ slug: `status-filter-test-${Date.now()}` });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Deprecated ${Date.now()}`,
+        status: 'deprecated',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ status: 'published' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBe(1);
+      expect(res.body.data.items[0].id).toBe(publishedVariant.id);
+    });
+
+    it('super admin can filter by draft status', async () => {
+      const testTask = await TaskFactory.create({ slug: `draft-filter-test-${Date.now()}` });
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ status: 'draft' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBe(1);
+      expect(res.body.data.items[0].id).toBe(draftVariant.id);
+    });
+
+    it('non-super admin status filter is ignored (always returns published)', async () => {
+      const testTask = await TaskFactory.create({ slug: `ignore-status-test-${Date.now()}` });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Draft ${Date.now()}`,
+        status: 'draft',
+      });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Published ${Date.now()}`,
+        status: 'published',
+      });
+
+      // Even if non-super admin tries to filter by draft, they should only see published
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ status: 'draft' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBe(1);
+      expect(res.body.data.items[0].id).toBe(publishedVariant.id);
     });
 
     it('siteAdmin tier can only see published variants', async () => {

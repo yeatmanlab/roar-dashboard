@@ -5,7 +5,7 @@ import { taskVariants, type TaskVariant } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { TaskVariantSortFieldType } from '@roar-dashboard/api-contract';
+import type { TaskVariantSortFieldType, TaskVariantStatusType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 
 /**
@@ -16,6 +16,7 @@ const TASK_VARIANT_SORT_COLUMNS: Record<TaskVariantSortFieldType, Column> = {
   createdAt: taskVariants.createdAt,
   updatedAt: taskVariants.updatedAt,
   name: taskVariants.name,
+  status: taskVariants.status,
 };
 
 /**
@@ -29,6 +30,7 @@ export interface ListTaskVariantsOptions {
     direction: SortOrder;
   };
   search?: string;
+  status?: TaskVariantStatusType;
 }
 
 /**
@@ -36,8 +38,8 @@ export interface ListTaskVariantsOptions {
  */
 export interface ListTaskVariantsFilter {
   taskId: string;
-  /** If true, returns all variants. If false, returns only published variants. */
-  includeAllStatuses: boolean;
+  /** Optional status to filter by. If not provided, returns all variants. */
+  status?: TaskVariantStatusType;
 }
 
 /**
@@ -129,11 +131,7 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
   /**
    * List task variants for a given task with optional filtering and sorting.
    *
-   * Access control is based on the `includeAllStatuses` filter:
-   * - If true: returns all variants regardless of status
-   * - If false: returns only published variants
-   *
-   * @param filter - Filter containing taskId and access control flag
+   * @param filter - Filter containing taskId and optional status filter
    * @param options - Pagination, sorting, and search options
    * @returns Paginated result with task variants
    */
@@ -141,7 +139,7 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
     filter: ListTaskVariantsFilter,
     options: ListTaskVariantsOptions,
   ): Promise<PaginatedResult<TaskVariant>> {
-    const { taskId, includeAllStatuses } = filter;
+    const { taskId, status } = filter;
     const { page, perPage, orderBy, search } = options;
     const offset = (page - 1) * perPage;
 
@@ -151,9 +149,9 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
     // Always filter by taskId
     conditions.push(eq(taskVariants.taskId, taskId));
 
-    // Status filter: non-super admins only see published variants
-    if (!includeAllStatuses) {
-      conditions.push(eq(taskVariants.status, 'published'));
+    // Status filter (if provided)
+    if (status) {
+      conditions.push(eq(taskVariants.status, status));
     }
 
     // Search filter (name or description)

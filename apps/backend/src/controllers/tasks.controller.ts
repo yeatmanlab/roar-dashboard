@@ -151,12 +151,13 @@ export const TasksController = {
    */
   listTaskVariants: async (authContext: AuthContext, taskId: string, query: ListTaskVariantsQuery) => {
     try {
-      const { page, perPage, sortBy, sortOrder, search } = query;
+      const { page, perPage, sortBy, sortOrder, search, status } = query;
       const result = await taskService.listTaskVariants(authContext, taskId, {
         page,
         perPage,
         orderBy: { field: sortBy, direction: sortOrder },
         ...(search && { search }),
+        ...(status && { status }),
       });
 
       const { task } = result;

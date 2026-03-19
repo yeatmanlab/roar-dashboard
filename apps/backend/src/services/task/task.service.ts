@@ -234,12 +234,12 @@ export function TaskService({
    * List task variants for a given task.
    *
    * Authorization:
-   * - Super admins see all variants (draft, published, deprecated)
-   * - Regular users see only published variants
+   * - Super admins can filter by any status or see all variants (no status filter)
+   * - Regular users can only see published variants (status defaults to 'published')
    *
    * @param authContext - User's authentication context
    * @param taskId - The UUID of the parent task
-   * @param options - Pagination, sorting, and search options
+   * @param options - Pagination, sorting, search, and status filter options
    * @returns Paginated result with task variants and task info
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
@@ -267,8 +267,11 @@ export function TaskService({
         });
       }
 
-      // Super admins see all statuses, regular users see only published
-      const variants = await taskVariantRepository.listByTaskId({ taskId, includeAllStatuses: isSuperAdmin }, options);
+      // Super admins can use any status filter (or none to see all)
+      // Non-super admins are restricted to 'published' only
+      const status = isSuperAdmin ? options.status : 'published';
+      const filter = status ? { taskId, status } : { taskId };
+      const variants = await taskVariantRepository.listByTaskId(filter, options);
 
       // Fetch parameters for each variant as array of {name, value} objects
       const variantsWithParams = await Promise.all(

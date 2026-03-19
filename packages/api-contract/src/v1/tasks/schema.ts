@@ -18,6 +18,8 @@ export const TaskIdParamSchema = z.object({
 
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
 
+export type TaskVariantStatusType = z.infer<typeof TaskVariantStatusSchema>;
+
 /**
  * Task Variant Parameter Schema
  *
@@ -110,7 +112,7 @@ export type TaskVariant = z.infer<typeof TaskVariantSchema>;
 /**
  * Allowed sort fields for task variants.
  */
-export const TASK_VARIANT_SORT_FIELDS = ['createdAt', 'name', 'updatedAt'] as const;
+export const TASK_VARIANT_SORT_FIELDS = ['createdAt', 'name', 'updatedAt', 'status'] as const;
 
 /**
  * Sort field type for task variants.
@@ -124,15 +126,22 @@ export const TaskVariantSortField = {
   CREATED_AT: 'createdAt',
   NAME: 'name',
   UPDATED_AT: 'updatedAt',
+  STATUS: 'status',
 } as const satisfies Record<string, TaskVariantSortFieldType>;
 
 /**
  * Query parameters for listing task variants.
- * Supports pagination, sorting, and search (name/description).
+ * Supports pagination, sorting, search (name/description), and status filtering.
  */
 export const ListTaskVariantsQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(TASK_VARIANT_SORT_FIELDS, 'name', 'asc'),
-).merge(SearchQuerySchema);
+)
+  .merge(SearchQuerySchema)
+  .merge(
+    z.object({
+      status: TaskVariantStatusSchema.optional(),
+    }),
+  );
 
 /**
  * Paginated response for task variants list.
