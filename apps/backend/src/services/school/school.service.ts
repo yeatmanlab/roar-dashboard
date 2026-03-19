@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { SchoolRepository, type School, type SchoolWithCounts } from '../../repositories/school.repository';
+import { SchoolRepository, type SchoolWithCounts } from '../../repositories/school.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
@@ -23,10 +23,9 @@ export interface ListOptions {
 
 /**
  * School with optional embeds
+ * Note: children embed will be added in future GET /schools/:id implementation
  */
-export interface SchoolWithEmbeds extends SchoolWithCounts {
-  children?: School[];
-}
+export type SchoolWithEmbeds = SchoolWithCounts;
 
 /**
  * School Service

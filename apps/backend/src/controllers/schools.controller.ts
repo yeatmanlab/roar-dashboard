@@ -51,7 +51,7 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
     parentOrgId: school.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
-    isRosteringRootOrg: school.isRosteringRootOrg,
+    ...(school.rosteringEnded && { rosteringEnded: school.rosteringEnded.toISOString() }),
   };
 }
 
@@ -121,7 +121,7 @@ export const SchoolsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }
