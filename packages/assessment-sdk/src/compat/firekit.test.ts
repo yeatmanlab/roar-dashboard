@@ -754,6 +754,11 @@ describe('firekit compat', () => {
       expect(() => addInteraction({ event: 'focus', time: 100 })).toThrow(SDKError);
     });
 
+    it('throws SDKError when called before startRun', () => {
+      // beforeEach leaves us initialized but without a run
+      expect(() => addInteraction({ event: 'focus', time: 100 })).toThrow(SDKError);
+    });
+
     it('buffers interaction events', async () => {
       await startRun();
       const interaction: AddInteractionInput = { event: 'focus', time: 100 };
