@@ -73,6 +73,121 @@ function buildVariantBody(overrides: Record<string, unknown> = {}) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/tasks/:taskId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/tasks/:taskId', () => {
+  const taskId = () => baseFixture.task.id;
+  const path = () => `/v1/tasks/${taskId()}`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can get a task by ID', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(taskId());
+      expect(res.body.data.slug).toBe(baseFixture.task.slug);
+      expect(res.body.data.name).toBe(baseFixture.task.name);
+    });
+
+    it('siteAdmin tier can get a task by ID', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(taskId());
+    });
+
+    it('admin tier can get a task by ID', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(taskId());
+    });
+
+    it('educator tier can get a task by ID', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(taskId());
+    });
+
+    it('student tier can get a task by ID', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(taskId());
+    });
+
+    it('caregiver tier can get a task by ID', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(taskId());
+    });
+  });
+
+  describe('response structure', () => {
+    it('returns all expected task fields', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toMatchObject({
+        id: taskId(),
+        slug: baseFixture.task.slug,
+        name: baseFixture.task.name,
+        nameSimple: baseFixture.task.nameSimple,
+        nameTechnical: baseFixture.task.nameTechnical,
+      });
+      expect(res.body.data).toHaveProperty('description');
+      expect(res.body.data).toHaveProperty('image');
+      expect(res.body.data).toHaveProperty('tutorialVideo');
+      expect(res.body.data).toHaveProperty('taskConfig');
+      expect(res.body.data).toHaveProperty('createdAt');
+      expect(res.body.data).toHaveProperty('updatedAt');
+    });
+
+    it('returns ISO date strings for timestamps', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      // createdAt should be a valid ISO date string
+      expect(new Date(res.body.data.createdAt).toISOString()).toBe(res.body.data.createdAt);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when task does not exist', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(`/v1/tasks/${faker.string.uuid()}`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 when taskId is not a valid UUID', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get('/v1/tasks/not-a-valid-uuid').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // POST /v1/tasks/:taskId/variants
 // ═══════════════════════════════════════════════════════════════════════════
 

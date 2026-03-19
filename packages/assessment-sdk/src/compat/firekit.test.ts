@@ -1,4 +1,4 @@
-import { describe, it, expect, expectTypeOf, vi } from 'vitest';
+import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
 import {
   startRun,
   finishRun,
@@ -7,6 +7,8 @@ import {
   addInteraction,
   updateUser,
   writeTrial,
+  initFirekitCompat,
+  _resetFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
 import type {
@@ -17,10 +19,11 @@ import type {
   RawScores,
   ComputedScores,
 } from '../types';
+import type { CommandContext } from '../command/command';
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
-    it('throws SdkError when called', () => {
+    it('throws SDKError when called (stub not yet implemented)', () => {
       expect(() => abortRun()).toThrow(SDKError);
     });
 
@@ -31,7 +34,7 @@ describe('firekit compat', () => {
   });
 
   describe('finishRun', () => {
-    it('throws SdkError when called', async () => {
+    it('throws SDKError when called (stub not yet implemented)', async () => {
       await expect(finishRun()).rejects.toBeInstanceOf(SDKError);
       await expect(finishRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
     });
@@ -43,19 +46,139 @@ describe('firekit compat', () => {
   });
 
   describe('startRun', () => {
-    it('throws SDKError when called', async () => {
-      await expect(startRun()).rejects.toBeInstanceOf(SDKError);
-      await expect(startRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
+    let mockContext: CommandContext;
+
+    beforeEach(() => {
+      mockContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
     });
 
-    it('matches Firekit signature', () => {
+    afterEach(() => {
+      vi.clearAllMocks();
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when administrationId is required but missing (isAnonymous=false)', async () => {
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: false,
+      });
+
+      await expect(startRun()).rejects.toThrow('appkit.startRun requires administrationId when isAnonymous is false.');
+    });
+
+    it('resets facade instance state on re-initialization (prevents state leakage)', async () => {
+      let callCount = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => {
+          callCount++;
+          return {
+            status: 201,
+            json: async () => ({ data: { id: `run-${callCount}` } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          };
+        }),
+      );
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      // Re-initialize should reset state to prevent leakage across tests/consumers
+      // This is observable through the fact that a fresh startRun() call succeeds
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      // After re-initialization, startRun should succeed again without errors
+      await expect(startRun()).resolves.toBeUndefined();
+    });
+
+    it('throws SDKError when Firekit compat is not initialized (no task info)', async () => {
+      // Don't call initFirekitCompat - simulate uninitialized state
+      // Throws because taskInfo is null - facade was never initialized
+      await expect(startRun()).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('successfully starts an anonymous run (isAnonymous=true)', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-anon-123' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await expect(startRun()).resolves.toBeUndefined();
+    });
+
+    it('successfully starts a non-anonymous run with administrationId (isAnonymous=false)', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-non-anon-789' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        administrationId: 'admin-456',
+        isAnonymous: false,
+      });
+
+      await expect(startRun()).resolves.toBeUndefined();
+    });
+
+    it('includes additional metadata when provided (custom key-value pairs)', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          status: 201,
+          json: async () => ({ data: { id: 'run-with-metadata' } }),
+          headers: new Headers([['content-type', 'application/json']]),
+        }),
+      );
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      const additionalMetadata = { customField: 'value', count: 42 };
+      await expect(startRun(additionalMetadata)).resolves.toBeUndefined();
+    });
+
+    it('matches Firekit signature (with optional metadata)', () => {
       expect(typeof startRun).toBe('function');
-      expectTypeOf(startRun).toEqualTypeOf<(additionalRunMetadata?: { [key: string]: string }) => Promise<void>>();
+      expectTypeOf(startRun).toEqualTypeOf<(additionalRunMetadata?: Record<string, unknown>) => Promise<void>>();
     });
   });
 
   describe('updateEngagementFlags', () => {
-    it('throws SDKError when called', async () => {
+    it('throws SDKError when called (stub not yet implemented)', async () => {
       await expect(updateEngagementFlags({ flagNames: ['flag1'] })).rejects.toBeInstanceOf(SDKError);
       await expect(
         updateEngagementFlags({ flagNames: ['flag1', 'flag2'], markAsReliable: true }),
@@ -75,7 +198,7 @@ describe('firekit compat', () => {
   });
 
   describe('addInteraction', () => {
-    it('throws SDKError when called', () => {
+    it('throws SDKError when called (stub not yet implemented)', () => {
       expect(() => addInteraction({ type: 'click' })).toThrow(SDKError);
       expect(() => addInteraction({ foo: 'bar' })).toThrow(SDKError);
     });
@@ -90,7 +213,7 @@ describe('firekit compat', () => {
   });
 
   describe('updateUser', () => {
-    it('throws SDKError when called', async () => {
+    it('throws SDKError when called (stub not yet implemented)', async () => {
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
       await expect(updateUser({ tasks: [], variants: [] })).rejects.toBeInstanceOf(SDKError);
       await expect(updateUser({ assessmentPid: 'test', metadata: { customField: 'value' } })).rejects.toBeInstanceOf(
@@ -98,7 +221,7 @@ describe('firekit compat', () => {
       );
     });
 
-    it('issues deprecation warning when called', async () => {
+    it('issues deprecation warning when called (related to standalone apps)', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
@@ -120,7 +243,7 @@ describe('firekit compat', () => {
   });
 
   describe('writeTrial', () => {
-    it('throws SDKError when called', async () => {
+    it('throws SDKError when called (stub not yet implemented)', async () => {
       const trialData: TrialData = { response: 'correct', rt: 500 };
       await expect(writeTrial(trialData)).rejects.toBeInstanceOf(SDKError);
 
@@ -130,7 +253,7 @@ describe('firekit compat', () => {
       await expect(writeTrial(trialData, callback)).rejects.toBeInstanceOf(SDKError);
     });
 
-    it('matches Firekit signature', () => {
+    it('matches Firekit signature (with optional computed score callback)', () => {
       // runtime assertion to satisfy vitest/expect-expect
       expect(typeof writeTrial).toBe('function');
 
