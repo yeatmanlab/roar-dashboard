@@ -85,7 +85,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
-      ...getEnrolledUsersFilterConditions(options),
+      ...getEnrolledUsersFilterConditions(options, 'userClasses'),
     );
 
     const countResult = await this.db
@@ -146,7 +146,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
       isNull(classes.rosteringEnded),
-      ...getEnrolledUsersFilterConditions(options),
+      ...getEnrolledUsersFilterConditions(options, 'userClasses'),
     );
 
     const countResult = await this.db

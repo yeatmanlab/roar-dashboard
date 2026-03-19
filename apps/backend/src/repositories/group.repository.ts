@@ -60,9 +60,9 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const offset = (page - 1) * perPage;
 
     const whereCondition = and(
-      eq(groups.id, groupId),
+      eq(userGroups.groupId, groupId),
       isEnrollmentActive(userGroups),
-      ...getEnrolledUsersFilterConditions(options),
+      ...getEnrolledUsersFilterConditions(options, 'userGroups'),
     );
 
     const countResult = await this.db
@@ -115,14 +115,17 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
   ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
-    const { userId, allowedRoles } = accessControlFilter;
+
+    const group = await this.getAuthorizedById(accessControlFilter, groupId);
+    if (!group) {
+      return { items: [], totalItems: 0 };
+    }
 
     const whereCondition = and(
-      eq(groups.id, groupId),
+      eq(userGroups.groupId, groupId),
       isEnrollmentActive(userGroups),
       isNull(groups.rosteringEnded),
-      isAuthorizedMembership(userGroups, userId, allowedRoles),
-      ...getEnrolledUsersFilterConditions(options),
+      ...getEnrolledUsersFilterConditions(options, 'userGroups'),
     );
 
     const countResult = await this.db

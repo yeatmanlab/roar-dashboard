@@ -1,6 +1,6 @@
 import { SQL, inArray, eq, Column } from 'drizzle-orm';
 import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
-import { users, userClasses } from '../../db/schema';
+import { users, userClasses, userGroups, userOrgs } from '../../db/schema';
 import type { ListEnrolledUsersOptions } from '../../types/user';
 
 export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Column> = {
@@ -9,7 +9,18 @@ export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Col
   grade: users.grade,
 };
 
-export const getEnrolledUsersFilterConditions = (options: ListEnrolledUsersOptions): SQL[] => {
+type UserJunctionTable = 'userGroups' | 'userClasses' | 'userOrgs';
+
+const tableMap: Record<UserJunctionTable, typeof userGroups | typeof userClasses | typeof userOrgs> = {
+  userGroups: userGroups,
+  userClasses: userClasses,
+  userOrgs: userOrgs,
+} as const;
+
+export const getEnrolledUsersFilterConditions = (
+  options: ListEnrolledUsersOptions,
+  junctionTable: UserJunctionTable,
+): SQL[] => {
   const { grade, role } = options;
   const conditions: SQL[] = [];
 
@@ -18,7 +29,7 @@ export const getEnrolledUsersFilterConditions = (options: ListEnrolledUsersOptio
   }
 
   if (role) {
-    conditions.push(eq(userClasses.role, role));
+    conditions.push(eq(tableMap[junctionTable].role, role));
   }
 
   return conditions;
