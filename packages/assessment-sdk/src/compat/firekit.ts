@@ -557,6 +557,7 @@ export async function writeTrial(
 
   const cmd = new WriteTrialCommand(api);
 
+  const bufferedInteractions = facade._getInteractionBuffer();
   await invoker.run(cmd, {
     runId,
     type: RUN_EVENT_TRIAL,
@@ -566,11 +567,15 @@ export async function writeTrial(
       payload?: Json;
       [key: string]: unknown;
     },
-    interactions: facade._getInteractionBuffer().map((interaction) => ({
-      ...interaction,
-      // trial field required by WriteTrialInteractionCommandInput but stripped by WriteTrialCommand before sending to backend
-      trial: 1,
-    })),
+    ...(bufferedInteractions.length > 0
+      ? {
+          interactions: bufferedInteractions.map((interaction) => ({
+            ...interaction,
+            // trial field required by WriteTrialInteractionCommandInput but stripped by WriteTrialCommand before sending to backend
+            trial: 1,
+          })),
+        }
+      : {}),
   });
 
   facade._clearInteractionBuffer();

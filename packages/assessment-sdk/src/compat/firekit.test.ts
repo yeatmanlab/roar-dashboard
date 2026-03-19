@@ -9,6 +9,7 @@ import {
   writeTrial,
   initFirekitCompat,
   _resetFirekitCompat,
+  getFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
 import type {
@@ -764,10 +765,16 @@ describe('firekit compat', () => {
       addInteraction({ event: 'focus', time: 100 });
       addInteraction({ event: 'blur', time: 200 });
       addInteraction({ event: 'fullscreenenter', time: 300 });
+      addInteraction({ event: 'fullscreenexit', time: 400 });
 
-      expect(() => {
-        addInteraction({ event: 'fullscreenexit', time: 400 });
-      }).not.toThrow();
+      // Verify all 4 interactions are in the buffer
+      const facade = getFirekitCompat();
+      const buffer = facade._getInteractionBuffer();
+      expect(buffer).toHaveLength(4);
+      expect(buffer[0]!.event).toBe('focus');
+      expect(buffer[1]!.event).toBe('blur');
+      expect(buffer[2]!.event).toBe('fullscreenenter');
+      expect(buffer[3]!.event).toBe('fullscreenexit');
     });
 
     it('clears buffer after writeTrial', async () => {
