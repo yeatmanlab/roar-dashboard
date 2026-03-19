@@ -12,6 +12,7 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
     findByAuthId: vi.fn(),
+    getAuthorizedById: vi.fn(),
   } as MockedObject<UserRepository>;
 }
 
