@@ -23,9 +23,10 @@ export interface ListOptions {
 
 /**
  * School with optional embeds
- * Note: children embed will be added in future GET /schools/:id implementation
  */
-export type SchoolWithEmbeds = SchoolWithCounts;
+export interface SchoolWithEmbeds extends SchoolWithCounts {
+  children?: SchoolWithCounts[];
+}
 
 /**
  * School Service

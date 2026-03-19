@@ -36,6 +36,7 @@ function expectErrorResponse(
 
 describe('SchoolsController', () => {
   const mockList = vi.fn();
+  const mockGetById = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -44,6 +45,7 @@ describe('SchoolsController', () => {
     // Setup the mock service
     vi.mocked(SchoolService).mockReturnValue({
       list: mockList,
+      getById: mockGetById,
     } as ISchoolService);
   });
 
@@ -209,7 +211,10 @@ describe('SchoolsController', () => {
       );
     });
 
-    it('should handle ApiError with 403 Forbidden', async () => {
+    it('should convert 403 ApiError to 500 (list never returns 403)', async () => {
+      // List endpoint uses INNER JOIN for access control, so 403 should never occur.
+      // If a 403 ApiError is thrown, toErrorResponse converts it to 500 since 403
+      // is not in the allowed status codes for list.
       const error = new ApiError('Access denied', {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -226,7 +231,8 @@ describe('SchoolsController', () => {
         embed: [],
       });
 
-      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      // 403 gets converted to 500 because it's not in the allowed status codes
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
       expect(errorBody).toBeDefined();
     });
 
