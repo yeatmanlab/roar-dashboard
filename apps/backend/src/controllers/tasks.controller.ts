@@ -38,13 +38,14 @@ function transformTask(task: Task): ContractTask {
 }
 
 /**
- * Maps a database TaskVariant entity to the API schema.
+ * Maps a database TaskVariant entity to the API schema (without task fields).
  * Converts Date fields to ISO strings.
+ * Task fields (taskName, taskSlug, taskImage) are added separately by the controller.
  *
  * @param variant - The database TaskVariant entity
- * @returns The API-formatted task variant object
+ * @returns The API-formatted task variant object without task fields
  */
-function transformTaskVariant(variant: TaskVariant): ContractTaskVariant {
+function transformTaskVariant(variant: TaskVariant): Omit<ContractTaskVariant, 'taskName' | 'taskSlug' | 'taskImage'> {
   return {
     id: variant.id,
     taskId: variant.taskId,
@@ -144,7 +145,7 @@ export const TasksController = {
    * @param authContext - User's authentication context
    * @param taskId - The UUID of the parent task
    * @param query - Query parameters for pagination, sorting, and searching
-   * @returns Paginated list of task variants
+   * @returns Paginated list of task variants with task info
    */
   listTaskVariants: async (authContext: AuthContext, taskId: string, query: ListTaskVariantsQuery) => {
     try {
@@ -156,11 +157,18 @@ export const TasksController = {
         ...(search && { search }),
       });
 
+      const { task } = result;
+
       return {
         status: StatusCodes.OK as const,
         body: {
           data: {
-            items: result.items.map(transformTaskVariant),
+            items: result.items.map((variant) => ({
+              ...transformTaskVariant(variant),
+              taskName: task.name,
+              taskSlug: task.slug,
+              taskImage: task.image,
+            })),
             pagination: {
               page,
               perPage,

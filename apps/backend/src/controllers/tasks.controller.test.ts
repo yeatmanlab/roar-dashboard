@@ -30,7 +30,7 @@ describe('TasksController', () => {
       getById: mockGetById,
       createTaskVariant: mockCreateTaskVariant,
       updateTaskVariant: mockUpdateTaskVariant,
-      listVariants: mockListVariants,
+      listTaskVariants: mockListVariants,
       evaluateTaskVariantEligibility: vi.fn(),
     });
   });

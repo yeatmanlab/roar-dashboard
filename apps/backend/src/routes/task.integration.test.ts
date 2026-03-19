@@ -829,6 +829,32 @@ describe('GET /v1/tasks/:taskId/variants', () => {
       expect(variant).toHaveProperty('status');
       expect(variant).toHaveProperty('createdAt');
       expect(variant).toHaveProperty('updatedAt');
+      // Task fields should be included
+      expect(variant).toHaveProperty('taskName');
+      expect(variant).toHaveProperty('taskSlug');
+      expect(variant).toHaveProperty('taskImage');
+    });
+
+    it('returns correct task info for each variant', async () => {
+      const taskName = `Task Name ${Date.now()}`;
+      const taskSlug = `task-slug-${Date.now()}`;
+      const taskImage = 'https://example.com/image.png';
+      const testTask = await TaskFactory.create({ name: taskName, slug: taskSlug, image: taskImage });
+      await TaskVariantFactory.create({
+        taskId: testTask.id,
+        name: `Variant ${Date.now()}`,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const variant = res.body.data.items[0];
+      expect(variant.taskName).toBe(taskName);
+      expect(variant.taskSlug).toBe(taskSlug);
+      expect(variant.taskImage).toBe(taskImage);
     });
   });
 

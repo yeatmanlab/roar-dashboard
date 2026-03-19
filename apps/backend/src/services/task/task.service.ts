@@ -240,7 +240,7 @@ export function TaskService({
    * @param authContext - User's authentication context
    * @param taskId - The UUID of the parent task
    * @param options - Pagination, sorting, and search options
-   * @returns Paginated result with task variants
+   * @returns Paginated result with task variants and task info
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
@@ -248,7 +248,7 @@ export function TaskService({
     authContext: AuthContext,
     taskId: string,
     options: ListTaskVariantsOptions,
-  ): Promise<PaginatedResult<TaskVariant>> {
+  ): Promise<PaginatedResult<TaskVariant> & { task: Pick<Task, 'name' | 'slug' | 'image'> }> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
@@ -264,7 +264,12 @@ export function TaskService({
       }
 
       // Super admins see all statuses, regular users see only published
-      return await taskVariantRepository.listByTaskId({ taskId, includeAllStatuses: isSuperAdmin }, options);
+      const variants = await taskVariantRepository.listByTaskId({ taskId, includeAllStatuses: isSuperAdmin }, options);
+
+      return {
+        ...variants,
+        task: { name: task.name, slug: task.slug, image: task.image },
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

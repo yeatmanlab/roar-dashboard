@@ -89,6 +89,7 @@ const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema);
 
 /**
  * Schema for a task variant in list responses.
+ * Includes denormalized task fields for convenience.
  */
 export const TaskVariantSchema = z.object({
   id: z.string().uuid(),
@@ -98,6 +99,9 @@ export const TaskVariantSchema = z.object({
   status: TaskVariantStatusSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().nullable(),
+  taskName: z.string(),
+  taskSlug: z.string(),
+  taskImage: z.string().nullable(),
 });
 
 export type TaskVariant = z.infer<typeof TaskVariantSchema>;
