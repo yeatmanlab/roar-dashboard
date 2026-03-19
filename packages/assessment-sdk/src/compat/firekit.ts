@@ -13,6 +13,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialInteractionCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT } from '../types/abort-run';
 import { RUN_EVENT_COMPLETE } from '../types/finish-run';
@@ -68,6 +69,8 @@ export class FirekitFacade {
   private invoker: Invoker | undefined;
   private runId: string | undefined;
   private taskInfo: CompatTaskInfo | undefined;
+  /** Buffer for interaction events, flushed when writeTrial() is called */
+  private interactionBuffer: AddInteractionInput[] = [];
 
   private constructor() {}
 
@@ -100,6 +103,7 @@ export class FirekitFacade {
     // Reset compat state on re-init to avoid leaking state across tests / consumers
     this.runId = undefined;
     this.taskInfo = taskInfo;
+    this.interactionBuffer = [];
   }
 
   /**
@@ -175,6 +179,31 @@ export class FirekitFacade {
    */
   _getTaskInfo(): CompatTaskInfo | undefined {
     return this.taskInfo;
+  }
+
+  /**
+   * Retrieves the current interaction buffer.
+   * @returns Array of buffered interaction events
+   */
+  _getInteractionBuffer(): AddInteractionInput[] {
+    return this.interactionBuffer;
+  }
+
+  /**
+   * Adds an interaction event to the buffer.
+   * Interactions are accumulated and flushed when writeTrial() is called.
+   * @param interaction - The interaction event to buffer
+   */
+  _pushInteraction(interaction: AddInteractionInput): void {
+    this.interactionBuffer.push(interaction);
+  }
+
+  /**
+   * Clears the interaction buffer.
+   * Called after interactions are flushed to the backend via writeTrial().
+   */
+  _clearInteractionBuffer(): void {
+    this.interactionBuffer = [];
   }
 }
 
@@ -416,18 +445,19 @@ export async function updateEngagementFlags({
 }
 
 /**
- * Firekit compatibility stub for recording an interaction.
+ * Firekit compatibility method for buffering interaction events.
  *
  * From @bdelab/roar-firekit:
  * addInteraction(interaction: InteractionEvent) { […] }
  *
- * @param interaction - The interaction event to record.
+ * Interactions are buffered in memory and later flushed with `writeTrial()`.
+ *
+ * @param interaction - The interaction event to record
  * @returns void
- * @throws {SDKError} Always, until implemented.
  */
 export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
-  void interaction;
-  throw new SDKError('appkit.addInteraction not yet implemented');
+  const facade = getFirekitCompat();
+  facade._pushInteraction(interaction);
 }
 
 /**
@@ -528,5 +558,8 @@ export async function writeTrial(
       payload?: Json;
       [key: string]: unknown;
     },
+    interactions: facade._getInteractionBuffer() as WriteTrialInteractionCommandInput[],
   });
+
+  facade._clearInteractionBuffer();
 }
