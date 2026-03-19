@@ -11,7 +11,11 @@ import { isActiveInFamily, isEnrollmentActive } from '../utils/enrollment.utils'
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isAuthorizedFamily, isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
 import { parseAccessControlFilter } from '../utils/parse-access-control-filter.utils';
-import { filterSupervisoryRoles, filterCaretakerRoles } from '../utils/supervisory-roles.utils';
+import {
+  filterSupervisoryRoles,
+  filterCaretakerRoles,
+  filterHierarchicalUserAccessRoles,
+} from '../utils/supervisory-roles.utils';
 
 /**
  * User Access Controls
@@ -26,10 +30,10 @@ import { filterSupervisoryRoles, filterCaretakerRoles } from '../utils/superviso
  * ```
  * Requesting user belongs to:    Can see users in:
  * ───────────────────────────    ─────────────────────────────────────────
- * District (supervisory)         → That district and descendant orgs
- * School (supervisory)           → That school and descendant orgs
- * Class (supervisory)            → That class
- * Group (supervisory)            → That group
+ * District (admin role)          → That district and descendant orgs
+ * School (admin role)            → That school and descendant orgs
+ * Class (any supervisory role)   → That class
+ * Group (any supervisory role)   → That group
  * Family (any role)              → That family
  * ```
  *
@@ -43,9 +47,9 @@ import { filterSupervisoryRoles, filterCaretakerRoles } from '../utils/superviso
  * - Students with no supervisory roles rely on service-layer self-access check
  *
  * **Supervisory users** — Access users through multiple paths:
- * - **PATH 1 - Via org hierarchy**: District/school admins see users in descendant orgs
- * - **PATH 2 - Via org→class**: District/school admins see users in classes under their orgs
- * - **PATH 3 - Via direct class**: Teachers see users in their classes
+ * - **PATH 1 - Via org hierarchy**: Admins see users in descendant orgs (teachers excluded)
+ * - **PATH 2 - Via org→class**: Admins see users in classes under their orgs (teachers excluded)
+ * - **PATH 3 - Via direct class**: Teachers/admins see users in their directly assigned classes
  * - **PATH 4 - Via direct group**: Group leaders see users in their groups
  * - **PATH 5 - Via family**: Family members see each other (no supervisory role required)
  *
@@ -98,6 +102,7 @@ export class UserAccessControls {
     const usersTable = alias(users, 'users_table');
     const supervisoryAllowedRoles = filterSupervisoryRoles(allowedRoles);
     const caretakerAllowedRoles = filterCaretakerRoles(allowedRoles);
+    const hierarchicalUserAccessRoles = filterHierarchicalUserAccessRoles(allowedRoles);
 
     // ─────────────────────────────────────────────────────────────────────────–––────
     // NON-SUPERVISORY, NON-CARETAKER ACCESS: Return empty result set
@@ -120,49 +125,57 @@ export class UserAccessControls {
 
     // Only add supervisory paths if user has supervisory roles
     if (supervisoryAllowedRoles.length > 0) {
-      // Shared aliases for org-based queries
-      const requesterUserOrgs = alias(userOrgs, 'requester_user_orgs');
-      const requesterOrgsTable = alias(orgs, 'requester_orgs_table');
-      const targetOrgsTable = alias(orgs, 'target_orgs_table');
+      // PATH 1 & 2: Hierarchical org access (admin roles only)
+      // Teachers are excluded — they only access users via PATH 3 (direct class membership)
+      if (hierarchicalUserAccessRoles.length > 0) {
+        // Shared aliases for org-based queries
+        const requesterUserOrgs = alias(userOrgs, 'requester_user_orgs');
+        const requesterOrgsTable = alias(orgs, 'requester_orgs_table');
+        const targetOrgsTable = alias(orgs, 'target_orgs_table');
 
-      // PATH 1: Via org hierarchy (district/school admin → users in descendant orgs)
-      const viaUserOrgToDescendantOrg = this.db
-        .select({ userId: userOrgs.userId })
-        .from(requesterUserOrgs)
-        // Get all orgs the user is a member of
-        .innerJoin(requesterOrgsTable, eq(requesterOrgsTable.id, requesterUserOrgs.orgId))
-        // This is an exhaustive of all orgs the user is a member of and descendent orgs that they can see
-        .innerJoin(targetOrgsTable, isAncestorOrEqual(requesterOrgsTable.path, targetOrgsTable.path))
-        // This is an exhaustive list of all user orgs memberships
-        .innerJoin(userOrgs, eq(userOrgs.orgId, targetOrgsTable.id))
-        .where(
-          and(
-            isAuthorizedMembership(requesterUserOrgs, requestingUserId, supervisoryAllowedRoles),
-            isEnrollmentActive(userOrgs),
-          ),
-        );
+        // PATH 1: Via org hierarchy (admin roles only → users in descendant orgs)
+        const viaUserOrgToDescendantOrg = this.db
+          .select({ userId: userOrgs.userId })
+          .from(requesterUserOrgs)
+          // Get all orgs the user is a member of
+          .innerJoin(requesterOrgsTable, eq(requesterOrgsTable.id, requesterUserOrgs.orgId))
+          // This is an exhaustive of all orgs the user is a member of and descendent orgs that they can see
+          .innerJoin(targetOrgsTable, isAncestorOrEqual(requesterOrgsTable.path, targetOrgsTable.path))
+          // This is an exhaustive list of all user orgs memberships
+          .innerJoin(userOrgs, eq(userOrgs.orgId, targetOrgsTable.id))
+          .where(
+            and(
+              isAuthorizedMembership(requesterUserOrgs, requestingUserId, hierarchicalUserAccessRoles),
+              isEnrollmentActive(userOrgs),
+            ),
+          );
 
-      // PATH 2: Via org → class (district/school admin → users in classes under their orgs)
-      const targetClassesTable = alias(classes, 'target_classes_table');
-      const viaUserOrgToDescendantClass = this.db
-        .select({
-          userId: userClasses.userId,
-        })
-        .from(requesterUserOrgs)
-        // Get all orgs the user is a member of
-        .innerJoin(requesterOrgsTable, eq(requesterOrgsTable.id, requesterUserOrgs.orgId))
-        // Get all classes that are descendants of all of the user's orgs
-        .innerJoin(targetClassesTable, isAncestorOrEqual(requesterOrgsTable.path, targetClassesTable.orgPath))
-        // This is an exhaustive list of classes the user has access to via their orgs
-        .innerJoin(userClasses, eq(userClasses.classId, targetClassesTable.id))
-        .where(
-          and(
-            isAuthorizedMembership(requesterUserOrgs, requestingUserId, supervisoryAllowedRoles),
-            isEnrollmentActive(userClasses),
-          ),
-        );
+        // PATH 2: Via org → class (admin roles only → users in classes under their orgs)
+        const targetClassesTable = alias(classes, 'target_classes_table');
+        const viaUserOrgToDescendantClass = this.db
+          .select({
+            userId: userClasses.userId,
+          })
+          .from(requesterUserOrgs)
+          // Get all orgs the user is a member of
+          .innerJoin(requesterOrgsTable, eq(requesterOrgsTable.id, requesterUserOrgs.orgId))
+          // Get all classes that are descendants of all of the user's orgs
+          .innerJoin(targetClassesTable, isAncestorOrEqual(requesterOrgsTable.path, targetClassesTable.orgPath))
+          // This is an exhaustive list of classes the user has access to via their orgs
+          .innerJoin(userClasses, eq(userClasses.classId, targetClassesTable.id))
+          .where(
+            and(
+              isAuthorizedMembership(requesterUserOrgs, requestingUserId, hierarchicalUserAccessRoles),
+              isEnrollmentActive(userClasses),
+            ),
+          );
 
-      // PATH 3: Direct class membership (teacher → students in their classes)
+        // Start with hierarchical paths
+        query = viaUserOrgToDescendantOrg.union(viaUserOrgToDescendantClass);
+      }
+
+      // PATH 3: Direct class membership (teacher/admin → students in their directly assigned classes)
+      // This is the ONLY path teachers use to access users
       const requesterUserClasses = alias(userClasses, 'requester_user_classes');
       const viaDirectClass = this.db
         .select({ userId: userClasses.userId })
@@ -188,23 +201,28 @@ export class UserAccessControls {
           ),
         );
 
-      // Union all supervisory paths
-      query = viaUserOrgToDescendantOrg.union(viaUserOrgToDescendantClass).union(viaDirectClass).union(viaDirectGroup);
+      // Union direct class and group paths
+      query = query ? query.union(viaDirectClass).union(viaDirectGroup) : viaDirectClass.union(viaDirectGroup);
     }
 
     // Only add caretaker path if user has caretaker roles
     if (caretakerAllowedRoles.length > 0) {
       // PATH 5: Direct family membership (family member → other family members, no supervisory role needed)
       const requesterUserFamilies = alias(userFamilies, 'requester_user_families');
+
+      // TODO: Schema inconsistency - user_families.role uses user_family_role enum ['parent', 'child']
+      // while user_orgs.role uses the full userRoleEnum which includes ['guardian', 'parent', 'relative'].
+      // Until a migration adds 'guardian' and 'relative' to user_family_role enum, we map all
+      // caretaker UserRole values to 'parent' when querying families. This means guardians and
+      // relatives are treated as parents in the family context.
+      const familyRoles = ['parent'];
+
       const viaDirectFamily = this.db
         .select({ userId: userFamilies.userId })
         .from(requesterUserFamilies)
         .innerJoin(userFamilies, eq(requesterUserFamilies.familyId, userFamilies.familyId))
         .where(
-          and(
-            isAuthorizedFamily(requesterUserFamilies, requestingUserId, caretakerAllowedRoles),
-            isActiveInFamily(userFamilies),
-          ),
+          and(isAuthorizedFamily(requesterUserFamilies, requestingUserId, familyRoles), isActiveInFamily(userFamilies)),
         );
 
       // Union family path with existing query (or start with it if no supervisory paths)
