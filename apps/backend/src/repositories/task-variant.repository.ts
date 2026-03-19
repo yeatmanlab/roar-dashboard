@@ -5,7 +5,7 @@ import { taskVariants, type TaskVariant } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { TaskVariantSortFieldType, TaskVariantStatusType } from '@roar-dashboard/api-contract';
+import type { TaskVariantSortFieldType, TaskVariantStatus } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 
 /**
@@ -30,7 +30,7 @@ export interface ListTaskVariantsOptions {
     direction: SortOrder;
   };
   search?: string;
-  status?: TaskVariantStatusType;
+  status?: TaskVariantStatus;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface ListTaskVariantsOptions {
 export interface ListTaskVariantsFilter {
   taskId: string;
   /** Optional status to filter by. If not provided, returns all variants. */
-  status?: TaskVariantStatusType;
+  status?: TaskVariantStatus;
 }
 
 /**

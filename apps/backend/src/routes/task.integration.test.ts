@@ -912,7 +912,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
       expect(variant).toHaveProperty('taskImage');
       // Parameters should be included
       expect(variant).toHaveProperty('parameters');
-      expect(typeof variant.parameters).toBe('object');
+      expect(Array.isArray(variant.parameters)).toBe(true);
     });
 
     it('returns correct task info for each variant', async () => {

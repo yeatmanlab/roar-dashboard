@@ -80,7 +80,7 @@ export const TasksContract = c.router(
       description:
         'Returns a paginated list of variants for the specified task. ' +
         'All users can see published variants. Super admins can see all variants (draft, published, deprecated). ' +
-        'Supports pagination (page, perPage), searching by name or description, and sorting by name, createdAt, or updatedAt. ' +
+        'Supports pagination (page, perPage), searching by name or description, and sorting by name, status, createdAt, or updatedAt. ' +
         'Returns 404 if the task does not exist.',
     },
     createTaskVariant: {

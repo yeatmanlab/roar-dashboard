@@ -18,8 +18,6 @@ export const TaskIdParamSchema = z.object({
 
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
 
-export type TaskVariantStatusType = z.infer<typeof TaskVariantStatusSchema>;
-
 /**
  * Task Variant Parameter Schema
  *
