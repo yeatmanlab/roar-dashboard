@@ -39,7 +39,6 @@ function toUserResponse(user: User): UserResponse {
     race: user.race,
     hispanicEthnicity: user.hispanicEthnicity,
     homeLanguage: user.homeLanguage,
-    rosteringEnded: user.rosteringEnded?.toISOString() ?? null,
     isSuperAdmin: user.isSuperAdmin,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt?.toISOString() ?? null,

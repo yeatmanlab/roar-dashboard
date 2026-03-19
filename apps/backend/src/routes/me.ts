@@ -18,7 +18,8 @@ export function registerMeRoutes(routerInstance: Router) {
     get: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req }) => MeController.get(req.user!.userId),
+      // @ts-expect-error - ts-rest type inference limitation with union return types
+      handler: async ({ req: { user } }) => MeController.get(user!),
     },
   });
 

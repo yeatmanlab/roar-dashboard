@@ -36,7 +36,6 @@ export const UserResponseSchema = z.object({
   race: z.string().nullable(),
   hispanicEthnicity: z.boolean().nullable(),
   homeLanguage: z.string().nullable(),
-  rosteringEnded: z.string().datetime().nullable(),
   isSuperAdmin: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().nullable(),

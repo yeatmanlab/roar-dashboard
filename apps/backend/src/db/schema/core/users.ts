@@ -71,8 +71,6 @@ export const users = db.table(
     hispanicEthnicity: p.boolean(),
     homeLanguage: p.text(),
 
-    rosteringEnded: p.timestamp(),
-
     isSuperAdmin: p.boolean().notNull().default(false),
 
     ...timestamps,

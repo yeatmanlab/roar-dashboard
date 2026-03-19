@@ -71,6 +71,12 @@ export function UserService({
       return user;
     }
 
+    // Users can always access their own profile
+    // Fast path - no database query needed
+    if (userId === id) {
+      return user;
+    }
+
     // Check access for non-super admin users
     const allowedRoles = rolesForPermission(permission);
     const authorized = await userRepository.getAuthorizedById({ userId, allowedRoles }, id);
