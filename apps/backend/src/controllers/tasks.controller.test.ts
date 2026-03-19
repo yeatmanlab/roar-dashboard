@@ -732,4 +732,258 @@ describe('TasksController', () => {
       expect(result.status).toBe(StatusCodes.NO_CONTENT);
     });
   });
+
+  describe('listTaskVariants', () => {
+    const mockTask = {
+      name: 'Single Word Reading',
+      slug: 'swr',
+      image: 'https://example.com/swr.png',
+    };
+
+    const mockVariants = [
+      {
+        id: 'variant-1',
+        taskId: 'task-123',
+        name: 'Easy Variant',
+        description: 'An easy variant',
+        status: TaskVariantStatus.PUBLISHED,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-02T00:00:00Z'),
+        parameters: [
+          { name: 'difficulty', value: 'easy' },
+          { name: 'timeLimit', value: 60 },
+        ],
+      },
+      {
+        id: 'variant-2',
+        taskId: 'task-123',
+        name: 'Hard Variant',
+        description: 'A hard variant',
+        status: TaskVariantStatus.DRAFT,
+        createdAt: new Date('2024-01-03T00:00:00Z'),
+        updatedAt: null,
+        parameters: [],
+      },
+    ];
+
+    it('should return 200 with paginated variants on success', async () => {
+      mockListVariants.mockResolvedValue({
+        items: mockVariants,
+        totalItems: 2,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        expect(result.body.data.items).toHaveLength(2);
+        expect(result.body.data.pagination).toEqual({
+          page: 1,
+          perPage: 25,
+          totalItems: 2,
+          totalPages: 1,
+        });
+      }
+
+      expect(mockListVariants).toHaveBeenCalledWith(mockAuthContext, 'task-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+    });
+
+    it('should include task info in each variant', async () => {
+      mockListVariants.mockResolvedValue({
+        items: [mockVariants[0]],
+        totalItems: 1,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        const variant = result.body.data.items[0]!;
+        expect(variant.taskName).toBe('Single Word Reading');
+        expect(variant.taskSlug).toBe('swr');
+        expect(variant.taskImage).toBe('https://example.com/swr.png');
+      }
+    });
+
+    it('should include parameters array in each variant', async () => {
+      mockListVariants.mockResolvedValue({
+        items: [mockVariants[0]],
+        totalItems: 1,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        const variant = result.body.data.items[0]!;
+        expect(Array.isArray(variant.parameters)).toBe(true);
+        expect(variant.parameters).toEqual([
+          { name: 'difficulty', value: 'easy' },
+          { name: 'timeLimit', value: 60 },
+        ]);
+      }
+    });
+
+    it('should transform date fields to ISO strings', async () => {
+      mockListVariants.mockResolvedValue({
+        items: mockVariants,
+        totalItems: 2,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        expect(result.body.data.items[0]!.createdAt).toBe('2024-01-01T00:00:00.000Z');
+        expect(result.body.data.items[0]!.updatedAt).toBe('2024-01-02T00:00:00.000Z');
+        expect(result.body.data.items[1]!.updatedAt).toBeNull();
+      }
+    });
+
+    it('should return empty list when no variants exist', async () => {
+      mockListVariants.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        expect(result.body.data.items).toHaveLength(0);
+        expect(result.body.data.pagination.totalItems).toBe(0);
+        expect(result.body.data.pagination.totalPages).toBe(0);
+      }
+    });
+
+    it('should pass search filter to service', async () => {
+      mockListVariants.mockResolvedValue({
+        items: [mockVariants[0]],
+        totalItems: 1,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc', search: 'easy' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(mockListVariants).toHaveBeenCalledWith(mockAuthContext, 'task-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: 'asc' },
+        search: 'easy',
+      });
+    });
+
+    it('should pass status filter to service', async () => {
+      mockListVariants.mockResolvedValue({
+        items: [mockVariants[0]],
+        totalItems: 1,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc', status: 'published' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(mockListVariants).toHaveBeenCalledWith(mockAuthContext, 'task-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: 'asc' },
+        status: 'published',
+      });
+    });
+
+    it('should calculate correct totalPages for pagination', async () => {
+      mockListVariants.mockResolvedValue({
+        items: mockVariants,
+        totalItems: 55,
+        task: mockTask,
+      });
+
+      const query = { page: 1, perPage: 10, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      if (result.status === StatusCodes.OK) {
+        expect(result.body.data.pagination.totalPages).toBe(6); // ceil(55/10) = 6
+      }
+    });
+
+    it('should return 404 when task does not exist', async () => {
+      const notFoundError = new ApiError('Not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      mockListVariants.mockRejectedValue(notFoundError);
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'nonexistent-task', query);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      if (result.status === StatusCodes.NOT_FOUND) {
+        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      }
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const internalError = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      mockListVariants.mockRejectedValue(internalError);
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.listTaskVariants(mockAuthContext, 'task-123', query);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
+        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      }
+    });
+
+    it('should re-throw non-ApiError errors', async () => {
+      const unexpectedError = new Error('Unexpected error');
+      mockListVariants.mockRejectedValue(unexpectedError);
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await expect(Controller.listTaskVariants(mockAuthContext, 'task-123', query)).rejects.toThrow(unexpectedError);
+    });
+  });
 });
