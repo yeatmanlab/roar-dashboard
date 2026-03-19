@@ -527,7 +527,12 @@ describe('firekit compat', () => {
 
       await startRun();
 
-      const trialData: TrialData = { response: 'correct', rt: 500 };
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'correct',
+        rt: 500,
+      };
       const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
         return { computed: rawScores };
       };

@@ -498,8 +498,12 @@ export async function writeTrial(
   const invoker = facade.getInvoker();
 
   // Validate required fields to prevent silent failures
-  if (typeof (trialData as Record<string, unknown>)['assessmentStage'] !== 'string') {
+  const trialDataRecord = trialData as Record<string, unknown>;
+  if (typeof trialDataRecord['assessmentStage'] !== 'string') {
     throw new SDKError('writeTrial requires assessmentStage in trial data.');
+  }
+  if (typeof trialDataRecord['correct'] !== 'number') {
+    throw new SDKError('writeTrial requires correct in trial data.');
   }
 
   const cmd = new WriteTrialCommand(api);
