@@ -10,7 +10,7 @@ vi.mock('../services/school/school.service', () => ({
   SchoolService: vi.fn(),
 }));
 
-import { SchoolService } from '../services/school/school.service';
+import { SchoolService, type ISchoolService } from '../services/school/school.service';
 
 /**
  * Type-safe assertion helper for success responses.
@@ -44,8 +44,7 @@ describe('SchoolsController', () => {
     // Setup the mock service
     vi.mocked(SchoolService).mockReturnValue({
       list: mockList,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as ISchoolService);
   });
 
   describe('list', () => {

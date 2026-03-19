@@ -47,7 +47,7 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
     id: school.id,
     name: school.name,
     abbreviation: school.abbreviation,
-    orgType: school.orgType,
+    orgType: 'school' as const,
     parentOrgId: school.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
@@ -121,7 +121,7 @@ export const SchoolsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }

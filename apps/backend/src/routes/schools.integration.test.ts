@@ -12,9 +12,11 @@
  *   - student:     student (no Organizations.LIST permission → empty results)
  *   - caregiver:   guardian
  *
- * Each endpoint section follows the structure:
+ * Each endpoint section generally follows the structure:
  *   1. Authorization — one spec per tier with status + content assertions
- *   2. Error cases — 401 unauthenticated, 403 forbidden, 404 not found
+ *   2. Error cases where applicable — e.g. 401 unauthenticated, 403 forbidden, 404 not found.
+ *      For GET /v1/schools specifically, unauthorized roles receive 200 with an
+ *      empty result set rather than 403/404 (access control via INNER JOIN).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';

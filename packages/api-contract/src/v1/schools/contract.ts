@@ -17,7 +17,6 @@ export const SchoolsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(SchoolsListResponseSchema),
         401: ErrorEnvelopeSchema,
-        403: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -25,6 +24,7 @@ export const SchoolsContract = c.router(
       description:
         'Returns a paginated list of schools the authenticated user has access to. ' +
         'Super admins can access all schools. Regular users only see schools they belong to. ' +
+        'Unauthorized users receive an empty result set (not a 403 error). ' +
         'Use ?includeEnded=true to include organizations with rosteringEnded timestamp. ' +
         'Use ?embed=counts to include aggregated statistics (users, classes).',
     },
