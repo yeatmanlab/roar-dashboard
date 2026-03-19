@@ -15,8 +15,8 @@ const s = initServer();
 export function registerUserRoutes(routerInstance: Router) {
   const UserRoutes = s.router(UsersContract, {
     get: {
-      middleware: [AuthGuardMiddleware],
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => UsersController.get(user!, id),
     },
   });
