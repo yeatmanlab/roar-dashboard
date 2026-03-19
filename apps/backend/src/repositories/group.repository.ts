@@ -1,6 +1,7 @@
 import { eq, and, isNull, asc, count, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { SortOrder, type EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
+import type { UserRole, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 import { getEnrolledUsersFilterConditions, ENROLLED_USERS_SORT_COLUMNS } from './utils/enrolled-users-query.utils';
@@ -39,6 +40,26 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .limit(1);
 
     return result[0]?.groups ?? null;
+  }
+
+  /**
+   * Get the role a user holds for a specific group.
+   *
+   * User can only hold one role per group.
+   *
+   * @param userId - The user ID to query roles for
+   * @param groupId - The group ID to check access for
+   * @returns Array of distinct roles the user has for group.
+   */
+  async getUserRolesForGroup(userId: string, groupId: string): Promise<UserRole[]> {
+    const result = await this.db
+      .select({ role: userGroups.role })
+      .from(userGroups)
+      .where(and(eq(userGroups.groupId, groupId), eq(userGroups.userId, userId)))
+      .limit(1);
+
+    // Verified earlier that user has access to this group, so result should always exist
+    return result[0]!.role ? [result[0]!.role] : [];
   }
 
   /**

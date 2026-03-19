@@ -108,6 +108,22 @@ describe('GroupRepository', () => {
     });
   });
 
+  describe('getUserRoleForGroup', () => {
+    it('returns the role a user holds for a specific group', async () => {
+      const user = await UserFactory.create();
+      const group = await GroupFactory.create();
+      await UserGroupFactory.create({
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.TEACHER,
+      });
+
+      const result = await repository.getUserRolesForGroup(user.id, group.id);
+
+      expect(result).toContain(UserRole.TEACHER);
+    });
+  });
+
   describe('getUsersByGroupId', () => {
     // baseFixture.group has exactly 1 active user:
     // - groupStudent (student)
@@ -410,32 +426,51 @@ describe('GroupRepository', () => {
   });
 
   describe('getAuthorizedUsersByGroupId', () => {
-    describe('returns users when requester has access', () => {
-      it('supervisory role can list users in their groups', async () => {
-        const adminUser = await UserFactory.create({ nameLast: 'GroupAdmin' });
-        const teacherUser = await UserFactory.create({ nameLast: 'Teacher' });
-        const studentUser = await UserFactory.create({ nameLast: 'Student' });
-        const adminGroup = await GroupFactory.create({
-          name: 'Group Admin Test Group',
-        });
-
-        await UserGroupFactory.create({ userId: adminUser.id, groupId: adminGroup.id, role: UserRole.ADMINISTRATOR });
-        await UserGroupFactory.create({ userId: teacherUser.id, groupId: adminGroup.id, role: UserRole.TEACHER });
-        await UserGroupFactory.create({ userId: studentUser.id, groupId: adminGroup.id, role: UserRole.STUDENT });
-        const result = await repository.getAuthorizedUsersByGroupId(
-          { userId: adminUser.id, allowedRoles: [UserRole.ADMINISTRATOR, UserRole.TEACHER, UserRole.STUDENT] },
-          adminGroup.id,
-          { page: 1, perPage: 100 },
-        );
-
-        expect(result.totalItems).toBe(3);
-        expect(result.items).toHaveLength(3);
-
-        const userIds = result.items.map((u) => u.id);
-        expect(userIds).toContain(adminUser.id);
-        expect(userIds).toContain(teacherUser.id);
-        expect(userIds).toContain(studentUser.id);
+    it('returns users with supervisor access', async () => {
+      const adminUser = await UserFactory.create({ nameLast: 'GroupAdmin' });
+      const teacherUser = await UserFactory.create({ nameLast: 'Teacher' });
+      const studentUser = await UserFactory.create({ nameLast: 'Student' });
+      const adminGroup = await GroupFactory.create({
+        name: 'Group Admin Test Group',
       });
+
+      await UserGroupFactory.create({ userId: adminUser.id, groupId: adminGroup.id, role: UserRole.ADMINISTRATOR });
+      await UserGroupFactory.create({ userId: teacherUser.id, groupId: adminGroup.id, role: UserRole.TEACHER });
+      await UserGroupFactory.create({ userId: studentUser.id, groupId: adminGroup.id, role: UserRole.STUDENT });
+      const result = await repository.getAuthorizedUsersByGroupId(
+        { userId: adminUser.id, allowedRoles: [UserRole.ADMINISTRATOR, UserRole.TEACHER] },
+        adminGroup.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.totalItems).toBe(3);
+      expect(result.items).toHaveLength(3);
+
+      const userIds = result.items.map((u) => u.id);
+      expect(userIds).toContain(adminUser.id);
+      expect(userIds).toContain(teacherUser.id);
+      expect(userIds).toContain(studentUser.id);
+    });
+
+    it('returns null with supervisory role', async () => {
+      const adminUser = await UserFactory.create({ nameLast: 'GroupAdmin' });
+      const teacherUser = await UserFactory.create({ nameLast: 'Teacher' });
+      const studentUser = await UserFactory.create({ nameLast: 'Student' });
+      const adminGroup = await GroupFactory.create({
+        name: 'Group Admin Test Group',
+      });
+
+      await UserGroupFactory.create({ userId: adminUser.id, groupId: adminGroup.id, role: UserRole.ADMINISTRATOR });
+      await UserGroupFactory.create({ userId: teacherUser.id, groupId: adminGroup.id, role: UserRole.TEACHER });
+      await UserGroupFactory.create({ userId: studentUser.id, groupId: adminGroup.id, role: UserRole.STUDENT });
+      const result = await repository.getAuthorizedUsersByGroupId(
+        { userId: studentUser.id, allowedRoles: [UserRole.ADMINISTRATOR, UserRole.TEACHER] },
+        adminGroup.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.totalItems).toBe(0);
+      expect(result.items).toHaveLength(0);
     });
   });
 });
