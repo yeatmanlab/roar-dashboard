@@ -273,14 +273,23 @@ export function TaskService({
       const filter = status ? { taskId, status } : { taskId };
       const variants = await taskVariantRepository.listByTaskId(filter, options);
 
-      // Fetch parameters for each variant as array of {name, value} objects
-      const variantsWithParams = await Promise.all(
-        variants.items.map(async (variant) => {
-          const params = await taskVariantParameterRepository.getByTaskVariantId(variant.id);
-          const parameters = params.map((param) => ({ name: param.name, value: param.value }));
-          return { ...variant, parameters };
-        }),
-      );
+      // Fetch all parameters for all variants in a single query
+      const variantIds = variants.items.map((v) => v.id);
+      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(variantIds);
+
+      // Group parameters by variant ID
+      const paramsByVariantId = new Map<string, Array<{ name: string; value: unknown }>>();
+      for (const param of allParams) {
+        const existing = paramsByVariantId.get(param.taskVariantId) ?? [];
+        existing.push({ name: param.name, value: param.value });
+        paramsByVariantId.set(param.taskVariantId, existing);
+      }
+
+      // Attach parameters to each variant
+      const variantsWithParams = variants.items.map((variant) => ({
+        ...variant,
+        parameters: paramsByVariantId.get(variant.id) ?? [],
+      }));
 
       return {
         items: variantsWithParams,
