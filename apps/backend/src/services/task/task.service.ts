@@ -248,7 +248,11 @@ export function TaskService({
     authContext: AuthContext,
     taskId: string,
     options: ListTaskVariantsOptions,
-  ): Promise<PaginatedResult<TaskVariant> & { task: Pick<Task, 'name' | 'slug' | 'image'> }> {
+  ): Promise<
+    PaginatedResult<TaskVariant & { parameters: Array<{ name: string; value: unknown }> }> & {
+      task: Pick<Task, 'name' | 'slug' | 'image'>;
+    }
+  > {
     const { userId, isSuperAdmin } = authContext;
 
     try {
@@ -266,8 +270,18 @@ export function TaskService({
       // Super admins see all statuses, regular users see only published
       const variants = await taskVariantRepository.listByTaskId({ taskId, includeAllStatuses: isSuperAdmin }, options);
 
+      // Fetch parameters for each variant as array of {name, value} objects
+      const variantsWithParams = await Promise.all(
+        variants.items.map(async (variant) => {
+          const params = await taskVariantParameterRepository.getByTaskVariantId(variant.id);
+          const parameters = params.map((param) => ({ name: param.name, value: param.value }));
+          return { ...variant, parameters };
+        }),
+      );
+
       return {
-        ...variants,
+        items: variantsWithParams,
+        totalItems: variants.totalItems,
         task: { name: task.name, slug: task.slug, image: task.image },
       };
     } catch (error) {

@@ -38,14 +38,16 @@ function transformTask(task: Task): ContractTask {
 }
 
 /**
- * Maps a database TaskVariant entity to the API schema (without task fields).
+ * Maps a database TaskVariant entity to the API schema (without task/parameter fields).
  * Converts Date fields to ISO strings.
- * Task fields (taskName, taskSlug, taskImage) are added separately by the controller.
+ * Task fields (taskName, taskSlug, taskImage) and parameters are added separately by the controller.
  *
  * @param variant - The database TaskVariant entity
- * @returns The API-formatted task variant object without task fields
+ * @returns The API-formatted task variant object without task fields or parameters
  */
-function transformTaskVariant(variant: TaskVariant): Omit<ContractTaskVariant, 'taskName' | 'taskSlug' | 'taskImage'> {
+function transformTaskVariant(
+  variant: TaskVariant,
+): Omit<ContractTaskVariant, 'taskName' | 'taskSlug' | 'taskImage' | 'parameters'> {
   return {
     id: variant.id,
     taskId: variant.taskId,
@@ -168,6 +170,7 @@ export const TasksController = {
               taskName: task.name,
               taskSlug: task.slug,
               taskImage: task.image,
+              parameters: variant.parameters,
             })),
             pagination: {
               page,

@@ -833,6 +833,9 @@ describe('GET /v1/tasks/:taskId/variants', () => {
       expect(variant).toHaveProperty('taskName');
       expect(variant).toHaveProperty('taskSlug');
       expect(variant).toHaveProperty('taskImage');
+      // Parameters should be included
+      expect(variant).toHaveProperty('parameters');
+      expect(typeof variant.parameters).toBe('object');
     });
 
     it('returns correct task info for each variant', async () => {
@@ -855,6 +858,43 @@ describe('GET /v1/tasks/:taskId/variants', () => {
       expect(variant.taskName).toBe(taskName);
       expect(variant.taskSlug).toBe(taskSlug);
       expect(variant.taskImage).toBe(taskImage);
+    });
+
+    it('returns variant parameters as array of name-value objects', async () => {
+      const testTask = await TaskFactory.create({ slug: `params-test-${Date.now()}` });
+
+      // Create variant via API to also create parameters
+      authenticateAs(tiers.superAdmin);
+      const createRes = await request(app)
+        .post(`/v1/tasks/${testTask.id}/variants`)
+        .set('Authorization', 'Bearer token')
+        .send({
+          name: `Params Variant ${Date.now()}`,
+          description: 'Variant with parameters',
+          status: 'published',
+          parameters: [
+            { name: 'difficulty', value: 'hard' },
+            { name: 'timeLimit', value: 120 },
+            { name: 'hints', value: true },
+          ],
+        });
+
+      expect(createRes.status).toBe(StatusCodes.CREATED);
+
+      // Fetch variants and verify parameters
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const variant = res.body.data.items[0];
+      expect(Array.isArray(variant.parameters)).toBe(true);
+      expect(variant.parameters).toEqual(
+        expect.arrayContaining([
+          { name: 'difficulty', value: 'hard' },
+          { name: 'timeLimit', value: 120 },
+          { name: 'hints', value: true },
+        ]),
+      );
     });
   });
 
