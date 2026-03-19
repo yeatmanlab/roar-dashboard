@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
+import { MockedUserService } from '../test-support/services/user.service';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
@@ -44,8 +45,7 @@ describe('UsersController', () => {
     // Setup the mock service
     vi.mocked(UserService).mockReturnValue({
       getById: mockGetById,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as MockedUserService);
   });
 
   describe('get', () => {
@@ -173,10 +173,11 @@ describe('UsersController', () => {
         race: 'asian',
         hispanicEthnicity: false,
         homeLanguage: 'English',
-        isSuperAdmin: false,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-02T00:00:00.000Z',
       });
+      // Verify isSuperAdmin is NOT included for non-super admin requesters (security)
+      expect(data).not.toHaveProperty('isSuperAdmin');
     });
 
     it('should handle null optional fields', async () => {
@@ -325,6 +326,7 @@ describe('UsersController', () => {
         id: 'any-user-456',
         nameFirst: 'Any',
         nameLast: 'User',
+        isSuperAdmin: false,
       });
 
       mockGetById.mockResolvedValue(mockUser);
@@ -336,6 +338,42 @@ describe('UsersController', () => {
       const data = expectOkResponse(result);
       expect(data.id).toBe('any-user-456');
       expect(mockGetById).toHaveBeenCalledWith(authContext, 'any-user-456');
+      // Verify isSuperAdmin IS included for super admin requesters
+      expect(data.isSuperAdmin).toBe(false);
+    });
+
+    it('should include isSuperAdmin field only when requester is a super admin', async () => {
+      const superAdminContext = AuthContextFactory.build({ userId: 'admin-123', isSuperAdmin: true });
+      const mockUser = UserFactory.build({
+        id: 'target-user',
+        isSuperAdmin: true,
+      });
+
+      mockGetById.mockResolvedValue(mockUser);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      // Super admin can see isSuperAdmin field
+      const superAdminResult = await Controller.get(superAdminContext, 'target-user');
+      const superAdminData = expectOkResponse(superAdminResult);
+      expect(superAdminData.isSuperAdmin).toBe(true);
+    });
+
+    it('should exclude isSuperAdmin field when requester is not a super admin', async () => {
+      const nonSuperAdminContext = AuthContextFactory.build({ userId: 'regular-user', isSuperAdmin: false });
+      const mockUser = UserFactory.build({
+        id: 'target-user',
+        isSuperAdmin: true,
+      });
+
+      mockGetById.mockResolvedValue(mockUser);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      // Non-super admin cannot see isSuperAdmin field
+      const regularResult = await Controller.get(nonSuperAdminContext, 'target-user');
+      const regularData = expectOkResponse(regularResult);
+      expect(regularData).not.toHaveProperty('isSuperAdmin');
     });
   });
 });

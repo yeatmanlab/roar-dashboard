@@ -10,11 +10,15 @@ import {
 /**
  * Response schema for GET /users/:userId
  * Returns user profile information
+ *
+ * Security note: isSuperAdmin is only included when the requesting user is a super admin.
+ * Non-super admins will not see this field for security reasons.
+ *
  * TODO: This may need to be split into separate schemas for different PII permission levels
  */
 export const UserResponseSchema = z.object({
   id: z.string().uuid(),
-  assessmentPid: z.string().min(1).max(255),
+  assessmentPid: z.string(),
   authProvider: z.array(AuthProviderSchema).nullable(),
   nameFirst: z.string().nullable(),
   nameMiddle: z.string().nullable(),
@@ -36,7 +40,7 @@ export const UserResponseSchema = z.object({
   race: z.string().nullable(),
   hispanicEthnicity: z.boolean().nullable(),
   homeLanguage: z.string().nullable(),
-  isSuperAdmin: z.boolean(),
+  isSuperAdmin: z.boolean().optional(), // Only visible to super admins
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().nullable(),
 });

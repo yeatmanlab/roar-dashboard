@@ -40,7 +40,7 @@ export function UserService({
    * 1. Looks up the user by ID to verify they exist
    * 2. Checks if the requestor is a super admin or has the required permission
    *
-   * @param authContxt - User's auth context (id and super admin flag)
+   * @param authContext - User's auth context (id and super admin flag)
    * @param id - The user's ID to verify
    * @param permission - The permission to check (default: Permissions.Users.READ)
    * @returns The user record if access is granted, null otherwise
@@ -139,11 +139,11 @@ export function UserService({
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId: id },
+        context: { userId, requestedUserId: id },
         cause: error,
       });
     }
   }
 
-  return { verifySupervisoryAccess, findByAuthId, getById };
+  return { findByAuthId, getById };
 }

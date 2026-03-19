@@ -11,10 +11,13 @@ const userService = UserService();
  * Transform a User database record into a UserResponse API schema.
  * Converts Date objects to ISO datetime strings as required by the API contract.
  *
+ * Security: isSuperAdmin is only included when the requesting user is a super admin.
+ *
  * @param user - User record from the database
+ * @param authContext - Requesting user's authentication context
  * @returns UserResponse with Date fields converted to strings
  */
-function toUserResponse(user: User): UserResponse {
+function toUserResponse(user: User, authContext: AuthContext): UserResponse {
   return {
     id: user.id,
     assessmentPid: user.assessmentPid,
@@ -39,7 +42,7 @@ function toUserResponse(user: User): UserResponse {
     race: user.race,
     hispanicEthnicity: user.hispanicEthnicity,
     homeLanguage: user.homeLanguage,
-    isSuperAdmin: user.isSuperAdmin,
+    ...(authContext.isSuperAdmin && { isSuperAdmin: user.isSuperAdmin }),
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt?.toISOString() ?? null,
   };
@@ -56,7 +59,7 @@ export const UsersController = {
   /**
    * Get a single user by ID.
    *
-   * Delagates to the UserService for authorization and retrieval.
+   * Delegates to the UserService for authorization and retrieval.
    *
    * @param authContext - Requesting user's authentication context.
    * @param userId - UUID of the user to retrieve.
@@ -67,7 +70,7 @@ export const UsersController = {
       return {
         status: StatusCodes.OK as const,
         body: {
-          data: toUserResponse(user),
+          data: toUserResponse(user, authContext),
         },
       };
     } catch (error) {

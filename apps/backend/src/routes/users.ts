@@ -9,14 +9,14 @@ const s = initServer();
 /**
  * Registers /users routes on the provided Express router.
  *
- * All routes require authentiaction (AuthGuardMiddleWare)
+ * All routes require authentication (AuthGuardMiddleWare)
  * Authorization is handled in the service and repository layers.
  */
 export function registerUserRoutes(routerInstance: Router) {
   const UserRoutes = s.router(UsersContract, {
     get: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       handler: async ({ req: { user }, params: { id } }) => UsersController.get(user!, id),
     },
   });
