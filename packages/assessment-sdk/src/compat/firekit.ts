@@ -3,8 +3,6 @@ import { SDKError } from '../errors/sdk-error';
 import type {
   StartRunInput,
   FinishRunInput,
-  UpdateEngagementFlagsInput,
-  UpdateEngagementFlagsOutput,
   AddInteractionInput,
   AddInteractionOutput,
   UpdateUserInput,
@@ -17,6 +15,7 @@ import type {
 import { RUN_EVENT_ABORT } from '../types/abort-run';
 import { RUN_EVENT_COMPLETE } from '../types/finish-run';
 import { RUN_EVENT_TRIAL } from '../types/write-trial';
+import { RUN_EVENT_ENGAGEMENT } from '../types/update-engagement-flags';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
@@ -24,6 +23,7 @@ import { StartRunCommand } from '../commands/start-run.command';
 import { AbortRunCommand } from '../commands/abort-run.command';
 import { FinishRunCommand } from '../commands/finish-run.command';
 import { WriteTrialCommand } from '../commands/write-trial.command';
+import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -423,27 +423,32 @@ export function abortRun(): void {
   });
 }
 
-/**
- * Firekit compatibility stub for updating engagement flags.
- *
- * From @bdelab/roar-firekit:
- * async updateEngagementFlags(flagNames: string[], markAsReliable = false, reliableByBlock = undefined) { […] }
- *
- * @param flagNames - Array of engagement flag names to update.
- * @param markAsReliable - Whether to mark the run as reliable (default: false).
- * @param reliableByBlock - Optional block-level reliability data.
- * @returns Promise<void>
- * @throws {SDKError} Always, until implemented.
- */
-export async function updateEngagementFlags({
-  flagNames,
-  markAsReliable = false,
-  reliableByBlock = undefined,
-}: UpdateEngagementFlagsInput): UpdateEngagementFlagsOutput {
-  void flagNames;
-  void markAsReliable;
-  void reliableByBlock;
-  throw new SDKError('appkit.updateEngagementFlags not yet implemented');
+export async function updateEngagementFlags(flagNames: string[], markAsReliable?: boolean): Promise<void> {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('Run not started');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const engagementFlags = Object.fromEntries(
+    flagNames.map((flag) => [
+      flag,
+      flag as 'incomplete' | 'response_time_too_fast' | 'accuracy_too_low' | 'not_enough_responses',
+    ]),
+  ) as Record<string, 'incomplete' | 'response_time_too_fast' | 'accuracy_too_low' | 'not_enough_responses'>;
+
+  const cmd = new UpdateRunEngagementFlagsCommand(api);
+
+  await invoker.run(cmd, {
+    runId,
+    type: RUN_EVENT_ENGAGEMENT,
+    engagementFlags,
+    reliableRun: markAsReliable ?? false,
+  });
 }
 
 /**
