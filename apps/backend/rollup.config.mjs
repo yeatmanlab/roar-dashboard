@@ -22,11 +22,12 @@ export default defineConfig({
         exports: 'auto',
       }
     : {
-        file: `dist/server.js`,
+        dir: 'dist',
         format: 'esm',
         sourcemap: true,
         exports: 'auto',
-        inlineDynamicImports: true,
+        entryFileNames: 'server.js',
+        chunkFileNames: '[name]-[hash].js',
       },
   plugins: [
     // In dev, externalize node_modules (except our workspace package) to keep rebuilds fast.
