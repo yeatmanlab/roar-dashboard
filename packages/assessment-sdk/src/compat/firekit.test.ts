@@ -540,7 +540,7 @@ describe('firekit compat', () => {
       await expect(writeTrial(trialData, callback)).resolves.toBeUndefined();
     });
 
-    it('coerces boolean correct values (legacy Firekit) to numbers', async () => {
+    it('coerces boolean correct: true to 1', async () => {
       const mockContext: CommandContext = {
         baseUrl: 'http://localhost:3000',
         auth: {
@@ -553,7 +553,7 @@ describe('firekit compat', () => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
             status: 201,
-            json: async () => ({ data: { id: 'run-bool-correct' } }),
+            json: async () => ({ data: { id: 'run-bool-true' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
@@ -586,12 +586,66 @@ describe('firekit compat', () => {
 
       await expect(writeTrial(trialDataWithBooleanCorrect)).resolves.toBeUndefined();
 
-      // Verify the boolean was coerced to number (1)
       expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('/runs/run-bool-correct/event'),
+        expect.stringContaining('/runs/run-bool-true/event'),
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining('"correct":1'),
+        }),
+      );
+    });
+
+    it('coerces boolean correct: false to 0', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-bool-false' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      const trialDataWithBooleanCorrect: TrialData = {
+        assessmentStage: 'test',
+        correct: false,
+        response: 'B',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialDataWithBooleanCorrect)).resolves.toBeUndefined();
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-bool-false/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"correct":0'),
         }),
       );
     });
