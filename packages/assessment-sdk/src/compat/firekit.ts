@@ -423,23 +423,45 @@ export function abortRun(): void {
   });
 }
 
+/**
+ * Firekit compatibility method for updating engagement flags on a run.
+ *
+ * Marks a run with quality flags such as incomplete responses, response times that are too fast,
+ * accuracy that is too low, or insufficient number of responses. Optionally marks the run as reliable.
+ *
+ * @param flagNames - Array of engagement flag names to set (e.g., 'incomplete', 'response_time_too_fast')
+ * @param markAsReliable - Optional flag to mark the run as reliable (defaults to false)
+ * @returns Promise that resolves when the engagement flags have been sent to the backend
+ * @throws {SDKError} If no active run exists
+ *
+ * @example
+ * ```typescript
+ * await updateEngagementFlags(['incomplete', 'response_time_too_fast'], true);
+ * ```
+ */
 export async function updateEngagementFlags(flagNames: string[], markAsReliable?: boolean): Promise<void> {
   const facade = getFirekitCompat();
   const runId = facade._getRunId();
 
   if (!runId) {
-    throw new SDKError('Run not started');
+    throw new SDKError('appkit.updateEngagementFlags requires an active run. Call appkit.startRun() first.');
   }
 
   const api = facade.getApi();
   const invoker = facade.getInvoker();
 
-  const engagementFlags = Object.fromEntries(
-    flagNames.map((flag) => [
-      flag,
-      flag as 'incomplete' | 'response_time_too_fast' | 'accuracy_too_low' | 'not_enough_responses',
-    ]),
-  ) as Record<string, 'incomplete' | 'response_time_too_fast' | 'accuracy_too_low' | 'not_enough_responses'>;
+  // Map snake_case Firekit flag names to camelCase schema property names
+  const flagNameMap: Record<string, string> = {
+    incomplete: 'incomplete',
+    response_time_too_fast: 'responseTimeTooFast',
+    accuracy_too_low: 'accuracyTooLow',
+    not_enough_responses: 'notEnoughResponses',
+  };
+
+  const engagementFlags = Object.fromEntries(flagNames.map((flag) => [flagNameMap[flag] || flag, true])) as Record<
+    string,
+    boolean
+  >;
 
   const cmd = new UpdateRunEngagementFlagsCommand(api);
 

@@ -400,13 +400,17 @@ describe('firekit compat', () => {
       await startRun();
       await updateEngagementFlags(['incomplete', 'response_time_too_fast']);
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('/runs/run-engagement-test/event'),
-        expect.objectContaining({
-          method: 'POST',
-          body: expect.stringContaining('engagement'),
-        }),
-      );
+      const calls = fetchMock.mock.calls;
+      const eventCall = calls.find((call) => call[0].includes('/event'));
+      expect(eventCall).toBeDefined();
+
+      const body = JSON.parse(eventCall![1].body as string);
+      expect(body.type).toBe('engagement');
+      expect(body.engagementFlags).toEqual({
+        incomplete: true,
+        responseTimeTooFast: true,
+      });
+      expect(body.reliableRun).toBe(false);
     });
 
     it('sends engagement flags with markAsReliable when provided', async () => {
@@ -447,13 +451,16 @@ describe('firekit compat', () => {
       await startRun();
       await updateEngagementFlags(['incomplete'], true);
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('/runs/run-reliable-test/event'),
-        expect.objectContaining({
-          method: 'POST',
-          body: expect.stringContaining('true'),
-        }),
-      );
+      const calls = fetchMock.mock.calls;
+      const eventCall = calls.find((call) => call[0].includes('/event'));
+      expect(eventCall).toBeDefined();
+
+      const body = JSON.parse(eventCall![1].body as string);
+      expect(body.type).toBe('engagement');
+      expect(body.engagementFlags).toEqual({
+        incomplete: true,
+      });
+      expect(body.reliableRun).toBe(true);
     });
 
     it('matches Firekit signature', () => {

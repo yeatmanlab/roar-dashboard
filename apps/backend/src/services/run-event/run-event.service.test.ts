@@ -373,7 +373,7 @@ describe('RunEventService', () => {
       type: 'engagement' as const,
       engagementFlags: {
         incomplete: true,
-        response_time_too_fast: true,
+        responseTimeTooFast: true,
       },
       reliableRun: true,
     };
@@ -430,9 +430,9 @@ describe('RunEventService', () => {
         type: 'engagement' as const,
         engagementFlags: {
           incomplete: true,
-          response_time_too_fast: true,
-          accuracy_too_low: true,
-          not_enough_responses: true,
+          responseTimeTooFast: true,
+          accuracyTooLow: true,
+          notEnoughResponses: true,
         },
         reliableRun: false,
       };
