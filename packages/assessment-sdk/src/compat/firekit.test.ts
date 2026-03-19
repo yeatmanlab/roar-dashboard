@@ -540,6 +540,62 @@ describe('firekit compat', () => {
       await expect(writeTrial(trialData, callback)).resolves.toBeUndefined();
     });
 
+    it('coerces boolean correct values (legacy Firekit) to numbers', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-bool-correct' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      const trialDataWithBooleanCorrect: TrialData = {
+        assessmentStage: 'test',
+        correct: true,
+        response: 'A',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialDataWithBooleanCorrect)).resolves.toBeUndefined();
+
+      // Verify the boolean was coerced to number (1)
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-bool-correct/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"correct":1'),
+        }),
+      );
+    });
+
     it('matches Firekit signature (with optional computed score callback)', () => {
       // runtime assertion to satisfy vitest/expect-expect
       expect(typeof writeTrial).toBe('function');

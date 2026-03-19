@@ -502,16 +502,27 @@ export async function writeTrial(
   if (typeof trialDataRecord['assessmentStage'] !== 'string') {
     throw new SDKError('writeTrial requires assessmentStage in trial data.');
   }
-  if (typeof trialDataRecord['correct'] !== 'number') {
+  if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
     throw new SDKError('writeTrial requires correct in trial data.');
   }
+
+  // Coerce boolean correct values (legacy Firekit) to numbers
+  const normalizedTrialData = {
+    ...trialData,
+    correct:
+      typeof trialDataRecord['correct'] === 'boolean'
+        ? trialDataRecord['correct']
+          ? 1
+          : 0
+        : trialDataRecord['correct'],
+  };
 
   const cmd = new WriteTrialCommand(api);
 
   await invoker.run(cmd, {
     runId,
     type: RUN_EVENT_TRIAL,
-    trial: trialData as {
+    trial: normalizedTrialData as {
       assessmentStage: 'practice' | 'test' | 'practice_response' | 'test_response';
       correct: number;
       payload?: Json;
