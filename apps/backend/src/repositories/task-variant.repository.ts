@@ -130,8 +130,8 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
    * List task variants for a given task with optional filtering and sorting.
    *
    * Access control is based on the `includeAllStatuses` filter:
-   * - If true (super admins): returns all variants regardless of status
-   * - If false (regular users): returns only published variants
+   * - If true: returns all variants regardless of status
+   * - If false: returns only published variants
    *
    * @param filter - Filter containing taskId and access control flag
    * @param options - Pagination, sorting, and search options
@@ -151,7 +151,7 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
     // Always filter by taskId
     conditions.push(eq(taskVariants.taskId, taskId));
 
-    // Status filter: regular users only see published variants
+    // Status filter: non-super admins only see published variants
     if (!includeAllStatuses) {
       conditions.push(eq(taskVariants.status, 'published'));
     }
@@ -167,7 +167,7 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
       );
     }
 
-    const whereClause = and(...conditions);
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Count query
     const countResult = await this.db.select({ count: count() }).from(taskVariants).where(whereClause);
