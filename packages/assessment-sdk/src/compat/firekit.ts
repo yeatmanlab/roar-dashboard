@@ -429,6 +429,9 @@ export function abortRun(): void {
  * Marks a run with quality flags such as incomplete responses, response times that are too fast,
  * accuracy that is too low, or insufficient number of responses. Optionally marks the run as reliable.
  *
+ * **Breaking Change**: The `reliableByBlock` parameter from the original Firekit API is no longer supported.
+ * Use `markAsReliable` to mark the entire run as reliable instead.
+ *
  * @param flagNames - Array of engagement flag names to set (e.g., 'incomplete', 'response_time_too_fast')
  * @param markAsReliable - Optional flag to mark the run as reliable (defaults to false)
  * @returns Promise that resolves when the engagement flags have been sent to the backend
