@@ -365,14 +365,6 @@ describe('firekit compat', () => {
     });
   });
 
-  describe('addInteraction (old stub tests - deprecated)', () => {
-    it('old test - no longer applicable', () => {
-      // addInteraction now buffers interactions instead of throwing
-      // These old tests are kept for reference but no longer run
-      expect(true).toBe(true);
-    });
-  });
-
   describe('updateUser', () => {
     it('throws SDKError when called (stub not yet implemented)', async () => {
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
@@ -643,6 +635,64 @@ describe('firekit compat', () => {
       );
     });
 
+    it('flushes buffered interactions with trial data', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-with-interactions' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+
+      // Buffer interactions
+      addInteraction({ event: 'focus', time: 100 });
+      addInteraction({ event: 'blur', time: 200 });
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify interactions were sent in the request body
+      const eventCall = fetchMock.mock.calls.find((call) => call[0].includes('/event'));
+      expect(eventCall).toBeDefined();
+      const body = JSON.parse(eventCall![1].body as string);
+      expect(body.interactions).toHaveLength(2);
+      expect(body.interactions[0].event).toBe('focus');
+      expect(body.interactions[1].event).toBe('blur');
+    });
+
     it('matches Firekit signature (with optional computed score callback)', () => {
       // runtime assertion to satisfy vitest/expect-expect
       expect(typeof writeTrial).toBe('function');
@@ -655,22 +705,25 @@ describe('firekit compat', () => {
         ) => Promise<void>
       >();
     });
+  });
 
-    it('flushes buffered interactions with trial data', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
+  describe('addInteraction', () => {
+    const mockContext: CommandContext = {
+      baseUrl: 'http://localhost:3000',
+      auth: {
+        getToken: vi.fn().mockResolvedValue('test-token'),
+      },
+    };
 
+    beforeEach(() => {
+      vi.clearAllMocks();
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation((url: string) => {
           if (url.includes('/runs') && !url.includes('/event')) {
             return Promise.resolve({
               status: 201,
-              json: async () => ({ data: { id: 'run-with-interactions' } }),
+              json: async () => ({ data: { id: 'run-interaction-test' } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
@@ -684,89 +737,40 @@ describe('firekit compat', () => {
           return Promise.reject(new Error('Unexpected fetch call'));
         }),
       );
-
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
         taskVersion: '1.0.0',
         isAnonymous: true,
       });
-
-      await startRun();
-
-      // Buffer interactions
-      addInteraction({ event: 'focus', time: 100, trial: 1 });
-      addInteraction({ event: 'blur', time: 200, trial: 1 });
-
-      const trialData: TrialData = {
-        assessmentStage: 'test',
-        correct: 1,
-        response: 'A',
-        rt: 500,
-      };
-
-      await expect(writeTrial(trialData)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('addInteraction', () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
     });
 
     afterEach(() => {
       _resetFirekitCompat();
     });
 
-    it('buffers interaction events', () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
+    it('throws SDKError when called before initFirekitCompat', () => {
+      _resetFirekitCompat();
+      expect(() => addInteraction({ event: 'focus', time: 100 })).toThrow(SDKError);
+    });
 
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
-      const interaction: AddInteractionInput = { event: 'focus', time: 100, trial: 1 };
+    it('buffers interaction events', async () => {
+      await startRun();
+      const interaction: AddInteractionInput = { event: 'focus', time: 100 };
       expect(() => addInteraction(interaction)).not.toThrow();
     });
 
-    it('accumulates multiple interactions in buffer', () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
+    it('accumulates multiple interactions in buffer', async () => {
+      await startRun();
+      addInteraction({ event: 'focus', time: 100 });
+      addInteraction({ event: 'blur', time: 200 });
+      addInteraction({ event: 'fullscreenenter', time: 300 });
 
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
-      addInteraction({ event: 'focus', time: 100, trial: 1 });
-      addInteraction({ event: 'blur', time: 200, trial: 1 });
-      addInteraction({ event: 'fullscreenenter', time: 300, trial: 1 });
-
-      // All interactions should be buffered without error
       expect(() => {
-        addInteraction({ event: 'fullscreenexit', time: 400, trial: 1 });
+        addInteraction({ event: 'fullscreenexit', time: 400 });
       }).not.toThrow();
     });
 
     it('clears buffer after writeTrial', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation((url: string) => {
@@ -788,17 +792,10 @@ describe('firekit compat', () => {
         }),
       );
 
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
       await startRun();
 
-      // Buffer interactions
-      addInteraction({ event: 'focus', time: 100, trial: 1 });
-      addInteraction({ event: 'blur', time: 200, trial: 1 });
+      addInteraction({ event: 'focus', time: 100 });
+      addInteraction({ event: 'blur', time: 200 });
 
       const trialData: TrialData = {
         assessmentStage: 'test',
@@ -809,10 +806,7 @@ describe('firekit compat', () => {
 
       await writeTrial(trialData);
 
-      // Add new interaction after buffer is cleared
-      addInteraction({ event: 'fullscreenenter', time: 300, trial: 1 });
-
-      // Second trial should succeed with fresh interactions
+      addInteraction({ event: 'fullscreenenter', time: 300 });
       await expect(writeTrial(trialData)).resolves.toBeUndefined();
     });
 
@@ -822,4 +816,5 @@ describe('firekit compat', () => {
       expectTypeOf(addInteraction).toEqualTypeOf<(interaction: AddInteractionInput) => void>();
     });
   });
+
 });

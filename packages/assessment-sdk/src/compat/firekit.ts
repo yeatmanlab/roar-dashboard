@@ -13,7 +13,6 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
-  WriteTrialInteractionCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT } from '../types/abort-run';
 import { RUN_EVENT_COMPLETE } from '../types/finish-run';
@@ -183,15 +182,17 @@ export class FirekitFacade {
 
   /**
    * Retrieves the current interaction buffer.
+   * @internal
    * @returns Array of buffered interaction events
    */
   _getInteractionBuffer(): AddInteractionInput[] {
-    return this.interactionBuffer;
+    return [...this.interactionBuffer];
   }
 
   /**
    * Adds an interaction event to the buffer.
    * Interactions are accumulated and flushed when writeTrial() is called.
+   * @internal
    * @param interaction - The interaction event to buffer
    */
   _pushInteraction(interaction: AddInteractionInput): void {
@@ -201,6 +202,7 @@ export class FirekitFacade {
   /**
    * Clears the interaction buffer.
    * Called after interactions are flushed to the backend via writeTrial().
+   * @internal
    */
   _clearInteractionBuffer(): void {
     this.interactionBuffer = [];
@@ -457,6 +459,9 @@ export async function updateEngagementFlags({
  */
 export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
   const facade = getFirekitCompat();
+  if (!facade._getRunId()) {
+    throw new SDKError('appkit.addInteraction requires an active run. Call appkit.startRun() first.');
+  }
   facade._pushInteraction(interaction);
 }
 
@@ -558,7 +563,10 @@ export async function writeTrial(
       payload?: Json;
       [key: string]: unknown;
     },
-    interactions: facade._getInteractionBuffer() as WriteTrialInteractionCommandInput[],
+    interactions: facade._getInteractionBuffer().map((interaction) => ({
+      ...interaction,
+      trial: 1,
+    })),
   });
 
   facade._clearInteractionBuffer();
