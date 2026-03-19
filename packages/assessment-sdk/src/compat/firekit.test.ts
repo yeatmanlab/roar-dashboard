@@ -771,26 +771,25 @@ describe('firekit compat', () => {
     });
 
     it('clears buffer after writeTrial', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockImplementation((url: string) => {
-          if (url.includes('/runs') && !url.includes('/event')) {
-            return Promise.resolve({
-              status: 201,
-              json: async () => ({ data: { id: 'run-buffer-clear' } }),
-              headers: new Headers([['content-type', 'application/json']]),
-            });
-          }
-          if (url.includes('/event')) {
-            return Promise.resolve({
-              status: 200,
-              json: async () => ({ data: { status: 'ok' } }),
-              headers: new Headers([['content-type', 'application/json']]),
-            });
-          }
-          return Promise.reject(new Error('Unexpected fetch call'));
-        }),
-      );
+      const fetchMock = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: 201,
+            json: async () => ({ data: { id: 'run-buffer-clear' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: 200,
+            json: async () => ({ data: { status: 'ok' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
 
       await startRun();
 
@@ -808,6 +807,12 @@ describe('firekit compat', () => {
 
       addInteraction({ event: 'fullscreenenter', time: 300 });
       await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify second call only sent 1 interaction (buffer was cleared)
+      const eventCalls = fetchMock.mock.calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls).toHaveLength(2);
+      const secondBody = JSON.parse(eventCalls[1]![1].body as string);
+      expect(secondBody.interactions).toHaveLength(1);
     });
 
     it('matches Firekit signature', () => {
@@ -816,5 +821,4 @@ describe('firekit compat', () => {
       expectTypeOf(addInteraction).toEqualTypeOf<(interaction: AddInteractionInput) => void>();
     });
   });
-
 });

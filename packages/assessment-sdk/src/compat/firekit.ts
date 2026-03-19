@@ -459,6 +459,9 @@ export async function updateEngagementFlags({
  */
 export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
   const facade = getFirekitCompat();
+  if (!facade) {
+    throw new SDKError('appkit.addInteraction requires initialization. Call appkit.initFirekitCompat() first.');
+  }
   if (!facade._getRunId()) {
     throw new SDKError('appkit.addInteraction requires an active run. Call appkit.startRun() first.');
   }
