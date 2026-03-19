@@ -9,7 +9,7 @@ const s = initServer();
 /**
  * Registers /users routes on the provided Express router.
  *
- * All routes require authentication (AuthGuardMiddleWare)
+ * All routes require authentication (AuthGuardMiddleware)
  * Authorization is handled in the service and repository layers.
  */
 export function registerUserRoutes(routerInstance: Router) {
