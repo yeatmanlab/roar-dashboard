@@ -622,4 +622,5 @@ export async function writeTrial(
         }
       : {}),
   });
+  facade._clearInteractionBuffer();
 }
