@@ -1669,4 +1669,225 @@ describe('TaskService', () => {
       });
     });
   });
+
+  describe('listTaskVariants', () => {
+    const validTaskId = '123e4567-e89b-12d3-a456-426614174000';
+    const mockTask = TaskFactory.build({
+      id: validTaskId,
+      name: 'Test Task',
+      slug: 'test-task',
+      image: 'https://example.com/image.png',
+    });
+
+    const mockVariants = [
+      TaskVariantFactory.build({ id: 'variant-1', taskId: validTaskId, status: TaskVariantStatus.PUBLISHED }),
+      TaskVariantFactory.build({ id: 'variant-2', taskId: validTaskId, status: TaskVariantStatus.DRAFT }),
+    ];
+
+    const mockParams = [
+      TaskVariantParameterFactory.build({ taskVariantId: 'variant-1', name: 'difficulty', value: 'easy' }),
+      TaskVariantParameterFactory.build({ taskVariantId: 'variant-1', name: 'timeLimit', value: 60 }),
+      TaskVariantParameterFactory.build({ taskVariantId: 'variant-2', name: 'mode', value: 'practice' }),
+    ];
+
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      orderBy: { field: 'name' as const, direction: SortOrder.ASC },
+    };
+
+    describe('successful retrieval', () => {
+      it('should return variants with parameters for super admin', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({
+          items: mockVariants,
+          totalItems: 2,
+        });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue(mockParams);
+
+        const result = await taskService.listTaskVariants(authContext, validTaskId, defaultOptions);
+
+        expect(result.items).toHaveLength(2);
+        expect(result.totalItems).toBe(2);
+        expect(result.task).toEqual({
+          name: 'Test Task',
+          slug: 'test-task',
+          image: 'https://example.com/image.png',
+        });
+
+        // Verify parameters are grouped correctly
+        const variant1 = result.items.find((v) => v.id === 'variant-1');
+        const variant2 = result.items.find((v) => v.id === 'variant-2');
+        expect(variant1?.parameters).toHaveLength(2);
+        expect(variant2?.parameters).toHaveLength(1);
+      });
+
+      it('should call repository with no status filter for super admin without status option', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({ items: [], totalItems: 0 });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+        await taskService.listTaskVariants(authContext, validTaskId, defaultOptions);
+
+        expect(taskVariantRepository.listByTaskId).toHaveBeenCalledWith({ taskId: validTaskId }, defaultOptions);
+      });
+
+      it('should call repository with status filter for super admin with status option', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({ items: [], totalItems: 0 });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+        const optionsWithStatus = { ...defaultOptions, status: 'draft' as const };
+        await taskService.listTaskVariants(authContext, validTaskId, optionsWithStatus);
+
+        expect(taskVariantRepository.listByTaskId).toHaveBeenCalledWith(
+          { taskId: validTaskId, status: 'draft' },
+          optionsWithStatus,
+        );
+      });
+
+      it('should force published status for non-super admin', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({ items: [], totalItems: 0 });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+        await taskService.listTaskVariants(nonAdminContext, validTaskId, defaultOptions);
+
+        expect(taskVariantRepository.listByTaskId).toHaveBeenCalledWith(
+          { taskId: validTaskId, status: 'published' },
+          defaultOptions,
+        );
+      });
+
+      it('should ignore status option for non-super admin and force published', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({ items: [], totalItems: 0 });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+        const optionsWithStatus = { ...defaultOptions, status: 'draft' as const };
+        await taskService.listTaskVariants(nonAdminContext, validTaskId, optionsWithStatus);
+
+        // Should still use 'published' even though 'draft' was requested
+        expect(taskVariantRepository.listByTaskId).toHaveBeenCalledWith(
+          { taskId: validTaskId, status: 'published' },
+          optionsWithStatus,
+        );
+      });
+
+      it('should return empty parameters array for variants without parameters', async () => {
+        const variantWithoutParams = TaskVariantFactory.build({ id: 'variant-no-params', taskId: validTaskId });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({
+          items: [variantWithoutParams],
+          totalItems: 1,
+        });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+        const result = await taskService.listTaskVariants(authContext, validTaskId, defaultOptions);
+
+        expect(result.items[0]?.parameters).toEqual([]);
+      });
+
+      it('should return empty items when no variants exist', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({ items: [], totalItems: 0 });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+        const result = await taskService.listTaskVariants(authContext, validTaskId, defaultOptions);
+
+        expect(result.items).toEqual([]);
+        expect(result.totalItems).toBe(0);
+        expect(result.task).toEqual({
+          name: 'Test Task',
+          slug: 'test-task',
+          image: 'https://example.com/image.png',
+        });
+      });
+
+      it('should not call getByTaskVariantIds when no variants exist', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({ items: [], totalItems: 0 });
+        taskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+
+        await taskService.listTaskVariants(authContext, validTaskId, defaultOptions);
+
+        expect(taskVariantParameterRepository.getByTaskVariantIds).toHaveBeenCalledWith([]);
+      });
+    });
+
+    describe('not found', () => {
+      it('should throw NOT_FOUND when task does not exist', async () => {
+        taskRepository.getById.mockResolvedValue(null);
+
+        await expect(taskService.listTaskVariants(authContext, validTaskId, defaultOptions)).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: 'admin-1', taskId: validTaskId },
+        });
+      });
+
+      it('should not call listByTaskId when task does not exist', async () => {
+        taskRepository.getById.mockResolvedValue(null);
+
+        await expect(taskService.listTaskVariants(authContext, validTaskId, defaultOptions)).rejects.toThrow();
+
+        expect(taskVariantRepository.listByTaskId).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap database errors in ApiError', async () => {
+        const dbError = new Error('Connection timeout');
+        taskRepository.getById.mockRejectedValue(dbError);
+
+        await expect(taskService.listTaskVariants(authContext, validTaskId, defaultOptions)).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: 'admin-1', taskId: validTaskId },
+          cause: dbError,
+        });
+      });
+
+      it('should wrap variant repository errors in ApiError', async () => {
+        const dbError = new Error('Query failed');
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockRejectedValue(dbError);
+
+        await expect(taskService.listTaskVariants(authContext, validTaskId, defaultOptions)).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          cause: dbError,
+        });
+      });
+
+      it('should wrap parameter repository errors in ApiError', async () => {
+        const dbError = new Error('Parameter query failed');
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.listByTaskId.mockResolvedValue({ items: mockVariants, totalItems: 2 });
+        taskVariantParameterRepository.getByTaskVariantIds.mockRejectedValue(dbError);
+
+        await expect(taskService.listTaskVariants(authContext, validTaskId, defaultOptions)).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          cause: dbError,
+        });
+      });
+
+      it('should propagate existing ApiErrors', async () => {
+        const apiError = new ApiError('Custom error', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+        taskRepository.getById.mockRejectedValue(apiError);
+
+        await expect(taskService.listTaskVariants(authContext, validTaskId, defaultOptions)).rejects.toThrow(apiError);
+      });
+    });
+  });
 });
