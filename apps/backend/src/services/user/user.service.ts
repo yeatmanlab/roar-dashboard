@@ -1,13 +1,49 @@
-import { StatusCodes } from 'http-status-codes';
 import type { AuthContext } from '../../types/auth-context';
 import type { User } from '../../db/schema';
-import { Permissions, type Permission } from '../../constants/permissions';
+import type { UserType } from '../../enums/user-type.enum';
+import type { Grade } from '../../enums/grade.enum';
+import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
+import type { Permission } from '../../constants/permissions';
+import { StatusCodes } from 'http-status-codes';
+import { Permissions } from '../../constants/permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
+import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { logger } from '../../logger';
 import { UserRepository } from '../../repositories/user.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
+
+/**
+ * The subset of user fields that may be updated via PATCH /users/:id.
+ *
+ * System-managed fields (id, assessmentPid, authId, authProvider, isSuperAdmin,
+ * schoolLevel, createdAt, updatedAt) are intentionally excluded.
+ *
+ * All fields are optional — only those present in the request body are applied.
+ * Nullable fields may be set to null to clear their stored value.
+ */
+interface UpdateUserData {
+  nameFirst?: string | null | undefined;
+  nameMiddle?: string | null | undefined;
+  nameLast?: string | null | undefined;
+  username?: string | null | undefined;
+  email?: string | null | undefined;
+  userType?: UserType | undefined;
+  dob?: string | null | undefined;
+  grade?: Grade | null | undefined;
+  statusEll?: string | null | undefined;
+  statusFrl?: FreeReducedLunchStatus | null | undefined;
+  statusIep?: string | null | undefined;
+  studentId?: string | null | undefined;
+  sisId?: string | null | undefined;
+  stateId?: string | null | undefined;
+  localId?: string | null | undefined;
+  gender?: string | null | undefined;
+  race?: string | null | undefined;
+  hispanicEthnicity?: boolean | null | undefined;
+  homeLanguage?: string | null | undefined;
+}
 
 /**
  * UserService
@@ -145,5 +181,127 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById };
+  /**
+   * Partially update a user by ID.
+   *
+   * Only fields present in the request body are written — omitted fields are left unchanged.
+   * Nullable fields may be set to null to clear their stored value.
+   *
+   * Authorization: currently restricted to super admins only.
+   * To expand access to lower-tiered roles when ready:
+   *   1. Assign Permissions.Users.UPDATE to the appropriate roles in role-permissions.ts
+   *   2. Remove the isSuperAdmin guard below
+   *   3. Remove the manual getById 404 check below
+   *   4. Replace both with: await verifySupervisoryAccess(authContext, id, Permissions.Users.UPDATE)
+   *      which already handles 404-before-403, super-admin bypass, self-access, and role-based checks
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param id - UUID of the user to update.
+   * @param data - Partial user fields to apply.
+   * @throws {ApiError} FORBIDDEN if the requestor is not a super admin.
+   * @throws {ApiError} NOT_FOUND if the target user does not exist.
+   * @throws {ApiError} CONFLICT if a unique field (email or username) collides with an existing user.
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails.
+   */
+  async function update(authContext: AuthContext, id: string, data: UpdateUserData): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Authorization: super admins only (see JSDoc above for the expansion path)
+    if (!isSuperAdmin) {
+      logger.warn({ userId, id }, 'Non-super admin attempted to update user');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, id },
+      });
+    }
+
+    const {
+      nameFirst,
+      nameMiddle,
+      nameLast,
+      username,
+      email,
+      userType,
+      dob,
+      grade,
+      statusEll,
+      statusFrl,
+      statusIep,
+      studentId,
+      sisId,
+      stateId,
+      localId,
+      gender,
+      race,
+      hispanicEthnicity,
+      homeLanguage,
+    } = data;
+
+    try {
+      // Verify the target user exists.
+      // Note: verifySupervisoryAccess handles this automatically when the guard above is expanded.
+      const user = await userRepository.getById({ id });
+      if (!user) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, id },
+        });
+      }
+
+      await userRepository.update({
+        id,
+        data: {
+          ...(nameFirst !== undefined && { nameFirst }),
+          ...(nameMiddle !== undefined && { nameMiddle }),
+          ...(nameLast !== undefined && { nameLast }),
+          ...(username !== undefined && { username }),
+          ...(email !== undefined && { email }),
+          ...(userType !== undefined && { userType }),
+          ...(dob !== undefined && { dob }),
+          ...(grade !== undefined && { grade }),
+          ...(statusEll !== undefined && { statusEll }),
+          ...(statusFrl !== undefined && { statusFrl }),
+          ...(statusIep !== undefined && { statusIep }),
+          ...(studentId !== undefined && { studentId }),
+          ...(sisId !== undefined && { sisId }),
+          ...(stateId !== undefined && { stateId }),
+          ...(localId !== undefined && { localId }),
+          ...(gender !== undefined && { gender }),
+          ...(race !== undefined && { race }),
+          ...(hispanicEthnicity !== undefined && { hispanicEthnicity }),
+          ...(homeLanguage !== undefined && { homeLanguage }),
+        },
+      });
+
+      logger.info({ userId, id }, 'Updated user');
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      // Unwrap the Drizzle error to access the underlying PostgreSQL error with SQLSTATE codes
+      const dbError = unwrapDrizzleError(error);
+
+      // email and username both carry unique constraints — surface as 409 rather than 500
+      if (isUniqueViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, id },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, id } }, 'Failed to update user');
+
+      throw new ApiError('Failed to update user', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, id },
+        cause: error,
+      });
+    }
+  }
+
+  return { findByAuthId, getById, update };
 }
