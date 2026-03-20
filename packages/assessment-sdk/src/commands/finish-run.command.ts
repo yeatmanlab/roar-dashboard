@@ -4,6 +4,7 @@ import type { RoarApi } from '../receiver/roar-api';
 import type { FinishRunInput, FinishRunOutput } from '../types/finish-run';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums';
+import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
 
 /**
  * Command to mark an assessment run as complete in the ROAR backend.
@@ -62,7 +63,7 @@ export class FinishRunCommand implements Command<FinishRunInput, FinishRunOutput
     });
 
     if (result.status === StatusCodes.OK || result.status === StatusCodes.CONFLICT) {
-      return { status: 'ok' };
+      return { status: RUN_EVENT_STATUS_OK };
     }
 
     const errorBody = result.body as { error?: { message?: string } };
