@@ -215,6 +215,7 @@ export class UserAccessControls {
       // Until a migration adds 'guardian' and 'relative' to user_family_role enum, we map all
       // caretaker UserRole values to 'parent' when querying families. This means guardians and
       // relatives are treated as parents in the family context.
+      // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1707
       const familyRoles = ['parent'];
 
       const viaDirectFamily = this.db

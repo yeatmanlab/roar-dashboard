@@ -14,7 +14,8 @@ import {
  * Security note: isSuperAdmin is only included when the requesting user is a super admin.
  * Non-super admins will not see this field for security reasons.
  *
- * TODO: This may need to be split into separate schemas for different PII permission levels
+ * TODO: Consider scoping PII fields based on the user's permissions
+ * ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1706
  */
 export const UserResponseSchema = z.object({
   id: z.string().uuid(),

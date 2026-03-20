@@ -110,6 +110,7 @@ describe('GET /v1/users/:id', () => {
     });
 
     // TODO: Add family-based access test once family fixtures are available
+    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1707
     it.skip('caregiver tier can access users in their family', async () => {
       // Would require family fixtures linking caregiver to target user
     });
