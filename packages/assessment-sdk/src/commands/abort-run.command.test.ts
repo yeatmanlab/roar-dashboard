@@ -4,6 +4,8 @@ import { AbortRunCommand } from './abort-run.command';
 import { StatusCodes } from 'http-status-codes';
 import { createMockRoarApi } from '../test-support';
 import type { AbortRunInput } from '../types/abort-run';
+import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums';
 
 describe('AbortRunCommand', () => {
   let command: AbortRunCommand;
@@ -54,7 +56,10 @@ describe('AbortRunCommand', () => {
       body: { error: { message: 'Run not found' } },
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Run not found');
+    const error = await command.execute(input).catch((e) => e);
+    expect(error).toBeInstanceOf(SDKError);
+    expect((error as SDKError).message).toBe('Run not found');
+    expect((error as SDKError).code).toBe(SdkErrorCode.ABORT_RUN_FAILED);
   });
 
   it('throws SDKError with status code message on BAD_REQUEST when error details are missing', async () => {
@@ -71,7 +76,7 @@ describe('AbortRunCommand', () => {
     await expect(command.execute(input)).rejects.toThrow('Failed to abort run with status 400');
   });
 
-  it('throws SDKError with status code message when error details are missing', async () => {
+  it('throws SDKError with status code message on INTERNAL_SERVER_ERROR when error details are missing', async () => {
     const input: AbortRunInput = {
       runId: 'run-123',
       type: 'abort',
