@@ -8,6 +8,8 @@ import {
   UpdateTaskVariantResponseSchema,
   TasksListQuerySchema,
   TasksListResponseSchema,
+  TaskIdParamSchema,
+  TaskSchema,
 } from './schema';
 
 const c = initContract();
@@ -36,6 +38,27 @@ export const TasksContract = c.router(
         'Results can be sorted by name (default), slug, createdAt, or updatedAt in ascending or descending order. ' +
         'Returns 200 with paginated results on success. ' +
         'Returns 400 if the request parameters are invalid. ' +
+        'Returns 500 if a server error occurs.',
+    },
+    get: {
+      method: 'GET',
+      path: '/:taskId',
+      pathParams: TaskIdParamSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(TaskSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a task by ID',
+      description:
+        'Returns a single task by its UUID. ' +
+        'The taskId path parameter must be a valid UUID. ' +
+        'Returns 200 with the task on success. ' +
+        'Returns 400 if the ID is invalid. ' +
+        'Returns 404 if no task exists with the given ID. ' +
         'Returns 500 if a server error occurs.',
     },
     createTaskVariant: {

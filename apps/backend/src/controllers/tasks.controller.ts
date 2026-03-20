@@ -88,6 +88,33 @@ export const TasksController = {
   },
 
   /**
+   * Get a single task by its ID.
+   *
+   * Delegates to TaskService for business logic.
+   *
+   * @param authContext - User's authentication context
+   * @param taskId - The unique ID identifier for the task
+   * @returns The task with the given ID
+   */
+  get: async (authContext: AuthContext, taskId: string) => {
+    try {
+      const task = await taskService.getById(authContext, taskId);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformTask(task),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Create a new task-variant for a given task id.
    *
    * Delegates to TaskService for authorization and business logic.

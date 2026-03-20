@@ -1,0 +1,4 @@
+export enum SdkErrorCode {
+  START_RUN_FAILED = 'START_RUN_FAILED',
+  ABORT_RUN_FAILED = 'ABORT_RUN_FAILED',
+}

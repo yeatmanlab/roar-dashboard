@@ -22,11 +22,25 @@ export default defineConfig({
         exports: 'auto',
       }
     : {
-        file: `dist/server.js`,
+        // Output to a directory with code splitting enabled.
+        // IMPORTANT: Do NOT use `file` + `inlineDynamicImports: true` here.
+        //
+        // server.ts uses a dynamic import(`./app`) to defer loading the application module
+        // until after initializeDatabasePools() completes. This ensures CoreDbClient and
+        // AssessmentDbClient are defined before any module-level service/repository
+        // instantiation occurs (e.g., `const userService = UserService()` in auth middleware).
+        //
+        // inlineDynamicImports collapses this boundary into a single file, causing all
+        // module-level code to execute at load time — before the DB clients are initialized.
+        // Code splitting preserves the dynamic import as a separate chunk, maintaining the
+        // correct initialization order.
+        dir: 'dist',
+        inlineDynamicImports: false,
         format: 'esm',
         sourcemap: true,
         exports: 'auto',
-        inlineDynamicImports: true,
+        entryFileNames: 'server.js',
+        chunkFileNames: '[name]-[hash].js',
       },
   plugins: [
     // In dev, externalize node_modules (except our workspace package) to keep rebuilds fast.

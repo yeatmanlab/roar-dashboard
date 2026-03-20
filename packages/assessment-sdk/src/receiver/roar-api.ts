@@ -1,54 +1,56 @@
+import { initClient, tsRestFetchApi } from '@ts-rest/core';
+import { ApiContractV1 } from '@roar-dashboard/api-contract';
 import type { CommandContext } from '../command/command';
 
 /**
+ * Creates a ts-rest client configured with ROAR API contract and authentication.
+ *
+ * The client automatically injects:
+ * - Authorization header with Bearer token (when available)
+ * - x-request-id header for request tracing (when requestId is defined)
+ * - Custom fetch implementation (if provided in context)
+ *
+ * @param ctx - CommandContext with baseUrl, auth callbacks, optional logger, and optional custom fetch
+ * @returns Initialized ts-rest client for ApiContractV1
+ */
+function createClient(ctx: CommandContext) {
+  return initClient(ApiContractV1, {
+    baseUrl: ctx.baseUrl,
+    baseHeaders: {},
+    api: async (args) => {
+      const token = await ctx.auth.getToken();
+      const requestId = ctx.requestId?.();
+
+      args.headers = {
+        ...args.headers,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(requestId ? { 'x-request-id': requestId } : {}),
+      };
+
+      return tsRestFetchApi({
+        ...args,
+        ...(ctx.fetchImpl ? { fetchApi: ctx.fetchImpl } : {}),
+      });
+    },
+  });
+}
+
+type RoarApiClient = ReturnType<typeof createClient>;
+
+/**
  * RoarApi is the Receiver in the GoF Command pattern.
- * It owns the HTTP client and handles all API communication.
+ * It owns the ts-rest HTTP client and provides typed API access to the ROAR backend.
  *
  * Responsibilities:
- * - Manage HTTP requests to the backend API
- * - Inject authentication headers (Bearer token)
- * - Inject request ID headers for tracing
- * - Use custom fetch implementation if provided
- *
- * Note: This is a foundation class. Actual API methods (recordRun, etc.)
- * would be added as the SDK evolves and ts-rest client is integrated.
+ * - Manage the ts-rest client instance
+ * - Provide type-safe API methods through the client
+ * - Handle authentication header injection
+ * - Support request tracing via x-request-id headers
  */
 export class RoarApi {
-  private ctx: CommandContext;
+  public readonly client: RoarApiClient;
 
   constructor(ctx: CommandContext) {
-    this.ctx = ctx;
-  }
-
-  /**
-   * Makes an HTTP request with automatic header injection.
-   *
-   * @param endpoint - API endpoint path (e.g., '/api/runs')
-   * @param options - Optional RequestInit options (method, body, etc.)
-   * @returns Promise<Response> from the fetch call
-   *
-   * Automatically injects, when values are available:
-   * - Authorization header with Bearer token (only if a non-empty token is returned from auth.getToken)
-   * - x-request-id header for request tracing (only if the requestId function is defined and returns a value)
-   * If the token or requestId are undefined, the corresponding headers are not added.
-   */
-  async request(endpoint: string, options?: RequestInit): Promise<Response> {
-    const url = `${this.ctx.baseUrl}${endpoint}`;
-    const token = await this.ctx.auth.getToken();
-    const requestId = this.ctx.requestId?.();
-
-    // Build headers with auth and tracing info
-    const headers: Record<string, string> = {
-      ...(options?.headers as Record<string, string>),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(requestId ? { 'x-request-id': requestId } : {}),
-    };
-
-    // Use custom fetch or global fetch
-    const fetchImpl = this.ctx.fetchImpl ?? fetch;
-    return fetchImpl(url, {
-      ...options,
-      headers,
-    });
+    this.client = createClient(ctx);
   }
 }
