@@ -8,6 +8,7 @@ import {
   updateUser,
   writeTrial,
   initFirekitCompat,
+  getFirekitCompat,
   _resetFirekitCompat,
   getFirekitCompat,
 } from './firekit';
@@ -88,6 +89,10 @@ describe('firekit compat', () => {
           body: expect.stringContaining('abort'),
         }),
       );
+
+      // Verify runId is cleared after successful abort
+      const facade = getFirekitCompat();
+      expect(facade._getRunId()).toBeUndefined();
     });
 
     it('matches Firekit signature', () => {
