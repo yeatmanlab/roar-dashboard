@@ -454,7 +454,7 @@ export async function updateEngagementFlags(flagNames: string[], markAsReliable?
   const api = facade.getApi();
   const invoker = facade.getInvoker();
 
-  // Map snake_case Firekit flag names to camelCase schema property names
+  // Map snake_case Firekit flag names to camelCase SDK property names
   const flagNameMap: Record<string, string> = {
     incomplete: 'incomplete',
     response_time_too_fast: 'responseTimeTooFast',
@@ -475,6 +475,7 @@ export async function updateEngagementFlags(flagNames: string[], markAsReliable?
     engagementFlags,
     reliableRun: markAsReliable ?? false,
   });
+  facade._setRunId(undefined);
 }
 
 /**

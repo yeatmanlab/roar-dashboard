@@ -57,8 +57,8 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
-          incomplete: 'incomplete',
-          responseTimeTooFast: 'response_time_too_fast',
+          incomplete: true,
+          responseTimeTooFast: true,
         },
         reliableRun: true,
       },
@@ -87,7 +87,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
-          accuracyTooLow: 'accuracy_too_low',
+          accuracyTooLow: true,
         },
         reliableRun: false,
       },
@@ -120,10 +120,10 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
-          incomplete: 'incomplete',
-          responseTimeTooFast: 'response_time_too_fast',
-          accuracyTooLow: 'accuracy_too_low',
-          notEnoughResponses: 'not_enough_responses',
+          incomplete: true,
+          responseTimeTooFast: true,
+          accuracyTooLow: true,
+          notEnoughResponses: true,
         },
         reliableRun: false,
       },

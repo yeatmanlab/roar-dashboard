@@ -352,6 +352,8 @@ describe('firekit compat', () => {
         responseTimeTooFast: true,
       });
       expect(body.reliableRun).toBe(false);
+      expect(body.engagementFlags.incomplete).toBe(true);
+      expect(body.engagementFlags.responseTimeTooFast).toBe(true);
     });
 
     it('sends engagement flags with markAsReliable when provided', async () => {
