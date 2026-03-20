@@ -504,6 +504,58 @@ describe('PATCH /v1/tasks/:taskId/variants/:variantId', () => {
       expect(updatedVariant!.taskId).toBe(variantBeforeUpdate!.taskId);
     });
 
+    it('can clear name by setting it to null', async () => {
+      // First ensure the variant has a name set
+      const uniqueName = `Name Before Null ${Date.now()}`;
+      authenticateAs(tiers.superAdmin);
+      await request(app).patch(path()).set('Authorization', 'Bearer token').send({ name: uniqueName });
+
+      const variantWithName = await taskVariantRepository.getById({ id: variantId() });
+      expect(variantWithName!.name).toBe(uniqueName);
+
+      // Clear the name by setting it to null
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ name: null });
+
+      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+
+      // Verify name is null in the database
+      const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+      expect(updatedVariant).not.toBeNull();
+      expect(updatedVariant!.name).toBeNull();
+
+      // Verify other fields were not changed
+      expect(updatedVariant!.description).toBe(variantWithName!.description);
+      expect(updatedVariant!.status).toBe(variantWithName!.status);
+      expect(updatedVariant!.taskId).toBe(variantWithName!.taskId);
+    });
+
+    it('can clear description by setting it to null', async () => {
+      // First ensure the variant has a description set
+      const newDescription = `Description Before Null ${Date.now()}`;
+      authenticateAs(tiers.superAdmin);
+      await request(app).patch(path()).set('Authorization', 'Bearer token').send({ description: newDescription });
+
+      const variantWithDescription = await taskVariantRepository.getById({ id: variantId() });
+      expect(variantWithDescription!.description).toBe(newDescription);
+
+      // Clear the description by setting it to null
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).patch(path()).set('Authorization', 'Bearer token').send({ description: null });
+
+      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+
+      // Verify description is null in the database
+      const updatedVariant = await taskVariantRepository.getById({ id: variantId() });
+      expect(updatedVariant).not.toBeNull();
+      expect(updatedVariant!.description).toBeNull();
+
+      // Verify other fields were not changed
+      expect(updatedVariant!.name).toBe(variantWithDescription!.name);
+      expect(updatedVariant!.status).toBe(variantWithDescription!.status);
+      expect(updatedVariant!.taskId).toBe(variantWithDescription!.taskId);
+    });
+
     it('can update multiple fields at once', async () => {
       const uniqueName = `Multi Update ${Date.now()}`;
       const newDescription = 'Multi-field update';

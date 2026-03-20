@@ -27,10 +27,11 @@ export interface CreateTaskVariantParameterData {
  * Data required to create a new task variant.
  *
  * NOTE: taskId is passed separately as a path parameter.
+ * NOTE: We union optional fields with 'null' and 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
  */
 export interface CreateTaskVariantData {
-  name: string;
-  description: string;
+  name?: string | undefined;
+  description?: string | undefined;
   status: TaskVariantStatus;
   parameters: CreateTaskVariantParameterData[];
 }
@@ -43,8 +44,8 @@ export interface CreateTaskVariantData {
  * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
  */
 export interface UpdateTaskVariantData {
-  name?: string | undefined;
-  description?: string | undefined;
+  name?: string | null | undefined;
+  description?: string | null | undefined;
   status?: TaskVariantStatus | undefined;
   parameters?: CreateTaskVariantParameterData[] | undefined;
 }
