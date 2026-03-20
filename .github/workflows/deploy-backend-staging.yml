@@ -1,4 +1,4 @@
-name: Deploy Backend to Dev
+name: Deploy Backend to Staging
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build Docker image
     runs-on: ubuntu-latest
-    environment: development
+    environment: staging
     timeout-minutes: 10
     outputs:
       image-version: ${{ steps.docker-build.outputs.image-version }}
@@ -42,7 +42,6 @@ jobs:
           image-name: roar-backend
           image-tag-rules: |
             type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
           dockerfile: apps/backend/Dockerfile
 
   # ––––––––––––––––––––––––––––––––––––– #
@@ -52,7 +51,7 @@ jobs:
     name: Migrate core database
     needs: [build]
     runs-on: ubuntu-latest
-    environment: development
+    environment: staging
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -69,7 +68,7 @@ jobs:
     name: Migrate assessment database
     needs: [build]
     runs-on: ubuntu-latest
-    environment: development
+    environment: staging
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -89,7 +88,7 @@ jobs:
     name: Deploy backend to Cloud Run
     needs: [build, core-db-migrations, assessment-db-migrations]
     runs-on: ubuntu-latest
-    environment: development
+    environment: staging
     timeout-minutes: 10
     steps:
       - name: Checkout repository
