@@ -1,4 +1,5 @@
 import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import {
   startRun,
   finishRun,
@@ -14,6 +15,90 @@ import {
 import { SDKError } from '../errors/sdk-error';
 import type { AddInteractionInput, UpdateUserInput, TrialData, RawScores, ComputedScores } from '../types';
 import type { CommandContext } from '../command/command';
+import { RUN_EVENT_STATUS_OK } from '../types';
+
+/**
+ * Helper to create a mock CommandContext for testing.
+ * Provides a standard test context with a mocked auth token provider.
+ *
+ * @returns A CommandContext configured for testing with localhost baseUrl
+ */
+function createMockContext(): CommandContext {
+  return {
+    baseUrl: 'http://localhost:3000',
+    auth: {
+      getToken: vi.fn().mockResolvedValue('test-token'),
+    },
+  };
+}
+
+/**
+ * Helper to set up a fetch mock that handles startRun and event endpoints.
+ * Simulates the ROAR backend API responses for run creation and event posting.
+ *
+ * **Mocked endpoints:**
+ * - POST /runs → Returns 201 CREATED with the provided runId
+ * - POST /runs/:runId/event → Returns 200 OK with success status
+ *
+ * @param runId - The run ID to return for startRun requests
+ * @returns A vitest mock function configured to handle run API calls
+ */
+function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
+  const fetchMock = vi.fn();
+  fetchMock.mockImplementation((url: string) => {
+    // Return 201 CREATED for startRun (POST /runs)
+    if (url.includes('/runs') && !url.includes('/event')) {
+      return Promise.resolve({
+        status: StatusCodes.CREATED,
+        json: async () => ({ data: { id: runId } }),
+        headers: new Headers([['content-type', 'application/json']]),
+      });
+    }
+    // Return 200 OK for event endpoints (POST /runs/:runId/event)
+    if (url.includes('/event')) {
+      return Promise.resolve({
+        status: StatusCodes.OK,
+        json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+        headers: new Headers([['content-type', 'application/json']]),
+      });
+    }
+    return Promise.reject(new Error('Unexpected fetch call'));
+  });
+  return fetchMock;
+}
+
+/**
+ * Helper to initialize firekit compat with a mock context and fetch mock.
+ * Reduces boilerplate in tests by combining context creation, fetch setup, and initialization.
+ *
+ * **Usage:**
+ * ```ts
+ * const { fetchMock } = initializeFirekit('run-123');
+ * await startRun();
+ * expect(fetchMock).toHaveBeenCalled();
+ * ```
+ *
+ * @param runId - The run ID to return for startRun requests
+ * @param options - Optional configuration for the run (isAnonymous, administrationId)
+ * @returns Object containing the mock context and fetch mock for assertions
+ */
+function initializeFirekit(
+  runId: string,
+  options: { isAnonymous?: boolean; administrationId?: string } = {},
+): { mockContext: CommandContext; fetchMock: ReturnType<typeof vi.fn> } {
+  const mockContext = createMockContext();
+  const fetchMock = setupFetchMock(runId);
+  vi.stubGlobal('fetch', fetchMock);
+
+  initFirekitCompat(mockContext, {
+    variantId: 'variant-123',
+    taskVersion: '1.0.0',
+    isAnonymous: options.isAnonymous ?? true,
+    ...(options.administrationId && { administrationId: options.administrationId }),
+  });
+
+  return { mockContext, fetchMock };
+}
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
@@ -30,41 +115,7 @@ describe('firekit compat', () => {
     });
 
     it('issues best-effort async abort request when run is active', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      const fetchMock = vi.fn();
-      fetchMock.mockImplementation((url: string) => {
-        // Return 201 for startRun (POST /runs)
-        if (url.includes('/runs') && !url.includes('/event')) {
-          return Promise.resolve({
-            status: 201,
-            json: async () => ({ data: { id: 'run-abort-test' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        // Return 200 for abortRun (POST /runs/:runId/event)
-        if (url.includes('/event')) {
-          return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        return Promise.reject(new Error('Unexpected fetch call'));
-      });
-
-      vi.stubGlobal('fetch', fetchMock);
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      const { fetchMock } = initializeFirekit('run-abort-test');
 
       await startRun();
 
@@ -108,41 +159,7 @@ describe('firekit compat', () => {
     });
 
     it('successfully finishes an active run', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      const fetchMock = vi.fn();
-      fetchMock.mockImplementation((url: string) => {
-        // Return 201 for startRun (POST /runs)
-        if (url.includes('/runs') && !url.includes('/event')) {
-          return Promise.resolve({
-            status: 201,
-            json: async () => ({ data: { id: 'run-finish-test' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        // Return 200 for finishRun (POST /runs/:runId/event)
-        if (url.includes('/event')) {
-          return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        return Promise.reject(new Error('Unexpected fetch call'));
-      });
-
-      vi.stubGlobal('fetch', fetchMock);
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      const { fetchMock } = initializeFirekit('run-finish-test');
 
       await startRun();
       await expect(finishRun()).resolves.toBeUndefined();
@@ -155,42 +172,14 @@ describe('firekit compat', () => {
           body: expect.stringContaining('complete'),
         }),
       );
+
+      // Verify runId is cleared after successful finish to prevent stale state
+      const facade = getFirekitCompat();
+      expect(facade._getRunId()).toBeUndefined();
     });
 
     it('includes metadata when provided', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      const fetchMock = vi.fn();
-      fetchMock.mockImplementation((url: string) => {
-        if (url.includes('/runs') && !url.includes('/event')) {
-          return Promise.resolve({
-            status: 201,
-            json: async () => ({ data: { id: 'run-finish-metadata' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        if (url.includes('/event')) {
-          return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        return Promise.reject(new Error('Unexpected fetch call'));
-      });
-
-      vi.stubGlobal('fetch', fetchMock);
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      const { fetchMock } = initializeFirekit('run-finish-metadata');
 
       await startRun();
       await expect(finishRun({ customField: 'value', count: 42 })).resolves.toBeUndefined();
@@ -212,23 +201,13 @@ describe('firekit compat', () => {
   });
 
   describe('startRun', () => {
-    let mockContext: CommandContext;
-
-    beforeEach(() => {
-      mockContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-    });
-
     afterEach(() => {
       vi.clearAllMocks();
       _resetFirekitCompat();
     });
 
     it('throws SDKError when administrationId is required but missing (isAnonymous=false)', async () => {
+      const mockContext = createMockContext();
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
         taskVersion: '1.0.0',
@@ -240,12 +219,13 @@ describe('firekit compat', () => {
 
     it('resets facade instance state on re-initialization (prevents state leakage)', async () => {
       let callCount = 0;
+      const mockContext = createMockContext();
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation(async () => {
           callCount++;
           return {
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: `run-${callCount}` } }),
             headers: new Headers([['content-type', 'application/json']]),
           };
@@ -279,60 +259,17 @@ describe('firekit compat', () => {
     });
 
     it('successfully starts an anonymous run (isAnonymous=true)', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          status: 201,
-          json: async () => ({ data: { id: 'run-anon-123' } }),
-          headers: new Headers([['content-type', 'application/json']]),
-        }),
-      );
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
+      initializeFirekit('run-anon-123');
       await expect(startRun()).resolves.toBeUndefined();
     });
 
     it('successfully starts a non-anonymous run with administrationId (isAnonymous=false)', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          status: 201,
-          json: async () => ({ data: { id: 'run-non-anon-789' } }),
-          headers: new Headers([['content-type', 'application/json']]),
-        }),
-      );
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        administrationId: 'admin-456',
-        isAnonymous: false,
-      });
-
+      initializeFirekit('run-non-anon-789', { isAnonymous: false, administrationId: 'admin-456' });
       await expect(startRun()).resolves.toBeUndefined();
     });
 
     it('includes additional metadata when provided (custom key-value pairs)', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          status: 201,
-          json: async () => ({ data: { id: 'run-with-metadata' } }),
-          headers: new Headers([['content-type', 'application/json']]),
-        }),
-      );
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
+      initializeFirekit('run-with-metadata');
       const additionalMetadata = { customField: 'value', count: 42 };
       await expect(startRun(additionalMetadata)).resolves.toBeUndefined();
     });
@@ -540,7 +477,7 @@ describe('firekit compat', () => {
         // Return 201 for startRun (POST /runs)
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-trial-test' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
@@ -548,8 +485,8 @@ describe('firekit compat', () => {
         // Return 200 for writeTrial (POST /runs/:runId/event)
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
@@ -598,15 +535,15 @@ describe('firekit compat', () => {
         vi.fn().mockImplementation((url: string) => {
           if (url.includes('/runs') && !url.includes('/event')) {
             return Promise.resolve({
-              status: 201,
+              status: StatusCodes.CREATED,
               json: async () => ({ data: { id: 'run-trial-callback' } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
           if (url.includes('/event')) {
             return Promise.resolve({
-              status: 200,
-              json: async () => ({ data: { status: 'ok' } }),
+              status: StatusCodes.OK,
+              json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
@@ -647,15 +584,15 @@ describe('firekit compat', () => {
       fetchMock.mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-bool-true' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
@@ -702,15 +639,15 @@ describe('firekit compat', () => {
       fetchMock.mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-bool-false' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
