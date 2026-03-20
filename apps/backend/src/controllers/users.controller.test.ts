@@ -432,9 +432,9 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
       const result = await Controller.update(superAdminContext, targetUserId, validBody);
 
-      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
-      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
-      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect(result.body).toHaveProperty('error.message', ApiErrorMessage.FORBIDDEN);
+      expect(result.body).toHaveProperty('error.code', ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('should return 404 when service throws NOT_FOUND', async () => {
@@ -447,9 +447,9 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
       const result = await Controller.update(superAdminContext, targetUserId, validBody);
 
-      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
-      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
-      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect(result.body).toHaveProperty('error.message', ApiErrorMessage.NOT_FOUND);
+      expect(result.body).toHaveProperty('error.code', ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('should return 409 when service throws CONFLICT', async () => {
@@ -462,9 +462,9 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
       const result = await Controller.update(superAdminContext, targetUserId, validBody);
 
-      const errorBody = expectErrorResponse(result, StatusCodes.CONFLICT);
-      expect(errorBody.message).toBe(ApiErrorMessage.CONFLICT);
-      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      expect(result.body).toHaveProperty('error.message', ApiErrorMessage.CONFLICT);
+      expect(result.body).toHaveProperty('error.code', ApiErrorCode.RESOURCE_CONFLICT);
     });
 
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
@@ -477,9 +477,9 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
       const result = await Controller.update(superAdminContext, targetUserId, validBody);
 
-      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
-      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
-      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(result.body).toHaveProperty('error.message', ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(result.body).toHaveProperty('error.code', ApiErrorCode.DATABASE_QUERY_FAILED);
     });
 
     it('should re-throw non-ApiError exceptions', async () => {
