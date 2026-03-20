@@ -4,7 +4,6 @@ import type {
   StartRunInput,
   FinishRunInput,
   FinishRunOutput,
-  AbortRunOutput,
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
   AddInteractionInput,
@@ -16,10 +15,12 @@ import type {
   ComputedScores,
   WriteTrialOutput,
 } from '../types';
+import { RUN_EVENT_ABORT } from '../types/abort-run';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
+import { AbortRunCommand } from '../commands/abort-run.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -161,7 +162,7 @@ export class FirekitFacade {
    * Internal setter for the runId.
    * @internal
    */
-  _setRunId(runId: string): void {
+  _setRunId(runId: string | undefined): void {
     this.runId = runId;
   }
 
@@ -319,13 +320,32 @@ export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise
  * Firekit compatibility stub for aborting a run.
  *
  * From @bdelab/roar-firekit:
+ * ```ts
  * abortRun() { […] }
+ * ```
+ *
+ * Preserves the legacy Firekit synchronous signature while issuing a best-effort
+ * asynchronous abort request to the backend when a run is active.
  *
  * @returns void
- * @throws {SDKError} Always, until implemented.
  */
-export function abortRun(): AbortRunOutput {
-  throw new SDKError('firekit.abortRun not yet implemented');
+export function abortRun(): void {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  // No active run: preserve Firekit-like no-op behavior
+  if (!runId) return;
+
+  void (async () => {
+    const api = facade.getApi();
+    const invoker = facade.getInvoker();
+
+    const cmd = new AbortRunCommand(api);
+    await invoker.run(cmd, { runId, type: RUN_EVENT_ABORT });
+    facade._setRunId(undefined);
+  })().catch((err) => {
+    facade.getContext().logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
+  });
 }
 
 /**
