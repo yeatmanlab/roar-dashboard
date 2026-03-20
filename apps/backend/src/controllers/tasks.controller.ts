@@ -1,12 +1,14 @@
 import type { AuthContext } from '../types/auth-context';
 import type {
+  ListTaskVariantsQuery,
   CreateTaskVariantRequestBody,
   UpdateTaskVariantRequestBody,
   TasksListQuery,
   Task as ContractTask,
+  TaskVariant as ContractTaskVariant,
   Json,
 } from '@roar-dashboard/api-contract';
-import type { Task } from '../db/schema';
+import type { Task, TaskVariant } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';
 import { ApiError } from '../errors/api-error';
@@ -32,6 +34,28 @@ function transformTask(task: Task): ContractTask {
     taskConfig: task.taskConfig as Json,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt?.toISOString() ?? null,
+  };
+}
+
+/**
+ * Maps a database TaskVariant entity to the API schema (without task/parameter fields).
+ * Converts Date fields to ISO strings.
+ * Task fields (taskName, taskSlug, taskImage) and parameters are added separately by the controller.
+ *
+ * @param variant - The database TaskVariant entity
+ * @returns The API-formatted task variant object without task fields or parameters
+ */
+function transformTaskVariant(
+  variant: TaskVariant,
+): Omit<ContractTaskVariant, 'taskName' | 'taskSlug' | 'taskImage' | 'parameters'> {
+  return {
+    id: variant.id,
+    taskId: variant.taskId,
+    name: variant.name,
+    description: variant.description,
+    status: variant.status,
+    createdAt: variant.createdAt.toISOString(),
+    updatedAt: variant.updatedAt?.toISOString() ?? null,
   };
 }
 
@@ -109,6 +133,62 @@ export const TasksController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List variants for a given task.
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Super admins see all variants; regular users see only published variants.
+   *
+   * @param authContext - User's authentication context
+   * @param taskId - The UUID of the parent task
+   * @param query - Query parameters for pagination, sorting, and searching
+   * @returns Paginated list of task variants with task info
+   */
+  listTaskVariants: async (authContext: AuthContext, taskId: string, query: ListTaskVariantsQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder, search, status } = query;
+      const result = await taskService.listTaskVariants(authContext, taskId, {
+        page,
+        perPage,
+        orderBy: { field: sortBy, direction: sortOrder },
+        ...(search && { search }),
+        ...(status && { status }),
+      });
+
+      const { task } = result;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items: result.items.map((variant) => ({
+              ...transformTaskVariant(variant),
+              taskName: task.name,
+              taskSlug: task.slug,
+              taskImage: task.image,
+              parameters: variant.parameters,
+            })),
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }
