@@ -162,7 +162,7 @@ export class FirekitFacade {
    * Internal setter for the runId.
    * @internal
    */
-  _setRunId(runId: string): void {
+  _setRunId(runId: string | undefined): void {
     this.runId = runId;
   }
 
@@ -342,6 +342,7 @@ export function abortRun(): void {
 
     const cmd = new AbortRunCommand(api);
     await invoker.run(cmd, { runId, type: RUN_EVENT_ABORT });
+    facade._setRunId(undefined);
   })().catch((err) => {
     facade.getContext().logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
   });
