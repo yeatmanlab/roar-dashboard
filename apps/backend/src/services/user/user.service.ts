@@ -157,10 +157,12 @@ export function UserService({
    * Users with supervisory roles can access users in their district, school, or class.
    * Super admin users can access any user.
    *
-   *
-   * @param id - The user's UUID.
-   * @returns The user record if found, null otherwise.
-   * @throws {ApiError} If the database query fails.
+   * @param authContext - Requesting user's authentication context.
+   * @param id - UUID of the user to retrieve.
+   * @returns The user record if access is granted.
+   * @throws {ApiError} NOT_FOUND if the user does not exist.
+   * @throws {ApiError} FORBIDDEN if the requestor lacks permission to access this user.
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails.
    */
   async function getById(authContext: AuthContext, id: string): Promise<User> {
     const { userId } = authContext;

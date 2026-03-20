@@ -64,10 +64,6 @@ export type UserResponse = z.infer<typeof UserResponseSchema>;
  * - isSuperAdmin — security-sensitive, managed separately
  * - schoolLevel — DB-generated from grade
  * - createdAt, updatedAt — managed by DB triggers
- *
- * Authorization note: currently restricted to super admins only.
- * When Permissions.Users.UPDATE is assigned to supervisory roles, the service layer
- * will enforce field-level authorization here via a future enhancement.
  */
 export const UpdateUserRequestBodySchema = z
   .object({
