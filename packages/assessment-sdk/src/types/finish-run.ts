@@ -1,4 +1,5 @@
 import type { Json } from '@roar-dashboard/api-contract';
+import { RUN_EVENT_STATUS_OK } from './run-event-status';
 
 /**
  * Event type constant for marking a run as complete.
@@ -49,7 +50,7 @@ export interface FinishRunInput {
  *
  * @example
  * ```ts
- * const output: FinishRunOutput = { status: 'ok' };
+ * const output: FinishRunOutput = { status: RUN_EVENT_STATUS_OK };
  * ```
  */
-export type FinishRunOutput = { status: 'ok' };
+export type FinishRunOutput = { status: typeof RUN_EVENT_STATUS_OK };
