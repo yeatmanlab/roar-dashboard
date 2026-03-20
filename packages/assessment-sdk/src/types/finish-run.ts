@@ -1,14 +1,5 @@
 import type { Json } from '@roar-dashboard/api-contract';
-import { RUN_EVENT_STATUS_OK } from './run-event-status';
-
-/**
- * Event type constant for marking a run as complete.
- * Used in finish run operations to indicate the run has ended.
- *
- * @constant
- * @type {'complete'}
- */
-export const RUN_EVENT_COMPLETE = 'complete' as const;
+import { RUN_EVENT_STATUS_OK, RUN_EVENT_COMPLETE } from './run-event-status';
 
 /**
  * FinishRunInput contains the parameters required to mark an assessment run as complete.
@@ -29,7 +20,7 @@ export const RUN_EVENT_COMPLETE = 'complete' as const;
  * ```ts
  * const input: FinishRunInput = {
  *   runId: 'run-xyz-123',
- *   type: 'complete',
+ *   type: RUN_EVENT_COMPLETE,
  *   metadata: { totalScore: 85, timeSpent: 300 }
  * };
  * ```

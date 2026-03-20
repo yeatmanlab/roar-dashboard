@@ -12,6 +12,7 @@ import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
  * This command sends a completion event to the backend for a specific run,
  * optionally including metadata about the run's completion state.
  *
+ * **Idempotency:**
  * This command is non-idempotent; the Invoker will execute it exactly once.
  * 409 Conflict is treated as success since the run is already in a terminal state.
  *
@@ -22,8 +23,13 @@ import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
  * - Throws `SDKError` with code `FINISH_RUN_FAILED` on failure
  *
  * **Error handling:**
- * - Extracts error message from backend response if available
- * - Falls back to generic error message with HTTP status code
+ * - HTTP 200 OK or 409 Conflict → Success
+ * - HTTP 400 Bad Request → Extracts error message from response body (type-narrowed by status check)
+ * - Other status codes → Generic error message with HTTP status code
+ *
+ * The API contract's `strictStatusCodes: true` configuration enables TypeScript to
+ * automatically narrow the response body type based on the status code, eliminating
+ * the need for explicit type casts.
  *
  * @implements {Command<FinishRunInput, FinishRunOutput>}
  *
@@ -66,9 +72,13 @@ export class FinishRunCommand implements Command<FinishRunInput, FinishRunOutput
       return { status: RUN_EVENT_STATUS_OK };
     }
 
-    const errorBody = result.body as { error?: { message?: string } };
+    if (result.status === StatusCodes.BAD_REQUEST) {
+      throw new SDKError(result.body.error?.message ?? `Failed to finish run with status ${result.status}`, {
+        code: SdkErrorCode.FINISH_RUN_FAILED,
+      });
+    }
 
-    throw new SDKError(errorBody?.error?.message ?? `Failed to finish run with status ${result.status}`, {
+    throw new SDKError(`Failed to finish run with status ${result.status}`, {
       code: SdkErrorCode.FINISH_RUN_FAILED,
     });
   }

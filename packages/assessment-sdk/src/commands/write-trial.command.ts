@@ -17,8 +17,18 @@ import { SdkErrorCode } from '../enums';
  * - 'practice' and 'practice_response' → 'practice'
  * - 'test' and 'test_response' → 'test'
  *
+ * This normalization allows the SDK to accept both response and non-response stage
+ * values from Firekit while maintaining compatibility with the backend's simpler
+ * two-stage model.
+ *
  * @param stage - The assessment stage from Firekit
  * @returns Normalized stage value ('practice' or 'test')
+ *
+ * @example
+ * ```ts
+ * normalizeAssessmentStage('practice_response') // → 'practice'
+ * normalizeAssessmentStage('test') // → 'test'
+ * ```
  */
 function normalizeAssessmentStage(stage: WriteTrialAssessmentStage): 'practice' | 'test' {
   if (stage === 'practice' || stage === 'practice_response') {
@@ -36,8 +46,17 @@ function normalizeAssessmentStage(stage: WriteTrialAssessmentStage): 'practice' 
  * - 'fullscreenexit' → 'fullscreen_exit'
  * - Other events ('blur', 'focus') pass through unchanged
  *
+ * This normalization bridges the camelCase naming convention used by Firekit
+ * with the snake_case convention expected by the backend API.
+ *
  * @param event - The interaction event from Firekit
- * @returns Normalized event name
+ * @returns Normalized event name in snake_case format
+ *
+ * @example
+ * ```ts
+ * normalizeInteractionEvent('fullscreenenter') // → 'fullscreen_enter'
+ * normalizeInteractionEvent('focus') // → 'focus'
+ * ```
  */
 function normalizeInteractionEvent(
   event: WriteTrialInteractionEvent,
@@ -53,6 +72,7 @@ function normalizeInteractionEvent(
  * This command submits trial data (responses, reaction times, etc.) to the backend
  * for a specific run, optionally including interaction events (focus, blur, fullscreen).
  *
+ * **Idempotency:**
  * This command is non-idempotent; the Invoker will execute it exactly once.
  *
  * **Behavior:**
@@ -63,8 +83,13 @@ function normalizeInteractionEvent(
  * - Throws `SDKError` with code `WRITE_TRIAL_FAILED` on failure
  *
  * **Error handling:**
- * - Extracts error message from backend response if available
- * - Falls back to generic error message with HTTP status code
+ * - HTTP 200 OK → Success
+ * - HTTP 400 Bad Request → Extracts error message from response body (type-narrowed by status check)
+ * - Other status codes → Generic error message with HTTP status code
+ *
+ * The API contract's `strictStatusCodes: true` configuration enables TypeScript to
+ * automatically narrow the response body type based on the status code, eliminating
+ * the need for explicit type casts.
  *
  * @implements {Command<WriteTrialCommandInput, WriteTrialCommandOutput>}
  *
@@ -130,9 +155,13 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
       return {};
     }
 
-    const errorBody = result.body as { error?: { message?: string } };
+    if (result.status === StatusCodes.BAD_REQUEST) {
+      throw new SDKError(result.body.error.message ?? `Failed to write trial with status ${result.status}`, {
+        code: SdkErrorCode.WRITE_TRIAL_FAILED,
+      });
+    }
 
-    throw new SDKError(errorBody?.error?.message ?? `Failed to write trial with status ${result.status}`, {
+    throw new SDKError(`Failed to write trial with status ${result.status}`, {
       code: SdkErrorCode.WRITE_TRIAL_FAILED,
     });
   }
