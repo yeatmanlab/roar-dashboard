@@ -574,6 +574,4 @@ export async function writeTrial(
       [key: string]: unknown;
     },
   });
-
-  facade._setRunId(undefined);
 }
