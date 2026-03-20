@@ -65,7 +65,7 @@ describe('AbortRunCommand', () => {
 
     eventMock.mockResolvedValue({
       status: StatusCodes.BAD_REQUEST,
-      body: {},
+      body: { error: {} },
     });
 
     await expect(command.execute(input)).rejects.toThrow('Failed to abort run with status 400');
