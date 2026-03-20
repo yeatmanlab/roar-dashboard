@@ -71,7 +71,7 @@ describe('AbortRunCommand', () => {
     await expect(command.execute(input)).rejects.toThrow('Failed to abort run with status 400');
   });
 
-  it('throws SDKError with status code message when error details are missing', async () => {
+  it('throws SDKError with status code message on INTERNAL_SERVER_ERROR when error details are missing', async () => {
     const input: AbortRunInput = {
       runId: 'run-123',
       type: 'abort',
