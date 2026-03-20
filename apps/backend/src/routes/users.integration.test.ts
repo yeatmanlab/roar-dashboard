@@ -4,11 +4,18 @@
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Tests cover:
+ * GET /v1/users/:id
  * - Authorization (who can access which users)
  * - Self-access (all users can access their own profile)
  * - Field transformations (Date → ISO string)
  * - Error cases (401, 403, 404)
+ *
+ * PATCH /v1/users/:id
+ * - Authorization (super admin only; all other tiers → 403)
+ * - Partial update semantics (only provided fields written, null clears a field)
+ * - Validation (empty body, invalid UUID, invalid enum value)
+ * - Unique constraint violations (email, username → 409)
+ * - Error cases (401, 404)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
