@@ -12,6 +12,7 @@ export function createMockTaskVariantParameterRepository(): MockedObject<TaskVar
   return {
     ...createMockBaseRepositoryMethods(),
     getByTaskVariantId: vi.fn(),
+    getByTaskVariantIds: vi.fn(),
     createMany: vi.fn(),
     deleteByTaskVariantId: vi.fn(),
   } as MockedObject<TaskVariantParameterRepository>;
