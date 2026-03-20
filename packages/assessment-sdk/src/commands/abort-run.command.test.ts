@@ -56,14 +56,10 @@ describe('AbortRunCommand', () => {
       body: { error: { message: 'Run not found' } },
     });
 
-    await expect(command.execute(input)).rejects.toThrow(SDKError);
-    try {
-      await command.execute(input);
-    } catch (err) {
-      expect(err).toBeInstanceOf(SDKError);
-      expect((err as SDKError).message).toBe('Run not found');
-      expect((err as SDKError).code).toBe(SdkErrorCode.ABORT_RUN_FAILED);
-    }
+    const error = await command.execute(input).catch((e) => e);
+    expect(error).toBeInstanceOf(SDKError);
+    expect((error as SDKError).message).toBe('Run not found');
+    expect((error as SDKError).code).toBe(SdkErrorCode.ABORT_RUN_FAILED);
   });
 
   it('throws SDKError with status code message on BAD_REQUEST when error details are missing', async () => {
