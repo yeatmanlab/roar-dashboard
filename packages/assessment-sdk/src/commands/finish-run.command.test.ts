@@ -4,7 +4,9 @@ import { FinishRunCommand } from './finish-run.command';
 import { StatusCodes } from 'http-status-codes';
 import { createMockRoarApi } from '../test-support';
 import type { FinishRunInput } from '../types/finish-run';
-import { RUN_EVENT_COMPLETE } from '../types/finish-run';
+import { RUN_EVENT_COMPLETE } from '../types/run-event-status';
+import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums';
 
 describe('FinishRunCommand', () => {
   let command: FinishRunCommand;
@@ -95,7 +97,14 @@ describe('FinishRunCommand', () => {
       body: { error: { message: 'Run not found' } },
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Run not found');
+    await expect(command.execute(input)).rejects.toThrow(SDKError);
+    try {
+      await command.execute(input);
+    } catch (err) {
+      expect(err).toBeInstanceOf(SDKError);
+      expect((err as SDKError).message).toBe('Run not found');
+      expect((err as SDKError).code).toBe(SdkErrorCode.FINISH_RUN_FAILED);
+    }
   });
 
   it('throws SDKError with status code message when error details are missing', async () => {
