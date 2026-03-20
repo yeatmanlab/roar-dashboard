@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
+import type { UpdateUserRequestBody } from '@roar-dashboard/api-contract';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
 import { MockedUserService } from '../test-support/services/user.service';
 import { ApiError } from '../errors/api-error';
@@ -37,6 +38,7 @@ function expectErrorResponse(
 
 describe('UsersController', () => {
   const mockGetById = vi.fn();
+  const mockUpdate = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
@@ -44,7 +46,9 @@ describe('UsersController', () => {
 
     // Setup the mock service
     vi.mocked(UserService).mockReturnValue({
+      findByAuthId: vi.fn(),
       getById: mockGetById,
+      update: mockUpdate,
     } as MockedUserService);
   });
 
@@ -390,6 +394,101 @@ describe('UsersController', () => {
       const regularResult = await Controller.get(nonSuperAdminContext, 'target-user');
       const regularData = expectOkResponse(regularResult);
       expect(regularData).not.toHaveProperty('isSuperAdmin');
+    });
+  });
+
+  describe('update', () => {
+    const superAdminContext = AuthContextFactory.build({ userId: 'admin-123', isSuperAdmin: true });
+    const validBody: UpdateUserRequestBody = { nameFirst: 'Jane' };
+    const targetUserId = 'user-456';
+
+    it('should return 204 No Content on success', async () => {
+      mockUpdate.mockResolvedValue(undefined);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.update(superAdminContext, targetUserId, validBody);
+
+      expect(result.status).toBe(StatusCodes.NO_CONTENT);
+      expect(result.body).toBeUndefined();
+    });
+
+    it('should delegate to the service with the correct arguments', async () => {
+      mockUpdate.mockResolvedValue(undefined);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.update(superAdminContext, targetUserId, validBody);
+
+      expect(mockUpdate).toHaveBeenCalledWith(superAdminContext, targetUserId, validBody);
+      expect(mockUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return 403 when service throws FORBIDDEN', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.update(superAdminContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should return 404 when service throws NOT_FOUND', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.update(superAdminContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('should return 409 when service throws CONFLICT', async () => {
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.update(superAdminContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.CONFLICT);
+      expect(errorBody.message).toBe(ApiErrorMessage.CONFLICT);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.update(superAdminContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected error');
+      mockUpdate.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.update(superAdminContext, targetUserId, validBody)).rejects.toThrow('Unexpected error');
     });
   });
 });
