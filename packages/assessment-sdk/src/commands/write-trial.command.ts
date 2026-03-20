@@ -156,7 +156,7 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
     }
 
     if (result.status === StatusCodes.BAD_REQUEST) {
-      throw new SDKError(result.body.error?.message ?? `Failed to write trial with status ${result.status}`, {
+      throw new SDKError(result.body.error.message ?? `Failed to write trial with status ${result.status}`, {
         code: SdkErrorCode.WRITE_TRIAL_FAILED,
       });
     }

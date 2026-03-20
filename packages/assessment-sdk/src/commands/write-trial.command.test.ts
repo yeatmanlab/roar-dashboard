@@ -4,7 +4,7 @@ import { WriteTrialCommand } from './write-trial.command';
 import { StatusCodes } from 'http-status-codes';
 import { createMockRoarApi } from '../test-support';
 import type { WriteTrialCommandInput } from '../types/write-trial';
-import { RUN_EVENT_TRIAL } from '../types/write-trial';
+import { RUN_EVENT_TRIAL } from '../types/run-event-status';
 
 /**
  * Test suite for WriteTrialCommand.
