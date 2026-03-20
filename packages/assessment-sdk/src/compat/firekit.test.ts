@@ -10,7 +10,6 @@ import {
   initFirekitCompat,
   getFirekitCompat,
   _resetFirekitCompat,
-  getFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
 import type {
