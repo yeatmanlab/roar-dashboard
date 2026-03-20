@@ -15,7 +15,13 @@ import { SdkErrorCode } from '../enums';
  * Responsibilities:
  * - Call the ts-rest client to post a run abort event
  * - Interpret the HTTP response (200 OK or 409 Conflict = success)
+ * - Extract error messages from BAD_REQUEST responses when available
  * - Throw SDKError with appropriate error code on failure
+ *
+ * **Error handling:**
+ * - 200 OK or 409 Conflict → Success
+ * - 400 Bad Request → Extract error message from response body if available
+ * - Other status codes → Generic error message with status code
  *
  * @implements {Command<AbortRunInput, AbortRunOutput>}
  */
@@ -42,9 +48,14 @@ export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
       return { status: RUN_EVENT_STATUS_OK };
     }
 
-    const errorBody = result.body as { error?: { message?: string } };
+    if (result.status === StatusCodes.BAD_REQUEST) {
+      const errorBody = result.body as { error?: { message?: string } };
+      throw new SDKError(errorBody?.error?.message ?? `Failed to abort run with status ${result.status}`, {
+        code: SdkErrorCode.ABORT_RUN_FAILED,
+      });
+    }
 
-    throw new SDKError(errorBody?.error?.message ?? `Failed to abort run with status ${result.status}`, {
+    throw new SDKError(`Failed to abort run with status ${result.status}`, {
       code: SdkErrorCode.ABORT_RUN_FAILED,
     });
   }

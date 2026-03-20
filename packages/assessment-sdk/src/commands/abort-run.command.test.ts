@@ -43,7 +43,7 @@ describe('AbortRunCommand', () => {
     expect(result).toEqual({ status: 'ok' });
   });
 
-  it('throws SDKError with error message from response body', async () => {
+  it('throws SDKError with error message from response body on BAD_REQUEST', async () => {
     const input: AbortRunInput = {
       runId: 'run-123',
       type: 'abort',
@@ -55,6 +55,20 @@ describe('AbortRunCommand', () => {
     });
 
     await expect(command.execute(input)).rejects.toThrow('Run not found');
+  });
+
+  it('throws SDKError with status code message on BAD_REQUEST when error details are missing', async () => {
+    const input: AbortRunInput = {
+      runId: 'run-123',
+      type: 'abort',
+    };
+
+    eventMock.mockResolvedValue({
+      status: StatusCodes.BAD_REQUEST,
+      body: {},
+    });
+
+    await expect(command.execute(input)).rejects.toThrow('Failed to abort run with status 400');
   });
 
   it('throws SDKError with status code message when error details are missing', async () => {
