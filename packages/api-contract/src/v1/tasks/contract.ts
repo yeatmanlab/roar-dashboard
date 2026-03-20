@@ -12,6 +12,8 @@ import {
   TaskSchema,
   ListTaskVariantsQuerySchema,
   ListTaskVariantsResponseSchema,
+  CreateTaskRequestBodySchema,
+  CreateTaskResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -40,6 +42,32 @@ export const TasksContract = c.router(
         'Results can be sorted by name (default), slug, createdAt, or updatedAt in ascending or descending order. ' +
         'Returns 200 with paginated results on success. ' +
         'Returns 400 if the request parameters are invalid. ' +
+        'Returns 500 if a server error occurs.',
+    },
+    create: {
+      method: 'POST',
+      path: '/',
+      contentType: 'application/json',
+      body: CreateTaskRequestBodySchema,
+      responses: {
+        201: SuccessEnvelopeSchema(CreateTaskResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Create a new task',
+      description:
+        'Creates a new task. Requires super admin privileges. ' +
+        'The slug must be unique and follow the format: lowercase alphanumeric with hyphens. ' +
+        'Returns 201 with the created task ID on success. ' +
+        'Returns 400 if the request body is malformed. ' +
+        'Returns 403 if the user is not a super admin. ' +
+        'Returns 409 if a task with the same slug already exists. ' +
+        'Returns 422 if validation fails (e.g., invalid slug format). ' +
         'Returns 500 if a server error occurs.',
     },
     get: {

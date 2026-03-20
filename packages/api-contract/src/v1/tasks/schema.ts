@@ -275,3 +275,50 @@ export const TasksListResponseSchema = createPaginatedResponseSchema(TaskSchema)
 export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
 
 export type TaskIdParam = z.infer<typeof TaskIdParamSchema>;
+
+/**
+ * Slug format regex: lowercase alphanumeric with hyphens between segments.
+ * Must match the database constraint: ^[a-z0-9]+(-[a-z0-9]+)*$
+ *
+ * Examples: "swr", "letter-task", "phoneme-awareness-1"
+ */
+const TASK_SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * Task Create Request Schema
+ *
+ * Creates a new task with the specified configuration.
+ *
+ * @property slug - URL-friendly identifier (lowercase alphanumeric with hyphens, max 32 chars)
+ * @property name - Display name for the task
+ * @property nameSimple - Simplified name for the task
+ * @property nameTechnical - Technical/internal name for the task
+ * @property taskConfig - JSON configuration object for the task
+ * @property description - Optional human-readable description
+ * @property image - Optional URL to task image
+ * @property tutorialVideo - Optional URL to tutorial video
+ */
+export const CreateTaskRequestBodySchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(1, 'Slug is required')
+    .max(32, 'Slug must be at most 32 characters')
+    .regex(TASK_SLUG_REGEX, 'Slug must be lowercase alphanumeric with hyphens (e.g., "my-task")'),
+  name: z.string().trim().min(1, 'Name is required'),
+  nameSimple: z.string().trim().min(1, 'Simple name is required'),
+  nameTechnical: z.string().trim().min(1, 'Technical name is required'),
+  taskConfig: JsonValue.superRefine((value, ctx) => {
+    parseJsonB(value, ctx);
+  }),
+  description: z.string().trim().min(1).optional(),
+  image: z.string().url('Image must be a valid URL').optional(),
+  tutorialVideo: z.string().url('Tutorial video must be a valid URL').optional(),
+});
+
+export const CreateTaskResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type CreateTaskRequestBody = z.infer<typeof CreateTaskRequestBodySchema>;
+export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
