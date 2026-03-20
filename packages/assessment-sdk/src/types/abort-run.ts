@@ -1,6 +1,4 @@
-import { RUN_EVENT_STATUS_OK } from './run-event-status';
-
-export const RUN_EVENT_ABORT = 'abort' as const;
+import { RUN_EVENT_STATUS_OK, RUN_EVENT_ABORT } from './run-event-status';
 /**
  * Input for the AbortRun command.
  *
