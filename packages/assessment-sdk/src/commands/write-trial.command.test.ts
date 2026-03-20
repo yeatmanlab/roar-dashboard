@@ -5,6 +5,8 @@ import { StatusCodes } from 'http-status-codes';
 import { createMockRoarApi } from '../test-support';
 import type { WriteTrialCommandInput } from '../types/write-trial';
 import { RUN_EVENT_TRIAL } from '../types/run-event-status';
+import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums';
 
 /**
  * Test suite for WriteTrialCommand.
@@ -269,7 +271,10 @@ describe('WriteTrialCommand', () => {
       body: { error: { message: 'Invalid trial data' } },
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Invalid trial data');
+    const error = await command.execute(input).catch((e) => e);
+    expect(error).toBeInstanceOf(SDKError);
+    expect((error as SDKError).message).toBe('Invalid trial data');
+    expect((error as SDKError).code).toBe(SdkErrorCode.WRITE_TRIAL_FAILED);
   });
 
   it('throws SDKError with status code message when error details are missing', async () => {
@@ -289,7 +294,10 @@ describe('WriteTrialCommand', () => {
       body: {},
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Failed to write trial with status 500');
+    const error = await command.execute(input).catch((e) => e);
+    expect(error).toBeInstanceOf(SDKError);
+    expect((error as SDKError).message).toBe('Failed to write trial with status 500');
+    expect((error as SDKError).code).toBe(SdkErrorCode.WRITE_TRIAL_FAILED);
   });
 
   it('throws SDKError with status code message when body is null', async () => {
@@ -309,7 +317,10 @@ describe('WriteTrialCommand', () => {
       body: null,
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Failed to write trial with status 404');
+    const error = await command.execute(input).catch((e) => e);
+    expect(error).toBeInstanceOf(SDKError);
+    expect((error as SDKError).message).toBe('Failed to write trial with status 404');
+    expect((error as SDKError).code).toBe(SdkErrorCode.WRITE_TRIAL_FAILED);
   });
 
   it('propagates errors from api.client.runs.event', async () => {
