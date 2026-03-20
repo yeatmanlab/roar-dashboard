@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { JsonValue, parseJsonB } from '../common/parse-jsonb';
+import { JsonValue, ValidatedJsonValue } from '../common/parse-jsonb';
 import { IDENTIFIER_WITH_SPACES, IDENTIFIER_WITH_UNDERSCORES } from '../common/regex';
 import {
   PaginationQuerySchema,
@@ -60,11 +60,15 @@ export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated
  *   }
  * }
  */
-const TaskVariantParameterSchema = z.object({
+/**
+ * `ValidatedJsonValue` provides runtime validation (size limits, depth, dangerous keys, etc.)
+ * but its inferred TypeScript output type is `Json`. We explicitly annotate the schema as
+ * `z.ZodType<{ name: string; value: unknown }>` so the output stays `unknown` — consistent
+ * with how Drizzle types `jsonb()` columns — while the security checks still run at parse time.
+ */
+const TaskVariantParameterSchema: z.ZodType<{ name: string; value: unknown }> = z.object({
   name: z.string().min(1).max(255).regex(IDENTIFIER_WITH_UNDERSCORES),
-  value: JsonValue.superRefine((value, ctx) => {
-    parseJsonB(value, ctx);
-  }),
+  value: ValidatedJsonValue,
 });
 
 /**
@@ -85,7 +89,66 @@ const TaskVariantParameterSchema = z.object({
  *   { "name": "stimuli", "value": ["word1", "word2", "word3"] }
  * ]
  */
-const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema);
+export const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema);
+
+/**
+ * Schema for a task variant in list responses.
+ * Includes denormalized task fields and parameters for convenience.
+ */
+export const TaskVariantSchema = z.object({
+  id: z.string().uuid(),
+  taskId: z.string().uuid(),
+  name: z.string().nullable(),
+  description: z.string().nullable(),
+  status: TaskVariantStatusSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
+  taskName: z.string(),
+  taskSlug: z.string(),
+  taskImage: z.string().nullable(),
+  parameters: TaskVariantParametersArraySchema,
+});
+
+export type TaskVariant = z.infer<typeof TaskVariantSchema>;
+
+/**
+ * Allowed sort fields for task variants.
+ */
+export const TASK_VARIANT_SORT_FIELDS = ['createdAt', 'name', 'updatedAt', 'status'] as const;
+
+/**
+ * Sort field type for task variants.
+ */
+export type TaskVariantSortFieldType = (typeof TASK_VARIANT_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const TaskVariantSortField = {
+  CREATED_AT: 'createdAt',
+  NAME: 'name',
+  UPDATED_AT: 'updatedAt',
+  STATUS: 'status',
+} as const satisfies Record<string, TaskVariantSortFieldType>;
+
+/**
+ * Query parameters for listing task variants.
+ * Supports pagination, sorting, search (name/description), and status filtering.
+ */
+export const ListTaskVariantsQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(TASK_VARIANT_SORT_FIELDS, 'name', 'asc'),
+)
+  .merge(SearchQuerySchema)
+  .merge(
+    z.object({
+      status: TaskVariantStatusSchema.optional(),
+    }),
+  );
+
+/**
+ * Paginated response for task variants list.
+ */
+export const ListTaskVariantsResponseSchema = createPaginatedResponseSchema(TaskVariantSchema);
 
 /**
  * Task Variant Create Request Schema
@@ -98,9 +161,9 @@ const TaskVariantParametersArraySchema = z.array(TaskVariantParameterSchema);
  * @property status - Publication status of the variant
  */
 export const CreateTaskVariantRequestBodySchema = z.object({
-  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES),
+  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
   parameters: TaskVariantParametersArraySchema.default([]),
-  description: z.string().trim().min(1).max(1024),
+  description: z.string().trim().min(1).max(1024).optional(),
   status: TaskVariantStatusSchema,
 });
 
@@ -113,8 +176,8 @@ export const CreateTaskVariantResponseSchema = z.object({
  *
  * Updates an existing task variant. All fields are optional - only provided fields will be updated.
  *
- * @property name - New name for the variant (must remain unique within parent task)
- * @property description - New description for the variant
+ * @property name - New name for the variant (must remain unique within parent task), or null to clear it
+ * @property description - New description for the variant, or null to clear it
  * @property status - New publication status
  * @property parameters - New parameters array (omit to keep existing, provide empty array to clear all)
  *
@@ -124,8 +187,8 @@ export const CreateTaskVariantResponseSchema = z.object({
  */
 export const UpdateTaskVariantRequestBodySchema = z
   .object({
-    name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
-    description: z.string().trim().min(1).max(1024).optional(),
+    name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).nullish(),
+    description: z.string().trim().min(1).max(1024).nullish(),
     status: TaskVariantStatusSchema.optional(),
     parameters: TaskVariantParametersArraySchema.optional(),
   })
@@ -150,6 +213,8 @@ export const UpdateTaskVariantResponseSchema = z.undefined();
 export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
 export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
+export type ListTaskVariantsQuery = z.infer<typeof ListTaskVariantsQuerySchema>;
+export type ListTaskVariantsResponse = z.infer<typeof ListTaskVariantsResponseSchema>;
 export type CreateTaskVariantRequestBody = z.infer<typeof CreateTaskVariantRequestBodySchema>;
 export type CreateTaskVariantResponse = z.infer<typeof CreateTaskVariantResponseSchema>;
 export type UpdateTaskVariantRequestBody = z.infer<typeof UpdateTaskVariantRequestBodySchema>;
