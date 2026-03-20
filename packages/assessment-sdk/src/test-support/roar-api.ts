@@ -9,11 +9,13 @@ import type { RoarApi } from '../receiver/roar-api';
  */
 export function createMockRoarApi() {
   const createRunMock = vi.fn() as Mock;
+  const eventMock = vi.fn() as Mock;
 
   return {
     client: {
       runs: {
         create: createRunMock,
+        event: eventMock,
       },
     },
   } as unknown as RoarApi;
