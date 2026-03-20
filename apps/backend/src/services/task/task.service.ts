@@ -41,7 +41,7 @@ export interface CreateTaskVariantData {
  * All fields are optional - only provided fields will be updated.
  *
  * NOTE: taskId and variantId are passed separately as path parameters.
- * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
+ * NOTE: We union optional fields with 'null' and 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
  */
 export interface UpdateTaskVariantData {
   name?: string | null | undefined;
