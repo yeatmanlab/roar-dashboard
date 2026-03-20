@@ -14,9 +14,7 @@ import type {
   ComputedScores,
   WriteTrialOutput,
 } from '../types';
-import { RUN_EVENT_ABORT } from '../types/abort-run';
-import { RUN_EVENT_COMPLETE } from '../types/finish-run';
-import { RUN_EVENT_TRIAL } from '../types/write-trial';
+import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
@@ -314,8 +312,10 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
  * - `initFirekitCompat()` must be called before invoking this function
  * - `startRun()` must be called to create an active run
  *
- * The run is marked with a completion event and any provided metadata is included
- * in the backend request.
+ * **Behavior:**
+ * - Marks the run with a completion event in the backend
+ * - Includes any provided metadata in the request
+ * - Clears the internal runId after successful completion to prevent stale state
  *
  * @param finishingMetadata - Optional custom metadata to include with the completion event.
  *                            Can contain any key-value pairs for run customization.
@@ -359,6 +359,7 @@ export async function finishRun(finishingMetadata?: Record<string, unknown>): Pr
 
   const cmd = new FinishRunCommand(api);
   await invoker.run(cmd, input);
+  facade._setRunId(undefined);
 }
 
 /**
