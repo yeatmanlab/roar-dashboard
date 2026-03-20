@@ -66,6 +66,20 @@ export const JsonValue: z.ZodType<Json> = z.lazy(() =>
 );
 
 /**
+ * Validated JSON value schema with comprehensive security and data quality checks.
+ *
+ * Wraps {@link JsonValue} with {@link parseJsonB} validation. Use this instead of
+ * `JsonValue.superRefine(parseJsonB)` inline — the explicit `z.ZodType<Json>` annotation
+ * ensures TypeScript preserves `Json` as the output type rather than widening it to `unknown`.
+ *
+ * @example
+ * const schema = z.object({
+ *   value: ValidatedJsonValue,
+ * });
+ */
+export const ValidatedJsonValue: z.ZodType<Json> = JsonValue.superRefine(parseJsonB);
+
+/**
  * Validates JSONB values with comprehensive security and data quality checks.
  *
  * This function performs the following validations in a single pass:
