@@ -651,6 +651,4 @@ export async function writeTrial(
         }
       : {}),
   });
-
-  facade._setRunId(undefined);
 }

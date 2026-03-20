@@ -682,7 +682,7 @@ describe('firekit compat', () => {
       );
     });
 
-    it('flushes buffered interactions with trial data', async () => {
+    it('allows multiple trials to be written in sequence without clearing runId', async () => {
       const mockContext: CommandContext = {
         baseUrl: 'http://localhost:3000',
         auth: {
@@ -690,11 +690,12 @@ describe('firekit compat', () => {
         },
       };
 
-      const fetchMock = vi.fn().mockImplementation((url: string) => {
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
-            json: async () => ({ data: { id: 'run-with-interactions' } }),
+            json: async () => ({ data: { id: 'run-multi-trial' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
@@ -718,26 +719,24 @@ describe('firekit compat', () => {
 
       await startRun();
 
-      // Buffer interactions
-      addInteraction({ event: 'focus', time: 100 });
-      addInteraction({ event: 'blur', time: 200 });
-
-      const trialData: TrialData = {
+      const firstTrial: TrialData = {
         assessmentStage: 'test',
         correct: 1,
         response: 'A',
-        rt: 500,
+        rt: 1500,
       };
 
-      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+      const secondTrial: TrialData = {
+        assessmentStage: 'test',
+        correct: 0,
+        response: 'B',
+        rt: 2000,
+      };
 
-      // Verify interactions were sent in the request body
-      const eventCall = fetchMock.mock.calls.find((call) => call[0].includes('/event'));
-      expect(eventCall).toBeDefined();
-      const body = JSON.parse(eventCall![1].body as string);
-      expect(body.interactions).toHaveLength(2);
-      expect(body.interactions[0].event).toBe('focus');
-      expect(body.interactions[1].event).toBe('blur');
+      await expect(writeTrial(firstTrial)).resolves.toBeUndefined();
+      await expect(writeTrial(secondTrial)).resolves.toBeUndefined();
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
     it('matches Firekit signature (with optional computed score callback)', () => {
@@ -769,15 +768,15 @@ describe('firekit compat', () => {
         vi.fn().mockImplementation((url: string) => {
           if (url.includes('/runs') && !url.includes('/event')) {
             return Promise.resolve({
-              status: 201,
+              status: StatusCodes.CREATED,
               json: async () => ({ data: { id: 'run-interaction-test' } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
           if (url.includes('/event')) {
             return Promise.resolve({
-              status: 200,
-              json: async () => ({ data: { status: 'ok' } }),
+              status: StatusCodes.OK,
+              json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
@@ -832,15 +831,15 @@ describe('firekit compat', () => {
       const fetchMock = vi.fn().mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-buffer-clear' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
