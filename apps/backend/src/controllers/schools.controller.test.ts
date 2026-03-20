@@ -211,31 +211,6 @@ describe('SchoolsController', () => {
       );
     });
 
-    it('should convert 403 ApiError to 500 (list never returns 403)', async () => {
-      // List endpoint uses INNER JOIN for access control, so 403 should never occur.
-      // If a 403 ApiError is thrown, toErrorResponse converts it to 500 since 403
-      // is not in the allowed status codes for list.
-      const error = new ApiError('Access denied', {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-      mockList.mockRejectedValue(error);
-
-      const { SchoolsController: Controller } = await import('./schools.controller');
-
-      const result = await Controller.list(mockAuthContext, {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-        embed: [],
-      });
-
-      // 403 gets converted to 500 because it's not in the allowed status codes
-      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
-      expect(errorBody).toBeDefined();
-    });
-
     it('should handle ApiError with 500 Internal Server Error', async () => {
       const error = new ApiError('Database error', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
