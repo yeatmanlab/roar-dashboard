@@ -9,3 +9,5 @@ export const RUN_EVENT_ABORT = 'abort' as const;
 export const RUN_EVENT_COMPLETE = 'complete' as const;
 
 export const RUN_EVENT_TRIAL = 'trial' as const;
+
+export const RUN_EVENT_ENGAGEMENT = 'engagement' as const;

@@ -4,7 +4,9 @@ import { UpdateRunEngagementFlagsCommand } from './update-engagement-flags.comma
 import { StatusCodes } from 'http-status-codes';
 import { createMockRoarApi } from '../test-support';
 import type { UpdateRunEngagementFlagsCommandInput } from '../types/update-engagement-flags';
-import { RUN_EVENT_ENGAGEMENT } from '../types/update-engagement-flags';
+import { RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
+import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums';
 
 /**
  * Test suite for UpdateRunEngagementFlagsCommand.
@@ -55,8 +57,8 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
-          incomplete: true,
-          responseTimeTooFast: true,
+          incomplete: 'incomplete',
+          responseTimeTooFast: 'response_time_too_fast',
         },
         reliableRun: true,
       },
@@ -85,7 +87,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
-          accuracyTooLow: true,
+          accuracyTooLow: 'accuracy_too_low',
         },
         reliableRun: false,
       },
@@ -118,10 +120,10 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
-          incomplete: true,
-          responseTimeTooFast: true,
-          accuracyTooLow: true,
-          notEnoughResponses: true,
+          incomplete: 'incomplete',
+          responseTimeTooFast: 'response_time_too_fast',
+          accuracyTooLow: 'accuracy_too_low',
+          notEnoughResponses: 'not_enough_responses',
         },
         reliableRun: false,
       },
@@ -144,7 +146,11 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: { error: { message: 'Invalid engagement flags' } },
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Invalid engagement flags');
+    await expect(command.execute(input)).rejects.toThrow(SDKError);
+    await expect(command.execute(input)).rejects.toMatchObject({
+      message: 'Invalid engagement flags',
+      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+    });
   });
 
   it('throws SDKError with status code message when error details are missing', async () => {
@@ -162,7 +168,11 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {},
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Failed to update run engagement flags with status 500');
+    await expect(command.execute(input)).rejects.toThrow(SDKError);
+    await expect(command.execute(input)).rejects.toMatchObject({
+      message: 'Failed to update run engagement flags with status 500',
+      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+    });
   });
 
   it('throws SDKError with status code message when body is null', async () => {
@@ -180,7 +190,11 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: null,
     });
 
-    await expect(command.execute(input)).rejects.toThrow('Failed to update run engagement flags with status 404');
+    await expect(command.execute(input)).rejects.toThrow(SDKError);
+    await expect(command.execute(input)).rejects.toMatchObject({
+      message: 'Failed to update run engagement flags with status 404',
+      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+    });
   });
 
   it('propagates errors from api.client.runs.event', async () => {
@@ -196,5 +210,25 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     eventMock.mockRejectedValue(new Error('Network error'));
 
     await expect(command.execute(input)).rejects.toThrow('Network error');
+  });
+
+  it('treats 409 Conflict as success', async () => {
+    const input: UpdateRunEngagementFlagsCommandInput = {
+      runId: 'run-123',
+      type: RUN_EVENT_ENGAGEMENT,
+      engagementFlags: {
+        incomplete: true,
+      },
+      reliableRun: true,
+    };
+
+    eventMock.mockResolvedValue({
+      status: StatusCodes.CONFLICT,
+      body: {},
+    });
+
+    const result = await command.execute(input);
+
+    expect(result).toEqual({});
   });
 });
