@@ -1,4 +1,5 @@
 import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import {
   startRun,
   finishRun,
@@ -43,8 +44,8 @@ function createMockContext(): CommandContext {
  * Simulates the ROAR backend API responses for run creation and event posting.
  *
  * **Mocked endpoints:**
- * - POST /runs → Returns 201 with the provided runId
- * - POST /runs/:runId/event → Returns 200 with success status
+ * - POST /runs → Returns 201 CREATED with the provided runId
+ * - POST /runs/:runId/event → Returns 200 OK with success status
  *
  * @param runId - The run ID to return for startRun requests
  * @returns A vitest mock function configured to handle run API calls
@@ -52,18 +53,18 @@ function createMockContext(): CommandContext {
 function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn();
   fetchMock.mockImplementation((url: string) => {
-    // Return 201 for startRun (POST /runs)
+    // Return 201 CREATED for startRun (POST /runs)
     if (url.includes('/runs') && !url.includes('/event')) {
       return Promise.resolve({
-        status: 201,
+        status: StatusCodes.CREATED,
         json: async () => ({ data: { id: runId } }),
         headers: new Headers([['content-type', 'application/json']]),
       });
     }
-    // Return 200 for event endpoints (POST /runs/:runId/event)
+    // Return 200 OK for event endpoints (POST /runs/:runId/event)
     if (url.includes('/event')) {
       return Promise.resolve({
-        status: 200,
+        status: StatusCodes.OK,
         json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
         headers: new Headers([['content-type', 'application/json']]),
       });
@@ -178,6 +179,10 @@ describe('firekit compat', () => {
           body: expect.stringContaining('complete'),
         }),
       );
+
+      // Verify runId is cleared after successful finish to prevent stale state
+      const facade = getFirekitCompat();
+      expect(facade._getRunId()).toBeUndefined();
     });
 
     it('includes metadata when provided', async () => {
