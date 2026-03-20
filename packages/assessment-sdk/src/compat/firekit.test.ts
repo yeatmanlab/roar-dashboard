@@ -588,15 +588,15 @@ describe('firekit compat', () => {
       const fetchMock = vi.fn().mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-with-interactions' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
@@ -664,15 +664,15 @@ describe('firekit compat', () => {
         vi.fn().mockImplementation((url: string) => {
           if (url.includes('/runs') && !url.includes('/event')) {
             return Promise.resolve({
-              status: 201,
+              status: StatusCodes.CREATED,
               json: async () => ({ data: { id: 'run-interaction-test' } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
           if (url.includes('/event')) {
             return Promise.resolve({
-              status: 200,
-              json: async () => ({ data: { status: 'ok' } }),
+              status: StatusCodes.OK,
+              json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
@@ -727,15 +727,15 @@ describe('firekit compat', () => {
       const fetchMock = vi.fn().mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-buffer-clear' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
