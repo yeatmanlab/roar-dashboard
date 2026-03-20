@@ -1,4 +1,5 @@
 import type { Json } from '@roar-dashboard/api-contract';
+import { RUN_EVENT_TRIAL } from './run-event-status';
 
 /**
  * Types for the WriteTrial command and Firekit compatibility layer.
@@ -47,9 +48,6 @@ export interface RawScores {
 export interface ComputedScores {
   [key: string]: unknown;
 }
-
-/** Event type constant for trial events. */
-export const RUN_EVENT_TRIAL = 'trial' as const;
 
 /**
  * Assessment stage for a trial.

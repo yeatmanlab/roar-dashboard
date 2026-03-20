@@ -232,7 +232,7 @@ describe('firekit compat', () => {
         vi.fn().mockImplementation(async () => {
           callCount++;
           return {
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: `run-${callCount}` } }),
             headers: new Headers([['content-type', 'application/json']]),
           };
@@ -387,7 +387,7 @@ describe('firekit compat', () => {
         // Return 201 for startRun (POST /runs)
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-trial-test' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
@@ -395,8 +395,8 @@ describe('firekit compat', () => {
         // Return 200 for writeTrial (POST /runs/:runId/event)
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
@@ -445,15 +445,15 @@ describe('firekit compat', () => {
         vi.fn().mockImplementation((url: string) => {
           if (url.includes('/runs') && !url.includes('/event')) {
             return Promise.resolve({
-              status: 201,
+              status: StatusCodes.CREATED,
               json: async () => ({ data: { id: 'run-trial-callback' } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
           if (url.includes('/event')) {
             return Promise.resolve({
-              status: 200,
-              json: async () => ({ data: { status: 'ok' } }),
+              status: StatusCodes.OK,
+              json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
@@ -494,15 +494,15 @@ describe('firekit compat', () => {
       fetchMock.mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-bool-true' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
@@ -549,15 +549,15 @@ describe('firekit compat', () => {
       fetchMock.mockImplementation((url: string) => {
         if (url.includes('/runs') && !url.includes('/event')) {
           return Promise.resolve({
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-bool-false' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
         if (url.includes('/event')) {
           return Promise.resolve({
-            status: 200,
-            json: async () => ({ data: { status: 'ok' } }),
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }

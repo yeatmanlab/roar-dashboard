@@ -14,7 +14,7 @@ import type {
   ComputedScores,
   WriteTrialOutput,
 } from '../types';
-import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE } from '../types/run-event-status';
+import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
@@ -459,20 +459,46 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * Firekit compatibility method for writing trial data.
  *
  * From @bdelab/roar-firekit:
+ * ```ts
  * async writeTrial(trialData: TrialData, computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>) { […] }
+ * ```
  *
- * Records a trial event for the active run.
+ * Records a trial event for the active run in the ROAR assessment backend.
  *
- * Firekit-compatible wrapper that submits trial data to the assessment backend.
- * The trial data is transformed and sent as a WriteTrial command event.
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ * - `startRun()` must be called to create an active run
+ *
+ * **Behavior:**
+ * - Validates required fields (assessmentStage, correct) to prevent silent failures
+ * - Coerces boolean correct values to numbers (true → 1, false → 0) for Firekit compatibility
+ * - Normalizes assessment stages and interaction events to backend format
+ * - Submits trial data via the WriteTrialCommand
+ * - Supports optional computed score callback (not yet implemented)
+ *
+ * **Required trial data fields:**
+ * - `assessmentStage`: 'practice', 'practice_response', 'test', or 'test_response'
+ * - `correct`: 1 (correct), 0 (incorrect), or boolean (true/false)
+ *
+ * **Optional trial data fields:**
+ * - `response`: User's response
+ * - `rt`: Reaction time in milliseconds
+ * - `payload`: Custom JSON data
+ * - Any other assessment-specific fields
  *
  * @param trialData - Trial data object containing assessment-specific trial information
  * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores (not yet implemented)
  * @returns Promise<void> - Resolves when the trial event has been successfully submitted
- * @throws {SDKError} If no active run exists. Call appkit.startRun() first.
+ *
+ * @throws {SDKError}
+ * - If no active run exists (call appkit.startRun() first)
+ * - If assessmentStage is missing or not a string
+ * - If correct is missing or not a number/boolean
+ * - If the backend request fails
  *
  * @example
  * ```typescript
+ * // Basic trial submission
  * const trialData = {
  *   assessmentStage: 'test',
  *   correct: 1,
@@ -480,6 +506,23 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  *   rt: 1500
  * };
  * await writeTrial(trialData);
+ *
+ * // With boolean correct value (legacy Firekit)
+ * await writeTrial({
+ *   assessmentStage: 'test',
+ *   correct: true,  // Coerced to 1
+ *   response: 'B',
+ *   rt: 1200
+ * });
+ *
+ * // With custom payload
+ * await writeTrial({
+ *   assessmentStage: 'practice',
+ *   correct: 0,
+ *   response: 'C',
+ *   rt: 2000,
+ *   payload: { difficulty: 'hard', hint_used: true }
+ * });
  * ```
  */
 export async function writeTrial(
