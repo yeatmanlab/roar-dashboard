@@ -107,6 +107,30 @@ function initializeFirekit(
   return { mockContext, fetchMock };
 }
 
+/**
+ * Helper to initialize firekit compat and start a run in one call.
+ * Eliminates repetitive setup in tests that need an active run.
+ *
+ * **Usage:**
+ * ```ts
+ * const { fetchMock } = await initializeFirekitAndStartRun('run-123');
+ * await writeTrial(trialData);
+ * expect(fetchMock).toHaveBeenCalled();
+ * ```
+ *
+ * @param runId - The run ID to return for startRun requests
+ * @param options - Optional configuration for the run (isAnonymous, administrationId)
+ * @returns Object containing the mock context and fetch mock for assertions
+ */
+async function initializeFirekitAndStartRun(
+  runId: string,
+  options: { isAnonymous?: boolean; administrationId?: string } = {},
+): Promise<{ mockContext: CommandContext; fetchMock: ReturnType<typeof vi.fn> }> {
+  const { mockContext, fetchMock } = initializeFirekit(runId, options);
+  await startRun();
+  return { mockContext, fetchMock };
+}
+
 describe('firekit compat', () => {
   describe('abortRun', () => {
     beforeEach(() => {
@@ -375,9 +399,7 @@ describe('firekit compat', () => {
     });
 
     it('successfully submits trial data when run is active', async () => {
-      const { fetchMock } = initializeFirekit('run-trial-test');
-
-      await startRun();
+      const { fetchMock } = await initializeFirekitAndStartRun('run-trial-test');
 
       const trialData: TrialData = {
         assessmentStage: 'test',
@@ -399,9 +421,7 @@ describe('firekit compat', () => {
     });
 
     it('accepts optional computed score callback', async () => {
-      initializeFirekit('run-trial-callback');
-
-      await startRun();
+      await initializeFirekitAndStartRun('run-trial-callback');
 
       const trialData: TrialData = {
         assessmentStage: 'test',
@@ -417,9 +437,7 @@ describe('firekit compat', () => {
     });
 
     it('coerces boolean correct: true to 1', async () => {
-      const { fetchMock } = initializeFirekit('run-bool-true');
-
-      await startRun();
+      const { fetchMock } = await initializeFirekitAndStartRun('run-bool-true');
 
       const trialDataWithBooleanCorrect: TrialData = {
         assessmentStage: 'test',
@@ -440,9 +458,7 @@ describe('firekit compat', () => {
     });
 
     it('coerces boolean correct: false to 0', async () => {
-      const { fetchMock } = initializeFirekit('run-bool-false');
-
-      await startRun();
+      const { fetchMock } = await initializeFirekitAndStartRun('run-bool-false');
 
       const trialDataWithBooleanCorrect: TrialData = {
         assessmentStage: 'test',
@@ -463,9 +479,7 @@ describe('firekit compat', () => {
     });
 
     it('allows multiple trials to be written in sequence without clearing runId', async () => {
-      const { fetchMock } = initializeFirekit('run-multi-trial');
-
-      await startRun();
+      const { fetchMock } = await initializeFirekitAndStartRun('run-multi-trial');
 
       const firstTrial: TrialData = {
         assessmentStage: 'test',

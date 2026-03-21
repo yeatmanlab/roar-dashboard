@@ -538,7 +538,9 @@ export async function writeTrial(
   const runId = facade._getRunId();
 
   if (!runId) {
-    throw new SDKError('appkit.writeTrial requires an active run. Call appkit.startRun() first.');
+    throw new SDKError('appkit.writeTrial requires an active run. Call appkit.startRun() first.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
   }
 
   const api = facade.getApi();
