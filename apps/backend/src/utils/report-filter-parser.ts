@@ -63,7 +63,6 @@ export function buildFilterConditions(
     conditions.push(condition);
   }
 
-  if (conditions.length === 0) return undefined;
   if (conditions.length === 1) return conditions[0]!;
 
   return and(...conditions);
