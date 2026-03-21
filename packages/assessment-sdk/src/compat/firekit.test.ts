@@ -360,41 +360,7 @@ describe('firekit compat', () => {
     });
 
     it('successfully submits trial data when run is active', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      const fetchMock = vi.fn();
-      fetchMock.mockImplementation((url: string) => {
-        // Return 201 for startRun (POST /runs)
-        if (url.includes('/runs') && !url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.CREATED,
-            json: async () => ({ data: { id: 'run-trial-test' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        // Return 200 for writeTrial (POST /runs/:runId/event)
-        if (url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.OK,
-            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        return Promise.reject(new Error('Unexpected fetch call'));
-      });
-
-      vi.stubGlobal('fetch', fetchMock);
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      const { fetchMock } = initializeFirekit('run-trial-test');
 
       await startRun();
 
@@ -418,39 +384,7 @@ describe('firekit compat', () => {
     });
 
     it('accepts optional computed score callback', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockImplementation((url: string) => {
-          if (url.includes('/runs') && !url.includes('/event')) {
-            return Promise.resolve({
-              status: StatusCodes.CREATED,
-              json: async () => ({ data: { id: 'run-trial-callback' } }),
-              headers: new Headers([['content-type', 'application/json']]),
-            });
-          }
-          if (url.includes('/event')) {
-            return Promise.resolve({
-              status: StatusCodes.OK,
-              json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
-              headers: new Headers([['content-type', 'application/json']]),
-            });
-          }
-          return Promise.reject(new Error('Unexpected fetch call'));
-        }),
-      );
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      initializeFirekit('run-trial-callback');
 
       await startRun();
 
@@ -468,39 +402,7 @@ describe('firekit compat', () => {
     });
 
     it('coerces boolean correct: true to 1', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      const fetchMock = vi.fn();
-      fetchMock.mockImplementation((url: string) => {
-        if (url.includes('/runs') && !url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.CREATED,
-            json: async () => ({ data: { id: 'run-bool-true' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        if (url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.OK,
-            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        return Promise.reject(new Error('Unexpected fetch call'));
-      });
-
-      vi.stubGlobal('fetch', fetchMock);
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      const { fetchMock } = initializeFirekit('run-bool-true');
 
       await startRun();
 
@@ -523,39 +425,7 @@ describe('firekit compat', () => {
     });
 
     it('coerces boolean correct: false to 0', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      const fetchMock = vi.fn();
-      fetchMock.mockImplementation((url: string) => {
-        if (url.includes('/runs') && !url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.CREATED,
-            json: async () => ({ data: { id: 'run-bool-false' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        if (url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.OK,
-            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        return Promise.reject(new Error('Unexpected fetch call'));
-      });
-
-      vi.stubGlobal('fetch', fetchMock);
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      const { fetchMock } = initializeFirekit('run-bool-false');
 
       await startRun();
 
@@ -578,39 +448,7 @@ describe('firekit compat', () => {
     });
 
     it('allows multiple trials to be written in sequence without clearing runId', async () => {
-      const mockContext: CommandContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-
-      const fetchMock = vi.fn();
-      fetchMock.mockImplementation((url: string) => {
-        if (url.includes('/runs') && !url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.CREATED,
-            json: async () => ({ data: { id: 'run-multi-trial' } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        if (url.includes('/event')) {
-          return Promise.resolve({
-            status: StatusCodes.OK,
-            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
-            headers: new Headers([['content-type', 'application/json']]),
-          });
-        }
-        return Promise.reject(new Error('Unexpected fetch call'));
-      });
-
-      vi.stubGlobal('fetch', fetchMock);
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
+      const { fetchMock } = initializeFirekit('run-multi-trial');
 
       await startRun();
 
