@@ -28,6 +28,10 @@ export interface FilterBuildOptions {
  * Builds a Drizzle SQL condition from parsed filter expressions.
  * All filters are ANDed together.
  *
+ * Field names are validated at the contract level by `createFilterQuerySchema`, so
+ * the `allowedFields` lookup here serves as a safety net and maps field names to
+ * Drizzle column references for SQL generation.
+ *
  * @param filters - Parsed filter expressions from the query string
  * @param allowedFields - Map of field names to Drizzle column references
  * @param options - Optional configuration for field-specific behavior

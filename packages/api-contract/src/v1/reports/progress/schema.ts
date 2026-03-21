@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { PaginationQuerySchema, PaginationMetaSchema, createSortQuerySchema } from '../../common/query';
 import {
   ReportScopeQuerySchema,
-  ReportFilterQuerySchema,
+  createFilterQuerySchema,
   ReportTaskMetadataSchema,
   ReportUserInfoSchema,
 } from '../common';
@@ -48,11 +48,27 @@ export const PROGRESS_STUDENTS_SORT_FIELDS = [
 export type ProgressStudentsSortField = (typeof PROGRESS_STUDENTS_SORT_FIELDS)[number];
 
 /**
+ * Filter fields for the progress students endpoint.
+ *
+ * Note: `user.schoolName` is excluded because it's a derived field resolved via
+ * a separate query, not a direct column. Filtering by it would require a join.
+ */
+export const PROGRESS_STUDENTS_FILTER_FIELDS = [
+  'user.grade',
+  'user.firstName',
+  'user.lastName',
+  'user.username',
+  'user.email',
+] as const;
+
+export type ProgressStudentsFilterField = (typeof PROGRESS_STUDENTS_FILTER_FIELDS)[number];
+
+/**
  * Query schema for the progress students endpoint.
  * Combines pagination, scope, filter, and sort parameters.
  */
 export const ProgressStudentsQuerySchema = PaginationQuerySchema.merge(ReportScopeQuerySchema)
-  .merge(ReportFilterQuerySchema)
+  .merge(createFilterQuerySchema(PROGRESS_STUDENTS_FILTER_FIELDS))
   .merge(createSortQuerySchema(PROGRESS_STUDENTS_SORT_FIELDS, 'user.lastName', 'asc'));
 
 export type ProgressStudentsQuery = z.infer<typeof ProgressStudentsQuerySchema>;

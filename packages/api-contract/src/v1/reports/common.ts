@@ -35,79 +35,99 @@ export type FilterOperator = z.infer<typeof FilterOperatorSchema>;
 
 /**
  * Parsed filter expression from the `?filter=field:operator:value` query parameter.
+ *
+ * @typeParam TField - The allowed filter field names. Defaults to `string` for
+ *   backwards compatibility, but when produced by `createFilterQuerySchema`, the
+ *   field is constrained to the allowed values at parse time.
  */
-export interface ParsedFilter {
-  field: string;
+export interface ParsedFilter<TField extends string = string> {
+  field: TField;
   operator: FilterOperator;
   value: string;
 }
 
 /**
- * Schema for the repeatable `filter` query parameter.
+ * Creates a typed filter query schema that validates field names against an
+ * allowed list at parse time, mirroring how `createSortQuerySchema` validates
+ * sort fields and `createEmbedQuerySchema` validates embed options.
+ *
  * Accepts an array of strings in the format `field:operator:value`.
- * Parses each string into a structured `ParsedFilter` object.
+ * Parses each string into a structured `ParsedFilter<TField>` object.
+ *
+ * @param allowedFields - Tuple of allowed filter field names
+ * @returns Zod schema that parses and validates filter query parameters
  *
  * @example
- * ```
- * ?filter=user.grade:eq:3&filter=user.schoolName:contains:Lincoln
+ * ```typescript
+ * const PROGRESS_FILTER_FIELDS = ['user.grade', 'user.firstName'] as const;
+ * const schema = createFilterQuerySchema(PROGRESS_FILTER_FIELDS);
+ * // Produces ParsedFilter<'user.grade' | 'user.firstName'>[]
  * ```
  */
-export const ReportFilterQuerySchema = z.object({
-  filter: z
-    .union([z.string(), z.array(z.string())])
-    .optional()
-    .transform((val): ParsedFilter[] => {
-      if (!val) return [];
-      const filters = Array.isArray(val) ? val : [val];
-      return filters.map((f) => {
-        const parts = f.split(':');
-        if (parts.length < 3) {
-          throw new z.ZodError([
-            {
-              code: z.ZodIssueCode.custom,
-              message: `Invalid filter format: "${f}". Expected "field:operator:value"`,
-              path: ['filter'],
-            },
-          ]);
-        }
-        // Rejoin parts after the second colon to handle values containing colons
-        const field = parts[0]!;
-        const operator = parts[1]!;
-        const value = parts.slice(2).join(':');
-        if (!field) {
-          throw new z.ZodError([
-            {
-              code: z.ZodIssueCode.custom,
-              message: `Filter field name must not be empty: "${f}"`,
-              path: ['filter'],
-            },
-          ]);
-        }
-        if (value === '') {
-          throw new z.ZodError([
-            {
-              code: z.ZodIssueCode.custom,
-              message: `Filter value must not be empty: "${f}"`,
-              path: ['filter'],
-            },
-          ]);
-        }
-        const parsed = FilterOperatorSchema.safeParse(operator);
-        if (!parsed.success) {
-          throw new z.ZodError([
-            {
-              code: z.ZodIssueCode.custom,
-              message: `Invalid filter operator: "${operator}". Supported: eq, neq, in, gte, lte, contains`,
-              path: ['filter'],
-            },
-          ]);
-        }
-        return { field, operator: parsed.data, value };
-      });
-    }),
-});
-
-export type ReportFilterQuery = z.infer<typeof ReportFilterQuerySchema>;
+export const createFilterQuerySchema = <T extends readonly [string, ...string[]]>(allowedFields: T) =>
+  z.object({
+    filter: z
+      .union([z.string(), z.array(z.string())])
+      .optional()
+      .transform((val): ParsedFilter<T[number]>[] => {
+        if (!val) return [];
+        const filters = Array.isArray(val) ? val : [val];
+        return filters.map((f) => {
+          const parts = f.split(':');
+          if (parts.length < 3) {
+            throw new z.ZodError([
+              {
+                code: z.ZodIssueCode.custom,
+                message: `Invalid filter format: "${f}". Expected "field:operator:value"`,
+                path: ['filter'],
+              },
+            ]);
+          }
+          // Rejoin parts after the second colon to handle values containing colons
+          const field = parts[0]!;
+          const operator = parts[1]!;
+          const value = parts.slice(2).join(':');
+          if (!field) {
+            throw new z.ZodError([
+              {
+                code: z.ZodIssueCode.custom,
+                message: `Filter field name must not be empty: "${f}"`,
+                path: ['filter'],
+              },
+            ]);
+          }
+          if (value === '') {
+            throw new z.ZodError([
+              {
+                code: z.ZodIssueCode.custom,
+                message: `Filter value must not be empty: "${f}"`,
+                path: ['filter'],
+              },
+            ]);
+          }
+          if (!allowedFields.includes(field)) {
+            throw new z.ZodError([
+              {
+                code: z.ZodIssueCode.custom,
+                message: `Unknown filter field: "${field}". Allowed fields: ${allowedFields.join(', ')}`,
+                path: ['filter'],
+              },
+            ]);
+          }
+          const parsed = FilterOperatorSchema.safeParse(operator);
+          if (!parsed.success) {
+            throw new z.ZodError([
+              {
+                code: z.ZodIssueCode.custom,
+                message: `Invalid filter operator: "${operator}". Supported: eq, neq, in, gte, lte, contains`,
+                path: ['filter'],
+              },
+            ]);
+          }
+          return { field: field as T[number], operator: parsed.data, value };
+        });
+      }),
+  });
 
 /**
  * Task metadata included in report responses for column header rendering.
