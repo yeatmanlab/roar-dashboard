@@ -1,5 +1,6 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums/sdk-error-code.enum';
 import type {
   StartRunInput,
   FinishRunInput,
@@ -13,6 +14,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
@@ -577,10 +579,14 @@ export async function writeTrial(
   // Validate required fields to prevent silent failures
   const trialDataRecord = trialData as Record<string, unknown>;
   if (typeof trialDataRecord['assessmentStage'] !== 'string') {
-    throw new SDKError('writeTrial requires assessmentStage in trial data.');
+    throw new SDKError('writeTrial requires assessmentStage in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
   }
   if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
-    throw new SDKError('writeTrial requires correct in trial data.');
+    throw new SDKError('writeTrial requires correct in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
   }
 
   // Coerce boolean correct values (legacy Firekit) to numbers
