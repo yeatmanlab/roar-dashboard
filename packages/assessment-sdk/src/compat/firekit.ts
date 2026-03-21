@@ -179,12 +179,15 @@ export class FirekitFacade {
   }
 
   /**
-   * Retrieves the current interaction buffer.
+   * Atomically retrieves and clears the interaction buffer.
+   * This prevents race conditions when writeTrial() is called concurrently.
    * @internal
    * @returns Array of buffered interaction events
    */
-  _getInteractionBuffer(): AddInteractionInput[] {
-    return [...this.interactionBuffer];
+  _drainInteractionBuffer(): AddInteractionInput[] {
+    const buffer = this.interactionBuffer;
+    this.interactionBuffer = [];
+    return buffer;
   }
 
   /**
@@ -195,15 +198,6 @@ export class FirekitFacade {
    */
   _pushInteraction(interaction: AddInteractionInput): void {
     this.interactionBuffer.push(interaction);
-  }
-
-  /**
-   * Clears the interaction buffer.
-   * Called after interactions are flushed to the backend via writeTrial().
-   * @internal
-   */
-  _clearInteractionBuffer(): void {
-    this.interactionBuffer = [];
   }
 }
 
@@ -602,7 +596,7 @@ export async function writeTrial(
 
   const cmd = new WriteTrialCommand(api);
 
-  const bufferedInteractions = facade._getInteractionBuffer();
+  const bufferedInteractions = facade._drainInteractionBuffer();
   await invoker.run(cmd, {
     runId,
     type: RUN_EVENT_TRIAL,
@@ -614,13 +608,8 @@ export async function writeTrial(
     },
     ...(bufferedInteractions.length > 0
       ? {
-          interactions: bufferedInteractions.map((interaction) => ({
-            ...interaction,
-            // trial field required by WriteTrialInteractionCommandInput but stripped by WriteTrialCommand before sending to backend
-            trial: 1,
-          })),
+          interactions: bufferedInteractions,
         }
       : {}),
   });
-  facade._clearInteractionBuffer();
 }

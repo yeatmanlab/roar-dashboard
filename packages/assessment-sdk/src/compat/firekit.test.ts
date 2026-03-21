@@ -706,20 +706,50 @@ describe('firekit compat', () => {
     });
 
     it('accumulates multiple interactions in buffer', async () => {
+      const fetchMock = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-accumulate' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
       await startRun();
       addInteraction({ event: 'focus', time: 100 });
       addInteraction({ event: 'blur', time: 200 });
       addInteraction({ event: 'fullscreenenter', time: 300 });
       addInteraction({ event: 'fullscreenexit', time: 400 });
 
-      // Verify all 4 interactions are in the buffer
-      const facade = getFirekitCompat();
-      const buffer = facade._getInteractionBuffer();
-      expect(buffer).toHaveLength(4);
-      expect(buffer[0]!.event).toBe('focus');
-      expect(buffer[1]!.event).toBe('blur');
-      expect(buffer[2]!.event).toBe('fullscreenenter');
-      expect(buffer[3]!.event).toBe('fullscreenexit');
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      await writeTrial(trialData);
+
+      // Verify all 4 interactions were sent in the writeTrial call
+      const eventCalls = fetchMock.mock.calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls).toHaveLength(1);
+      const body = JSON.parse(eventCalls[0]![1].body as string);
+      expect(body.interactions).toHaveLength(4);
+      expect(body.interactions[0]!.event).toBe('focus');
+      expect(body.interactions[1]!.event).toBe('blur');
+      expect(body.interactions[2]!.event).toBe('fullscreen_enter');
+      expect(body.interactions[3]!.event).toBe('fullscreen_exit');
     });
 
     it('clears buffer after writeTrial', async () => {
