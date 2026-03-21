@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema, PaginationMetaSchema, SortOrderSchema } from '../../common/query';
+import { PaginationQuerySchema, PaginationMetaSchema, createSortQuerySchema } from '../../common/query';
 import {
   ReportScopeQuerySchema,
   ReportFilterQuerySchema,
@@ -53,10 +53,7 @@ export type ProgressStudentsSortField = (typeof PROGRESS_STUDENTS_SORT_FIELDS)[n
  */
 export const ProgressStudentsQuerySchema = PaginationQuerySchema.merge(ReportScopeQuerySchema)
   .merge(ReportFilterQuerySchema)
-  .extend({
-    sortBy: z.enum(PROGRESS_STUDENTS_SORT_FIELDS).default('user.lastName'),
-    sortOrder: SortOrderSchema.default('asc'),
-  });
+  .merge(createSortQuerySchema(PROGRESS_STUDENTS_SORT_FIELDS, 'user.lastName', 'asc'));
 
 export type ProgressStudentsQuery = z.infer<typeof ProgressStudentsQuerySchema>;
 

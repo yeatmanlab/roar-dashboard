@@ -1,4 +1,4 @@
-import { type SQL, sql, eq, ne, inArray, gte, lte, ilike } from 'drizzle-orm';
+import { type SQL, sql, and, eq, ne, inArray, gte, lte, ilike } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { ParsedFilter } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
@@ -62,11 +62,7 @@ export function buildFilterConditions(
   if (conditions.length === 0) return undefined;
   if (conditions.length === 1) return conditions[0]!;
 
-  // AND all conditions together
-  return sql.join(
-    conditions.map((c) => sql`(${c})`),
-    sql` AND `,
-  );
+  return and(...conditions);
 }
 
 /**
@@ -90,7 +86,10 @@ function buildOperatorCondition(
     case 'neq':
       return ne(column, value);
     case 'in': {
-      const values = value.split(',').map((v) => v.trim());
+      const values = value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0);
       return inArray(column, values);
     }
     case 'gte':
