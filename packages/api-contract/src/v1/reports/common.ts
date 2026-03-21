@@ -69,64 +69,68 @@ export const createFilterQuerySchema = <T extends readonly [string, ...string[]]
     filter: z
       .union([z.string(), z.array(z.string())])
       .optional()
-      .transform((val): ParsedFilter<T[number]>[] => {
-        if (!val) return [];
-        const filters = Array.isArray(val) ? val : [val];
-        return filters.map((f) => {
-          const parts = f.split(':');
-          if (parts.length < 3) {
-            throw new z.ZodError([
-              {
+      .transform((val) => {
+        if (!val) return [] as string[];
+        return Array.isArray(val) ? val : [val];
+      })
+      .pipe(
+        z.array(z.string()).transform((filters, ctx): ParsedFilter<T[number]>[] =>
+          filters.reduce<ParsedFilter<T[number]>[]>((acc, f, i) => {
+            const parts = f.split(':');
+            if (parts.length < 3) {
+              ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: `Invalid filter format: "${f}". Expected "field:operator:value"`,
-                path: ['filter'],
-              },
-            ]);
-          }
-          // Rejoin parts after the second colon to handle values containing colons
-          const field = parts[0]!;
-          const operator = parts[1]!;
-          const value = parts.slice(2).join(':');
-          if (!field) {
-            throw new z.ZodError([
-              {
+                path: [i],
+              });
+              return acc;
+            }
+
+            // Rejoin parts after the second colon to handle values containing colons
+            const field = parts[0]!;
+            const operator = parts[1]!;
+            const value = parts.slice(2).join(':');
+
+            if (!field) {
+              ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: `Filter field name must not be empty: "${f}"`,
-                path: ['filter'],
-              },
-            ]);
-          }
-          if (value === '') {
-            throw new z.ZodError([
-              {
+                path: [i],
+              });
+              return acc;
+            }
+            if (value === '') {
+              ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: `Filter value must not be empty: "${f}"`,
-                path: ['filter'],
-              },
-            ]);
-          }
-          if (!allowedFields.includes(field)) {
-            throw new z.ZodError([
-              {
+                path: [i],
+              });
+              return acc;
+            }
+            if (!allowedFields.includes(field)) {
+              ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `Unknown filter field: "${field}". Allowed fields: ${allowedFields.join(', ')}`,
-                path: ['filter'],
-              },
-            ]);
-          }
-          const parsed = FilterOperatorSchema.safeParse(operator);
-          if (!parsed.success) {
-            throw new z.ZodError([
-              {
+                message: `Unknown filter field: "${field}". Allowed: ${allowedFields.join(', ')}`,
+                path: [i],
+              });
+              return acc;
+            }
+
+            const parsed = FilterOperatorSchema.safeParse(operator);
+            if (!parsed.success) {
+              ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: `Invalid filter operator: "${operator}". Supported: eq, neq, in, gte, lte, contains`,
-                path: ['filter'],
-              },
-            ]);
-          }
-          return { field: field as T[number], operator: parsed.data, value };
-        });
-      }),
+                path: [i],
+              });
+              return acc;
+            }
+
+            acc.push({ field: field as T[number], operator: parsed.data, value });
+            return acc;
+          }, []),
+        ),
+      ),
   });
 
 /**
