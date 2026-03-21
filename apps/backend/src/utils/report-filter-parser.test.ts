@@ -133,7 +133,7 @@ describe('buildFilterConditions', () => {
     it('throws for grade values with no numeric mapping', () => {
       const filters: ParsedFilter[] = [{ field: 'user.grade', operator: 'gte', value: 'Ungraded' }];
       expect(() => buildFilterConditions(filters, TEST_FIELD_MAP, gradeAwareOptions)).toThrow(
-        'Cannot use "gte" on grade with value "Ungraded"',
+        'Invalid value for grade range filter',
       );
     });
 

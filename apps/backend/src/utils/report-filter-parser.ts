@@ -130,14 +130,11 @@ function buildOperatorCondition(
 function buildGradeRangeCondition(column: PgColumn, operator: 'gte' | 'lte', value: string): SQL {
   const matchingGrades = getGradesInRange(operator, value);
   if (matchingGrades === null) {
-    throw new ApiError(
-      `Cannot use "${operator}" on grade with value "${value}" — it has no numeric mapping. Use "eq" or "in" instead.`,
-      {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { operator, value },
-      },
-    );
+    throw new ApiError('Invalid value for grade range filter', {
+      statusCode: StatusCodes.BAD_REQUEST,
+      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      context: { operator, value },
+    });
   }
   if (matchingGrades.length === 0) {
     // No grades match — return a condition that's always false
