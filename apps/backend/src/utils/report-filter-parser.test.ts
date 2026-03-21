@@ -41,6 +41,12 @@ describe('buildFilterConditions', () => {
     expect(toSql(result)).toContain('in ($1, $2)');
   });
 
+  it('returns false condition when all in values are empty', () => {
+    const filters: ParsedFilter[] = [{ field: 'user.grade', operator: 'in', value: ',,,' }];
+    const result = buildFilterConditions(filters, TEST_FIELD_MAP)!;
+    expect(toSql(result)).toContain('false');
+  });
+
   it('produces an ILIKE condition for contains operator', () => {
     const filters: ParsedFilter[] = [{ field: 'user.firstName', operator: 'contains', value: 'Jan' }];
     const result = buildFilterConditions(filters, TEST_FIELD_MAP)!;
@@ -54,6 +60,15 @@ describe('buildFilterConditions', () => {
     expect(sqlStr).toContain('ilike');
     // The parameter should contain escaped wildcards
     const likeParam = params.find((p) => typeof p === 'string' && p.includes('\\%'));
+    expect(likeParam).toBeDefined();
+  });
+
+  it('escapes literal backslashes in contains filter values', () => {
+    const filters: ParsedFilter[] = [{ field: 'user.firstName', operator: 'contains', value: 'foo\\%bar' }];
+    const result = buildFilterConditions(filters, TEST_FIELD_MAP)!;
+    const { params } = dialect.sqlToQuery(result);
+    // The backslash should be escaped to \\\\ and the % to \\%
+    const likeParam = params.find((p) => typeof p === 'string' && p.includes('\\\\'));
     expect(likeParam).toBeDefined();
   });
 

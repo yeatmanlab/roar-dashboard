@@ -90,6 +90,10 @@ function buildOperatorCondition(
         .split(',')
         .map((v) => v.trim())
         .filter((v) => v.length > 0);
+      if (values.length === 0) {
+        // All values were empty after filtering — no rows can match
+        return sql`false`;
+      }
       return inArray(column, values);
     }
     case 'gte':
@@ -101,8 +105,9 @@ function buildOperatorCondition(
       return operator === 'gte' ? gte(column, value) : lte(column, value);
     }
     case 'contains': {
-      // Escape SQL wildcard characters so user input is treated as literal text
-      const escaped = value.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      // Escape SQL pattern characters so user input is treated as literal text.
+      // Backslash must be escaped first to avoid double-escaping the \ from % and _ replacements.
+      const escaped = value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
       return ilike(column, `%${escaped}%`);
     }
     default:
