@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createFilterQuerySchema } from '@roar-dashboard/api-contract';
+import { createFilterQuerySchema } from './common';
 
 const ALLOWED_FIELDS = ['user.grade', 'user.firstName', 'user.lastName'] as const;
 

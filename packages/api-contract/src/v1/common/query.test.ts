@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createDynamicSortQuerySchema } from '@roar-dashboard/api-contract';
+import { createDynamicSortQuerySchema } from './query';
 
 const STATIC_FIELDS = ['user.lastName', 'user.firstName'] as const;
 const UUID_PATTERN = /^progress\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.status$/;
