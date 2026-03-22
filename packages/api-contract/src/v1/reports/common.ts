@@ -63,6 +63,13 @@ export interface FilterQuerySchemaOptions {
    * ```
    */
   dynamicFieldPatterns?: RegExp[];
+  /**
+   * Human-readable description of accepted dynamic fields for error messages.
+   * Without this, the error only lists static fields.
+   *
+   * @example 'progress.<taskId>.status'
+   */
+  dynamicFieldHint?: string;
 }
 
 /**
@@ -144,7 +151,7 @@ export const createFilterQuerySchema = <T extends readonly [string, ...string[]]
             if (!isStaticField && !isDynamicField) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `Unknown filter field: "${field}". Allowed: ${allowedFields.join(', ')}${options?.dynamicFieldPatterns ? ', progress.<taskId>.status' : ''}`,
+                message: `Unknown filter field: "${field}". Allowed: ${allowedFields.join(', ')}${options?.dynamicFieldHint ? `, ${options.dynamicFieldHint}` : ''}`,
                 path: [i],
               });
               return acc;

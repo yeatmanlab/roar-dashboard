@@ -137,6 +137,13 @@ describe('buildFilterConditions', () => {
       );
     });
 
+    it('returns false condition when grade range is empty', () => {
+      // '14' parses as numeric 14, but nothing in GRADE_MAP has value >= 14
+      const filters: ParsedFilter[] = [{ field: 'user.grade', operator: 'gte', value: '14' }];
+      const result = buildFilterConditions(filters, TEST_FIELD_MAP, gradeAwareOptions)!;
+      expect(toSql(result)).toContain('false');
+    });
+
     it('uses >= for gte on non-grade-aware fields', () => {
       const filters: ParsedFilter[] = [{ field: 'user.firstName', operator: 'gte', value: 'M' }];
       const result = buildFilterConditions(filters, TEST_FIELD_MAP, gradeAwareOptions)!;

@@ -61,12 +61,14 @@ export const createSortQuerySchema = <T extends readonly [string, ...string[]]>(
  * @param defaultField - The default sort field (must be a static field)
  * @param defaultOrder - The default sort order (defaults to 'desc')
  * @param dynamicFieldPatterns - Regex patterns for dynamic field names
+ * @param dynamicFieldHint - Human-readable description of accepted dynamic fields for error messages
  */
 export const createDynamicSortQuerySchema = <T extends readonly [string, ...string[]]>(
   sortFields: T,
   defaultField: T[number],
   defaultOrder: SortOrder = 'desc',
   dynamicFieldPatterns: RegExp[] = [],
+  dynamicFieldHint?: string,
 ) =>
   z.object({
     sortBy: z
@@ -78,7 +80,7 @@ export const createDynamicSortQuerySchema = <T extends readonly [string, ...stri
           return dynamicFieldPatterns.some((pattern) => pattern.test(val));
         },
         (val) => ({
-          message: `Unknown sort field: "${val}". Allowed: ${sortFields.join(', ')}, progress.<taskId>.status`,
+          message: `Unknown sort field: "${val}". Allowed: ${sortFields.join(', ')}${dynamicFieldHint ? `, ${dynamicFieldHint}` : ''}`,
         }),
       ),
     sortOrder: SortOrderSchema.default(defaultOrder),

@@ -86,10 +86,17 @@ export const ProgressStudentsQuerySchema = PaginationQuerySchema.merge(ReportSco
   .merge(
     createFilterQuerySchema(PROGRESS_STUDENTS_FILTER_FIELDS, {
       dynamicFieldPatterns: [PROGRESS_TASK_STATUS_PATTERN],
+      dynamicFieldHint: 'progress.<taskId>.status',
     }),
   )
   .merge(
-    createDynamicSortQuerySchema(PROGRESS_STUDENTS_SORT_FIELDS, 'user.lastName', 'asc', [PROGRESS_TASK_STATUS_PATTERN]),
+    createDynamicSortQuerySchema(
+      PROGRESS_STUDENTS_SORT_FIELDS,
+      'user.lastName',
+      'asc',
+      [PROGRESS_TASK_STATUS_PATTERN],
+      'progress.<taskId>.status',
+    ),
   );
 
 export type ProgressStudentsQuery = z.infer<typeof ProgressStudentsQuerySchema>;
