@@ -1,4 +1,4 @@
-name: Deploy Backend to Dev
+name: Deploy Platform to Staging
 
 on:
   push:
@@ -18,18 +18,19 @@ permissions:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––– #
-  # 1. Build Docker image
+  # 1. Build Backend Docker image
   # ––––––––––––––––––––––––––––––––––––– #
-  build:
-    name: Build Docker image
+  build-backend:
+    name: Build Backend Docker image
     runs-on: ubuntu-latest
-    environment: development
+    environment: backend:staging
     timeout-minutes: 10
     outputs:
       image-version: ${{ steps.docker-build.outputs.image-version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Build and push image
         id: docker-build
         uses: ./.github/actions/build-docker-image
@@ -42,21 +43,21 @@ jobs:
           image-name: roar-backend
           image-tag-rules: |
             type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
           dockerfile: apps/backend/Dockerfile
 
   # ––––––––––––––––––––––––––––––––––––– #
   # 2. Migrate databases
   # ––––––––––––––––––––––––––––––––––––– #
-  core-db-migrations:
-    name: Migrate core database
-    needs: [build]
+  migrate-db:
+    name: Migrate databases
+    needs: [build-backend]
     runs-on: ubuntu-latest
-    environment: development
+    environment: db:staging
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Run core database migrations
         uses: ./.github/actions/migrate-database
         with:
@@ -65,15 +66,6 @@ jobs:
           cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
           database: core
 
-  assessment-db-migrations:
-    name: Migrate assessment database
-    needs: [build]
-    runs-on: ubuntu-latest
-    environment: development
-    timeout-minutes: 10
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
       - name: Run assessment database migrations
         uses: ./.github/actions/migrate-database
         with:
@@ -83,17 +75,18 @@ jobs:
           database: assessment
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # 3. Deploy to Cloud Run
+  # 3. Deploy Backend
   # ––––––––––––––––––––––––––––––––––––– #
-  deploy:
-    name: Deploy backend to Cloud Run
-    needs: [build, core-db-migrations, assessment-db-migrations]
+  deploy-backend:
+    name: Deploy backend
+    needs: [build-backend, migrate-db]
     runs-on: ubuntu-latest
-    environment: development
+    environment: backend:staging
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Deploy to Cloud Run
         uses: ./.github/actions/deploy-cloud-run
         with:
@@ -104,4 +97,34 @@ jobs:
           artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
           cloud-run-service: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
           image-name: roar-backend
-          image-tag: ${{ needs.build.outputs.image-version }}
+          image-tag: ${{ needs.build-backend.outputs.image-version }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # 4. Deploy frontend
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy-frontend:
+    name: Deploy frontend
+    needs: [deploy-backend]
+    runs-on: ubuntu-latest
+    environment: frontend:staging
+    timeout-minutes: 15
+    env:
+      DOTENV_PRIVATE_KEY_STAGING: ${{ secrets.DOTENV_PRIVATE_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build app
+        uses: ./.github/actions/build
+        with:
+          environment: staging
+          github-pat: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Deploy app
+        uses: ./.github/actions/deploy
+        id: deployment
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
+          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN }}
