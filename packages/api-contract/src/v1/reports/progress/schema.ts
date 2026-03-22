@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema, PaginationMetaSchema, createSortQuerySchema } from '../../common/query';
+import { PaginationQuerySchema, PaginationMetaSchema, createDynamicSortQuerySchema } from '../../common/query';
 import {
   ReportScopeQuerySchema,
   createFilterQuerySchema,
@@ -29,14 +29,22 @@ export const ProgressStatus = {
 } as const satisfies Record<string, ProgressStatus>;
 
 /**
- * Sort fields for the progress students endpoint.
+ * Regex pattern matching `progress.<uuid>.status` for dynamic sort/filter fields.
+ * The UUID is validated against the administration's actual task IDs in the service layer.
+ */
+export const PROGRESS_TASK_STATUS_PATTERN =
+  /^progress\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.status$/;
+
+/**
+ * Static sort fields for the progress students endpoint.
  *
- * Currently supports user fields only. Dynamic `progress.<taskId>.status` sorting
- * is planned for a future iteration — when added, it will be validated against
- * a UUID regex pattern in the service layer.
+ * Also accepts dynamic `progress.<taskId>.status` fields via pattern matching.
+ * The taskId UUID is validated against the administration's actual tasks in the
+ * service layer — unknown task IDs return 400.
  *
- * Note: `user.schoolName` is excluded because it's a derived field resolved via
- * a separate query, not a direct column. Sorting by it would require a join.
+ * Note: `user.schoolName` sorting is not supported because it's a derived field
+ * resolved via a separate org membership query, not a direct column. Filtering
+ * by school is not needed — use `scopeType=school` instead.
  */
 export const PROGRESS_STUDENTS_SORT_FIELDS = [
   'user.lastName',
@@ -48,10 +56,14 @@ export const PROGRESS_STUDENTS_SORT_FIELDS = [
 export type ProgressStudentsSortField = (typeof PROGRESS_STUDENTS_SORT_FIELDS)[number];
 
 /**
- * Filter fields for the progress students endpoint.
+ * Static filter fields for the progress students endpoint.
  *
- * Note: `user.schoolName` is excluded because it's a derived field resolved via
- * a separate query, not a direct column. Filtering by it would require a join.
+ * Also accepts dynamic `progress.<taskId>.status` fields via pattern matching.
+ * The taskId UUID is validated against the administration's actual tasks in the
+ * service layer — unknown task IDs return 400.
+ *
+ * Note: `user.schoolName` filtering is not needed — use `scopeType=school` instead,
+ * which scopes the entire student population to a specific school.
  */
 export const PROGRESS_STUDENTS_FILTER_FIELDS = [
   'user.grade',
@@ -66,10 +78,19 @@ export type ProgressStudentsFilterField = (typeof PROGRESS_STUDENTS_FILTER_FIELD
 /**
  * Query schema for the progress students endpoint.
  * Combines pagination, scope, filter, and sort parameters.
+ *
+ * Both sort and filter accept dynamic `progress.<taskId>.status` fields
+ * in addition to the static user fields.
  */
 export const ProgressStudentsQuerySchema = PaginationQuerySchema.merge(ReportScopeQuerySchema)
-  .merge(createFilterQuerySchema(PROGRESS_STUDENTS_FILTER_FIELDS))
-  .merge(createSortQuerySchema(PROGRESS_STUDENTS_SORT_FIELDS, 'user.lastName', 'asc'));
+  .merge(
+    createFilterQuerySchema(PROGRESS_STUDENTS_FILTER_FIELDS, {
+      dynamicFieldPatterns: [PROGRESS_TASK_STATUS_PATTERN],
+    }),
+  )
+  .merge(
+    createDynamicSortQuerySchema(PROGRESS_STUDENTS_SORT_FIELDS, 'user.lastName', 'asc', [PROGRESS_TASK_STATUS_PATTERN]),
+  );
 
 export type ProgressStudentsQuery = z.infer<typeof ProgressStudentsQuerySchema>;
 

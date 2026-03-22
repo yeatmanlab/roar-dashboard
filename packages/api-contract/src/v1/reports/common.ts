@@ -47,6 +47,25 @@ export interface ParsedFilter<TField extends string = string> {
 }
 
 /**
+ * Options for createFilterQuerySchema.
+ */
+export interface FilterQuerySchemaOptions {
+  /**
+   * Regex patterns for dynamic field names that can't be enumerated statically.
+   * Fields matching any pattern bypass the static allowlist and pass through
+   * with type `string`. The service layer is responsible for extracting IDs
+   * and validating them against actual data.
+   *
+   * @example
+   * ```typescript
+   * // Accept progress.<uuid>.status as a dynamic filter field
+   * dynamicFieldPatterns: [/^progress\.[0-9a-f-]{36}\.status$/]
+   * ```
+   */
+  dynamicFieldPatterns?: RegExp[];
+}
+
+/**
  * Creates a typed filter query schema that validates field names against an
  * allowed list at parse time, mirroring how `createSortQuerySchema` validates
  * sort fields and `createEmbedQuerySchema` validates embed options.
@@ -54,17 +73,26 @@ export interface ParsedFilter<TField extends string = string> {
  * Accepts an array of strings in the format `field:operator:value`.
  * Parses each string into a structured `ParsedFilter<TField>` object.
  *
- * @param allowedFields - Tuple of allowed filter field names
+ * Static fields are validated against `allowedFields` and typed as `T[number]`.
+ * Dynamic fields matching `options.dynamicFieldPatterns` pass through as `string`
+ * — the service layer validates them against actual data (e.g., administration tasks).
+ *
+ * @param allowedFields - Tuple of allowed static filter field names
+ * @param options - Optional configuration for dynamic field patterns
  * @returns Zod schema that parses and validates filter query parameters
  *
  * @example
  * ```typescript
- * const PROGRESS_FILTER_FIELDS = ['user.grade', 'user.firstName'] as const;
- * const schema = createFilterQuerySchema(PROGRESS_FILTER_FIELDS);
- * // Produces ParsedFilter<'user.grade' | 'user.firstName'>[]
+ * const FIELDS = ['user.grade', 'user.firstName'] as const;
+ * const schema = createFilterQuerySchema(FIELDS, {
+ *   dynamicFieldPatterns: [/^progress\.[0-9a-f-]{36}\.status$/],
+ * });
  * ```
  */
-export const createFilterQuerySchema = <T extends readonly [string, ...string[]]>(allowedFields: T) =>
+export const createFilterQuerySchema = <T extends readonly [string, ...string[]]>(
+  allowedFields: T,
+  options?: FilterQuerySchemaOptions,
+) =>
   z.object({
     filter: z
       .union([z.string(), z.array(z.string())])
@@ -74,8 +102,8 @@ export const createFilterQuerySchema = <T extends readonly [string, ...string[]]
         return Array.isArray(val) ? val : [val];
       })
       .pipe(
-        z.array(z.string()).transform((filters, ctx): ParsedFilter<T[number]>[] =>
-          filters.reduce<ParsedFilter<T[number]>[]>((acc, f, i) => {
+        z.array(z.string()).transform((filters, ctx): ParsedFilter<T[number] | string>[] =>
+          filters.reduce<ParsedFilter<T[number] | string>[]>((acc, f, i) => {
             const parts = f.split(':');
             if (parts.length < 3) {
               ctx.addIssue({
@@ -107,10 +135,16 @@ export const createFilterQuerySchema = <T extends readonly [string, ...string[]]
               });
               return acc;
             }
-            if (!allowedFields.includes(field)) {
+
+            // Check static allowlist first, then dynamic patterns
+            const isStaticField = allowedFields.includes(field);
+            const isDynamicField =
+              !isStaticField && options?.dynamicFieldPatterns?.some((pattern) => pattern.test(field));
+
+            if (!isStaticField && !isDynamicField) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `Unknown filter field: "${field}". Allowed: ${allowedFields.join(', ')}`,
+                message: `Unknown filter field: "${field}". Allowed: ${allowedFields.join(', ')}${options?.dynamicFieldPatterns ? ', progress.<taskId>.status' : ''}`,
                 path: [i],
               });
               return acc;
@@ -126,7 +160,7 @@ export const createFilterQuerySchema = <T extends readonly [string, ...string[]]
               return acc;
             }
 
-            acc.push({ field: field as T[number], operator: parsed.data, value });
+            acc.push({ field: isStaticField ? (field as T[number]) : field, operator: parsed.data, value });
             return acc;
           }, []),
         ),

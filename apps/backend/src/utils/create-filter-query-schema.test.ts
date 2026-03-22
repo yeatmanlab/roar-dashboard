@@ -80,4 +80,60 @@ describe('createFilterQuerySchema', () => {
       expect(result[0]!.operator).toBe(op);
     });
   });
+
+  describe('dynamic field patterns', () => {
+    const UUID_PATTERN = /^progress\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.status$/;
+
+    function parseDynamic(input: string | string[] | undefined) {
+      const schema = createFilterQuerySchema(ALLOWED_FIELDS, {
+        dynamicFieldPatterns: [UUID_PATTERN],
+      });
+      return schema.shape.filter.parse(input);
+    }
+
+    function parseDynamicSafe(input: string | string[] | undefined) {
+      const schema = createFilterQuerySchema(ALLOWED_FIELDS, {
+        dynamicFieldPatterns: [UUID_PATTERN],
+      });
+      return schema.shape.filter.safeParse(input);
+    }
+
+    it('accepts a valid progress.<uuid>.status filter', () => {
+      const result = parseDynamic('progress.ae557e88-582d-55fe-b41d-ba826adce70e.status:eq:completed');
+      expect(result).toHaveLength(1);
+      expect(result[0]!.field).toBe('progress.ae557e88-582d-55fe-b41d-ba826adce70e.status');
+      expect(result[0]!.operator).toBe('eq');
+      expect(result[0]!.value).toBe('completed');
+    });
+
+    it('accepts progress.<uuid>.status with in operator', () => {
+      const result = parseDynamic('progress.ae557e88-582d-55fe-b41d-ba826adce70e.status:in:completed,started');
+      expect(result[0]!.value).toBe('completed,started');
+    });
+
+    it('rejects invalid UUID format in dynamic field', () => {
+      const result = parseDynamicSafe('progress.not-a-uuid.status:eq:completed');
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects dynamic field with missing .status suffix', () => {
+      const result = parseDynamicSafe('progress.ae557e88-582d-55fe-b41d-ba826adce70e:eq:completed');
+      expect(result.success).toBe(false);
+    });
+
+    it('still accepts static fields alongside dynamic ones', () => {
+      const result = parseDynamic([
+        'user.grade:eq:3',
+        'progress.ae557e88-582d-55fe-b41d-ba826adce70e.status:eq:completed',
+      ]);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.field).toBe('user.grade');
+      expect(result[1]!.field).toBe('progress.ae557e88-582d-55fe-b41d-ba826adce70e.status');
+    });
+
+    it('still rejects unknown fields that match neither static nor dynamic', () => {
+      const result = parseDynamicSafe('totally.bogus:eq:value');
+      expect(result.success).toBe(false);
+    });
+  });
 });
