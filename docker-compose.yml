@@ -1,0 +1,48 @@
+name: roar-platform
+
+services:
+  # –––––––––––––––––––––––––––––––––––––––––––––––– #
+  # OpenFGA
+  # Authorization service for relationship-based access control.
+  #
+  # API:        https://localhost:5050
+  # Playground: http://localhost:5051/playground (HTTP only, dev UI)
+  #
+  # After first run, initialise the store and model:
+  #   npm run fga:init -w apps/backend
+  # –––––––––––––––––––––––––––––––––––––––––––––––– #
+  openfga:
+    container_name: openfga
+    image: openfga/openfga:v1.12.1
+    command: run
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
+    ports:
+      - '5050:8080' # HTTPS API
+      - '5051:3000' # Playground UI
+    volumes:
+      - ./certs:/certs:ro
+    environment:
+      - OPENFGA_DATASTORE_ENGINE=postgres
+      - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@host.docker.internal:5432/roar_openfga
+      - OPENFGA_PLAYGROUND_ENABLED=true
+      - OPENFGA_HTTP_TLS_ENABLED=true
+      - OPENFGA_HTTP_TLS_CERT=/certs/roar-local.crt
+      - OPENFGA_HTTP_TLS_KEY=/certs/roar-local.key
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+
+  # Runs OpenFGA's database migrations against the local openfga Postgres database.
+  # Exits on completion — openfga service waits for this before starting.
+  openfga-migrate:
+    container_name: openfga-migrate
+    image: openfga/openfga:v1.12.1
+    command: migrate
+    environment:
+      - OPENFGA_DATASTORE_ENGINE=postgres
+      - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@host.docker.internal:5432/roar_openfga
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: on-failure
