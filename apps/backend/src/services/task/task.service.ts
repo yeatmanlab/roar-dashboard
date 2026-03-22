@@ -1,10 +1,10 @@
-import type { NewTaskVariant, NewTaskVariantParameter, User, Task } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter, User, Task, TaskVariant } from '../../db/schema';
 import type { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../logger';
-import { TaskVariantRepository } from '../../repositories/task-variant.repository';
+import { TaskVariantRepository, type ListTaskVariantsOptions } from '../../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
 import { TaskRepository, type ListTasksOptions } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
@@ -27,10 +27,11 @@ export interface CreateTaskVariantParameterData {
  * Data required to create a new task variant.
  *
  * NOTE: taskId is passed separately as a path parameter.
+ * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
  */
 export interface CreateTaskVariantData {
-  name: string;
-  description: string;
+  name?: string | undefined;
+  description?: string | undefined;
   status: TaskVariantStatus;
   parameters: CreateTaskVariantParameterData[];
 }
@@ -40,11 +41,11 @@ export interface CreateTaskVariantData {
  * All fields are optional - only provided fields will be updated.
  *
  * NOTE: taskId and variantId are passed separately as path parameters.
- * NOTE: We union optional fields with 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
+ * NOTE: We union optional fields with 'null' and 'undefined' to satisfy 'exactOptionalPropertyTypes' type checking.
  */
 export interface UpdateTaskVariantData {
-  name?: string | undefined;
-  description?: string | undefined;
+  name?: string | null | undefined;
+  description?: string | null | undefined;
   status?: TaskVariantStatus | undefined;
   parameters?: CreateTaskVariantParameterData[] | undefined;
 }
@@ -230,6 +231,86 @@ export function TaskService({
   taskVariantRepository?: TaskVariantRepository;
   taskVariantParameterRepository?: TaskVariantParameterRepository;
 } = {}) {
+  /**
+   * List task variants for a given task.
+   *
+   * Authorization:
+   * - Super admins can filter by any status or see all variants (no status filter)
+   * - Regular users can only see published variants (status defaults to 'published')
+   *
+   * @param authContext - User's authentication context
+   * @param taskId - The UUID of the parent task
+   * @param options - Pagination, sorting, search, and status filter options
+   * @returns Paginated result with task variants and task info
+   * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function listTaskVariants(
+    authContext: AuthContext,
+    taskId: string,
+    options: ListTaskVariantsOptions,
+  ): Promise<
+    PaginatedResult<TaskVariant & { parameters: Array<{ name: string; value: unknown }> }> & {
+      task: Pick<Task, 'name' | 'slug' | 'image'>;
+    }
+  > {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Verify the parent task exists (404 before any data access)
+      const task = await taskRepository.getById({ id: taskId });
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+
+      // Super admins can use any status filter (or none to see all)
+      // Non-super admins are restricted to 'published' only
+      const status = isSuperAdmin ? options.status : 'published';
+      const filter = status ? { taskId, status } : { taskId };
+      const variants = await taskVariantRepository.listByTaskId(filter, options);
+
+      // Fetch all parameters for all variants in a single query
+      const variantIds = variants.items.map((v) => v.id);
+      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(variantIds);
+
+      // Group parameters by variant ID
+      const paramsByVariantId = new Map<string, Array<{ name: string; value: unknown }>>();
+      for (const param of allParams) {
+        const existing = paramsByVariantId.get(param.taskVariantId) ?? [];
+        existing.push({ name: param.name, value: param.value });
+        paramsByVariantId.set(param.taskVariantId, existing);
+      }
+
+      // Attach parameters to each variant
+      const variantsWithParams = variants.items.map((variant) => ({
+        ...variant,
+        parameters: paramsByVariantId.get(variant.id) ?? [],
+      }));
+
+      return {
+        items: variantsWithParams,
+        totalItems: variants.totalItems,
+        task: { name: task.name, slug: task.slug, image: task.image },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to list task variants');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
   /**
    * Creates a new task variant with its required parameters.
    *
@@ -697,6 +778,7 @@ export function TaskService({
   return {
     list,
     getById,
+    listTaskVariants,
     createTaskVariant,
     updateTaskVariant,
     evaluateTaskVariantEligibility,

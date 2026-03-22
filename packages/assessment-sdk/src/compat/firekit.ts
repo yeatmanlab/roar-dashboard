@@ -3,8 +3,6 @@ import { SDKError } from '../errors/sdk-error';
 import type {
   StartRunInput,
   FinishRunInput,
-  FinishRunOutput,
-  AbortRunOutput,
   UpdateEngagementFlagsInput,
   UpdateEngagementFlagsOutput,
   AddInteractionInput,
@@ -16,10 +14,13 @@ import type {
   ComputedScores,
   WriteTrialOutput,
 } from '../types';
+import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
+import { AbortRunCommand } from '../commands/abort-run.command';
+import { FinishRunCommand } from '../commands/finish-run.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -161,7 +162,7 @@ export class FirekitFacade {
    * Internal setter for the runId.
    * @internal
    */
-  _setRunId(runId: string): void {
+  _setRunId(runId: string | undefined): void {
     this.runId = runId;
   }
 
@@ -301,31 +302,95 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
 }
 
 /**
- * Firekit compatibility stub for finishing a run.
+ * Firekit compatibility method for finishing an assessment run.
  *
- * From @bdelab/roar-firekit:
- * async finishRun(finishingMetaData: { [key: string]: unknown } = {}) { […] }
+ * This function marks a run as complete in the ROAR backend system, serving as a drop-in
+ * replacement for the legacy Firekit `appkit.finishRun()` method.
  *
- * @param finishingMetaData - Optional finishing metadata for the run.
- * @returns Promise<void>
- * @throws {SDKError} Always, until implemented.
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ * - `startRun()` must be called to create an active run
+ *
+ * **Behavior:**
+ * - Marks the run with a completion event in the backend
+ * - Includes any provided metadata in the request
+ * - Clears the internal runId after successful completion to prevent stale state
+ *
+ * @param finishingMetadata - Optional custom metadata to include with the completion event.
+ *                            Can contain any key-value pairs for run customization.
+ *
+ * @returns Promise<void> - Resolves when the run is successfully marked as complete
+ *
+ * @throws {SDKError}
+ * - If the facade has not been initialized via `initFirekitCompat()`
+ * - If no active run exists (i.e., `startRun()` has not been called)
+ * - If the backend request fails
+ *
+ * @example
+ * ```ts
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
+ * await startRun();
+ * // ... assessment logic ...
+ * await finishRun({ totalScore: 85, timeSpent: 300 });
+ * ```
  */
-export async function finishRun(finishingMetaData: FinishRunInput = {}): Promise<FinishRunOutput> {
-  void finishingMetaData;
-  throw new SDKError('appkit.finishRun not yet implemented');
+export async function finishRun(finishingMetadata?: Record<string, unknown>): Promise<void> {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.finishRun requires an active run. Call appkit.startRun() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const input: FinishRunInput = {
+    runId,
+    type: RUN_EVENT_COMPLETE,
+    ...(finishingMetadata ? { metadata: finishingMetadata as Json } : {}),
+  };
+
+  const cmd = new FinishRunCommand(api);
+  await invoker.run(cmd, input);
+  facade._setRunId(undefined);
 }
 
 /**
  * Firekit compatibility stub for aborting a run.
  *
  * From @bdelab/roar-firekit:
+ * ```ts
  * abortRun() { […] }
+ * ```
+ *
+ * Preserves the legacy Firekit synchronous signature while issuing a best-effort
+ * asynchronous abort request to the backend when a run is active.
  *
  * @returns void
- * @throws {SDKError} Always, until implemented.
  */
-export function abortRun(): AbortRunOutput {
-  throw new SDKError('firekit.abortRun not yet implemented');
+export function abortRun(): void {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  // No active run: preserve Firekit-like no-op behavior
+  if (!runId) return;
+
+  void (async () => {
+    const api = facade.getApi();
+    const invoker = facade.getInvoker();
+
+    const cmd = new AbortRunCommand(api);
+    await invoker.run(cmd, { runId, type: RUN_EVENT_ABORT });
+    facade._setRunId(undefined);
+  })().catch((err) => {
+    facade.getContext().logger?.warn?.('[firekit.abortRun] Failed to abort run on backend:', err);
+  });
 }
 
 /**
