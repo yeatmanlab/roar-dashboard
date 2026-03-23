@@ -1,4 +1,5 @@
 import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import {
   startRun,
   finishRun,
@@ -8,6 +9,7 @@ import {
   updateUser,
   writeTrial,
   initFirekitCompat,
+  getFirekitCompat,
   _resetFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
@@ -20,11 +22,127 @@ import type {
   ComputedScores,
 } from '../types';
 import type { CommandContext } from '../command/command';
+import { RUN_EVENT_STATUS_OK } from '../types';
+
+/**
+ * Helper to create a mock CommandContext for testing.
+ * Provides a standard test context with a mocked auth token provider.
+ *
+ * @returns A CommandContext configured for testing with localhost baseUrl
+ */
+function createMockContext(): CommandContext {
+  return {
+    baseUrl: 'http://localhost:3000',
+    auth: {
+      getToken: vi.fn().mockResolvedValue('test-token'),
+    },
+  };
+}
+
+/**
+ * Helper to set up a fetch mock that handles startRun and event endpoints.
+ * Simulates the ROAR backend API responses for run creation and event posting.
+ *
+ * **Mocked endpoints:**
+ * - POST /runs → Returns 201 CREATED with the provided runId
+ * - POST /runs/:runId/event → Returns 200 OK with success status
+ *
+ * @param runId - The run ID to return for startRun requests
+ * @returns A vitest mock function configured to handle run API calls
+ */
+function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
+  const fetchMock = vi.fn();
+  fetchMock.mockImplementation((url: string) => {
+    // Return 201 CREATED for startRun (POST /runs)
+    if (url.includes('/runs') && !url.includes('/event')) {
+      return Promise.resolve({
+        status: StatusCodes.CREATED,
+        json: async () => ({ data: { id: runId } }),
+        headers: new Headers([['content-type', 'application/json']]),
+      });
+    }
+    // Return 200 OK for event endpoints (POST /runs/:runId/event)
+    if (url.includes('/event')) {
+      return Promise.resolve({
+        status: StatusCodes.OK,
+        json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+        headers: new Headers([['content-type', 'application/json']]),
+      });
+    }
+    return Promise.reject(new Error('Unexpected fetch call'));
+  });
+  return fetchMock;
+}
+
+/**
+ * Helper to initialize firekit compat with a mock context and fetch mock.
+ * Reduces boilerplate in tests by combining context creation, fetch setup, and initialization.
+ *
+ * **Usage:**
+ * ```ts
+ * const { fetchMock } = initializeFirekit('run-123');
+ * await startRun();
+ * expect(fetchMock).toHaveBeenCalled();
+ * ```
+ *
+ * @param runId - The run ID to return for startRun requests
+ * @param options - Optional configuration for the run (isAnonymous, administrationId)
+ * @returns Object containing the mock context and fetch mock for assertions
+ */
+function initializeFirekit(
+  runId: string,
+  options: { isAnonymous?: boolean; administrationId?: string } = {},
+): { mockContext: CommandContext; fetchMock: ReturnType<typeof vi.fn> } {
+  const mockContext = createMockContext();
+  const fetchMock = setupFetchMock(runId);
+  vi.stubGlobal('fetch', fetchMock);
+
+  initFirekitCompat(mockContext, {
+    variantId: 'variant-123',
+    taskVersion: '1.0.0',
+    isAnonymous: options.isAnonymous ?? true,
+    ...(options.administrationId && { administrationId: options.administrationId }),
+  });
+
+  return { mockContext, fetchMock };
+}
 
 describe('firekit compat', () => {
   describe('abortRun', () => {
-    it('throws SDKError when called (stub not yet implemented)', () => {
-      expect(() => abortRun()).toThrow(SDKError);
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('is a no-op when no active run (preserves Firekit behavior)', () => {
+      expect(() => abortRun()).not.toThrow();
+    });
+
+    it('issues best-effort async abort request when run is active', async () => {
+      const { fetchMock } = initializeFirekit('run-abort-test');
+
+      await startRun();
+
+      expect(() => abortRun()).not.toThrow();
+
+      // Wait a tick for the async abort to complete
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // Verify fetch was called with the abort event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-abort-test/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('abort'),
+        }),
+      );
+
+      // Verify runId is cleared after successful abort
+      const facade = getFirekitCompat();
+      expect(facade._getRunId()).toBeUndefined();
     });
 
     it('matches Firekit signature', () => {
@@ -34,9 +152,53 @@ describe('firekit compat', () => {
   });
 
   describe('finishRun', () => {
-    it('throws SDKError when called (stub not yet implemented)', async () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when called without an active run', async () => {
       await expect(finishRun()).rejects.toBeInstanceOf(SDKError);
       await expect(finishRun({ foo: 'bar' })).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('successfully finishes an active run', async () => {
+      const { fetchMock } = initializeFirekit('run-finish-test');
+
+      await startRun();
+      await expect(finishRun()).resolves.toBeUndefined();
+
+      // Verify fetch was called with the finish event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-finish-test/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('complete'),
+        }),
+      );
+
+      // Verify runId is cleared after successful finish to prevent stale state
+      const facade = getFirekitCompat();
+      expect(facade._getRunId()).toBeUndefined();
+    });
+
+    it('includes metadata when provided', async () => {
+      const { fetchMock } = initializeFirekit('run-finish-metadata');
+
+      await startRun();
+      await expect(finishRun({ customField: 'value', count: 42 })).resolves.toBeUndefined();
+
+      // Verify metadata was included in the request
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-finish-metadata/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('customField'),
+        }),
+      );
     });
 
     it('matches Firekit signature', () => {
@@ -46,23 +208,13 @@ describe('firekit compat', () => {
   });
 
   describe('startRun', () => {
-    let mockContext: CommandContext;
-
-    beforeEach(() => {
-      mockContext = {
-        baseUrl: 'http://localhost:3000',
-        auth: {
-          getToken: vi.fn().mockResolvedValue('test-token'),
-        },
-      };
-    });
-
     afterEach(() => {
       vi.clearAllMocks();
       _resetFirekitCompat();
     });
 
     it('throws SDKError when administrationId is required but missing (isAnonymous=false)', async () => {
+      const mockContext = createMockContext();
       initFirekitCompat(mockContext, {
         variantId: 'variant-123',
         taskVersion: '1.0.0',
@@ -74,6 +226,7 @@ describe('firekit compat', () => {
 
     it('resets facade instance state on re-initialization (prevents state leakage)', async () => {
       let callCount = 0;
+      const mockContext = createMockContext();
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation(async () => {
@@ -113,60 +266,17 @@ describe('firekit compat', () => {
     });
 
     it('successfully starts an anonymous run (isAnonymous=true)', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          status: 201,
-          json: async () => ({ data: { id: 'run-anon-123' } }),
-          headers: new Headers([['content-type', 'application/json']]),
-        }),
-      );
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
+      initializeFirekit('run-anon-123');
       await expect(startRun()).resolves.toBeUndefined();
     });
 
     it('successfully starts a non-anonymous run with administrationId (isAnonymous=false)', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          status: 201,
-          json: async () => ({ data: { id: 'run-non-anon-789' } }),
-          headers: new Headers([['content-type', 'application/json']]),
-        }),
-      );
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        administrationId: 'admin-456',
-        isAnonymous: false,
-      });
-
+      initializeFirekit('run-non-anon-789', { isAnonymous: false, administrationId: 'admin-456' });
       await expect(startRun()).resolves.toBeUndefined();
     });
 
     it('includes additional metadata when provided (custom key-value pairs)', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({
-          status: 201,
-          json: async () => ({ data: { id: 'run-with-metadata' } }),
-          headers: new Headers([['content-type', 'application/json']]),
-        }),
-      );
-
-      initFirekitCompat(mockContext, {
-        variantId: 'variant-123',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
+      initializeFirekit('run-with-metadata');
       const additionalMetadata = { customField: 'value', count: 42 };
       await expect(startRun(additionalMetadata)).resolves.toBeUndefined();
     });

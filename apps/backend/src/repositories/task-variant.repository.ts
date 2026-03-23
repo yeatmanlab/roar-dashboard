@@ -1,9 +1,46 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq, and, sql } from 'drizzle-orm';
+import type { Column, SQL } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, desc, count, sql } from 'drizzle-orm';
 import { taskVariants, type TaskVariant } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
-import { BaseRepository } from './base.repository';
+import { BaseRepository, type PaginatedResult } from './base.repository';
 import type * as CoreDbSchema from '../db/schema/core';
+import type { TaskVariantSortFieldType, TaskVariantStatus } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
+
+/**
+ * Explicit mapping from API sort field names to task variant table columns.
+ * This ensures only valid columns are used for sorting, even if API validation is bypassed.
+ */
+const TASK_VARIANT_SORT_COLUMNS: Record<TaskVariantSortFieldType, Column> = {
+  createdAt: taskVariants.createdAt,
+  updatedAt: taskVariants.updatedAt,
+  name: taskVariants.name,
+  status: taskVariants.status,
+};
+
+/**
+ * Options for listing task variants.
+ */
+export interface ListTaskVariantsOptions {
+  page: number;
+  perPage: number;
+  orderBy?: {
+    field: TaskVariantSortFieldType;
+    direction: SortOrder;
+  };
+  search?: string;
+  status?: TaskVariantStatus;
+}
+
+/**
+ * Filter for listing task variants.
+ */
+export interface ListTaskVariantsFilter {
+  taskId: string;
+  /** Optional status to filter by. If not provided, returns all variants. */
+  status?: TaskVariantStatus;
+}
 
 /**
  * Repository for task variant-related database operations.
@@ -89,5 +126,73 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
     if (!variant) return null;
 
     return { taskId: variant.taskId };
+  }
+
+  /**
+   * List task variants for a given task with optional filtering and sorting.
+   *
+   * @param filter - Filter containing taskId and optional status filter
+   * @param options - Pagination, sorting, and search options
+   * @returns Paginated result with task variants
+   */
+  async listByTaskId(
+    filter: ListTaskVariantsFilter,
+    options: ListTaskVariantsOptions,
+  ): Promise<PaginatedResult<TaskVariant>> {
+    const { taskId, status } = filter;
+    const { page, perPage, orderBy, search } = options;
+    const offset = (page - 1) * perPage;
+
+    // Build where conditions
+    const conditions: SQL[] = [];
+
+    // Always filter by taskId
+    conditions.push(eq(taskVariants.taskId, taskId));
+
+    // Status filter (if provided)
+    if (status) {
+      conditions.push(eq(taskVariants.status, status));
+    }
+
+    // Search filter (name or description)
+    if (search) {
+      const escapeLikePattern = (value: string): string =>
+        value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+      const escapedSearch = escapeLikePattern(search);
+      const searchPattern = `%${escapedSearch}%`;
+      conditions.push(
+        or(ilike(taskVariants.name, searchPattern), ilike(taskVariants.description, searchPattern)) as SQL,
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Count query
+    const countResult = await this.db.select({ count: count() }).from(taskVariants).where(whereClause);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Use explicit column mapping for type safety
+    const sortField = orderBy?.field as TaskVariantSortFieldType | undefined;
+    const sortColumn = (sortField && TASK_VARIANT_SORT_COLUMNS[sortField]) ?? taskVariants.name;
+    const sortDirection = (orderBy?.direction ?? SortOrder.ASC) === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
+
+    // Data query
+    const dataResult = await this.db
+      .select()
+      .from(taskVariants)
+      .where(whereClause)
+      .orderBy(sortDirection, asc(taskVariants.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult,
+      totalItems,
+    };
   }
 }
