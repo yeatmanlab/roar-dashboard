@@ -86,57 +86,60 @@ type school
     define supervisory_tier_group: admin_tier or educator_tier
     define member: supervisory_tier_group or student or caregiver_tier
 
-    # Permissions — "supervisory_tier_group from parent_org" grants district-level supervisory
-    # roles access to descendant schools
-    define can_list: member or supervisory_tier_group from parent_org
-    define can_read: member or supervisory_tier_group from parent_org
-    define can_create: admin_tier or supervisory_tier_group from parent_org
-    define can_update: admin_tier or supervisory_tier_group from parent_org
-    define can_delete: admin_tier or admin_tier from parent_org
-    define can_list_users: supervisory_tier_group or caregiver_tier or supervisory_tier_group from parent_org
-    define can_read_scores: supervisory_tier_group or supervisory_tier_group from parent_org
+    # Permissions
+    define can_list: member
+    define can_read: member
+    define can_create: admin_tier
+    define can_update: admin_tier
+    define can_delete: admin_tier
+    define can_list_users: supervisory_tier_group or caregiver_tier
+    define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
-    define can_read_progress: supervisory_tier_group or caregiver_tier or supervisory_tier_group from parent_org
+    define can_read_progress: supervisory_tier_group or caregiver_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # class — leaf-level entity, child of school
 #
-# No admin_tier — classes only have educator-level supervisory roles.
-# Inherits supervisory access from parent school (and transitively from district).
+# Inherits all roles from parent school (and transitively from district).
+# A teacher at a school is a teacher in all classes within that school.
 # ────────────────────────────────────────────────────────────────────────────────
 type class
   relations
     # Hierarchy
     define parent_org: [school]
 
-    # Assignable roles (no district-level admin roles at class level)
-    define principal: [user with active_membership]
-    define counselor: [user with active_membership]
-    define teacher: [user with active_membership]
-    define aide: [user with active_membership]
-    define proctor: [user with active_membership]
+    # Assignable roles — inherit from parent school
+    define system_administrator: [user with active_membership] or system_administrator from parent_org
+    define site_administrator: [user with active_membership] or site_administrator from parent_org
+    define district_administrator: [user with active_membership] or district_administrator from parent_org
+    define administrator: [user with active_membership] or administrator from parent_org
+    define principal: [user with active_membership] or principal from parent_org
+    define counselor: [user with active_membership] or counselor from parent_org
+    define teacher: [user with active_membership] or teacher from parent_org
+    define aide: [user with active_membership] or aide from parent_org
+    define proctor: [user with active_membership] or proctor from parent_org
     define student: [user with active_membership]
     define guardian: [user with active_membership]
     define parent: [user with active_membership]
     define relative: [user with active_membership]
 
     # Computed role tiers
+    define admin_tier: system_administrator or site_administrator or district_administrator or administrator
     define educator_tier: principal or counselor or teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: educator_tier or supervisory_tier_group from parent_org
-    define member: educator_tier or student or caregiver_tier or supervisory_tier_group from parent_org
+    define supervisory_tier_group: admin_tier or educator_tier
+    define member: supervisory_tier_group or student or caregiver_tier
 
-    # Permissions — "supervisory_tier_group from parent_org" grants school/district supervisory
-    # roles access to descendant classes
+    # Permissions
     define can_list: member
     define can_read: member
-    define can_create: educator_tier or supervisory_tier_group from parent_org
-    define can_update: educator_tier or supervisory_tier_group from parent_org
-    define can_delete: can_delete from parent_org
-    define can_list_users: educator_tier or caregiver_tier or supervisory_tier_group from parent_org
-    define can_read_scores: educator_tier or supervisory_tier_group from parent_org
+    define can_create: admin_tier or educator_tier
+    define can_update: admin_tier or educator_tier
+    define can_delete: admin_tier
+    define can_list_users: supervisory_tier_group or caregiver_tier
+    define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
-    define can_read_progress: educator_tier or caregiver_tier or supervisory_tier_group from parent_org
+    define can_read_progress: supervisory_tier_group or caregiver_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # family — links parents/guardians to children outside the org hierarchy
