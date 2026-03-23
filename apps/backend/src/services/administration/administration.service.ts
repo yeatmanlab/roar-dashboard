@@ -16,6 +16,8 @@ import type { Administration, Org, Class, Group } from '../../db/schema';
 import { Permissions, type Permission } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
+import { fgaListObjects, extractFgaObjectId } from '../authorization/fga-check';
+import { FgaType } from '../authorization/fga-constants';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -349,8 +351,14 @@ export function AdministrationService({
       if (isSuperAdmin) {
         result = await administrationRepository.listAll(queryParams);
       } else {
-        const allowedRoles = rolesForPermission(Permissions.Administrations.LIST);
-        result = await administrationRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+        // FGA resolves which administrations the user can access based on their
+        // role memberships and the org/class/group hierarchy
+        const { objects } = await fgaListObjects(userId, 'can_list', FgaType.ADMINISTRATION);
+        const ids = objects.map(extractFgaObjectId);
+        if (ids.length === 0) {
+          return { items: [], totalItems: 0 };
+        }
+        result = await administrationRepository.listByIds(ids, queryParams);
       }
 
       // If no embeds requested, return as-is
