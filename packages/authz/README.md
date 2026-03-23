@@ -100,6 +100,11 @@ Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
 | `can_create_run` | `student` only | `runs.create` (administration only) |
 | `can_launch_task` | `student` + `caregiver_tier` | `tasks.launch` (administration only) |
 
+**Design notes:**
+
+- **No `can_create`/`can_update` on `administration`:** Administration create/update is authorized through the **parent org**, not the administration itself. To create an administration assigned to `district:D`, check `can_create` on `district:D`. This avoids a chicken-and-egg problem — the administration doesn't exist yet at authorization time.
+- **`can_list_students` only on `class` and `administration`:** There are no district/school-level student listing endpoints. Org-level user listing uses `can_list_users` instead. If `GET /orgs/:id/students` is added later, extend `can_list_students` to district/school at that time.
+
 ## Bidirectional hierarchy
 
 FGA's `from parent_org` only cascades **downward** (parent -> child). This handles supervisory roles: a district administrator at `district:D` inherits into `school:A` via `or district_administrator from parent_org`.
@@ -201,7 +206,9 @@ No tuple migration needed — individual roles are already modeled.
 
 ## How service code changes
 
-### Before (SQL-based)
+### Example: checking permission on a resource (runs.create)
+
+**Before (SQL-based):**
 
 ```typescript
 async function create(authContext, body) {
@@ -216,7 +223,7 @@ async function create(authContext, body) {
 }
 ```
 
-### After (FGA)
+**After (FGA):**
 
 ```typescript
 async function create(authContext, body) {
@@ -232,6 +239,26 @@ async function create(authContext, body) {
     });
     if (!allowed) throw new ApiError(/* 403 */);
   }
+}
+```
+
+### Example: checking permission on a parent org (administrations.create)
+
+Administration create/update has no `can_create`/`can_update` on the `administration` type. Instead, check `can_create` on the **parent org** the administration is being assigned to:
+
+```typescript
+async function create(authContext, body) {
+  if (!isSuperAdmin) {
+    // Check permission on the org, not the (not-yet-existing) administration
+    const { allowed } = await fga.check({
+      user: `user:${userId}`,
+      relation: 'can_create',
+      object: `district:${body.districtId}`,
+      context: { current_time: new Date().toISOString() },
+    });
+    if (!allowed) throw new ApiError(/* 403 */);
+  }
+  // Create the administration and write assignment tuples...
 }
 ```
 
