@@ -176,7 +176,7 @@ export class UserAccessControls {
         query = viaUserOrgToDescendantOrg.union(viaUserOrgToDescendantClass);
       }
 
-      // PATH 3: Direct class membership (teacher/admin → students in their directly assigned classes)
+      // PATH 3: Direct class membership (teacher/admin → users in their directly assigned classes)
       // This is the ONLY path teachers use to access users
       const requesterUserClasses = alias(userClasses, 'requester_user_classes');
       const targetUserClasses = alias(userClasses, 'target_user_classes');

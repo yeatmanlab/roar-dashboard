@@ -44,6 +44,27 @@ export function isEnrollmentActive(table: { enrollmentStart: AnyColumn; enrollme
   );
 }
 
+/**
+ * Builds membership date boundary conditions for user family table.
+ *
+ * Ensures user's family membership is currently active:
+ * - joinedOn <= NOW()
+ * - leftOn >= NOW() OR leftOn IS NULL
+ *
+ * ## Timezone Handling
+ *
+ * This function uses PostgreSQL's `NOW()` which returns the current timestamp.
+ * The enrollment columns use `timestamptz` (timestamp with time zone), which:
+ * - Stores all timestamps internally as UTC
+ * - Automatically converts input timestamps to UTC
+ * - Ensures comparisons are timezone-safe regardless of server configuration
+ *
+ * As long as enrollment dates are written as JavaScript `Date` objects (UTC-based)
+ * or ISO 8601 strings, comparisons will be correct.
+ *
+ * @param table - A user membership table (currently only userFamilies) with joinedOn and leftOn columns
+ * @returns Drizzle SQL condition for active family membership
+ */
 export function isActiveInFamily(table: { joinedOn: AnyColumn; leftOn: AnyColumn }) {
   return and(lte(table.joinedOn, sql`NOW()`), or(gte(table.leftOn, sql`NOW()`), isNull(table.leftOn)));
 }
