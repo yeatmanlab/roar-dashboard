@@ -3,6 +3,9 @@ name: Deploy Platform to Staging
 on:
   push:
     branches:
+      # TODO: Remove after testing is complete
+      - enh/1645/backend-prod-deployment
+      # TODO: Remove once backend refactor is complete
       - project/backend-refactor
       - main
 
@@ -23,7 +26,7 @@ jobs:
   build-backend:
     name: Build Backend Docker image
     runs-on: ubuntu-latest
-    environment: backend:staging
+    environment: platform:staging
     timeout-minutes: 10
     outputs:
       image-version: ${{ steps.docker-build.outputs.image-version }}
@@ -35,11 +38,11 @@ jobs:
         id: docker-build
         uses: ./.github/actions/build-docker-image
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
           region: ${{ secrets.GCP_BACKEND_REGION }}
           project-id: ${{ secrets.GCP_PROJECT_ID }}
-          artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
           image-name: roar-backend
           image-tag-rules: |
             type=sha,prefix=
@@ -52,7 +55,7 @@ jobs:
     name: Migrate databases
     needs: [build-backend]
     runs-on: ubuntu-latest
-    environment: db:staging
+    environment: platform:staging
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -61,7 +64,7 @@ jobs:
       - name: Run core database migrations
         uses: ./.github/actions/migrate-database
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_CORE_SERVICE_ACCOUNT }}
           cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
           database: core
@@ -69,7 +72,7 @@ jobs:
       - name: Run assessment database migrations
         uses: ./.github/actions/migrate-database
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_ASSESSMENT_SERVICE_ACCOUNT }}
           cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
           database: assessment
@@ -81,7 +84,7 @@ jobs:
     name: Deploy backend
     needs: [build-backend, migrate-db]
     runs-on: ubuntu-latest
-    environment: backend:staging
+    environment: platform:staging
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -90,23 +93,25 @@ jobs:
       - name: Deploy to Cloud Run
         uses: ./.github/actions/deploy-cloud-run
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
           region: ${{ secrets.GCP_BACKEND_REGION }}
           project-id: ${{ secrets.GCP_PROJECT_ID }}
-          artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
-          cloud-run-service: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
+          cloud-run-service: ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }}
           image-name: roar-backend
           image-tag: ${{ needs.build-backend.outputs.image-version }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # 4. Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # TODO: Re-enable after testing is complete
   deploy-frontend:
+    if: false
     name: Deploy frontend
     needs: [deploy-backend]
     runs-on: ubuntu-latest
-    environment: frontend:staging
+    environment: platform:staging
     timeout-minutes: 15
     env:
       DOTENV_PRIVATE_KEY_STAGING: ${{ secrets.DOTENV_PRIVATE_KEY }}
@@ -125,6 +130,6 @@ jobs:
         id: deployment
         with:
           firebase-channel: default
-          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
-          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
-          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN }}
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
