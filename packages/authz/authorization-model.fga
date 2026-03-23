@@ -143,8 +143,8 @@ type class
 # ────────────────────────────────────────────────────────────────────────────────
 type family
   relations
-    define parent: [user]
-    define child: [user]
+    define parent: [user with active_membership]
+    define child: [user with active_membership]
     define member: parent or child
     define can_list: parent
     define can_read: parent
