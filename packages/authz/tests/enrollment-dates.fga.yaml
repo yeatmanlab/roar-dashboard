@@ -68,7 +68,7 @@ tuples:
 
   # ─── Group membership with future start ────────────────────────────
   - user: user:future-group-member
-    relation: member
+    relation: student
     object: group:group-a
     condition:
       name: active_membership

@@ -110,7 +110,6 @@ tests:
           can_create: false
           can_update: false
           can_list_users: false
-          can_list_students: false
           can_read_scores: false
 
   - name: Guardian can list/read class with limited permissions
