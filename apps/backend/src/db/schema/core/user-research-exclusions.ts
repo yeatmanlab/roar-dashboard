@@ -37,10 +37,7 @@ export const userResearchExclusions = db.table(
     ...timestamps,
   },
   (table) => [
-    p.check(
-      'user_research_exclusions_date_range_check',
-      sql`${table.excludeFrom} < ${table.excludeUntil}`,
-    ),
+    p.check('user_research_exclusions_date_range_check', sql`${table.excludeFrom} < ${table.excludeUntil}`),
     p.index('user_research_exclusions_user_id_idx').on(table.userId),
   ],
 );
