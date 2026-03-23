@@ -13,9 +13,22 @@ import {
  * Validates the ID format matches database constraints.
  */
 export const TaskIdParamSchema = z.object({
-  taskId: z.string().uuid({ message: 'Task ID must be a valid UUID' }),
+  taskId: z.string().uuid(),
 });
 
+/**
+ * Schema for GET task variants path parameters.
+ * Supports task variant lookup by slug or by UUID.
+ * Validates that the task variant format matches the database constraints.
+ */
+export const GetTaskVariantPathParamSchema = z.object({
+  taskId: z.string(), // Allow task-variant lookup to use either a slug or a UUID
+  variantId: z.string().uuid(),
+});
+
+/**
+ * Schema for task variant status.
+ */
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
 
 /**
@@ -110,6 +123,8 @@ export const TaskVariantSchema = z.object({
 });
 
 export type TaskVariant = z.infer<typeof TaskVariantSchema>;
+// Declaring a separate schema for the response allows for better semantic clarity and facilitates easier API changes in the future.
+export const GetTaskVariantResponseSchema = TaskVariantSchema;
 
 /**
  * Allowed sort fields for task variants.
@@ -215,6 +230,7 @@ export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
 export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
 export type ListTaskVariantsQuery = z.infer<typeof ListTaskVariantsQuerySchema>;
 export type ListTaskVariantsResponse = z.infer<typeof ListTaskVariantsResponseSchema>;
+export type GetTaskVariantResponse = z.infer<typeof GetTaskVariantResponseSchema>;
 export type CreateTaskVariantRequestBody = z.infer<typeof CreateTaskVariantRequestBodySchema>;
 export type CreateTaskVariantResponse = z.infer<typeof CreateTaskVariantResponseSchema>;
 export type UpdateTaskVariantRequestBody = z.infer<typeof UpdateTaskVariantRequestBodySchema>;
