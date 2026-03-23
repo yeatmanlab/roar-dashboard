@@ -20,5 +20,5 @@ export const AdminContract = c.router(
       strictStatusCodes: true,
     },
   },
-  { pathPrefix: '/admin' },
+  { pathPrefix: '/system' },
 );
