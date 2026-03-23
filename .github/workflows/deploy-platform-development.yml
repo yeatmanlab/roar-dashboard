@@ -19,10 +19,10 @@ permissions:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––– #
-  # Build Backend Docker image
+  # Build backend Docker image
   # ––––––––––––––––––––––––––––––––––––– #
   build-backend:
-    name: Build Backend Docker image
+    name: Build backend Docker image
     runs-on: ubuntu-latest
     environment: platform:development
     timeout-minutes: 10
