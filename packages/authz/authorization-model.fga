@@ -206,10 +206,10 @@ type administration
     define assigned_group: [group]
 
     # Resolved roles — pulled from assigned entities (including groups)
-    define system_administrator: system_administrator from assigned_district or system_administrator from assigned_school or system_administrator from assigned_group
-    define site_administrator: site_administrator from assigned_district or site_administrator from assigned_school or site_administrator from assigned_group
-    define district_administrator: district_administrator from assigned_district or district_administrator from assigned_school or district_administrator from assigned_group
-    define administrator: administrator from assigned_district or administrator from assigned_school or administrator from assigned_group
+    define system_administrator: system_administrator from assigned_district or system_administrator from assigned_school or system_administrator from assigned_class or system_administrator from assigned_group
+    define site_administrator: site_administrator from assigned_district or site_administrator from assigned_school or site_administrator from assigned_class or site_administrator from assigned_group
+    define district_administrator: district_administrator from assigned_district or district_administrator from assigned_school or district_administrator from assigned_class or district_administrator from assigned_group
+    define administrator: administrator from assigned_district or administrator from assigned_school or administrator from assigned_class or administrator from assigned_group
     define principal: principal from assigned_district or principal from assigned_school or principal from assigned_class or principal from assigned_group
     define counselor: counselor from assigned_district or counselor from assigned_school or counselor from assigned_class or counselor from assigned_group
     define teacher: teacher from assigned_district or teacher from assigned_school or teacher from assigned_class or teacher from assigned_group
@@ -224,7 +224,7 @@ type administration
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
     define educator_tier: principal or counselor or teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier or supervisory_tier_group from assigned_class
+    define supervisory_tier_group: admin_tier or educator_tier
 
     # Permissions
     define can_list: supervisory_tier_group or student or caregiver_tier

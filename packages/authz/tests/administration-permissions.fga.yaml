@@ -235,7 +235,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-
+          can_create: true
+          can_update: true
+          can_delete: false
 
   - name: School teacher does NOT see district-level administration
     check:
