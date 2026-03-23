@@ -45,8 +45,8 @@ Following the [OpenFGA roles and permissions pattern](https://openfga.dev/docs/m
 define teacher: [user with active_membership]
 
 # Permission (computed — derived from roles)
-define can_view: member
-define can_delete: system_administrator or site_administrator or ...
+define can_list: member
+define can_delete: admin_tier
 ```
 
 ### All 13 OneRoster roles
@@ -66,18 +66,20 @@ Each role is modeled as its own FGA relation — no tier mapping. Tuples use the
 | `proctor` | `proctor` | educator | Down |
 | `student` | `student` | student | Up (supervised) |
 | `guardian` | `guardian` | caregiver | Up |
-| `parent` | **`parent_role`** | caregiver | Up |
+| `parent` | `parent` | caregiver | Up |
 | `relative` | `relative` | caregiver | Up |
 
-> **`parent` -> `parent_role` rename:** The OneRoster role `parent` conflicts with the FGA relation `parent` used for hierarchy links (e.g., `parent: [district]` on `school`). In FGA, it's renamed to `parent_role`. The tuple sync maps this in `fgaRelationForRole()`.
+> **No `parent` rename needed:** The hierarchy links use `parent_org` (e.g., `define parent_org: [district]` on `school`), so there is no conflict with the `parent` role relation. Tuples use `parent` directly.
 
 ### Computed role groups
 
 Shared across org types to simplify permission definitions:
 
-- **`supervisor`** — all 9 supervisory roles (siteAdmin + admin + educator tiers)
-- **`member`** — all roles (`supervisor` + student + caregiver tiers)
-- **`educator`** — class-level only (principal, counselor, teacher, aide, proctor)
+- **`admin_tier`** — siteAdmin + admin roles (system_administrator, site_administrator, district_administrator, administrator)
+- **`educator_tier`** — educator roles (principal, counselor, teacher, aide, proctor)
+- **`caregiver_tier`** — caregiver roles (guardian, parent, relative)
+- **`supervisory_tier_group`** — all supervisory roles (`admin_tier` + `educator_tier`)
+- **`member`** — all roles (`supervisory_tier_group` + student + `caregiver_tier`)
 
 ### Permissions
 
@@ -85,29 +87,31 @@ Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
 
 | Permission | Who can do it | Used for |
 |-----------|--------------|----------|
-| `can_view` | All members | `administrations.list`, `administrations.read`, org/class listing |
-| `can_delete` | siteAdmin + admin tiers | `administrations.delete` |
-| `can_manage` | siteAdmin + admin tiers | Org/class management |
-| `can_list_students` | All supervisory roles | Sub-resource listing |
-| `can_list_users` | Supervisory + caregiver tiers | `users.list` |
-| `can_read_scores` | Supervisory roles | `reports.score.read` (full) |
-| `can_read_scores_basic` | Caregiver tier | `reports.score.read` (composite) |
-| `can_read_progress` | Supervisory + caregiver | `reports.progress.read` |
-| `can_create_run` | Student only | `runs.create` |
-| `can_launch_task` | Student + caregiver | `tasks.launch` |
+| `can_list` | All members | `administrations.list`, org/class listing |
+| `can_read` | All members | `administrations.read`, org/class detail |
+| `can_create` | `admin_tier` (org), `educator_tier` (class) | Org/class management |
+| `can_update` | `admin_tier` (org), `educator_tier` (class) | Org/class management |
+| `can_delete` | `admin_tier` | `administrations.delete`, org/class deletion |
+| `can_list_students` | `supervisory_tier_group` | Sub-resource listing (class only) |
+| `can_list_users` | `supervisory_tier_group` + `caregiver_tier` | `users.list` |
+| `can_read_scores` | `supervisory_tier_group` | `reports.score.read` (full) |
+| `can_read_scores_basic` | `caregiver_tier` | `reports.score.read` (composite) |
+| `can_read_progress` | `supervisory_tier_group` + `caregiver_tier` | `reports.progress.read` |
+| `can_create_run` | `student` only | `runs.create` (administration only) |
+| `can_launch_task` | `student` + `caregiver_tier` | `tasks.launch` (administration only) |
 
 ## Bidirectional hierarchy
 
-FGA's `from parent` only cascades **downward** (parent -> child). This handles supervisory roles: a district administrator at `district:D` inherits into `school:A` via `or district_administrator from parent`.
+FGA's `from parent_org` only cascades **downward** (parent -> child). This handles supervisory roles: a district administrator at `district:D` inherits into `school:A` via `or district_administrator from parent_org`.
 
 But supervised roles need the **opposite** — a student at `school:A` must see administrations assigned to the parent `district:D`. The solution is **bidirectional hierarchy links**.
 
 Each org link gets two tuples:
 
 ```
-# Downward (supervisory cascading via `from parent`)
-district:D    parent         school:A
-school:A      parent         class:X
+# Downward (supervisory cascading via `from parent_org`)
+district:D    parent_org     school:A
+school:A      parent_org     class:X
 
 # Upward (supervised bubbling via `from child_school` / `from child_class`)
 school:A      child_school   district:D
@@ -149,7 +153,7 @@ Enrollment dates are enforced at check time using the `active_membership` [CEL c
 ```typescript
 const { allowed } = await fga.check({
   user: 'user:student-x',
-  relation: 'can_view',
+  relation: 'can_read',
   object: 'administration:admin-1',
   context: { current_time: new Date().toISOString() },
 });
@@ -190,7 +194,7 @@ No tuple migration needed — individual roles are already modeled.
 ### Adding a new resource type
 
 1. Add the new type with its relations in `authorization-model.fga`
-2. If it's hierarchical, add bidirectional hierarchy links (`parent` + `child_*`)
+2. If it's hierarchical, add bidirectional hierarchy links (`parent_org` + `child_*`)
 3. Add tuple sync helpers in `apps/backend/src/authz/fga-tuples.ts`
 4. Create a new `.fga.yaml` test file
 5. Run `npm run test -w packages/authz`
