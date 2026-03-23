@@ -212,6 +212,22 @@ describe('UsersController', () => {
       expect(data.updatedAt).toBeNull();
     });
 
+    it('should return empty array when authProvider is null in database', async () => {
+      const mockUser = UserFactory.build({
+        id: 'user-no-auth',
+        authProvider: null,
+      });
+
+      mockGetById.mockResolvedValue(mockUser);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.get(mockAuthContext, 'user-no-auth');
+
+      const data = expectOkResponse(result);
+      expect(data.authProvider).toEqual([]);
+    });
+
     it('should pass auth context and userId to service', async () => {
       const mockUser = UserFactory.build();
       mockGetById.mockResolvedValue(mockUser);

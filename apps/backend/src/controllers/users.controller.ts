@@ -22,7 +22,7 @@ function toUserResponse(user: User, authContext: AuthContext): UserResponse {
   return {
     id: user.id,
     assessmentPid: user.assessmentPid,
-    authProvider: user.authProvider,
+    authProvider: user.authProvider ?? [],
     nameFirst: user.nameFirst,
     nameMiddle: user.nameMiddle,
     nameLast: user.nameLast,
