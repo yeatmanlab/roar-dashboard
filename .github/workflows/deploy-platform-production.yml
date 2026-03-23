@@ -1,0 +1,188 @@
+name: Deploy Platform to Production
+
+on:
+  push:
+    branches:
+      # TODO: Remove once backend refactor is complete
+      - project/backend-refactor
+    # TODO: Re-enable once backend refactor is complete
+    # tags:
+    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+"
+    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+
+concurrency:
+  # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
+  # cancel-in-progress: false — never interrupt a running migration.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Verify tag is on main
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  verify-tag:
+    name: Verify tag is on main
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        # TODO: Remove once branch triggers are removed and only tags remain
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag commit is on main
+        # TODO: Remove once branch triggers are removed and only tags remain
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_SHA="${{ github.sha }}"
+          if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
+            echo "::error::Tag ${{ github.ref_name }} (${TAG_SHA}) is not on the main branch. Aborting."
+            exit 1
+          fi
+          echo "Tag ${{ github.ref_name }} is on main."
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Product owner review
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  product-owner-review:
+    name: Request product owner review
+    needs: [verify-tag]
+    runs-on: ubuntu-latest
+    environment: roar-platform:production:release-approval
+    timeout-minutes: 15
+    steps:
+      - name: Approval granted
+        run: echo "Approval granted, proceeding with platform deployment to production."
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Build backend Docker image
+  # ––––––––––––––––––––––––––––––––––––– #
+  build-backend:
+    name: Build backend Docker image
+    needs: [product-owner-review]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 10
+    outputs:
+      image-version: ${{ steps.docker-build.outputs.image-version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build and push image
+        id: docker-build
+        uses: ./.github/actions/build-docker-image
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          region: ${{ secrets.GCP_BACKEND_REGION }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
+          image-name: roar-backend
+          image-tag-rules: |
+            type=sha,prefix=
+          dockerfile: apps/backend/Dockerfile
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Migrate databases
+  # ––––––––––––––––––––––––––––––––––––– #
+  migrate-db:
+    name: Migrate databases
+    needs: [build-backend]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run core database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_CORE_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: core
+
+      - name: Run assessment database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_ASSESSMENT_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: assessment
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Deploy Backend
+  # ––––––––––––––––––––––––––––––––––––– #
+  deploy-backend:
+    name: Deploy backend
+    needs: [build-backend, migrate-db]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Deploy to Cloud Run
+        uses: ./.github/actions/deploy-cloud-run
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          region: ${{ secrets.GCP_BACKEND_REGION }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
+          cloud-run-service: ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }}
+          image-name: roar-backend
+          image-tag: ${{ needs.build-backend.outputs.image-version }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy frontend
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # TODO: Re-enable after testing is complete
+  deploy-frontend:
+    if: false
+    name: Deploy frontend
+    needs: [deploy-backend]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 15
+    env:
+      DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build app
+        uses: ./.github/actions/build
+        with:
+          environment: production
+          github-pat: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Deploy app
+        uses: ./.github/actions/deploy
+        id: deployment
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1.8.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          environment: production
+          sourcemaps: ./app/dist/assets/*.js.map
+          version: ${{ github.ref_name }}
