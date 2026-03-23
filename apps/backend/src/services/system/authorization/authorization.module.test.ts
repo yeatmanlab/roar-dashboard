@@ -531,5 +531,36 @@ describe('AuthorizationModule', () => {
         }),
       );
     });
+
+    it('wraps FGA write errors with EXTERNAL_SERVICE_FAILED', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const fgaError = new Error('FGA connection timeout');
+
+      const db = createMockDb({
+        orgs: [schoolRow],
+        classes: [],
+        user_orgs: [],
+        user_classes: [],
+        user_groups: [],
+        user_families: [],
+        administration_orgs: [],
+        administration_classes: [],
+        administration_groups: [],
+      });
+
+      const failingClient = {
+        ...createMockFgaClient(),
+        writeTuples: vi.fn().mockRejectedValue(fgaError),
+      } as unknown as OpenFgaClient;
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => failingClient });
+
+      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+        expect.objectContaining({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+    });
   });
 });

@@ -383,23 +383,28 @@ export function AuthorizationModule({
 
       if (!dryRun) {
         // Write all categories sequentially to avoid overwhelming FGA
-        await writeTuplesInBatches(orgHierarchy);
-        logger.info({ count: orgHierarchy.length }, 'Wrote org hierarchy tuples');
+        const writeCategories = [
+          { tuples: orgHierarchy, label: 'org hierarchy' },
+          { tuples: orgMemberships, label: 'org membership' },
+          { tuples: classMemberships, label: 'class membership' },
+          { tuples: groupMemberships, label: 'group membership' },
+          { tuples: familyMemberships, label: 'family membership' },
+          { tuples: adminAssignments, label: 'administration assignment' },
+        ] as const;
 
-        await writeTuplesInBatches(orgMemberships);
-        logger.info({ count: orgMemberships.length }, 'Wrote org membership tuples');
-
-        await writeTuplesInBatches(classMemberships);
-        logger.info({ count: classMemberships.length }, 'Wrote class membership tuples');
-
-        await writeTuplesInBatches(groupMemberships);
-        logger.info({ count: groupMemberships.length }, 'Wrote group membership tuples');
-
-        await writeTuplesInBatches(familyMemberships);
-        logger.info({ count: familyMemberships.length }, 'Wrote family membership tuples');
-
-        await writeTuplesInBatches(adminAssignments);
-        logger.info({ count: adminAssignments.length }, 'Wrote administration assignment tuples');
+        for (const { tuples, label } of writeCategories) {
+          try {
+            await writeTuplesInBatches(tuples);
+            logger.info({ count: tuples.length }, `Wrote ${label} tuples`);
+          } catch (err) {
+            throw new ApiError(`Failed to write ${label} tuples to FGA`, {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+              context: { userId, category: label },
+              cause: err,
+            });
+          }
+        }
 
         logger.info({ totalTuples, userId }, 'FGA backfill completed successfully');
       }
