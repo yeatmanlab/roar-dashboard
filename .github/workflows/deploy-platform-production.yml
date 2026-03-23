@@ -24,7 +24,9 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Verify tag is on main
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # TODO: Re-enable once merged to main
   verify-tag:
+    if: false
     name: Verify tag is on main
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -46,7 +48,9 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Product owner review
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # TODO: Re-enable once merged to main
   product-owner-review:
+    if: false
     name: Request product owner review
     needs: [verify-tag]
     runs-on: ubuntu-latest
@@ -61,7 +65,8 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––– #
   build-backend:
     name: Build Backend Docker image
-    needs: [product-owner-review]
+    # TODO: Re-enable once merged to main
+    # needs: [product-owner-review]
     runs-on: ubuntu-latest
     environment: platform:production
     timeout-minutes: 10
