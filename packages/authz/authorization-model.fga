@@ -92,7 +92,7 @@ type school
     define can_read: member or supervisory_tier_group from parent_org
     define can_create: admin_tier or supervisory_tier_group from parent_org
     define can_update: admin_tier or supervisory_tier_group from parent_org
-    define can_delete: admin_tier or supervisory_tier_group from parent_org
+    define can_delete: admin_tier or admin_tier from parent_org
     define can_list_users: supervisory_tier_group or caregiver_tier or supervisory_tier_group from parent_org
     define can_read_scores: supervisory_tier_group or supervisory_tier_group from parent_org
     define can_read_scores_basic: caregiver_tier
