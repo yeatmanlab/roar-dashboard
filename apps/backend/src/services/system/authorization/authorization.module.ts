@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
+import type { BackfillFgaResponse } from '@roar-dashboard/api-contract';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { FgaClient } from '../../../clients/fga.client';
@@ -40,22 +41,6 @@ import {
 
 /** Maximum tuples per FGA writeTuples call. */
 const FGA_WRITE_BATCH_SIZE = 100;
-
-/**
- * Result returned by the backfill operation.
- */
-export interface BackfillResult {
-  dryRun: boolean;
-  categories: {
-    orgHierarchy: number;
-    orgMemberships: number;
-    classMemberships: number;
-    groupMemberships: number;
-    familyMemberships: number;
-    administrationAssignments: number;
-  };
-  totalTuples: number;
-}
 
 /**
  * Split an array into chunks of the given size.
@@ -308,7 +293,10 @@ export function AuthorizationModule({
    * @throws {ApiError} FORBIDDEN if the user is not a super admin
    * @throws {ApiError} INTERNAL_SERVER_ERROR if a database or FGA error occurs
    */
-  async function backfillFgaStore(authContext: AuthContext, { dryRun }: { dryRun: boolean }): Promise<BackfillResult> {
+  async function backfillFgaStore(
+    authContext: AuthContext,
+    { dryRun }: { dryRun: boolean },
+  ): Promise<BackfillFgaResponse> {
     const { userId, isSuperAdmin } = authContext;
 
     if (!isSuperAdmin) {

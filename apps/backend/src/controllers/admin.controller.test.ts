@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
-import type { BackfillResult } from '../services/system/authorization/authorization.module';
+import type { BackfillFgaResponse } from '@roar-dashboard/api-contract';
 
 vi.mock('../services/system/system.service', () => ({
   SystemService: vi.fn(),
@@ -27,7 +27,7 @@ describe('AdminController', () => {
 
   describe('backfillFga', () => {
     it('returns 200 with backfill result on success', async () => {
-      const backfillResult: BackfillResult = {
+      const backfillResult: BackfillFgaResponse = {
         dryRun: false,
         categories: {
           orgHierarchy: 10,
