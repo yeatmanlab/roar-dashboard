@@ -1,4 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { ClientWriteRequestOnDuplicateWrites } from '@openfga/sdk';
 import type { OpenFgaClient } from '@openfga/sdk';
 import { StatusCodes } from 'http-status-codes';
 import { ApiErrorCode } from '../../../enums/api-error-code.enum';
@@ -308,6 +309,7 @@ describe('AuthorizationModule', () => {
             relation: 'administrator',
           }),
         ]),
+        expect.anything(),
       );
     });
 
@@ -337,6 +339,7 @@ describe('AuthorizationModule', () => {
             relation: 'teacher',
           }),
         ]),
+        expect.anything(),
       );
     });
   });
@@ -374,6 +377,7 @@ describe('AuthorizationModule', () => {
             }),
           }),
         ]),
+        expect.anything(),
       );
     });
   });
@@ -405,6 +409,7 @@ describe('AuthorizationModule', () => {
             relation: 'assigned_district',
           }),
         ]),
+        expect.anything(),
       );
     });
 
@@ -434,6 +439,7 @@ describe('AuthorizationModule', () => {
             relation: 'assigned_school',
           }),
         ]),
+        expect.anything(),
       );
     });
 
@@ -496,6 +502,28 @@ describe('AuthorizationModule', () => {
       const classBatchSizes = classBatchCalls.map((call: unknown[][]) => call[0]!.length);
       expect(classBatchSizes).toContain(100);
       expect(classBatchSizes).toContain(50);
+    });
+
+    it('passes onDuplicateWrites: Ignore for idempotent writes', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const db = createMockDb({
+        orgs: [schoolRow],
+        classes: [],
+        user_orgs: [],
+        user_classes: [],
+        user_groups: [],
+        user_families: [],
+        administration_orgs: [],
+        administration_classes: [],
+        administration_groups: [],
+      });
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      await module.backfillFgaStore(authContext, { dryRun: false });
+
+      expect(mockClient.writeTuples).toHaveBeenCalledWith(expect.any(Array), {
+        conflict: { onDuplicateWrites: ClientWriteRequestOnDuplicateWrites.Ignore },
+      });
     });
   });
 

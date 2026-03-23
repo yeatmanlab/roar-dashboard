@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
 import type { BackfillFgaResponse } from '@roar-dashboard/api-contract';
+import { ClientWriteRequestOnDuplicateWrites } from '@openfga/sdk';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { FgaClient } from '../../../clients/fga.client';
@@ -80,10 +81,11 @@ export function AuthorizationModule({
   }
 
   /**
-   * Write tuples to FGA in batches.
+   * Write tuples to FGA in batches, skipping duplicates for idempotency.
    *
-   * Tuples can be either conditional (TupleKey) or unconditional (TupleKeyWithoutCondition).
-   * The FGA SDK `writeTuples` accepts both via `TupleKeyWithoutCondition[]`.
+   * Uses `onDuplicateWrites: Ignore` so that re-running the backfill after a
+   * partial failure (or against an already-hydrated store) succeeds without
+   * erroring on tuples that were already written.
    *
    * @param tuples - Tuples to write
    */
@@ -92,7 +94,9 @@ export function AuthorizationModule({
     const batches = chunk(tuples, FGA_WRITE_BATCH_SIZE);
 
     for (const batch of batches) {
-      await client.writeTuples(batch);
+      await client.writeTuples(batch, {
+        conflict: { onDuplicateWrites: ClientWriteRequestOnDuplicateWrites.Ignore },
+      });
     }
   }
 
