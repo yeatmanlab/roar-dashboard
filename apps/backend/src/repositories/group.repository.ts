@@ -137,23 +137,16 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const offset = (page - 1) * perPage;
     const { userId, allowedRoles } = accessControlFilter;
 
-    // Group existence is verified in listUsers via verifyGroupAccess.
-    // Extra defensive measure is applied when gathering users (skips innerJoin with groups table).
     // This checks if user has permission to list users for that group.
-    const group = await this.db
-      .select()
+    const accessibleGroups = this.db
+      .select({ groupId: userGroups.groupId })
       .from(userGroups)
       .where(and(eq(userGroups.groupId, groupId), isAuthorizedMembership(userGroups, userId, allowedRoles)))
-      .limit(1);
-
-    if (!group || group.length === 0) {
-      return { items: [], totalItems: 0 };
-    }
+      .as('accessible_groups');
 
     const whereCondition = and(
       eq(userGroups.groupId, groupId),
       isEnrollmentActive(userGroups),
-      isNull(groups.rosteringEnded),
       ...getEnrolledUsersFilterConditions(options, 'userGroups'),
     );
 
@@ -161,7 +154,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .select({ count: count() })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
-      .innerJoin(groups, eq(groups.id, userGroups.groupId))
+      .innerJoin(accessibleGroups, eq(accessibleGroups.groupId, userGroups.groupId))
       .where(whereCondition);
 
     const totalItems = countResult[0]?.count ?? 0;
@@ -178,7 +171,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .select({ user: users, enrollmentStart: userGroups.enrollmentStart, role: userGroups.role })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
-      .innerJoin(groups, eq(groups.id, userGroups.groupId))
+      .innerJoin(accessibleGroups, eq(accessibleGroups.groupId, userGroups.groupId))
       .where(whereCondition)
       .orderBy(primaryOrder, asc(users.id))
       .limit(perPage)
