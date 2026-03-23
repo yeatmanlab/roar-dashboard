@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ApiError } from '../errors/api-error';
 import { logger } from '../logger';
 import { FgaClient } from './fga.client';
 
@@ -48,37 +49,29 @@ describe('FgaClient', () => {
     expect(first).toBe(second);
   });
 
-  it('throws if FGA_API_URL is missing', () => {
+  it('throws ApiError if FGA_API_URL is missing', () => {
     process.env.FGA_STORE_ID = MOCK_ENV.FGA_STORE_ID;
     process.env.FGA_MODEL_ID = MOCK_ENV.FGA_MODEL_ID;
 
-    expect(() => FgaClient.getClient()).toThrow(
-      'Missing required FGA environment variables: FGA_API_URL, FGA_STORE_ID, FGA_MODEL_ID',
-    );
+    expect(() => FgaClient.getClient()).toThrow(ApiError);
   });
 
-  it('throws if FGA_STORE_ID is missing', () => {
+  it('throws ApiError if FGA_STORE_ID is missing', () => {
     process.env.FGA_API_URL = MOCK_ENV.FGA_API_URL;
     process.env.FGA_MODEL_ID = MOCK_ENV.FGA_MODEL_ID;
 
-    expect(() => FgaClient.getClient()).toThrow(
-      'Missing required FGA environment variables: FGA_API_URL, FGA_STORE_ID, FGA_MODEL_ID',
-    );
+    expect(() => FgaClient.getClient()).toThrow(ApiError);
   });
 
-  it('throws if FGA_MODEL_ID is missing', () => {
+  it('throws ApiError if FGA_MODEL_ID is missing', () => {
     process.env.FGA_API_URL = MOCK_ENV.FGA_API_URL;
     process.env.FGA_STORE_ID = MOCK_ENV.FGA_STORE_ID;
 
-    expect(() => FgaClient.getClient()).toThrow(
-      'Missing required FGA environment variables: FGA_API_URL, FGA_STORE_ID, FGA_MODEL_ID',
-    );
+    expect(() => FgaClient.getClient()).toThrow(ApiError);
   });
 
-  it('throws if all env vars are missing', () => {
-    expect(() => FgaClient.getClient()).toThrow(
-      'Missing required FGA environment variables: FGA_API_URL, FGA_STORE_ID, FGA_MODEL_ID',
-    );
+  it('throws ApiError if all env vars are missing', () => {
+    expect(() => FgaClient.getClient()).toThrow(ApiError);
   });
 
   it('logs apiUrl, storeId, and authorizationModelId on first initialization', () => {
@@ -122,8 +115,6 @@ describe('FgaClient', () => {
     FgaClient.clearCache();
     clearFgaEnv();
 
-    expect(() => FgaClient.getClient()).toThrow(
-      'Missing required FGA environment variables: FGA_API_URL, FGA_STORE_ID, FGA_MODEL_ID',
-    );
+    expect(() => FgaClient.getClient()).toThrow(ApiError);
   });
 });
