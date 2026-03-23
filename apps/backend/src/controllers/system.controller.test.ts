@@ -11,7 +11,7 @@ vi.mock('../services/system/system.service', () => ({
 
 import { SystemService } from '../services/system/system.service';
 
-describe('AdminController', () => {
+describe('SystemController', () => {
   const mockBackfillFgaStore = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: true };
 
@@ -41,8 +41,8 @@ describe('AdminController', () => {
       };
       mockBackfillFgaStore.mockResolvedValue(backfillResult);
 
-      const { AdminController } = await import('./admin.controller');
-      const result = await AdminController.backfillFga(mockAuthContext, { dryRun: false });
+      const { SystemController } = await import('./system.controller');
+      const result = await SystemController.backfillFga(mockAuthContext, { dryRun: false });
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toEqual({ data: backfillResult });
@@ -62,8 +62,8 @@ describe('AdminController', () => {
         totalTuples: 0,
       });
 
-      const { AdminController } = await import('./admin.controller');
-      await AdminController.backfillFga(mockAuthContext, { dryRun: true });
+      const { SystemController } = await import('./system.controller');
+      await SystemController.backfillFga(mockAuthContext, { dryRun: true });
 
       expect(mockBackfillFgaStore).toHaveBeenCalledWith(mockAuthContext, { dryRun: true });
     });
@@ -76,8 +76,8 @@ describe('AdminController', () => {
         }),
       );
 
-      const { AdminController } = await import('./admin.controller');
-      const result = await AdminController.backfillFga({ userId: 'user-456', isSuperAdmin: false }, { dryRun: false });
+      const { SystemController } = await import('./system.controller');
+      const result = await SystemController.backfillFga({ userId: 'user-456', isSuperAdmin: false }, { dryRun: false });
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toHaveProperty('error');
@@ -91,8 +91,8 @@ describe('AdminController', () => {
         }),
       );
 
-      const { AdminController } = await import('./admin.controller');
-      const result = await AdminController.backfillFga(mockAuthContext, { dryRun: false });
+      const { SystemController } = await import('./system.controller');
+      const result = await SystemController.backfillFga(mockAuthContext, { dryRun: false });
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(result.body).toHaveProperty('error');
@@ -102,9 +102,9 @@ describe('AdminController', () => {
       const rawError = new Error('unexpected');
       mockBackfillFgaStore.mockRejectedValue(rawError);
 
-      const { AdminController } = await import('./admin.controller');
+      const { SystemController } = await import('./system.controller');
 
-      await expect(AdminController.backfillFga(mockAuthContext, { dryRun: false })).rejects.toThrow('unexpected');
+      await expect(SystemController.backfillFga(mockAuthContext, { dryRun: false })).rejects.toThrow('unexpected');
     });
   });
 });

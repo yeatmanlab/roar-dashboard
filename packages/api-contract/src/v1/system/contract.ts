@@ -4,7 +4,7 @@ import { SuccessEnvelopeSchema, ErrorEnvelopeSchema } from '../response';
 
 const c = initContract();
 
-export const AdminContract = c.router(
+export const SystemContract = c.router(
   {
     backfillFga: {
       method: 'POST',

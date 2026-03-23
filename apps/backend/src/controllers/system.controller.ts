@@ -8,11 +8,11 @@ import type { AuthContext } from '../types/auth-context';
 const systemService = SystemService();
 
 /**
- * Admin controller — handles super-admin-only operations.
+ * System controller — handles super-admin-only system operations.
  *
  * Thin HTTP mapping layer. Authorization is enforced in the service layer.
  */
-export const AdminController = {
+export const SystemController = {
   /**
    * Backfill FGA tuples from existing Postgres junction table data.
    *
