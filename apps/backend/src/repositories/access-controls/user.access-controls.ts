@@ -131,30 +131,32 @@ export class UserAccessControls {
         // Shared aliases for org-based queries
         const requesterUserOrgs = alias(userOrgs, 'requester_user_orgs');
         const requesterOrgsTable = alias(orgs, 'requester_orgs_table');
+        const targetUserOrgs = alias(userOrgs, 'target_user_orgs');
         const targetOrgsTable = alias(orgs, 'target_orgs_table');
 
         // PATH 1: Via org hierarchy (admin roles only → users in descendant orgs)
         const viaUserOrgToDescendantOrg = this.db
-          .select({ userId: userOrgs.userId })
+          .select({ userId: targetUserOrgs.userId })
           .from(requesterUserOrgs)
           // Get all orgs the user is a member of
           .innerJoin(requesterOrgsTable, eq(requesterOrgsTable.id, requesterUserOrgs.orgId))
           // This is an exhaustive of all orgs the user is a member of and descendent orgs that they can see
           .innerJoin(targetOrgsTable, isAncestorOrEqual(requesterOrgsTable.path, targetOrgsTable.path))
           // This is an exhaustive list of all user orgs memberships
-          .innerJoin(userOrgs, eq(userOrgs.orgId, targetOrgsTable.id))
+          .innerJoin(targetUserOrgs, eq(targetUserOrgs.orgId, targetOrgsTable.id))
           .where(
             and(
               isAuthorizedMembership(requesterUserOrgs, requestingUserId, hierarchicalUserAccessRoles),
-              isEnrollmentActive(userOrgs),
+              isEnrollmentActive(targetUserOrgs),
             ),
           );
 
         // PATH 2: Via org → class (admin roles only → users in classes under their orgs)
+        const targetUserClasses = alias(userClasses, 'target_user_classes');
         const targetClassesTable = alias(classes, 'target_classes_table');
         const viaUserOrgToDescendantClass = this.db
           .select({
-            userId: userClasses.userId,
+            userId: targetUserClasses.userId,
           })
           .from(requesterUserOrgs)
           // Get all orgs the user is a member of
@@ -162,11 +164,11 @@ export class UserAccessControls {
           // Get all classes that are descendants of all of the user's orgs
           .innerJoin(targetClassesTable, isAncestorOrEqual(requesterOrgsTable.path, targetClassesTable.orgPath))
           // This is an exhaustive list of classes the user has access to via their orgs
-          .innerJoin(userClasses, eq(userClasses.classId, targetClassesTable.id))
+          .innerJoin(targetUserClasses, eq(targetUserClasses.classId, targetClassesTable.id))
           .where(
             and(
               isAuthorizedMembership(requesterUserOrgs, requestingUserId, hierarchicalUserAccessRoles),
-              isEnrollmentActive(userClasses),
+              isEnrollmentActive(targetUserClasses),
             ),
           );
 
@@ -177,27 +179,29 @@ export class UserAccessControls {
       // PATH 3: Direct class membership (teacher/admin → students in their directly assigned classes)
       // This is the ONLY path teachers use to access users
       const requesterUserClasses = alias(userClasses, 'requester_user_classes');
+      const targetUserClasses = alias(userClasses, 'target_user_classes');
       const viaDirectClass = this.db
-        .select({ userId: userClasses.userId })
+        .select({ userId: targetUserClasses.userId })
         .from(requesterUserClasses)
-        .innerJoin(userClasses, eq(requesterUserClasses.classId, userClasses.classId))
+        .innerJoin(targetUserClasses, eq(requesterUserClasses.classId, targetUserClasses.classId))
         .where(
           and(
             isAuthorizedMembership(requesterUserClasses, requestingUserId, supervisoryAllowedRoles),
-            isEnrollmentActive(userClasses),
+            isEnrollmentActive(targetUserClasses),
           ),
         );
 
       // PATH 4: Direct group membership (group leader → users in their groups)
       const requesterUserGroups = alias(userGroups, 'requester_user_groups');
+      const targetUserGroups = alias(userGroups, 'target_user_groups');
       const viaDirectGroup = this.db
-        .select({ userId: userGroups.userId })
+        .select({ userId: targetUserGroups.userId })
         .from(requesterUserGroups)
-        .innerJoin(userGroups, eq(requesterUserGroups.groupId, userGroups.groupId))
+        .innerJoin(targetUserGroups, eq(requesterUserGroups.groupId, targetUserGroups.groupId))
         .where(
           and(
             isAuthorizedMembership(requesterUserGroups, requestingUserId, supervisoryAllowedRoles),
-            isEnrollmentActive(userGroups),
+            isEnrollmentActive(targetUserGroups),
           ),
         );
 
@@ -209,6 +213,7 @@ export class UserAccessControls {
     if (caretakerAllowedRoles.length > 0) {
       // PATH 5: Direct family membership (family member → other family members, no supervisory role needed)
       const requesterUserFamilies = alias(userFamilies, 'requester_user_families');
+      const targetUserFamilies = alias(userFamilies, 'target_user_families');
 
       // TODO: Schema inconsistency - user_families.role uses user_family_role enum ['parent', 'child']
       // while user_orgs.role uses the full userRoleEnum which includes ['guardian', 'parent', 'relative'].
@@ -219,11 +224,14 @@ export class UserAccessControls {
       const familyRoles = ['parent'];
 
       const viaDirectFamily = this.db
-        .select({ userId: userFamilies.userId })
+        .select({ userId: targetUserFamilies.userId })
         .from(requesterUserFamilies)
-        .innerJoin(userFamilies, eq(requesterUserFamilies.familyId, userFamilies.familyId))
+        .innerJoin(targetUserFamilies, eq(requesterUserFamilies.familyId, targetUserFamilies.familyId))
         .where(
-          and(isAuthorizedFamily(requesterUserFamilies, requestingUserId, familyRoles), isActiveInFamily(userFamilies)),
+          and(
+            isAuthorizedFamily(requesterUserFamilies, requestingUserId, familyRoles),
+            isActiveInFamily(targetUserFamilies),
+          ),
         );
 
       // Union family path with existing query (or start with it if no supervisory paths)
