@@ -103,6 +103,7 @@ Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
 
 - **`can_list_users` on family:** Gated on `parent` — only parents can list family members. Children cannot.
 - **Groups have the full role model:** `user_groups` has a `role` column like `user_orgs`, so groups define all 13 roles with `active_membership` conditions, not just flat `member`.
+- **Groups are standalone — no org hierarchy cascading:** Groups have no `parent_org` link, so org-level roles (e.g., district admin) do not cascade into groups. A user must be an explicit member of a group to see it. This is intentional — groups are independent of the org tree.
 
 ## Bidirectional hierarchy
 
