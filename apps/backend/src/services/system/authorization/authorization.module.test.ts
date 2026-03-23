@@ -500,7 +500,7 @@ describe('AuthorizationModule', () => {
   });
 
   describe('error handling', () => {
-    it('wraps unexpected errors in ApiError with 500', async () => {
+    it('wraps DB errors with per-category context via per-promise .catch()', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const dbError = new Error('Connection refused');
 
@@ -527,11 +527,9 @@ describe('AuthorizationModule', () => {
       await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.INTERNAL,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
         }),
       );
-
-      expect(logger.error).toHaveBeenCalledWith(expect.objectContaining({ err: dbError }), 'FGA backfill failed');
     });
   });
 });
