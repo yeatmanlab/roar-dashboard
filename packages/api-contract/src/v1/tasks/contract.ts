@@ -1,11 +1,12 @@
 import { initContract } from '@ts-rest/core';
-import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import {
   CreateTaskVariantRequestBodySchema,
   CreateTaskVariantResponseSchema,
+  CreateTaskVariantPathParamSchema,
   UpdateTaskVariantRequestBodySchema,
   UpdateTaskVariantResponseSchema,
+  UpdateTaskVariantPathParamSchema,
   TasksListQuerySchema,
   TasksListResponseSchema,
   TaskIdParamSchema,
@@ -99,17 +100,15 @@ export const TasksContract = c.router(
       summary: 'Get a task variant',
       description:
         'Returns the variant with the specified ID for the specified task. ' +
-        'Supports task variant lookup by task slug or task UUID.' +
+        'Supports task variant lookup by task slug or task UUID. ' +
         'Returns 400 if an invalid UUID is provided in the path. ' +
-        'Returns 404 if the task or variant does not exist.' +
+        'Returns 404 if the task or variant does not exist. ' +
         'Returns 500 if an internal server error occurs.',
     },
     createTaskVariant: {
       method: 'POST',
       path: '/:taskId/variants',
-      pathParams: z.object({
-        taskId: z.string().uuid(),
-      }),
+      pathParams: CreateTaskVariantPathParamSchema,
       contentType: 'application/json',
       body: CreateTaskVariantRequestBodySchema,
       responses: {
@@ -132,10 +131,7 @@ export const TasksContract = c.router(
     updateTaskVariant: {
       method: 'PATCH',
       path: '/:taskId/variants/:variantId',
-      pathParams: z.object({
-        taskId: z.string().uuid(),
-        variantId: z.string().uuid(),
-      }),
+      pathParams: UpdateTaskVariantPathParamSchema,
       contentType: 'application/json',
       body: UpdateTaskVariantRequestBodySchema,
       responses: {

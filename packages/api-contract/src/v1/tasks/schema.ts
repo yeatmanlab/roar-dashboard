@@ -27,6 +27,23 @@ export const GetTaskVariantPathParamSchema = z.object({
 });
 
 /**
+ * Schema for CREATE task variant path parameters.
+ * Validates that the task ID is a valid UUID.
+ */
+export const CreateTaskVariantPathParamSchema = z.object({
+  taskId: z.string().uuid(),
+});
+
+/**
+ * Schema for UPDATE task variant path parameters.
+ * Validates that both task ID and variant ID are valid UUIDs.
+ */
+export const UpdateTaskVariantPathParamSchema = z.object({
+  taskId: z.string().uuid(),
+  variantId: z.string().uuid(),
+});
+
+/**
  * Schema for task variant status.
  */
 export const TaskVariantStatusSchema = z.enum(['draft', 'published', 'deprecated']);
@@ -295,3 +312,6 @@ export const TasksListResponseSchema = createPaginatedResponseSchema(TaskSchema)
 export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
 
 export type TaskIdParam = z.infer<typeof TaskIdParamSchema>;
+export type GetTaskVariantPathParam = z.infer<typeof GetTaskVariantPathParamSchema>;
+export type CreateTaskVariantPathParam = z.infer<typeof CreateTaskVariantPathParamSchema>;
+export type UpdateTaskVariantPathParam = z.infer<typeof UpdateTaskVariantPathParamSchema>;
