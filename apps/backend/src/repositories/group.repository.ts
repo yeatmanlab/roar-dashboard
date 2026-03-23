@@ -135,11 +135,18 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
   ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
+    const { userId, allowedRoles } = accessControlFilter;
 
-    // Verify if user has permission to list users
-    const group = await this.getAuthorizedById(accessControlFilter, groupId);
+    // Group existence is verified in listUsers via verifyGroupAccess.
+    // Extra defensive measure is applied when gathering users (skips innerJoin with groups table).
+    // This checks if user has permission to list users for that group.
+    const group = await this.db
+      .select()
+      .from(userGroups)
+      .where(and(eq(userGroups.groupId, groupId), isAuthorizedMembership(userGroups, userId, allowedRoles)))
+      .limit(1);
 
-    if (!group) {
+    if (!group || group.length === 0) {
       return { items: [], totalItems: 0 };
     }
 
