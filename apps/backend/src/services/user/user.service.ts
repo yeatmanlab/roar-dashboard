@@ -48,7 +48,7 @@ export function UserService({
    * @throws {ApiError} FORBIDDEN if user doesn't have the required permission
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
-  async function verifySupervisoryAccess(
+  async function verifyUserAccess(
     authContext: AuthContext,
     id: string,
     permission: Permission = Permissions.Users.READ,
@@ -130,7 +130,7 @@ export function UserService({
     const { userId } = authContext;
 
     try {
-      return await verifySupervisoryAccess(authContext, id);
+      return await verifyUserAccess(authContext, id);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
