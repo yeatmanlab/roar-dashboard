@@ -2,6 +2,9 @@ name: Deploy Platform to Production
 
 on:
   push:
+    branches:
+      # TODO: Remove after testing is complete
+      - enh/1645/backend-prod-deployment
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
@@ -60,7 +63,7 @@ jobs:
     name: Build Backend Docker image
     needs: [product-owner-review]
     runs-on: ubuntu-latest
-    environment: backend:production
+    environment: platform:production
     timeout-minutes: 10
     outputs:
       image-version: ${{ steps.docker-build.outputs.image-version }}
@@ -72,11 +75,11 @@ jobs:
         id: docker-build
         uses: ./.github/actions/build-docker-image
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
           region: ${{ secrets.GCP_BACKEND_REGION }}
           project-id: ${{ secrets.GCP_PROJECT_ID }}
-          artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
           image-name: roar-backend
           image-tag-rules: |
             type=sha,prefix=
@@ -89,7 +92,7 @@ jobs:
     name: Migrate databases
     needs: [build-backend]
     runs-on: ubuntu-latest
-    environment: db:production
+    environment: platform:production
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -98,7 +101,7 @@ jobs:
       - name: Run core database migrations
         uses: ./.github/actions/migrate-database
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_CORE_SERVICE_ACCOUNT }}
           cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
           database: core
@@ -106,7 +109,7 @@ jobs:
       - name: Run assessment database migrations
         uses: ./.github/actions/migrate-database
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_DB_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_ASSESSMENT_SERVICE_ACCOUNT }}
           cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
           database: assessment
@@ -118,7 +121,7 @@ jobs:
     name: Deploy backend
     needs: [build-backend, migrate-db]
     runs-on: ubuntu-latest
-    environment: backend:production
+    environment: platform:production
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -127,23 +130,25 @@ jobs:
       - name: Deploy to Cloud Run
         uses: ./.github/actions/deploy-cloud-run
         with:
-          gcp-workload-identity-provider: ${{ secrets.GCP_BACKEND_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
           region: ${{ secrets.GCP_BACKEND_REGION }}
           project-id: ${{ secrets.GCP_PROJECT_ID }}
-          artifact-registry-repo: ${{ secrets.BACKEND_ARTIFACT_REGISTRY_REPO }}
-          cloud-run-service: ${{ secrets.BACKEND_CLOUD_RUN_SERVICE_NAME }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
+          cloud-run-service: ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }}
           image-name: roar-backend
           image-tag: ${{ needs.build-backend.outputs.image-version }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # 4. Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # TODO: Re-enable after testing is complete
   deploy-frontend:
+    if: false
     name: Deploy frontend
     needs: [deploy-backend]
     runs-on: ubuntu-latest
-    environment: frontend:production
+    environment: platform:production
     timeout-minutes: 15
     env:
       DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY }}
@@ -162,9 +167,9 @@ jobs:
         id: deployment
         with:
           firebase-channel: default
-          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID_ADMIN }}
-          gcp-workload-identity-provider: ${{ secrets.FIREBASE_WORKLOAD_IDENTITY_PROVIDER_ADMIN }}
-          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID_ADMIN }}
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
 
       - name: Create Sentry release
         uses: getsentry/action-release@v1.8.0
