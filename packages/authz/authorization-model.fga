@@ -128,8 +128,8 @@ type class
 
     # Permissions — "supervisory_tier_group from parent_org" grants school/district supervisory
     # roles access to descendant classes
-    define can_list: member or supervisory_tier_group from parent_org
-    define can_read: member or supervisory_tier_group from parent_org
+    define can_list: member
+    define can_read: member
     define can_create: educator_tier or supervisory_tier_group from parent_org
     define can_update: educator_tier or supervisory_tier_group from parent_org
     define can_delete: can_delete from parent_org
