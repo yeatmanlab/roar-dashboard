@@ -1,4 +1,8 @@
 import { OpenFgaClient } from '@openfga/sdk';
+import { StatusCodes } from 'http-status-codes';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
+import { ApiError } from '../errors/api-error';
 import { logger } from '../logger';
 
 /**
@@ -32,7 +36,7 @@ export class FgaClient {
    * Subsequent calls return the cached instance.
    *
    * @returns The initialized `OpenFgaClient`
-   * @throws {Error} If required environment variables are missing
+   * @throws {ApiError} If required environment variables are missing
    */
   public static getClient(): OpenFgaClient {
     if (this.instance) return this.instance;
@@ -42,7 +46,11 @@ export class FgaClient {
     const authorizationModelId = process.env.FGA_MODEL_ID;
 
     if (!apiUrl || !storeId || !authorizationModelId) {
-      throw new Error('Missing required FGA environment variables: FGA_API_URL, FGA_STORE_ID, FGA_MODEL_ID');
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+        context: { missingVars: { apiUrl: !apiUrl, storeId: !storeId, authorizationModelId: !authorizationModelId } },
+      });
     }
 
     logger.debug({ apiUrl, storeId, authorizationModelId }, 'Initializing OpenFGA client');
