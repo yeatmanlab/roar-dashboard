@@ -141,6 +141,13 @@
       "when": 1773244800000,
       "tag": "0019_enable_uuid_ossp",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1774502400000,
+      "tag": "0020_add_created_at_to_fdw_views",
+      "breakpoints": true
     }
   ]
 }
