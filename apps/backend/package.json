@@ -27,10 +27,12 @@
     "db:push:core": "drizzle-kit push --config ./drizzle.core.config.ts",
     "db:push:assess": "drizzle-kit push --config ./drizzle.assessment.config.ts",
     "db:studio:core": "drizzle-kit studio --config ./drizzle.core.config.ts",
-    "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts"
+    "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts",
+    "fga:init": "bash ../../scripts/init-openfga-store.sh"
   },
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.4.3",
+    "@openfga/sdk": "^0.9.3",
     "@roar-dashboard/api-contract": "*",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
