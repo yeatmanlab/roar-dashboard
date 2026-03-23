@@ -13,7 +13,7 @@ describe('GroupService', () => {
   let mockGroupRepository: ReturnType<typeof createMockGroupRepository>;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
     mockGroupRepository = createMockGroupRepository();
   });
 

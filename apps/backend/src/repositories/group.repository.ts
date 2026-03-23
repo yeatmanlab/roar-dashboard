@@ -58,8 +58,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .where(and(eq(userGroups.groupId, groupId), eq(userGroups.userId, userId)))
       .limit(1);
 
-    // Verified earlier that user has access to this group, so result should always exist
-    return result[0]!.role ? [result[0]!.role] : [];
+    return result[0]?.role ? [result[0]?.role] : [];
   }
 
   /**

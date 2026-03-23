@@ -20,8 +20,6 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
-import request from 'supertest';
-import { StatusCodes } from 'http-status-codes';
 import { CoreDbClient } from '../db/clients';
 import { invitationCodes } from '../db/schema';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -31,7 +29,6 @@ import {
   createRouteHelper,
   createTierUsers,
   createGroupTierUsers,
-  authenticateAs,
 } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
@@ -260,7 +257,6 @@ describe('GET /v1/groups/:groupId/users', () => {
       });
 
       await UserGroupFactory.create({ userId: grade2User.id, groupId: testUserGroupId });
-      authenticateAs(baseFixture.districtAdmin);
       const res = await expectRoute('GET', `${testUserGroupPath()}?grade=2&role=student`)
         .as(userGroupTiers.admin)
         .toReturn(200);
@@ -275,6 +271,7 @@ describe('GET /v1/groups/:groupId/users', () => {
 
     it('supports pagination with page and perPage parameters', async () => {
       const paginationGroup = await GroupFactory.create({ name: 'Pagination Group' });
+
       await Promise.all([
         UserGroupFactory.create({
           userId: baseFixture.groupStudent.id,
@@ -288,12 +285,9 @@ describe('GET /v1/groups/:groupId/users', () => {
         }),
       ]);
 
-      authenticateAs(baseFixture.districtAdmin);
-      const res = await request(app)
-        .get(`/v1/groups/${paginationGroup.id}/users?page=1&perPage=1`)
-        .set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.OK);
+      const res = await expectRoute('GET', `/v1/groups/${paginationGroup.id}/users?page=1&perPage=1`)
+        .as({ authId: baseFixture.districtAdmin.authId! })
+        .toReturn(200);
 
       expect(res.body.data.items).toHaveLength(1);
       expect(res.body.data.pagination.page).toBe(1);
