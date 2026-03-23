@@ -42,6 +42,7 @@ export const fdwRuns = db.table('runs', {
   isAnonymous: p.boolean(),
   completedAt: p.timestamp({ withTimezone: true }),
   abortedAt: p.timestamp({ withTimezone: true }),
+  createdAt: p.timestamp({ withTimezone: true }).notNull(),
 });
 
 export type FdwRun = typeof fdwRuns.$inferSelect;

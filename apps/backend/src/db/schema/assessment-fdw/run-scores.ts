@@ -30,6 +30,7 @@ export const fdwRunScores = db.table('run_scores', {
   value: p.text().notNull(),
   assessmentStage: p.text().$type<AssessmentStage>(),
   categoryScore: p.boolean(),
+  createdAt: p.timestamp({ withTimezone: true }).notNull(),
 });
 
 export type FdwRunScore = typeof fdwRunScores.$inferSelect;
