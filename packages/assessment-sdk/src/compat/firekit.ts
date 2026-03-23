@@ -1,5 +1,6 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums/sdk-error-code.enum';
 import type {
   StartRunInput,
   FinishRunInput,
@@ -11,6 +12,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL, RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
@@ -178,12 +180,15 @@ export class FirekitFacade {
   }
 
   /**
-   * Retrieves the current interaction buffer.
+   * Atomically retrieves and clears the interaction buffer.
+   * This prevents race conditions when writeTrial() is called concurrently.
    * @internal
    * @returns Array of buffered interaction events
    */
-  _getInteractionBuffer(): AddInteractionInput[] {
-    return [...this.interactionBuffer];
+  _drainInteractionBuffer(): AddInteractionInput[] {
+    const buffer = this.interactionBuffer;
+    this.interactionBuffer = [];
+    return buffer;
   }
 
   /**
@@ -194,15 +199,6 @@ export class FirekitFacade {
    */
   _pushInteraction(interaction: AddInteractionInput): void {
     this.interactionBuffer.push(interaction);
-  }
-
-  /**
-   * Clears the interaction buffer.
-   * Called after interactions are flushed to the backend via writeTrial().
-   * @internal
-   */
-  _clearInteractionBuffer(): void {
-    this.interactionBuffer = [];
   }
 }
 
@@ -604,7 +600,9 @@ export async function writeTrial(
   const runId = facade._getRunId();
 
   if (!runId) {
-    throw new SDKError('appkit.writeTrial requires an active run. Call appkit.startRun() first.');
+    throw new SDKError('appkit.writeTrial requires an active run. Call appkit.startRun() first.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
   }
 
   const api = facade.getApi();
@@ -613,10 +611,14 @@ export async function writeTrial(
   // Validate required fields to prevent silent failures
   const trialDataRecord = trialData as Record<string, unknown>;
   if (typeof trialDataRecord['assessmentStage'] !== 'string') {
-    throw new SDKError('writeTrial requires assessmentStage in trial data.');
+    throw new SDKError('writeTrial requires assessmentStage in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
   }
   if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
-    throw new SDKError('writeTrial requires correct in trial data.');
+    throw new SDKError('writeTrial requires correct in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
   }
 
   // Coerce boolean correct values (legacy Firekit) to numbers
@@ -632,7 +634,7 @@ export async function writeTrial(
 
   const cmd = new WriteTrialCommand(api);
 
-  const bufferedInteractions = facade._getInteractionBuffer();
+  const bufferedInteractions = facade._drainInteractionBuffer();
   await invoker.run(cmd, {
     runId,
     type: RUN_EVENT_TRIAL,
@@ -644,13 +646,8 @@ export async function writeTrial(
     },
     ...(bufferedInteractions.length > 0
       ? {
-          interactions: bufferedInteractions.map((interaction) => ({
-            ...interaction,
-            // trial field required by WriteTrialInteractionCommandInput but stripped by WriteTrialCommand before sending to backend
-            trial: 1,
-          })),
+          interactions: bufferedInteractions,
         }
       : {}),
   });
-  facade._clearInteractionBuffer();
 }
