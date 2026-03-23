@@ -66,7 +66,7 @@ tuples:
 
   # ─── Group membership ─────────────────────────────────────────────
   - user: user:group-member
-    relation: member
+    relation: student
     object: group:group-g
     condition:
       name: active_membership
@@ -114,8 +114,10 @@ tests:
           can_list: true
           can_read: true
           can_create_run: true
+          can_create: false
+          can_update: false
           can_delete: false
-          can_list_students: false
+
           can_read_scores: false
           can_read_scores_basic: false
 
@@ -130,7 +132,7 @@ tests:
           can_read: true
           can_create_run: true
           can_delete: false
-          can_list_students: false
+
           can_read_scores: false
 
   - name: Student at class sees district-assigned administration (ancestor access via bidirectional hierarchy)
@@ -144,7 +146,7 @@ tests:
           can_read: true
           can_create_run: true
           can_delete: false
-          can_list_students: false
+
           can_read_scores: false
 
   # ─── District admin permissions ────────────────────────────────────
@@ -158,8 +160,10 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_create: true
+          can_update: true
           can_delete: true
-          can_list_students: true
+
           can_read_scores: true
           can_read_progress: true
           can_create_run: false
@@ -173,6 +177,8 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_create: true
+          can_update: true
           can_delete: true
 
   - name: District admin sees class-level administration (descendant access)
@@ -184,8 +190,10 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_create: true
+          can_update: true
           can_delete: true
-          can_list_students: true
+
           can_read_scores: true
           can_create_run: false
 
@@ -200,9 +208,11 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_list_students: true
+
           can_read_scores: true
           can_read_progress: true
+          can_create: false
+          can_update: false
           can_delete: false
           can_create_run: false
 
@@ -215,7 +225,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_list_students: true
+
 
   - name: School teacher does NOT see district-level administration
     check:
@@ -241,9 +251,11 @@ tests:
           can_launch_task: true
           can_read_scores_basic: true
           can_read_progress: true
+          can_create: false
+          can_update: false
           can_delete: false
           can_create_run: false
-          can_list_students: false
+
           can_read_scores: false
 
   - name: Caregiver sees school-assigned administration (ancestor access)
@@ -256,7 +268,7 @@ tests:
           can_list: true
           can_read: true
           can_launch_task: true
-          can_list_students: false
+
           can_read_scores: false
           can_delete: false
 
@@ -270,7 +282,7 @@ tests:
           can_list: true
           can_read: true
           can_launch_task: true
-          can_list_students: false
+
           can_read_scores: false
           can_delete: false
 
@@ -286,7 +298,7 @@ tests:
           can_list: true
           can_read: true
           can_create_run: true
-          can_list_students: false
+
           can_read_scores: false
           can_delete: false
 
@@ -311,6 +323,8 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_create: false
+          can_update: false
           can_delete: false
 
   - name: Student in tree A cannot see administrations in tree B
@@ -355,6 +369,8 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_create: false
+          can_update: false
           can_create_run: false
           can_delete: false
 
@@ -440,19 +456,6 @@ tests:
               - user:school-teacher
               - user:student-x
               - user:class-guardian
-
-  - name: Class-assigned administration lists only supervisors for can_list_students
-    list_users:
-      - object: administration:admin-at-class
-        user_filter:
-          - type: user
-        context:
-          current_time: "2025-06-15T12:00:00Z"
-        assertions:
-          can_list_students:
-            users:
-              - user:district-admin
-              - user:school-teacher
 
   - name: District-assigned administration lists users with can_list
     list_users:

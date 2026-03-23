@@ -89,11 +89,10 @@ Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
 |-----------|--------------|----------|
 | `can_list` | All members | `administrations.list`, org/class listing |
 | `can_read` | All members | `administrations.read`, org/class detail |
-| `can_create` | `admin_tier` (org), `educator_tier` (class) | Org/class management |
-| `can_update` | `admin_tier` (org), `educator_tier` (class) | Org/class management |
+| `can_create` | `admin_tier` (org/admin), `educator_tier` (class) | Org/class/administration management |
+| `can_update` | `admin_tier` (org/admin), `educator_tier` (class) | Org/class/administration management |
 | `can_delete` | `admin_tier` | `administrations.delete`, org/class deletion |
-| `can_list_students` | `supervisory_tier_group` | Sub-resource listing (class only) |
-| `can_list_users` | `supervisory_tier_group` + `caregiver_tier` | `users.list` |
+| `can_list_users` | `supervisory_tier_group` + `caregiver_tier` | User listing on orgs, classes, groups, families |
 | `can_read_scores` | `supervisory_tier_group` | `reports.score.read` (full) |
 | `can_read_scores_basic` | `caregiver_tier` | `reports.score.read` (composite) |
 | `can_read_progress` | `supervisory_tier_group` + `caregiver_tier` | `reports.progress.read` |
@@ -102,8 +101,8 @@ Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
 
 **Design notes:**
 
-- **No `can_create`/`can_update` on `administration`:** Administration create/update is authorized through the **parent org**, not the administration itself. To create an administration assigned to `district:D`, check `can_create` on `district:D`. This avoids a chicken-and-egg problem — the administration doesn't exist yet at authorization time.
-- **`can_list_students` only on `class` and `administration`:** There are no district/school-level student listing endpoints. Org-level user listing uses `can_list_users` instead. If `GET /orgs/:id/students` is added later, extend `can_list_students` to district/school at that time.
+- **`can_list_users` on family:** Gated on `parent` — only parents can list family members. Children cannot.
+- **Groups have the full role model:** `user_groups` has a `role` column like `user_orgs`, so groups define all 13 roles with `active_membership` conditions, not just flat `member`.
 
 ## Bidirectional hierarchy
 
@@ -239,26 +238,6 @@ async function create(authContext, body) {
     });
     if (!allowed) throw new ApiError(/* 403 */);
   }
-}
-```
-
-### Example: checking permission on a parent org (administrations.create)
-
-Administration create/update has no `can_create`/`can_update` on the `administration` type. Instead, check `can_create` on the **parent org** the administration is being assigned to:
-
-```typescript
-async function create(authContext, body) {
-  if (!isSuperAdmin) {
-    // Check permission on the org, not the (not-yet-existing) administration
-    const { allowed } = await fga.check({
-      user: `user:${userId}`,
-      relation: 'can_create',
-      object: `district:${body.districtId}`,
-      context: { current_time: new Date().toISOString() },
-    });
-    if (!allowed) throw new ApiError(/* 403 */);
-  }
-  // Create the administration and write assignment tuples...
 }
 ```
 

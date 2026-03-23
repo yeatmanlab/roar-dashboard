@@ -22,17 +22,18 @@ tuples:
     object: family:family-2
 
 tests:
-  - name: Parent can list/read their family
+  - name: Parent can list/read their family and list users
     check:
       - user: user:parent-a
         object: family:family-1
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_list_children: true
           member: true
 
-  - name: Child is a member but cannot list/read or list children
+  - name: Child is a member but cannot list/read, list users, or list children
     check:
       - user: user:child-a
         object: family:family-1
@@ -40,6 +41,7 @@ tests:
           member: true
           can_list: false
           can_read: false
+          can_list_users: false
           can_list_children: false
 
   - name: Parent cannot see another family
