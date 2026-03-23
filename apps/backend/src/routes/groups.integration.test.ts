@@ -21,8 +21,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
 import request from 'supertest';
+import { StatusCodes } from 'http-status-codes';
 import { CoreDbClient } from '../db/clients';
 import { invitationCodes } from '../db/schema';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { UserRole } from '../enums/user-role.enum';
 import {
   createTestApp,
   createRouteHelper,
@@ -32,8 +35,6 @@ import {
 } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
-import { ApiErrorCode } from '../enums/api-error-code.enum';
-import { UserRole } from '../enums/user-role.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
 import { UserGroupFactory } from '../test-support/factories/user-group.factory';
@@ -291,6 +292,8 @@ describe('GET /v1/groups/:groupId/users', () => {
       const res = await request(app)
         .get(`/v1/groups/${paginationGroup.id}/users?page=1&perPage=1`)
         .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
 
       expect(res.body.data.items).toHaveLength(1);
       expect(res.body.data.pagination.page).toBe(1);

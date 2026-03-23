@@ -108,8 +108,8 @@ describe('GroupRepository', () => {
     });
   });
 
-  describe('getUserRoleForGroup', () => {
-    it('returns the role a user holds for a specific group', async () => {
+  describe('getUserRolesForGroup', () => {
+    it('returns the roles a user holds for a specific group', async () => {
       const user = await UserFactory.create();
       const group = await GroupFactory.create();
       await UserGroupFactory.create({
@@ -452,7 +452,7 @@ describe('GroupRepository', () => {
       expect(userIds).toContain(studentUser.id);
     });
 
-    it('returns null with supervisory role', async () => {
+    it('returns empty array when user has no access', async () => {
       const adminUser = await UserFactory.create({ nameLast: 'GroupAdmin' });
       const teacherUser = await UserFactory.create({ nameLast: 'Teacher' });
       const studentUser = await UserFactory.create({ nameLast: 'Student' });

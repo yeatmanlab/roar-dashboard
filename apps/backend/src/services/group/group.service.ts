@@ -95,7 +95,7 @@ export function GroupService({
    *
    * Authorization behavior:
    * - Super admin: sees all users assigned to the group
-   * - Supervisory roles: sees only users if assigned to that group or if the group is in their accessible org tree
+   * - Supervisory roles: sees users only for groups they are directly assigned to (via group membership)
    *   - Excludes caregiver role
    * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
    *

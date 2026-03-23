@@ -137,7 +137,9 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
+    // Verify if user has permission to list users
     const group = await this.getAuthorizedById(accessControlFilter, groupId);
+
     if (!group) {
       return { items: [], totalItems: 0 };
     }
