@@ -23,7 +23,7 @@ jobs:
   build-backend:
     name: Build Backend Docker image
     runs-on: ubuntu-latest
-    environment: backend:development
+    environment: platform:development
     timeout-minutes: 10
     outputs:
       image-version: ${{ steps.docker-build.outputs.image-version }}
@@ -53,7 +53,7 @@ jobs:
     name: Migrate databases
     needs: [build-backend]
     runs-on: ubuntu-latest
-    environment: db:development
+    environment: platform:development
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -82,7 +82,7 @@ jobs:
     name: Deploy backend
     needs: [build-backend, migrate-db]
     runs-on: ubuntu-latest
-    environment: backend:development
+    environment: platform:development
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -103,11 +103,13 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # 4. Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # TODO: Re-enable after testing is complete
   deploy-frontend:
+    if: false
     name: Deploy frontend
     needs: [deploy-backend]
     runs-on: ubuntu-latest
-    environment: frontend:development
+    environment: platform:development
     timeout-minutes: 15
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY }}
