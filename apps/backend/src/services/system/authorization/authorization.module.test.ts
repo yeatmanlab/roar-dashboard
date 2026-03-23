@@ -558,6 +558,11 @@ describe('AuthorizationModule', () => {
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
         }),
       );
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: dbError }),
+        expect.stringContaining('Failed to build'),
+      );
     });
 
     it('wraps FGA write errors with EXTERNAL_SERVICE_FAILED', async () => {

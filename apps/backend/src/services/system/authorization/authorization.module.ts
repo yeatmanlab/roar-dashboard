@@ -312,58 +312,30 @@ export function AuthorizationModule({
       });
     }
 
+    /** Wrap a category builder promise — logs the underlying error, then throws ApiError. */
+    function wrapCategoryBuilder<T>(promise: Promise<T>, category: string): Promise<T> {
+      return promise.catch((err) => {
+        const message = `Failed to build ${category} tuples`;
+        logger.error({ err, context: { userId, category } }, message);
+        throw new ApiError(message, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, category },
+          cause: err,
+        });
+      });
+    }
+
     try {
       // Build all tuples in parallel — per-promise .catch() preserves which category failed
       const [orgHierarchy, orgMemberships, classMemberships, groupMemberships, familyMemberships, adminAssignments] =
         await Promise.all([
-          buildOrgHierarchyTuples().catch((err) => {
-            throw new ApiError('Failed to build org hierarchy tuples', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.DATABASE_QUERY_FAILED,
-              context: { userId, category: 'orgHierarchy' },
-              cause: err,
-            });
-          }),
-          buildOrgMembershipTuples().catch((err) => {
-            throw new ApiError('Failed to build org membership tuples', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.DATABASE_QUERY_FAILED,
-              context: { userId, category: 'orgMemberships' },
-              cause: err,
-            });
-          }),
-          buildClassMembershipTuples().catch((err) => {
-            throw new ApiError('Failed to build class membership tuples', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.DATABASE_QUERY_FAILED,
-              context: { userId, category: 'classMemberships' },
-              cause: err,
-            });
-          }),
-          buildGroupMembershipTuples().catch((err) => {
-            throw new ApiError('Failed to build group membership tuples', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.DATABASE_QUERY_FAILED,
-              context: { userId, category: 'groupMemberships' },
-              cause: err,
-            });
-          }),
-          buildFamilyMembershipTuples().catch((err) => {
-            throw new ApiError('Failed to build family membership tuples', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.DATABASE_QUERY_FAILED,
-              context: { userId, category: 'familyMemberships' },
-              cause: err,
-            });
-          }),
-          buildAdministrationAssignmentTuples().catch((err) => {
-            throw new ApiError('Failed to build administration assignment tuples', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.DATABASE_QUERY_FAILED,
-              context: { userId, category: 'administrationAssignments' },
-              cause: err,
-            });
-          }),
+          wrapCategoryBuilder(buildOrgHierarchyTuples(), 'orgHierarchy'),
+          wrapCategoryBuilder(buildOrgMembershipTuples(), 'orgMemberships'),
+          wrapCategoryBuilder(buildClassMembershipTuples(), 'classMemberships'),
+          wrapCategoryBuilder(buildGroupMembershipTuples(), 'groupMemberships'),
+          wrapCategoryBuilder(buildFamilyMembershipTuples(), 'familyMemberships'),
+          wrapCategoryBuilder(buildAdministrationAssignmentTuples(), 'administrationAssignments'),
         ]);
 
       const categories = {
