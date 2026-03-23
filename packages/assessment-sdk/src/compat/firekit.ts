@@ -14,7 +14,6 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
-  WriteTrialTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
@@ -604,6 +603,9 @@ export async function writeTrial(
 
   const cmd = new WriteTrialCommand(api);
 
+  // Drain buffer before invoker.run() to prevent duplicate interactions in concurrent writeTrial calls.
+  // Trade-off: interactions are lost if the network request fails (not retried on next call).
+  // See: https://github.com/richford/roar-dashboard/pull/3 - confirm this behavior is intentional.
   const bufferedInteractions = facade._drainInteractionBuffer();
   await invoker.run(cmd, {
     runId,
