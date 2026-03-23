@@ -3,6 +3,9 @@ name: Deploy Platform to Dev
 on:
   push:
     branches:
+      # TODO: Remove after testing is complete
+      - enh/1645/backend-prod-deployment
+      # TODO: Remove once backend refactor is complete
       - project/backend-refactor
       - main
 
