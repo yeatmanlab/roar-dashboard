@@ -29,7 +29,7 @@ export const ProgressReportsContract = c.router(
       description:
         'Returns a paginated table of students with per-task completion status ' +
         '(assigned, started, completed, optional), scoped to a specific org/class/group. ' +
-        'Requires report access and a supervisory role on the administration.'
+        'Requires report access and a supervisory role on the administration.',
     },
   },
   { pathPrefix: '/administrations' },
