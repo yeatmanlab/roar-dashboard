@@ -1,0 +1,279 @@
+name: Enrollment Dates
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── Hierarchy (bidirectional) ─────────────────────────────────────
+  - user: district:district-a
+    relation: parent_org
+    object: school:school-a
+  - user: school:school-a
+    relation: child_school
+    object: district:district-a
+  - user: school:school-a
+    relation: parent_org
+    object: class:class-a
+  - user: class:class-a
+    relation: child_class
+    object: school:school-a
+
+  # ─── Active enrollment (null end = far-future sentinel) ────────────
+  - user: user:active-student
+    relation: student
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Bounded enrollment (start=2025-01, end=2025-06) ──────────────
+  - user: user:bounded-student
+    relation: student
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2025-01-01T00:00:00Z"
+        grant_end: "2025-06-30T23:59:59Z"
+
+  # ─── Future enrollment (start=2030-01) ─────────────────────────────
+  - user: user:future-student
+    relation: student
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2030-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Expired enrollment (end=2020-12) ──────────────────────────────
+  - user: user:expired-student
+    relation: student
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2019-01-01T00:00:00Z"
+        grant_end: "2020-12-31T23:59:59Z"
+
+  # ─── Org membership with bounded enrollment ────────────────────────
+  - user: user:bounded-admin
+    relation: administrator
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2025-01-01T00:00:00Z"
+        grant_end: "2025-06-30T23:59:59Z"
+
+  # ─── Group membership with future start ────────────────────────────
+  - user: user:future-group-member
+    relation: member
+    object: group:group-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2030-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Administration assignments ────────────────────────────────────
+  - user: class:class-a
+    relation: assigned_class
+    object: administration:admin-a
+  - user: district:district-a
+    relation: assigned_district
+    object: administration:admin-a
+  - user: group:group-a
+    relation: assigned_group
+    object: administration:admin-via-group
+
+tests:
+  # ─── Null end date (far-future sentinel) = always active ───────────
+
+  - name: Active enrollment with null end date is always active
+    check:
+      - user: user:active-student
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+      - user: user:active-student
+        object: class:class-a
+        context:
+          current_time: "2099-12-31T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+
+  # ─── Bounded enrollment ────────────────────────────────────────────
+
+  - name: Bounded enrollment is active during the enrollment period
+    check:
+      - user: user:bounded-student
+        object: class:class-a
+        context:
+          current_time: "2025-03-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+
+  - name: Bounded enrollment is denied before start date
+    check:
+      - user: user:bounded-student
+        object: class:class-a
+        context:
+          current_time: "2024-12-31T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Bounded enrollment is denied after end date
+    check:
+      - user: user:bounded-student
+        object: class:class-a
+        context:
+          current_time: "2025-07-01T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── Future enrollment ─────────────────────────────────────────────
+
+  - name: Future enrollment is denied before start date
+    check:
+      - user: user:future-student
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Future enrollment is active after start date
+    check:
+      - user: user:future-student
+        object: class:class-a
+        context:
+          current_time: "2030-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+
+  # ─── Expired enrollment ────────────────────────────────────────────
+
+  - name: Expired enrollment is denied
+    check:
+      - user: user:expired-student
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── Enrollment dates affect administration access ─────────────────
+
+  - name: Active student sees administration (enrollment active)
+    check:
+      - user: user:active-student
+        object: administration:admin-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+
+  - name: Expired student does NOT see administration
+    check:
+      - user: user:expired-student
+        object: administration:admin-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_run: false
+
+  - name: Future student does NOT see administration yet
+    check:
+      - user: user:future-student
+        object: administration:admin-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_run: false
+
+  # ─── Org membership enrollment dates ───────────────────────────────
+
+  - name: Bounded admin sees district during enrollment
+    check:
+      - user: user:bounded-admin
+        object: district:district-a
+        context:
+          current_time: "2025-03-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: true
+          can_update: true
+          can_delete: true
+
+  - name: Bounded admin denied after enrollment expires
+    check:
+      - user: user:bounded-admin
+        object: district:district-a
+        context:
+          current_time: "2025-07-01T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: Bounded admin sees administration during enrollment
+    check:
+      - user: user:bounded-admin
+        object: administration:admin-a
+        context:
+          current_time: "2025-03-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+
+  - name: Bounded admin denied administration after enrollment expires
+    check:
+      - user: user:bounded-admin
+        object: administration:admin-a
+        context:
+          current_time: "2025-07-01T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── Group membership enrollment dates ─────────────────────────────
+
+  - name: Future group member cannot see group-assigned administration yet
+    check:
+      - user: user:future-group-member
+        object: administration:admin-via-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Future group member can see group-assigned administration after start
+    check:
+      - user: user:future-group-member
+        object: administration:admin-via-group
+        context:
+          current_time: "2030-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
