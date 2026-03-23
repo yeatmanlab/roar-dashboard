@@ -20,9 +20,6 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { UserRole } from '../enums/user-role.enum';
-import { CoreDbClient } from '../db/clients';
-import { users } from '../db/schema';
-import { eq } from 'drizzle-orm';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -44,9 +41,8 @@ beforeAll(async () => {
   tiers = await createTierUsers(baseFixture.district.id);
 
   // Assign tier educator to a class so they can access students via direct class membership (PATH 3)
-  const [educatorUser] = await CoreDbClient.select().from(users).where(eq(users.authId, tiers.educator.authId));
   await UserClassFactory.create({
-    userId: educatorUser!.id,
+    userId: tiers.educator.id,
     classId: baseFixture.classInSchoolA.id,
     role: UserRole.TEACHER,
   });
@@ -204,7 +200,7 @@ describe('GET /v1/users/:id', () => {
     it('unassigned user can only access themselves', async () => {
       // Unassigned user should not be able to access other users
       const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
-        .as({ authId: baseFixture.unassignedUser.authId! })
+        .as({ id: baseFixture.unassignedUser.id, authId: baseFixture.unassignedUser.authId! })
         .toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
