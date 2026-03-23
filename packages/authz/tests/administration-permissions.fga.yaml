@@ -1,0 +1,481 @@
+name: Administration Permissions
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── District hierarchy (bidirectional) ────────────────────────────
+  - user: district:district-a
+    relation: parent_org
+    object: school:school-a
+  - user: school:school-a
+    relation: child_school
+    object: district:district-a
+  - user: school:school-a
+    relation: parent_org
+    object: class:class-x
+  - user: class:class-x
+    relation: child_class
+    object: school:school-a
+
+  # ─── Memberships (with enrollment condition context) ───────────────
+  - user: user:district-admin
+    relation: district_administrator
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-teacher
+    relation: teacher
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:student-x
+    relation: student
+    object: class:class-x
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:class-guardian
+    relation: guardian
+    object: class:class-x
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Administration assignments ────────────────────────────────────
+  - user: district:district-a
+    relation: assigned_district
+    object: administration:admin-at-district
+  - user: school:school-a
+    relation: assigned_school
+    object: administration:admin-at-school
+  - user: class:class-x
+    relation: assigned_class
+    object: administration:admin-at-class
+  - user: group:group-g
+    relation: assigned_group
+    object: administration:admin-at-group
+
+  # ─── Group membership ─────────────────────────────────────────────
+  - user: user:group-member
+    relation: member
+    object: group:group-g
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Separate district tree for isolation tests ──────────────────
+  - user: district:district-b
+    relation: parent_org
+    object: school:school-b
+  - user: school:school-b
+    relation: child_school
+    object: district:district-b
+  - user: user:admin-b
+    relation: administrator
+    object: district:district-b
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:student-b
+    relation: student
+    object: school:school-b
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: district:district-b
+    relation: assigned_district
+    object: administration:admin-in-b
+
+tests:
+  # ─── Student permissions ───────────────────────────────────────────
+
+  - name: Student can list/read class-assigned administration
+    check:
+      - user: user:student-x
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_delete: false
+          can_list_students: false
+          can_read_scores: false
+          can_read_scores_basic: false
+
+  - name: Student at class sees school-assigned administration (ancestor access)
+    check:
+      - user: user:student-x
+        object: administration:admin-at-school
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_delete: false
+          can_list_students: false
+          can_read_scores: false
+
+  - name: Student at class sees district-assigned administration (ancestor access via bidirectional hierarchy)
+    check:
+      - user: user:student-x
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_delete: false
+          can_list_students: false
+          can_read_scores: false
+
+  # ─── District admin permissions ────────────────────────────────────
+
+  - name: District admin sees district-assigned administration with full permissions
+    check:
+      - user: user:district-admin
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_delete: true
+          can_list_students: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create_run: false
+
+  - name: District admin sees school-level administration (descendant access)
+    check:
+      - user: user:district-admin
+        object: administration:admin-at-school
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_delete: true
+
+  - name: District admin sees class-level administration (descendant access)
+    check:
+      - user: user:district-admin
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_delete: true
+          can_list_students: true
+          can_read_scores: true
+          can_create_run: false
+
+  # ─── School teacher permissions ────────────────────────────────────
+
+  - name: School teacher sees school-assigned administration
+    check:
+      - user: user:school-teacher
+        object: administration:admin-at-school
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_students: true
+          can_read_scores: true
+          can_read_progress: true
+          can_delete: false
+          can_create_run: false
+
+  - name: School teacher sees class-level administration (descendant access)
+    check:
+      - user: user:school-teacher
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_students: true
+
+  - name: School teacher does NOT see district-level administration
+    check:
+      - user: user:school-teacher
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── Caregiver permissions ─────────────────────────────────────────
+
+  - name: Caregiver can list/read class-assigned administration with limited permissions
+    check:
+      - user: user:class-guardian
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_launch_task: true
+          can_read_scores_basic: true
+          can_read_progress: true
+          can_delete: false
+          can_create_run: false
+          can_list_students: false
+          can_read_scores: false
+
+  - name: Caregiver sees school-assigned administration (ancestor access)
+    check:
+      - user: user:class-guardian
+        object: administration:admin-at-school
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_launch_task: true
+          can_list_students: false
+          can_read_scores: false
+          can_delete: false
+
+  - name: Caregiver sees district-assigned administration (ancestor access)
+    check:
+      - user: user:class-guardian
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_launch_task: true
+          can_list_students: false
+          can_read_scores: false
+          can_delete: false
+
+  # ─── Group member permissions ──────────────────────────────────────
+
+  - name: Group member sees group-assigned administration
+    check:
+      - user: user:group-member
+        object: administration:admin-at-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_list_students: false
+          can_read_scores: false
+          can_delete: false
+
+  - name: Group member does NOT see class-assigned administration
+    check:
+      - user: user:group-member
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── Cross-administration denial ───────────────────────────────────
+
+  - name: Admin in tree A cannot see administrations in tree B
+    check:
+      - user: user:district-admin
+        object: administration:admin-in-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_delete: false
+
+  - name: Student in tree A cannot see administrations in tree B
+    check:
+      - user: user:student-x
+        object: administration:admin-in-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_run: false
+
+  - name: Admin in tree B cannot see administrations in tree A
+    check:
+      - user: user:admin-b
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Student in tree B cannot see administrations in tree A
+    check:
+      - user: user:student-b
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── No-membership denial ────────────────────────────────────────
+
+  - name: User with no memberships sees nothing
+    check:
+      - user: user:nobody
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_run: false
+          can_delete: false
+
+  # ─── list_objects ──────────────────────────────────────────────────
+
+  - name: District admin can list all administrations in their tree
+    list_objects:
+      - user: user:district-admin
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-at-district
+            - administration:admin-at-school
+            - administration:admin-at-class
+
+  - name: Student sees all administrations in their ancestor tree
+    list_objects:
+      - user: user:student-x
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-at-district
+            - administration:admin-at-school
+            - administration:admin-at-class
+
+  - name: School teacher sees school and class administrations only
+    list_objects:
+      - user: user:school-teacher
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-at-school
+            - administration:admin-at-class
+
+  - name: Group member sees only group administration
+    list_objects:
+      - user: user:group-member
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-at-group
+
+  - name: Admin B sees only tree B administrations
+    list_objects:
+      - user: user:admin-b
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-in-b
+
+  - name: Nobody sees no administrations
+    list_objects:
+      - user: user:nobody
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: []
+
+  # ─── list_users ───────────────────────────────────────────────────
+
+  - name: Class-assigned administration lists all users with can_list
+    list_users:
+      - object: administration:admin-at-class
+        user_filter:
+          - type: user
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            users:
+              - user:district-admin
+              - user:school-teacher
+              - user:student-x
+              - user:class-guardian
+
+  - name: Class-assigned administration lists only supervisors for can_list_students
+    list_users:
+      - object: administration:admin-at-class
+        user_filter:
+          - type: user
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list_students:
+            users:
+              - user:district-admin
+              - user:school-teacher
+
+  - name: District-assigned administration lists users with can_list
+    list_users:
+      - object: administration:admin-at-district
+        user_filter:
+          - type: user
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            users:
+              - user:district-admin
+              - user:student-x
+              - user:class-guardian
+
+  - name: Group-assigned administration lists only group members
+    list_users:
+      - object: administration:admin-at-group
+        user_filter:
+          - type: user
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            users:
+              - user:group-member

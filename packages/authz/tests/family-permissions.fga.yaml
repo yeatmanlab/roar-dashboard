@@ -1,0 +1,72 @@
+name: Family Permissions
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── Family memberships ───────────────────────────────────────────
+  - user: user:parent-a
+    relation: parent
+    object: family:family-1
+  - user: user:child-a
+    relation: child
+    object: family:family-1
+  - user: user:child-b
+    relation: child
+    object: family:family-1
+
+  # Separate family for isolation tests
+  - user: user:parent-b
+    relation: parent
+    object: family:family-2
+  - user: user:child-c
+    relation: child
+    object: family:family-2
+
+tests:
+  - name: Parent can list/read their family
+    check:
+      - user: user:parent-a
+        object: family:family-1
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_children: true
+          member: true
+
+  - name: Child is a member but cannot list/read or list children
+    check:
+      - user: user:child-a
+        object: family:family-1
+        assertions:
+          member: true
+          can_list: false
+          can_read: false
+          can_list_children: false
+
+  - name: Parent cannot see another family
+    check:
+      - user: user:parent-a
+        object: family:family-2
+        assertions:
+          can_list: false
+          can_read: false
+          can_list_children: false
+          member: false
+
+  - name: Child cannot see another family
+    check:
+      - user: user:child-a
+        object: family:family-2
+        assertions:
+          member: false
+          can_list: false
+          can_read: false
+
+  - name: Non-member has no access to any family
+    check:
+      - user: user:nobody
+        object: family:family-1
+        assertions:
+          can_list: false
+          can_read: false
+          member: false
+          can_list_children: false

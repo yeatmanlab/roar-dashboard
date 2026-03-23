@@ -1,0 +1,9 @@
+{
+  "name": "@roar-dashboard/authz",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "validate": "fga model validate --file authorization-model.fga",
+    "test": "fga model test --tests 'tests/*.fga.yaml'"
+  }
+}

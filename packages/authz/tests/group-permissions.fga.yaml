@@ -1,0 +1,74 @@
+name: Group Permissions
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── Group memberships ────────────────────────────────────────────
+  - user: user:group-student
+    relation: member
+    object: group:group-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Administration assigned to group ──────────────────────────────
+  - user: group:group-a
+    relation: assigned_group
+    object: administration:admin-via-group
+
+tests:
+  - name: Group member can list/read group
+    check:
+      - user: user:group-student
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+
+  - name: Non-member cannot list/read group
+    check:
+      - user: user:nobody
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Group member can list/read and create runs on group-assigned administration
+    check:
+      - user: user:group-student
+        object: administration:admin-via-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_delete: false
+          can_list_students: false
+          can_read_scores: false
+
+  - name: Non-member cannot see group-assigned administration
+    check:
+      - user: user:nobody
+        object: administration:admin-via-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_run: false
+
+  - name: Group member sees only group administration
+    list_objects:
+      - user: user:group-student
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-via-group
