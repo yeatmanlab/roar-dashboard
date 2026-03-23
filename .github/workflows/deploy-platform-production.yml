@@ -3,8 +3,6 @@ name: Deploy Platform to Production
 on:
   push:
     branches:
-      # TODO: Remove after testing is complete
-      - enh/1645/backend-prod-deployment
       # TODO: Remove once backend refactor is complete
       - project/backend-refactor
     # TODO: Re-enable once backend refactor is complete
@@ -33,12 +31,14 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout repository
+        # TODO: Remove once branch triggers are removed and only tags remain
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Verify tag commit is on main
+        # TODO: Remove once branch triggers are removed and only tags remain
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG_SHA="${{ github.sha }}"
