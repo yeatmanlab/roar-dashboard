@@ -2,9 +2,9 @@ import { eq } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { FgaClient } from '../../clients/fga.client';
-import { getCoreDbClient } from '../../db/clients';
-import type * as CoreDbSchema from '../../db/schema/core';
+import { FgaClient } from '../../../clients/fga.client';
+import { getCoreDbClient } from '../../../db/clients';
+import type * as CoreDbSchema from '../../../db/schema/core';
 import {
   orgs,
   classes,
@@ -15,15 +15,15 @@ import {
   administrationOrgs,
   administrationClasses,
   administrationGroups,
-} from '../../db/schema/core';
-import { OrgType } from '../../enums/org-type.enum';
-import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import { ApiError } from '../../errors/api-error';
-import { logger } from '../../logger';
-import type { AuthContext } from '../../types/auth-context';
-import type { UserRole } from '../../enums/user-role.enum';
-import type { UserFamilyRole } from '../../enums/user-family-role.enum';
+} from '../../../db/schema/core';
+import { OrgType } from '../../../enums/org-type.enum';
+import { ApiErrorCode } from '../../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
+import { ApiError } from '../../../errors/api-error';
+import { logger } from '../../../logger';
+import type { AuthContext } from '../../../types/auth-context';
+import type { UserRole } from '../../../enums/user-role.enum';
+import type { UserFamilyRole } from '../../../enums/user-family-role.enum';
 import {
   schoolHierarchyTuples,
   classHierarchyTuples,
@@ -36,7 +36,7 @@ import {
   administrationSchoolTuple,
   administrationClassTuple,
   administrationGroupTuple,
-} from './helpers/fga-tuples';
+} from '../../authorization/helpers/fga-tuples';
 
 /** Maximum tuples per FGA writeTuples call. */
 const FGA_WRITE_BATCH_SIZE = 100;
@@ -73,7 +73,7 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * FgaBackfillService
+ * AuthorizationModule
  *
  * Reads all existing data from Postgres junction tables and writes
  * the corresponding FGA tuples. Used to hydrate an FGA store from
@@ -82,7 +82,7 @@ function chunk<T>(items: T[], size: number): T[][] {
  * @param db - Core database client (injectable for testing)
  * @param getClient - Callback returning the OpenFGA client
  */
-export function FgaBackfillService({
+export function AuthorizationModule({
   db,
   getClient = () => FgaClient.getClient(),
 }: {
@@ -308,7 +308,7 @@ export function FgaBackfillService({
    * @throws {ApiError} FORBIDDEN if the user is not a super admin
    * @throws {ApiError} INTERNAL_SERVER_ERROR if a database or FGA error occurs
    */
-  async function backfill(authContext: AuthContext, { dryRun }: { dryRun: boolean }): Promise<BackfillResult> {
+  async function backfillFgaStore(authContext: AuthContext, { dryRun }: { dryRun: boolean }): Promise<BackfillResult> {
     const { userId, isSuperAdmin } = authContext;
 
     if (!isSuperAdmin) {
@@ -388,5 +388,5 @@ export function FgaBackfillService({
     }
   }
 
-  return { backfill };
+  return { backfillFgaStore };
 }

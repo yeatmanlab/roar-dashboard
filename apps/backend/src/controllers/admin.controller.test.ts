@@ -3,23 +3,25 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
-import type { BackfillResult } from '../services/authorization/fga-backfill.service';
+import type { BackfillResult } from '../services/system/authorization/authorization.module';
 
-vi.mock('../services/authorization/fga-backfill.service', () => ({
-  FgaBackfillService: vi.fn(),
+vi.mock('../services/system/system.service', () => ({
+  SystemService: vi.fn(),
 }));
 
-import { FgaBackfillService } from '../services/authorization/fga-backfill.service';
+import { SystemService } from '../services/system/system.service';
 
 describe('AdminController', () => {
-  const mockBackfill = vi.fn();
+  const mockBackfillFgaStore = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: true };
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(FgaBackfillService).mockReturnValue({
-      backfill: mockBackfill,
+    vi.mocked(SystemService).mockReturnValue({
+      authorization: {
+        backfillFgaStore: mockBackfillFgaStore,
+      },
     });
   });
 
@@ -37,7 +39,7 @@ describe('AdminController', () => {
         },
         totalTuples: 83,
       };
-      mockBackfill.mockResolvedValue(backfillResult);
+      mockBackfillFgaStore.mockResolvedValue(backfillResult);
 
       const { AdminController } = await import('./admin.controller');
       const result = await AdminController.backfillFga(mockAuthContext, { dryRun: false });
@@ -47,7 +49,7 @@ describe('AdminController', () => {
     });
 
     it('passes dryRun query parameter to the service', async () => {
-      mockBackfill.mockResolvedValue({
+      mockBackfillFgaStore.mockResolvedValue({
         dryRun: true,
         categories: {
           orgHierarchy: 0,
@@ -63,11 +65,11 @@ describe('AdminController', () => {
       const { AdminController } = await import('./admin.controller');
       await AdminController.backfillFga(mockAuthContext, { dryRun: true });
 
-      expect(mockBackfill).toHaveBeenCalledWith(mockAuthContext, { dryRun: true });
+      expect(mockBackfillFgaStore).toHaveBeenCalledWith(mockAuthContext, { dryRun: true });
     });
 
     it('returns 403 when service throws FORBIDDEN', async () => {
-      mockBackfill.mockRejectedValue(
+      mockBackfillFgaStore.mockRejectedValue(
         new ApiError(ApiErrorMessage.FORBIDDEN, {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -82,7 +84,7 @@ describe('AdminController', () => {
     });
 
     it('returns 500 when service throws internal error', async () => {
-      mockBackfill.mockRejectedValue(
+      mockBackfillFgaStore.mockRejectedValue(
         new ApiError('FGA backfill failed', {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
@@ -98,7 +100,7 @@ describe('AdminController', () => {
 
     it('re-throws non-ApiError exceptions', async () => {
       const rawError = new Error('unexpected');
-      mockBackfill.mockRejectedValue(rawError);
+      mockBackfillFgaStore.mockRejectedValue(rawError);
 
       const { AdminController } = await import('./admin.controller');
 

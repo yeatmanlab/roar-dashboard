@@ -1,11 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 import type { BackfillFgaQuery } from '@roar-dashboard/api-contract';
-import { FgaBackfillService } from '../services/authorization/fga-backfill.service';
+import { SystemService } from '../services/system/system.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
 
-const backfillService = FgaBackfillService();
+const systemService = SystemService();
 
 /**
  * Admin controller — handles super-admin-only operations.
@@ -22,7 +22,7 @@ export const AdminController = {
    */
   backfillFga: async (authContext: AuthContext, query: BackfillFgaQuery) => {
     try {
-      const result = await backfillService.backfill(authContext, { dryRun: query.dryRun });
+      const result = await systemService.authorization.backfillFgaStore(authContext, { dryRun: query.dryRun });
       return {
         status: StatusCodes.OK as const,
         body: { data: result },

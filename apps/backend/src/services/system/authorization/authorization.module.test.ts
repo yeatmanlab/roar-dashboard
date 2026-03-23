@@ -1,13 +1,13 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { OpenFgaClient } from '@openfga/sdk';
 import { StatusCodes } from 'http-status-codes';
-import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import { ApiError } from '../../errors/api-error';
-import { logger } from '../../logger';
-import { AuthContextFactory } from '../../test-support/factories/user.factory';
-import { OrgType } from '../../enums/org-type.enum';
-import { FgaBackfillService } from './fga-backfill.service';
+import { ApiErrorCode } from '../../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
+import { ApiError } from '../../../errors/api-error';
+import { logger } from '../../../logger';
+import { AuthContextFactory } from '../../../test-support/factories/user.factory';
+import { OrgType } from '../../../enums/org-type.enum';
+import { AuthorizationModule } from './authorization.module';
 
 // ── Mock DB ──────────────────────────────────────────────────────────────────
 
@@ -127,7 +127,7 @@ const adminGroupRow = {
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
-describe('FgaBackfillService', () => {
+describe('AuthorizationModule', () => {
   let mockClient: OpenFgaClient;
 
   beforeEach(() => {
@@ -139,9 +139,9 @@ describe('FgaBackfillService', () => {
     it('throws 403 for non-super-admin', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const db = createMockDb({});
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
 
-      await expect(service.backfill(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.FORBIDDEN,
           statusCode: StatusCodes.FORBIDDEN,
@@ -153,9 +153,9 @@ describe('FgaBackfillService', () => {
     it('does not query the database for non-super-admin', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const db = createMockDb({});
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
 
-      await expect(service.backfill(authContext, { dryRun: false })).rejects.toThrow(ApiError);
+      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(ApiError);
       expect(db.select).not.toHaveBeenCalled();
     });
   });
@@ -175,8 +175,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [adminGroupRow],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: true });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: true });
 
       expect(result.dryRun).toBe(true);
       expect(result.totalTuples).toBeGreaterThan(0);
@@ -197,8 +197,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      await service.backfill(authContext, { dryRun: true });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      await module.backfillFgaStore(authContext, { dryRun: true });
 
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({ dryRun: true, totalTuples: 0 }),
@@ -222,8 +222,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories).toEqual({
         orgHierarchy: 0,
@@ -253,8 +253,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: true });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: true });
 
       // schoolHierarchyTuples returns 2 tuples per school
       expect(result.categories.orgHierarchy).toBe(2);
@@ -274,8 +274,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: true });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: true });
 
       expect(result.categories.orgHierarchy).toBe(2);
     });
@@ -296,8 +296,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.orgMemberships).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -325,8 +325,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.orgMemberships).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -356,8 +356,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.familyMemberships).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -393,8 +393,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -422,8 +422,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -451,8 +451,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [adminGroupRow],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(2);
     });
@@ -483,8 +483,8 @@ describe('FgaBackfillService', () => {
         administration_groups: [],
       });
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
-      const result = await service.backfill(authContext, { dryRun: false });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const result = await module.backfillFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.classMemberships).toBe(250);
 
@@ -522,9 +522,9 @@ describe('FgaBackfillService', () => {
         }),
       };
 
-      const service = FgaBackfillService({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
 
-      await expect(service.backfill(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.INTERNAL,
