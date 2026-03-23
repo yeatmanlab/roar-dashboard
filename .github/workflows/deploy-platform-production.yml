@@ -5,10 +5,13 @@ on:
     branches:
       # TODO: Remove after testing is complete
       - enh/1645/backend-prod-deployment
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      # TODO: Remove once backend refactor is complete
+      - project/backend-refactor
+    # TODO: Re-enable once backend refactor is complete
+    # tags:
+    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+"
+    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -24,19 +27,19 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Verify tag is on main
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # TODO: Re-enable once merged to main
   verify-tag:
-    if: false
     name: Verify tag is on main
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout repository
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Verify tag commit is on main
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG_SHA="${{ github.sha }}"
           if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
@@ -48,25 +51,22 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Product owner review
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # TODO: Re-enable once merged to main
   product-owner-review:
-    if: false
     name: Request product owner review
     needs: [verify-tag]
     runs-on: ubuntu-latest
-    environment: product-owner-review
+    environment: roar-platform:production:release-approval
     timeout-minutes: 15
     steps:
       - name: Approval granted
         run: echo "Approval granted, proceeding with platform deployment to production."
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # 1. Build Backend Docker image
+  # Build Backend Docker image
   # ––––––––––––––––––––––––––––––––––––– #
   build-backend:
     name: Build Backend Docker image
-    # TODO: Re-enable once merged to main
-    # needs: [product-owner-review]
+    needs: [product-owner-review]
     runs-on: ubuntu-latest
     environment: platform:production
     timeout-minutes: 10
@@ -91,7 +91,7 @@ jobs:
           dockerfile: apps/backend/Dockerfile
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # 2. Migrate databases
+  # Migrate databases
   # ––––––––––––––––––––––––––––––––––––– #
   migrate-db:
     name: Migrate databases
@@ -120,7 +120,7 @@ jobs:
           database: assessment
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # 3. Deploy Backend
+  # Deploy Backend
   # ––––––––––––––––––––––––––––––––––––– #
   deploy-backend:
     name: Deploy backend
@@ -145,7 +145,7 @@ jobs:
           image-tag: ${{ needs.build-backend.outputs.image-version }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # 4. Deploy frontend
+  # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # TODO: Re-enable after testing is complete
   deploy-frontend:

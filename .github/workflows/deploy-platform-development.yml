@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   # ––––––––––––––––––––––––––––––––––––– #
-  # 1. Build Backend Docker image
+  # Build Backend Docker image
   # ––––––––––––––––––––––––––––––––––––– #
   build-backend:
     name: Build Backend Docker image
@@ -48,7 +48,7 @@ jobs:
           dockerfile: apps/backend/Dockerfile
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # 2. Migrate databases
+  # Migrate databases
   # ––––––––––––––––––––––––––––––––––––– #
   migrate-db:
     name: Migrate databases
@@ -77,7 +77,7 @@ jobs:
           database: assessment
 
   # ––––––––––––––––––––––––––––––––––––– #
-  # 3. Deploy Backend
+  # Deploy Backend
   # ––––––––––––––––––––––––––––––––––––– #
   deploy-backend:
     name: Deploy backend
@@ -102,7 +102,7 @@ jobs:
           image-tag: ${{ needs.build-backend.outputs.image-version }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # 4. Deploy frontend
+  # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # TODO: Re-enable after testing is complete
   deploy-frontend:
