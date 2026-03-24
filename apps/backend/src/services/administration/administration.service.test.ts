@@ -22,13 +22,8 @@ import {
   createMockRunRepository,
   createMockUserRepository,
 } from '../../test-support/repositories';
-import { createMockTaskService } from '../../test-support/services';
-import { fgaListObjects } from '../authorization/fga-check';
-
-vi.mock('../authorization/fga-check', () => ({
-  fgaListObjects: vi.fn(),
-  extractFgaObjectId: (obj: string) => obj.split(':')[1] ?? '',
-}));
+import { createMockAuthorizationService, createMockTaskService } from '../../test-support/services';
+import type { MockAuthorizationService } from '../../test-support/services';
 
 describe('AdministrationService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
@@ -36,6 +31,7 @@ describe('AdministrationService', () => {
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockRunRepository: ReturnType<typeof createMockRunRepository>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
+  let mockAuthorizationService: MockAuthorizationService;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -44,6 +40,7 @@ describe('AdministrationService', () => {
     mockUserRepository = createMockUserRepository();
     mockRunRepository = createMockRunRepository();
     mockTaskService = createMockTaskService();
+    mockAuthorizationService = createMockAuthorizationService();
   });
 
   describe('list', () => {
@@ -74,7 +71,7 @@ describe('AdministrationService', () => {
         orderBy: { field: 'createdAt', direction: 'desc' },
       });
       // Super admins bypass FGA — no FGA call should be made
-      expect(fgaListObjects).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
     });
@@ -82,9 +79,7 @@ describe('AdministrationService', () => {
     it('should use FGA listObjects + getByIds for non-super-admin users', async () => {
       const mockAdmins = AdministrationFactory.buildList(3);
 
-      vi.mocked(fgaListObjects).mockResolvedValue({
-        objects: mockAdmins.map((a) => `administration:${a.id}`),
-      });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
       mockAdministrationRepository.getByIds.mockResolvedValue({
         items: mockAdmins,
         totalItems: 3,
@@ -92,6 +87,7 @@ describe('AdministrationService', () => {
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -104,7 +100,11 @@ describe('AdministrationService', () => {
         },
       );
 
-      expect(fgaListObjects).toHaveBeenCalledWith('user-123', 'can_list', 'administration');
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        'can_list',
+        'administration',
+      );
       expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith(
         mockAdmins.map((a) => a.id),
         {
@@ -119,13 +119,12 @@ describe('AdministrationService', () => {
     });
 
     it('should pass pagination options to getByIds', async () => {
-      vi.mocked(fgaListObjects).mockResolvedValue({
-        objects: ['administration:admin-1'],
-      });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['administration:admin-1']);
       mockAdministrationRepository.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -146,10 +145,11 @@ describe('AdministrationService', () => {
     });
 
     it('should return empty results when FGA returns no accessible administrations', async () => {
-      vi.mocked(fgaListObjects).mockResolvedValue({ objects: [] });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -162,7 +162,11 @@ describe('AdministrationService', () => {
         },
       );
 
-      expect(fgaListObjects).toHaveBeenCalledWith('user-no-access', 'can_list', 'administration');
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-no-access',
+        'can_list',
+        'administration',
+      );
       // Should short-circuit without calling the repository
       expect(mockAdministrationRepository.getByIds).not.toHaveBeenCalled();
       expect(result.items).toEqual([]);
@@ -170,13 +174,12 @@ describe('AdministrationService', () => {
     });
 
     it('should map API sort field "name" to database column "name"', async () => {
-      vi.mocked(fgaListObjects).mockResolvedValue({
-        objects: ['administration:admin-1'],
-      });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['administration:admin-1']);
       mockAdministrationRepository.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -220,13 +223,14 @@ describe('AdministrationService', () => {
 
       it('should pass status filter to getByIds for non-super-admin users', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);
-        vi.mocked(fgaListObjects).mockResolvedValue({
-          objects: mockAdmins.map((a) => `administration:${a.id}`),
-        });
+        mockAuthorizationService.listAccessibleObjects.mockResolvedValue(
+          mockAdmins.map((a) => `administration:${a.id}`),
+        );
         mockAdministrationRepository.getByIds.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await service.list(
@@ -277,14 +281,15 @@ describe('AdministrationService', () => {
     describe('embed=stats', () => {
       it('should not fetch stats for non-super-admin users even when requested', async () => {
         const mockAdmins = AdministrationFactory.buildList(2);
-        vi.mocked(fgaListObjects).mockResolvedValue({
-          objects: mockAdmins.map((a) => `administration:${a.id}`),
-        });
+        mockAuthorizationService.listAccessibleObjects.mockResolvedValue(
+          mockAdmins.map((a) => `administration:${a.id}`),
+        );
         mockAdministrationRepository.getByIds.mockResolvedValue({ items: mockAdmins, totalItems: 2 });
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(

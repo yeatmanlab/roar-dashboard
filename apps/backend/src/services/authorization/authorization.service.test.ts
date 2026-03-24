@@ -10,9 +10,6 @@ beforeEach(() => {
   mockClient = createMockFgaClient();
 });
 
-// Safe cast: the service only calls writeTuples/deleteTuples, which the mock provides
-const getClient = () => mockClient as unknown as OpenFgaClient;
-
 const sampleTuples: TupleKey[] = [
   {
     user: 'user:abc',
@@ -40,7 +37,7 @@ describe('AuthorizationService', () => {
 
   describe('writeTuples', () => {
     it('skips the SDK call when given an empty array', async () => {
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await service.writeTuples([]);
 
@@ -48,7 +45,7 @@ describe('AuthorizationService', () => {
     });
 
     it('calls client.writeTuples with the provided tuples', async () => {
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await service.writeTuples(sampleTuples);
 
@@ -56,7 +53,7 @@ describe('AuthorizationService', () => {
     });
 
     it('logs at debug level on success', async () => {
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await service.writeTuples(sampleTuples);
 
@@ -66,7 +63,7 @@ describe('AuthorizationService', () => {
     it('logs error and does not throw on SDK failure', async () => {
       const sdkError = new Error('FGA write failed');
       mockClient.writeTuples.mockRejectedValueOnce(sdkError);
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await expect(service.writeTuples(sampleTuples)).resolves.toBeUndefined();
 
@@ -76,7 +73,7 @@ describe('AuthorizationService', () => {
 
   describe('deleteTuples', () => {
     it('skips the SDK call when given an empty array', async () => {
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await service.deleteTuples([]);
 
@@ -84,7 +81,7 @@ describe('AuthorizationService', () => {
     });
 
     it('calls client.deleteTuples with the provided tuples', async () => {
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await service.deleteTuples(sampleTuplesWithoutCondition);
 
@@ -92,7 +89,7 @@ describe('AuthorizationService', () => {
     });
 
     it('logs at debug level on success', async () => {
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await service.deleteTuples(sampleTuplesWithoutCondition);
 
@@ -102,11 +99,93 @@ describe('AuthorizationService', () => {
     it('logs error and does not throw on SDK failure', async () => {
       const sdkError = new Error('FGA delete failed');
       mockClient.deleteTuples.mockRejectedValueOnce(sdkError);
-      const service = AuthorizationService({ getClient });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await expect(service.deleteTuples(sampleTuplesWithoutCondition)).resolves.toBeUndefined();
 
       expect(logger.error).toHaveBeenCalledWith({ err: sdkError, tupleCount: 1 }, 'Failed to delete FGA tuples');
+    });
+  });
+
+  describe('hasPermission', () => {
+    it('returns true when client.check returns allowed: true', async () => {
+      mockClient.check.mockResolvedValueOnce({ allowed: true });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.hasPermission('user-123', 'can_read', 'administration:admin-456');
+
+      expect(result).toBe(true);
+      expect(mockClient.check).toHaveBeenCalledWith({
+        user: 'user:user-123',
+        relation: 'can_read',
+        object: 'administration:admin-456',
+        context: { current_time: expect.any(String) },
+      });
+    });
+
+    it('returns false when client.check returns allowed: false', async () => {
+      mockClient.check.mockResolvedValueOnce({ allowed: false });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.hasPermission('user-123', 'can_read', 'administration:admin-456');
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when client.check returns allowed: undefined', async () => {
+      mockClient.check.mockResolvedValueOnce({});
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.hasPermission('user-123', 'can_read', 'administration:admin-456');
+
+      expect(result).toBe(false);
+    });
+
+    it('propagates errors from the FGA client', async () => {
+      const sdkError = new Error('FGA check failed');
+      mockClient.check.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.hasPermission('user-123', 'can_read', 'administration:admin-456')).rejects.toThrow(
+        'FGA check failed',
+      );
+    });
+  });
+
+  describe('listAccessibleObjects', () => {
+    it('returns object IDs from the FGA client', async () => {
+      const objects = ['administration:aaa', 'administration:bbb'];
+      mockClient.listObjects.mockResolvedValueOnce({ objects });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.listAccessibleObjects('user-123', 'can_read', 'administration');
+
+      expect(result).toEqual(objects);
+      expect(mockClient.listObjects).toHaveBeenCalledWith({
+        user: 'user:user-123',
+        relation: 'can_read',
+        type: 'administration',
+        context: { current_time: expect.any(String) },
+      });
+    });
+
+    it('returns an empty array when no objects are accessible', async () => {
+      mockClient.listObjects.mockResolvedValueOnce({ objects: [] });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.listAccessibleObjects('user-123', 'can_read', 'administration');
+
+      expect(result).toEqual([]);
+    });
+
+    it('propagates errors from the FGA client', async () => {
+      const sdkError = new Error('FGA listObjects failed');
+      mockClient.listObjects.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.listAccessibleObjects('user-123', 'can_read', 'administration')).rejects.toThrow(
+        'FGA listObjects failed',
+      );
     });
   });
 });

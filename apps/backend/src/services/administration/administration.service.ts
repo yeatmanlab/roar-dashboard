@@ -16,8 +16,9 @@ import type { Administration, Org, Class, Group } from '../../db/schema';
 import { Permissions, type Permission } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-import { fgaListObjects, extractFgaObjectId } from '../authorization/fga-check';
+import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType } from '../authorization/fga-constants';
+import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -103,12 +104,14 @@ export function AdministrationService({
   runRepository = new RunRepository(),
   userRepository = new UserRepository(),
   taskService = TaskService(),
+  authorizationService = AuthorizationService(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
   runRepository?: RunRepository;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
    * Verify that an administration exists and the user has access to it.
@@ -353,7 +356,7 @@ export function AdministrationService({
       } else {
         // FGA resolves which administrations the user can access based on their
         // role memberships and the org/class/group hierarchy
-        const { objects } = await fgaListObjects(userId, 'can_list', FgaType.ADMINISTRATION);
+        const objects = await authorizationService.listAccessibleObjects(userId, 'can_list', FgaType.ADMINISTRATION);
         const ids = objects.map(extractFgaObjectId);
         if (ids.length === 0) {
           return { items: [], totalItems: 0 };

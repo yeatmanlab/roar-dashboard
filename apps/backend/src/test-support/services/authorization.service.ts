@@ -10,6 +10,8 @@ export function createMockAuthorizationService(): MockedObject<ReturnType<typeof
   return {
     writeTuples: vi.fn(),
     deleteTuples: vi.fn(),
+    hasPermission: vi.fn(),
+    listAccessibleObjects: vi.fn(),
   } as MockedObject<ReturnType<typeof AuthorizationService>>;
 }
 
