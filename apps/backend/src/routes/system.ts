@@ -14,11 +14,11 @@ const s = initServer();
  */
 export function registerSystemRoutes(routerInstance: Router) {
   const SystemRoutes = s.router(SystemContract, {
-    backfillFga: {
+    syncFga: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, query }) =>
-        SystemController.backfillFga({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, query),
+        SystemController.syncFga({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, query),
     },
   });
 

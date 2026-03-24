@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
-import type { BackfillFgaResponse } from '@roar-dashboard/api-contract';
+import type { SyncFgaResponse } from '@roar-dashboard/api-contract';
 import { ClientWriteRequestOnDuplicateWrites } from '@openfga/sdk';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -63,7 +63,7 @@ function chunk<T>(items: T[], size: number): T[][] {
  * AuthorizationModule
  *
  * Reads all existing data from Postgres junction tables and writes
- * the corresponding FGA tuples. Used to hydrate an FGA store from
+ * the corresponding FGA tuples. Used to sync an FGA store from
  * existing Postgres data (e.g., after a dbt migration from Firestore).
  *
  * @param db - Core database client (injectable for testing)
@@ -303,28 +303,25 @@ export function AuthorizationModule({
     return tuples;
   }
 
-  // ── Main backfill method ────────────────────────────────────────────────────
+  // ── Main sync method ────────────────────────────────────────────────────────
 
   /**
-   * Backfill all FGA tuples from Postgres junction tables.
+   * Sync all FGA tuples from Postgres junction tables.
    *
    * Authorization: super-admin only.
    *
    * @param authContext - The authenticated user's context
-   * @param options - Backfill options
+   * @param options - Sync options
    * @param options.dryRun - When true, returns counts without writing to FGA
-   * @returns Backfill result with per-category tuple counts
+   * @returns Sync result with per-category tuple counts
    * @throws {ApiError} FORBIDDEN if the user is not a super admin
    * @throws {ApiError} INTERNAL_SERVER_ERROR if a database or FGA error occurs
    */
-  async function backfillFgaStore(
-    authContext: AuthContext,
-    { dryRun }: { dryRun: boolean },
-  ): Promise<BackfillFgaResponse> {
+  async function syncFgaStore(authContext: AuthContext, { dryRun }: { dryRun: boolean }): Promise<SyncFgaResponse> {
     const { userId, isSuperAdmin } = authContext;
 
     if (!isSuperAdmin) {
-      logger.warn({ userId }, 'Non-super-admin attempted FGA backfill');
+      logger.warn({ userId }, 'Non-super-admin attempted FGA sync');
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -375,7 +372,7 @@ export function AuthorizationModule({
         categories.familyMemberships +
         categories.administrationAssignments;
 
-      logger.info({ categories, totalTuples, dryRun, userId }, 'FGA backfill tuple counts');
+      logger.info({ categories, totalTuples, dryRun, userId }, 'FGA sync tuple counts');
 
       if (!dryRun) {
         // Write all categories sequentially to avoid overwhelming FGA
@@ -403,15 +400,15 @@ export function AuthorizationModule({
           }
         }
 
-        logger.info({ totalTuples, userId }, 'FGA backfill completed successfully');
+        logger.info({ totalTuples, userId }, 'FGA sync completed successfully');
       }
 
       return { dryRun, categories, totalTuples };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId } }, 'FGA backfill failed');
-      throw new ApiError('FGA backfill failed', {
+      logger.error({ err: error, context: { userId } }, 'FGA sync failed');
+      throw new ApiError('FGA sync failed', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.INTERNAL,
         context: { userId },
@@ -420,5 +417,5 @@ export function AuthorizationModule({
     }
   }
 
-  return { backfillFgaStore };
+  return { syncFgaStore };
 }

@@ -1,19 +1,19 @@
 import { initContract } from '@ts-rest/core';
-import { BackfillFgaQuerySchema, BackfillFgaResponseSchema, BackfillFgaAcceptedSchema } from './schema';
+import { SyncFgaQuerySchema, SyncFgaResponseSchema, SyncFgaAcceptedSchema } from './schema';
 import { SuccessEnvelopeSchema, ErrorEnvelopeSchema } from '../response';
 
 const c = initContract();
 
 export const SystemContract = c.router(
   {
-    backfillFga: {
+    syncFga: {
       method: 'POST',
-      path: '/authorization/backfill-fga',
-      query: BackfillFgaQuerySchema,
+      path: '/authorization/sync-fga',
+      query: SyncFgaQuerySchema,
       body: c.noBody(),
       responses: {
-        200: SuccessEnvelopeSchema(BackfillFgaResponseSchema),
-        202: SuccessEnvelopeSchema(BackfillFgaAcceptedSchema),
+        200: SuccessEnvelopeSchema(SyncFgaResponseSchema),
+        202: SuccessEnvelopeSchema(SyncFgaAcceptedSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,

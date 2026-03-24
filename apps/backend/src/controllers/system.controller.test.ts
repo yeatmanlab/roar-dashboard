@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
-import type { BackfillFgaResponse } from '@roar-dashboard/api-contract';
+import type { SyncFgaResponse } from '@roar-dashboard/api-contract';
 
 vi.mock('../services/system/system.service', () => ({
   SystemService: vi.fn(),
@@ -16,7 +16,7 @@ import { SystemService } from '../services/system/system.service';
 import { logger } from '../logger';
 
 describe('SystemController', () => {
-  const mockBackfillFgaStore = vi.fn();
+  const mockSyncFgaStore = vi.fn();
   const mockSuperAdminContext = { userId: 'user-123', isSuperAdmin: true };
   const mockNonSuperAdminContext = { userId: 'user-456', isSuperAdmin: false };
 
@@ -25,15 +25,15 @@ describe('SystemController', () => {
 
     vi.mocked(SystemService).mockReturnValue({
       authorization: {
-        backfillFgaStore: mockBackfillFgaStore,
+        syncFgaStore: mockSyncFgaStore,
       },
     });
   });
 
-  describe('backfillFga', () => {
+  describe('syncFga', () => {
     describe('dry-run (synchronous)', () => {
       it('returns 200 with tuple counts for dry-run', async () => {
-        const dryRunResult: BackfillFgaResponse = {
+        const dryRunResult: SyncFgaResponse = {
           dryRun: true,
           categories: {
             orgHierarchy: 10,
@@ -45,26 +45,26 @@ describe('SystemController', () => {
           },
           totalTuples: 83,
         };
-        mockBackfillFgaStore.mockResolvedValue(dryRunResult);
+        mockSyncFgaStore.mockResolvedValue(dryRunResult);
 
         const { SystemController } = await import('./system.controller');
-        const result = await SystemController.backfillFga(mockSuperAdminContext, { dryRun: true });
+        const result = await SystemController.syncFga(mockSuperAdminContext, { dryRun: true });
 
         expect(result.status).toBe(StatusCodes.OK);
         expect(result.body).toEqual({ data: dryRunResult });
-        expect(mockBackfillFgaStore).toHaveBeenCalledWith(mockSuperAdminContext, { dryRun: true });
+        expect(mockSyncFgaStore).toHaveBeenCalledWith(mockSuperAdminContext, { dryRun: true });
       });
 
       it('returns 500 when dry-run service throws internal error', async () => {
-        mockBackfillFgaStore.mockRejectedValue(
-          new ApiError('FGA backfill failed', {
+        mockSyncFgaStore.mockRejectedValue(
+          new ApiError('FGA sync failed', {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
             code: ApiErrorCode.INTERNAL,
           }),
         );
 
         const { SystemController } = await import('./system.controller');
-        const result = await SystemController.backfillFga(mockSuperAdminContext, { dryRun: true });
+        const result = await SystemController.syncFga(mockSuperAdminContext, { dryRun: true });
 
         expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
         expect(result.body).toHaveProperty('error');
@@ -72,54 +72,52 @@ describe('SystemController', () => {
 
       it('re-throws non-ApiError exceptions in dry-run', async () => {
         const rawError = new Error('unexpected');
-        mockBackfillFgaStore.mockRejectedValue(rawError);
+        mockSyncFgaStore.mockRejectedValue(rawError);
 
         const { SystemController } = await import('./system.controller');
 
-        await expect(SystemController.backfillFga(mockSuperAdminContext, { dryRun: true })).rejects.toThrow(
-          'unexpected',
-        );
+        await expect(SystemController.syncFga(mockSuperAdminContext, { dryRun: true })).rejects.toThrow('unexpected');
       });
     });
 
     describe('real run (fire-and-forget)', () => {
-      it('returns 202 and fires backfill without awaiting', async () => {
+      it('returns 202 and fires sync without awaiting', async () => {
         // Service returns a promise that hasn't resolved yet
-        let resolveBackfill!: () => void;
-        mockBackfillFgaStore.mockReturnValue(
+        let resolveSync!: () => void;
+        mockSyncFgaStore.mockReturnValue(
           new Promise<void>((resolve) => {
-            resolveBackfill = resolve;
+            resolveSync = resolve;
           }),
         );
 
         const { SystemController } = await import('./system.controller');
-        const result = await SystemController.backfillFga(mockSuperAdminContext, { dryRun: false });
+        const result = await SystemController.syncFga(mockSuperAdminContext, { dryRun: false });
 
-        // Controller returns 202 before the backfill finishes
+        // Controller returns 202 before the sync finishes
         expect(result.status).toBe(202);
         expect(result.body).toEqual({
-          data: { message: 'FGA backfill started. Check server logs for progress.' },
+          data: { message: 'FGA sync started. Check server logs for progress.' },
         });
-        expect(mockBackfillFgaStore).toHaveBeenCalledWith(mockSuperAdminContext, { dryRun: false });
+        expect(mockSyncFgaStore).toHaveBeenCalledWith(mockSuperAdminContext, { dryRun: false });
 
         // Clean up the pending promise
-        resolveBackfill();
+        resolveSync();
       });
 
-      it('logs errors from the background backfill', async () => {
-        const backfillError = new Error('FGA API timeout');
-        mockBackfillFgaStore.mockRejectedValue(backfillError);
+      it('logs errors from the background sync', async () => {
+        const syncError = new Error('FGA API timeout');
+        mockSyncFgaStore.mockRejectedValue(syncError);
 
         const { SystemController } = await import('./system.controller');
-        const result = await SystemController.backfillFga(mockSuperAdminContext, { dryRun: false });
+        const result = await SystemController.syncFga(mockSuperAdminContext, { dryRun: false });
 
         expect(result.status).toBe(202);
 
         // Let the microtask queue flush so the .catch() handler runs
         await vi.waitFor(() => {
           expect(logger.error).toHaveBeenCalledWith(
-            { err: backfillError, context: { userId: 'user-123' } },
-            'FGA backfill failed (async)',
+            { err: syncError, context: { userId: 'user-123' } },
+            'FGA sync failed (async)',
           );
         });
       });
@@ -128,20 +126,20 @@ describe('SystemController', () => {
     describe('authorization', () => {
       it('returns 403 when user is not super admin', async () => {
         const { SystemController } = await import('./system.controller');
-        const result = await SystemController.backfillFga(mockNonSuperAdminContext, { dryRun: false });
+        const result = await SystemController.syncFga(mockNonSuperAdminContext, { dryRun: false });
 
         expect(result.status).toBe(StatusCodes.FORBIDDEN);
         expect(result.body).toHaveProperty('error');
-        expect(mockBackfillFgaStore).not.toHaveBeenCalled();
+        expect(mockSyncFgaStore).not.toHaveBeenCalled();
       });
 
       it('returns 403 for non-super-admin even on dry-run', async () => {
         const { SystemController } = await import('./system.controller');
-        const result = await SystemController.backfillFga(mockNonSuperAdminContext, { dryRun: true });
+        const result = await SystemController.syncFga(mockNonSuperAdminContext, { dryRun: true });
 
         expect(result.status).toBe(StatusCodes.FORBIDDEN);
         expect(result.body).toHaveProperty('error');
-        expect(mockBackfillFgaStore).not.toHaveBeenCalled();
+        expect(mockSyncFgaStore).not.toHaveBeenCalled();
       });
     });
   });

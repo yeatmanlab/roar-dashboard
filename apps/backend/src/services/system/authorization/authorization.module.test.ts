@@ -142,7 +142,7 @@ describe('AuthorizationModule', () => {
       const db = createMockDb({});
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
 
-      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.FORBIDDEN,
           statusCode: StatusCodes.FORBIDDEN,
@@ -156,7 +156,7 @@ describe('AuthorizationModule', () => {
       const db = createMockDb({});
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
 
-      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(ApiError);
+      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(ApiError);
       expect(db.select).not.toHaveBeenCalled();
     });
   });
@@ -177,7 +177,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: true });
+      const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(result.dryRun).toBe(true);
       expect(result.totalTuples).toBeGreaterThan(0);
@@ -199,11 +199,11 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      await module.backfillFgaStore(authContext, { dryRun: true });
+      await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({ dryRun: true, totalTuples: 0 }),
-        'FGA backfill tuple counts',
+        'FGA sync tuple counts',
       );
     });
   });
@@ -224,7 +224,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories).toEqual({
         orgHierarchy: 0,
@@ -255,7 +255,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: true });
+      const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       // schoolHierarchyTuples returns 2 tuples per school
       expect(result.categories.orgHierarchy).toBe(2);
@@ -276,7 +276,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: true });
+      const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(result.categories.orgHierarchy).toBe(2);
     });
@@ -298,7 +298,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.orgMemberships).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -328,7 +328,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.orgMemberships).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -360,7 +360,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.familyMemberships).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -398,7 +398,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -428,7 +428,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
@@ -458,7 +458,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(2);
     });
@@ -490,7 +490,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      const result = await module.backfillFgaStore(authContext, { dryRun: false });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.classMemberships).toBe(250);
 
@@ -519,7 +519,7 @@ describe('AuthorizationModule', () => {
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
-      await module.backfillFgaStore(authContext, { dryRun: false });
+      await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(mockClient.writeTuples).toHaveBeenCalledWith(expect.any(Array), {
         conflict: { onDuplicateWrites: ClientWriteRequestOnDuplicateWrites.Ignore },
@@ -552,7 +552,7 @@ describe('AuthorizationModule', () => {
 
       const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
 
-      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -588,7 +588,7 @@ describe('AuthorizationModule', () => {
 
       const module = AuthorizationModule({ db: db as never, getClient: () => failingClient });
 
-      await expect(module.backfillFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,

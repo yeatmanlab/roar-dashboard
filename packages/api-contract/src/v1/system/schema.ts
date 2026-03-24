@@ -1,20 +1,20 @@
 import { z } from 'zod';
 
 /**
- * Query parameters for the FGA backfill endpoint.
+ * Query parameters for the FGA sync endpoint.
  *
  * @property dryRun - When true, returns tuple counts without writing to FGA
  */
-export const BackfillFgaQuerySchema = z.object({
+export const SyncFgaQuerySchema = z.object({
   dryRun: z.coerce.boolean().optional().default(false),
 });
 
-export type BackfillFgaQuery = z.infer<typeof BackfillFgaQuerySchema>;
+export type SyncFgaQuery = z.infer<typeof SyncFgaQuerySchema>;
 
 /**
- * Per-category tuple counts from the backfill operation.
+ * Per-category tuple counts from the sync operation.
  */
-export const BackfillCategoriesSchema = z.object({
+export const SyncCategoriesSchema = z.object({
   orgHierarchy: z.number(),
   orgMemberships: z.number(),
   classMemberships: z.number(),
@@ -23,24 +23,24 @@ export const BackfillCategoriesSchema = z.object({
   administrationAssignments: z.number(),
 });
 
-export type BackfillCategories = z.infer<typeof BackfillCategoriesSchema>;
+export type SyncCategories = z.infer<typeof SyncCategoriesSchema>;
 
 /**
- * Response body for the FGA backfill endpoint.
+ * Response body for the FGA sync endpoint.
  */
-export const BackfillFgaResponseSchema = z.object({
+export const SyncFgaResponseSchema = z.object({
   dryRun: z.boolean(),
-  categories: BackfillCategoriesSchema,
+  categories: SyncCategoriesSchema,
   totalTuples: z.number(),
 });
 
-export type BackfillFgaResponse = z.infer<typeof BackfillFgaResponseSchema>;
+export type SyncFgaResponse = z.infer<typeof SyncFgaResponseSchema>;
 
 /**
- * Response body when a non-dry-run backfill is accepted for async processing.
+ * Response body when a non-dry-run sync is accepted for async processing.
  */
-export const BackfillFgaAcceptedSchema = z.object({
+export const SyncFgaAcceptedSchema = z.object({
   message: z.string(),
 });
 
-export type BackfillFgaAccepted = z.infer<typeof BackfillFgaAcceptedSchema>;
+export type SyncFgaAccepted = z.infer<typeof SyncFgaAcceptedSchema>;
