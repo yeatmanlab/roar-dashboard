@@ -329,6 +329,9 @@ export function TaskService({
 
   /**
    * Retrieves a single task variant by its ID.
+   * Supports lookup by task ID or task slug.
+   * First tries to look up by task ID, then falls back to task slug if not found.
+   * Task slugs are case-insensitive.
    *
    * Authorization:
    * - Super admins can filter by any status or see all variants (no status filter)

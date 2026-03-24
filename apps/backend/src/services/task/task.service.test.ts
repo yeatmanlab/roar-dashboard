@@ -2238,6 +2238,29 @@ describe('TaskService', () => {
         expect(taskRepository.getBySlug).toHaveBeenCalledWith(slug);
         expect(result.task.slug).toBe(mockTask.slug);
       });
+
+      it('should handle case-insensitive slug lookup', async () => {
+        const taskWithLowerSlug = TaskFactory.build({ slug: 'swr' });
+        taskRepository.getBySlug.mockResolvedValue(taskWithLowerSlug);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        // Test with different case variations - all should normalize to lowercase
+        const slugVariations = ['SWR', 'swR', 'swr'];
+        const results = await Promise.all(
+          slugVariations.map((slug) => taskService.getTaskVariant(authContext, slug, mockVariant.id)),
+        );
+
+        // Verify repository was called with each variation
+        slugVariations.forEach((slug) => {
+          expect(taskRepository.getBySlug).toHaveBeenCalledWith(slug);
+        });
+
+        // Verify all variations return the same task
+        results.forEach((result) => {
+          expect(result.task.slug).toBe('swr');
+        });
+      });
     });
 
     describe('response structure', () => {
