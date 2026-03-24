@@ -247,34 +247,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
-   * List administrations by a pre-computed set of IDs with pagination and sorting.
-   *
-   * Used after FGA `listObjects` returns the IDs the user can access —
-   * this method fetches the actual records from Postgres.
-   *
-   * @param ids - Administration IDs to fetch (from FGA)
-   * @param options - Pagination, sorting, and optional status filter
-   * @returns Paginated result with administrations
-   */
-  async listByIds(ids: string[], options: ListAuthorizedOptions): Promise<PaginatedResult<Administration>> {
-    if (ids.length === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    const { page, perPage, orderBy, status } = options;
-    const statusFilter = this.getStatusFilterCondition(status);
-    const idFilter = inArray(administrations.id, ids);
-    const combinedFilter = statusFilter ? and(idFilter, statusFilter) : idFilter;
-
-    return this.getAll({
-      page,
-      perPage,
-      ...(orderBy && { orderBy }),
-      ...(combinedFilter && { where: combinedFilter }),
-    });
-  }
-
-  /**
    * List administrations the user is authorized to access.
    *
    * Authorization respects the org hierarchy:

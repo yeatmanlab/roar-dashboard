@@ -1,4 +1,4 @@
-import { eq, count as drizzleCount, asc, desc } from 'drizzle-orm';
+import { eq, inArray, and, count as drizzleCount, asc, desc } from 'drizzle-orm';
 import type { SQL, InferInsertModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
@@ -143,6 +143,28 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
     const items = (await itemsQuery) as TEntity[];
 
     return { items, totalItems };
+  }
+
+  /**
+   * Retrieves entities matching the given IDs with pagination and optional filtering.
+   *
+   * Returns an empty result immediately when the IDs array is empty.
+   * If a `where` clause is provided it is AND-ed with the ID filter.
+   *
+   * @param ids - Array of entity UUIDs to fetch
+   * @param params - Pagination, ordering, and optional additional where clause
+   * @returns Paginated result with matching entities
+   */
+  async getByIds(ids: string[], params: BaseGetAllParams): Promise<PaginatedResult<TEntity>> {
+    if (ids.length === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
+    const idFilter = inArray(idColumn, ids);
+    const where = params.where ? (and(idFilter, params.where) ?? idFilter) : idFilter;
+
+    return this.getAll({ ...params, where });
   }
 
   /**

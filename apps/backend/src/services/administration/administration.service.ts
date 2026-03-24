@@ -358,7 +358,7 @@ export function AdministrationService({
         if (ids.length === 0) {
           return { items: [], totalItems: 0 };
         }
-        result = await administrationRepository.listByIds(ids, queryParams);
+        result = await administrationRepository.getByIds(ids, queryParams);
       }
 
       // If no embeds requested, return as-is
