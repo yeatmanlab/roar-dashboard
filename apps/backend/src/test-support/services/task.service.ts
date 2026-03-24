@@ -10,9 +10,11 @@ export function createMockTaskService(): MockedObject<ReturnType<typeof TaskServ
   return {
     listTaskVariants: vi.fn(),
     getTaskVariant: vi.fn(),
-    updateTaskVariant: vi.fn(),
     createTaskVariant: vi.fn(),
+    updateTaskVariant: vi.fn(),
     evaluateTaskVariantEligibility: vi.fn(),
+    list: vi.fn(),
+    getById: vi.fn(),
   } as MockedObject<ReturnType<typeof TaskService>>;
 }
 

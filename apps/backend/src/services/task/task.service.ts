@@ -390,10 +390,15 @@ export function TaskService({
       }
 
       // Check authorization based on variant status
+      // Information disclosure prevention: return 404 for draft or unpublished variants instead of 403
       if (!isSuperAdmin && variant.status !== 'published') {
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.UNAUTHORIZED,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
+        logger.warn(
+          { userId, taskId, variantId, variantStatus: variant.status },
+          'Non-admin attempted to access non-published task variant',
+        );
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId, taskId, variantId },
         });
       }

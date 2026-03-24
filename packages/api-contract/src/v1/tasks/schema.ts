@@ -13,12 +13,12 @@ import {
  * Validates the ID format matches database constraints.
  */
 export const TaskIdParamSchema = z.object({
-  taskId: z.string().uuid(),
+  taskId: z.string().uuid('Task ID must be a valid UUID'),
 });
 
 /**
- * Schema for GET task variants path parameters.
- * Supports task variant lookup by slug or by UUID.
+ * Schema for GET task variant path parameters.
+ * Supports task variant lookup by task UUID or slug (case-sensitive).
  * Validates that the task variant format matches the database constraints.
  */
 export const GetTaskVariantPathParamSchema = z.object({
@@ -27,16 +27,16 @@ export const GetTaskVariantPathParamSchema = z.object({
 });
 
 /**
- * Schema for CREATE task variant path parameters.
- * Validates that the task ID is a valid UUID.
+ * Schema for POST task variant path parameters.
+ * Requires task ID as a valid UUID.
  */
 export const CreateTaskVariantPathParamSchema = z.object({
   taskId: z.string().uuid(),
 });
 
 /**
- * Schema for UPDATE task variant path parameters.
- * Validates that both task ID and variant ID are valid UUIDs.
+ * Schema for PATCH task variant path parameters.
+ * Requires both task ID and variant ID as valid UUIDs.
  */
 export const UpdateTaskVariantPathParamSchema = z.object({
   taskId: z.string().uuid(),
@@ -139,8 +139,15 @@ export const TaskVariantSchema = z.object({
   parameters: TaskVariantParametersArraySchema,
 });
 
+/**
+ * Task-variant type
+ */
 export type TaskVariant = z.infer<typeof TaskVariantSchema>;
-// Declaring a separate schema for the response allows for better semantic clarity and facilitates easier API changes in the future.
+
+/**
+ * Response schema for get operations on task-variants.
+ * Allows for better semantic clarity and facilitates easier API development.
+ */
 export const GetTaskVariantResponseSchema = TaskVariantSchema;
 
 /**
@@ -199,6 +206,10 @@ export const CreateTaskVariantRequestBodySchema = z.object({
   status: TaskVariantStatusSchema,
 });
 
+/**
+ * Response schema for create operations on task-variants
+ * Returns the ID of the newly created variant.
+ */
 export const CreateTaskVariantResponseSchema = z.object({
   id: z.string().uuid(),
 });
@@ -242,15 +253,34 @@ export const UpdateTaskVariantRequestBodySchema = z
  */
 export const UpdateTaskVariantResponseSchema = z.undefined();
 
+/** Task variant status type. */
 export type TaskVariantStatus = z.infer<typeof TaskVariantStatusSchema>;
+
+/** Single task variant parameter type. */
 export type TaskVariantParameter = z.infer<typeof TaskVariantParameterSchema>;
+
+/** Array of task variant parameters type. */
 export type TaskVariantParametersArray = z.infer<typeof TaskVariantParametersArraySchema>;
+
+/** Query parameters for listing task variants. */
 export type ListTaskVariantsQuery = z.infer<typeof ListTaskVariantsQuerySchema>;
+
+/** Paginated response type for listing task variants. */
 export type ListTaskVariantsResponse = z.infer<typeof ListTaskVariantsResponseSchema>;
+
+/** Response type for GET task variant endpoint. */
 export type GetTaskVariantResponse = z.infer<typeof GetTaskVariantResponseSchema>;
+
+/** Request body type for creating a task variant. */
 export type CreateTaskVariantRequestBody = z.infer<typeof CreateTaskVariantRequestBodySchema>;
+
+/** Response type for creating a task variant. */
 export type CreateTaskVariantResponse = z.infer<typeof CreateTaskVariantResponseSchema>;
+
+/** Request body type for updating a task variant. */
 export type UpdateTaskVariantRequestBody = z.infer<typeof UpdateTaskVariantRequestBodySchema>;
+
+/** Response type for updating a task variant. */
 export type UpdateTaskVariantResponse = z.infer<typeof UpdateTaskVariantResponseSchema>;
 
 /**
@@ -270,6 +300,9 @@ export const TaskSchema = z.object({
   updatedAt: z.string().datetime().nullable(),
 });
 
+/**
+ * Task type
+ */
 export type Task = z.infer<typeof TaskSchema>;
 
 /**
@@ -302,6 +335,9 @@ export const TasksListQuerySchema = PaginationQuerySchema.merge(createSortQueryS
     slug: z.string().optional(),
   });
 
+/**
+ * Type for querying during list operations on tasks.
+ */
 export type TasksListQuery = z.infer<typeof TasksListQuerySchema>;
 
 /**
@@ -309,9 +345,27 @@ export type TasksListQuery = z.infer<typeof TasksListQuerySchema>;
  */
 export const TasksListResponseSchema = createPaginatedResponseSchema(TaskSchema);
 
+/**
+ * Response type for list operations on tasks.
+ */
 export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
 
+/**
+ * Type for task ID parameters in path operations.
+ */
 export type TaskIdParam = z.infer<typeof TaskIdParamSchema>;
+
+/**
+ * Type for task variant path parameters in path operations.
+ */
 export type GetTaskVariantPathParam = z.infer<typeof GetTaskVariantPathParamSchema>;
+
+/**
+ * Type for task variant path parameters in create operations.
+ */
 export type CreateTaskVariantPathParam = z.infer<typeof CreateTaskVariantPathParamSchema>;
+
+/**
+ * Type for task variant path parameters in update operations.
+ */
 export type UpdateTaskVariantPathParam = z.infer<typeof UpdateTaskVariantPathParamSchema>;

@@ -1950,7 +1950,9 @@ describe('TaskService', () => {
         taskRepository.getById.mockResolvedValue(null);
         taskRepository.getBySlug.mockResolvedValue(null);
 
-        await expect(taskService.getTaskVariant(authContext, 'nonexistent-id', mockVariant.id)).rejects.toThrow(
+        await expect(
+          taskService.getTaskVariant(authContext, '00000000-0000-0000-0000-000000000000', mockVariant.id),
+        ).rejects.toThrow(
           expect.objectContaining({
             statusCode: StatusCodes.NOT_FOUND,
             code: ApiErrorCode.RESOURCE_NOT_FOUND,
@@ -2034,28 +2036,28 @@ describe('TaskService', () => {
         expect(result.status).toBe('published');
       });
 
-      it('should throw UNAUTHORIZED when non-super admin tries to retrieve draft variant', async () => {
+      it('should throw NOT_FOUND when non-super admin tries to retrieve draft variant', async () => {
         const draftVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'draft' });
         taskRepository.getById.mockResolvedValue(mockTask);
         taskVariantRepository.getById.mockResolvedValue(draftVariant);
 
         await expect(taskService.getTaskVariant(nonAdminContext, mockTask.id, draftVariant.id)).rejects.toThrow(
           expect.objectContaining({
-            statusCode: StatusCodes.UNAUTHORIZED,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
           }),
         );
       });
 
-      it('should throw UNAUTHORIZED when non-super admin tries to retrieve deprecated variant', async () => {
+      it('should throw NOT_FOUND when non-super admin tries to retrieve deprecated variant', async () => {
         const deprecatedVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'deprecated' });
         taskRepository.getById.mockResolvedValue(mockTask);
         taskVariantRepository.getById.mockResolvedValue(deprecatedVariant);
 
         await expect(taskService.getTaskVariant(nonAdminContext, mockTask.id, deprecatedVariant.id)).rejects.toThrow(
           expect.objectContaining({
-            statusCode: StatusCodes.UNAUTHORIZED,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
           }),
         );
       });

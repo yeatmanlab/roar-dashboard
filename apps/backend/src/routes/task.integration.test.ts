@@ -1180,7 +1180,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GET /v1/tasks/:taskId/variants
+// GET /v1/tasks/:taskId/variants/:variantId
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
@@ -1249,6 +1249,7 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
 
     it('returns variant parameters as array of name-value objects', async () => {
       const testTask = await TaskFactory.create();
+      authenticateAs(tiers.superAdmin);
       const createRes = await request(app)
         .post(`/v1/tasks/${testTask.id}/variants`)
         .set('Authorization', 'Bearer token')
@@ -1374,7 +1375,7 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
         .get(`/v1/tasks/${testTask.id}/variants/${draftVariant.id}`)
         .set('Authorization', 'Bearer token');
 
-      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
     });
 
     it('non-super admin cannot see deprecated variant', async () => {
@@ -1389,7 +1390,7 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
         .get(`/v1/tasks/${testTask.id}/variants/${deprecatedVariant.id}`)
         .set('Authorization', 'Bearer token');
 
-      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
     });
   });
 
