@@ -2,7 +2,7 @@ name: Family Permissions
 model_file: ../authorization-model.fga
 
 tuples:
-  # ─── Family memberships ───────────────────────────────────────────
+  # ─── Family memberships (with active_membership condition) ───────
   - user: user:parent-a
     relation: parent
     object: family:family-1
