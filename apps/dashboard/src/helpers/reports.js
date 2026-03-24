@@ -712,7 +712,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   // Try percentile-based scoring for grades < 6
-  // Except for PA with scoringVersion >= 4, percentile is used for all grades
+  // Exception: PA with scoringVersion >= 4 uses percentile for all grades
   const isUpdatedPa = taskId === 'pa' && scoringVersion >= 4;
   if (percentile !== null && percentile !== undefined && (gradeLevel < 6 || isUpdatedPa)) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
@@ -1191,7 +1191,12 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
       path = pickPath('elementaryV1');
     }
   } else {
-    path = pickPath('secondaryV1');
+    const isUpdatedPa = applicableTasks.some(([taskId, version]) => taskId === 'pa' && version >= 4);
+    if (!isUpdatedPa) path = pickPath('secondaryV1');
+    // PA with scoringVersion >= 4 defines support categories using percentiles for all grades (grade >= 6 is matched to 120 months)
+    // If the only task assigned, show the elementary cutoffs applied
+    if (isUpdatedPa && applicableTasks.length === 1) path = pickPath('elementaryV2');
+    // Otherwise, we have a mix of tasks so we'll need to default to no cutoffs
   }
 
   return path;
@@ -1235,11 +1240,7 @@ export const taskInfoById = {
     color: '#E97A49',
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: `ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between ${
-      getRawScoreRange('swr').min
-    }-${
-      getRawScoreRange('swr').max
-    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
+    desc: `ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between {{RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -1286,7 +1287,7 @@ export const taskInfoById = {
       'improve their overall reading ability. This assessment is helpful for ' +
       'identifying students who may struggle with reading comprehension due to ' +
       'difficulties with decoding words accurately or reading slowly and with effort.' +
-      ` The student's score will range between ${getRawScoreRange('sre').min}-${getRawScoreRange('sre').max} ` +
+      ` The student's score will range between {{RANGE}} ` +
       "and can be viewed by selecting 'Raw Score' on the table above. " +
       'Students in the pink category need support in sentence-reading ' +
       'efficiency to support growth in reading comprehension. Students in grades ' +
@@ -1401,16 +1402,17 @@ export const taskInfoById = {
 export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (!desc) return '';
 
+  let editedDesc = desc;
   // Only process desc field if it contains placeholders
   if (desc.includes('{{RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
-    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+    editedDesc = editedDesc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
     const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
-    return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
+    editedDesc = editedDesc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
   }
 
-  return desc;
+  return editedDesc;
 };
