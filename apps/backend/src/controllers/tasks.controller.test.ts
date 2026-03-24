@@ -20,6 +20,7 @@ describe('TasksController', () => {
   const mockCreateTaskVariant = vi.fn();
   const mockUpdateTaskVariant = vi.fn();
   const mockListVariants = vi.fn();
+  const mockGetTaskVariant = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,6 +32,7 @@ describe('TasksController', () => {
       createTaskVariant: mockCreateTaskVariant,
       updateTaskVariant: mockUpdateTaskVariant,
       listTaskVariants: mockListVariants,
+      getTaskVariant: mockGetTaskVariant,
       evaluateTaskVariantEligibility: vi.fn(),
     });
   });

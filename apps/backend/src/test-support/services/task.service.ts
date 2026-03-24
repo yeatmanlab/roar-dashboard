@@ -8,6 +8,9 @@ import type { TaskService } from '../../services/task/task.service';
  */
 export function createMockTaskService(): MockedObject<ReturnType<typeof TaskService>> {
   return {
+    listTaskVariants: vi.fn(),
+    getTaskVariant: vi.fn(),
+    updateTaskVariant: vi.fn(),
     createTaskVariant: vi.fn(),
     evaluateTaskVariantEligibility: vi.fn(),
   } as MockedObject<ReturnType<typeof TaskService>>;

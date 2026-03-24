@@ -12,6 +12,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import { isValidUuid } from '../../utils/is-valid-uuid.util';
 import { Operator, type Condition, type FieldCondition, type CompositeCondition } from './task.types';
 
 /**
@@ -59,6 +60,25 @@ export interface TaskVariantEligibilityResult {
   /** True if the task variant is optional for this user (only meaningful if isAssigned is true) */
   isOptional: boolean;
 }
+
+/**
+ * Represents a single task variant parameter.
+ * Parameters are key-value pairs that configure a task variant.
+ */
+export type TaskVariantParameter = {
+  name: string;
+  value: unknown;
+};
+
+export type TaskFields = Pick<Task, 'name' | 'slug' | 'image'>;
+
+/**
+ * Represents a task variant with its parameters.
+ * Used as the return type for variant retrieval operations where parameter context is needed.
+ */
+export type TaskVariantWithParameters = TaskVariant & {
+  parameters: TaskVariantParameter[];
+};
 
 /**
  * Data structure expected by condition evaluation.
@@ -249,11 +269,7 @@ export function TaskService({
     authContext: AuthContext,
     taskId: string,
     options: ListTaskVariantsOptions,
-  ): Promise<
-    PaginatedResult<TaskVariant & { parameters: Array<{ name: string; value: unknown }> }> & {
-      task: Pick<Task, 'name' | 'slug' | 'image'>;
-    }
-  > {
+  ): Promise<PaginatedResult<TaskVariantWithParameters> & { task: TaskFields }> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
@@ -279,7 +295,7 @@ export function TaskService({
       const allParams = await taskVariantParameterRepository.getByTaskVariantIds(variantIds);
 
       // Group parameters by variant ID
-      const paramsByVariantId = new Map<string, Array<{ name: string; value: unknown }>>();
+      const paramsByVariantId = new Map<string, TaskVariantParameter[]>();
       for (const param of allParams) {
         const existing = paramsByVariantId.get(param.taskVariantId) ?? [];
         existing.push({ name: param.name, value: param.value });
@@ -307,6 +323,81 @@ export function TaskService({
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, taskId },
         cause: error,
+      });
+    }
+  }
+
+  /**
+   * Retrieves a single task variant by its ID.
+   *
+   * Authorization:
+   * - Super admins can filter by any status or see all variants (no status filter)
+   * - Regular users can only see published variants (status defaults to 'published')
+   *
+   * @param authContext - The user's authentication context
+   * @param taskId - The ID of the task; can be a task ID or a task slug
+   * @param variantId - The ID of the task variant
+   * @returns The requested task variant, if it exists
+   */
+  async function getTaskVariant(
+    authContext: AuthContext,
+    taskId: string,
+    variantId: string,
+  ): Promise<TaskVariantWithParameters & { task: TaskFields }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Parse taskId: try UUID first, then fall back to slug lookup
+      let task: Task | null = null;
+
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
+      } else {
+        task = await taskRepository.getBySlug(taskId);
+      }
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+      // Fetch the variant and check its status
+      const variant = await taskVariantRepository.getById({ id: variantId });
+
+      if (!variant) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId, variantId },
+        });
+      }
+
+      if (!isSuperAdmin && variant.status !== 'published') {
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.UNAUTHORIZED,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, taskId, variantId },
+        });
+      }
+
+      const parameters = await taskVariantParameterRepository.getByTaskVariantId(variantId);
+      const variantWithParams = { ...variant, parameters };
+
+      return {
+        ...variantWithParams,
+        task: { name: task.name, slug: task.slug, image: task.image },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, taskId, variantId } }, 'Failed to fetch task variant');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+        context: { userId, taskId, variantId },
       });
     }
   }
@@ -779,6 +870,7 @@ export function TaskService({
     list,
     getById,
     listTaskVariants,
+    getTaskVariant,
     createTaskVariant,
     updateTaskVariant,
     evaluateTaskVariantEligibility,
