@@ -411,29 +411,15 @@
     {
       "idx": 58,
       "version": "7",
-      "when": 1774502400000,
-      "tag": "0058_add_user_research_exclusions_table",
+      "when": 1774346220476,
+      "tag": "0058_add_user_research_exclusions_and_user_columns",
       "breakpoints": true
     },
     {
       "idx": 59,
       "version": "7",
-      "when": 1774502400001,
+      "when": 1774346220477,
       "tag": "0059_add_created_at_to_fdw_foreign_tables",
-      "breakpoints": true
-    },
-    {
-      "idx": 60,
-      "version": "7",
-      "when": 1774502400002,
-      "tag": "0060_make_assessment_pid_nullable",
-      "breakpoints": true
-    },
-    {
-      "idx": 61,
-      "version": "7",
-      "when": 1774502400003,
-      "tag": "0061_add_rostering_ended_to_users",
       "breakpoints": true
     }
   ]

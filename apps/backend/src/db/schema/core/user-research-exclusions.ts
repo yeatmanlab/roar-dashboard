@@ -36,10 +36,7 @@ export const userResearchExclusions = db.table(
     exclusionReason: p.text().notNull(),
     ...timestamps,
   },
-  (table) => [
-    p.check('user_research_exclusions_date_range_check', sql`${table.excludeFrom} < ${table.excludeUntil}`),
-    p.index('user_research_exclusions_user_id_idx').on(table.userId),
-  ],
+  (table) => [p.check('user_research_exclusions_date_range_check', sql`${table.excludeFrom} < ${table.excludeUntil}`)],
 );
 
 export type UserResearchExclusion = typeof userResearchExclusions.$inferSelect;
