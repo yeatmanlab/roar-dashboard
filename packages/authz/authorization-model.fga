@@ -227,7 +227,7 @@ type administration
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
     define educator_tier: principal or counselor or teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or educator_tier or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
 
     # Permissions
     define can_list: supervisory_tier_group or student or caregiver_tier

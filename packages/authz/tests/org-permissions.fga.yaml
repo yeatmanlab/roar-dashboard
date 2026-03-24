@@ -31,6 +31,22 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:district-teacher
+    relation: teacher
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:district-student
+    relation: student
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:school-teacher
     relation: teacher
     object: school:school-a
@@ -133,6 +149,36 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+
+  - name: District teacher can list/read their district (supervisory role)
+    check:
+      - user: user:district-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_read_scores: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: District student cannot list/read their district (supervisory only)
+    check:
+      - user: user:district-student
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_list_users: false
+          can_read_scores: false
 
   - name: Student in school cannot list/read parent district (supervisory only)
     check:
@@ -421,6 +467,7 @@ tests:
           can_list:
             users:
               - user:district-admin
+              - user:district-teacher
 
   - name: School lists supervisory users with can_list
     list_users:
@@ -433,5 +480,6 @@ tests:
           can_list:
             users:
               - user:district-admin
+              - user:district-teacher
               - user:school-teacher
               - user:teacher-in-tree-a
