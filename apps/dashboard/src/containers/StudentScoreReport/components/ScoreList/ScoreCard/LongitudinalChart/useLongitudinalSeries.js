@@ -16,7 +16,17 @@ const preferredTypes = Object.values(SCORE_TYPES)
 export function useLongitudinalSeries(props) {
   const sorted = computed(() => {
     const a = props.longitudinalData || [];
-    return [...a].sort((x, y) => new Date(x.date) - new Date(y.date));
+    let filtered = a;
+
+    if (props.taskId === 'pa') {
+      const scoringVersion = props.taskScoringVersions[props.taskId];
+      filtered =
+        scoringVersion === 4
+          ? a.filter((e) => e.scores?.scoringVersion === 4)
+          : a.filter((e) => e.scores?.scoringVersion !== 4);
+    }
+
+    return [...filtered].sort((x, y) => new Date(x.date) - new Date(y.date));
   });
 
   const chosenType = computed(() => preferredTypes.find((t) => sorted.value.some((e) => e.scores?.[t] != null)));
