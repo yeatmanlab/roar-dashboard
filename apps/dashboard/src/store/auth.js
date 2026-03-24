@@ -1,3 +1,4 @@
+import { markRaw } from 'vue';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
@@ -30,6 +31,7 @@ export const useAuthStore = () => {
         adminAuthStateListener: null,
         appAuthStateListener: null,
         accessToken: null,
+        redirectError: null, // Stores SSO redirect errors for display on sign-in page
       };
     },
     getters: {
@@ -64,7 +66,13 @@ export const useAuthStore = () => {
     actions: {
       async initFirekit() {
         try {
-          this.roarfirekit = await initializeFirekit();
+          // IMPORTANT: Firebase/Firekit objects must be wrapped with markRaw() to prevent Vue's
+          // reactivity system from deeply traversing them. These objects internally reference
+          // cross-origin windows/iframes created during OAuth flows (Clever, ClassLink, etc.).
+          // Without markRaw(), Vue's reactive proxy throws: "SecurityError: Failed to read a
+          // named property from 'Window': Blocked a frame with origin from accessing cross-origin frame."
+          // See: https://github.com/vuejs/core/issues/2282
+          this.roarfirekit = markRaw(await initializeFirekit());
           this.setAuthStateListeners();
         } catch (error) {
           // @TODO: Improve error handling, incl. redirect to error page.
@@ -86,7 +94,9 @@ export const useAuthStore = () => {
         this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if (user) {
             this.localFirekitInit = true;
-            this.firebaseUser.adminFirebaseUser = user;
+            // Firebase User objects must use markRaw() for the same reason as roarfirekit above.
+            // They contain internal auth provider state that references cross-origin frames.
+            this.firebaseUser.adminFirebaseUser = markRaw(user);
             this.accessToken = user.accessToken;
           } else {
             this.firebaseUser.adminFirebaseUser = null;
@@ -94,7 +104,7 @@ export const useAuthStore = () => {
         });
         this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
-            this.firebaseUser.appFirebaseUser = user;
+            this.firebaseUser.appFirebaseUser = markRaw(user);
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
@@ -137,11 +147,13 @@ export const useAuthStore = () => {
         }
       },
       async signInWithGooglePopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.GOOGLE;
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.GOOGLE);
         }
       },
       async signInWithGoogleRedirect() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.GOOGLE;
         return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.GOOGLE);
       },
       async signInWithCleverPopup() {
@@ -176,19 +188,28 @@ export const useAuthStore = () => {
       },
       async initStateFromRedirect() {
         this.spinner = true;
+        this.redirectError = null; // Clear any previous redirect errors
         const enableCookiesCallback = () => {
           const router = useRouter();
           router.replace({ name: 'EnableCookies' });
         };
         if (this.isFirekitInit) {
-          return await this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
-            // If the result is null, then no redirect operation was called.
-            if (result !== null) {
-              this.spinner = true;
-            } else {
+          return await this.roarfirekit
+            .signInFromRedirectResult(enableCookiesCallback)
+            .then((result) => {
+              // If the result is null, then no redirect operation was called.
+              if (result !== null) {
+                this.spinner = true;
+              } else {
+                this.spinner = false;
+              }
+            })
+            .catch((error) => {
+              console.error('Error processing redirect result:', error);
+              // Store redirect error for display on sign-in page
+              this.redirectError = error;
               this.spinner = false;
-            }
-          });
+            });
         }
       },
       async forceIdTokenRefresh() {

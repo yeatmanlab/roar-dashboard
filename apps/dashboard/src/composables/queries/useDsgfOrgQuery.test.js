@@ -36,14 +36,13 @@ describe('useDsgfOrgQuery', () => {
   it('should call query with correct parameters', () => {
     const mockUserId = nanoid();
     const mockAdministrationId = nanoid();
-    const mockAssignedOrgs = [nanoid()];
 
     const authStore = useAuthStore(piniaInstance);
     authStore.uid = mockUserId;
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useDsgfOrgQuery(mockAdministrationId, mockAssignedOrgs), {
+    withSetup(() => useDsgfOrgQuery(mockAdministrationId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -55,13 +54,12 @@ describe('useDsgfOrgQuery', () => {
       }),
     });
 
-    expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId, mockAssignedOrgs);
+    expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId);
   });
 
   it('should correctly control the enabled state of the query', async () => {
     const mockUserId = nanoid();
     const mockAdministrationId = nanoid();
-    const mockAssignedOrgs = [nanoid()];
 
     const authStore = useAuthStore(piniaInstance);
     authStore.uid = mockUserId;
@@ -72,7 +70,7 @@ describe('useDsgfOrgQuery', () => {
       enabled: enableQuery,
     };
 
-    withSetup(() => useDsgfOrgQuery(mockAdministrationId, mockAssignedOrgs, queryOptions), {
+    withSetup(() => useDsgfOrgQuery(mockAdministrationId, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -90,16 +88,15 @@ describe('useDsgfOrgQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId, mockAssignedOrgs);
+    expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId);
   });
 
   it('should only fetch data if the administration ID is available', async () => {
     const mockAdministrationId = ref();
-    const mockAssignedOrgs = [nanoid()];
 
     const queryOptions = { enabled: true };
 
-    withSetup(() => useDsgfOrgQuery(mockAdministrationId, mockAssignedOrgs, queryOptions), {
+    withSetup(() => useDsgfOrgQuery(mockAdministrationId, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -117,16 +114,15 @@ describe('useDsgfOrgQuery', () => {
     mockAdministrationId.value = nanoid();
     await nextTick();
 
-    expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId, mockAssignedOrgs);
+    expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
     const mockAdministrationId = null;
-    const mockAssignedOrgs = [nanoid()];
 
     const queryOptions = { enabled: true };
 
-    withSetup(() => useDsgfOrgQuery(mockAdministrationId, mockAssignedOrgs, queryOptions), {
+    withSetup(() => useDsgfOrgQuery(mockAdministrationId, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 

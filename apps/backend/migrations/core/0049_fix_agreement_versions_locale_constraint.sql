@@ -1,0 +1,1 @@
+ALTER TABLE "app"."agreement_versions" ALTER COLUMN "locale" SET DATA TYPE varchar(5);

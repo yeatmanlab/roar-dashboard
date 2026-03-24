@@ -126,7 +126,7 @@ async function startTask(selectedAdmin) {
       // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
       if (props.launchId) {
-        router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
+        router.go(-1);
       } else {
         router.push({ name: 'Home' });
       }

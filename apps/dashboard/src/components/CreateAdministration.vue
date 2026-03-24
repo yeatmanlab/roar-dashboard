@@ -176,6 +176,7 @@ import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
+import _cloneDeep from 'lodash/cloneDeep';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -358,8 +359,10 @@ const rules = {
 const v$ = useVuelidate(rules, state);
 
 const minStartDate = computed(() => {
-  if (props.adminId && existingAdministrationData.value?.dateOpened) {
-    return new Date(existingAdministrationData.value.dateOpened);
+  // When editing, allow selecting any date (no minimum restriction)
+  // When creating new, use today as minimum
+  if (props.adminId) {
+    return null;
   }
   return new Date();
 });
@@ -400,6 +403,19 @@ const nonUniqueTasks = ref('');
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
+
+const handleFoundVariant = (assessment, allVariants) => {
+  const { conditions: assessmentConditions = undefined, params: assessmentParams, taskId } = assessment;
+  const allVariantsForThisTask = _filter(allVariants, (variant) => variant.task.id === taskId);
+  const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
+  if (found) {
+    const clonedFound = _cloneDeep(found);
+    // Set conditions from assessment, or undefined if no conditions exist
+    clonedFound.variant.conditions = !_isEmpty(assessmentConditions) ? assessmentConditions : undefined;
+    preSelectedVariants.value = _union(preSelectedVariants.value, [clonedFound]);
+    variants.value = _union(variants.value, [clonedFound]);
+  }
+};
 
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
@@ -466,7 +482,7 @@ const submit = async () => {
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
       // Exclude conditions key if there are no conditions to be set.
-      ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
+      ...(!_isEmpty(assessment.variant.conditions) && { conditions: toRaw(assessment.variant.conditions) }),
     }),
   );
 
@@ -580,10 +596,10 @@ watch(
         state.administrationName = adminInfo.name;
         state.administrationPublicName = adminInfo.publicName;
       }
-      // For each orgtype, find the orgs in adminInfo and add them to state
+      // For each orgtype, find the orgs in adminInfo.minimalOrgs and add them to state
       _forEach(ORG_TYPES, (orgType) => {
-        if (!_isEmpty(adminInfo[orgType])) {
-          state[orgType] = adminInfo[orgType].map((orgId) => ({ id: orgId }));
+        if (!_isEmpty(adminInfo.minimalOrgs?.[orgType])) {
+          state[orgType] = adminInfo.minimalOrgs[orgType].map((orgId) => ({ id: orgId }));
         } else {
           state[orgType] = [];
         }
@@ -591,14 +607,7 @@ watch(
       state.dateStarted = new Date(adminInfo.dateOpened);
       state.dateClosed = new Date(adminInfo.dateClosed);
       _forEach(adminInfo.assessments, (assessment) => {
-        const assessmentParams = assessment.params;
-        const taskId = assessment.taskId;
-        const allVariantsForThisTask = _filter(allVariantInfo, (variant) => variant.task.id === taskId);
-        const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
-        if (found) {
-          preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
-          variants.value = _union(variants.value, [found]);
-        }
+        handleFoundVariant(assessment, allVariantInfo);
       });
       state.legal = adminInfo.legal;
       state.consent = adminInfo?.legal?.consent ?? null;

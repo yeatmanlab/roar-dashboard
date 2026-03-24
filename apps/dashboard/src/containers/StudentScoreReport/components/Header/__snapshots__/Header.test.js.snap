@@ -1,0 +1,110 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Header.vue - Snapshots > snapshots > renders expanded state 1`] = `
+"<section data-cy="report__header" aria-labelledby="page-title">
+  <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-between">
+    <h1 id="page-title" class="p-0 m-0 text-5xl"><span class="block mb-1 text-sm font-medium text-gray-500 uppercase"></span><span>John Doe</span></h1>
+    <div class="flex gap-2"><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__expand-btn" pc0="" data-pc-section="root"><span class="p-button-icon pi pi-chevron-down ml-2 transition-all rotate-180" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__pdf-export-btn" pc1="" data-pc-section="root"><span class="p-button-icon pi pi-download ml-2" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button></div>
+  </div>
+  <!--v-if-->
+</section>"
+`;
+
+exports[`Header.vue - Snapshots > snapshots > renders loading state 1`] = `
+"<section data-cy="report__header" aria-labelledby="page-title">
+  <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-between">
+    <h1 id="page-title" class="p-0 m-0 text-5xl"><span class="block mb-1 text-sm font-medium text-gray-500 uppercase"></span><span>John </span></h1>
+    <div class="flex gap-2"><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__expand-btn" pc0="" data-pc-section="root"><span class="p-button-icon pi pi-chevron-down ml-2 transition-all" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" disabled="" data-pc-name="button" data-p-disabled="true" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__pdf-export-btn" pc1="" data-pc-section="root"><span class="p-button-icon pi pi-spin pi-spinner ml-2" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button></div>
+  </div>
+  <!--v-if-->
+</section>"
+`;
+
+exports[`Header.vue - Snapshots > snapshots > renders minimal props (firstName only) 1`] = `
+"<section data-cy="report__header" aria-labelledby="page-title">
+  <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-between">
+    <h1 id="page-title" class="p-0 m-0 text-5xl"><span class="block mb-1 text-sm font-medium text-gray-500 uppercase"></span><span>John </span></h1>
+    <div class="flex gap-2"><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__expand-btn" pc0="" data-pc-section="root"><span class="p-button-icon pi pi-chevron-down ml-2 transition-all" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__pdf-export-btn" pc1="" data-pc-section="root"><span class="p-button-icon pi pi-download ml-2" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button></div>
+  </div>
+  <!--v-if-->
+</section>"
+`;
+
+exports[`Header.vue - Snapshots > snapshots > renders with Kindergarten grade 1`] = `
+"<section data-cy="report__header" aria-labelledby="page-title">
+  <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-between">
+    <h1 id="page-title" class="p-0 m-0 text-5xl"><span class="block mb-1 text-sm font-medium text-gray-500 uppercase"></span><span>Sarah </span></h1>
+    <div class="flex gap-2"><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__expand-btn" pc0="" data-pc-section="root"><span class="p-button-icon pi pi-chevron-down ml-2 transition-all" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__pdf-export-btn" pc1="" data-pc-section="root"><span class="p-button-icon pi pi-download ml-2" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button></div>
+  </div>
+  <!--v-if-->
+</section>"
+`;
+
+exports[`Header.vue - Snapshots > snapshots > renders with full props 1`] = `
+"<section data-cy="report__header" aria-labelledby="page-title">
+  <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-between">
+    <h1 id="page-title" class="p-0 m-0 text-5xl"><span class="block mb-1 text-sm font-medium text-gray-500 uppercase"></span><span>John Doe</span></h1>
+    <div class="flex gap-2"><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__expand-btn" pc0="" data-pc-section="root"><span class="p-button-icon pi pi-chevron-down ml-2 transition-all" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__pdf-export-btn" pc1="" data-pc-section="root"><span class="p-button-icon pi pi-download ml-2" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button></div>
+  </div>
+  <dl class="flex flex-wrap gap-4 mt-4 w-full text-gray-600">
+    <div class="inline-flex p-1 px-2 bg-gray-200 rounded">
+      <dt class="font-medium">:</dt>
+      <dd class="ml-1">3rd Grade</dd>
+    </div>
+    <div class="inline-flex p-1 px-2 bg-gray-200 rounded">
+      <dt class="font-medium">:</dt>
+      <dd class="ml-1">Ms. Smith</dd>
+    </div>
+    <div class="inline-flex p-1 px-2 bg-gray-200 rounded">
+      <dt class="font-medium">:</dt>
+      <dd class="ml-1">Fall 2024</dd>
+    </div>
+  </dl>
+</section>"
+`;
+
+exports[`Header.vue - Snapshots > snapshots > renders without optional metadata 1`] = `
+"<section data-cy="report__header" aria-labelledby="page-title">
+  <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-between">
+    <h1 id="page-title" class="p-0 m-0 text-5xl"><span class="block mb-1 text-sm font-medium text-gray-500 uppercase"></span><span>John Doe</span></h1>
+    <div class="flex gap-2"><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__expand-btn" pc0="" data-pc-section="root"><span class="p-button-icon pi pi-chevron-down ml-2 transition-all" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-outlined" data-p="icon-only outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" data-html2canvas-ignore="true" data-cy="report__pdf-export-btn" pc1="" data-pc-section="root"><span class="p-button-icon pi pi-download ml-2" data-p="right" data-pc-section="icon"></span>
+        <!---->
+        <!---->
+      </button></div>
+  </div>
+  <!--v-if-->
+</section>"
+`;

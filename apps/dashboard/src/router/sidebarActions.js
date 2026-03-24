@@ -73,13 +73,6 @@ const sidebarActionOptions = [
     permission: Permissions.Tasks.UPDATE,
     category: 'Administrations',
   },
-  {
-    title: 'Register New Family',
-    icon: 'pi pi-home',
-    buttonLink: { name: 'Register' },
-    requiresSuperAdmin: true,
-    category: 'Users',
-  },
 ];
 
 export const getSidebarActions = ({ isLaunchAdmin = false }) => {

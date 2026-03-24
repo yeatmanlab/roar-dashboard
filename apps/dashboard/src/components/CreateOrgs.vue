@@ -162,6 +162,7 @@
                 class="w-full"
                 data-cy="input-autocomplete"
                 @complete="searchTags"
+                @keydown.enter.prevent="addTag"
               />
               <label for="tags">Tags</label>
             </PvFloatLabel>
@@ -361,6 +362,14 @@ const searchTags = (event) => {
     filteredOptions = filteredOptions.map((opt) => opt);
   }
   tagSuggestions.value = filteredOptions;
+};
+
+const addTag = (event) => {
+  const input = event.target.value.trim();
+  if (input && !state.tags.includes(input)) {
+    state.tags.push(input);
+  }
+  event.target.value = '';
 };
 
 const setAddress = (place) => {

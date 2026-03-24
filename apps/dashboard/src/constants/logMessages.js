@@ -5,6 +5,7 @@ export const AUTH_LOG_MESSAGES = Object.freeze({
   SUCCESS: 'User successfully identified, routing to home page',
   MISSING_SSO_PROVIDER: 'No SSO provider detected. Redirecting to SSO landing page...',
   POLLING_ACCOUNT_READINESS: 'Redirected to SSO landing page, polling for account readiness...',
+  POLLING_MAX_RETRIES_EXCEEDED: 'SSO account readiness polling exceeded maximum retries',
 });
 
 export const NAV_LOG_MESSAGES = Object.freeze({

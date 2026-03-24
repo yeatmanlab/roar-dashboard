@@ -1,7 +1,6 @@
 import 'cypress-wait-until';
 import '@testing-library/cypress/add-commands';
 import { APP_ROUTES } from '../../src/constants/routes.js';
-import { redirectSignInPath } from '../../src/helpers/redirectSignInPath.js';
 
 const baseUrl = Cypress.config().baseUrl;
 
@@ -19,9 +18,11 @@ Cypress.Commands.add('login', (username, password) => {
       cy.visit(APP_ROUTES.HOME);
 
       cy.get('[data-cy="sign-in__username"]').type(username, { log: false });
+
+      cy.get('[data-cy="signin-continue"]').click();
       cy.get('[data-cy="sign-in__password"]').type(password, { log: false });
 
-      cy.get('button').contains('Go!').click();
+      cy.get('[data-cy="signin-continue"]').click();
 
       cy.url().should('eq', `${baseUrl}/`);
       cy.log('Login successful.');
@@ -50,20 +51,15 @@ Cypress.Commands.add('login', (username, password) => {
 });
 
 /**
- * Logs in a user using Clever SSO.
+ * Performs Clever OAuth flow and lands on the /sso page.
+ * Does NOT wait for redirect - use this as a building block for login commands.
  *
  * @param {string} schoolName - The name of the school to log in with.
  * @param {string} username - The username to log in with.
  * @param {string} password - The password to log in with.
- * @param {string} [firstPath=APP_ROUTES.HOME] - The first path to visit.
  */
-Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPath = APP_ROUTES.HOME) => {
+Cypress.Commands.add('performCleverOAuth', (schoolName, username, password) => {
   const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
-
-  cy.visit(firstPath);
-
-  const signInPath = `${APP_ROUTES.SIGN_IN}${firstPath === APP_ROUTES.HOME ? '' : `?redirect_to=${firstPath}`}`;
-  cy.url().should('eq', `${baseUrl}${signInPath}`);
 
   cy.get('[data-cy="sign-in__clever-sso"]').contains('Clever').click();
 
@@ -78,27 +74,56 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
     },
     ({ schoolName, username, password }) => {
       cy.get('input[title="School name"]').type(schoolName);
-      cy.get('ul > li').contains(schoolName).click();
+      cy.get('ul > li').contains(schoolName).should('be.visible').click();
 
       cy.get('input#username').type(username);
       cy.get('input#password').type(password, { log: false });
-      cy.wait(1000); // Add a delay to simulate user input, as Clever SSO is sensitive to rapid input.
+      cy.wait(1000); // Delay to simulate user input, as Clever SSO is sensitive to rapid input.
       cy.get('button#UsernamePasswordForm--loginButton').click();
     },
   );
 
-  const landingPath = `${baseUrl}${
-    firstPath === APP_ROUTES.HOME ? APP_ROUTES.HOME : redirectSignInPath({ query: { redirect_to: firstPath } })
-  }`;
-  cy.url().should('include', landingPath);
+  // After OAuth, we land on /sso page which polls for account readiness.
+  cy.url({ timeout: 30000 }).should('include', '/sso');
+  cy.log('Clever OAuth complete, landed on /sso page.');
+});
 
-  if (landingPath === `${baseUrl}${APP_ROUTES.HOME}`) {
-    cy.get('[data-cy="app-spinner"]').should('be.visible');
-    cy.waitForParticipantHomepage();
-    cy.url().should('eq', `${baseUrl}/`);
-    cy.log('SSO login successful.');
-    cy.agreeToConsent();
-  }
+/**
+ * Logs in a user using Clever SSO.
+ * Authenticates via Clever OAuth, waits for the SSO page to process,
+ * and then waits for redirect to home page.
+ *
+ * @param {string} schoolName - The name of the school to log in with.
+ * @param {string} username - The username to log in with.
+ * @param {string} password - The password to log in with.
+ */
+Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
+  cy.visit(APP_ROUTES.HOME);
+  cy.url().should('eq', `${baseUrl}${APP_ROUTES.SIGN_IN}`);
+
+  cy.performCleverOAuth(schoolName, username, password);
+
+  // Wait for redirect to home page (SSO polling succeeded and user has valid userType).
+  cy.url({ timeout: 60000 }).should('eq', `${baseUrl}/`);
+
+  cy.log('Clever SSO login successful.');
+});
+
+/**
+ * Intercepts Firestore user document requests and removes userType from the response.
+ * This simulates an unprovisioned SSO user for testing the error state.
+ */
+Cypress.Commands.add('interceptUserDataWithoutUserType', () => {
+  // Intercept Firestore REST API calls for user documents.
+  // The URL pattern matches: firestore.googleapis.com/.../documents/users/{userId}
+  cy.intercept('GET', '**/firestore.googleapis.com/**/documents/users/**', (req) => {
+    req.continue((res) => {
+      // Remove userType from the response fields if it exists.
+      if (res.body?.fields?.userType) {
+        delete res.body.fields.userType;
+      }
+    });
+  }).as('userDataRequest');
 });
 
 /**
@@ -107,7 +132,7 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password, firstPa
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="navbar__signout-btn-desktop"]').click();
   cy.url().should('eq', `${baseUrl}/signin`);
-  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
+  cy.get('h1').should('contain.text', 'Welcome!');
   cy.log('Logout successful.');
 });
 
@@ -156,6 +181,64 @@ Cypress.Commands.add('waitForStudentReportList', () => {
 });
 
 /**
+ * Waits for the progress report button to load.
+ * @param {string} orgName - Optional organization name to wait for button in specific row
+ */
+Cypress.Commands.add('waitForProgressReportButton', (orgName = null) => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      if (orgName) {
+        // Find the specific row containing orgName, then check for button within that row
+        const row = Cypress.$('[data-testid="card-administration__body-cell-content"]')
+          .filter((i, el) => Cypress.$(el).text().includes(orgName))
+          .closest('tr');
+        return row.find('[data-cy="button-progress"]').length > 0;
+      }
+      // If no orgName, just check if any button exists
+      return Cypress.$('[data-cy="button-progress"]').length;
+    },
+    {
+      errorMsg: orgName
+        ? `Failed to find progress button for ${orgName} before timeout`
+        : 'Failed to find the progress report button before timeout',
+      timeout: 1200000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
+ * Waits for the score report button to load.
+ * @param {string} orgName - Optional organization name to wait for button in specific row
+ */
+Cypress.Commands.add('waitForScoreReportButton', (orgName = null) => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      if (orgName) {
+        // Find the specific row containing orgName, then check for button within that row
+        const row = Cypress.$('[data-testid="card-administration__body-cell-content"]')
+          .filter((i, el) => Cypress.$(el).text().includes(orgName))
+          .closest('tr');
+        return row.find('[data-cy="button-scores"]').length > 0;
+      }
+      // If no orgName, just check if any button exists
+      return Cypress.$('[data-cy="button-scores"]').length;
+    },
+    {
+      errorMsg: orgName
+        ? `Failed to find score button for ${orgName} before timeout`
+        : 'Failed to find the score report button before timeout',
+      timeout: 1200000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
  * Waits for the launch student button to load.
  */
 Cypress.Commands.add('waitForPlayAssessmentsBtn', () => {
@@ -187,13 +270,16 @@ Cypress.Commands.add('waitForOrganisationsList', () => {
 
 /**
  * Wait for the participant homepage to load.
+ * Accepts either the assignments view or the empty state as valid loaded states.
  */
 Cypress.Commands.add('waitForParticipantHomepage', () => {
   // Note: Especially during SSO auth flows, the application takes a while to load. Until this is resolved, we need to
   // work with a slightly excessive timeout to ensure we allow the application to complete the auth flow.
   cy.waitUntil(
     () => {
-      return Cypress.$('[data-cy="home-participant__administration"]').length > 0;
+      const hasAssignments = Cypress.$('[data-cy="home-participant__administration"]').length > 0;
+      const hasEmptyState = Cypress.$('[data-cy="home-participant__administration-emptystate"]').length > 0;
+      return hasAssignments || hasEmptyState;
     },
     {
       errorMsg: 'Failed to load the participant home page before timeout',
@@ -345,6 +431,9 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
       cy.wrap($cards).should('have.length.greaterThan', 0);
 
       cy.wrap($cards.get(0)).find('button').contains('Show details').click();
+
+      // Wait for the tree table to load after clicking Show details
+      cy.get('[data-cy="administration-orgs-tree"]', { timeout: 30000 }).should('be.visible');
     });
 });
 
@@ -432,20 +521,63 @@ Cypress.Commands.add(
  *
  * @param {Array<string>} userList - The list of users to check.
  */
-Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
-    cy.wrap(row)
-      .find('td.p-datatable-frozen-column')
-      .then((cell) => {
-        // Clean the non-breaking space character and any whitespace from the cell text.
-        const cellText = cell
-          .text()
-          .replace(/&nbsp;/g, '')
-          .trim();
+// cypress/support/commands.js
+Cypress.Commands.add(
+  'checkUserList',
+  (
+    userList,
+    {
+      tableSelector = '[data-cy="roar-data-table"]',
+      colSel = 'td.p-datatable-frozen-column',
+      caseInsensitive = false,
+    } = {},
+  ) => {
+    cy.get(tableSelector)
+      .first()
+      .within(() => {
+        cy.get(`tbody tr ${colSel}`).then(($cells) => {
+          const normalize = (s) => {
+            // Replace actual NBSPs, collapse spaces, trim, and optionally lowercase
+            let t = (s ?? '')
+              .replace(/\u00A0/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            return caseInsensitive ? t.toLowerCase() : t;
+          };
 
-        expect(userList).to.include(cellText);
+          const expected = userList.map(normalize);
+          const expectedSet = new Set(expected);
+
+          const displayed = [...$cells].map((el) => normalize(el.textContent)).filter(Boolean);
+
+          displayed.forEach((v) => {
+            expect(expectedSet.has(v), `Displayed row "${v}" should exist in the provided user list`).to.be.true;
+          });
+
+          // Optional sanity check: table should not be empty
+          expect(displayed.length, 'Should have at least one visible row').to.be.greaterThan(0);
+        });
       });
+  },
+);
+
+/**
+ * Waits for the table to load and ensure it has at least one row.
+ *
+ * @param {object} options - The options for the command.
+ * @param {string} options.tableSelector - The selector for the table.
+ * @param {number} options.minRows - The minimum number of rows to wait for.
+ */
+Cypress.Commands.add('waitForRoarTable', ({ tableSelector = '[data-cy="roar-data-table"]', minRows = 1 } = {}) => {
+  cy.get(tableSelector).should('be.visible');
+
+  // Ensure rows actually rendered
+  cy.get(`${tableSelector} tbody tr`).should(($rows) => {
+    expect($rows.length, 'rendered table rows').to.be.greaterThan(minRows - 1);
   });
+
+  // If virtualized, ensure table is in view
+  cy.get(tableSelector).scrollIntoView();
 });
 
 /**
@@ -531,3 +663,16 @@ function getIfExists({ selector, skip = true }) {
 }
 
 Cypress.Commands.add('getIfExists', getIfExists);
+
+/**
+ * Selects a row in CardAdministration and performs an action on it.
+ * @param {string} orgName The name of the organization.
+ * @param {string} buttonSelector The selector of the button to click.
+ */
+Cypress.Commands.add('performRowAction', (orgName, buttonSelector) => {
+  cy.findAllByTestId('card-administration__body-cell-content')
+    .contains(orgName)
+    .closest('tr')
+    .find(`[data-cy="${buttonSelector}"], [data-testid="${buttonSelector}"]`)
+    .click();
+});

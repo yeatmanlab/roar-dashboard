@@ -83,9 +83,7 @@ const columns = computed(() => {
       filter: true,
     });
   }
-  console.log('props.taskId', props.taskId);
   if (props.taskId === 'letter' || props.taskId === 'letter-en-ca') {
-    console.log('exporting letter data', props.taskId);
     tableColumns.push(
       { field: `scores.${props.taskId}.lowerCaseScore`, header: 'Lower Case', dataType: 'text', sort: false },
       { field: `scores.${props.taskId}.upperCaseScore`, header: 'Upper Case', dataType: 'text', sort: false },
@@ -130,6 +128,7 @@ const columns = computed(() => {
         header: header,
         dataType: 'text',
         sort: true,
+        tooltip: false,
         body: (row) => {
           return _get(row, `scores.${props.taskId}.composite.subscores.${field}`) || '0/0';
         },
@@ -142,19 +141,21 @@ const columns = computed(() => {
       header: 'Total % Correct',
       dataType: 'number',
       sort: true,
+      tooltip: false,
       body: (row) => {
         const totalPercent = _get(row, `scores.${props.taskId}.composite.totalPercentCorrect`);
         return typeof totalPercent === 'number' ? `${Math.round(totalPercent)}%` : '0%';
       },
     });
 
-    // Add skills to work on
-    tableColumns.push({
-      field: `scores.${props.taskId}.skillsToWorkOn`,
-      header: 'Skills To Work On',
-      dataType: 'text',
-      sort: false,
-    });
+    // Hide skills to work on
+    // tableColumns.push({
+    //   field: `scores.${props.taskId}.skillsToWorkOn`,
+    //   header: 'Skills To Work On',
+    //   dataType: 'text',
+    //   sort: false,
+    //   tooltip: false,
+    // });
   }
   if (props.taskId === 'roam-alpaca') {
     const gradeEstimate = `scores.${props.taskId}.gradeEstimate`;
@@ -240,7 +241,6 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Total % Correct', _get(scores, `${props.taskId}.composite.totalPercentCorrect`));
       _set(tableRow, 'Skills To Work On', _get(scores, `${props.taskId}.skillsToWorkOn`));
     }
-
     if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));

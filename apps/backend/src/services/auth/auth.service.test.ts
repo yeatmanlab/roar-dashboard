@@ -32,7 +32,7 @@ describe('AuthService', () => {
     await AuthService.verifyToken(token);
 
     expect(mockVerifyToken).toHaveBeenCalledOnce();
-    expect(mockVerifyToken).toHaveBeenCalledWith(token);
+    expect(mockVerifyToken).toHaveBeenCalledExactlyOnceWith(token);
   });
 
   it('should verify token and return decoded user', async () => {

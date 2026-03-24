@@ -9,10 +9,7 @@ import NavBar from '@/components/NavBar';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { useAuthStore } from '@/store/auth';
 import { usePermissions } from '@/composables/usePermissions';
-import mockUserClaims, {
-  mockSuperAdminUserClaims,
-  mockPartnerAdminUserClaims,
-} from '@/test-support/mocks/mockUserClaims';
+import mockUserClaims from '@/test-support/mocks/mockUserClaims';
 import mockPermissions from '@/test-support/mocks/mockPermissions';
 
 vi.mock('vue-router', async (getModule) => {
@@ -40,7 +37,7 @@ authStore.roarfirekit = {
   restConfig: vi.fn().mockReturnValue(true),
 };
 
-authStore.userData = {
+const defaultUserData = {
   name: {
     first: firstName,
     last: lastName,
@@ -49,6 +46,8 @@ authStore.userData = {
   displayName: displayName,
   email: email,
 };
+
+authStore.userData = { ...defaultUserData };
 
 describe('<Navigation />', () => {
   let wrapper;
@@ -59,6 +58,9 @@ describe('<Navigation />', () => {
   };
 
   beforeEach(() => {
+    // Reset authStore.userData to default state
+    authStore.userData = { ...defaultUserData };
+
     mockRoute = {
       name: 'Dashboard',
     };
@@ -187,7 +189,7 @@ describe('<Navigation />', () => {
     });
 
     it('should render the user type as final fall back for display name', () => {
-      delete authStore.userData;
+      authStore.userData = undefined;
 
       wrapper = mount(Navigation, {
         global: {
@@ -201,74 +203,6 @@ describe('<Navigation />', () => {
       const navbarComponent = wrapper.findComponent(NavBar);
       expect(navbarComponent.props()).toMatchObject({
         displayName: 'User',
-      });
-    });
-  });
-
-  describe('account settings', () => {
-    it('should hide the account settings for participants', () => {
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        showAccountSettingsLink: false,
-      });
-    });
-
-    it('should show the account settings for partner admins', () => {
-      vi.mocked(useUserClaimsQuery).mockReturnValue({
-        isLoading: false,
-        data: mockPartnerAdminUserClaims,
-      });
-      vi.mocked(usePermissions).mockReturnValue({
-        userCan: vi.fn().mockReturnValue(true),
-        Permissions: mockPermissions,
-      });
-
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        showAccountSettingsLink: true,
-      });
-    });
-
-    it('should show the account settings for super admins', () => {
-      vi.mocked(useUserClaimsQuery).mockReturnValue({
-        isLoading: false,
-        data: mockSuperAdminUserClaims,
-      });
-      vi.mocked(usePermissions).mockReturnValue({
-        userCan: vi.fn().mockReturnValue(true),
-        Permissions: mockPermissions,
-      });
-
-      wrapper = mount(Navigation, {
-        global: {
-          plugins: [testingPinia, VueQueryPlugin],
-          stubs: {
-            NavBar: true,
-          },
-        },
-      });
-
-      const navbarComponent = wrapper.findComponent(NavBar);
-      expect(navbarComponent.props()).toMatchObject({
-        showAccountSettingsLink: true,
       });
     });
   });

@@ -1,0 +1,1 @@
+ALTER TYPE "app"."user_type" ADD VALUE 'super_admin';

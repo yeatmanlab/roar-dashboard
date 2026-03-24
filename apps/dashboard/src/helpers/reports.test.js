@@ -7,13 +7,33 @@ import {
   getRawScoreThreshold,
   getRawScoreRange,
   getTagColor,
-  supportLevelColors,
   replaceScoreRange,
   taskInfoById,
+  getDialColor,
+  getDistributionChartPath,
+  getPaSkillsToWorkOn,
+  PA_SKILL_THRESHOLD,
+  PA_SKILL_LEGACY_THRESHOLD,
 } from './reports';
+import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 
 vi.mock('./index', () => ({
   flattenObj: vi.fn((obj) => obj),
+}));
+
+vi.mock('@/translations/i18n', () => ({
+  i18n: {
+    global: {
+      t: vi.fn((key) => key),
+    },
+  },
+}));
+
+vi.mock('vue-i18n', () => ({
+  useI18n: vi.fn(() => ({
+    locale: { value: 'en' },
+    t: vi.fn((key) => key),
+  })),
 }));
 
 vi.mock('html2canvas', () => ({
@@ -66,7 +86,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 75, 100, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000',
         });
       });
 
@@ -90,7 +110,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 600, 'swr', false);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
     });
@@ -100,7 +120,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 50, 513, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -124,7 +144,7 @@ describe('reports', () => {
         const result = getSupportLevel(3, 40, 41, 'sre', false, 4);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -132,7 +152,7 @@ describe('reports', () => {
         const result = getSupportLevel(6, undefined, 520, 'swr', false, 7);
         expect(result).toEqual({
           support_level: 'Achieved Skill',
-          tag_color: 'green',
+          tag_color: '#008000', // green-500
         });
       });
 
@@ -652,7 +672,7 @@ describe('reports', () => {
     it('should have correct properties for letter task', () => {
       expect(taskDisplayNames.letter).toHaveProperty('name', 'Letter');
       expect(taskDisplayNames.letter).toHaveProperty('publicName', 'ROAR - Letter');
-      expect(taskDisplayNames.letter).toHaveProperty('order', 1);
+      expect(taskDisplayNames.letter).toHaveProperty('order', 4);
     });
   });
 
@@ -687,21 +707,21 @@ describe('reports', () => {
 
   describe('getTagColor', () => {
     it('should return below color for "Needs Extra Support"', () => {
-      expect(getTagColor('Needs Extra Support')).toBe(supportLevelColors.below);
+      expect(getTagColor('Needs Extra Support')).toBe(SCORE_SUPPORT_LEVEL_COLORS.BELOW);
     });
 
     it('should return some color for "Developing Skill"', () => {
-      expect(getTagColor('Developing Skill')).toBe(supportLevelColors.some);
+      expect(getTagColor('Developing Skill')).toBe(SCORE_SUPPORT_LEVEL_COLORS.SOME);
     });
 
     it('should return above color for "Achieved Skill"', () => {
-      expect(getTagColor('Achieved Skill')).toBe(supportLevelColors.above);
+      expect(getTagColor('Achieved Skill')).toBe(SCORE_SUPPORT_LEVEL_COLORS.ABOVE);
     });
 
     it('should handle unexpected values gracefully', () => {
-      expect(getTagColor('Unknown')).toBe(supportLevelColors.Assessed);
-      expect(getTagColor(null)).toBe(supportLevelColors.Assessed);
-      expect(getTagColor(undefined)).toBe(supportLevelColors.Assessed);
+      expect(getTagColor('Unknown')).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+      expect(getTagColor(null)).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
+      expect(getTagColor(undefined)).toBe(SCORE_SUPPORT_LEVEL_COLORS.ASSESSED);
     });
   });
 
@@ -731,6 +751,288 @@ describe('reports', () => {
       const sreDesc = replaceScoreRange(taskInfoById['sre']?.desc, 'sre', 4);
       expect(sreDesc).not.toMatch(/{{.*}}/);
       expect(sreDesc).toMatch(/80%/);
+    });
+  });
+
+  describe('getDialColor', () => {
+    it('should return gray for phonics', () => {
+      expect(getDialColor(6, 40, 45, 'phonics', null, null)).toBe('#3b82f6'); // blue-500
+    });
+
+    it('should return support level color using percentile for grade < 6 for sre with scoringVersion 3', () => {
+      expect(getDialColor(3, 45, null, 'sre', null, 3)).toBe('#edc037');
+    });
+
+    it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 3', () => {
+      expect(getDialColor(6, null, 40, 'sre', null, 3)).toBe('#c93d82');
+    });
+
+    it('should return support level color using percentile for grade < 6 for sre with scoringVersion 4', () => {
+      expect(getDialColor(3, 45, null, 'sre', null, 4)).toBe('#008000'); // green-500
+    });
+
+    it('should return support level color using raw score for grade >= 6 for sre with scoringVersion 4', () => {
+      expect(getDialColor(6, null, 40, 'sre', null, 4)).toBe('#edc037');
+    });
+
+    it('should return null if percentile is undefined for grade < 6', () => {
+      expect(getDialColor(3, undefined, 40, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if raw score is undefined for grade >= 6', () => {
+      expect(getDialColor(6, 45, undefined, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if percentile is null for grade < 6', () => {
+      expect(getDialColor(3, null, 40, 'sre', null, 4)).toBe(null);
+    });
+
+    it('should return null if raw score is null for grade >= 6', () => {
+      expect(getDialColor(6, 45, null, 'sre', null, 4)).toBe(null);
+    });
+  });
+
+  describe('getDistributionChartPath', () => {
+    describe('grade < 6', () => {
+      it('should return v2 chart when all applicable tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, 'swr-es': 1 }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when all applicable tasks use updated norms and assigned unnormed tasks', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, letter: null, morphology: null }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when swr-es is unnormed but other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, 'swr-es': null }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return v2 chart when sre-es is unnormed but other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { sre: 4, 'sre-es': null }, 'en')).toMatch(
+          /distribution-chart-elementary-v2-en\.webp$/,
+        );
+      });
+
+      it('should return Spanish v2 chart when language is "es" and tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { 'swr-es': 1, 'sre-es': 1 }, 'es')).toMatch(
+          /distribution-chart-elementary-v2-es\.webp$/,
+        );
+      });
+
+      it('should return v1 chart when all applicable tasks use old norms', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 3, 'swr-es': null, letter: null }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return v1 chart when pa is assigned and other tasks use old norms', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 3, pa: 3 }, 'en')).toMatch(
+          /distribution-chart-elementary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs chart when pa is assigned even if other tasks use updated norms', () => {
+        expect(getDistributionChartPath(3, { swr: 7, sre: 4, pa: 3 }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+
+      it('should return no-cutoffs chart when scoring versions are mixed', () => {
+        expect(getDistributionChartPath(3, { swr: 6, sre: 4, 'swr-es': 1, 'sre-es': null }, 'en')).toMatch(
+          /distribution-chart-no-cutoffs-en\.webp$/,
+        );
+      });
+    });
+
+    describe('grade >= 6', () => {
+      it('should return secondary chart regardless of scoring versions', () => {
+        expect(getDistributionChartPath(6, { swr: 7, sre: 4, 'swr-es': 1, 'sre-es': null }, 'en')).toMatch(
+          /distribution-chart-secondary-v1-en\.webp$/,
+        );
+      });
+
+      it('should return secondary chart when taskScoringVersions is empty', () => {
+        expect(getDistributionChartPath(6, {}, 'en')).toMatch(/distribution-chart-secondary-v1-en\.webp$/);
+      });
+    });
+
+    it('should return no-cutoffs chart if grade is undefined', () => {
+      expect(getDistributionChartPath(undefined, { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should return no-cutoffs chart if grade is null', () => {
+      expect(getDistributionChartPath(null, { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should return no-cutoffs chart if grade is empty string', () => {
+      expect(getDistributionChartPath('', { swr: 7, sre: 4 }, 'en')).toMatch(/distribution-chart-no-cutoffs-en\.webp$/);
+    });
+
+    it('should return no-cutoffs chart if grade is not a number', () => {
+      expect(getDistributionChartPath('K0', { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-no-cutoffs-en\.webp$/,
+      );
+    });
+
+    it('should handle string grade values correctly', () => {
+      expect(getDistributionChartPath('3', { swr: 7, sre: 4 }, 'en')).toMatch(
+        /distribution-chart-elementary-v2-en\.webp$/,
+      );
+    });
+  });
+
+  describe('getPaSkillsToWorkOn', () => {
+    describe('threshold constants', () => {
+      it('should define PA_SKILL_THRESHOLD as (15/19)*100', () => {
+        expect(PA_SKILL_THRESHOLD).toBeCloseTo((15 / 19) * 100);
+      });
+
+      it('should define PA_SKILL_LEGACY_THRESHOLD as 15', () => {
+        expect(PA_SKILL_LEGACY_THRESHOLD).toBe(15);
+      });
+    });
+
+    describe('new scoring with percentCorrect', () => {
+      it('should flag all subtasks below threshold', () => {
+        const scores = {
+          FSM: { percentCorrect: 50 },
+          LSM: { percentCorrect: 60 },
+          DEL: { percentCorrect: 70 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'LSM', 'DEL']);
+      });
+
+      it('should flag no subtasks when all are above threshold', () => {
+        const scores = {
+          FSM: { percentCorrect: 85 },
+          LSM: { percentCorrect: 90 },
+          DEL: { percentCorrect: 80 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+
+      it('should flag only subtasks below threshold', () => {
+        const scores = {
+          FSM: { percentCorrect: 75 }, // below (15/19)*100 (~78.9%)
+          LSM: { percentCorrect: 85 }, // above
+          DEL: { percentCorrect: 60 }, // below
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'DEL']);
+      });
+
+      it('should treat percentCorrect exactly at threshold as not needing work', () => {
+        const scores = {
+          FSM: { percentCorrect: (15 / 19) * 100 },
+          LSM: { percentCorrect: (15 / 19) * 100 },
+          DEL: { percentCorrect: (15 / 19) * 100 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+
+      it('should prefer percentCorrect over roarScore when both are present', () => {
+        const scores = {
+          FSM: { percentCorrect: 85, roarScore: 10 }, // percentCorrect above → ok (roarScore would say needs work)
+          LSM: { percentCorrect: 50, roarScore: 20 }, // percentCorrect below → needs work (roarScore would say ok)
+          DEL: { percentCorrect: 90, roarScore: 8 }, // percentCorrect above → ok
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['LSM']);
+      });
+    });
+
+    describe('legacy scoring with roarScore fallback', () => {
+      it('should flag all subtasks below legacy threshold', () => {
+        const scores = {
+          FSM: { roarScore: 10 },
+          LSM: { roarScore: 8 },
+          DEL: { roarScore: 12 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'LSM', 'DEL']);
+      });
+
+      it('should flag no subtasks when all are at or above legacy threshold', () => {
+        const scores = {
+          FSM: { roarScore: 15 },
+          LSM: { roarScore: 18 },
+          DEL: { roarScore: 19 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+
+      it('should flag only subtasks below legacy threshold', () => {
+        const scores = {
+          FSM: { roarScore: 10 },
+          LSM: { roarScore: 20 },
+          DEL: { roarScore: 8 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM', 'DEL']);
+      });
+
+      it('should treat roarScore exactly at legacy threshold as not needing work', () => {
+        const scores = {
+          FSM: { roarScore: 15 },
+          LSM: { roarScore: 15 },
+          DEL: { roarScore: 15 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual([]);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should return empty array for null scores', () => {
+        expect(getPaSkillsToWorkOn(null)).toEqual([]);
+      });
+
+      it('should return empty array for undefined scores', () => {
+        expect(getPaSkillsToWorkOn(undefined)).toEqual([]);
+      });
+
+      it('should return empty array for empty scores object', () => {
+        expect(getPaSkillsToWorkOn({})).toEqual([]);
+      });
+
+      it('should handle missing subtask keys gracefully', () => {
+        const scores = {
+          FSM: { roarScore: 10 },
+          // LSM and DEL missing
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
+      });
+
+      it('should handle subtask with neither percentCorrect nor roarScore', () => {
+        const scores = {
+          FSM: { someOtherField: 5 },
+          LSM: { roarScore: 10 },
+          DEL: { percentCorrect: 90 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['LSM']);
+      });
+
+      it('should handle percentCorrect of 0 as needing work', () => {
+        const scores = {
+          FSM: { percentCorrect: 0 },
+          LSM: { percentCorrect: 90 },
+          DEL: { percentCorrect: 90 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
+      });
+
+      it('should handle roarScore of 0 as needing work', () => {
+        const scores = {
+          FSM: { roarScore: 0 },
+          LSM: { roarScore: 18 },
+          DEL: { roarScore: 16 },
+        };
+        expect(getPaSkillsToWorkOn(scores)).toEqual(['FSM']);
+      });
     });
   });
 });

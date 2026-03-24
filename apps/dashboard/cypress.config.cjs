@@ -1,7 +1,7 @@
 const Vue = require('@vitejs/plugin-vue').default;
 const { defineConfig } = require('cypress');
 const { nodePolyfills } = require('vite-plugin-node-polyfills');
-const vitePreprocessor = require('cypress-vite');
+const vitePreprocessor = require('cypress-vite').default;
 // Commenting this out for now due to incompatibility with Cypress
 // const UnheadVite = require('@unhead/addons/vite');
 const path = require('path');
@@ -141,6 +141,7 @@ module.exports = defineConfig({
     testDistrictNcesId: '0123456789',
     testDistrictId: 'qoW9OEPcV50rIA2IcqbV',
     testSchoolName: 'Cypress Test School',
+    testSchoolId: '3LN7JxYOXt5Ih3XMTx1G',
     testSchoolInitials: 'SATS',
     testSchoolNcesId: '0123456789',
     testClassName: 'Cypress Test Class',

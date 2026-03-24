@@ -4,6 +4,63 @@ body.page-signin {
   min-height: 100vh;
   background: var(--primary-color);
 }
+.border-style {
+  outline: 1.2px solid rgba(0, 0, 0, 0.1);
+}
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #94a3b8;
+  font-weight: 500;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #d1d5db;
+}
+.divider::before {
+  margin-right: 0.75rem;
+}
+.divider::after {
+  margin-left: 0.75rem;
+}
+.loading-blur {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(2px);
+  z-index: 50;
+}
+#signin-container-blur {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+body.page-signin .signin-card {
+  width: 100%;
+  max-width: 50vh; /* controls overall width */
+  margin-top: 3rem; /* center + vertical rhythm */
+  padding: 2rem; /* card padding */
+}
+.signin-column {
+  width: 100%;
+  max-width: 45vh;
+  margin-inline: auto;
+  padding: 1rem;
+}
+.signin-card {
+  width: 100%;
+}
+.signin-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
 
 #signin-container {
   display: flex;
@@ -18,16 +75,13 @@ body.page-signin {
 
 #signin {
   background: var(--surface-a);
-  width: clamp(500px, 75vw, 620px);
   height: auto;
-  padding: 1rem 0rem 2rem;
   margin-block: auto;
   border-radius: 5px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1rem;
 
   h1 {
     font-size: clamp(2rem, 20vw, 2rem);
@@ -42,9 +96,10 @@ body.page-signin {
     // justify-content: space-around;
     text-align: center;
     flex-direction: column;
+    padding: 0;
 
     width: 100%;
-    border-bottom: 1px solid var(--surface-d);
+    // border-bottom: 1px solid var(--surface-d);
     // border-bottom: 10px solid var(--surface-d);
     padding-block: 2rem;
 
@@ -52,8 +107,8 @@ body.page-signin {
       // width: 100%;
 
       svg {
-        height: 111px;
-        width: auto;
+        height: auto;
+        width: 87.97px;
 
         * {
           fill: var(--primary-color);
@@ -65,7 +120,6 @@ body.page-signin {
   footer {
     width: 100%;
     text-align: center;
-    border-top: 1px solid var(--surface-d);
     margin-top: 2rem;
     padding-top: 1rem;
     padding-bottom: 2rem;
@@ -144,6 +198,12 @@ body.page-signin {
 
 .grecaptcha-badge {
   display: none;
+}
+
+.provider-button {
+  border-radius: 3rem;
+  height: 2.5rem;
+  color: black !important;
 }
 
 .signin-button {

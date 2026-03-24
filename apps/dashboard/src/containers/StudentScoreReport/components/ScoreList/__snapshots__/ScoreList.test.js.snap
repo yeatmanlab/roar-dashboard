@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ScoreList.vue > snapshots > renders expanded state 1`] = `
+"<section data-v-07dec570="" class="pt-4">
+  <h2 data-v-07dec570="" class="text-2xl font-bold">Detailed Assessment Results</h2>
+  <div data-v-07dec570="" class="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
+    <score-card-stub data-v-07dec570="" publicname="Single Word Reading" scorelabel="Percentile Score" score="[object Object]" tags="[object Object]" valuetemplate="{value}%" scoretodisplay="percentileScore" studentfirstname="John" description="[object Object]" scoresarray="Raw Score,50,0,100,Percentile,75,0,100" expanded="true" longitudinaldata="" taskid="swr" studentgrade="3"></score-card-stub>
+  </div>
+</section>"
+`;
+
+exports[`ScoreList.vue > snapshots > renders with different student 1`] = `
+"<section data-v-07dec570="" class="pt-4">
+  <h2 data-v-07dec570="" class="text-2xl font-bold">Detailed Assessment Results</h2>
+  <div data-v-07dec570="" class="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
+    <score-card-stub data-v-07dec570="" publicname="Single Word Reading" scorelabel="Percentile Score" score="[object Object]" tags="[object Object]" valuetemplate="{value}%" scoretodisplay="percentileScore" studentfirstname="Sarah" description="[object Object]" scoresarray="Raw Score,50,0,100,Percentile,75,0,100" expanded="false" longitudinaldata="" taskid="swr" studentgrade="5"></score-card-stub>
+  </div>
+</section>"
+`;
+
+exports[`ScoreList.vue > snapshots > renders with single task 1`] = `
+"<section data-v-07dec570="" class="pt-4">
+  <h2 data-v-07dec570="" class="text-2xl font-bold">Detailed Assessment Results</h2>
+  <div data-v-07dec570="" class="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
+    <score-card-stub data-v-07dec570="" publicname="Single Word Reading" scorelabel="Percentile Score" score="[object Object]" tags="[object Object]" valuetemplate="{value}%" scoretodisplay="percentileScore" studentfirstname="John" description="[object Object]" scoresarray="Raw Score,50,0,100,Percentile,75,0,100" expanded="false" longitudinaldata="" taskid="swr" studentgrade="3"></score-card-stub>
+  </div>
+</section>"
+`;

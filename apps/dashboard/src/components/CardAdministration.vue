@@ -48,7 +48,11 @@
         </template>
 
         <div v-if="showParams">
-          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <PvPopover
+            v-for="assessmentId in assessmentIds"
+            :key="assessmentId"
+            :ref="(el) => (paramPanelRefs[assessmentId] = el)"
+          >
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -68,7 +72,7 @@
         </div>
       </div>
 
-      <div v-if="isAssigned">
+      <div>
         <PvButton
           class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           :icon="toggleIcon"
@@ -79,13 +83,28 @@
         />
       </div>
 
+      <div v-if="showTable && noOrgsFound" class="mt-3 p-3 text-center text-gray-600 bg-gray-50 border-round">
+        No organizations found for this administration.
+      </div>
+
       <PvTreeTable
-        v-if="showTable"
+        v-if="showTable && !noOrgsFound"
         class="mt-3"
         lazy
         row-hover
         :loading="loadingTreeTable"
         :value="treeTableOrgs"
+        :pt="{
+          column: {
+            nodeToggleButton: {
+              'data-testid': 'card-administration__node-toggle-button',
+            },
+            bodyCellContent: {
+              'data-testid': 'card-administration__body-cell-content',
+            },
+          },
+        }"
+        data-cy="administration-orgs-tree"
         @node-expand="onExpand"
       >
         <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
@@ -93,8 +112,8 @@
           <template #body="{ node }">
             <PvChart
               type="bar"
-              :data="setBarChartData(node.data.stats?.assignment)"
-              :options="setBarChartOptions(node.data.stats?.assignment)"
+              :data="setProgressChartData(node.data.stats?.assignment)"
+              :options="setProgressChartOptions(node.data.stats?.assignment)"
               class="h-3rem w-full"
             />
           </template>
@@ -112,7 +131,11 @@
                 <PvButton
                   v-tooltip.top="'See completion details'"
                   class="m-0 mr-1 surface-0 text-primary shadow-1 border-none p-2 border-round hover:surface-100"
-                  style="height: 2.5rem; color: var(--primary-color) !important; border: none !important"
+                  :style="
+                    node.data.orgType !== 'district'
+                      ? { height: '2.5rem', color: 'var(--primary-color) !important', border: 'none !important' }
+                      : { display: 'none !important' }
+                  "
                   severity="secondary"
                   text
                   raised
@@ -128,6 +151,7 @@
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
                 }"
                 class="no-underline"
+                :style="node.data.orgType === 'district' ? { 'margin-left': '5rem !important' } : {}"
               >
                 <PvButton
                   v-tooltip.top="'See Scores'"
@@ -156,11 +180,8 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useRouter } from 'vue-router';
 import _fromPairs from 'lodash/fromPairs';
-import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
-import _without from 'lodash/without';
-import _zip from 'lodash/zip';
 import PvButton from 'primevue/button';
 import PvColumn from 'primevue/column';
 import PvChart from 'primevue/chart';
@@ -169,19 +190,20 @@ import PvDataTable from 'primevue/datatable';
 import PvPopover from 'primevue/popover';
 import PvSpeedDial from 'primevue/speeddial';
 import PvTreeTable from 'primevue/treetable';
-import { batchGetDocs } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
-import { removeEmptyOrgs } from '@/helpers';
-import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import { setProgressChartData, setProgressChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { ADMINISTRATION_FORM_TYPES } from '@/constants/routes';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
+import { PROGRESS_COLORS } from '@/constants/completionStatus';
+import { useAuthStore } from '@/store/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const { roarfirekit } = authStore;
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -189,7 +211,6 @@ const props = defineProps({
   publicName: { type: String, required: true },
   stats: { type: Object, required: false, default: () => ({}) },
   dates: { type: Object, required: true },
-  assignees: { type: Object, required: true },
   assessments: { type: Array, required: true },
   showParams: { type: Boolean, required: true },
   isSuperAdmin: { type: Boolean, required: true },
@@ -258,29 +279,38 @@ const processedDates = computed(() => {
   });
 });
 
-const assessmentIds = props.assessments
-  .map((assessment) => assessment.taskId.toLowerCase())
-  .sort((p1, p2) => {
-    return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
-  });
+const assessmentIds = computed(() => {
+  return (props.assessments ?? [])
+    .map((assessment) => assessment.taskId.toLowerCase())
+    .sort((p1, p2) => {
+      return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
+    });
+});
 
-const paramPanelRefs = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
-const params = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+const paramPanelRefs = ref({});
+const params = ref({});
+
+// Watch for changes in assessments prop and update paramPanelRefs and params
+watch(
+  () => props.assessments,
+  (newAssessments) => {
+    paramPanelRefs.value = _fromPairs(newAssessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
+    params.value = _fromPairs(newAssessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+  },
+  { immediate: true },
+);
 
 const toEntryObjects = (inputObj) => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
 };
 
 const toggleParams = (event, id) => {
-  paramPanelRefs[id].value[0].toggle(event);
+  paramPanelRefs.value[id].toggle(event);
 };
 
 function getAssessment(assessmentId) {
   return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
 }
-
-const displayOrgs = removeEmptyOrgs(props.assignees);
-const isAssigned = !_isEmpty(Object.values(displayOrgs));
 
 const showTable = ref(false);
 const enableQueries = ref(false);
@@ -304,13 +334,17 @@ const toggleTable = () => {
   showTable.value = !showTable.value;
 };
 
+const noOrgsFound = computed(() => {
+  return !loadingTreeTable.value && (!treeTableOrgs.value || treeTableOrgs.value.length === 0);
+});
+
 const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
 
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
-const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
+const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, {
   enabled: enableQueries,
 });
 
@@ -329,15 +363,16 @@ watch(showTable, (newValue) => {
 
 const expanding = ref(false);
 const onExpand = async (node) => {
-  if (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && node.children?.length > 0 && !node.data.expanded) {
+  if (
+    (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS || node.data.orgType === SINGULAR_ORG_TYPES.DISTRICTS) &&
+    node.children?.length > 0 &&
+    !node.data.expanded
+  ) {
     expanding.value = true;
 
-    const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
-    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
-
-    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
-
-    const [classDocs, classStats] = await Promise.all(classPromises);
+    // Fetch child orgs using roarfirekit
+    const orgType = node.data.orgType.toLowerCase();
+    const { data: childOrgs } = await roarfirekit.getAdministrationOrgsAndStats(props.id, node.data.id, orgType);
 
     // Lazy node is a copy of the expanding node. We will insert more detailed
     // children nodes later.
@@ -349,50 +384,58 @@ const onExpand = async (node) => {
       },
     };
 
-    const childNodes = _without(
-      _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
+    // Build child nodes from the returned org data
+    const childNodes = childOrgs.map((org, index) => {
+      const childNode = {
+        key: `${node.key}-${index}`,
+        data: {
+          id: org.orgId,
+          name: org.name,
+          orgType: SINGULAR_ORG_TYPES[org.orgType.toUpperCase()],
+          stats: org.stats,
+          ...org,
+        },
+      };
 
-        if (_isEmpty(nodeData)) return undefined;
-
-        return {
-          key: `${node.key}-${index}`,
-          data: {
-            orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
-            ...(stats && { stats }),
-            ...nodeData,
+      // Add placeholder child if this org has children
+      if (org.hasChildren) {
+        childNode.children = [
+          {
+            key: `${childNode.key}-placeholder`,
+            data: {
+              name: 'Loading...',
+              isPlaceholder: true,
+            },
           },
-        };
-      }),
-      undefined,
-    );
+        ];
+      }
+
+      return childNode;
+    });
 
     lazyNode.children = childNodes;
 
-    // Replace the existing nodes with a map that inserts the child nodes at the
-    // appropriate position
-    const newNodes = treeTableOrgs.value.map((n) => {
-      // First, match on the districtId if the expanded school is part of a district
-      if (n.data.id === node.data.districtId) {
-        const newNode = {
-          ...n,
-          // Replace the existing school child nodes with a map that inserts the
-          // classes at the appropriate position
-          children: n.children.map((child) => {
-            if (child.data.id === node.data.id) {
-              return lazyNode;
-            }
-            return child;
-          }),
-        };
-        return newNode;
-        // Next check to see if the expanded node was the school node itself
-      } else if (n.data.id === node.data.id) {
-        return lazyNode;
-      }
+    // Recursively find and replace the expanding node in the tree
+    const replaceNodeInTree = (nodes) => {
+      return nodes.map((n) => {
+        // If this is the node we're expanding, replace it with the lazy node
+        if (n.data.id === node.data.id) {
+          return lazyNode;
+        }
 
-      return n;
-    });
+        // If this node has children, recursively search them
+        if (n.children && n.children.length > 0) {
+          return {
+            ...n,
+            children: replaceNodeInTree(n.children),
+          };
+        }
+
+        return n;
+      });
+    };
+
+    const newNodes = replaceNodeInTree(treeTableOrgs.value);
 
     // Sort the classes by existence of stats then alphabetically
     // TODO: This fails currently as it tries to set a read only reactive handler
@@ -434,23 +477,14 @@ const setDoughnutChartOptions = () => ({
 });
 
 const setDoughnutChartData = () => {
-  const docStyle = getComputedStyle(document.documentElement);
-  let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
-
-  started -= completed;
-  assigned -= started + completed;
+  let { assigned = 0, started = 0, completed = 0 } = props.stats || {};
 
   return {
     labels: ['Completed', 'Started', 'Assigned'],
     datasets: [
       {
         data: [completed, started, assigned],
-        backgroundColor: [
-          docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--yellow-100'),
-          docStyle.getPropertyValue('--surface-d'),
-        ],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
+        backgroundColor: [PROGRESS_COLORS.COMPLETED, PROGRESS_COLORS.STARTED, PROGRESS_COLORS.ASSIGNED],
       },
     ],
   };

@@ -1,0 +1,1 @@
+ALTER TABLE "app"."task_bundles" ADD COLUMN "image" text;

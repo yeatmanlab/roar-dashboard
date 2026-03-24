@@ -446,7 +446,7 @@ const routes = [
     name: 'Launch Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: (route) => ({
-      taskId: 'core-tasks',
+      taskId: route.params.taskId,
       language: 'en',
       launchId: route.params.launchId,
     }),
@@ -685,7 +685,7 @@ const routes = [
   {
     path: APP_ROUTES.ORGS_LIST,
     name: 'ListOrgs',
-    component: () => import('../components/ListOrgs.vue'),
+    component: () => import('../pages/ListOrgs.vue'),
     meta: { pageTitle: 'List organizations', permission: Permissions.Organizations.LIST },
   },
   {
@@ -713,16 +713,6 @@ const routes = [
     meta: { pageTitle: 'View Scores', permission: Permissions.Reports.Score.READ },
   },
   {
-    path: APP_ROUTES.STUDENT_REPORT,
-    name: 'StudentReport',
-    props: true,
-    component: () => import('../pages/StudentReport.vue'),
-    meta: {
-      pageTitle: 'Student Score Report',
-      permission: Permissions.Reports.Student.READ,
-    },
-  },
-  {
     path: APP_ROUTES.SCORE_REPORT_STUDENT,
     name: 'StudentScoreReport',
     props: true,
@@ -732,31 +722,31 @@ const routes = [
       permission: Permissions.Reports.Student.READ,
     },
   },
-  {
-    path: APP_ROUTES.ACCOUNT_PROFILE,
-    name: 'Profile',
-    component: () => import('../pages/AdminProfile.vue'),
-    children: [
-      {
-        path: '',
-        name: 'ProfileInfo',
-        component: () => import('../components/views/UserInfoView.vue'),
-      },
-      {
-        path: 'password',
-        name: 'ProfilePassword',
-        component: () => import('../components/views/PasswordView.vue'),
-        meta: { requireAdmin: true },
-      },
-      {
-        path: 'accounts',
-        name: 'ProfileAccounts',
-        component: () => import('../components/views/LinkAccountsView.vue'),
-        meta: { requireAdmin: true },
-      },
-    ],
-    meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
-  },
+  // {
+  //   path: APP_ROUTES.ACCOUNT_PROFILE,
+  //   name: 'Profile',
+  //   component: () => import('../pages/AdminProfile.vue'),
+  //   children: [
+  //     {
+  //       path: '',
+  //       name: 'ProfileInfo',
+  //       component: () => import('../components/views/UserInfoView.vue'),
+  //     },
+  //     {
+  //       path: 'password',
+  //       name: 'ProfilePassword',
+  //       component: () => import('../components/views/PasswordView.vue'),
+  //       meta: { requireAdmin: true },
+  //     },
+  //     {
+  //       path: 'accounts',
+  //       name: 'ProfileAccounts',
+  //       component: () => import('../components/views/LinkAccountsView.vue'),
+  //       meta: { requireAdmin: true },
+  //     },
+  //   ],
+  //   meta: { pageTitle: 'Profile', permission: Permissions.Profile.READ },
+  // },
   {
     path: '/enable-cookies',
     name: 'EnableCookies',

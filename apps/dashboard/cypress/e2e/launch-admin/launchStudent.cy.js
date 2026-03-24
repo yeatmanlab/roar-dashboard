@@ -5,7 +5,10 @@ describe('Launch Admin: Launch Student', () => {
   it("Navigates to launch into user's assessments", () => {
     cy.login(LAUNCH_ADMIN_USERNAME, LAUNCH_ADMIN_PASSWORD);
     cy.waitForStudentReportList();
-    cy.get('[data-cy="play-assessments-btn').first().click();
+
+    cy.get('[data-cy="student-card__assignment-header"]').first().click();
+    cy.get('[data-cy="student-card__assignment-content"]').first().should('be.visible');
+    cy.get('[data-cy="play-assessments-btn"]').first().click();
 
     cy.waitForParticipantHomepage();
     cy.get('[data-cy="participant-launch-mode"]').should('contain', 'external launch mode');

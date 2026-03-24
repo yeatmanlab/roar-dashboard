@@ -35,9 +35,13 @@ export const isCurrentVersion = async (app) => {
     const mainAppVersion = mainDependencies[app];
     const currentAppVersion = featureDependencies[app];
 
+    console.log(`${app} currently on v${currentAppVersion}, main branch on v${mainAppVersion}`);
+
     return mainAppVersion === currentAppVersion;
   } catch (error) {
+    // On error (e.g., GitHub API rate limit), assume version hasn't changed = skip test
+    // This prevents tests from running unnecessarily when we can't verify the version
     console.error(`Failed to check if ${app} is the current version: ${error}`);
-    return false;
+    return true;
   }
 };

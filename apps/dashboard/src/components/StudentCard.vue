@@ -61,7 +61,7 @@
             >
               <PvAccordionTab>
                 <template #header>
-                  <div class="flex justify-between w-full">
+                  <div class="flex justify-between w-full" data-cy="student-card__assignment-header">
                     <div>
                       <div class="text-md">{{ assignment.name }}</div>
                       <div class="mt-1 text-xs font-light">Assignment</div>
@@ -74,7 +74,7 @@
                     </div>
                   </div>
                 </template>
-                <div class="flex gap-3 p-3 flex-column">
+                <div class="flex gap-3 p-3 flex-column" data-cy="student-card__assignment-content">
                   <div class="flex gap-4 justify-content-between">
                     <PvButton
                       label="Play Games"
@@ -83,7 +83,7 @@
                     />
                     <router-link
                       :to="{
-                        name: 'StudentReport',
+                        name: 'StudentScoreReport',
                         params: {
                           administrationId: assignment.id,
                           orgType: props.orgType,
