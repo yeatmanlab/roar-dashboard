@@ -2,24 +2,19 @@
 # setup-fdw-local.sh — Provision postgres_fdw prerequisites for local development
 #
 # Run BEFORE Drizzle migrations. Handles superuser-only operations that Drizzle
-# cannot perform: extension, server, user mapping, and the app_fdw schema.
-# Views (assessment) and foreign tables (core) come from Drizzle migrations.
+# cannot perform: extension, server, and user mapping.
+# Foreign tables (core) come from Drizzle migrations.
 #
 # Prerequisites: both core and assessment databases exist locally
 # Usage: ./scripts/setup-fdw-local.sh
 
 set -euo pipefail
 
-CORE_DB="${CORE_DB:-core}"
-ASSESSMENT_DB="${ASSESSMENT_DB:-assessment}"
+CORE_DB="${CORE_DB:-roar_core}"
+ASSESSMENT_DB="${ASSESSMENT_DB:-roar_assessment}"
 PG_HOST="${PG_HOST:-localhost}"
 PG_PORT="${PG_PORT:-5432}"
 PG_USER="${PG_USER:-postgres}"
-
-# Assessment side: create app_fdw schema (views come from Drizzle migrations)
-psql -v ON_ERROR_STOP=1 -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$ASSESSMENT_DB" <<'SQL'
-CREATE SCHEMA IF NOT EXISTS app_fdw;
-SQL
 
 # Core side: extension, server, user mapping (foreign tables come from Drizzle migrations)
 # Creates the server if missing, or updates connection options if it already exists.
@@ -89,8 +84,7 @@ END
 SQL
 
 echo "FDW prerequisites provisioned. Now run Drizzle migrations:"
-echo "  1. Assessment DB: drizzle-kit migrate (creates app_fdw.fdw_runs, app_fdw.fdw_run_scores views)"
-echo "  2. Core DB: drizzle-kit migrate (creates app_assessment_fdw schema + foreign tables)"
+echo "  1. Core DB: drizzle-kit migrate (creates app_assessment_fdw schema + foreign tables)"
 echo ""
 echo "Then test with:"
 echo "  psql -h $PG_HOST -p $PG_PORT -U $PG_USER -d $CORE_DB -c 'SELECT * FROM app_assessment_fdw.runs LIMIT 5;'"
