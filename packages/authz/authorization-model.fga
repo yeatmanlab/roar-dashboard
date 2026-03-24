@@ -41,8 +41,8 @@ type district
     define member: supervisory_tier_group or student or caregiver_tier
 
     # Permissions
-    define can_list: member
-    define can_read: member
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
     define no_one: [user]
     define can_create: no_one
     define can_update: no_one
@@ -88,8 +88,8 @@ type school
     define member: supervisory_tier_group or student or caregiver_tier
 
     # Permissions
-    define can_list: member
-    define can_read: member
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
     define no_one: [user]
     define can_create: no_one
     define can_update: no_one

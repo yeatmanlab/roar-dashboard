@@ -134,44 +134,44 @@ tests:
           can_update: false
           can_delete: false
 
-  - name: Student in school can list/read parent district (ancestor access)
+  - name: Student in school cannot list/read parent district (supervisory only)
     check:
       - user: user:student-in-school
         object: district:district-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_delete: false
           can_list_users: false
           can_read_scores: false
 
-  - name: Student in class can list/read parent district (ancestor access via class->school->district)
+  - name: Student in class cannot list/read parent district (supervisory only)
     check:
       - user: user:student-in-class
         object: district:district-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_delete: false
           can_list_users: false
 
-  - name: Guardian in school can list/read parent district (ancestor access)
+  - name: Guardian in school cannot list/read parent district (supervisory only)
     check:
       - user: user:guardian-in-school
         object: district:district-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: true
           can_read_scores_basic: true
           can_read_progress: true
@@ -235,15 +235,15 @@ tests:
           can_list: false
           can_read: false
 
-  - name: Student in school can list/read their school
+  - name: Student in school cannot list/read their school (supervisory only)
     check:
       - user: user:student-in-school
         object: school:school-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_delete: false
@@ -259,15 +259,15 @@ tests:
           can_list: false
           can_read: false
 
-  - name: Student in class can list/read parent school (ancestor access)
+  - name: Student in class cannot list/read parent school (supervisory only)
     check:
       - user: user:student-in-class
         object: school:school-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: false
 
   - name: Student in district does NOT see descendant schools (no downward access)
@@ -390,29 +390,27 @@ tests:
           can_list:
             - school:school-a
 
-  - name: Student in school sees only their school
+  - name: Student in school sees no schools (supervisory only)
     list_objects:
       - user: user:student-in-school
         type: school
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list:
-            - school:school-a
+          can_list: []
 
-  - name: Student in class sees parent school
+  - name: Student in class sees no schools (supervisory only)
     list_objects:
       - user: user:student-in-class
         type: school
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list:
-            - school:school-a
+          can_list: []
 
   # ─── list_users ───────────────────────────────────────────────────
 
-  - name: District lists members with can_list
+  - name: District lists supervisory users with can_list
     list_users:
       - object: district:district-a
         user_filter:
@@ -423,12 +421,8 @@ tests:
           can_list:
             users:
               - user:district-admin
-              - user:student-in-school
-              - user:student-in-class
-              - user:guardian-in-school
-              - user:student-in-tree-a
 
-  - name: School lists members with can_list
+  - name: School lists supervisory users with can_list
     list_users:
       - object: school:school-a
         user_filter:
@@ -440,8 +434,4 @@ tests:
             users:
               - user:district-admin
               - user:school-teacher
-              - user:student-in-school
-              - user:student-in-class
-              - user:guardian-in-school
               - user:teacher-in-tree-a
-              - user:student-in-tree-a

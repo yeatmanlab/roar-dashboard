@@ -156,7 +156,7 @@ tests:
 
   # ─── Supervised bubbling UP ────────────────────────────────────────
 
-  - name: Class student bubbles up to school (via child_class)
+  - name: Class student role bubbles up to school (via child_class) but no can_list/can_read
     check:
       - user: user:class-student
         object: school:school-a
@@ -164,11 +164,11 @@ tests:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
           student: true
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: false
 
-  - name: Class student bubbles up to district (via child_class -> child_school)
+  - name: Class student role bubbles up to district (via child_class -> child_school) but no can_list/can_read
     check:
       - user: user:class-student
         object: district:district-a
@@ -176,11 +176,11 @@ tests:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
           student: true
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: false
 
-  - name: School student bubbles up to district (via child_school)
+  - name: School student role bubbles up to district (via child_school) but no can_list/can_read
     check:
       - user: user:school-student
         object: district:district-a
@@ -188,11 +188,11 @@ tests:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
           student: true
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: false
 
-  - name: Class guardian bubbles up to school
+  - name: Class guardian role bubbles up to school but no can_list/can_read
     check:
       - user: user:class-guardian
         object: school:school-a
@@ -200,10 +200,10 @@ tests:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
           guardian: true
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
 
-  - name: Class guardian bubbles up to district
+  - name: Class guardian role bubbles up to district but no can_list/can_read
     check:
       - user: user:class-guardian
         object: district:district-a
@@ -211,8 +211,8 @@ tests:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
           guardian: true
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
 
   # ─── Supervised does NOT cascade DOWN ──────────────────────────────
 
