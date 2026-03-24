@@ -83,7 +83,7 @@ tuples:
 tests:
   # ─── Direct class membership ──────────────────────────────────────
 
-  - name: Class teacher can list, read, and manage their class
+  - name: Class teacher can list/read their class
     check:
       - user: user:class-teacher
         object: class:class-a
@@ -92,8 +92,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
+          can_create: false
+          can_update: false
+          can_delete: false
           can_list_users: true
           can_read_scores: true
           can_read_progress: true
@@ -130,7 +131,7 @@ tests:
 
   # ─── Inherited access from school/district ─────────────────────────
 
-  - name: School teacher can list/read and manage classes in their school (descendant access)
+  - name: School teacher can list/read classes in their school (descendant access)
     check:
       - user: user:school-teacher
         object: class:class-a
@@ -139,12 +140,13 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
+          can_create: false
+          can_update: false
+          can_delete: false
           can_list_users: true
           can_read_scores: true
 
-  - name: District admin can list/read and manage classes (descendant access)
+  - name: District admin can list/read classes (descendant access)
     check:
       - user: user:district-admin
         object: class:class-a
@@ -153,23 +155,24 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
+          can_create: false
+          can_update: false
+          can_delete: false
           can_list_users: true
           can_read_scores: true
 
-  # ─── can_delete delegation ─────────────────────────────────────────
+  # ─── can_delete (super-admin-only, always denied in FGA) ───────────
 
-  - name: District admin can delete class (via can_delete from parent school)
+  - name: District admin cannot delete class (CUD is super-admin-only)
     check:
       - user: user:district-admin
         object: class:class-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_delete: true
+          can_delete: false
 
-  - name: School teacher cannot delete class (educator_tier has no can_delete on school)
+  - name: School teacher cannot delete class
     check:
       - user: user:school-teacher
         object: class:class-a
@@ -178,7 +181,7 @@ tests:
         assertions:
           can_delete: false
 
-  - name: Class teacher cannot delete their class (educator_tier has no can_delete)
+  - name: Class teacher cannot delete their class
     check:
       - user: user:class-teacher
         object: class:class-a

@@ -219,9 +219,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
   - name: Bounded admin denied after enrollment expires
     check:

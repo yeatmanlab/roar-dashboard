@@ -43,9 +43,10 @@ type district
     # Permissions
     define can_list: member
     define can_read: member
-    define can_create: admin_tier
-    define can_update: admin_tier
-    define can_delete: admin_tier
+    define no_one: [user]
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
     define can_list_users: supervisory_tier_group or caregiver_tier
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
@@ -89,9 +90,10 @@ type school
     # Permissions
     define can_list: member
     define can_read: member
-    define can_create: admin_tier
-    define can_update: admin_tier
-    define can_delete: admin_tier
+    define no_one: [user]
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
     define can_list_users: supervisory_tier_group or caregiver_tier
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
@@ -133,9 +135,10 @@ type class
     # Permissions
     define can_list: member
     define can_read: member
-    define can_create: admin_tier or educator_tier
-    define can_update: admin_tier or educator_tier
-    define can_delete: admin_tier
+    define no_one: [user]
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
     define can_list_users: supervisory_tier_group or caregiver_tier
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
@@ -229,9 +232,10 @@ type administration
     # Permissions
     define can_list: supervisory_tier_group or student or caregiver_tier
     define can_read: supervisory_tier_group or student or caregiver_tier
-    define can_create: admin_tier or can_create from assigned_class
-    define can_update: admin_tier or can_update from assigned_class
-    define can_delete: admin_tier or can_delete from assigned_class
+    define no_one: [user]
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
     define can_read_progress: supervisory_tier_group or caregiver_tier

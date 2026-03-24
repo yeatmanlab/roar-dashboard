@@ -89,9 +89,9 @@ Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
 |-----------|--------------|----------|
 | `can_list` | All members | `administrations.list`, org/class listing |
 | `can_read` | All members | `administrations.read`, org/class detail |
-| `can_create` | `admin_tier` (org/admin), `educator_tier` (class) | Org/class/administration management |
-| `can_update` | `admin_tier` (org/admin), `educator_tier` (class) | Org/class/administration management |
-| `can_delete` | `admin_tier` | `administrations.delete`, org/class deletion |
+| `can_create` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
+| `can_update` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
+| `can_delete` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
 | `can_list_users` | `supervisory_tier_group` + `caregiver_tier` | User listing on orgs, classes, groups, families |
 | `can_read_scores` | `supervisory_tier_group` | `reports.score.read` (full) |
 | `can_read_scores_basic` | `caregiver_tier` | `reports.score.read` (composite) |
