@@ -41,7 +41,7 @@ runs:
         service_account: ${{ inputs.gcp-service-account }}
 
     - name: Deploy to Cloud Run
-      uses: google-github-actions/deploy-cloudrun@v2
+      uses: google-github-actions/deploy-cloudrun@v3
       with:
         service: ${{ inputs.cloud-run-service }}
         region: ${{ inputs.region }}

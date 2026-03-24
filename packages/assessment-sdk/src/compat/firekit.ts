@@ -1,6 +1,12 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';
+import {
+  ASSESSMENT_STAGE_PRACTICE,
+  ASSESSMENT_STAGE_PRACTICE_RESPONSE,
+  ASSESSMENT_STAGE_TEST,
+  ASSESSMENT_STAGE_TEST_RESPONSE,
+} from '../enums';
 import type {
   StartRunInput,
   FinishRunInput,
@@ -510,7 +516,7 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * - Supports optional computed score callback (not yet implemented)
  *
  * **Required trial data fields:**
- * - `assessmentStage`: 'practice', 'practice_response', 'test', or 'test_response'
+ * - `assessmentStage`: ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, or ASSESSMENT_STAGE_TEST_RESPONSE
  * - `correct`: 1 (correct), 0 (incorrect), or boolean (true/false)
  *
  * **Optional trial data fields:**
@@ -526,6 +532,7 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * @throws {SDKError}
  * - If no active run exists (call appkit.startRun() first)
  * - If assessmentStage is missing or not a string
+ * - If assessmentStage is not one of the valid values (ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, ASSESSMENT_STAGE_TEST_RESPONSE)
  * - If correct is missing or not a number/boolean
  * - If the backend request fails
  *
@@ -584,6 +591,23 @@ export async function writeTrial(
       code: SdkErrorCode.WRITE_TRIAL_FAILED,
     });
   }
+
+  const assessmentStage = trialDataRecord['assessmentStage'] as string;
+  const validStages = [
+    ASSESSMENT_STAGE_PRACTICE,
+    ASSESSMENT_STAGE_PRACTICE_RESPONSE,
+    ASSESSMENT_STAGE_TEST,
+    ASSESSMENT_STAGE_TEST_RESPONSE,
+  ] as const;
+  if (!validStages.includes(assessmentStage as (typeof validStages)[number])) {
+    throw new SDKError(
+      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${assessmentStage}`,
+      {
+        code: SdkErrorCode.WRITE_TRIAL_FAILED,
+      },
+    );
+  }
+
   if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
     throw new SDKError('writeTrial requires correct in trial data.', {
       code: SdkErrorCode.WRITE_TRIAL_FAILED,
