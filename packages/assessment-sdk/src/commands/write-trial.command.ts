@@ -14,49 +14,41 @@ import {
   ASSESSMENT_STAGE_PRACTICE_RESPONSE,
   ASSESSMENT_STAGE_TEST,
   ASSESSMENT_STAGE_TEST_RESPONSE,
-  NORMALIZED_ASSESSMENT_STAGE_PRACTICE,
-  NORMALIZED_ASSESSMENT_STAGE_TEST,
   INTERACTION_EVENT_BLUR,
   INTERACTION_EVENT_FOCUS,
   INTERACTION_EVENT_FULLSCREEN_ENTER,
   INTERACTION_EVENT_FULLSCREEN_EXIT,
-  NORMALIZED_INTERACTION_EVENT_BLUR,
-  NORMALIZED_INTERACTION_EVENT_FOCUS,
-  NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER,
-  NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT,
 } from '../enums';
 
 /**
  * Normalizes assessment stage values to backend-compatible format.
  *
  * Maps Firekit-compatible stage values to the backend's simplified format:
- * - ASSESSMENT_STAGE_PRACTICE and ASSESSMENT_STAGE_PRACTICE_RESPONSE → NORMALIZED_ASSESSMENT_STAGE_PRACTICE
- * - ASSESSMENT_STAGE_TEST and ASSESSMENT_STAGE_TEST_RESPONSE → NORMALIZED_ASSESSMENT_STAGE_TEST
+ * - ASSESSMENT_STAGE_PRACTICE and ASSESSMENT_STAGE_PRACTICE_RESPONSE → 'practice'
+ * - ASSESSMENT_STAGE_TEST and ASSESSMENT_STAGE_TEST_RESPONSE → 'test'
  *
  * This normalization allows the SDK to accept both response and non-response stage
  * values from Firekit while maintaining compatibility with the backend's simpler
  * two-stage model.
  *
  * @param stage - The assessment stage from Firekit
- * @returns Normalized stage value (NORMALIZED_ASSESSMENT_STAGE_PRACTICE or NORMALIZED_ASSESSMENT_STAGE_TEST)
+ * @returns Normalized stage value ('practice' or 'test')
  * @throws {SDKError} If stage is not a valid assessment stage value
  *
  * @example
  * ```ts
- * normalizeAssessmentStage(ASSESSMENT_STAGE_PRACTICE_RESPONSE) // → NORMALIZED_ASSESSMENT_STAGE_PRACTICE
- * normalizeAssessmentStage(ASSESSMENT_STAGE_TEST) // → NORMALIZED_ASSESSMENT_STAGE_TEST
+ * normalizeAssessmentStage(ASSESSMENT_STAGE_PRACTICE_RESPONSE) // → 'practice'
+ * normalizeAssessmentStage(ASSESSMENT_STAGE_TEST) // → 'test'
  * ```
  */
-function normalizeAssessmentStage(
-  stage: WriteTrialAssessmentStage,
-): typeof NORMALIZED_ASSESSMENT_STAGE_PRACTICE | typeof NORMALIZED_ASSESSMENT_STAGE_TEST {
+function normalizeAssessmentStage(stage: WriteTrialAssessmentStage): 'practice' | 'test' {
   switch (stage) {
     case ASSESSMENT_STAGE_PRACTICE:
     case ASSESSMENT_STAGE_PRACTICE_RESPONSE:
-      return NORMALIZED_ASSESSMENT_STAGE_PRACTICE;
+      return 'practice';
     case ASSESSMENT_STAGE_TEST:
     case ASSESSMENT_STAGE_TEST_RESPONSE:
-      return NORMALIZED_ASSESSMENT_STAGE_TEST;
+      return 'test';
     default: {
       const exhaustiveCheck: never = stage;
       throw new SDKError(`Unknown assessment stage: ${exhaustiveCheck}`, {
@@ -70,8 +62,8 @@ function normalizeAssessmentStage(
  * Normalizes interaction event names to backend-compatible format.
  *
  * Maps Firekit-compatible event names to the backend's snake_case format:
- * - INTERACTION_EVENT_FULLSCREEN_ENTER → NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER
- * - INTERACTION_EVENT_FULLSCREEN_EXIT → NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT
+ * - INTERACTION_EVENT_FULLSCREEN_ENTER → 'fullscreen_enter'
+ * - INTERACTION_EVENT_FULLSCREEN_EXIT → 'fullscreen_exit'
  * - Other events (INTERACTION_EVENT_BLUR, INTERACTION_EVENT_FOCUS) pass through unchanged
  *
  * This normalization bridges the camelCase naming convention used by Firekit
@@ -83,26 +75,22 @@ function normalizeAssessmentStage(
  *
  * @example
  * ```ts
- * normalizeInteractionEvent(INTERACTION_EVENT_FULLSCREEN_ENTER) // → NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER
- * normalizeInteractionEvent(INTERACTION_EVENT_FOCUS) // → NORMALIZED_INTERACTION_EVENT_FOCUS
+ * normalizeInteractionEvent(INTERACTION_EVENT_FULLSCREEN_ENTER) // → 'fullscreen_enter'
+ * normalizeInteractionEvent(INTERACTION_EVENT_FOCUS) // → 'focus'
  * ```
  */
 function normalizeInteractionEvent(
   event: WriteTrialInteractionEvent,
-):
-  | typeof NORMALIZED_INTERACTION_EVENT_BLUR
-  | typeof NORMALIZED_INTERACTION_EVENT_FOCUS
-  | typeof NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER
-  | typeof NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT {
+): 'blur' | 'focus' | 'fullscreen_enter' | 'fullscreen_exit' {
   switch (event) {
     case INTERACTION_EVENT_BLUR:
-      return NORMALIZED_INTERACTION_EVENT_BLUR;
+      return 'blur';
     case INTERACTION_EVENT_FOCUS:
-      return NORMALIZED_INTERACTION_EVENT_FOCUS;
+      return 'focus';
     case INTERACTION_EVENT_FULLSCREEN_ENTER:
-      return NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER;
+      return 'fullscreen_enter';
     case INTERACTION_EVENT_FULLSCREEN_EXIT:
-      return NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT;
+      return 'fullscreen_exit';
     default: {
       const exhaustiveCheck: never = event;
       throw new SDKError(`Unknown interaction event: ${exhaustiveCheck}`, {
