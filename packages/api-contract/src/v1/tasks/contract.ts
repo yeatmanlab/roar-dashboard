@@ -10,6 +10,8 @@ import {
   TasksListResponseSchema,
   TaskIdParamSchema,
   TaskSchema,
+  ListTaskVariantsQuerySchema,
+  ListTaskVariantsResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -60,6 +62,26 @@ export const TasksContract = c.router(
         'Returns 400 if the ID is invalid. ' +
         'Returns 404 if no task exists with the given ID. ' +
         'Returns 500 if a server error occurs.',
+    },
+    listTaskVariants: {
+      method: 'GET',
+      path: '/:taskId/variants',
+      pathParams: TaskIdParamSchema,
+      query: ListTaskVariantsQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(ListTaskVariantsResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List variants for a task',
+      description:
+        'Returns a paginated list of variants for the specified task. ' +
+        'All users can see published variants. Super admins can see all variants (draft, published, deprecated). ' +
+        'Supports pagination (page, perPage), searching by name or description, and sorting by name, status, createdAt, or updatedAt. ' +
+        'Returns 404 if the task does not exist.',
     },
     createTaskVariant: {
       method: 'POST',

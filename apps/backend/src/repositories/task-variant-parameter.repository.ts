@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { taskVariantParameters, type TaskVariantParameter, type NewTaskVariantParameter } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -42,6 +42,37 @@ export class TaskVariantParameterRepository extends BaseRepository<TaskVariantPa
   async getByTaskVariantId(taskVariantId: string): Promise<TaskVariantParameter[]> {
     const results = await this.get({
       where: eq(taskVariantParameters.taskVariantId, taskVariantId),
+    });
+
+    return results;
+  }
+
+  /**
+   * Retrieves all parameters for multiple task variants in a single query.
+   *
+   * This is more efficient than calling getByTaskVariantId for each variant
+   * when you need parameters for multiple variants at once.
+   *
+   * @param taskVariantIds - Array of task variant UUIDs
+   * @returns Array of parameters for all specified variants
+   *
+   * @example
+   * ```typescript
+   * const params = await repository.getByTaskVariantIds(['variant-1', 'variant-2']);
+   * // Group by variant ID if needed
+   * const paramsByVariant = params.reduce((acc, p) => {
+   *   (acc[p.taskVariantId] ??= []).push(p);
+   *   return acc;
+   * }, {});
+   * ```
+   */
+  async getByTaskVariantIds(taskVariantIds: string[]): Promise<TaskVariantParameter[]> {
+    if (taskVariantIds.length === 0) {
+      return [];
+    }
+
+    const results = await this.get({
+      where: inArray(taskVariantParameters.taskVariantId, taskVariantIds),
     });
 
     return results;
