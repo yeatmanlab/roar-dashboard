@@ -1,11 +1,11 @@
 /**
  * core.app_assessment_fdw.run_scores
  *
- * This is a postgres_fdw foreign table that maps to the assessment DB's
- * `app_fdw.fdw_run_scores` view. The view joins through app.runs to filter
- * out scores belonging to soft-deleted runs.
+ * This is a postgres_fdw foreign table that maps directly to the assessment DB's
+ * `app.run_scores` table. Unlike the previous view-based approach, this does not
+ * join through runs — queries by run_id skip the unnecessary join.
  *
- * Data flow: core DB (app_assessment_fdw.run_scores) → assessment DB (app_fdw.fdw_run_scores view) → assessment DB (app.run_scores)
+ * Data flow: core DB (app_assessment_fdw.run_scores) → assessment DB (app.run_scores)
  *
  * Enums (score_type, assessment_stage) are mapped as text in PostgreSQL since
  * enums are database-local and cannot cross a FDW boundary. The TypeScript
@@ -30,6 +30,8 @@ export const fdwRunScores = db.table('run_scores', {
   value: p.text().notNull(),
   assessmentStage: p.text().$type<AssessmentStage>(),
   categoryScore: p.boolean(),
+  updatedAt: p.timestamp({ withTimezone: true }),
+  createdAt: p.timestamp({ withTimezone: true }).notNull(),
 });
 
 export type FdwRunScore = typeof fdwRunScores.$inferSelect;
