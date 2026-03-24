@@ -7,6 +7,8 @@
  *
  * Data flow: core DB (app_assessment_fdw.run_scores) → assessment DB (app.run_scores)
  *
+ * @see {@link ../assessment/run-scores.ts} — source table definition in assessment DB
+ *
  * Enums (score_type, assessment_stage) are mapped as text in PostgreSQL since
  * enums are database-local and cannot cross a FDW boundary. The TypeScript
  * types are narrowed via $type<>() using the source enum definitions.

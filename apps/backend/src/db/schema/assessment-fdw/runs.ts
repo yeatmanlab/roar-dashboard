@@ -7,6 +7,8 @@
  *
  * Data flow: core DB (app_assessment_fdw.runs) → assessment DB (app.runs)
  *
+ * @see {@link ../assessment/runs.ts} — source table definition in assessment DB
+ *
  * This directory is intentionally excluded from drizzle.config.ts schema discovery.
  * Foreign tables are managed by SQL migrations, not Drizzle's push/generate.
  * These tables are not registered in CoreDbSchema, so the relational query API
