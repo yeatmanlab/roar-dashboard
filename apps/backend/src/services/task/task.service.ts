@@ -340,8 +340,7 @@ export function TaskService({
    * @param taskId - The ID of the task; can be a task UUID or a task slug
    * @param variantId - The ID of the task variant
    * @returns The requested task variant with task information
-   * @throws {ApiError} NOT_FOUND if task or variant doesn't exist, or variant belongs to different task
-   * @throws {ApiError} UNAUTHORIZED if user lacks permission to view variant status
+   * @throws {ApiError} NOT_FOUND if task doesn't exist, variant doesn't exist, variant belongs to different task, or variant is unpublished and user is not super admin
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
   async function getTaskVariant(

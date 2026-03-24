@@ -1395,12 +1395,6 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
   });
 
   describe('error cases', () => {
-    it('returns 401 when unauthenticated', async () => {
-      const res = await request(app).get(`/v1/tasks/${testTaskId}/variants/${testVariantId}`);
-
-      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
-    });
-
     it('returns 404 when task does not exist', async () => {
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
@@ -1432,17 +1426,6 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.NOT_FOUND);
-    });
-
-    it('returns 400 when variantId is not a valid UUID', async () => {
-      const testTask = await TaskFactory.create();
-
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .get(`/v1/tasks/${testTask.id}/variants/not-a-valid-uuid`)
-        .set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
   });
 

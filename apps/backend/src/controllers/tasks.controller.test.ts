@@ -1088,32 +1088,6 @@ describe('TasksController', () => {
       expect(result.status).toBe(404);
     });
 
-    it('should return 400 when service throws BAD_REQUEST error', async () => {
-      const badRequestError = new ApiError('Invalid request', {
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-      mockGetTaskVariant.mockRejectedValue(badRequestError);
-
-      const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.getTaskVariant(mockAuthContext, 'task-123', 'variant-123');
-
-      expect(result.status).toBe(400);
-    });
-
-    it('should return 401 when service throws UNAUTHORIZED error', async () => {
-      const unauthorizedError = new ApiError('Unauthorized', {
-        statusCode: StatusCodes.UNAUTHORIZED,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-      mockGetTaskVariant.mockRejectedValue(unauthorizedError);
-
-      const { TasksController: Controller } = await import('./tasks.controller');
-      const result = await Controller.getTaskVariant(mockAuthContext, 'task-123', 'variant-123');
-
-      expect(result.status).toBe(401);
-    });
-
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
       const internalError = new ApiError('Internal error', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

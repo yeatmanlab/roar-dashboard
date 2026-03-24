@@ -224,7 +224,6 @@ export const TasksController = {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
           StatusCodes.BAD_REQUEST,
-          StatusCodes.UNAUTHORIZED,
           StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);

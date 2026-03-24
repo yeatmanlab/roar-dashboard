@@ -92,8 +92,6 @@ export const TasksContract = c.router(
       pathParams: GetTaskVariantPathParamSchema,
       responses: {
         200: SuccessEnvelopeSchema(GetTaskVariantResponseSchema),
-        400: ErrorEnvelopeSchema,
-        401: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
