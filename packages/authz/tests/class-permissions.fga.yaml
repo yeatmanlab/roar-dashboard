@@ -99,29 +99,29 @@ tests:
           can_read_scores: true
           can_read_progress: true
 
-  - name: Student can list/read their class with limited permissions
+  - name: Student cannot list/read their class (supervisory only)
     check:
       - user: user:student-a
         object: class:class-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_list_users: false
           can_read_scores: false
 
-  - name: Guardian can list/read class with limited permissions
+  - name: Guardian cannot list/read class (supervisory only)
     check:
       - user: user:guardian-a
         object: class:class-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: true
           can_read_scores_basic: true
           can_read_progress: true
