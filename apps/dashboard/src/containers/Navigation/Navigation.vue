@@ -75,6 +75,7 @@ const navbarBlacklist = [
   'RAN',
   'Crowding',
   'MEP',
+  'ROAV-MP',
   'Launch SWR',
   'Launch SWR-ES',
   'Launch SRE',
