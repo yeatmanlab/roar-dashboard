@@ -34,15 +34,15 @@ tuples:
     object: administration:admin-via-group
 
 tests:
-  - name: Group student can list/read group
+  - name: Group student cannot list/read group (supervisory only)
     check:
       - user: user:group-student
         object: group:group-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: false
 
   - name: Group teacher can list/read group and list users
@@ -56,15 +56,15 @@ tests:
           can_read: true
           can_list_users: true
 
-  - name: Group guardian can list/read group and list users
+  - name: Group guardian cannot list/read group (supervisory only) but can list users
     check:
       - user: user:group-guardian
         object: group:group-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_list_users: true
 
   - name: Non-member cannot list/read group

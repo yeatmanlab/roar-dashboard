@@ -97,15 +97,13 @@ tests:
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          student: true
       - user: user:active-student
         object: class:class-a
         context:
           current_time: "2099-12-31T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          student: true
 
   # ─── Bounded enrollment ────────────────────────────────────────────
 
@@ -116,8 +114,7 @@ tests:
         context:
           current_time: "2025-03-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          student: true
 
   - name: Bounded enrollment is denied before start date
     check:
@@ -126,8 +123,7 @@ tests:
         context:
           current_time: "2024-12-31T12:00:00Z"
         assertions:
-          can_list: false
-          can_read: false
+          student: false
 
   - name: Bounded enrollment is denied after end date
     check:
@@ -136,8 +132,7 @@ tests:
         context:
           current_time: "2025-07-01T12:00:00Z"
         assertions:
-          can_list: false
-          can_read: false
+          student: false
 
   # ─── Future enrollment ─────────────────────────────────────────────
 
@@ -148,8 +143,7 @@ tests:
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: false
-          can_read: false
+          student: false
 
   - name: Future enrollment is active after start date
     check:
@@ -158,8 +152,7 @@ tests:
         context:
           current_time: "2030-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          student: true
 
   # ─── Expired enrollment ────────────────────────────────────────────
 
@@ -170,8 +163,7 @@ tests:
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: false
-          can_read: false
+          student: false
 
   # ─── Enrollment dates affect administration access ─────────────────
 

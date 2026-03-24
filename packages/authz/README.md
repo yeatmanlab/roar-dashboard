@@ -87,8 +87,8 @@ Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
 
 | Permission | Who can do it | Used for |
 |-----------|--------------|----------|
-| `can_list` | All members | `administrations.list`, org/class listing |
-| `can_read` | All members | `administrations.read`, org/class detail |
+| `can_list` | All members (org/admin), `supervisory_tier_group` (class/group) | `administrations.list`, org/class listing |
+| `can_read` | All members (org/admin), `supervisory_tier_group` (class/group) | `administrations.read`, org/class detail |
 | `can_create` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
 | `can_update` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
 | `can_delete` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
