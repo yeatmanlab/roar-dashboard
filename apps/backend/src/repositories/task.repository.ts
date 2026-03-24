@@ -47,7 +47,7 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
   /**
    * Retrieves a task by its unique slug.
    *
-o  * Slugs are unique identifiers in a URL-friendly format (e.g., 'swr', 'letter-task').
+   * Slugs are unique identifiers in a URL-friendly format (e.g., 'swr', 'letter-task').
    *
    * @param slug - The unique slug of the task to retrieve
    * @returns The task with the given slug, or null if not found
