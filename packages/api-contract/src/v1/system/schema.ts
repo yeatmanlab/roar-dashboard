@@ -35,3 +35,12 @@ export const BackfillFgaResponseSchema = z.object({
 });
 
 export type BackfillFgaResponse = z.infer<typeof BackfillFgaResponseSchema>;
+
+/**
+ * Response body when a non-dry-run backfill is accepted for async processing.
+ */
+export const BackfillFgaAcceptedSchema = z.object({
+  message: z.string(),
+});
+
+export type BackfillFgaAccepted = z.infer<typeof BackfillFgaAcceptedSchema>;

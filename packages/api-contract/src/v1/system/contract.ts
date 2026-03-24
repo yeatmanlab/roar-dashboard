@@ -1,5 +1,5 @@
 import { initContract } from '@ts-rest/core';
-import { BackfillFgaQuerySchema, BackfillFgaResponseSchema } from './schema';
+import { BackfillFgaQuerySchema, BackfillFgaResponseSchema, BackfillFgaAcceptedSchema } from './schema';
 import { SuccessEnvelopeSchema, ErrorEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -13,6 +13,7 @@ export const SystemContract = c.router(
       body: c.noBody(),
       responses: {
         200: SuccessEnvelopeSchema(BackfillFgaResponseSchema),
+        202: SuccessEnvelopeSchema(BackfillFgaAcceptedSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,

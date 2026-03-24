@@ -2,7 +2,10 @@ import { StatusCodes } from 'http-status-codes';
 import type { BackfillFgaQuery } from '@roar-dashboard/api-contract';
 import { SystemService } from '../services/system/system.service';
 import { ApiError } from '../errors/api-error';
+import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { toErrorResponse } from '../utils/to-error-response.util';
+import { logger } from '../logger';
 import type { AuthContext } from '../types/auth-context';
 
 const systemService = SystemService();
@@ -16,22 +19,49 @@ export const SystemController = {
   /**
    * Backfill FGA tuples from existing Postgres junction table data.
    *
+   * - Dry-run (`?dryRun=true`): synchronous, returns 200 with tuple counts
+   * - Real run (`?dryRun=false`): returns 202 immediately, runs backfill in the background
+   *
    * @param authContext - The authenticated user's context
    * @param query - Query parameters including dryRun flag
-   * @returns Backfill result with per-category tuple counts
+   * @returns Backfill result (200) or accepted acknowledgement (202)
    */
   backfillFga: async (authContext: AuthContext, query: BackfillFgaQuery) => {
-    try {
-      const result = await systemService.authorization.backfillFgaStore(authContext, { dryRun: query.dryRun });
-      return {
-        status: StatusCodes.OK as const,
-        body: { data: result },
-      };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
-      }
-      throw error;
+    // Auth check before potentially returning 202 (defense-in-depth — service also checks)
+    if (!authContext.isSuperAdmin) {
+      return toErrorResponse(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+        [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR],
+      );
     }
+
+    // Dry-run: synchronous, return counts
+    if (query.dryRun) {
+      try {
+        const result = await systemService.authorization.backfillFgaStore(authContext, { dryRun: true });
+        return {
+          status: StatusCodes.OK as const,
+          body: { data: result },
+        };
+      } catch (error) {
+        if (error instanceof ApiError) {
+          return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+        }
+        throw error;
+      }
+    }
+
+    // Real run: fire-and-forget, return 202
+    systemService.authorization.backfillFgaStore(authContext, { dryRun: false }).catch((error) => {
+      logger.error({ err: error, context: { userId: authContext.userId } }, 'FGA backfill failed (async)');
+    });
+
+    return {
+      status: 202 as const,
+      body: { data: { message: 'FGA backfill started. Check server logs for progress.' } },
+    };
   },
 };
