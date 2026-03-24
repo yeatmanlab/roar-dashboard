@@ -45,9 +45,37 @@ export const FgaAssignmentRelation = {
 export type FgaAssignmentRelation = (typeof FgaAssignmentRelation)[keyof typeof FgaAssignmentRelation];
 
 /**
+ * Roles that are valid as direct relations on the FGA `class` type.
+ *
+ * The `class` type in the authorization model does not include admin-tier roles
+ * (`administrator`, `district_administrator`, `site_administrator`, `system_administrator`).
+ * Admin access to classes flows through the org hierarchy (school → district).
+ *
+ * DB rows with admin-tier roles on `user_classes` are valid in Postgres but must be
+ * skipped when writing FGA tuples — otherwise the FGA API returns a validation error.
+ */
+export const FGA_CLASS_VALID_ROLES = new Set([
+  'principal',
+  'counselor',
+  'teacher',
+  'aide',
+  'proctor',
+  'student',
+  'guardian',
+  'parent',
+  'relative',
+]);
+
+/**
  * FGA condition name for time-bound membership tuples.
  */
 export const FGA_CONDITION_ACTIVE_MEMBERSHIP = 'active_membership' as const;
+
+/**
+ * Sentinel value for memberships with no start date.
+ * FGA conditions require a concrete timestamp, so we treat missing starts as epoch.
+ */
+export const FAR_PAST = '1970-01-01T00:00:00Z';
 
 /**
  * Sentinel value for memberships with no end date.

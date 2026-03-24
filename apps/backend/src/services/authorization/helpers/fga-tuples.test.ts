@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  FAR_PAST,
   FAR_FUTURE,
   districtMembershipTuple,
   schoolMembershipTuple,
@@ -197,6 +198,40 @@ describe('fga-tuples', () => {
       expect(tuple.condition!.context).toEqual({
         grant_start: JOINED_ON.toISOString(),
         grant_end: LEFT_ON.toISOString(),
+      });
+    });
+  });
+
+  describe('null and invalid date handling', () => {
+    it('uses FAR_PAST when enrollmentStart is null', () => {
+      const tuple = districtMembershipTuple(USER_ID, DISTRICT_ID, UserRole.TEACHER, null, ENROLLMENT_END);
+      expect(tuple.condition!.context).toEqual({
+        grant_start: FAR_PAST,
+        grant_end: ENROLLMENT_END.toISOString(),
+      });
+    });
+
+    it('uses FAR_PAST when enrollmentStart is an invalid Date', () => {
+      const tuple = schoolMembershipTuple(USER_ID, SCHOOL_ID, UserRole.TEACHER, new Date('invalid'), null);
+      expect(tuple.condition!.context).toEqual({
+        grant_start: FAR_PAST,
+        grant_end: FAR_FUTURE,
+      });
+    });
+
+    it('uses FAR_PAST and FAR_FUTURE when both dates are null', () => {
+      const tuple = classMembershipTuple(USER_ID, CLASS_ID, UserRole.STUDENT, null, null);
+      expect(tuple.condition!.context).toEqual({
+        grant_start: FAR_PAST,
+        grant_end: FAR_FUTURE,
+      });
+    });
+
+    it('handles null joinedOn in familyMembershipTuple', () => {
+      const tuple = familyMembershipTuple(USER_ID, FAMILY_ID, UserFamilyRole.PARENT, null, null);
+      expect(tuple.condition!.context).toEqual({
+        grant_start: FAR_PAST,
+        grant_end: FAR_FUTURE,
       });
     });
   });

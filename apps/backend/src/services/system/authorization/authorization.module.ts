@@ -39,6 +39,7 @@ import {
   administrationClassTuple,
   administrationGroupTuple,
 } from '../../authorization/helpers/fga-tuples';
+import { FGA_CLASS_VALID_ROLES } from '../../authorization/fga-constants';
 
 /** Maximum tuples per FGA writeTuples call. */
 const FGA_WRITE_BATCH_SIZE = 100;
@@ -168,6 +169,10 @@ export function AuthorizationModule({
 
   /**
    * Build class membership tuples from user_classes.
+   *
+   * Filters out admin-tier roles (`administrator`, `district_administrator`, etc.)
+   * because the FGA `class` type only defines educator and supervised roles.
+   * Admin access to classes flows through the org hierarchy instead.
    */
   async function buildClassMembershipTuples(): Promise<TupleKey[]> {
     const dbClient = getDb();
@@ -182,9 +187,24 @@ export function AuthorizationModule({
       })
       .from(userClasses);
 
-    return rows.map((row) =>
-      classMembershipTuple(row.userId, row.classId, row.role as UserRole, row.enrollmentStart, row.enrollmentEnd),
-    );
+    const tuples: TupleKey[] = [];
+    let skipped = 0;
+
+    for (const row of rows) {
+      if (!FGA_CLASS_VALID_ROLES.has(row.role)) {
+        skipped++;
+        continue;
+      }
+      tuples.push(
+        classMembershipTuple(row.userId, row.classId, row.role as UserRole, row.enrollmentStart, row.enrollmentEnd),
+      );
+    }
+
+    if (skipped > 0) {
+      logger.info({ skipped }, 'Skipped class membership rows with admin-tier roles (not valid on FGA class type)');
+    }
+
+    return tuples;
   }
 
   /**
@@ -373,6 +393,7 @@ export function AuthorizationModule({
             await writeTuplesInBatches(tuples);
             logger.info({ count: tuples.length }, `Wrote ${label} tuples`);
           } catch (err) {
+            logger.error({ err, context: { userId, category: label } }, `Failed to write ${label} tuples to FGA`);
             throw new ApiError(`Failed to write ${label} tuples to FGA`, {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
