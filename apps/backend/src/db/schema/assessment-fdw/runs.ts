@@ -1,11 +1,13 @@
 /**
  * core.app_assessment_fdw.runs
  *
- * This is a postgres_fdw foreign table that maps to the assessment DB's
- * `app_fdw.fdw_runs` view. The view filters out soft-deleted runs and exposes
- * only the columns needed for cross-database joins and queries.
+ * This is a postgres_fdw foreign table that maps directly to the assessment DB's
+ * `app.runs` table. Soft-delete filtering (deleted_at IS NULL) must be applied
+ * in the core DB query layer.
  *
- * Data flow: core DB (app_assessment_fdw.runs) → assessment DB (app_fdw.fdw_runs view) → assessment DB (app.runs)
+ * Data flow: core DB (app_assessment_fdw.runs) → assessment DB (app.runs)
+ *
+ * @see {@link ../assessment/runs.ts} — source table definition in assessment DB
  *
  * This directory is intentionally excluded from drizzle.config.ts schema discovery.
  * Foreign tables are managed by SQL migrations, not Drizzle's push/generate.
@@ -16,13 +18,14 @@
  * ```typescript
  * import { fdwRuns } from '@/db/schema/assessment-fdw/runs';
  * import { getCoreDbClient } from '@/db/clients';
- * import { eq } from 'drizzle-orm';
+ * import { eq, isNull } from 'drizzle-orm';
  *
  * // Always use getCoreDbClient() — the foreign tables live in the core database
+ * // Always filter out soft-deleted runs
  * const runs = await getCoreDbClient()
  *   .select()
  *   .from(fdwRuns)
- *   .where(eq(fdwRuns.administrationId, adminId));
+ *   .where(and(eq(fdwRuns.administrationId, adminId), isNull(fdwRuns.deletedAt)));
  * ```
  */
 import * as p from 'drizzle-orm/pg-core';
@@ -39,9 +42,14 @@ export const fdwRuns = db.table('runs', {
   useForReporting: p.boolean().notNull(),
   reliableRun: p.boolean().notNull(),
   engagementFlags: p.jsonb(),
-  isAnonymous: p.boolean(),
+  metadata: p.jsonb(),
+  isAnonymous: p.boolean().notNull(),
   completedAt: p.timestamp({ withTimezone: true }),
   abortedAt: p.timestamp({ withTimezone: true }),
+  deletedAt: p.timestamp({ withTimezone: true }),
+  deletedBy: p.uuid(),
+  updatedAt: p.timestamp({ withTimezone: true }),
+  createdAt: p.timestamp({ withTimezone: true }).notNull(),
 });
 
 export type FdwRun = typeof fdwRuns.$inferSelect;
