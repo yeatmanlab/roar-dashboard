@@ -347,7 +347,9 @@ export function TaskService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      // Parse taskId: try UUID first, then fall back to slug lookup
+      // Parse taskId: if it's a UUID format, look up by ID; otherwise by slug
+      // A task slug is a human-readable identifier, not a UUID
+      // We do not need to perform any fallback lookup if UUID lookup fails, we can rely on the slug lookup
       let task: Task | null = null;
 
       if (isValidUuid(taskId)) {
@@ -396,8 +398,9 @@ export function TaskService({
 
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.INTERNAL,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, taskId, variantId },
+        cause: error,
       });
     }
   }
