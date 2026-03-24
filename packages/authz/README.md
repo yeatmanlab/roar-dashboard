@@ -83,21 +83,7 @@ Shared across org types to simplify permission definitions:
 
 ### Permissions
 
-Permissions encode the full `RolePermissions` matrix from `role-permissions.ts`:
-
-| Permission | Who can do it | Used for |
-|-----------|--------------|----------|
-| `can_list` | All members (org/admin), `supervisory_tier_group` (class/group) | `administrations.list`, org/class listing |
-| `can_read` | All members (org/admin), `supervisory_tier_group` (class/group) | `administrations.read`, org/class detail |
-| `can_create` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
-| `can_update` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
-| `can_delete` | `no_one` (super-admin-only, app layer) | Reserved — always denied in FGA |
-| `can_list_users` | `supervisory_tier_group` + `caregiver_tier` | User listing on orgs, classes, groups, families |
-| `can_read_scores` | `supervisory_tier_group` | `reports.score.read` (full) |
-| `can_read_scores_basic` | `caregiver_tier` | `reports.score.read` (composite) |
-| `can_read_progress` | `supervisory_tier_group` + `caregiver_tier` | `reports.progress.read` |
-| `can_create_run` | `student` only | `runs.create` (administration only) |
-| `can_launch_task` | `student` + `caregiver_tier` | `tasks.launch` (administration only) |
+Permissions are defined as computed relations in each type in `authorization-model.fga`. See the model for the authoritative mapping of which role tiers grant which permissions. CUD permissions (`can_create`, `can_update`, `can_delete`) resolve to `no_one` — they are super-admin-only, enforced in the app layer.
 
 **Design notes:**
 
