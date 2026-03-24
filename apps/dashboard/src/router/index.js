@@ -201,6 +201,13 @@ const routes = [
     meta: { pageTitle: 'MEP' },
   },
   {
+    path: GAME_ROUTES.ROAV_MP,
+    name: 'MP',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: { taskId: 'roav-mp', language: 'en' },
+    meta: { pageTitle: 'MP' },
+  },
+  {
     path: GAME_ROUTES.ROAR_READALOUD,
     name: 'Read Aloud',
     component: () => import('../components/tasks/TaskReadAloud.vue'),
