@@ -1910,7 +1910,7 @@ describe('TaskService', () => {
 
         expect(result).toEqual({
           ...mockVariant,
-          parameters: mockParams,
+          parameters: mockParams.map(({ name, value }) => ({ name, value })),
           task: {
             name: mockTask.name,
             slug: mockTask.slug,
@@ -1934,7 +1934,7 @@ describe('TaskService', () => {
 
         expect(result).toEqual({
           ...mockVariant,
-          parameters: mockParams,
+          parameters: mockParams.map(({ name, value }) => ({ name, value })),
           task: {
             name: mockTask.name,
             slug: mockTask.slug,
@@ -2097,13 +2097,16 @@ describe('TaskService', () => {
           },
           { taskVariantId: mockVariant.id, name: 'param4', value: null, createdAt: new Date(), updatedAt: new Date() },
         ];
+        // Service method maps parameters to name/value only
+        const manyParamsSimplified = manyParams.map(({ name, value }) => ({ name, value }));
+
         taskRepository.getById.mockResolvedValue(mockTask);
         taskVariantRepository.getById.mockResolvedValue(mockVariant);
         taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(manyParams);
 
         const result = await taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id);
 
-        expect(result.parameters).toEqual(manyParams);
+        expect(result.parameters).toEqual(manyParamsSimplified);
       });
     });
 
@@ -2239,27 +2242,38 @@ describe('TaskService', () => {
         expect(result.task.slug).toBe(mockTask.slug);
       });
 
-      it('should handle case-insensitive slug lookup', async () => {
-        const taskWithLowerSlug = TaskFactory.build({ slug: 'swr' });
-        taskRepository.getBySlug.mockResolvedValue(taskWithLowerSlug);
+      it('should handle case-sensitive slug lookup', async () => {
+        const taskWithLowerSlug = TaskFactory.build({ id: mockTask.id, slug: 'swr' });
+        taskRepository.getBySlug.mockImplementation((slug) => {
+          if (slug === 'swr') {
+            return Promise.resolve(taskWithLowerSlug);
+          }
+          return Promise.resolve(null);
+        });
         taskVariantRepository.getById.mockResolvedValue(mockVariant);
         taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
 
-        // Test with different case variations - all should normalize to lowercase
-        const slugVariations = ['SWR', 'swR', 'swr'];
-        const results = await Promise.all(
-          slugVariations.map((slug) => taskService.getTaskVariant(authContext, slug, mockVariant.id)),
+        // Lowercase slug should work
+        const resultLower = await taskService.getTaskVariant(authContext, 'swr', mockVariant.id);
+
+        expect(resultLower.task.slug).toBe('swr');
+
+        // Uppercase slug should fail (not found)
+        taskRepository.getBySlug.mockResolvedValue(null);
+        await expect(taskService.getTaskVariant(authContext, 'SWR', mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
         );
 
-        // Verify repository was called with each variation
-        slugVariations.forEach((slug) => {
-          expect(taskRepository.getBySlug).toHaveBeenCalledWith(slug);
-        });
-
-        // Verify all variations return the same task
-        results.forEach((result) => {
-          expect(result.task.slug).toBe('swr');
-        });
+        // Mixed case slug should fail (not found)
+        await expect(taskService.getTaskVariant(authContext, 'SwR', mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
       });
     });
 

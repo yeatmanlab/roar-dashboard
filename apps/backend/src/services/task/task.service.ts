@@ -329,18 +329,20 @@ export function TaskService({
 
   /**
    * Retrieves a single task variant by its ID.
-   * Supports lookup by task ID or task slug.
-   * First tries to look up by task ID, then falls back to task slug if not found.
-   * Task slugs are case-insensitive.
+   * Supports lookup by task ID (UUID) or task slug.
+   * Task slugs are case-sensitive.
    *
    * Authorization:
-   * - Super admins can filter by any status or see all variants (no status filter)
-   * - Regular users can only see published variants (status defaults to 'published')
+   * - Super admins can retrieve any variant regardless of status
+   * - Regular users can only retrieve published variants
    *
    * @param authContext - The user's authentication context
-   * @param taskId - The ID of the task; can be a task ID or a task slug
+   * @param taskId - The ID of the task; can be a task UUID or a task slug
    * @param variantId - The ID of the task variant
-   * @returns The requested task variant, if it exists
+   * @returns The requested task variant with task information
+   * @throws {ApiError} NOT_FOUND if task or variant doesn't exist, or variant belongs to different task
+   * @throws {ApiError} UNAUTHORIZED if user lacks permission to view variant status
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
   async function getTaskVariant(
     authContext: AuthContext,
@@ -351,8 +353,6 @@ export function TaskService({
 
     try {
       // Parse taskId: if it's a UUID format, look up by ID; otherwise by slug
-      // A task slug is a human-readable identifier, not a UUID
-      // We do not need to perform any fallback lookup if UUID lookup fails, we can rely on the slug lookup
       let task: Task | null = null;
 
       if (isValidUuid(taskId)) {
@@ -368,7 +368,8 @@ export function TaskService({
           context: { userId, taskId },
         });
       }
-      // Fetch the variant and check its status
+
+      // Fetch the variant and verify it belongs to this task
       const variant = await taskVariantRepository.getById({ id: variantId });
 
       if (!variant) {
@@ -379,6 +380,16 @@ export function TaskService({
         });
       }
 
+      // Verify variant belongs to the requested task
+      if (variant.taskId !== task.id) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId, variantId },
+        });
+      }
+
+      // Check authorization based on variant status
       if (!isSuperAdmin && variant.status !== 'published') {
         throw new ApiError(ApiErrorMessage.FORBIDDEN, {
           statusCode: StatusCodes.UNAUTHORIZED,
@@ -387,11 +398,14 @@ export function TaskService({
         });
       }
 
+      // Fetch parameters
       const parameters = await taskVariantParameterRepository.getByTaskVariantId(variantId);
-      const variantWithParams = { ...variant, parameters };
+      // Simplify parameters to only include name and value
+      const simplifiedParameters = parameters.map(({ name, value }) => ({ name, value }));
 
       return {
-        ...variantWithParams,
+        ...variant,
+        parameters: simplifiedParameters,
         task: { name: task.name, slug: task.slug, image: task.image },
       };
     } catch (error) {
@@ -403,7 +417,6 @@ export function TaskService({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, taskId, variantId },
-        cause: error,
       });
     }
   }

@@ -61,9 +61,8 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
    * ```
    */
   async getBySlug(slug: string): Promise<Task | null> {
-    const normalizedSlug = slug.toLocaleLowerCase();
     const results = await this.get({
-      where: eq(tasks.slug, normalizedSlug),
+      where: eq(tasks.slug, slug),
       limit: 1,
     });
 
