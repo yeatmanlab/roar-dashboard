@@ -8,62 +8,108 @@ import type {
   WriteTrialInteractionEvent,
 } from '../types/write-trial';
 import { SDKError } from '../errors/sdk-error';
-import { SdkErrorCode } from '../enums';
+import {
+  SdkErrorCode,
+  ASSESSMENT_STAGE_PRACTICE,
+  ASSESSMENT_STAGE_PRACTICE_RESPONSE,
+  ASSESSMENT_STAGE_TEST,
+  ASSESSMENT_STAGE_TEST_RESPONSE,
+  NORMALIZED_ASSESSMENT_STAGE_PRACTICE,
+  NORMALIZED_ASSESSMENT_STAGE_TEST,
+  INTERACTION_EVENT_BLUR,
+  INTERACTION_EVENT_FOCUS,
+  INTERACTION_EVENT_FULLSCREEN_ENTER,
+  INTERACTION_EVENT_FULLSCREEN_EXIT,
+  NORMALIZED_INTERACTION_EVENT_BLUR,
+  NORMALIZED_INTERACTION_EVENT_FOCUS,
+  NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER,
+  NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT,
+} from '../enums';
 
 /**
  * Normalizes assessment stage values to backend-compatible format.
  *
  * Maps Firekit-compatible stage values to the backend's simplified format:
- * - 'practice' and 'practice_response' → 'practice'
- * - 'test' and 'test_response' → 'test'
+ * - ASSESSMENT_STAGE_PRACTICE and ASSESSMENT_STAGE_PRACTICE_RESPONSE → NORMALIZED_ASSESSMENT_STAGE_PRACTICE
+ * - ASSESSMENT_STAGE_TEST and ASSESSMENT_STAGE_TEST_RESPONSE → NORMALIZED_ASSESSMENT_STAGE_TEST
  *
  * This normalization allows the SDK to accept both response and non-response stage
  * values from Firekit while maintaining compatibility with the backend's simpler
  * two-stage model.
  *
  * @param stage - The assessment stage from Firekit
- * @returns Normalized stage value ('practice' or 'test')
+ * @returns Normalized stage value (NORMALIZED_ASSESSMENT_STAGE_PRACTICE or NORMALIZED_ASSESSMENT_STAGE_TEST)
+ * @throws {SDKError} If stage is not a valid assessment stage value
  *
  * @example
  * ```ts
- * normalizeAssessmentStage('practice_response') // → 'practice'
- * normalizeAssessmentStage('test') // → 'test'
+ * normalizeAssessmentStage(ASSESSMENT_STAGE_PRACTICE_RESPONSE) // → NORMALIZED_ASSESSMENT_STAGE_PRACTICE
+ * normalizeAssessmentStage(ASSESSMENT_STAGE_TEST) // → NORMALIZED_ASSESSMENT_STAGE_TEST
  * ```
  */
-function normalizeAssessmentStage(stage: WriteTrialAssessmentStage): 'practice' | 'test' {
-  if (stage === 'practice' || stage === 'practice_response') {
-    return 'practice';
+function normalizeAssessmentStage(
+  stage: WriteTrialAssessmentStage,
+): typeof NORMALIZED_ASSESSMENT_STAGE_PRACTICE | typeof NORMALIZED_ASSESSMENT_STAGE_TEST {
+  switch (stage) {
+    case ASSESSMENT_STAGE_PRACTICE:
+    case ASSESSMENT_STAGE_PRACTICE_RESPONSE:
+      return NORMALIZED_ASSESSMENT_STAGE_PRACTICE;
+    case ASSESSMENT_STAGE_TEST:
+    case ASSESSMENT_STAGE_TEST_RESPONSE:
+      return NORMALIZED_ASSESSMENT_STAGE_TEST;
+    default: {
+      const exhaustiveCheck: never = stage;
+      throw new SDKError(`Unknown assessment stage: ${exhaustiveCheck}`, {
+        code: SdkErrorCode.WRITE_TRIAL_FAILED,
+      });
+    }
   }
-
-  return 'test';
 }
 
 /**
  * Normalizes interaction event names to backend-compatible format.
  *
  * Maps Firekit-compatible event names to the backend's snake_case format:
- * - 'fullscreenenter' → 'fullscreen_enter'
- * - 'fullscreenexit' → 'fullscreen_exit'
- * - Other events ('blur', 'focus') pass through unchanged
+ * - INTERACTION_EVENT_FULLSCREEN_ENTER → NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER
+ * - INTERACTION_EVENT_FULLSCREEN_EXIT → NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT
+ * - Other events (INTERACTION_EVENT_BLUR, INTERACTION_EVENT_FOCUS) pass through unchanged
  *
  * This normalization bridges the camelCase naming convention used by Firekit
  * with the snake_case convention expected by the backend API.
  *
  * @param event - The interaction event from Firekit
  * @returns Normalized event name in snake_case format
+ * @throws {SDKError} If event is not a valid interaction event value
  *
  * @example
  * ```ts
- * normalizeInteractionEvent('fullscreenenter') // → 'fullscreen_enter'
- * normalizeInteractionEvent('focus') // → 'focus'
+ * normalizeInteractionEvent(INTERACTION_EVENT_FULLSCREEN_ENTER) // → NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER
+ * normalizeInteractionEvent(INTERACTION_EVENT_FOCUS) // → NORMALIZED_INTERACTION_EVENT_FOCUS
  * ```
  */
 function normalizeInteractionEvent(
   event: WriteTrialInteractionEvent,
-): 'blur' | 'focus' | 'fullscreen_enter' | 'fullscreen_exit' {
-  if (event === 'fullscreenenter') return 'fullscreen_enter';
-  if (event === 'fullscreenexit') return 'fullscreen_exit';
-  return event;
+):
+  | typeof NORMALIZED_INTERACTION_EVENT_BLUR
+  | typeof NORMALIZED_INTERACTION_EVENT_FOCUS
+  | typeof NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER
+  | typeof NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT {
+  switch (event) {
+    case INTERACTION_EVENT_BLUR:
+      return NORMALIZED_INTERACTION_EVENT_BLUR;
+    case INTERACTION_EVENT_FOCUS:
+      return NORMALIZED_INTERACTION_EVENT_FOCUS;
+    case INTERACTION_EVENT_FULLSCREEN_ENTER:
+      return NORMALIZED_INTERACTION_EVENT_FULLSCREEN_ENTER;
+    case INTERACTION_EVENT_FULLSCREEN_EXIT:
+      return NORMALIZED_INTERACTION_EVENT_FULLSCREEN_EXIT;
+    default: {
+      const exhaustiveCheck: never = event;
+      throw new SDKError(`Unknown interaction event: ${exhaustiveCheck}`, {
+        code: SdkErrorCode.WRITE_TRIAL_FAILED,
+      });
+    }
+  }
 }
 
 /**
@@ -101,16 +147,16 @@ function normalizeInteractionEvent(
  *
  * await invoker.run(cmd, {
  *   runId: 'run-123',
- *   type: 'trial',
+ *   type: RUN_EVENT_TRIAL,
  *   trial: {
- *     assessmentStage: 'test',
+ *     assessmentStage: ASSESSMENT_STAGE_TEST,
  *     correct: 1,
  *     response: 'A',
  *     rt: 1500
  *   },
  *   interactions: [
- *     { event: 'focus', trial: 1, time: 100 },
- *     { event: 'blur', trial: 1, time: 200 }
+ *     { event: INTERACTION_EVENT_FOCUS, trial: 1, time: 100 },
+ *     { event: INTERACTION_EVENT_BLUR, trial: 1, time: 200 }
  *   ]
  * });
  * ```
