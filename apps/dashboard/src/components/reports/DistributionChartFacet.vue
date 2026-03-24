@@ -62,6 +62,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  taskScoringVersions: {
+    type: Object,
+    required: true,
+  },
 });
 
 const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
@@ -103,7 +107,7 @@ const makeRunsFromBins = ({ binsObj, facet, scoreKey }) => {
 
 // Normalize facet mode to 'grade' | 'school'
 const facetKind = computed(() => (props.facetMode?.name === 'Grade' ? 'grade' : 'school'));
-
+const isUpdatedPa = props.taskScoringVersions && props.taskScoringVersions['pa'] >= 4;
 const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
@@ -116,7 +120,7 @@ const getBinSize = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 10;
   } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 5;
+    if (taskId === 'pa') return isUpdatedPa ? 40 : 5;
     else if (taskId === 'sre') return 10;
     else if (taskId === 'swr') return 50;
   }
@@ -127,7 +131,7 @@ const getRangeLow = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 0;
   } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 0;
+    if (taskId === 'pa') return isUpdatedPa ? 40 : 0;
     else if (taskId === 'sre') return 0;
     else if (taskId === 'swr') return 100;
   }
@@ -138,7 +142,7 @@ const getRangeHigh = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 100;
   } else if (scoreMode === 'Raw Score') {
-    if (taskId === 'pa') return 57;
+    if (taskId === 'pa') return isUpdatedPa ? 733 : 57;
     else if (taskId === 'sre') return 130;
     else if (taskId === 'swr') return 900;
   }

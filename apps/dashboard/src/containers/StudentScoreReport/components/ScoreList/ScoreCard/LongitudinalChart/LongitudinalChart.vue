@@ -68,6 +68,7 @@ const props = defineProps({
   studentGrade: { type: String, required: true },
   currentAssignmentId: { type: String, required: true },
   scoreLabel: { type: String, required: true },
+  taskScoringVersions: { type: Object, required: true },
 });
 
 const { series, seriesLabel, seriesStroke } = useLongitudinalSeries(props);

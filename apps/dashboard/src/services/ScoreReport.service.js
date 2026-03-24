@@ -282,7 +282,7 @@ const ScoreReportService = (() => {
       if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
         const percentileScore = getScoreValue(compositeScores, taskId, grade, 'percentile');
         const standardScore = getScoreValue(compositeScores, taskId, grade, SCORE_TYPES.STANDARD_SCORE);
-        const rawScoreRange = getRawScoreRange(taskId);
+        const rawScoreRange = getRawScoreRange(taskId, scoringVersions[taskId]);
         const supportColor = getDialColor(grade, percentileScore, rawScore, taskId, optional, scoringVersions[taskId]);
 
         const scoresForTask = {
