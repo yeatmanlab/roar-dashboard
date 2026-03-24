@@ -105,7 +105,7 @@ tuples:
 tests:
   # ─── District permissions ──────────────────────────────────────────
 
-  - name: District admin can list, read, and manage their district
+  - name: District admin can list/read their district
     check:
       - user: user:district-admin
         object: district:district-a
@@ -114,9 +114,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
           can_list_users: true
           can_read_scores: true
           can_read_progress: true
@@ -182,7 +182,7 @@ tests:
 
   # ─── School permissions ────────────────────────────────────────────
 
-  - name: District admin can list, read, and manage descendant schools
+  - name: District admin can list/read descendant schools
     check:
       - user: user:district-admin
         object: school:school-a
@@ -191,13 +191,13 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
           can_list_users: true
           can_read_scores: true
 
-  - name: District admin can list/read and manage sibling school (same district)
+  - name: District admin can list/read sibling school (same district)
     check:
       - user: user:district-admin
         object: school:school-b
@@ -206,9 +206,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
   - name: School teacher can list/read their school
     check:

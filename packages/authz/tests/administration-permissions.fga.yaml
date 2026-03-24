@@ -161,7 +161,7 @@ tests:
 
   # ─── District admin permissions ────────────────────────────────────
 
-  - name: District admin sees district-assigned administration with full permissions
+  - name: District admin can list/read district-assigned administration
     check:
       - user: user:district-admin
         object: administration:admin-at-district
@@ -170,9 +170,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
           can_read_scores: true
           can_read_progress: true
@@ -187,9 +187,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
   - name: District admin sees class-level administration (descendant access)
     check:
@@ -200,9 +200,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
           can_read_scores: true
           can_create_run: false
@@ -235,8 +235,8 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
+          can_create: false
+          can_update: false
           can_delete: false
 
   - name: School teacher does NOT see district-level administration
@@ -267,7 +267,7 @@ tests:
           can_delete: false
           can_create_run: false
 
-  - name: District-level educator cannot delete class-assigned administration but can create/update
+  - name: District-level educator can list/read but NOT create/update/delete class-assigned administration
     check:
       - user: user:district-teacher
         object: administration:admin-at-class
@@ -276,8 +276,8 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
+          can_create: false
+          can_update: false
           can_delete: false
 
   # ─── Caregiver permissions ─────────────────────────────────────────

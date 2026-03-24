@@ -86,9 +86,9 @@ tests:
           supervisory_tier_group: true
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
   - name: System admin at district cascades to class (via school)
     check:
@@ -99,9 +99,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
   - name: District admin cascades to school
     check:
@@ -124,9 +124,9 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
-          can_delete: true
+          can_create: false
+          can_update: false
+          can_delete: false
 
   - name: School teacher cascades to class
     check:
@@ -137,8 +137,8 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_create: true
-          can_update: true
+          can_create: false
+          can_update: false
           can_delete: false
 
   # ─── Supervisory does NOT cascade UP ───────────────────────────────
