@@ -712,12 +712,14 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   // Try percentile-based scoring for grades < 6
-  if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
+  // Except for PA with scoringVersion >= 4, percentile is used for all grades
+  const isUpdatedPa = taskId === 'pa' && scoringVersion >= 4;
+  if (percentile !== null && percentile !== undefined && (gradeLevel < 6 || isUpdatedPa)) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
     const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
     const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
-    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
+    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs || isUpdatedPa;
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
@@ -735,10 +737,12 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   // Use raw score if:
   // 1. Grade >= 6, OR
   // 2. Grade < 6 but percentile is not available
+  // 3. Grade >= 6 and PA.scoringVersion < 4
   if (
     rawScore !== null &&
     rawScore !== undefined &&
-    (gradeLevel >= 6 || percentile === null || percentile === undefined)
+    (gradeLevel >= 6 || percentile === null || percentile === undefined) &&
+    !isUpdatedPa
   ) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
@@ -1090,12 +1094,7 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'pa') {
-    if (scoringVersion >= 4) {
-      return {
-        above: 513,
-        some: 413,
-      };
-    }
+    // Only applies to scoringVersion 3
     return {
       above: 55,
       some: 45,
@@ -1123,8 +1122,8 @@ export const getRawScoreRange = (taskId, scoringVersion = null) => {
   } else if (taskId.includes('pa')) {
     if (scoringVersion >= 4) {
       return {
-        min: 100,
-        max: 900,
+        min: 40,
+        max: 733,
       };
     }
     return {
