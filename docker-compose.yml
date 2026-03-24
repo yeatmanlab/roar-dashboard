@@ -5,8 +5,8 @@ services:
   # OpenFGA
   # Authorization service for relationship-based access control.
   #
-  # API:        http://localhost:8080
-  # Playground: http://localhost:3000/playground (via nginx proxy)
+  # API:        https://localhost:5050
+  # Playground: http://localhost:5051/playground (via nginx proxy)
   #
   # After first run, initialise the store and model:
   #   npm run fga:init -w apps/backend
@@ -19,12 +19,17 @@ services:
       openfga-migrate:
         condition: service_completed_successfully
     ports:
-      - '8080:8080'  # HTTP API
-      - '8081:8081'  # gRPC
+      - '5050:8080'  # HTTP API
+      - '5052:8081'  # gRPC
+    volumes:
+      - ./certs:/certs:ro
     environment:
       - OPENFGA_DATASTORE_ENGINE=postgres
       - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@host.docker.internal:5432/roar_openfga
       - OPENFGA_PLAYGROUND_ENABLED=true
+      - OPENFGA_HTTP_TLS_ENABLED=true
+      - OPENFGA_HTTP_TLS_CERT=/certs/roar-local.crt
+      - OPENFGA_HTTP_TLS_KEY=/certs/roar-local.key
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
@@ -38,7 +43,7 @@ services:
     depends_on:
       - openfga
     ports:
-      - '3000:3000'
+      - '5051:5051'
     volumes:
       - ./openfga-playground.nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
