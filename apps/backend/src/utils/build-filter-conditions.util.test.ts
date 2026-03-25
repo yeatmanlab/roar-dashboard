@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { buildFilterConditions, type FilterFieldMap } from './report-filter-parser';
+import { buildFilterConditions, type FilterFieldMap } from './build-filter-conditions.util';
 import type { ParsedFilter } from '@roar-dashboard/api-contract';
 import { users } from '../db/schema';
 
