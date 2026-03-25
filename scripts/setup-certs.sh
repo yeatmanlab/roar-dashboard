@@ -14,6 +14,6 @@ mkcert -install
 mkcert \
   -key-file "$CERT_DIR/roar-local.key" \
   -cert-file "$CERT_DIR/roar-local.crt" \
-  roar.local roar-backend.local localhost
+  roar.local roar-backend.local roar-fga.local localhost
 
 echo "✅ Certificates created in $CERT_DIR"

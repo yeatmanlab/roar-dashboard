@@ -41,7 +41,7 @@ export const users = db.table(
       .uuid()
       .default(sql`gen_random_uuid()`)
       .primaryKey(),
-    assessmentPid: p.text().notNull().unique(),
+    assessmentPid: p.text().unique(),
     authProvider: authProviderEnum().array(),
     authId: p.text().unique(),
 
@@ -72,6 +72,8 @@ export const users = db.table(
     homeLanguage: p.text(),
 
     isSuperAdmin: p.boolean().notNull().default(false),
+
+    rosteringEnded: p.timestamp({ withTimezone: true }),
 
     ...timestamps,
   },
