@@ -59,7 +59,7 @@ const UserIdentifierSchema = z.object({
 
 export const UserBaseSchema = z.object({
   id: z.string().uuid(),
-  assessmentPid: z.string(),
+  assessmentPid: z.string().nullable(),
   nameFirst: z.string().nullable(),
   nameLast: z.string().nullable(),
   username: z.string().nullable(),
