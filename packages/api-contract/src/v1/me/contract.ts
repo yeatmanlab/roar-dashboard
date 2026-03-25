@@ -16,6 +16,7 @@ export const MeContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(MeSchema),
         401: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'Get current user profile',

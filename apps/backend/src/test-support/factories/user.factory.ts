@@ -78,6 +78,7 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
     hispanicEthnicity: null,
     homeLanguage: null,
     isSuperAdmin: false,
+    rosteringEnded: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
