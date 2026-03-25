@@ -24,6 +24,7 @@ describe('useLongitudinalSeries', () => {
         studentGrade: 3,
         taskId: 'test-task',
         currentAssignmentId: 'a3',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -42,6 +43,7 @@ describe('useLongitudinalSeries', () => {
         studentGrade: 3,
         taskId: 'test-task',
         currentAssignmentId: 'a1',
+        taskScoringVersions: {},
       };
 
       const { series, seriesLabel } = useLongitudinalSeries(props);
@@ -56,6 +58,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { percentile: 75, standardScore: 110 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series, seriesLabel } = useLongitudinalSeries(props);
@@ -70,6 +73,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { standardScore: 105 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series, seriesLabel } = useLongitudinalSeries(props);
@@ -88,6 +92,7 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -106,6 +111,7 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -122,6 +128,79 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
+      };
+
+      const { series } = useLongitudinalSeries(props);
+
+      expect(series.value).toHaveLength(2);
+    });
+  });
+
+  describe('PA series data processing', () => {
+    it('should filter to only v4 scores when task scoringVersion == 4', () => {
+      const props = {
+        longitudinalData: [
+          { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: 4 } },
+          { date: '2024-01-02', scores: { rawScore: 15, scoringVersion: 3 } },
+          { date: '2024-01-03', scores: { rawScore: 20, scoringVersion: 4 } },
+        ],
+        taskId: 'pa',
+        studentGrade: 3,
+        taskScoringVersions: { pa: 4 },
+      };
+
+      const { series } = useLongitudinalSeries(props);
+
+      expect(series.value).toHaveLength(2);
+      expect(series.value.map((s) => s.y)).toEqual([10, 20]);
+    });
+
+    it('should filter to only v3 scores when task scoringVersion == 3', () => {
+      const props = {
+        longitudinalData: [
+          { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: 4 } },
+          { date: '2024-01-02', scores: { rawScore: 15, scoringVersion: 3 } },
+          { date: '2024-01-03', scores: { rawScore: 20, scoringVersion: 4 } },
+        ],
+        taskId: 'pa',
+        studentGrade: 3,
+        taskScoringVersions: { pa: 3 },
+      };
+
+      const { series } = useLongitudinalSeries(props);
+
+      expect(series.value).toHaveLength(1);
+      expect(series.value[0].y).toBe(15);
+    });
+
+    it('should filter to only v3 scores when scoringVersion does not exist', () => {
+      const props = {
+        longitudinalData: [
+          { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: 3 } },
+          { date: '2024-01-02', scores: { rawScore: 15, scoringVersion: 3 } },
+          { date: '2024-01-03', scores: { rawScore: 20, scoringVersion: 4 } },
+        ],
+        taskId: 'pa',
+        studentGrade: 3,
+        taskScoringVersions: {},
+      };
+
+      const { series } = useLongitudinalSeries(props);
+
+      expect(series.value).toHaveLength(2);
+      expect(series.value.map((s) => s.y)).toEqual([10, 15]);
+    });
+
+    it('should not filter non-PA tasks', () => {
+      const props = {
+        longitudinalData: [
+          { date: '2024-01-01', scores: { rawScore: 10, scoringVersion: 4 } },
+          { date: '2024-01-02', scores: { rawScore: 15, scoringVersion: 3 } },
+        ],
+        taskId: 'sre',
+        studentGrade: 3,
+        taskScoringVersions: { sre: 4 },
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -138,6 +217,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 25 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -152,6 +232,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -164,13 +245,14 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 50 } }],
         studentGrade: 5,
         taskId: 'swr',
+        taskScoringVersions: { swr: 6 },
       };
 
       const { series } = useLongitudinalSeries(props);
 
       series.value;
 
-      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr');
+      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr', null, 6);
     });
   });
 
@@ -180,6 +262,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 60, standardScore: 95 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -193,6 +276,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -206,6 +290,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { seriesStroke } = useLongitudinalSeries(props);
@@ -224,6 +309,7 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { xDomain } = useLongitudinalSeries(props);
@@ -238,6 +324,7 @@ describe('useLongitudinalSeries', () => {
         studentGrade: 3,
         taskId: 'test-task',
         currentAssignmentId: 'a1',
+        taskScoringVersions: {},
       };
 
       const { yDomain } = useLongitudinalSeries(props);
@@ -251,6 +338,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { xDomain, yDomain } = useLongitudinalSeries(props);
@@ -268,6 +356,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -280,6 +369,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: null,
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -292,6 +382,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: undefined,
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -308,6 +399,7 @@ describe('useLongitudinalSeries', () => {
         ],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
@@ -320,6 +412,7 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-15T10:30:00Z', scores: { rawScore: 10 } }],
         studentGrade: 3,
         taskId: 'test-task',
+        taskScoringVersions: {},
       };
 
       const { series } = useLongitudinalSeries(props);
