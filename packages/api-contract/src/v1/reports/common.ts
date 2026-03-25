@@ -197,6 +197,7 @@ export type ReportTaskMetadata = z.infer<typeof ReportTaskMetadataSchema>;
  */
 export const ReportUserInfoSchema = z.object({
   userId: z.string().uuid(),
+  assessmentPid: z.string(),
   username: z.string().nullable(),
   email: z.string().nullable(),
   firstName: z.string().nullable(),
