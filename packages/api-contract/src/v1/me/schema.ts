@@ -1,9 +1,5 @@
 import { z } from 'zod';
-
-/**
- * User type enum values matching the database enum.
- */
-export const UserTypeSchema = z.enum(['student', 'educator', 'caregiver', 'admin']);
+import { UserTypeSchema } from '../common/user';
 
 /**
  * Schema for the authenticated user's profile returned by /me endpoint.
@@ -16,4 +12,3 @@ export const MeSchema = z.object({
 });
 
 export type Me = z.infer<typeof MeSchema>;
-export type UserType = z.infer<typeof UserTypeSchema>;
