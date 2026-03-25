@@ -17,6 +17,7 @@ const db = p.pgSchema('app');
  *
  * @see {@link runTrials} - Individual trial records within this run
  * @see {@link runScores} - Computed scores for this run
+ * @see {@link ../assessment-fdw/runs.ts} — FDW mirror of this table in core DB
  */
 
 export const runs = db.table(
