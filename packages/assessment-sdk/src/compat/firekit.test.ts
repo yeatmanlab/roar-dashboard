@@ -23,12 +23,13 @@ import { RUN_EVENT_STATUS_OK } from '../types';
  *
  * @returns A CommandContext configured for testing with localhost baseUrl
  */
-function createMockContext(): CommandContext {
+function createMockContext(fetchImpl?: typeof fetch): CommandContext {
   return {
     baseUrl: 'http://localhost:3000',
     auth: {
       getToken: vi.fn().mockResolvedValue('test-token'),
     },
+    ...(fetchImpl ? { fetchImpl } : {}),
   };
 }
 
@@ -86,9 +87,8 @@ function initializeFirekit(
   runId: string,
   options: { isAnonymous?: boolean; administrationId?: string } = {},
 ): { mockContext: CommandContext; fetchMock: ReturnType<typeof vi.fn> } {
-  const mockContext = createMockContext();
   const fetchMock = setupFetchMock(runId);
-  vi.stubGlobal('fetch', fetchMock);
+  const mockContext = createMockContext(fetchMock as typeof fetch);
 
   initFirekitCompat(mockContext, {
     variantId: 'variant-123',
@@ -754,6 +754,65 @@ describe('firekit compat', () => {
       expect(eventCalls).toHaveLength(2);
       const secondBody = JSON.parse(eventCalls[1]![1].body as string);
       expect(secondBody.interactions).toHaveLength(1);
+    });
+
+    it('restores interactions to buffer if writeTrial fails', async () => {
+      let callCount = 0;
+      const fetchMock = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-buffer-restore' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          callCount++;
+          // First call fails, second call succeeds
+          if (callCount === 1) {
+            return Promise.reject(new Error('Network error'));
+          }
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      await startRun();
+
+      addInteraction({ event: 'focus', time: 100 });
+      addInteraction({ event: 'blur', time: 200 });
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      // First writeTrial call fails
+      await expect(writeTrial(trialData)).rejects.toThrow();
+
+      // Add another interaction after the failure
+      addInteraction({ event: 'fullscreenenter', time: 300 });
+
+      // Second writeTrial call should succeed and include all 3 interactions
+      // (the 2 from before + 1 new, since the first 2 were restored to buffer)
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify second call sent all 3 interactions (buffer was restored after failure)
+      const eventCalls = fetchMock.mock.calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls).toHaveLength(2);
+      const secondBody = JSON.parse(eventCalls[1]![1].body as string);
+      expect(secondBody.interactions).toHaveLength(3);
+      expect(secondBody.interactions[0]!.event).toBe('focus');
+      expect(secondBody.interactions[1]!.event).toBe('blur');
+      expect(secondBody.interactions[2]!.event).toBe('fullscreen_enter');
     });
 
     it('matches Firekit signature', () => {

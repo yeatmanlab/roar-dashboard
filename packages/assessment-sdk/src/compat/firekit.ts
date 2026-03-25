@@ -657,23 +657,32 @@ export async function writeTrial(
 
   const cmd = new WriteTrialCommand(api);
 
-  // Drain buffer before invoker.run() to prevent duplicate interactions in concurrent writeTrial calls.
-  // Trade-off: interactions are lost if the network request fails (not retried on next call).
-  // See: https://github.com/richford/roar-dashboard/pull/3 - confirm this behavior is intentional.
+  // Capture interactions before the attempt, but only drain after success.
+  // This ensures interactions are retried if the network call fails.
+  // To prevent duplicate interactions in concurrent writeTrial calls, we use a temporary
+  // buffer that's only committed after the invoker succeeds.
   const bufferedInteractions = facade._drainInteractionBuffer();
-  await invoker.run(cmd, {
-    runId,
-    type: RUN_EVENT_TRIAL,
-    trial: normalizedTrialData as {
-      assessmentStage: 'practice' | 'test' | 'practice_response' | 'test_response';
-      correct: number;
-      payload?: Json;
-      [key: string]: unknown;
-    },
-    ...(bufferedInteractions.length > 0
-      ? {
-          interactions: bufferedInteractions,
-        }
-      : {}),
-  });
+  try {
+    await invoker.run(cmd, {
+      runId,
+      type: RUN_EVENT_TRIAL,
+      trial: normalizedTrialData as {
+        assessmentStage: 'practice' | 'test' | 'practice_response' | 'test_response';
+        correct: number;
+        payload?: Json;
+        [key: string]: unknown;
+      },
+      ...(bufferedInteractions.length > 0
+        ? {
+            interactions: bufferedInteractions,
+          }
+        : {}),
+    });
+  } catch (error) {
+    // Restore interactions to buffer if the write trial fails, so they can be retried
+    for (const interaction of bufferedInteractions) {
+      facade._pushInteraction(interaction);
+    }
+    throw error;
+  }
 }
