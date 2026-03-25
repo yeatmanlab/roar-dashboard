@@ -82,6 +82,9 @@ export type TaskVariantWithParameters = TaskVariant & {
 
 /**
  * Data required to create a new task.
+ *
+ * NOTE: While identical to the request body schema, this interface maintains
+ * a clear separation between API contract and service layer implementation.
  */
 export interface CreateTaskData {
   slug: string;

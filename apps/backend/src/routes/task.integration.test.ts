@@ -242,6 +242,279 @@ describe('GET /v1/tasks/:taskId', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/tasks
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/tasks', () => {
+  const path = '/v1/tasks';
+
+  /** Counter to generate unique slugs across tests. */
+  let taskCounter = 0;
+
+  /** Builds a valid create-task request body with a unique slug. */
+  function buildTaskBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    taskCounter += 1;
+    return {
+      slug: `test-task-${taskCounter}-${Date.now()}`,
+      name: `Test Task ${taskCounter}`,
+      nameSimple: `Test ${taskCounter}`,
+      nameTechnical: `test-task-technical-${taskCounter}`,
+      taskConfig: { difficulty: 'easy', levels: [1, 2, 3] },
+      ...overrides,
+    };
+  }
+
+  describe('authorization', () => {
+    it('superAdmin tier can create a task', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildTaskBody());
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toEqual(expect.any(String));
+    });
+
+    it('siteAdmin tier is forbidden from creating tasks', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildTaskBody());
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier is forbidden from creating tasks', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildTaskBody());
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from creating tasks', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildTaskBody());
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from creating tasks', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildTaskBody());
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from creating tasks', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildTaskBody());
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('successful creation', () => {
+    it('creates a task with all required fields', async () => {
+      const body = buildTaskBody();
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toEqual(expect.any(String));
+
+      // Verify the task was created in the database by fetching it
+      authenticateAs(tiers.superAdmin);
+      const getRes = await request(app).get(`/v1/tasks/${res.body.data.id}`).set('Authorization', 'Bearer token');
+
+      expect(getRes.status).toBe(StatusCodes.OK);
+      expect(getRes.body.data.slug).toBe(body.slug);
+      expect(getRes.body.data.name).toBe(body.name);
+      expect(getRes.body.data.nameSimple).toBe(body.nameSimple);
+      expect(getRes.body.data.nameTechnical).toBe(body.nameTechnical);
+      expect(getRes.body.data.taskConfig).toEqual(body.taskConfig);
+    });
+
+    it('creates a task with optional fields', async () => {
+      const body = buildTaskBody({
+        description: 'A detailed description of the task',
+        image: 'https://example.com/task-image.png',
+        tutorialVideo: 'https://example.com/tutorial.mp4',
+      });
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+
+      // Verify optional fields were saved
+      authenticateAs(tiers.superAdmin);
+      const getRes = await request(app).get(`/v1/tasks/${res.body.data.id}`).set('Authorization', 'Bearer token');
+
+      expect(getRes.status).toBe(StatusCodes.OK);
+      expect(getRes.body.data.description).toBe(body.description);
+      expect(getRes.body.data.image).toBe(body.image);
+      expect(getRes.body.data.tutorialVideo).toBe(body.tutorialVideo);
+    });
+
+    it('creates a task with complex taskConfig', async () => {
+      const complexConfig = {
+        difficulty: 'medium',
+        levels: [1, 2, 3, 4, 5],
+        settings: {
+          audio: true,
+          volume: 0.8,
+          hints: { enabled: true, maxHints: 3 },
+        },
+        stimuli: ['word1', 'word2', 'word3'],
+      };
+      const body = buildTaskBody({ taskConfig: complexConfig });
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+
+      // Verify complex taskConfig was saved correctly
+      authenticateAs(tiers.superAdmin);
+      const getRes = await request(app).get(`/v1/tasks/${res.body.data.id}`).set('Authorization', 'Bearer token');
+
+      expect(getRes.status).toBe(StatusCodes.OK);
+      expect(getRes.body.data.taskConfig).toEqual(complexConfig);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('POST', path).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 409 when slug already exists', async () => {
+      const duplicateSlug = `duplicate-slug-${Date.now()}`;
+
+      // Create the first task
+      authenticateAs(tiers.superAdmin);
+      const first = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: duplicateSlug }));
+
+      expect(first.status).toBe(StatusCodes.CREATED);
+
+      // Attempt to create another with the same slug
+      authenticateAs(tiers.superAdmin);
+      const second = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: duplicateSlug }));
+
+      expect(second.status).toBe(StatusCodes.CONFLICT);
+      expect(second.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('returns 400 when required field slug is missing', async () => {
+      const body = buildTaskBody();
+      delete (body as Record<string, unknown>).slug;
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when required field name is missing', async () => {
+      const body = buildTaskBody();
+      delete (body as Record<string, unknown>).name;
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when required field nameSimple is missing', async () => {
+      const body = buildTaskBody();
+      delete (body as Record<string, unknown>).nameSimple;
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when required field nameTechnical is missing', async () => {
+      const body = buildTaskBody();
+      delete (body as Record<string, unknown>).nameTechnical;
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when required field taskConfig is missing', async () => {
+      const body = buildTaskBody();
+      delete (body as Record<string, unknown>).taskConfig;
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(body);
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when slug format is invalid (uppercase)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'Invalid-Slug' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when slug format is invalid (spaces)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'invalid slug' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when slug format is invalid (underscores)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'invalid_slug' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when image is not a valid URL', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ image: 'not-a-valid-url' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when tutorialVideo is not a valid URL', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ tutorialVideo: 'not-a-valid-url' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // POST /v1/tasks/:taskId/variants
 // ═══════════════════════════════════════════════════════════════════════════
 
