@@ -53,10 +53,10 @@ function createMockContext(fetchImpl?: typeof fetch): CommandContext {
  */
 function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn();
-  fetchMock.mockImplementation((url: string | Request, init?: RequestInit) => {
+  fetchMock.mockImplementation((url: string | Request) => {
     // Extract URL string from Request object if needed
     const urlString = typeof url === 'string' ? url : url.url;
-    
+
     // Return 200 OK for event endpoints (POST /runs/:runId/event) - check this first
     if (urlString.includes('/event')) {
       return Promise.resolve({

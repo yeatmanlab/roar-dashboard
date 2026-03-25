@@ -74,6 +74,7 @@ export class FirekitFacade {
   #invoker: Invoker | undefined;
   #runId: string | undefined;
   #taskInfo: CompatTaskInfo | undefined;
+  interactionBuffer: AddInteractionInput[] = [];
 
   private constructor() {}
 
