@@ -29,6 +29,7 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { UserRole } from '../enums/user-role.enum';
+import { UserRepository } from '../repositories/user.repository';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -37,6 +38,7 @@ import { UserRole } from '../enums/user-role.enum';
 let app: express.Application;
 let expectRoute: ReturnType<typeof createRouteHelper>;
 let tiers: TierUsers;
+let userRepository: UserRepository;
 
 beforeAll(async () => {
   // Route modules must be imported dynamically — they instantiate services at
@@ -48,6 +50,7 @@ beforeAll(async () => {
   app = createTestApp(registerUserRoutes, registerMeRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+  userRepository = new UserRepository();
 
   // Assign tier educator to a class so they can access students via direct class membership (PATH 3)
   await UserClassFactory.create({
@@ -503,7 +506,9 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
-      const [updated] = await CoreDbClient.select().from(users).where(eq(users.id, targetUser.id));
+      // Verify database state using repository
+      const updated = await userRepository.getById({ id: targetUser.id });
+      expect(updated).not.toBeNull();
       expect(updated!.nameFirst).toBe('Updated');
       // Unchanged fields must not be affected
       expect(updated!.nameLast).toBe('Unchanged');
@@ -525,7 +530,9 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
-      const [updated] = await CoreDbClient.select().from(users).where(eq(users.id, targetUser.id));
+      // Verify database state using repository
+      const updated = await userRepository.getById({ id: targetUser.id });
+      expect(updated).not.toBeNull();
       expect(updated!.nameFirst).toBe('After');
       expect(updated!.nameLast).toBe('After');
       expect(updated!.grade).toBe('5');
@@ -542,7 +549,9 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.status).toBe(StatusCodes.NO_CONTENT);
 
-      const [updated] = await CoreDbClient.select().from(users).where(eq(users.id, targetUser.id));
+      // Verify database state using repository
+      const updated = await userRepository.getById({ id: targetUser.id });
+      expect(updated).not.toBeNull();
       expect(updated!.nameFirst).toBeNull();
       // Other fields must remain untouched
       expect(updated!.grade).toBe('6');
