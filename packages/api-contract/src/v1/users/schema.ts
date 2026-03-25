@@ -83,6 +83,7 @@ export const UpdateUserRequestBodySchema = z
     race: z.string().nullable().optional(),
     hispanicEthnicity: z.boolean().nullable().optional(),
     homeLanguage: z.string().nullable().optional(),
+    rosteringEnded: z.string().datetime().nullable().optional(),
   })
   .superRefine((payload, ctx) => {
     if (Object.keys(payload).length === 0) {
