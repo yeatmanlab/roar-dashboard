@@ -44,6 +44,7 @@ function toUserResponse(user: User, authContext: AuthContext): UserResponse {
     hispanicEthnicity: user.hispanicEthnicity,
     homeLanguage: user.homeLanguage,
     ...(authContext.isSuperAdmin && { isSuperAdmin: user.isSuperAdmin }),
+    rosteringEnded: user.rosteringEnded?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt?.toISOString() ?? null,
   };
