@@ -534,6 +534,20 @@ const routes = [
     },
   },
   {
+    path: APP_ROUTES.LAUNCH + GAME_ROUTES.ROAV_MP,
+    name: 'Launch Roav - MP',
+    component: () => import('../components/tasks/TaskRoav.vue'),
+    props: (route) => ({
+      taskId: 'roav-mp',
+      language: 'en',
+      launchId: route.params.launchId,
+    }),
+    meta: {
+      pageTitle: 'ROAR Survey',
+      permission: Permissions.Tasks.LAUNCH,
+    },
+  },
+  {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
     component: () => import('../pages/ManageTasksVariants.vue'),
