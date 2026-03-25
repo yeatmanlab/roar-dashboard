@@ -478,7 +478,7 @@ describe('PATCH /v1/users/:id', () => {
     it.skip('non-super admin users cannot update their own profile yet', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
-        .patch(`/v1/users/${tiers.student}`)
+        .patch(`/v1/users/${tiers.student.id}`)
         .set('Authorization', 'Bearer token')
         .send({ nameFirst: 'Self Update' });
 

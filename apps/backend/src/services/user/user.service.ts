@@ -194,7 +194,7 @@ export function UserService({
    *   1. Assign Permissions.Users.UPDATE to the appropriate roles in role-permissions.ts
    *   2. Remove the isSuperAdmin guard below
    *   3. Remove the manual getById 404 check below
-   *   4. Replace both with: await verifySupervisoryAccess(authContext, id, Permissions.Users.UPDATE)
+   *   4. Replace both with: await verifyUserAccess(authContext, id, Permissions.Users.UPDATE)
    *      which already handles 404-before-403, super-admin bypass, self-access, and role-based checks
    *
    * @param authContext - Requesting user's authentication context.
