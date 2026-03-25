@@ -20,6 +20,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
@@ -636,12 +637,7 @@ export async function writeTrial(
     await invoker.run(cmd, {
       runId,
       type: RUN_EVENT_TRIAL,
-      trial: normalizedTrialData as {
-        assessmentStage: 'practice' | 'test' | 'practice_response' | 'test_response';
-        correct: number;
-        payload?: Json;
-        [key: string]: unknown;
-      },
+      trial: normalizedTrialData as WriteTrialTrialCommandInput,
       ...(bufferedInteractions.length > 0
         ? {
             interactions: bufferedInteractions,
