@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PaginationQuerySchema, PaginationMetaSchema, createDynamicSortQuerySchema } from '../../common/query';
+import { PaginationQuerySchema, PaginationMetaSchema, createDynamicSortQuerySchema } from '../../../common/query';
 import {
   ReportScopeQuerySchema,
   createFilterQuerySchema,

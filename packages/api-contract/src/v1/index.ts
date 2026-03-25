@@ -6,7 +6,6 @@ import { DistrictsContract } from './districts/index';
 import { GroupsContract } from './groups/index';
 import { TasksContract } from './tasks/index';
 import { ClassesContract } from './classes/index';
-import { ProgressReportsContract } from './reports/progress/index';
 export * from './response';
 export * from './common/index';
 
@@ -20,7 +19,6 @@ export const ApiContractV1 = c.router({
   groups: GroupsContract,
   tasks: TasksContract,
   classes: ClassesContract,
-  progressReports: ProgressReportsContract,
 });
 
 export * from './me/index';
@@ -30,4 +28,3 @@ export * from './districts/index';
 export * from './groups/index';
 export * from './tasks/index';
 export * from './classes/index';
-export * from './reports/index';
