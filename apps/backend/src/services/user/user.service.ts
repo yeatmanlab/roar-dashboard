@@ -242,7 +242,7 @@ export function UserService({
 
     try {
       // Verify the target user exists.
-      // Note: verifySupervisoryAccess handles this automatically when the guard above is expanded.
+      // Note: verifyUserAccess handles this automatically when the guard above is expanded.
       const user = await userRepository.getById({ id });
       if (!user) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
