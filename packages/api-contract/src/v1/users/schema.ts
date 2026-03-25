@@ -19,7 +19,7 @@ import {
  */
 export const UserResponseSchema = z.object({
   id: z.string().uuid(),
-  assessmentPid: z.string(),
+  assessmentPid: z.string().nullable(),
   authProvider: z.array(AuthProviderSchema),
   nameFirst: z.string().nullable(),
   nameMiddle: z.string().nullable(),

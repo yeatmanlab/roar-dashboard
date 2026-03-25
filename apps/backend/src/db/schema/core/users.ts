@@ -73,8 +73,6 @@ export const users = db.table(
 
     isSuperAdmin: p.boolean().notNull().default(false),
 
-    rosteringEnded: p.timestamp({ withTimezone: true }),
-
     ...timestamps,
   },
   (table) => [
