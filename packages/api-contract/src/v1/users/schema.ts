@@ -42,6 +42,7 @@ export const UserResponseSchema = z.object({
   hispanicEthnicity: z.boolean().nullable(),
   homeLanguage: z.string().nullable(),
   isSuperAdmin: z.boolean().optional(), // Only visible to super admins
+  rosteringEnded: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().nullable(),
 });
