@@ -1,4 +1,4 @@
-import type { NewTaskVariant, NewTaskVariantParameter, User, Task, TaskVariant } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter, User, Task, TaskVariant, NewTask } from '../../db/schema';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
@@ -79,6 +79,20 @@ export type TaskFields = Pick<Task, 'name' | 'slug' | 'image'>;
 export type TaskVariantWithParameters = TaskVariant & {
   parameters: TaskVariantParameter[];
 };
+
+/**
+ * Data required to create a new task.
+ */
+export interface CreateTaskData {
+  slug: string;
+  name: string;
+  nameSimple: string;
+  nameTechnical: string;
+  taskConfig: unknown;
+  description?: string | undefined;
+  image?: string | undefined;
+  tutorialVideo?: string | undefined;
+}
 
 /**
  * Data structure expected by condition evaluation.
@@ -904,9 +918,75 @@ export function TaskService({
     }
   }
 
+  /**
+   * Creates a new task.
+   *
+   * Only super admins can create tasks.
+   *
+   * @param authContext - User's auth context (requires super admin privileges)
+   * @param body - Task data including slug, name, nameSimple, nameTechnical, taskConfig, and optional fields
+   * @returns An object containing the created task's UUID
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} CONFLICT if a task with the same slug already exists
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function create(authContext: AuthContext, body: CreateTaskData): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    try {
+      const taskData: NewTask = {
+        slug: body.slug,
+        name: body.name,
+        nameSimple: body.nameSimple,
+        nameTechnical: body.nameTechnical,
+        taskConfig: body.taskConfig,
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.image !== undefined && { image: body.image }),
+        ...(body.tutorialVideo !== undefined && { tutorialVideo: body.tutorialVideo }),
+      };
+
+      const result = await taskRepository.create({ data: taskData });
+
+      logger.info({ userId, taskId: result.id, slug: body.slug }, 'Created task');
+
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      const dbError = unwrapDrizzleError(error);
+
+      if (isUniqueViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, slug: body.slug },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, slug: body.slug } }, 'Failed to create task');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, slug: body.slug },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
+    create,
     listTaskVariants,
     getTaskVariant,
     createTaskVariant,
