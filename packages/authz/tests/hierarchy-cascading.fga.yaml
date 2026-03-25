@@ -44,6 +44,16 @@ tuples:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
 
+  # ─── Supervisory role at class level ───────────────────────────────
+  - user: user:class-teacher
+    relation: teacher
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
   # ─── Supervised roles at class level ───────────────────────────────
   - user: user:class-student
     relation: student
@@ -141,18 +151,69 @@ tests:
           can_update: false
           can_delete: false
 
-  # ─── Supervisory does NOT cascade UP ───────────────────────────────
+  # ─── Supervisory does NOT cascade UP (org permissions unaffected) ──
 
-  - name: School teacher does NOT cascade up to district
+  - name: School teacher does NOT cascade up to district (org-level)
     check:
       - user: user:school-teacher
         object: district:district-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
+          teacher: false
+          supervisory_tier_group: false
           can_list: false
           can_read: false
+
+  - name: Class teacher does NOT cascade up to school (org-level)
+    check:
+      - user: user:class-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          teacher: false
           supervisory_tier_group: false
+          can_list: false
+          can_read: false
+
+  # ─── Subtree supervisory (aggregated for administration access) ───
+
+  - name: School teacher is in district subtree_supervisory_tier_group
+    check:
+      - user: user:school-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
+
+  - name: Class teacher is in school subtree_supervisory_tier_group
+    check:
+      - user: user:class-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
+
+  - name: Class teacher is in district subtree_supervisory_tier_group (via school)
+    check:
+      - user: user:class-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
+
+  - name: District admin is in district subtree_supervisory_tier_group (direct)
+    check:
+      - user: user:district-admin
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
 
   # ─── Supervised bubbling UP ────────────────────────────────────────
 

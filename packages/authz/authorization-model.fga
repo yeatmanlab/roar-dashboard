@@ -12,6 +12,12 @@ type user
 # Supervisory roles cascade DOWN to child schools (via school.parent_org).
 # Supervised roles (student, caregivers) bubble UP from child schools
 # (via child_school).
+#
+# Supervisory roles do NOT bubble up into the district's own role
+# definitions — doing so would create circular cascading (school teacher
+# → district teacher → sibling school teacher), breaking school isolation.
+# Instead, subtree_supervisory_tier_group aggregates supervisory users from
+# child schools for use by the administration type's role resolution.
 # ────────────────────────────────────────────────────────────────────────────────
 type district
   relations
@@ -40,6 +46,12 @@ type district
     define supervisory_tier_group: admin_tier or educator_tier
     define member: supervisory_tier_group or student or caregiver_tier
 
+    # Subtree membership — aggregates supervisory users from the district's
+    # full subtree (child schools and their classes). Referenced only by the
+    # administration type for ancestor access; does NOT feed into district
+    # permissions, preserving school-level isolation.
+    define subtree_supervisory_tier_group: supervisory_tier_group or subtree_supervisory_tier_group from child_school
+
     # Permissions
     define can_list: supervisory_tier_group
     define can_read: supervisory_tier_group
@@ -58,6 +70,11 @@ type district
 # Inherits supervisory roles from parent district (via parent_org).
 # Supervised roles bubble UP from child classes (via child_class)
 # and further up to the parent district (via district.child_school).
+#
+# Like district, supervisory roles do NOT bubble up from child classes
+# into the school's own role definitions (circular cascading would break
+# sibling class isolation). subtree_supervisory_tier_group aggregates
+# them for the administration type instead.
 # ────────────────────────────────────────────────────────────────────────────────
 type school
   relations
@@ -86,6 +103,11 @@ type school
     define caregiver_tier: guardian or parent or relative
     define supervisory_tier_group: admin_tier or educator_tier
     define member: supervisory_tier_group or student or caregiver_tier
+
+    # Subtree membership — aggregates supervisory users from the school's
+    # child classes. Referenced only by the administration type for ancestor
+    # access; does NOT feed into school permissions, preserving class isolation.
+    define subtree_supervisory_tier_group: supervisory_tier_group or supervisory_tier_group from child_class
 
     # Permissions
     define can_list: supervisory_tier_group
@@ -199,6 +221,13 @@ type group
 # Individual roles must be enumerated (not tiers) because each resolves through
 # multiple "X from Y" paths (assigned_district, assigned_school, assigned_class).
 # Tiers are defined after role resolution for use in permissions.
+#
+# Ancestor access for supervisory roles: supervisory_tier_group additionally
+# includes subtree_supervisory_tier_group from assigned_district and
+# assigned_school. This lets a school teacher see a district-assigned
+# administration, and a class teacher see a school-assigned administration,
+# without bubbling supervisory roles up into the org types themselves (which
+# would break sibling isolation).
 # ────────────────────────────────────────────────────────────────────────────────
 type administration
   relations
@@ -227,7 +256,7 @@ type administration
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
     define educator_tier: principal or counselor or teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or educator_tier or subtree_supervisory_tier_group from assigned_district or subtree_supervisory_tier_group from assigned_school or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
 
     # Permissions
     define can_list: supervisory_tier_group or student or caregiver_tier

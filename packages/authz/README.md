@@ -55,15 +55,15 @@ Each role is modeled as its own FGA relation — no tier mapping. Tuples use the
 
 | Role | FGA relation | Tier | Cascading |
 |------|-------------|------|-----------|
-| `system_administrator` | `system_administrator` | siteAdmin | Down (supervisory) |
-| `site_administrator` | `site_administrator` | siteAdmin | Down |
-| `district_administrator` | `district_administrator` | admin | Down |
-| `administrator` | `administrator` | admin | Down |
-| `principal` | `principal` | educator | Down |
-| `counselor` | `counselor` | educator | Down |
-| `teacher` | `teacher` | educator | Down |
-| `aide` | `aide` | educator | Down |
-| `proctor` | `proctor` | educator | Down |
+| `system_administrator` | `system_administrator` | siteAdmin | Down + subtree (supervisory) |
+| `site_administrator` | `site_administrator` | siteAdmin | Down + subtree |
+| `district_administrator` | `district_administrator` | admin | Down + subtree |
+| `administrator` | `administrator` | admin | Down + subtree |
+| `principal` | `principal` | educator | Down + subtree |
+| `counselor` | `counselor` | educator | Down + subtree |
+| `teacher` | `teacher` | educator | Down + subtree |
+| `aide` | `aide` | educator | Down + subtree |
+| `proctor` | `proctor` | educator | Down + subtree |
 | `student` | `student` | student | Up (supervised) |
 | `guardian` | `guardian` | caregiver | Up |
 | `parent` | `parent` | caregiver | Up |
@@ -121,6 +121,40 @@ FGA resolution for "is user:X a student of district:D?":
 3. Check `student` tuples on `school:A` (which in turn follows `child_class` to `class:X`)
 
 This replaces the ltree ancestor/descendant UNION queries with pure FGA graph traversal.
+
+## Subtree supervisory access (administration ancestor access)
+
+In the SQL model, a school teacher sees administrations assigned to the parent district because the `isDescendantOrEqual` ltree operator matches both the entity where the user has a role AND its ancestors. Supervisory roles cascade **down** in FGA (district admin → school → class), but they do **not** cascade **up** — a school teacher is NOT a district teacher.
+
+Simply adding upward bubbling (`teacher from child_school` on district) would create **circular cascading**: a teacher at school-A would resolve as a teacher on the district, which would cascade back down to school-B via `teacher from parent_org`, breaking school isolation.
+
+The solution is `subtree_supervisory_tier_group` — a computed relation on district and school that aggregates supervisory users from the full subtree without feeding into the org type's own permissions:
+
+```
+# On district (recursive — includes school subtrees, reaching class-level teachers):
+define subtree_supervisory_tier_group: supervisory_tier_group or subtree_supervisory_tier_group from child_school
+
+# On school:
+define subtree_supervisory_tier_group: supervisory_tier_group or supervisory_tier_group from child_class
+```
+
+The `administration` type references these in its `supervisory_tier_group` definition:
+
+```
+define supervisory_tier_group: admin_tier or educator_tier
+    or subtree_supervisory_tier_group from assigned_district
+    or subtree_supervisory_tier_group from assigned_school
+```
+
+This gives the correct behavior:
+
+| User | District entity | District-assigned administration |
+|------|----------------|----------------------------------|
+| District admin | `can_list: true` | `can_list: true` |
+| School teacher | `can_list: false` (org isolation preserved) | `can_list: true` (via subtree) |
+| Class teacher | `can_list: false` | `can_list: true` (via subtree, two hops) |
+
+The key invariant: `subtree_supervisory_tier_group` is **never referenced by org permissions** (`can_list`, `can_read`, etc. still use `supervisory_tier_group`). It only flows into the administration type, so school/class isolation is preserved.
 
 ## Enrollment dates (conditions)
 

@@ -50,6 +50,16 @@ tuples:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
 
+  # ─── Supervisory role at class level (for subtree ancestor access) ─
+  - user: user:class-teacher
+    relation: teacher
+    object: class:class-x
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
   # ─── District-level educator (edge case for can_delete) ────────────
   - user: user:district-teacher
     relation: teacher
@@ -239,15 +249,71 @@ tests:
           can_update: false
           can_delete: false
 
-  - name: School teacher does NOT see district-level administration
+  - name: School teacher sees district-level administration (ancestor access via subtree)
     check:
       - user: user:school-teacher
         object: administration:admin-at-district
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: false
-          can_read: false
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
+
+  # ─── Class teacher permissions (ancestor access via subtree) ──────
+
+  - name: Class teacher sees class-assigned administration
+    check:
+      - user: user:class-teacher
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
+
+  - name: Class teacher sees school-assigned administration (ancestor access via subtree)
+    check:
+      - user: user:class-teacher
+        object: administration:admin-at-school
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
+
+  - name: Class teacher sees district-assigned administration (ancestor access via subtree, two hops)
+    check:
+      - user: user:class-teacher
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
 
   # ─── District-level educator permissions (edge case) ──────────────
 
@@ -443,7 +509,7 @@ tests:
             - administration:admin-at-school
             - administration:admin-at-class
 
-  - name: School teacher sees school and class administrations only
+  - name: School teacher sees all administrations in their ancestor tree
     list_objects:
       - user: user:school-teacher
         type: administration
@@ -451,6 +517,19 @@ tests:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
           can_list:
+            - administration:admin-at-district
+            - administration:admin-at-school
+            - administration:admin-at-class
+
+  - name: Class teacher sees all administrations in their ancestor tree
+    list_objects:
+      - user: user:class-teacher
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-at-district
             - administration:admin-at-school
             - administration:admin-at-class
 
@@ -498,10 +577,11 @@ tests:
               - user:district-admin
               - user:district-teacher
               - user:school-teacher
+              - user:class-teacher
               - user:student-x
               - user:class-guardian
 
-  - name: District-assigned administration lists users with can_list
+  - name: District-assigned administration lists users with can_list (includes subtree supervisory)
     list_users:
       - object: administration:admin-at-district
         user_filter:
@@ -513,6 +593,8 @@ tests:
             users:
               - user:district-admin
               - user:district-teacher
+              - user:school-teacher
+              - user:class-teacher
               - user:student-x
               - user:class-guardian
 
