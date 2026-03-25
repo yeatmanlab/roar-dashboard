@@ -1925,7 +1925,6 @@ describe('TaskService', () => {
     describe('successful retrieval with task slug', () => {
       it('should retrieve variant by task slug successfully', async () => {
         const taskSlug = 'test-task-slug';
-        taskRepository.getById.mockResolvedValue(null);
         taskRepository.getBySlug.mockResolvedValue(mockTask);
         taskVariantRepository.getById.mockResolvedValue(mockVariant);
         taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
