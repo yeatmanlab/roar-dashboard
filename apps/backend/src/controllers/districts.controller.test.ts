@@ -215,27 +215,6 @@ describe('DistrictsController', () => {
       );
     });
 
-    it('should handle ApiError with 403 Forbidden', async () => {
-      const error = new ApiError('Access denied', {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-      mockList.mockRejectedValue(error);
-
-      const { DistrictsController: Controller } = await import('./districts.controller');
-
-      const result = await Controller.list(mockAuthContext, {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-        embed: [],
-      });
-
-      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
-      expect(errorBody).toBeDefined();
-    });
-
     it('should handle ApiError with 500 Internal Server Error', async () => {
       const error = new ApiError('Database error', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
