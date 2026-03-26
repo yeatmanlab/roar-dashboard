@@ -137,6 +137,58 @@ tuples:
     relation: assigned_class
     object: administration:admin-multi
 
+  # ─── Admin-tier roles (spot-check non-district_administrator) ─────
+  - user: user:sys-admin
+    relation: system_administrator
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:site-admin
+    relation: site_administrator
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Non-teacher educator roles ──────────────────────────────────
+  - user: user:school-counselor
+    relation: counselor
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:class-aide
+    relation: aide
+    object: class:class-x
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:district-proctor
+    relation: proctor
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Administration assigned to school + group simultaneously ────
+  - user: school:school-a
+    relation: assigned_school
+    object: administration:admin-school-and-group
+  - user: group:group-g
+    relation: assigned_group
+    object: administration:admin-school-and-group
+
   # ─── Cross-tree user: teacher in tree B + student in tree A ──────
   - user: user:cross-tree-user
     relation: teacher
@@ -540,6 +592,143 @@ tests:
           can_read_scores: true
           can_create_run: false
 
+  # ─── Admin-tier role spot-checks ───────────────────────────────────
+
+  - name: System administrator sees district-assigned administration
+    check:
+      - user: user:sys-admin
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
+
+  - name: Site administrator sees class-assigned administration (descendant access)
+    check:
+      - user: user:site-admin
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  # ─── Non-teacher educator role spot-checks ───────────────────────
+
+  - name: School counselor sees school-assigned administration
+    check:
+      - user: user:school-counselor
+        object: administration:admin-at-school
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
+
+  - name: School counselor sees district-assigned administration (ancestor access via subtree)
+    check:
+      - user: user:school-counselor
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+
+  - name: Class aide sees class-assigned administration
+    check:
+      - user: user:class-aide
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
+
+  - name: Class aide sees district-assigned administration (ancestor access via subtree, two hops)
+    check:
+      - user: user:class-aide
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+
+  - name: District proctor sees district-assigned administration
+    check:
+      - user: user:district-proctor
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_create_run: false
+
+  # ─── Administration assigned to school + group ────────────────────
+
+  - name: School teacher sees school+group administration (via school assignment)
+    check:
+      - user: user:school-teacher
+        object: administration:admin-school-and-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+
+  - name: Group member sees school+group administration (via group assignment only)
+    check:
+      - user: user:group-member
+        object: administration:admin-school-and-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_read_scores: false
+
+  - name: Admin in tree B cannot see school+group administration (wrong tree)
+    check:
+      - user: user:admin-b
+        object: administration:admin-school-and-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
   # ─── Cross-administration denial ───────────────────────────────────
 
   - name: Admin in tree A cannot see administrations in tree B
@@ -616,6 +805,7 @@ tests:
             - administration:admin-at-school
             - administration:admin-at-class
             - administration:admin-multi
+            - administration:admin-school-and-group
 
   - name: Student sees all administrations in their ancestor tree
     list_objects:
@@ -629,6 +819,7 @@ tests:
             - administration:admin-at-school
             - administration:admin-at-class
             - administration:admin-multi
+            - administration:admin-school-and-group
 
   - name: School teacher sees all administrations in their ancestor tree
     list_objects:
@@ -642,6 +833,7 @@ tests:
             - administration:admin-at-school
             - administration:admin-at-class
             - administration:admin-multi
+            - administration:admin-school-and-group
 
   - name: Class teacher sees all administrations in their ancestor tree
     list_objects:
@@ -655,8 +847,9 @@ tests:
             - administration:admin-at-school
             - administration:admin-at-class
             - administration:admin-multi
+            - administration:admin-school-and-group
 
-  - name: Group member sees only group administration
+  - name: Group member sees group administrations
     list_objects:
       - user: user:group-member
         type: administration
@@ -665,6 +858,7 @@ tests:
         assertions:
           can_list:
             - administration:admin-at-group
+            - administration:admin-school-and-group
 
   - name: Admin B sees only tree B administrations
     list_objects:
@@ -699,8 +893,13 @@ tests:
             users:
               - user:district-admin
               - user:district-teacher
+              - user:sys-admin
+              - user:site-admin
+              - user:district-proctor
               - user:school-teacher
+              - user:school-counselor
               - user:class-teacher
+              - user:class-aide
               - user:student-x
               - user:cross-tree-user
 
@@ -716,8 +915,13 @@ tests:
             users:
               - user:district-admin
               - user:district-teacher
+              - user:sys-admin
+              - user:site-admin
+              - user:district-proctor
               - user:school-teacher
+              - user:school-counselor
               - user:class-teacher
+              - user:class-aide
               - user:student-x
               - user:cross-tree-user
 

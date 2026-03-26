@@ -58,9 +58,16 @@ tests:
           can_read: true
           can_list_users: true
           can_list_children: true
+          can_create_child: true
+          can_read_child: true
+          can_update_child: true
+          can_delete_child: true
+          can_create: false
+          can_update: false
+          can_delete: false
           member: true
 
-  - name: Child is a member but cannot list/read, list users, or list children
+  - name: Child is a member but cannot list/read, list users, or manage children
     check:
       - user: user:child-a
         object: family:family-1
@@ -72,6 +79,13 @@ tests:
           can_read: false
           can_list_users: false
           can_list_children: false
+          can_create_child: false
+          can_read_child: false
+          can_update_child: false
+          can_delete_child: false
+          can_create: false
+          can_update: false
+          can_delete: false
 
   - name: Parent cannot see another family
     check:
@@ -83,6 +97,10 @@ tests:
           can_list: false
           can_read: false
           can_list_children: false
+          can_create_child: false
+          can_read_child: false
+          can_update_child: false
+          can_delete_child: false
           member: false
 
   - name: Child cannot see another family
@@ -107,3 +125,10 @@ tests:
           can_read: false
           member: false
           can_list_children: false
+          can_create_child: false
+          can_read_child: false
+          can_update_child: false
+          can_delete_child: false
+          can_create: false
+          can_update: false
+          can_delete: false
