@@ -539,29 +539,5 @@ describe('SchoolRepository', () => {
       expect(result).toBeDefined();
       expect(result?.id).toBe(baseFixture.schoolA.id);
     });
-
-    it('excludes schools with rosteringEnded by default', async () => {
-      const endedSchool = await OrgFactory.create({
-        orgType: OrgType.SCHOOL,
-        name: 'Ended School for Auth By ID Test',
-        parentOrgId: baseFixture.district.id,
-        rosteringEnded: new Date('2020-01-01'),
-      });
-
-      // Assign user to the ended school
-      await UserOrgFactory.create({
-        userId: baseFixture.districtAdmin.id,
-        orgId: endedSchool.id,
-        role: UserRole.ADMINISTRATOR,
-      });
-
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        endedSchool.id,
-      );
-
-      // Should return null because school has rosteringEnded
-      expect(result).toBeNull();
-    });
   });
 });

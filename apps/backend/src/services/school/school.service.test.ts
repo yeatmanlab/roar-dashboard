@@ -392,17 +392,12 @@ describe('SchoolService', () => {
         schoolRepository: mockSchoolRepository,
       });
 
-      await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id')).rejects.toThrow(
-        ApiError,
-      );
-
-      try {
-        await service.getById({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id');
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
-        expect((err as ApiError).code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-      }
+      await expect(
+        service.getById({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id'),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
 
       // Should check unrestricted first, not authorized
       expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith('non-existent-id');
@@ -434,17 +429,12 @@ describe('SchoolService', () => {
         schoolRepository: mockSchoolRepository,
       });
 
-      await expect(service.getById({ userId: 'user-no-access', isSuperAdmin: false }, mockSchool.id)).rejects.toThrow(
-        ApiError,
-      );
-
-      try {
-        await service.getById({ userId: 'user-no-access', isSuperAdmin: false }, mockSchool.id);
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).statusCode).toBe(StatusCodes.FORBIDDEN);
-        expect((err as ApiError).code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-      }
+      await expect(
+        service.getById({ userId: 'user-no-access', isSuperAdmin: false }, mockSchool.id),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
 
       expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith(mockSchool.id);
       expect(mockSchoolRepository.getAuthorizedById).toHaveBeenCalledWith(
@@ -486,15 +476,10 @@ describe('SchoolService', () => {
         schoolRepository: mockSchoolRepository,
       });
 
-      await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'some-id')).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById({ userId: 'user-123', isSuperAdmin: false }, 'some-id');
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((err as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      }
+      await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'some-id')).rejects.toMatchObject({
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     });
 
     it('should rethrow ApiError without wrapping', async () => {
@@ -519,16 +504,14 @@ describe('SchoolService', () => {
         schoolRepository: mockSchoolRepository,
       });
 
-      try {
-        await service.getById({ userId: 'user-456', isSuperAdmin: false }, 'missing-school-id');
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        const apiError = err as ApiError;
-        expect(apiError.context).toMatchObject({
+      await expect(
+        service.getById({ userId: 'user-456', isSuperAdmin: false }, 'missing-school-id'),
+      ).rejects.toMatchObject({
+        context: {
           userId: 'user-456',
           schoolId: 'missing-school-id',
-        });
-      }
+        },
+      });
     });
 
     it('should include context in 403 error', async () => {
@@ -540,16 +523,52 @@ describe('SchoolService', () => {
         schoolRepository: mockSchoolRepository,
       });
 
-      try {
-        await service.getById({ userId: 'unauthorized-user', isSuperAdmin: false }, 'restricted-school');
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        const apiError = err as ApiError;
-        expect(apiError.context).toMatchObject({
+      await expect(
+        service.getById({ userId: 'unauthorized-user', isSuperAdmin: false }, 'restricted-school'),
+      ).rejects.toMatchObject({
+        context: {
           userId: 'unauthorized-user',
           schoolId: 'restricted-school',
-        });
-      }
+        },
+      });
+    });
+
+    it('should return 404 when regular user accesses ended school (not 403)', async () => {
+      const endedSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(endedSchool);
+      mockSchoolRepository.getAuthorizedById.mockResolvedValue(endedSchool);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(
+        service.getById({ userId: 'user-with-access', isSuperAdmin: false }, endedSchool.id),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('should return ended school for super admin', async () => {
+      const endedSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(endedSchool);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      const result = await service.getById({ userId: 'admin-123', isSuperAdmin: true }, endedSchool.id);
+
+      expect(result).toEqual(endedSchool);
+      // Super admin should bypass both authorization and rosteringEnded checks
+      expect(mockSchoolRepository.getAuthorizedById).not.toHaveBeenCalled();
     });
   });
 });

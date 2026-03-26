@@ -137,6 +137,16 @@ export function SchoolService({
         });
       }
 
+      // 4. Check if school has ended rostering (business rule, not authorization)
+      // Return 404 instead of showing ended schools to regular users
+      if (authorized.rosteringEnded) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
       return authorized;
     } catch (error) {
       if (error instanceof ApiError) {
