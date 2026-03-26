@@ -324,6 +324,24 @@ describe('TasksController', () => {
         expect(result.body.data.taskConfig).toEqual({ difficulty: 'easy' });
       }
     });
+
+    it('should call service with correct parameters for UUID task ID', async () => {
+      mockGetById.mockResolvedValue(mockTask);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await Controller.get(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000');
+    });
+
+    it('should call service with correct parameters for slug task ID', async () => {
+      mockGetById.mockResolvedValue(mockTask);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await Controller.get(mockAuthContext, 'swr');
+
+      expect(mockGetById).toHaveBeenCalledWith(mockAuthContext, 'swr');
+    });
   });
 
   describe('createTaskVariant', () => {

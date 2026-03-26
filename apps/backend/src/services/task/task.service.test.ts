@@ -1607,7 +1607,7 @@ describe('TaskService', () => {
   describe('getById', () => {
     const validTaskId = '123e4567-e89b-12d3-a456-426614174000';
 
-    describe('successful retrieval', () => {
+    describe('successful retrieval with UUID', () => {
       it('should return task when found by valid UUID', async () => {
         const mockTask = TaskFactory.build({ id: validTaskId });
         taskRepository.getById.mockResolvedValue(mockTask);
@@ -1631,8 +1631,35 @@ describe('TaskService', () => {
       });
     });
 
+    describe('successful retrieval with task slug', () => {
+      it('should return task when found by slug', async () => {
+        const taskSlug = 'swr';
+        const mockTask = TaskFactory.build({ slug: taskSlug });
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+
+        const result = await taskService.getById(authContext, taskSlug);
+
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith(taskSlug);
+        expect(taskRepository.getById).not.toHaveBeenCalled();
+      });
+
+      it('should allow non-super-admin users to get task by slug', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+        const taskSlug = 'letter-task';
+        const mockTask = TaskFactory.build({ slug: taskSlug });
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+
+        const result = await taskService.getById(nonAdminContext, taskSlug);
+
+        // Tasks are global resources - all authenticated users can view them
+        expect(result).toEqual(mockTask);
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith(taskSlug);
+      });
+    });
+
     describe('not found', () => {
-      it('should throw NOT_FOUND when task does not exist', async () => {
+      it('should throw NOT_FOUND when task does not exist by UUID', async () => {
         taskRepository.getById.mockResolvedValue(null);
 
         await expect(taskService.getById(authContext, validTaskId)).rejects.toMatchObject({
@@ -1640,6 +1667,65 @@ describe('TaskService', () => {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId: 'admin-1', taskId: validTaskId },
+        });
+      });
+
+      it('should throw NOT_FOUND when task does not exist by slug', async () => {
+        const taskSlug = 'nonexistent-slug';
+        taskRepository.getBySlug.mockResolvedValue(null);
+
+        await expect(taskService.getById(authContext, taskSlug)).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: 'admin-1', taskId: taskSlug },
+        });
+      });
+    });
+
+    describe('UUID vs slug detection', () => {
+      it('should use getById for UUID-formatted task ID', async () => {
+        const mockTask = TaskFactory.build({ id: validTaskId });
+        taskRepository.getById.mockResolvedValue(mockTask);
+
+        await taskService.getById(authContext, validTaskId);
+
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: validTaskId });
+        expect(taskRepository.getBySlug).not.toHaveBeenCalled();
+      });
+
+      it('should use getBySlug for non-UUID formatted task ID', async () => {
+        const slug = 'reading-comprehension';
+        const mockTask = TaskFactory.build({ slug });
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+
+        await taskService.getById(authContext, slug);
+
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith(slug);
+        expect(taskRepository.getById).not.toHaveBeenCalled();
+      });
+
+      it('should handle case-sensitive slug lookup', async () => {
+        const taskWithLowerSlug = TaskFactory.build({ slug: 'swr' });
+        taskRepository.getBySlug.mockImplementation((slug) => {
+          if (slug === 'swr') return Promise.resolve(taskWithLowerSlug);
+          return Promise.resolve(null);
+        });
+
+        // Lowercase slug should work
+        const result = await taskService.getById(authContext, 'swr');
+        expect(result.slug).toBe('swr');
+
+        // Uppercase slug should fail (not found)
+        await expect(taskService.getById(authContext, 'SWR')).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+
+        // Mixed case slug should fail (not found)
+        await expect(taskService.getById(authContext, 'SwR')).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
         });
       });
     });

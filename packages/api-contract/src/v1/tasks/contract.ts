@@ -10,6 +10,7 @@ import {
   TasksListQuerySchema,
   TasksListResponseSchema,
   TaskIdParamSchema,
+  GetTaskPathParamSchema,
   GetTaskVariantPathParamSchema,
   TaskSchema,
   ListTaskVariantsQuerySchema,
@@ -48,7 +49,7 @@ export const TasksContract = c.router(
     get: {
       method: 'GET',
       path: '/:taskId',
-      pathParams: TaskIdParamSchema,
+      pathParams: GetTaskPathParamSchema,
       responses: {
         200: SuccessEnvelopeSchema(TaskSchema),
         400: ErrorEnvelopeSchema,
@@ -57,13 +58,12 @@ export const TasksContract = c.router(
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
-      summary: 'Get a task by ID',
+      summary: 'Get a task by ID or slug',
       description:
-        'Returns a single task by its UUID. ' +
-        'The taskId path parameter must be a valid UUID. ' +
+        'Returns a single task by its UUID or slug. ' +
+        'Supports task lookup by task UUID or slug (case-sensitive). ' +
         'Returns 200 with the task on success. ' +
-        'Returns 400 if the ID is invalid. ' +
-        'Returns 404 if no task exists with the given ID. ' +
+        'Returns 404 if no task exists with the given ID or slug. ' +
         'Returns 500 if a server error occurs.',
     },
     listTaskVariants: {

@@ -17,6 +17,18 @@ export const TaskIdParamSchema = z.object({
 });
 
 /**
+ * Schema for GET task path parameters.
+ * Supports task lookup by task UUID or slug (case-sensitive).
+ *
+ * @remarks
+ * This endpoint accepts either UUID or slug to support both programmatic access
+ * (where UUIDs are known) and flexible client-side lookups (where slugs are more user-friendly).
+ */
+export const GetTaskPathParamSchema = z.object({
+  taskId: z.string(),
+});
+
+/**
  * Schema for GET task variant path parameters.
  * Supports task variant lookup by task UUID or slug (case-sensitive).
  * Validates that the task variant format matches the database constraints.
@@ -358,6 +370,11 @@ export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
  * Type for task ID parameters in path operations.
  */
 export type TaskIdParam = z.infer<typeof TaskIdParamSchema>;
+
+/**
+ * Type for GET task path parameters (UUID or slug).
+ */
+export type GetTaskPathParam = z.infer<typeof GetTaskPathParamSchema>;
 
 /**
  * Type for task variant path parameters in path operations.

@@ -172,6 +172,52 @@ describe('GET /v1/tasks/:taskId', () => {
     });
   });
 
+  describe('lookup by slug', () => {
+    it('returns 200 when task is looked up by slug', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(`/v1/tasks/${baseFixture.task.slug}`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(baseFixture.task.id);
+      expect(res.body.data.slug).toBe(baseFixture.task.slug);
+    });
+
+    it('returns 404 when task slug does not match any task', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get('/v1/tasks/nonexistent-slug').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('task slug is case-sensitive', async () => {
+      const uniqueSlug = `get-task-${Date.now()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+
+      authenticateAs(tiers.superAdmin);
+
+      // Correct lowercase slug should succeed
+      const resLower = await request(app).get(`/v1/tasks/${uniqueSlug}`).set('Authorization', 'Bearer token');
+
+      expect(resLower.status).toBe(StatusCodes.OK);
+      expect(resLower.body.data.id).toBe(testTask.id);
+
+      // Uppercase slug should fail (not found)
+      const resUpper = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.toUpperCase()}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resUpper.status).toBe(StatusCodes.NOT_FOUND);
+
+      // Mixed case slug should fail (not found)
+      const resMixed = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.charAt(0).toUpperCase()}${uniqueSlug.slice(1)}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resMixed.status).toBe(StatusCodes.NOT_FOUND);
+    });
+  });
+
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
@@ -185,13 +231,6 @@ describe('GET /v1/tasks/:taskId', () => {
 
       expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-    });
-
-    it('returns 400 when taskId is not a valid UUID', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app).get('/v1/tasks/not-a-valid-uuid').set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
   });
 });
