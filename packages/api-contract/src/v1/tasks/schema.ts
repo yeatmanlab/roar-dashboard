@@ -24,7 +24,6 @@ export const TaskIdParamSchema = z.object({
  * @remarks
  * This endpoint accepts either UUID or slug to support both programmatic access
  * (where UUIDs are known) and flexible client-side lookups (where slugs are more user-friendly).
- * Other endpoints like listTaskVariants require UUID for consistency and performance.
  */
 export const GetTaskVariantPathParamSchema = z.object({
   taskId: z.string(),
