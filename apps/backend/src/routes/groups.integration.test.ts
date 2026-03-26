@@ -310,6 +310,25 @@ describe('GET /v1/groups/:groupId/users', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
+    it('returns 403 when user is admin of a different group', async () => {
+      const groupB = await GroupFactory.create({ name: 'Isolated Group B' });
+      const isolatedUser = await UserFactory.create({
+        nameFirst: 'Isolated',
+        nameLast: 'Admin',
+        email: 'isolated-admin@example.com',
+      });
+      await UserGroupFactory.create({
+        userId: isolatedUser.id,
+        groupId: groupB.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+      const res = await expectRoute('GET', testUserGroupPath())
+        .as({ id: isolatedUser.id, authId: isolatedUser.authId! })
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
     it('returns 404 when group does not exist', async () => {
       const res = await expectRoute('GET', '/v1/groups/00000000-0000-0000-0000-000000000000/users')
         .as(tiers.admin)
