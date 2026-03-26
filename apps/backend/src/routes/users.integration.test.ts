@@ -471,71 +471,6 @@ describe('PATCH /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('admin tier cannot make themselves super admin', async () => {
-      authenticateAs(tiers.admin);
-      const res = await request(app)
-        .patch(`/v1/users/${tiers.admin.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ isSuperAdmin: true });
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('siteAdmin tier cannot make themselves super admin', async () => {
-      authenticateAs(tiers.siteAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${tiers.siteAdmin.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ isSuperAdmin: true });
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('educator tier cannot make themselves super admin', async () => {
-      authenticateAs(tiers.educator);
-      const res = await request(app)
-        .patch(`/v1/users/${tiers.educator.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ isSuperAdmin: true });
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('caregiver tier cannot make themselves super admin', async () => {
-      authenticateAs(tiers.caregiver);
-      const res = await request(app)
-        .patch(`/v1/users/${tiers.caregiver.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ isSuperAdmin: true });
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('student tier cannot make themselves super admin', async () => {
-      authenticateAs(tiers.student);
-      const res = await request(app)
-        .patch(`/v1/users/${tiers.student.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ isSuperAdmin: true });
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('superAdmin tier can make themselves not super admin', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${tiers.superAdmin.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ isSuperAdmin: false });
-
-      expect(res.status).toBe(StatusCodes.OK);
-    });
-
     // Self-update is not yet permitted for non-super-admin users.
     // To enable: assign Permissions.Users.UPDATE to roles in role-permissions.ts,
     // then the service's update() will delegate to verifySupervisoryAccess which
@@ -689,6 +624,23 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.status).toBe(StatusCodes.CONFLICT);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Schema strictness
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('schema strictness', () => {
+    it('rejects unknown fields like isSuperAdmin', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${tiers.superAdmin.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Valid', isSuperAdmin: true });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.message).toContain('isSuperAdmin');
     });
   });
 

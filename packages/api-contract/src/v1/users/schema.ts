@@ -58,9 +58,11 @@ export type UserResponse = z.infer<typeof UserResponseSchema>;
  *
  * Excluded from this schema (system-managed, not updatable via API):
  * - id, assessmentPid, authId, authProvider — identity/rostering fields
- * - isSuperAdmin — security-sensitive, managed separately
+ * - isSuperAdmin — security-sensitive, not user-updatable
  * - schoolLevel — DB-generated from grade
  * - createdAt, updatedAt — managed by DB triggers
+ *
+ * Unknown fields in the request body will be rejected with a validation error.
  */
 export const UpdateUserRequestBodySchema = z
   .object({
@@ -84,6 +86,7 @@ export const UpdateUserRequestBodySchema = z
     hispanicEthnicity: z.boolean().nullable().optional(),
     homeLanguage: z.string().nullable().optional(),
   })
+  .strict()
   .superRefine((payload, ctx) => {
     if (Object.keys(payload).length === 0) {
       ctx.addIssue({
