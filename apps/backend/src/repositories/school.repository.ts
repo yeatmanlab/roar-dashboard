@@ -105,7 +105,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
 
       const schoolsWithCounts = result.items.map((school) => ({
         ...school,
-        counts: countsMap.get(school.id),
+        counts: countsMap.get(school.id) ?? { users: 0, classes: 0 },
       })) as SchoolWithCounts[];
 
       return {
@@ -216,7 +216,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
    * @param schoolIds - Array of school IDs to fetch counts for
    * @returns Map of school ID to counts
    */
-  async fetchSchoolCounts(schoolIds: string[]): Promise<Map<string, SchoolCounts>> {
+  private async fetchSchoolCounts(schoolIds: string[]): Promise<Map<string, SchoolCounts>> {
     // Pre-aggregate user counts per school
     const userCounts = this.db
       .select({

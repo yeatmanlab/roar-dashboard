@@ -106,7 +106,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
       const districtsWithCounts = result.items.map((district) => ({
         ...district,
-        counts: countsMap.get(district.id),
+        counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
       })) as DistrictWithCounts[];
 
       return {
@@ -195,7 +195,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
       districts = districts.map((district) => ({
         ...district,
-        counts: countsMap.get(district.id),
+        counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
       }));
     }
 
@@ -220,7 +220,10 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param includeEnded - Whether to include ended organizations in school counts
    * @returns Map of district ID to counts
    */
-  async fetchDistrictCounts(districtIds: string[], includeEnded: boolean): Promise<Map<string, DistrictCounts>> {
+  private async fetchDistrictCounts(
+    districtIds: string[],
+    includeEnded: boolean,
+  ): Promise<Map<string, DistrictCounts>> {
     // Pre-aggregate user counts per district
     const userCounts = this.db
       .select({
