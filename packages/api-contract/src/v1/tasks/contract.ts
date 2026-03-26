@@ -9,7 +9,6 @@ import {
   UpdateTaskVariantPathParamSchema,
   TasksListQuerySchema,
   TasksListResponseSchema,
-  TaskIdParamSchema,
   GetTaskPathParamSchema,
   GetTaskVariantPathParamSchema,
   TaskSchema,
@@ -69,7 +68,7 @@ export const TasksContract = c.router(
     listTaskVariants: {
       method: 'GET',
       path: '/:taskId/variants',
-      pathParams: TaskIdParamSchema,
+      pathParams: GetTaskPathParamSchema,
       query: ListTaskVariantsQuerySchema,
       responses: {
         200: SuccessEnvelopeSchema(ListTaskVariantsResponseSchema),
@@ -82,6 +81,7 @@ export const TasksContract = c.router(
       summary: 'List variants for a task',
       description:
         'Returns a paginated list of variants for the specified task. ' +
+        'Supports task lookup by task UUID or slug (case-sensitive). ' +
         'All users can see published variants. Super admins can see all variants (draft, published, deprecated). ' +
         'Supports pagination (page, perPage), searching by name or description, and sorting by name, status, createdAt, or updatedAt. ' +
         'Returns 404 if the task does not exist.',

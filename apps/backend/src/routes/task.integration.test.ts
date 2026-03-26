@@ -1208,12 +1208,54 @@ describe('GET /v1/tasks/:taskId/variants', () => {
       expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
+  });
 
-    it('returns 400 when taskId is not a valid UUID', async () => {
+  describe('lookup by slug', () => {
+    it('returns 200 when task variants are listed by task slug', async () => {
+      const uniqueSlug = `list-variants-slug-${Date.now()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+      await TaskVariantFactory.create({ taskId: testTask.id, status: 'published' });
+
       authenticateAs(tiers.superAdmin);
-      const res = await request(app).get('/v1/tasks/not-a-valid-uuid/variants').set('Authorization', 'Bearer token');
+      const res = await request(app).get(`/v1/tasks/${uniqueSlug}/variants`).set('Authorization', 'Bearer token');
 
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(1);
+    });
+
+    it('returns 404 when task slug does not match any task', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get('/v1/tasks/nonexistent-slug/variants').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('task slug is case-sensitive', async () => {
+      const uniqueSlug = `list-variants-case-${Date.now()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+      await TaskVariantFactory.create({ taskId: testTask.id, status: 'published' });
+
+      authenticateAs(tiers.superAdmin);
+
+      // Correct lowercase slug should succeed
+      const resLower = await request(app).get(`/v1/tasks/${uniqueSlug}/variants`).set('Authorization', 'Bearer token');
+
+      expect(resLower.status).toBe(StatusCodes.OK);
+
+      // Uppercase slug should fail (not found)
+      const resUpper = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.toUpperCase()}/variants`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resUpper.status).toBe(StatusCodes.NOT_FOUND);
+
+      // Mixed case slug should fail (not found)
+      const resMixed = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.charAt(0).toUpperCase()}${uniqueSlug.slice(1)}/variants`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resMixed.status).toBe(StatusCodes.NOT_FOUND);
     });
   });
 });

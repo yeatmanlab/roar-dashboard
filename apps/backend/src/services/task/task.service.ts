@@ -273,8 +273,14 @@ export function TaskService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      // Verify the parent task exists (404 before any data access)
-      const task = await taskRepository.getById({ id: taskId });
+      // Parse taskId: if it's a UUID format, look up by ID; otherwise by slug
+      let task: Task | null = null;
+
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
+      } else {
+        task = await taskRepository.getBySlug(taskId);
+      }
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
@@ -287,7 +293,7 @@ export function TaskService({
       // Super admins can use any status filter (or none to see all)
       // Non-super admins are restricted to 'published' only
       const status = isSuperAdmin ? options.status : TaskVariantStatus.PUBLISHED;
-      const filter = status ? { taskId, status } : { taskId };
+      const filter = status ? { taskId: task.id, status } : { taskId: task.id };
       const variants = await taskVariantRepository.listByTaskId(filter, options);
 
       // Fetch all parameters for all variants in a single query

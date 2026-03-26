@@ -1006,6 +1006,32 @@ describe('TasksController', () => {
       const { TasksController: Controller } = await import('./tasks.controller');
       await expect(Controller.listTaskVariants(mockAuthContext, 'task-123', query)).rejects.toThrow(unexpectedError);
     });
+
+    it('should call service with correct parameters for UUID task ID', async () => {
+      mockListVariants.mockResolvedValue({ items: [], totalItems: 0, task: mockTask });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await Controller.listTaskVariants(mockAuthContext, '123e4567-e89b-12d3-a456-426614174000', query);
+
+      expect(mockListVariants).toHaveBeenCalledWith(
+        mockAuthContext,
+        '123e4567-e89b-12d3-a456-426614174000',
+        expect.any(Object),
+      );
+    });
+
+    it('should call service with correct parameters for slug task ID', async () => {
+      mockListVariants.mockResolvedValue({ items: [], totalItems: 0, task: mockTask });
+
+      const query = { page: 1, perPage: 25, sortBy: 'name', sortOrder: 'asc' } as const;
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await Controller.listTaskVariants(mockAuthContext, 'swr', query);
+
+      expect(mockListVariants).toHaveBeenCalledWith(mockAuthContext, 'swr', expect.any(Object));
+    });
   });
 
   describe('getTaskVariant', () => {
