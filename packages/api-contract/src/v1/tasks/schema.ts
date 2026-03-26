@@ -20,9 +20,14 @@ export const TaskIdParamSchema = z.object({
  * Schema for GET task variant path parameters.
  * Supports task variant lookup by task UUID or slug (case-sensitive).
  * Validates that the task variant format matches the database constraints.
+ *
+ * @remarks
+ * This endpoint accepts either UUID or slug to support both programmatic access
+ * (where UUIDs are known) and flexible client-side lookups (where slugs are more user-friendly).
+ * Other endpoints like listTaskVariants require UUID for consistency and performance.
  */
 export const GetTaskVariantPathParamSchema = z.object({
-  taskId: z.string(), // Allow task-variant lookup to use either a slug or a UUID
+  taskId: z.string(),
   variantId: z.string().uuid(),
 });
 

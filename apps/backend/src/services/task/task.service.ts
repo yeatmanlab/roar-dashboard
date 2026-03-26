@@ -1,5 +1,5 @@
 import type { NewTaskVariant, NewTaskVariantParameter, User, Task, TaskVariant } from '../../db/schema';
-import type { TaskVariantStatus } from '../../enums/task-variant-status.enum';
+import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import { StatusCodes } from 'http-status-codes';
@@ -286,7 +286,7 @@ export function TaskService({
 
       // Super admins can use any status filter (or none to see all)
       // Non-super admins are restricted to 'published' only
-      const status = isSuperAdmin ? options.status : 'published';
+      const status = isSuperAdmin ? options.status : TaskVariantStatus.PUBLISHED;
       const filter = status ? { taskId, status } : { taskId };
       const variants = await taskVariantRepository.listByTaskId(filter, options);
 
@@ -390,10 +390,10 @@ export function TaskService({
 
       // Check authorization based on variant status
       // Information disclosure prevention: return 404 for draft or unpublished variants instead of 403
-      if (!isSuperAdmin && variant.status !== 'published') {
+      if (!isSuperAdmin && variant.status !== TaskVariantStatus.PUBLISHED) {
         logger.warn(
           { userId, taskId, variantId, variantStatus: variant.status },
-          'Non-admin attempted to access non-published task variant',
+          'Non-super-admin attempted to access unpublished task variant',
         );
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
