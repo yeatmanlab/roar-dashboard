@@ -1,8 +1,11 @@
 import { initContract } from '@ts-rest/core';
-import { z } from 'zod';
-import { SchoolsListQuerySchema, SchoolsListResponseSchema, SchoolDetailSchema, SCHOOL_EMBED_OPTIONS } from './schema';
+import {
+  SchoolsListQuerySchema,
+  SchoolsListResponseSchema,
+  SchoolDetailSchema,
+  GetSchoolPathParamSchema,
+} from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
-import { createEmbedQuerySchema } from '../common/query';
 
 const c = initContract();
 
@@ -30,13 +33,10 @@ export const SchoolsContract = c.router(
         'Use ?includeEnded=true to include organizations with rosteringEnded timestamp. ' +
         'Use ?embed=counts to include aggregated statistics (users, classes).',
     },
-    getById: {
+    get: {
       method: 'GET',
-      path: '/:id',
-      pathParams: z.object({
-        id: z.string().uuid(),
-      }),
-      query: createEmbedQuerySchema(SCHOOL_EMBED_OPTIONS),
+      path: '/:schoolId',
+      pathParams: GetSchoolPathParamSchema,
       responses: {
         200: SuccessEnvelopeSchema(SchoolDetailSchema),
         401: ErrorEnvelopeSchema,
@@ -48,9 +48,9 @@ export const SchoolsContract = c.router(
       summary: 'Get school by ID',
       description:
         'Returns a single school by ID. ' +
-        'Returns 403 if the user lacks permission to access the school. ' +
-        'Returns 404 if the school does not exist. ' +
-        'Use ?embed=counts to include aggregated statistics (users, classes).',
+        'Returns 401 if the requesting user is not authenticated. ' +
+        'Returns 403 if the requesting user lacks permission to access the school. ' +
+        'Returns 404 if the requested school does not exist.',
     },
   },
   { pathPrefix: '/schools' },

@@ -97,9 +97,9 @@ export function SchoolService({
   /**
    * Get a single school by ID.
    *
-   * super_admin users can access any school.
-   * Other users can only access schools they have active membership in via pg_user_orgs
-   * (resolved through org hierarchy joins for org/class/group membership).
+   * Authorization:
+   * - Super admins can retrieve any school
+   * - Regular users can only retrieve schools for which they are an active member
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param schoolId - UUID of the school to retrieve

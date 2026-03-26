@@ -147,6 +147,7 @@ export const SchoolsController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
           StatusCodes.INTERNAL_SERVER_ERROR,
