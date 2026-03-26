@@ -247,14 +247,14 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .groupBy(orgs.parentOrgId)
       .as('school_counts');
 
-    // Pre-aggregate class counts per district
+    // Pre-aggregate class counts per district (only active classes)
     const classCounts = this.db
       .select({
         districtId: classes.districtId,
         classes: countDistinct(classes.id).as('classes'),
       })
       .from(classes)
-      .where(inArray(classes.districtId, districtIds))
+      .where(and(inArray(classes.districtId, districtIds), isNull(classes.rosteringEnded)))
       .groupBy(classes.districtId)
       .as('class_counts');
 

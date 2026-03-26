@@ -23,10 +23,9 @@ export interface ListOptions {
 
 /**
  * District with optional embeds
+ * Note: children embed will be added in future GET /districts/:id implementation
  */
-export interface DistrictWithEmbeds extends DistrictWithCounts {
-  children?: District[];
-}
+export type DistrictWithEmbeds = DistrictWithCounts;
 
 /**
  * District Service

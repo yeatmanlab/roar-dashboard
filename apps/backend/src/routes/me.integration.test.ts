@@ -83,7 +83,9 @@ describe('GET /v1/me', () => {
 
   describe('response content', () => {
     it('returns the correct profile fields for a known fixture user', async () => {
-      const res = await expectRoute('GET', '/v1/me').as({ authId: baseFixture.districtAdmin.authId! }).toReturn(200);
+      const res = await expectRoute('GET', '/v1/me')
+        .as({ id: baseFixture.districtAdmin.id, authId: baseFixture.districtAdmin.authId! })
+        .toReturn(200);
 
       expect(res.body.data).toMatchObject({
         id: baseFixture.districtAdmin.id,

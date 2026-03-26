@@ -56,7 +56,7 @@ export const DistrictDetailBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   abbreviation: z.string(),
-  orgType: z.string(),
+  orgType: z.literal('district'),
   parentOrgId: z.string().uuid().nullable(),
   location: DistrictLocationSchema.optional(),
   identifiers: DistrictIdentifiersSchema.optional(),

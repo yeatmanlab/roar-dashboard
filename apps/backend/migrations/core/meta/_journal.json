@@ -407,6 +407,20 @@
       "when": 1773244800000,
       "tag": "0057_enable_uuid_ossp",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1774857600000,
+      "tag": "0058_switch_fdw_to_direct_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1774361278051,
+      "tag": "0059_user_research_exclusions_and_user_updates",
+      "breakpoints": true
     }
   ]
 }
