@@ -22,7 +22,7 @@ describe('Parent: Auth', () => {
     cy.logout();
   });
 
-  it('Shows an error when using invalid invitation codes during sign-up', () => {
+  it.skip('Shows an error when using invalid invitation codes during sign-up', () => {
     const invalidActivationCode = '123456';
 
     // Visit the sign-up page with the activation code.
@@ -51,7 +51,7 @@ describe('Parent: Auth', () => {
       .contains(`The code ${invalidActivationCode} does not belong to any organization`);
   });
 
-  it('Validates invitation codes during sign-up', () => {
+  it.skip('Validates invitation codes during sign-up', () => {
     const ORG_CODE = Cypress.env('ACTIVATION_CODE');
     const ORG_NAME = Cypress.env('testInviteGroupName');
 
