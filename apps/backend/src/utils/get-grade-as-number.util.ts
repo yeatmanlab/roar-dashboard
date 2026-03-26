@@ -35,6 +35,30 @@ const GRADE_MAP: Record<string, number> = {
 };
 
 /**
+ * Returns all grade enum strings whose numeric value satisfies a comparison
+ * against the given reference grade. Used to convert gte/lte filter operations
+ * on grade into an IN clause with correct numeric ordering.
+ *
+ * Grades without a numeric mapping ('', 'Ungraded', 'Other') are excluded
+ * from the result since they can't be meaningfully compared.
+ *
+ * @param operator - 'gte' or 'lte'
+ * @param referenceGrade - The grade value to compare against (e.g., '3', 'Kindergarten')
+ * @returns Array of grade enum strings that satisfy the comparison, or null if
+ *   the reference grade has no numeric mapping
+ */
+export function getGradesInRange(operator: 'gte' | 'lte', referenceGrade: string): string[] | null {
+  const refNumeric = getGradeAsNumber(referenceGrade);
+  if (refNumeric === null) return null;
+
+  const compareFn = operator === 'gte' ? (n: number) => n >= refNumeric : (n: number) => n <= refNumeric;
+
+  return Object.entries(GRADE_MAP)
+    .filter(([, numericValue]) => compareFn(numericValue))
+    .map(([gradeString]) => gradeString);
+}
+
+/**
  * Convert a grade to a numeric value for comparison.
  * Accepts exact gradeEnum values from the database or numeric values.
  *

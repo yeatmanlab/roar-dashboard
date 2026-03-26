@@ -18,6 +18,7 @@ import {
   AdministrationAgreementsListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
+import { ProgressReportsContract } from './reports/progress/index';
 
 const c = initContract();
 
@@ -213,6 +214,8 @@ export const AdministrationsContract = c.router(
         'Returns 404 if the administration does not exist. ' +
         'Returns 409 if the administration has existing assessment runs that must be preserved.',
     },
+    // Nest report sub-routers under /administrations
+    progressReports: ProgressReportsContract,
   },
   { pathPrefix: '/administrations' },
 );
