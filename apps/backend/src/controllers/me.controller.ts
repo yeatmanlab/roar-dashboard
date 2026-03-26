@@ -1,5 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
+import type { AuthContext } from '../types/auth-context';
+import { ApiError } from '../errors/api-error';
+import { toErrorResponse } from '../utils/to-error-response.util';
 
 const userService = UserService();
 
@@ -13,29 +16,30 @@ export const MeController = {
   /**
    * Get the current authenticated user's profile.
    *
-   * @param userId - The authenticated user's ID from req.user
+   * @param authContext - The authenticated user's context from req.user
    * @returns ts-rest response object with user profile or error
    */
-  get: async (userId: string) => {
-    const user = await userService.getById(userId);
+  get: async (authContext: AuthContext) => {
+    try {
+      // User is requesting their own profile
+      const user = await userService.getById(authContext, authContext.userId);
 
-    if (!user) {
       return {
-        status: StatusCodes.UNAUTHORIZED as const,
-        body: { error: { message: 'Authentication failed' } },
-      };
-    }
-
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: {
-          id: user.id,
-          userType: user.userType,
-          nameFirst: user.nameFirst,
-          nameLast: user.nameLast,
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            id: user.id,
+            userType: user.userType,
+            nameFirst: user.nameFirst,
+            nameLast: user.nameLast,
+          },
         },
-      },
-    };
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.UNAUTHORIZED, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
   },
 };

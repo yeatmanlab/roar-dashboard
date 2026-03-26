@@ -67,6 +67,7 @@ export const Permissions = {
   Users: {
     ALL: 'users.*',
     LIST: 'users.list',
+    READ: 'users.read',
     CREATE: 'users.create',
     UPDATE: 'users.update',
     UNENROLL: 'users.unenroll',
