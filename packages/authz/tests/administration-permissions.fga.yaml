@@ -139,7 +139,6 @@ tests:
           can_delete: false
 
           can_read_scores: false
-          can_read_scores_basic: false
 
   - name: Student at class sees school-assigned administration (ancestor access)
     check:
@@ -348,50 +347,43 @@ tests:
 
   # ─── Caregiver permissions ─────────────────────────────────────────
 
-  - name: Caregiver can list/read class-assigned administration with limited permissions
+  - name: Caregiver cannot list/read administrations (no org-level access)
     check:
       - user: user:class-guardian
         object: administration:admin-at-class
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
-          can_launch_task: true
-          can_read_scores_basic: true
-          can_read_progress: true
+          can_list: false
+          can_read: false
+          can_read_scores: false
+          can_read_progress: false
           can_create: false
           can_update: false
           can_delete: false
           can_create_run: false
 
-          can_read_scores: false
-
-  - name: Caregiver sees school-assigned administration (ancestor access)
+  - name: Caregiver cannot see school-assigned administration
     check:
       - user: user:class-guardian
         object: administration:admin-at-school
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
-          can_launch_task: true
-
+          can_list: false
+          can_read: false
           can_read_scores: false
           can_delete: false
 
-  - name: Caregiver sees district-assigned administration (ancestor access)
+  - name: Caregiver cannot see district-assigned administration
     check:
       - user: user:class-guardian
         object: administration:admin-at-district
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
-          can_launch_task: true
-
+          can_list: false
+          can_read: false
           can_read_scores: false
           can_delete: false
 
@@ -579,7 +571,6 @@ tests:
               - user:school-teacher
               - user:class-teacher
               - user:student-x
-              - user:class-guardian
 
   - name: District-assigned administration lists users with can_list (includes subtree supervisory)
     list_users:
@@ -596,7 +587,6 @@ tests:
               - user:school-teacher
               - user:class-teacher
               - user:student-x
-              - user:class-guardian
 
   - name: Group-assigned administration lists only group members
     list_users:

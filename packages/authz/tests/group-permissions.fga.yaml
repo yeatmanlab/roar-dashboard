@@ -56,7 +56,7 @@ tests:
           can_read: true
           can_list_users: true
 
-  - name: Group guardian cannot list/read group (supervisory only) but can list users
+  - name: Group guardian cannot list/read group (supervisory only)
     check:
       - user: user:group-guardian
         object: group:group-a
@@ -65,7 +65,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
-          can_list_users: true
+          can_list_users: false
 
   - name: Non-member cannot list/read group
     check:

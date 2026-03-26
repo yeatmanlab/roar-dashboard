@@ -122,9 +122,8 @@ tests:
         assertions:
           can_list: false
           can_read: false
-          can_list_users: true
-          can_read_scores_basic: true
-          can_read_progress: true
+          can_list_users: false
+          can_read_progress: false
           can_create: false
           can_update: false
           can_read_scores: false
