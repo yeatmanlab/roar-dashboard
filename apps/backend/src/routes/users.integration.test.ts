@@ -641,7 +641,7 @@ describe('PATCH /v1/users/:id', () => {
         .send({ nameFirst: 'Valid', isSuperAdmin: true });
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
-      expect(res.body.error.message).toContain('isSuperAdmin');
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_INVALID);
     });
 
     it('rejects isSuperAdmin from non-superAdmin with 400 validation error (not 403 authorization error)', async () => {
@@ -653,7 +653,7 @@ describe('PATCH /v1/users/:id', () => {
         .send({ nameFirst: 'Valid', isSuperAdmin: true });
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
-      expect(res.body.error.message).toContain('isSuperAdmin');
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_INVALID);
     });
   });
 
