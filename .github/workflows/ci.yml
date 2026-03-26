@@ -80,6 +80,11 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_core_test;"
           PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE roar_assessment_test;"
 
+      - name: Run OpenFGA model tests
+        uses: openfga/action-openfga-test@v0.1.2
+        with:
+          test_path: packages/authz/tests
+
       - name: Run all tests
         run: npm run test
 
