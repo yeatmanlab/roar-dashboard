@@ -77,7 +77,6 @@ export const TasksContract = c.router(
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         409: ErrorEnvelopeSchema,
-        422: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -89,7 +88,6 @@ export const TasksContract = c.router(
         'Returns 400 if the request body is malformed. ' +
         'Returns 403 if the user is not a super admin. ' +
         'Returns 409 if a task with the same slug already exists. ' +
-        'Returns 422 if validation fails (e.g., invalid slug format). ' +
         'Returns 500 if a server error occurs.',
     },
     listTaskVariants: {

@@ -164,7 +164,6 @@ export const TasksController = {
           StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
           StatusCodes.CONFLICT,
-          StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
