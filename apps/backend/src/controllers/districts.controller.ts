@@ -47,7 +47,7 @@ function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
     id: district.id,
     name: district.name,
     abbreviation: district.abbreviation,
-    orgType: district.orgType,
+    orgType: 'district' as const,
     parentOrgId: district.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
