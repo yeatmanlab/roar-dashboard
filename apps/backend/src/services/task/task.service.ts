@@ -253,13 +253,15 @@ export function TaskService({
 } = {}) {
   /**
    * List task variants for a given task.
+   * Supports lookup by task ID (UUID) or slug (case-sensitive).
+   * Supports filtering by status and pagination.
    *
    * Authorization:
    * - Super admins can filter by any status or see all variants (no status filter)
    * - Regular users can only see published variants (status defaults to 'published')
    *
    * @param authContext - User's authentication context
-   * @param taskId - The UUID of the parent task
+   * @param taskId - The UUID of the parent task or the task's slug
    * @param options - Pagination, sorting, search, and status filter options
    * @returns Paginated result with task variants and task info
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
@@ -855,13 +857,13 @@ export function TaskService({
   /**
    * Get a task by ID.
    *
-   * Searches by task ID (UUID).
+   * Searches by task ID (UUID) or slug (case-sensitive).
    *
    * Tasks are global resources (not tied to org hierarchy), so all authenticated
    * users can view any task. No authorization filtering is applied.
    *
    * @param authContext - User's authentication context (used for logging)
-   * @param taskId - The task ID (UUID) to search for
+   * @param taskId - The task ID (UUID) or slug to search for
    * @returns The task with the given ID
    * @throws {ApiError} NOT_FOUND if no task exists with the given ID
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
