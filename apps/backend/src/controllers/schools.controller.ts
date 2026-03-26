@@ -132,15 +132,11 @@ export const SchoolsController = {
    *
    * @param authContext - User's authentication context containing userId and super admin flag
    * @param schoolId - UUID of the school to retrieve
-   * @param query - Query parameters including embed options
    * @returns School data transformed to API response format
    */
-  getById: async (authContext: AuthContext, schoolId: string, query?: { embed?: string[] }) => {
+  getById: async (authContext: AuthContext, schoolId: string) => {
     try {
-      // Check if children embed is requested
-      const embedChildren = query?.embed?.includes(SchoolEmbedOption.CHILDREN) ?? false;
-
-      const school = await schoolService.getById(authContext, schoolId, { embedChildren });
+      const school = await schoolService.getById(authContext, schoolId);
 
       return {
         status: StatusCodes.OK as const,

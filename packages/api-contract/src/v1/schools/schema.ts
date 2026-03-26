@@ -95,14 +95,13 @@ export const SchoolDetailSortField = {
 /**
  * Allowed embed options for schools.
  */
-export const SCHOOL_EMBED_OPTIONS = ['counts', 'children'] as const;
+export const SCHOOL_EMBED_OPTIONS = ['counts'] as const;
 
 /**
  * Embed option constants for type-safe access.
  */
 export const SchoolEmbedOption = {
   COUNTS: 'counts',
-  CHILDREN: 'children',
 } as const satisfies Record<string, (typeof SCHOOL_EMBED_OPTIONS)[number]>;
 
 /**

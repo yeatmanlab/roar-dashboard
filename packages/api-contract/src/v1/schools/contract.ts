@@ -50,7 +50,7 @@ export const SchoolsContract = c.router(
         'Returns a single school by ID. ' +
         'Returns 403 if the user lacks permission to access the school. ' +
         'Returns 404 if the school does not exist. ' +
-        'Use ?embed=children to include child organizations (typically empty for schools).',
+        'Use ?embed=counts to include aggregated statistics (users, classes).',
     },
   },
   { pathPrefix: '/schools' },

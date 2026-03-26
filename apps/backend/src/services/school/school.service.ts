@@ -24,9 +24,7 @@ export interface ListOptions {
 /**
  * School with optional embeds
  */
-export interface SchoolWithEmbeds extends SchoolWithCounts {
-  children?: SchoolWithCounts[];
-}
+export type SchoolWithEmbeds = SchoolWithCounts;
 
 /**
  * School Service
@@ -105,15 +103,10 @@ export function SchoolService({
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param schoolId - UUID of the school to retrieve
-   * @param options - Optional embed options (embedChildren)
    * @returns The school if found and authorized
    * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
    */
-  async function getById(
-    authContext: AuthContext,
-    schoolId: string,
-    options?: { embedChildren?: boolean },
-  ): Promise<SchoolWithEmbeds> {
+  async function getById(authContext: AuthContext, schoolId: string): Promise<SchoolWithEmbeds> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
@@ -129,11 +122,7 @@ export function SchoolService({
 
       // 2. Super admins bypass access checks
       if (isSuperAdmin) {
-        const result: SchoolWithEmbeds = school;
-        if (options?.embedChildren) {
-          result.children = [];
-        }
-        return result;
+        return school;
       }
 
       // 3. Check access via org hierarchy joins
@@ -148,13 +137,7 @@ export function SchoolService({
         });
       }
 
-      // 4. Attach children if requested (typically empty for schools)
-      const result: SchoolWithEmbeds = authorized;
-      if (options?.embedChildren) {
-        result.children = [];
-      }
-
-      return result;
+      return authorized;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

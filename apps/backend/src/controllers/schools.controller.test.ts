@@ -306,4 +306,142 @@ describe('SchoolsController', () => {
       expect(data.items[0]).not.toHaveProperty('identifiers');
     });
   });
+
+  describe('getById', () => {
+    it('should return a single school with 200 status', async () => {
+      const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL });
+      mockGetById.mockResolvedValue(mockSchool);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, mockSchool.id);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toHaveProperty('data');
+      const data = (result.body as { data: unknown }).data as Record<string, unknown>;
+      expect(data.id).toBe(mockSchool.id);
+      expect(data.name).toBe(mockSchool.name);
+      expect(data.orgType).toBe('school');
+    });
+
+    it('should handle ApiError with 404 Not Found', async () => {
+      const error = new ApiError('School not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'non-existent-id');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 403 Forbidden', async () => {
+      const error = new ApiError('Access denied', {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'unauthorized-school-id');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 500 Internal Server Error', async () => {
+      const error = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockGetById.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, 'some-school-id');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockGetById.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      await expect(Controller.getById(mockAuthContext, 'some-school-id')).rejects.toThrow('Unexpected error');
+    });
+
+    it('should transform school with location data', async () => {
+      const mockSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
+        locationAddressLine1: '123 Main St',
+        locationCity: 'Springfield',
+        locationStateProvince: 'IL',
+        locationPostalCode: '62701',
+        locationCountry: 'US',
+        locationLatLong: [-89.6501, 39.7817],
+      });
+      mockGetById.mockResolvedValue(mockSchool);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, mockSchool.id);
+
+      const data = expectOkResponse(result);
+      expect(data).toHaveProperty('location');
+      expect(data.location).toMatchObject({
+        addressLine1: '123 Main St',
+        city: 'Springfield',
+        stateProvince: 'IL',
+        postalCode: '62701',
+        country: 'US',
+      });
+    });
+
+    it('should omit location when all location fields are null', async () => {
+      const mockSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
+        locationAddressLine1: null,
+        locationAddressLine2: null,
+        locationCity: null,
+        locationStateProvince: null,
+        locationPostalCode: null,
+        locationCountry: null,
+        locationLatLong: null,
+      });
+      mockGetById.mockResolvedValue(mockSchool);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, mockSchool.id);
+
+      const data = expectOkResponse(result);
+      expect(data).not.toHaveProperty('location');
+    });
+
+    it('should omit identifiers when all identifier fields are null', async () => {
+      const mockSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
+        mdrNumber: null,
+        ncesId: null,
+        stateId: null,
+        schoolNumber: null,
+      });
+      mockGetById.mockResolvedValue(mockSchool);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.getById(mockAuthContext, mockSchool.id);
+
+      const data = expectOkResponse(result);
+      expect(data).not.toHaveProperty('identifiers');
+    });
+  });
 });
