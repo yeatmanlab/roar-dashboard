@@ -634,8 +634,9 @@ describe('PATCH /v1/users/:id', () => {
   describe('schema strictness', () => {
     it('rejects unknown fields like isSuperAdmin', async () => {
       authenticateAs(tiers.superAdmin);
+      // Super admin users cannot set isSuperAdmin on any user, even though they can update other fields for that user
       const res = await request(app)
-        .patch(`/v1/users/${tiers.superAdmin.id}`)
+        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
         .set('Authorization', 'Bearer token')
         .send({ nameFirst: 'Valid', isSuperAdmin: true });
 
