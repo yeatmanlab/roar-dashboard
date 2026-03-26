@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { SchoolService } from './school.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { OrgType } from '../../enums/org-type.enum';
@@ -9,10 +9,10 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { StatusCodes } from 'http-status-codes';
 
 describe('SchoolService', () => {
-  const mockSchoolRepository = createMockSchoolRepository();
+  let mockSchoolRepository: ReturnType<typeof createMockSchoolRepository>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockSchoolRepository = createMockSchoolRepository();
   });
 
   describe('list', () => {

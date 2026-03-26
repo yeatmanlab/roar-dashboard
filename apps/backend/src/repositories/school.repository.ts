@@ -281,8 +281,9 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
   }
 
   /**
-   * Get a school by ID with authorization checks.
+   * Get a single school by ID with authorization check.
    * Only returns the school if the user has access via org/class/group membership.
+   * Excludes schools with rosteringEnded timestamp by default.
    *
    * @param filter - Access control filter with userId and allowed roles
    * @param schoolId - UUID of the school to retrieve
@@ -295,7 +296,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .select({ org: orgs })
       .from(orgs)
       .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
-      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, OrgType.SCHOOL)))
+      .where(and(eq(orgs.id, schoolId), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded)))
       .limit(1);
 
     return result[0]?.org ?? null;
