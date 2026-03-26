@@ -641,6 +641,14 @@ describe('PATCH /v1/users/:id', () => {
         .send({ nameFirst: 'Valid', isSuperAdmin: true });
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+
+      // Verify that the failed PATCH operation did not modify any user data
+      const getRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+      expect(getRes.status).toBe(StatusCodes.OK);
+      expect(getRes.body.nameFirst).not.toBe('Valid');
+      expect(getRes.body.nameFirst).toBe(baseFixture.schoolAStudent.nameFirst);
     });
 
     it('rejects isSuperAdmin from non-superAdmin with 400 validation error (not 403 authorization error)', async () => {
@@ -652,6 +660,15 @@ describe('PATCH /v1/users/:id', () => {
         .send({ nameFirst: 'Valid', isSuperAdmin: true });
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+
+      // Verify that the failed PATCH operation did not modify any user data
+      authenticateAs(tiers.superAdmin);
+      const getRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+      expect(getRes.status).toBe(StatusCodes.OK);
+      expect(getRes.body.nameFirst).not.toBe('Valid');
+      expect(getRes.body.nameFirst).toBe(baseFixture.schoolAStudent.nameFirst);
     });
   });
 
