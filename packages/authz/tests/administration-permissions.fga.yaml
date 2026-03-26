@@ -93,6 +93,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:group-teacher
+    relation: teacher
+    object: group:group-g
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
 
   # ─── Separate district tree for isolation tests ──────────────────
   - user: district:district-b
@@ -120,6 +128,32 @@ tuples:
   - user: district:district-b
     relation: assigned_district
     object: administration:admin-in-b
+
+  # ─── Multi-entity administration (assigned to both district and class) ─
+  - user: district:district-a
+    relation: assigned_district
+    object: administration:admin-multi
+  - user: class:class-x
+    relation: assigned_class
+    object: administration:admin-multi
+
+  # ─── Cross-tree user: teacher in tree B + student in tree A ──────
+  - user: user:cross-tree-user
+    relation: teacher
+    object: school:school-b
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:cross-tree-user
+    relation: student
+    object: class:class-x
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
 
 tests:
   # ─── Student permissions ───────────────────────────────────────────
@@ -413,6 +447,99 @@ tests:
           can_list: false
           can_read: false
 
+  - name: Group teacher cannot see district-assigned administration (group grants no org-level access)
+    check:
+      - user: user:group-teacher
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_read_scores: false
+          can_read_progress: false
+
+  - name: Group teacher cannot see class-assigned administration (group grants no org-level access)
+    check:
+      - user: user:group-teacher
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── Multi-entity administration ──────────────────────────────────
+
+  - name: District admin sees multi-entity administration (via district assignment)
+    check:
+      - user: user:district-admin
+        object: administration:admin-multi
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+
+  - name: Class teacher sees multi-entity administration (via class assignment)
+    check:
+      - user: user:class-teacher
+        object: administration:admin-multi
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+
+  - name: Student sees multi-entity administration (via class assignment)
+    check:
+      - user: user:student-x
+        object: administration:admin-multi
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+
+  - name: Admin in tree B cannot see multi-entity administration in tree A
+    check:
+      - user: user:admin-b
+        object: administration:admin-multi
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── Cross-tree user permissions ──────────────────────────────────
+
+  - name: Cross-tree user sees tree-A administration as student (not as tree-B teacher)
+    check:
+      - user: user:cross-tree-user
+        object: administration:admin-at-class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_read_scores: false
+
+  - name: Cross-tree user sees tree-B administration as teacher (not as tree-A student)
+    check:
+      - user: user:cross-tree-user
+        object: administration:admin-in-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_create_run: false
+
   # ─── Cross-administration denial ───────────────────────────────────
 
   - name: Admin in tree A cannot see administrations in tree B
@@ -488,6 +615,7 @@ tests:
             - administration:admin-at-district
             - administration:admin-at-school
             - administration:admin-at-class
+            - administration:admin-multi
 
   - name: Student sees all administrations in their ancestor tree
     list_objects:
@@ -500,6 +628,7 @@ tests:
             - administration:admin-at-district
             - administration:admin-at-school
             - administration:admin-at-class
+            - administration:admin-multi
 
   - name: School teacher sees all administrations in their ancestor tree
     list_objects:
@@ -512,6 +641,7 @@ tests:
             - administration:admin-at-district
             - administration:admin-at-school
             - administration:admin-at-class
+            - administration:admin-multi
 
   - name: Class teacher sees all administrations in their ancestor tree
     list_objects:
@@ -524,6 +654,7 @@ tests:
             - administration:admin-at-district
             - administration:admin-at-school
             - administration:admin-at-class
+            - administration:admin-multi
 
   - name: Group member sees only group administration
     list_objects:
@@ -571,6 +702,7 @@ tests:
               - user:school-teacher
               - user:class-teacher
               - user:student-x
+              - user:cross-tree-user
 
   - name: District-assigned administration lists users with can_list (includes subtree supervisory)
     list_users:
@@ -587,6 +719,7 @@ tests:
               - user:school-teacher
               - user:class-teacher
               - user:student-x
+              - user:cross-tree-user
 
   - name: Group-assigned administration lists only group members
     list_users:
@@ -599,3 +732,4 @@ tests:
           can_list:
             users:
               - user:group-member
+              - user:group-teacher
