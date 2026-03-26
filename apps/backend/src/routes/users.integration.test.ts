@@ -632,9 +632,21 @@ describe('PATCH /v1/users/:id', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   describe('schema strictness', () => {
-    it('rejects unknown fields like isSuperAdmin', async () => {
+    it('rejects unknown fields like isSuperAdmin from superAdmin', async () => {
       authenticateAs(tiers.superAdmin);
       // Super admin users cannot set isSuperAdmin on any user, even though they can update other fields for that user
+      const res = await request(app)
+        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Valid', isSuperAdmin: true });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.message).toContain('isSuperAdmin');
+    });
+
+    it('rejects isSuperAdmin from non-superAdmin with 400 validation error (not 403 authorization error)', async () => {
+      authenticateAs(tiers.educator);
+      // Non-superAdmin users get caught by schema validation (400) before authorization layer (403)
       const res = await request(app)
         .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
         .set('Authorization', 'Bearer token')
