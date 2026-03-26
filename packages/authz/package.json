@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "validate": "command -v fga >/dev/null 2>&1 && fga model validate --file authorization-model.fga || echo 'SKIP: fga CLI not installed'",
-    "test": "command -v fga >/dev/null 2>&1 && fga model test --tests 'tests/*.fga.yaml' || echo 'SKIP: fga CLI not installed'"
+    "validate": "fga model validate --file authorization-model.fga",
+    "test": "fga model test --tests 'tests/*.fga.yaml'"
   }
 }
