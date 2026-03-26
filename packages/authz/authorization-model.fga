@@ -53,12 +53,14 @@ type district
     define subtree_supervisory_tier_group: supervisory_tier_group or subtree_supervisory_tier_group from child_school
 
     # Permissions
-    define can_list: supervisory_tier_group
-    define can_read: supervisory_tier_group
     define no_one: [user]
+
     define can_create: no_one
     define can_update: no_one
     define can_delete: no_one
+
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
     define can_list_users: supervisory_tier_group or caregiver_tier
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
@@ -110,12 +112,15 @@ type school
     define subtree_supervisory_tier_group: supervisory_tier_group or supervisory_tier_group from child_class
 
     # Permissions
-    define can_list: supervisory_tier_group
-    define can_read: supervisory_tier_group
     define no_one: [user]
+
     define can_create: no_one
     define can_update: no_one
     define can_delete: no_one
+
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
+    
     define can_list_users: supervisory_tier_group or caregiver_tier
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
@@ -155,12 +160,14 @@ type class
     define member: supervisory_tier_group or student or caregiver_tier
 
     # Permissions
-    define can_list: supervisory_tier_group
-    define can_read: supervisory_tier_group
     define no_one: [user]
+
     define can_create: no_one
     define can_update: no_one
     define can_delete: no_one
+
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
     define can_list_users: supervisory_tier_group or caregiver_tier
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
@@ -171,9 +178,18 @@ type class
 # ────────────────────────────────────────────────────────────────────────────────
 type family
   relations
+    # Assignable roles — written via tuples, not inherited through the org hierarchy
     define parent: [user with active_membership]
     define child: [user with active_membership]
     define member: parent or child
+
+    # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+    
     define can_list: parent
     define can_read: parent
     define can_list_users: parent
@@ -210,6 +226,12 @@ type group
     define member: supervisory_tier_group or student or caregiver_tier
 
     # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+
     define can_list: supervisory_tier_group
     define can_read: supervisory_tier_group
     define can_list_users: supervisory_tier_group or caregiver_tier
@@ -259,12 +281,14 @@ type administration
     define supervisory_tier_group: admin_tier or educator_tier or subtree_supervisory_tier_group from assigned_district or subtree_supervisory_tier_group from assigned_school or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
 
     # Permissions
-    define can_list: supervisory_tier_group or student or caregiver_tier
-    define can_read: supervisory_tier_group or student or caregiver_tier
     define no_one: [user]
+
     define can_create: no_one
     define can_update: no_one
     define can_delete: no_one
+
+    define can_list: supervisory_tier_group or student or caregiver_tier
+    define can_read: supervisory_tier_group or student or caregiver_tier
     define can_read_scores: supervisory_tier_group
     define can_read_scores_basic: caregiver_tier
     define can_read_progress: supervisory_tier_group or caregiver_tier
