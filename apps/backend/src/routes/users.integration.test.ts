@@ -634,6 +634,14 @@ describe('PATCH /v1/users/:id', () => {
   describe('schema strictness', () => {
     it('rejects unknown fields like isSuperAdmin from superAdmin', async () => {
       authenticateAs(tiers.superAdmin);
+      // Get the original data before attempting the patch
+      const originalRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(originalRes.status).toBe(StatusCodes.OK);
+      const originalNameFirst = originalRes.body.nameFirst;
+
       // Super admin users cannot set isSuperAdmin on any user, even though they can update other fields for that user
       const res = await request(app)
         .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
@@ -642,18 +650,28 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
 
-      // Verify that the failed PATCH operation did not modify any user data
-      const getRes = await request(app)
+      // Verify the PATCH operation did not modify any data
+      const verifyRes = await request(app)
         .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
         .set('Authorization', 'Bearer token');
-      expect(getRes.status).toBe(StatusCodes.OK);
-      expect(getRes.body.nameFirst).not.toBe('Valid');
-      expect(getRes.body.nameFirst).toBe(baseFixture.schoolAStudent.nameFirst);
+
+      expect(verifyRes.status).toBe(StatusCodes.OK);
+      expect(verifyRes.body.nameFirst).toBe(originalNameFirst);
+      expect(verifyRes.body.nameFirst).not.toBe('Valid');
     });
 
     it('rejects isSuperAdmin from non-superAdmin with 400 validation error (not 403 authorization error)', async () => {
-      authenticateAs(tiers.educator);
+      // Get the original data before attempting the patch
+      authenticateAs(tiers.superAdmin);
+      const originalRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(originalRes.status).toBe(StatusCodes.OK);
+      const originalNameFirst = originalRes.body.nameFirst;
+
       // Non-superAdmin users get caught by schema validation (400) before authorization layer (403)
+      authenticateAs(tiers.educator);
       const res = await request(app)
         .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
         .set('Authorization', 'Bearer token')
@@ -661,14 +679,15 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
 
-      // Verify that the failed PATCH operation did not modify any user data
+      // Verify the PATCH operation did not modify any data
       authenticateAs(tiers.superAdmin);
-      const getRes = await request(app)
+      const verifyRes = await request(app)
         .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
         .set('Authorization', 'Bearer token');
-      expect(getRes.status).toBe(StatusCodes.OK);
-      expect(getRes.body.nameFirst).not.toBe('Valid');
-      expect(getRes.body.nameFirst).toBe(baseFixture.schoolAStudent.nameFirst);
+
+      expect(verifyRes.status).toBe(StatusCodes.OK);
+      expect(verifyRes.body.nameFirst).toBe(originalNameFirst);
+      expect(verifyRes.body.nameFirst).not.toBe('Valid');
     });
   });
 
