@@ -198,12 +198,12 @@ export async function createGroupTierUsers(groupId: string): Promise<TierUsers> 
   ]);
 
   return {
-    superAdmin: { authId: superAdminUser.authId! },
-    siteAdmin: { authId: siteAdminUser.authId! },
-    admin: { authId: adminUser.authId! },
-    educator: { authId: educatorUser.authId! },
-    student: { authId: studentUser.authId! },
-    caregiver: { authId: caregiverUser.authId! },
+    superAdmin: { id: superAdminUser.id, authId: superAdminUser.authId! },
+    siteAdmin: { id: siteAdminUser.id, authId: siteAdminUser.authId! },
+    admin: { id: adminUser.id, authId: adminUser.authId! },
+    educator: { id: educatorUser.id, authId: educatorUser.authId! },
+    student: { id: studentUser.id, authId: studentUser.authId! },
+    caregiver: { id: caregiverUser.id, authId: caregiverUser.authId! },
   };
 }
 

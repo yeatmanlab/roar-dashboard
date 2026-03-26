@@ -274,19 +274,19 @@ describe('GET /v1/groups/:groupId/users', () => {
 
       await Promise.all([
         UserGroupFactory.create({
-          userId: baseFixture.groupStudent.id,
+          userId: userGroupTiers.student.id,
           groupId: paginationGroup.id,
           role: UserRole.STUDENT,
         }),
         UserGroupFactory.create({
-          userId: baseFixture.districtAdmin.id,
+          userId: userGroupTiers.admin.id,
           groupId: paginationGroup.id,
           role: UserRole.ADMINISTRATOR,
         }),
       ]);
 
       const res = await expectRoute('GET', `/v1/groups/${paginationGroup.id}/users?page=1&perPage=1`)
-        .as({ authId: baseFixture.districtAdmin.authId! })
+        .as(userGroupTiers.admin)
         .toReturn(200);
 
       expect(res.body.data.items).toHaveLength(1);
