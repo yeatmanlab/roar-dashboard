@@ -9,14 +9,6 @@ import {
 } from '../common/query';
 
 /**
- * Schema for task ID path parameter.
- * Validates the ID format matches database constraints.
- */
-export const TaskIdParamSchema = z.object({
-  taskId: z.string().uuid('Task ID must be a valid UUID'),
-});
-
-/**
  * Schema for GET task path parameters.
  * Supports task lookup by task UUID or slug (case-sensitive).
  *
@@ -365,11 +357,6 @@ export const TasksListResponseSchema = createPaginatedResponseSchema(TaskSchema)
  * Response type for list operations on tasks.
  */
 export type TasksListResponse = z.infer<typeof TasksListResponseSchema>;
-
-/**
- * Type for task ID parameters in path operations.
- */
-export type TaskIdParam = z.infer<typeof TaskIdParamSchema>;
 
 /**
  * Type for GET task path parameters (UUID or slug).
