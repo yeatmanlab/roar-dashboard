@@ -39,6 +39,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Reports.Student.ALL,
     Permissions.TaskVariants.LIST,
     Permissions.Users.LIST,
+    Permissions.Users.READ,
   ];
 
   const admin: readonly Permission[] = [
@@ -56,6 +57,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Reports.Student.ALL,
     Permissions.TaskVariants.LIST,
     Permissions.Users.LIST,
+    Permissions.Users.READ,
   ];
 
   const educator: readonly Permission[] = [
@@ -72,6 +74,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Reports.Student.ALL,
     Permissions.TaskVariants.LIST,
     Permissions.Users.LIST,
+    Permissions.Users.READ,
   ];
 
   const caregiver: readonly Permission[] = [
@@ -85,6 +88,7 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Reports.Student.READ,
     Permissions.Tasks.LAUNCH,
     Permissions.Users.LIST,
+    Permissions.Users.READ,
   ];
 
   const student: readonly Permission[] = [
