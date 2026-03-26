@@ -1,0 +1,132 @@
+name: Group Permissions
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── Group memberships ────────────────────────────────────────────
+  - user: user:group-student
+    relation: student
+    object: group:group-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:group-teacher
+    relation: teacher
+    object: group:group-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:group-guardian
+    relation: guardian
+    object: group:group-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Administration assigned to group ──────────────────────────────
+  - user: group:group-a
+    relation: assigned_group
+    object: administration:admin-via-group
+
+tests:
+  - name: Group student cannot list/read group (supervisory only)
+    check:
+      - user: user:group-student
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_list_users: false
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: Group teacher can list/read group and list users but not CUD
+    check:
+      - user: user:group-teacher
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: Group guardian cannot list/read group (supervisory only)
+    check:
+      - user: user:group-guardian
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_list_users: false
+
+  - name: Non-member cannot list/read group
+    check:
+      - user: user:nobody
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_list_users: false
+
+  - name: Group student can list/read and create runs on group-assigned administration
+    check:
+      - user: user:group-student
+        object: administration:admin-via-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create_run: true
+          can_delete: false
+          can_read_scores: false
+
+  - name: Group teacher can list/read group-assigned administration with supervisory permissions
+    check:
+      - user: user:group-teacher
+        object: administration:admin-via-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create_run: false
+
+  - name: Non-member cannot see group-assigned administration
+    check:
+      - user: user:nobody
+        object: administration:admin-via-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_run: false
+
+  - name: Group student sees only group administration
+    list_objects:
+      - user: user:group-student
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-via-group
