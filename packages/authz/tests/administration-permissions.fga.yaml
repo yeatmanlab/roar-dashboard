@@ -905,6 +905,7 @@ tests:
         assertions:
           can_list:
             - administration:admin-at-group
+            - administration:admin-school-and-group
 
   - name: Group admin sees only group administration
     list_objects:
@@ -915,6 +916,7 @@ tests:
         assertions:
           can_list:
             - administration:admin-at-group
+            - administration:admin-school-and-group
 
   - name: Admin B sees only tree B administrations
     list_objects:
