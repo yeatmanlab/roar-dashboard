@@ -65,10 +65,12 @@ const districtGradeSupportBreakdown = computed(() => {
     ['below', 'some', 'above'].forEach((level) => {
       const grades = props?.runs?.[level]?.grades ?? {};
       Object.entries(grades).forEach(([grade, count]) => {
-        if (!gradeMap.has(grade)) {
-          gradeMap.set(grade, { category: grade, support_levels: [0, 0, 0], totalStudents: 0 });
+        // Trim grades of leading zeros
+        const trimmedGrade = grade.replace(/^0+/, '');
+        if (!gradeMap.has(trimmedGrade)) {
+          gradeMap.set(trimmedGrade, { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 });
         }
-        const row = gradeMap.get(grade);
+        const row = gradeMap.get(trimmedGrade);
         row.support_levels[supportLevelIndexMap[level]] += count;
         row.totalStudents += count;
       });
@@ -80,9 +82,12 @@ const districtGradeSupportBreakdown = computed(() => {
   // For school- or class-level aggregation
   const gradeCounts = [];
   for (const run of props.runs) {
-    let gradeCounter = gradeCounts.find((g) => g.category === run?.user?.grade);
+    const rawGrade = run?.user?.grade;
+    // Trim grades of leading zeros
+    const trimmedGrade = rawGrade.replace(/^0+/, '');
+    let gradeCounter = gradeCounts.find((g) => g.category === trimmedGrade);
     if (!gradeCounter) {
-      gradeCounter = { category: run?.user?.grade, support_levels: [0, 0, 0], totalStudents: 0 };
+      gradeCounter = { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 };
       gradeCounts.push(gradeCounter);
     }
 
