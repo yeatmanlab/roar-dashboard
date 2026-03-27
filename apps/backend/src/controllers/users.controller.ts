@@ -1,6 +1,6 @@
 import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
-import type { UserResponse } from '@roar-dashboard/api-contract';
+import type { UserResponse, UpdateUserRequestBody } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
 import { ApiError } from '../errors/api-error';
@@ -44,6 +44,7 @@ function toUserResponse(user: User, authContext: AuthContext): UserResponse {
     hispanicEthnicity: user.hispanicEthnicity,
     homeLanguage: user.homeLanguage,
     ...(authContext.isSuperAdmin && { isSuperAdmin: user.isSuperAdmin }),
+    rosteringEnded: user.rosteringEnded?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt?.toISOString() ?? null,
   };
@@ -55,6 +56,12 @@ function toUserResponse(user: User, authContext: AuthContext): UserResponse {
  * Responsible for transforming service results into ts-rest responses
  * and mapping known ApiError status codes to typed error responses.
  * Business logic and authorization are delegated to the UserService.
+ *
+ * Error status codes shared across multiple methods are listed here for reference:
+ * - 401: Unauthenticated (handled by AuthGuardMiddleware before reaching the controller)
+ * - 403: Forbidden (user lacks permission)
+ * - 404: User not found
+ * - 500: Unexpected internal error
  */
 export const UsersController = {
   /**
@@ -80,6 +87,38 @@ export const UsersController = {
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Partially update a user by ID.
+   *
+   * Only fields present in the request body are updated.
+   * Delegates to UserService for authorization and the update operation.
+   * Returns 204 No Content on success — use GET if the updated resource is needed.
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param userId - UUID of the user to update.
+   * @param body - Partial user fields to apply.
+   */
+  update: async (authContext: AuthContext, userId: string, body: UpdateUserRequestBody) => {
+    try {
+      await userService.update(authContext, userId, body);
+      return {
+        status: StatusCodes.NO_CONTENT as const,
+        body: undefined,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.CONFLICT,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
