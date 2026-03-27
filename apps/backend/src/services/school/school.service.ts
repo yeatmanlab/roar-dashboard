@@ -37,8 +37,6 @@ export function SchoolService({
 }: {
   schoolRepository?: SchoolRepository;
 } = {}) {
-  // Use injected repository or create default instance.
-
   /**
    * List schools accessible to a user with pagination and sorting.
    *

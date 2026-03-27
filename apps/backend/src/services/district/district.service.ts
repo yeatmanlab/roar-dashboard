@@ -38,8 +38,6 @@ export function DistrictService({
 }: {
   districtRepository?: DistrictRepository;
 } = {}) {
-  // Use injected repository or create default instance.
-
   /**
    * List districts accessible to a user with pagination and sorting.
    *
