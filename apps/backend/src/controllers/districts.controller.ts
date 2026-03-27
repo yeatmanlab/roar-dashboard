@@ -15,10 +15,11 @@ const districtService = DistrictService();
 function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
-  if (district.locationLatLong) {
+  const { locationLatLong } = district;
+  if (locationLatLong) {
     coordinates = {
       type: 'Point',
-      coordinates: [district.locationLatLong[0], district.locationLatLong[1]],
+      coordinates: locationLatLong,
     };
   }
 

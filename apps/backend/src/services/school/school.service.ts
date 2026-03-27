@@ -34,13 +34,10 @@ export type SchoolWithEmbeds = SchoolWithCounts;
  * Handles authorization (super admin vs regular user) and delegates to repository.
  */
 export function SchoolService({
-  schoolRepository,
+  schoolRepository = new SchoolRepository(),
 }: {
   schoolRepository?: SchoolRepository;
 } = {}) {
-  // Use injected repository or create default instance.
-  const repo = schoolRepository ?? new SchoolRepository();
-
   /**
    * Checks if a school entity is valid.
    * Returns false if the school has invalid data, true otherwise.
@@ -113,10 +110,10 @@ export function SchoolService({
 
       // Fetch schools based on user role and authorization
       if (isSuperAdmin) {
-        result = await repo.listAll(queryParams);
+        result = await schoolRepository.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
+        result = await schoolRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
 
       // Filter out invalid schools instead of throwing
