@@ -22,6 +22,7 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | [backend-error-handling](backend-error-handling.md) | HIGH | Service try/catch, controller error mapping, global handler |
 | [backend-repository-pattern](backend-repository-pattern.md) | HIGH | BaseRepository extension, listAll/listAuthorized, access control joins |
 | [backend-service-pattern](backend-service-pattern.md) | HIGH | Closure-based DI, default parameter injection |
+| [backend-utility-placement](backend-utility-placement.md) | MEDIUM | Utility files belong to the layer that consumes them, not in cross-layer grab bags |
 | [backend-testing-unit-vs-integration](backend-testing-unit-vs-integration.md) | MEDIUM | Separate Vitest projects, vi.mock for controllers, DI for services |
 | [backend-testing-factory-usage](backend-testing-factory-usage.md) | MEDIUM | build() vs create(), baseFixture, Fishery factories |
 
@@ -47,7 +48,7 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | [quality-no-followup-prs](quality-no-followup-prs.md) | MEDIUM | Complete small refactors in the current PR |
 | [quality-code-style](quality-code-style.md) | MEDIUM | Constants, naming conventions, structured logging, JSDoc |
 | [quality-pr-creation](quality-pr-creation.md) | MEDIUM | Branch naming, commit messages, draft mode, PR description |
-| [quality-typescript-strictness](quality-typescript-strictness.md) | MEDIUM | as const, @ts-expect-error, avoid as any |
+| [quality-typescript-strictness](quality-typescript-strictness.md) | MEDIUM | as const, @ts-expect-error, avoid as any, import type convention |
 
 ### Testing
 
