@@ -9,6 +9,8 @@ import {
   getRawScoreRange,
   getScoreValue,
   tasksToDisplayPercentCorrect,
+  getPaSkillsToWorkOn,
+  PA_SUBTASK_I18N_KEYS,
 } from '@/helpers/reports';
 import { SCORE_SUPPORT_SKILL_LEVELS, SCORE_TYPES } from '@/constants/scores';
 import { TAG_SEVERITIES } from '@/constants/tags';
@@ -111,19 +113,23 @@ const ScoreReportService = (() => {
     });
 
     if (taskId === 'pa') {
-      const fsm = scores?.FSM?.roarScore;
-      const lsm = scores?.LSM?.roarScore;
-      const del = scores?.DEL?.roarScore;
-      const skills = [];
-
-      if (fsm < 15) skills.push('FSM');
-      if (lsm < 15) skills.push('LSM');
-      if (del < 15) skills.push('DEL');
+      const formatPaSubtaskScore = (subtask) => {
+        if (subtask?.percentCorrect != null) return `${Math.floor(subtask.percentCorrect)}%`;
+        return subtask?.roarScore;
+      };
+      const fsm = formatPaSubtaskScore(scores?.FSM);
+      const lsm = formatPaSubtaskScore(scores?.LSM);
+      const del = formatPaSubtaskScore(scores?.DEL);
+      const skillKeys = getPaSkillsToWorkOn(scores);
+      const translatedSkills = skillKeys.map((key) => i18n.t(PA_SUBTASK_I18N_KEYS[key]));
 
       formattedScoresArray.push([i18n.t('scoreReports.firstSoundMatching'), fsm]);
       formattedScoresArray.push([i18n.t('scoreReports.lastSoundMatching'), lsm]);
       formattedScoresArray.push([i18n.t('scoreReports.deletion'), del]);
-      formattedScoresArray.push([i18n.t('scoreReports.skillsToWorkOn'), skills.join(', ') || 'None']);
+      formattedScoresArray.push([
+        i18n.t('scoreReports.skillsToWorkOn'),
+        translatedSkills.join(', ') || i18n.t('scoreReports.none'),
+      ]);
     }
 
     if (taskId === 'letter' || taskId === 'letter-en-ca') {
@@ -141,11 +147,11 @@ const ScoreReportService = (() => {
       const phonemeIncorrect = scores?.Phonemes?.phonemeIncorrect;
       const incorrectPhonemes = Array.isArray(phonemeIncorrect) ? phonemeIncorrect.join(', ') : '';
 
-      formattedScoresArray.push([i18n.t('Lower Case'), scores?.LowercaseNames?.subScore, 0, 26]);
-      formattedScoresArray.push([i18n.t('Upper Case'), scores?.UppercaseNames?.subScore, 0, 26]);
-      formattedScoresArray.push([i18n.t('Letter Sounds'), scores?.Phonemes?.subScore, 0, 38]);
-      formattedScoresArray.push([i18n.t('Letter To Work On'), incorrectLetters]);
-      formattedScoresArray.push([i18n.t('Letter Sounds To Work On'), incorrectPhonemes]);
+      formattedScoresArray.push([i18n.t('scoreReports.lowerCase'), scores?.LowercaseNames?.subScore, 0, 26]);
+      formattedScoresArray.push([i18n.t('scoreReports.upperCase'), scores?.UppercaseNames?.subScore, 0, 26]);
+      formattedScoresArray.push([i18n.t('scoreReports.letterSounds'), scores?.Phonemes?.subScore, 0, 38]);
+      formattedScoresArray.push([i18n.t('scoreReports.lettersToWorkOn'), incorrectLetters]);
+      formattedScoresArray.push([i18n.t('scoreReports.letterSoundsToWorkOn'), incorrectPhonemes]);
     }
 
     const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
