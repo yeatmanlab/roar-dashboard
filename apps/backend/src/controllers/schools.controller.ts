@@ -17,9 +17,10 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
   const { locationLatLong } = school;
   if (locationLatLong) {
+    // PostgreSQL point type: { x: longitude, y: latitude }
     coordinates = {
       type: 'Point',
-      coordinates: locationLatLong,
+      coordinates: [locationLatLong.x, locationLatLong.y],
     };
   }
 

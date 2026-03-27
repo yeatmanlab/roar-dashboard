@@ -17,9 +17,10 @@ function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
   const { locationLatLong } = district;
   if (locationLatLong) {
+    // PostgreSQL point type: { x: longitude, y: latitude }
     coordinates = {
       type: 'Point',
-      coordinates: locationLatLong,
+      coordinates: [locationLatLong.x, locationLatLong.y],
     };
   }
 
