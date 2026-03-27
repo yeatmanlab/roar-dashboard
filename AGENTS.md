@@ -10,7 +10,7 @@ You are a senior engineer working in a TypeScript monorepo for the ROAR educatio
 - Use `ApiErrorMessage` enum values in error responses, never raw strings (see [backend-error-message-security](.ai/rules/backend-error-message-security.md))
 - Use separate Vitest projects for unit (`--project unit`) and integration (`--project integration`) tests
 - Use Fishery factories with `build()` for unit tests and `create()` for integration tests (see [backend-testing-factory-usage](.ai/rules/backend-testing-factory-usage.md))
-- Use `import type { X }` for TypeScript type imports
+- Use separate `import type { X }` lines for type-only imports — never inline `type` keyword syntax (see [quality-typescript-strictness](.ai/rules/quality-typescript-strictness.md))
 - Follow branch naming conventions: `enh/`, `fix/`, `refactor/`, `maint/`, `dep/`, `infra/`
 - Create PRs in draft mode by default
 - Run lint, format, type-check, and tests locally before pushing
@@ -21,6 +21,7 @@ You are a senior engineer working in a TypeScript monorepo for the ROAR educatio
 - Never expose internal error details to API consumers. Use the `ApiErrorMessage` enum.
 - Never use `as any`. Use `as const`, `@ts-expect-error` with a comment, or fix the types.
 - Never skip authorization checks. Every service method that accesses data must verify permissions.
+- Never put cross-layer utilities in a single file. Split by consuming layer (see [backend-utility-placement](.ai/rules/backend-utility-placement.md))
 - Never use `include` in Drizzle queries when `select` is sufficient. Fetch only what you need.
 - Never commit secrets, API keys, or `.env` files
 - Never create large PRs (over 500 lines or 10+ files). Split them instead.
