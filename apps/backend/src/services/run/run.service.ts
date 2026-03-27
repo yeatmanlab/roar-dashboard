@@ -13,7 +13,7 @@ import type { AuthContext } from '../../types/auth-context';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { AdministrationAccessControls } from '../../repositories/access-controls/administration.access-controls';
-import { type UserRole as UserRoleType } from '../../enums/user-role.enum';
+import type { UserRole as UserRoleType } from '../../enums/user-role.enum';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 
 /**

@@ -3,13 +3,14 @@ import type { MockedObject } from 'vitest';
 import { UserService } from '../../services/user/user.service';
 
 /**
- * Mock User UserService
+ * Mock UserService
  * Returns a mocked version of UserService with all methods as vi.fn() mocks.
  */
 export function createMockUserService(): MockedObject<ReturnType<typeof UserService>> {
   return {
     findByAuthId: vi.fn(),
     getById: vi.fn(),
+    update: vi.fn(),
   } as MockedObject<ReturnType<typeof UserService>>;
 }
 
