@@ -50,7 +50,6 @@ export function filterSupervisoryRoles<T extends string>(roles: T[]): T[] {
  * @param roles - Array of roles to filter
  * @returns Array containing only the caretaker roles from the input
  */
-
 export function filterCaretakerRoles<T extends string>(roles: T[]): T[] {
   return roles.filter((role) => (CARETAKER_ROLES as readonly string[]).includes(role));
 }
