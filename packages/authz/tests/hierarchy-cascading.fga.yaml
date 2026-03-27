@@ -1,0 +1,289 @@
+name: Hierarchy Cascading
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── Hierarchy (bidirectional) ─────────────────────────────────────
+  - user: district:district-a
+    relation: parent_org
+    object: school:school-a
+  - user: school:school-a
+    relation: child_school
+    object: district:district-a
+  - user: school:school-a
+    relation: parent_org
+    object: class:class-a
+  - user: class:class-a
+    relation: child_class
+    object: school:school-a
+
+  # ─── Supervisory roles at district level ───────────────────────────
+  - user: user:district-sys-admin
+    relation: system_administrator
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:district-admin
+    relation: district_administrator
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Supervisory role at school level ──────────────────────────────
+  - user: user:school-teacher
+    relation: teacher
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Supervisory role at class level ───────────────────────────────
+  - user: user:class-teacher
+    relation: teacher
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Supervised roles at class level ───────────────────────────────
+  - user: user:class-student
+    relation: student
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:class-guardian
+    relation: guardian
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # ─── Supervised role at school level ───────────────────────────────
+  - user: user:school-student
+    relation: student
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+tests:
+  # ─── Supervisory cascading DOWN ────────────────────────────────────
+
+  - name: System admin at district cascades to school
+    check:
+      - user: user:district-sys-admin
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          system_administrator: true
+          supervisory_tier_group: true
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: System admin at district cascades to class (via school)
+    check:
+      - user: user:district-sys-admin
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: District admin cascades to school
+    check:
+      - user: user:district-admin
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          district_administrator: true
+          supervisory_tier_group: true
+          can_list: true
+          can_read: true
+
+  - name: District admin cascades to class (via school)
+    check:
+      - user: user:district-admin
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: School teacher cascades to class
+    check:
+      - user: user:school-teacher
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  # ─── Supervisory does NOT cascade UP (org permissions unaffected) ──
+
+  - name: School teacher does NOT cascade up to district (org-level)
+    check:
+      - user: user:school-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          teacher: false
+          supervisory_tier_group: false
+          can_list: false
+          can_read: false
+
+  - name: Class teacher does NOT cascade up to school (org-level)
+    check:
+      - user: user:class-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          teacher: false
+          supervisory_tier_group: false
+          can_list: false
+          can_read: false
+
+  # ─── Subtree supervisory (aggregated for administration access) ───
+
+  - name: School teacher is in district subtree_supervisory_tier_group
+    check:
+      - user: user:school-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
+
+  - name: Class teacher is in school subtree_supervisory_tier_group
+    check:
+      - user: user:class-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
+
+  - name: Class teacher is in district subtree_supervisory_tier_group (via school)
+    check:
+      - user: user:class-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
+
+  - name: District admin is in district subtree_supervisory_tier_group (direct)
+    check:
+      - user: user:district-admin
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          subtree_supervisory_tier_group: true
+
+  # ─── Supervised bubbling UP ────────────────────────────────────────
+
+  - name: Class student role bubbles up to school (via child_class) but no can_list/can_read
+    check:
+      - user: user:class-student
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          student: true
+          can_list: false
+          can_read: false
+          can_list_users: false
+
+  - name: Class student role bubbles up to district (via child_class -> child_school) but no can_list/can_read
+    check:
+      - user: user:class-student
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          student: true
+          can_list: false
+          can_read: false
+          can_list_users: false
+
+  - name: School student role bubbles up to district (via child_school) but no can_list/can_read
+    check:
+      - user: user:school-student
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          student: true
+          can_list: false
+          can_read: false
+          can_list_users: false
+
+  - name: Class guardian role bubbles up to school but no can_list/can_read
+    check:
+      - user: user:class-guardian
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          guardian: true
+          can_list: false
+          can_read: false
+
+  - name: Class guardian role bubbles up to district but no can_list/can_read
+    check:
+      - user: user:class-guardian
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          guardian: true
+          can_list: false
+          can_read: false
+
+  # ─── Supervised does NOT cascade DOWN ──────────────────────────────
+
+  - name: School student does NOT cascade down to class
+    check:
+      - user: user:school-student
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          student: false
+          can_list: false
+          can_read: false
