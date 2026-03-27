@@ -8,7 +8,6 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
-import { isCoordinateTuple } from '../utils/coordinate-validation.util';
 
 /**
  * Options for listing districts
@@ -40,46 +39,6 @@ export function DistrictService({
   districtRepository?: DistrictRepository;
 } = {}) {
   // Use injected repository or create default instance.
-
-  /**
-   * Checks if a district entity is valid.
-   * Returns false if the district has invalid data, true otherwise.
-   *
-   * @param district - The district to validate
-   * @returns true if valid, false otherwise
-   */
-  function isDistrictValid(district: DistrictWithEmbeds): boolean {
-    // Validate coordinates if present
-    if (district.locationLatLong && !isCoordinateTuple(district.locationLatLong)) {
-      return false;
-    }
-
-    // Additional validations can be added here as needed:
-    // - Name/abbreviation format validation
-    // - ID format validation
-    // - Cross-field consistency checks
-    // - etc.
-
-    return true;
-  }
-
-  /**
-   * Validates a district entity for data integrity.
-   * Ensures all data meets business requirements before returning to clients.
-   * Throws an error if validation fails.
-   *
-   * @param district - The district to validate
-   * @throws {ApiError} If validation fails
-   */
-  function validateDistrict(district: DistrictWithEmbeds): void {
-    if (!isDistrictValid(district)) {
-      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.INTERNAL,
-        context: { districtId: district.id },
-      });
-    }
-  }
 
   /**
    * List districts accessible to a user with pagination and sorting.
@@ -117,10 +76,6 @@ export function DistrictService({
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
         result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
-
-      // Filter out invalid districts instead of throwing
-      const validDistricts = result.items.filter(isDistrictValid);
-      result.items = validDistricts;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -164,9 +119,6 @@ export function DistrictService({
           context: { userId, districtId },
         });
       }
-
-      // Validate district data integrity
-      validateDistrict(district);
 
       // 2. Super admins bypass access checks
       if (isSuperAdmin) return district;

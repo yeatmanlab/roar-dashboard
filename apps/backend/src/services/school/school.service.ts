@@ -7,7 +7,6 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
-import { isCoordinateTuple } from '../utils/coordinate-validation.util';
 
 /**
  * Options for listing schools
@@ -38,46 +37,7 @@ export function SchoolService({
 }: {
   schoolRepository?: SchoolRepository;
 } = {}) {
-  /**
-   * Checks if a school entity is valid.
-   * Returns false if the school has invalid data, true otherwise.
-   *
-   * @param school - The school to validate
-   * @returns true if valid, false otherwise
-   */
-  function isSchoolValid(school: SchoolWithEmbeds): boolean {
-    // Validate coordinates if present
-    if (school.locationLatLong && !isCoordinateTuple(school.locationLatLong)) {
-      return false;
-    }
-
-    // Additional validations can be added here as needed:
-    // - Name/abbreviation format validation
-    // - ID format validation
-    // - Cross-field consistency checks
-    // - etc.
-
-    return true;
-  }
-
-  /**
-   * NOTE: Uncomment this when the school detail endpoint is implemented
-   * Validates a school entity for data integrity.
-   * Ensures all data meets business requirements before returning to clients.
-   * Throws an error if validation fails.
-   *
-   * @param school - The school to validate
-   * @throws {ApiError} If validation fails
-   */
-  // function validateSchool(school: SchoolWithEmbeds): void {
-  //   if (!isSchoolValid(school)) {
-  //     throw new ApiError('Invalid school data', {
-  //       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-  //       code: ApiErrorCode.INTERNAL,
-  //       context: { schoolId: school.id },
-  //     });
-  //   }
-  // }
+  // Use injected repository or create default instance.
 
   /**
    * List schools accessible to a user with pagination and sorting.
@@ -115,10 +75,6 @@ export function SchoolService({
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
         result = await schoolRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
-
-      // Filter out invalid schools instead of throwing
-      const validSchools = result.items.filter(isSchoolValid);
-      result.items = validSchools;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
