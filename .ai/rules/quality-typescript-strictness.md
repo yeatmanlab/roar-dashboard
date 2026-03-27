@@ -22,6 +22,9 @@ const result = items as any;
 
 // Raw strings where typed constants exist
 const roles = rolesForPermission('administrations.read');
+
+// Mixing type-only and runtime imports on one line
+import { type EnrolledUser, UserRole } from '@roar-dashboard/api-contract';
 ```
 
 ### Correct
@@ -51,6 +54,27 @@ const SORT_COLUMNS = {
   name: administrations.name,
 } as const satisfies Record<SortFieldType, Column>;
 ```
+
+**`import type` for type-only imports:**
+
+Separate type imports from runtime imports using `import type` on its own line:
+
+```typescript
+// Types on their own line, runtime values on theirs
+import type { AuthContext, ListOptions } from '../types/auth-context';
+import { StatusCodes } from 'http-status-codes';
+
+// When a module provides both, split into two imports
+import type { EnrolledUser, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import { UserRole, SortOrder } from '@roar-dashboard/api-contract';
+
+// When everything from a module is type-only, use a single import type
+import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
+```
+
+Don't use the inline `type` keyword syntax (`import { type Foo, Bar }`). The codebase uses separate `import type` lines consistently — follow the existing convention.
+
+A quick test: if removing the import doesn't cause a runtime error (only a type error), it should be `import type`.
 
 **`@ts-expect-error` with explanation:**
 
