@@ -4,15 +4,24 @@
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Tests cover:
+ * GET /v1/users/:id
  * - Authorization (who can access which users)
  * - Self-access (all users can access their own profile)
  * - Field transformations (Date → ISO string)
  * - Error cases (401, 403, 404)
+ *
+ * PATCH /v1/users/:id
+ * - Authorization (super admin only; all other tiers → 403)
+ * - Partial update semantics (only provided fields written, null clears a field)
+ * - Validation (empty body, invalid UUID, invalid enum value)
+ * - Unique constraint violations (email, username → 409)
+ * - Error cases (401, 404)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
-import { createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
+import request from 'supertest';
+import { StatusCodes } from 'http-status-codes';
+import { createTestApp, createRouteHelper, createTierUsers, authenticateAs } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -20,6 +29,7 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { UserRole } from '../enums/user-role.enum';
+import { UserRepository } from '../repositories/user.repository';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -28,6 +38,7 @@ import { UserRole } from '../enums/user-role.enum';
 let app: express.Application;
 let expectRoute: ReturnType<typeof createRouteHelper>;
 let tiers: TierUsers;
+let userRepository: UserRepository;
 
 beforeAll(async () => {
   // Route modules must be imported dynamically — they instantiate services at
@@ -39,6 +50,7 @@ beforeAll(async () => {
   app = createTestApp(registerUserRoutes, registerMeRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+  userRepository = new UserRepository();
 
   // Assign tier educator to a class so they can access students via direct class membership (PATH 3)
   await UserClassFactory.create({
@@ -374,6 +386,333 @@ describe('GET /v1/users/:id', () => {
         .toReturn(200);
 
       expect(res.body.data.id).toBe(baseFixture.multiAssignedUser.id);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PATCH /v1/users/:id
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('PATCH /v1/users/:id', () => {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Authorization
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('authorization', () => {
+    let targetUser: Awaited<ReturnType<typeof UserFactory.create>>;
+
+    beforeAll(async () => {
+      targetUser = await UserFactory.create({ nameFirst: 'Auth', nameLast: 'Target' });
+    });
+
+    it('superAdmin tier can update any user', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Updated by superAdmin' });
+
+      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+    });
+
+    it('siteAdmin tier cannot update users', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Should Fail' });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier cannot update users', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Should Fail' });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier cannot update users', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Should Fail' });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier cannot update users', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Should Fail' });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier cannot update users', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Should Fail' });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    // Self-update is not yet permitted for non-super-admin users.
+    // To enable: assign Permissions.Users.UPDATE to roles in role-permissions.ts,
+    // then the service's update() will delegate to verifySupervisoryAccess which
+    // allows self-access. Un-skip and adjust the expected status at that point.
+    it.skip('non-super admin users cannot update their own profile yet', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .patch(`/v1/users/${tiers.student.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Self Update' });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Partial update semantics
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('partial update semantics', () => {
+    it('updates only the provided field and leaves others unchanged', async () => {
+      const targetUser = await UserFactory.create({
+        nameFirst: 'Original',
+        nameLast: 'Unchanged',
+        grade: '3',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Updated' });
+
+      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+
+      // Verify database state using repository
+      const updated = await userRepository.getById({ id: targetUser.id });
+      expect(updated).not.toBeNull();
+      expect(updated!.nameFirst).toBe('Updated');
+      // Unchanged fields must not be affected
+      expect(updated!.nameLast).toBe('Unchanged');
+      expect(updated!.grade).toBe('3');
+    });
+
+    it('updates multiple fields in a single request', async () => {
+      const targetUser = await UserFactory.create({
+        nameFirst: 'Before',
+        nameLast: 'Before',
+        grade: '4',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'After', nameLast: 'After', grade: '5' });
+
+      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+
+      // Verify database state using repository
+      const updated = await userRepository.getById({ id: targetUser.id });
+      expect(updated).not.toBeNull();
+      expect(updated!.nameFirst).toBe('After');
+      expect(updated!.nameLast).toBe('After');
+      expect(updated!.grade).toBe('5');
+    });
+
+    it('sets a nullable field to null to clear it', async () => {
+      const targetUser = await UserFactory.create({ nameFirst: 'HasAName', grade: '6' });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: null });
+
+      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+
+      // Verify database state using repository
+      const updated = await userRepository.getById({ id: targetUser.id });
+      expect(updated).not.toBeNull();
+      expect(updated!.nameFirst).toBeNull();
+      // Other fields must remain untouched
+      expect(updated!.grade).toBe('6');
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Validation
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('validation', () => {
+    it('returns 400 for an empty request body', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({});
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 for an invalid UUID in the path', async () => {
+      const res = await expectRoute('PATCH', '/v1/users/not-a-valid-uuid')
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      const messages = res.body.issues.map((issue: { message: string }) => issue.message);
+      expect(messages).toContain('Invalid uuid');
+    });
+
+    it('returns 400 for an invalid enum value', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ grade: 'not-a-real-grade' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Unique constraint violations
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('unique constraint violations', () => {
+    it('returns 409 when the email conflicts with an existing user', async () => {
+      const existingUser = await UserFactory.create({ email: 'taken-email@example.com' });
+      const targetUser = await UserFactory.create({ email: 'other-email@example.com' });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ email: existingUser.email });
+
+      expect(res.status).toBe(StatusCodes.CONFLICT);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('returns 409 when the username conflicts with an existing user', async () => {
+      const existingUser = await UserFactory.create({ username: 'taken-username' });
+      const targetUser = await UserFactory.create({ username: 'other-username' });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(`/v1/users/${targetUser.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ username: existingUser.username });
+
+      expect(res.status).toBe(StatusCodes.CONFLICT);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Schema strictness
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('schema strictness', () => {
+    it('rejects unknown fields like isSuperAdmin from superAdmin', async () => {
+      authenticateAs(tiers.superAdmin);
+      // Get the original data before attempting the patch
+      const originalRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(originalRes.status).toBe(StatusCodes.OK);
+      const originalNameFirst = originalRes.body.nameFirst;
+
+      // Super admin users cannot set isSuperAdmin on any user, even though they can update other fields for that user
+      const res = await request(app)
+        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Valid', isSuperAdmin: true });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+
+      // Verify the PATCH operation did not modify any data
+      const verifyRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(verifyRes.status).toBe(StatusCodes.OK);
+      expect(verifyRes.body.nameFirst).toBe(originalNameFirst);
+      expect(verifyRes.body.nameFirst).not.toBe('Valid');
+    });
+
+    it('rejects isSuperAdmin from non-superAdmin with 400 validation error (not 403 authorization error)', async () => {
+      // Get the original data before attempting the patch
+      authenticateAs(tiers.superAdmin);
+      const originalRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(originalRes.status).toBe(StatusCodes.OK);
+      const originalNameFirst = originalRes.body.nameFirst;
+
+      // Non-superAdmin users get caught by schema validation (400) before authorization layer (403)
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Valid', isSuperAdmin: true });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+
+      // Verify the PATCH operation did not modify any data
+      authenticateAs(tiers.superAdmin);
+      const verifyRes = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(verifyRes.status).toBe(StatusCodes.OK);
+      expect(verifyRes.body.nameFirst).toBe(originalNameFirst);
+      expect(verifyRes.body.nameFirst).not.toBe('Valid');
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Error cases
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('PATCH', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .unauthenticated()
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 for a non-existent user', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch('/v1/users/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', 'Bearer token')
+        .send({ nameFirst: 'Ghost' });
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
   });
 });

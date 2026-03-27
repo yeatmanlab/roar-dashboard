@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import {
-  AuthProviderSchema,
   UserTypeSchema,
   UserGradeSchema,
   SchoolLevelSchema,
+  AuthProviderSchema,
   FreeReducedLunchStatusSchema,
 } from '../common/user';
 
@@ -42,8 +42,58 @@ export const UserResponseSchema = z.object({
   hispanicEthnicity: z.boolean().nullable(),
   homeLanguage: z.string().nullable(),
   isSuperAdmin: z.boolean().optional(), // Only visible to super admins
+  rosteringEnded: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime().nullable(),
 });
 
 export type UserResponse = z.infer<typeof UserResponseSchema>;
+
+/**
+ * Request body schema for PATCH /users/:id
+ *
+ * All fields are optional — only provided fields are updated (partial update semantics).
+ * Nullable fields may be explicitly set to null to clear the value.
+ * At least one field must be present in the request body.
+ *
+ * Excluded from this schema (system-managed, not updatable via API):
+ * - id, assessmentPid, authId, authProvider — identity/rostering fields
+ * - isSuperAdmin — security-sensitive, not user-updatable
+ * - schoolLevel — DB-generated from grade
+ * - createdAt, updatedAt — managed by DB triggers
+ *
+ * Unknown fields in the request body will be rejected with a validation error.
+ */
+export const UpdateUserRequestBodySchema = z
+  .object({
+    nameFirst: z.string().nullable().optional(),
+    nameMiddle: z.string().nullable().optional(),
+    nameLast: z.string().nullable().optional(),
+    username: z.string().nullable().optional(),
+    email: z.string().email().nullable().optional(),
+    userType: UserTypeSchema.optional(),
+    dob: z.string().date().nullable().optional(),
+    grade: UserGradeSchema.nullable().optional(),
+    statusEll: z.string().nullable().optional(),
+    statusFrl: FreeReducedLunchStatusSchema.nullable().optional(),
+    statusIep: z.string().nullable().optional(),
+    studentId: z.string().nullable().optional(),
+    sisId: z.string().nullable().optional(),
+    stateId: z.string().nullable().optional(),
+    localId: z.string().nullable().optional(),
+    gender: z.string().nullable().optional(),
+    race: z.string().nullable().optional(),
+    hispanicEthnicity: z.boolean().nullable().optional(),
+    homeLanguage: z.string().nullable().optional(),
+  })
+  .strict()
+  .superRefine((payload, ctx) => {
+    if (Object.keys(payload).length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'At least one field must be provided.',
+      });
+    }
+  });
+
+export type UpdateUserRequestBody = z.infer<typeof UpdateUserRequestBodySchema>;
