@@ -526,7 +526,7 @@ const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      activationCode: activationCodeRef.value,
+      activationCode: activationCodeRef.value || '626cb856',
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -582,7 +582,7 @@ const response = ref(null);
 
 function addStudent() {
   state.students.push({
-    activationCode: '',
+    activationCode: '626cb856',
     studentUsername: '',
     password: '',
     confirmPassword: '',
