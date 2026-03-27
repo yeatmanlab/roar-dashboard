@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getGradeAsNumber } from './get-grade-as-number.util';
+import { getGradeAsNumber, getGradesInRange } from './get-grade-as-number.util';
 
 describe('getGradeAsNumber', () => {
   describe('early childhood grades (map to 0)', () => {
@@ -78,5 +78,52 @@ describe('getGradeAsNumber', () => {
       expect(getGradeAsNumber('14')).toBe(14);
       expect(getGradeAsNumber('0')).toBe(0);
     });
+  });
+});
+
+describe('getGradesInRange', () => {
+  it('returns grades >= a numeric grade', () => {
+    const result = getGradesInRange('gte', '10');
+    expect(result).not.toBeNull();
+    expect(result).toContain('10');
+    expect(result).toContain('11');
+    expect(result).toContain('12');
+    expect(result).toContain('13');
+    expect(result).toContain('PostGraduate');
+    expect(result).not.toContain('9');
+    expect(result).not.toContain('Kindergarten');
+  });
+
+  it('returns grades <= a numeric grade', () => {
+    const result = getGradesInRange('lte', '2');
+    expect(result).not.toBeNull();
+    expect(result).toContain('1');
+    expect(result).toContain('2');
+    expect(result).toContain('Kindergarten');
+    expect(result).toContain('PreKindergarten');
+    expect(result).toContain('InfantToddler');
+    expect(result).not.toContain('3');
+  });
+
+  it('handles named grade values', () => {
+    const result = getGradesInRange('gte', 'Kindergarten');
+    expect(result).not.toBeNull();
+    // Kindergarten maps to 0, so all grades should be included
+    expect(result).toContain('Kindergarten');
+    expect(result).toContain('1');
+    expect(result).toContain('12');
+  });
+
+  it('returns null for grades with no numeric mapping', () => {
+    expect(getGradesInRange('gte', 'Ungraded')).toBeNull();
+    expect(getGradesInRange('lte', 'Other')).toBeNull();
+    expect(getGradesInRange('gte', '')).toBeNull();
+  });
+
+  it('returns empty array when no grades satisfy the range', () => {
+    // '14' parses as numeric 14, but no GRADE_MAP entry has value >= 14
+    const result = getGradesInRange('gte', '14');
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(0);
   });
 });
