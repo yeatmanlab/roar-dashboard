@@ -8,6 +8,7 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
+import { isCoordinateTuple } from '../utils/coordinate-validation.util';
 
 /**
  * Options for listing districts
@@ -34,12 +35,52 @@ export type DistrictWithEmbeds = DistrictWithCounts;
  * Handles authorization (super admin vs regular user) and delegates to repository.
  */
 export function DistrictService({
-  districtRepository,
+  districtRepository = new DistrictRepository(),
 }: {
   districtRepository?: DistrictRepository;
 } = {}) {
   // Use injected repository or create default instance.
-  const repo = districtRepository ?? new DistrictRepository();
+
+  /**
+   * Checks if a district entity is valid.
+   * Returns false if the district has invalid data, true otherwise.
+   *
+   * @param district - The district to validate
+   * @returns true if valid, false otherwise
+   */
+  function isDistrictValid(district: DistrictWithEmbeds): boolean {
+    // Validate coordinates if present
+    if (district.locationLatLong && !isCoordinateTuple(district.locationLatLong)) {
+      return false;
+    }
+
+    // Additional validations can be added here as needed:
+    // - Name/abbreviation format validation
+    // - ID format validation
+    // - Cross-field consistency checks
+    // - etc.
+
+    return true;
+  }
+
+  /**
+   * Validates a district entity for data integrity.
+   * Ensures all data meets business requirements before returning to clients.
+   * Throws an error if validation fails.
+   *
+   * @param district - The district to validate
+   * @throws {ApiError} If validation fails
+   */
+  function validateDistrict(district: DistrictWithEmbeds): void {
+    if (!isDistrictValid(district)) {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.INTERNAL,
+        context: { districtId: district.id },
+      });
+    }
+  }
+
   /**
    * List districts accessible to a user with pagination and sorting.
    *
@@ -71,11 +112,15 @@ export function DistrictService({
 
       // Fetch districts based on user role and authorization
       if (isSuperAdmin) {
-        result = await repo.listAll(queryParams);
+        result = await districtRepository.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
+        result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
+
+      // Filter out invalid districts instead of throwing
+      const validDistricts = result.items.filter(isDistrictValid);
+      result.items = validDistricts;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -110,7 +155,8 @@ export function DistrictService({
 
     try {
       // 1. Look up unrestricted first — distinguishes 404 from 403
-      const district = await repo.getUnrestrictedById(districtId);
+      const district = await districtRepository.getUnrestrictedById(districtId);
+
       if (!district) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
@@ -119,12 +165,15 @@ export function DistrictService({
         });
       }
 
+      // Validate district data integrity
+      validateDistrict(district);
+
       // 2. Super admins bypass access checks
       if (isSuperAdmin) return district;
 
       // 3. Check access via org hierarchy joins
       const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-      const authorized = await repo.getAuthorizedById({ userId, allowedRoles }, districtId);
+      const authorized = await districtRepository.getAuthorizedById({ userId, allowedRoles }, districtId);
       if (!authorized) {
         logger.warn({ userId, districtId }, 'User attempted to access district without permission');
         throw new ApiError(ApiErrorMessage.FORBIDDEN, {
