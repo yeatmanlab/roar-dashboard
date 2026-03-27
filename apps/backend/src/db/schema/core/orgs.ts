@@ -1,6 +1,6 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { ltree, timestamps } from '../common';
+import { ltree, timestamps, type PostgreSQLPoint } from '../common';
 import { orgTypeEnum } from '../enums';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
@@ -44,7 +44,7 @@ export const orgs = db.table(
     locationStateProvince: p.text(),
     locationPostalCode: p.text(),
     locationCountry: p.varchar({ length: 2 }),
-    locationLatLong: p.point(),
+    locationLatLong: p.point().$type<PostgreSQLPoint>(),
 
     mdrNumber: p.text(),
     ncesId: p.text().unique(),

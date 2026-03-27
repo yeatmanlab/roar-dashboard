@@ -34,12 +34,10 @@ export type DistrictWithEmbeds = DistrictWithCounts;
  * Handles authorization (super admin vs regular user) and delegates to repository.
  */
 export function DistrictService({
-  districtRepository,
+  districtRepository = new DistrictRepository(),
 }: {
   districtRepository?: DistrictRepository;
 } = {}) {
-  // Use injected repository or create default instance.
-  const repo = districtRepository ?? new DistrictRepository();
   /**
    * List districts accessible to a user with pagination and sorting.
    *
@@ -71,10 +69,10 @@ export function DistrictService({
 
       // Fetch districts based on user role and authorization
       if (isSuperAdmin) {
-        result = await repo.listAll(queryParams);
+        result = await districtRepository.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
+        result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) {
@@ -110,7 +108,8 @@ export function DistrictService({
 
     try {
       // 1. Look up unrestricted first — distinguishes 404 from 403
-      const district = await repo.getUnrestrictedById(districtId);
+      const district = await districtRepository.getUnrestrictedById(districtId);
+
       if (!district) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
@@ -124,7 +123,7 @@ export function DistrictService({
 
       // 3. Check access via org hierarchy joins
       const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-      const authorized = await repo.getAuthorizedById({ userId, allowedRoles }, districtId);
+      const authorized = await districtRepository.getAuthorizedById({ userId, allowedRoles }, districtId);
       if (!authorized) {
         logger.warn({ userId, districtId }, 'User attempted to access district without permission');
         throw new ApiError(ApiErrorMessage.FORBIDDEN, {

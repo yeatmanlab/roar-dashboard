@@ -7,6 +7,18 @@ export const timestamps = {
 };
 
 /**
+ * PostgreSQL Point type runtime representation.
+ *
+ * PostgreSQL returns point data as an object with x and y properties.
+ * - x: longitude
+ * - y: latitude
+ */
+export type PostgreSQLPoint = {
+  x: number;
+  y: number;
+};
+
+/**
  * Custom ltree type for hierarchical path storage.
  *
  * ltree is a PostgreSQL extension that provides a data type for representing
