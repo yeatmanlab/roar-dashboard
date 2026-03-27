@@ -4,7 +4,11 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import type { UserRole, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import { getEnrolledUsersFilterConditions, ENROLLED_USERS_SORT_COLUMNS } from './utils/enrolled-users-query.utils';
+import {
+  getEnrolledUsersFilterConditions,
+  ENROLLED_USERS_SORT_COLUMNS,
+  UserJunctionTable,
+} from './utils/enrolled-users-query.utils';
 import { isAuthorizedMembership } from './utils/is-authorized-membership.utils';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { CoreDbClient } from '../db/clients';
@@ -82,7 +86,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const whereCondition = and(
       eq(userGroups.groupId, groupId),
       isEnrollmentActive(userGroups),
-      ...getEnrolledUsersFilterConditions(options, 'userGroups'),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_GROUPS),
     );
 
     const countResult = await this.db
@@ -147,7 +151,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const whereCondition = and(
       eq(userGroups.groupId, groupId),
       isEnrollmentActive(userGroups),
-      ...getEnrolledUsersFilterConditions(options, 'userGroups'),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_GROUPS),
     );
 
     const countResult = await this.db

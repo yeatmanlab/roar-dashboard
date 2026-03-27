@@ -5,7 +5,11 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import { ClassAccessControls } from './access-controls/class.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';
-import { getEnrolledUsersFilterConditions, ENROLLED_USERS_SORT_COLUMNS } from './utils/enrolled-users-query.utils';
+import {
+  getEnrolledUsersFilterConditions,
+  ENROLLED_USERS_SORT_COLUMNS,
+  UserJunctionTable,
+} from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { CoreDbClient } from '../db/clients';
@@ -85,7 +89,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
-      ...getEnrolledUsersFilterConditions(options, 'userClasses'),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES),
     );
 
     const countResult = await this.db
@@ -146,7 +150,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
       isNull(classes.rosteringEnded),
-      ...getEnrolledUsersFilterConditions(options, 'userClasses'),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES),
     );
 
     const countResult = await this.db

@@ -9,12 +9,17 @@ export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Col
   grade: users.grade,
 };
 
-type UserJunctionTable = 'userGroups' | 'userClasses' | 'userOrgs';
+export enum UserJunctionTable {
+  USER_GROUPS = 'userGroups',
+  USER_CLASSES = 'userClasses',
+  USER_ORGS = 'userOrgs',
+}
 
-const tableMap: Record<UserJunctionTable, typeof userGroups | typeof userClasses | typeof userOrgs> = {
-  userGroups: userGroups,
-  userClasses: userClasses,
-  userOrgs: userOrgs,
+/** Map of junction table types to their corresponding table schemas */
+const TABLE_MAP = {
+  [UserJunctionTable.USER_GROUPS]: userGroups,
+  [UserJunctionTable.USER_CLASSES]: userClasses,
+  [UserJunctionTable.USER_ORGS]: userOrgs,
 } as const;
 
 export const getEnrolledUsersFilterConditions = (
@@ -29,7 +34,7 @@ export const getEnrolledUsersFilterConditions = (
   }
 
   if (role) {
-    conditions.push(eq(tableMap[junctionTable].role, role));
+    conditions.push(eq(TABLE_MAP[junctionTable].role, role));
   }
 
   return conditions;
