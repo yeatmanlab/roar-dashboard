@@ -1,10 +1,6 @@
 import { initContract } from '@ts-rest/core';
-import {
-  SchoolsListQuerySchema,
-  SchoolsListResponseSchema,
-  SchoolDetailSchema,
-  GetSchoolPathParamSchema,
-} from './schema';
+import { z } from 'zod';
+import { SchoolsListQuerySchema, SchoolsListResponseSchema, SchoolDetailSchema } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -36,7 +32,9 @@ export const SchoolsContract = c.router(
     get: {
       method: 'GET',
       path: '/:schoolId',
-      pathParams: GetSchoolPathParamSchema,
+      pathParams: z.object({
+        schoolId: z.string().uuid(),
+      }),
       responses: {
         200: SuccessEnvelopeSchema(SchoolDetailSchema),
         401: ErrorEnvelopeSchema,

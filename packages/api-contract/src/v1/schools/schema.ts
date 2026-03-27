@@ -7,15 +7,6 @@ import {
 } from '../common/query';
 
 /**
- * Path parameters for GET /schools/:schoolId
- */
-export const GetSchoolPathParamSchema = z.object({
-  schoolId: z.string().uuid(),
-});
-
-export type GetSchoolPathParam = z.infer<typeof GetSchoolPathParamSchema>;
-
-/**
  * School location schema.
  */
 export const SchoolLocationSchema = z.object({
