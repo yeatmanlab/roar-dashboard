@@ -1,9 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
+import type { AuthContext } from '../../types/auth-context';
 import type { User } from '../../db/schema';
+import { Permissions, type Permission } from '../../constants/permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { UserRepository } from '../../repositories/user.repository';
+import { rolesForPermission } from '../../constants/role-permissions';
 
 /**
  * UserService
@@ -30,6 +34,65 @@ export function UserService({
   userRepository?: UserRepository;
 } = {}) {
   /**
+   * Verify that a user exists and that the requestor has the required permission.
+   *
+   * Performs a two-step check:
+   * 1. Looks up the user by ID to verify they exist
+   * 2. Checks if the requestor is a super admin or has the required permission
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param id - The user's ID to verify
+   * @param permission - The permission to check (default: Permissions.Users.READ)
+   * @returns {Promise<User>} The user record if access is granted.
+   * @throws {ApiError} NOT_FOUND if user doesn't exist
+   * @throws {ApiError} FORBIDDEN if user doesn't have the required permission
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function verifyUserAccess(
+    authContext: AuthContext,
+    id: string,
+    permission: Permission = Permissions.Users.READ,
+  ): Promise<User> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Look up the user first to distinguish between not found and permission issues
+    const user = await userRepository.getById({ id });
+
+    if (!user) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { id, userId },
+      });
+    }
+
+    // Super admins bypass permission checks
+    if (isSuperAdmin) {
+      return user;
+    }
+
+    // Users can always access their own profile
+    // Fast path - no database query needed
+    if (userId === id) {
+      return user;
+    }
+
+    // Check access for non-super admin users
+    const allowedRoles = rolesForPermission(permission);
+    const authorized = await userRepository.getAuthorizedById({ userId, allowedRoles }, id);
+
+    if (!authorized) {
+      logger.warn({ userId, id }, 'User attempted to access another user without permission');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, id },
+      });
+    }
+    return authorized;
+  }
+
+  /**
    * Find a user by their Firebase authentication ID.
    *
    * @param authId - The Firebase UID to look up.
@@ -52,22 +115,31 @@ export function UserService({
   }
 
   /**
-   * Get a user by their ID.
+   * Get a user by their ID with access control.
+   *
+   * A user can access their own record.
+   * Users with supervisory roles can access users in their district, school, or class.
+   * Super admin users can access any user.
+   *
    *
    * @param id - The user's UUID.
    * @returns The user record if found, null otherwise.
    * @throws {ApiError} If the database query fails.
    */
-  async function getById(id: string): Promise<User | null> {
+  async function getById(authContext: AuthContext, id: string): Promise<User> {
+    const { userId } = authContext;
+
     try {
-      return await userRepository.getById({ id });
+      return await verifyUserAccess(authContext, id);
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      logger.error({ err: error, context: { userId: id } }, 'Failed to get user by ID');
-      throw new ApiError('Failed to retrieve user', {
+
+      logger.error({ err: error, context: { userId } }, 'Failed to get user by ID');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId: id },
+        context: { userId, requestedUserId: id },
         cause: error,
       });
     }

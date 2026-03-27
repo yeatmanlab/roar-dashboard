@@ -50,6 +50,42 @@ export const createSortQuerySchema = <T extends readonly [string, ...string[]]>(
     sortOrder: SortOrderSchema.default(defaultOrder),
   });
 
+/**
+ * Creates a sort query schema that accepts both static enum fields and
+ * dynamic pattern-matched fields (e.g., `progress.<uuid>.status`).
+ *
+ * Dynamic fields pass through as `string` — the service layer validates
+ * them against actual data (e.g., administration task IDs).
+ *
+ * @param sortFields - The allowed static sort field values
+ * @param defaultField - The default sort field (must be a static field)
+ * @param defaultOrder - The default sort order (defaults to 'desc')
+ * @param dynamicFieldPatterns - Regex patterns for dynamic field names
+ * @param dynamicFieldHint - Human-readable description of accepted dynamic fields for error messages
+ */
+export const createDynamicSortQuerySchema = <T extends readonly [string, ...string[]]>(
+  sortFields: T,
+  defaultField: T[number],
+  defaultOrder: SortOrder = 'desc',
+  dynamicFieldPatterns: RegExp[] = [],
+  dynamicFieldHint?: string,
+) =>
+  z.object({
+    sortBy: z
+      .string()
+      .default(defaultField)
+      .refine(
+        (val) => {
+          if ((sortFields as readonly string[]).includes(val)) return true;
+          return dynamicFieldPatterns.some((pattern) => pattern.test(val));
+        },
+        (val) => ({
+          message: `Unknown sort field: "${val}". Allowed: ${sortFields.join(', ')}${dynamicFieldHint ? `, ${dynamicFieldHint}` : ''}`,
+        }),
+      ),
+    sortOrder: SortOrderSchema.default(defaultOrder),
+  });
+
 // Template schema to extract sort query structure
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used only for type derivation
 const _sortQueryTemplate = createSortQuerySchema(['_'] as const, '_');

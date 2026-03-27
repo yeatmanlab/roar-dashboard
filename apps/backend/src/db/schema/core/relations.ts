@@ -13,6 +13,7 @@ import { userClasses } from './user-classes';
 import { userFamilies } from './user-families';
 import { userGroups } from './user-groups';
 import { userOrgs } from './user-orgs';
+import { userResearchExclusions } from './user-research-exclusions';
 import { tasks } from './tasks';
 import { taskVariants } from './task-variants';
 import { taskVariantParameters } from './task-variant-parameters';
@@ -223,6 +224,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   classes: many(userClasses),
   families: many(userFamilies),
   agreements: many(userAgreements),
+  researchExclusions: many(userResearchExclusions),
 }));
 
 export const userOrgsRelations = relations(userOrgs, ({ one }) => ({
@@ -251,4 +253,9 @@ export const userAgreementsRelations = relations(userAgreements, ({ one }) => ({
     fields: [userAgreements.agreementVersionId],
     references: [agreementVersions.id],
   }),
+}));
+
+export const userResearchExclusionsRelations = relations(userResearchExclusions, ({ one }) => ({
+  user: one(users, { fields: [userResearchExclusions.userId], references: [users.id] }),
+  excludedByUser: one(users, { fields: [userResearchExclusions.excludedBy], references: [users.id] }),
 }));

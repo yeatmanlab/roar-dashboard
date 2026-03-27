@@ -9,6 +9,24 @@
 import type { UserRole } from '../enums/user-role.enum';
 
 /**
+ * Roles with hierarchical user access.
+ *
+ * These roles can see users in descendant orgs via the org hierarchy:
+ * - User at district → sees users in child schools, classes, etc.
+ * - User at school → sees users in child classes
+ *
+ * Teachers are excluded — they only see students in classes they directly teach,
+ * not all users in descendant orgs.
+ */
+export const HIERARCHICAL_USER_ACCESS_ROLES: UserRole[] = [
+  'administrator',
+  'district_administrator',
+  'principal',
+  'site_administrator',
+  'system_administrator',
+];
+
+/**
  * Roles with supervisory responsibility.
  *
  * These roles can see administrations assigned to child entities:
@@ -41,3 +59,11 @@ export const SUPERVISORY_ROLES: UserRole[] = [
  * They cannot see administrations assigned to sibling or child entities.
  */
 export const SUPERVISED_ROLES: UserRole[] = ['student', 'guardian', 'parent', 'relative'];
+
+/**
+ * Roles that are caretakers within a family context.
+ *
+ * These roles can only see all users within their family, but not other users
+ * that are in their children's organizations or classes
+ */
+export const CARETAKER_ROLES: UserRole[] = ['guardian', 'parent', 'relative'];

@@ -1,0 +1,321 @@
+model
+  schema 1.1
+
+# ────────────────────────────────────────────────────────────────────────────────
+# user — the principal that all roles are assigned to
+# ────────────────────────────────────────────────────────────────────────────────
+type user
+
+# ────────────────────────────────────────────────────────────────────────────────
+# district — top-level org in the hierarchy
+#
+# Supervisory roles cascade DOWN to child schools (via school.parent_org).
+# Supervised roles (student, caregivers) bubble UP from child schools
+# (via child_school).
+#
+# Supervisory roles do NOT bubble up into the district's own role
+# definitions — doing so would create circular cascading (school teacher
+# → district teacher → sibling school teacher), breaking school isolation.
+# Instead, subtree_supervisory_tier_group aggregates supervisory users from
+# child schools for use by the administration type's role resolution.
+# ────────────────────────────────────────────────────────────────────────────────
+type district
+  relations
+    # Hierarchy
+    define child_school: [school]
+
+    # Assignable roles
+    define system_administrator: [user with active_membership]
+    define site_administrator: [user with active_membership]
+    define district_administrator: [user with active_membership]
+    define administrator: [user with active_membership]
+
+    define principal: [user with active_membership]
+    define counselor: [user with active_membership]
+    define teacher: [user with active_membership]
+    define aide: [user with active_membership]
+    define proctor: [user with active_membership]
+
+    define guardian: [user with active_membership] or guardian from child_school
+    define parent: [user with active_membership] or parent from child_school
+    define relative: [user with active_membership] or relative from child_school
+
+    define student: [user with active_membership] or student from child_school
+
+    # Computed role tiers
+    define admin_tier: system_administrator or site_administrator or district_administrator or administrator
+    define educator_tier: principal or counselor or teacher or aide or proctor
+    define caregiver_tier: guardian or parent or relative
+    define supervisory_tier_group: admin_tier or educator_tier
+    define member: supervisory_tier_group or caregiver_tier or student
+
+    # Subtree membership — aggregates supervisory users from the district's
+    # full subtree (child schools and their classes). Referenced only by the
+    # administration type for ancestor access; does NOT feed into district
+    # permissions, preserving school-level isolation.
+    define subtree_supervisory_tier_group: supervisory_tier_group or subtree_supervisory_tier_group from child_school
+
+    # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
+    define can_list_users: supervisory_tier_group
+    define can_read_scores: supervisory_tier_group
+    define can_read_progress: supervisory_tier_group
+
+# ────────────────────────────────────────────────────────────────────────────────
+# school — mid-level org, child of district, parent of classes
+#
+# Inherits supervisory roles from parent district (via parent_org).
+# Supervised roles bubble UP from child classes (via child_class)
+# and further up to the parent district (via district.child_school).
+#
+# Like district, supervisory roles do NOT bubble up from child classes
+# into the school's own role definitions (circular cascading would break
+# sibling class isolation). subtree_supervisory_tier_group aggregates
+# them for the administration type instead.
+# ────────────────────────────────────────────────────────────────────────────────
+type school
+  relations
+    # Hierarchy
+    define parent_org: [district]
+    define child_class: [class]
+
+    # Assignable roles
+    define system_administrator: [user with active_membership] or system_administrator from parent_org
+    define site_administrator: [user with active_membership] or site_administrator from parent_org
+    define district_administrator: [user with active_membership] or district_administrator from parent_org
+    define administrator: [user with active_membership] or administrator from parent_org
+
+    define principal: [user with active_membership] or principal from parent_org
+    define counselor: [user with active_membership] or counselor from parent_org
+    define teacher: [user with active_membership] or teacher from parent_org
+    define aide: [user with active_membership] or aide from parent_org
+    define proctor: [user with active_membership] or proctor from parent_org
+    
+    define guardian: [user with active_membership] or guardian from child_class
+    define parent: [user with active_membership] or parent from child_class
+    define relative: [user with active_membership] or relative from child_class
+
+    define student: [user with active_membership] or student from child_class
+
+    # Computed role tiers
+    define admin_tier: system_administrator or site_administrator or district_administrator or administrator
+    define educator_tier: principal or counselor or teacher or aide or proctor
+    define caregiver_tier: guardian or parent or relative
+    define supervisory_tier_group: admin_tier or educator_tier
+    define member: supervisory_tier_group or caregiver_tier or student
+
+    # Subtree membership — aggregates supervisory users from the school's
+    # child classes. Referenced only by the administration type for ancestor
+    # access; does NOT feed into school permissions, preserving class isolation.
+    define subtree_supervisory_tier_group: supervisory_tier_group or supervisory_tier_group from child_class
+
+    # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
+    
+    define can_list_users: supervisory_tier_group
+    define can_read_scores: supervisory_tier_group
+    define can_read_progress: supervisory_tier_group
+
+# ────────────────────────────────────────────────────────────────────────────────
+# class — leaf-level entity, child of school
+#
+# Inherits all roles from parent school (and transitively from district).
+# A teacher at a school is a teacher in all classes within that school.
+# ────────────────────────────────────────────────────────────────────────────────
+type class
+  relations
+    # Hierarchy
+    define parent_org: [school]
+
+    # Assignable roles
+    define system_administrator: [user with active_membership] or system_administrator from parent_org
+    define site_administrator: [user with active_membership] or site_administrator from parent_org
+    define district_administrator: [user with active_membership] or district_administrator from parent_org
+    define administrator: [user with active_membership] or administrator from parent_org
+
+    define principal: [user with active_membership] or principal from parent_org
+    define counselor: [user with active_membership] or counselor from parent_org
+    define teacher: [user with active_membership] or teacher from parent_org
+    define aide: [user with active_membership] or aide from parent_org
+    define proctor: [user with active_membership] or proctor from parent_org
+
+    define guardian: [user with active_membership]
+    define parent: [user with active_membership]
+    define relative: [user with active_membership]
+
+    define student: [user with active_membership]
+
+    # Computed role tiers
+    define admin_tier: system_administrator or site_administrator or district_administrator or administrator
+    define educator_tier: principal or counselor or teacher or aide or proctor
+    define caregiver_tier: guardian or parent or relative
+    define supervisory_tier_group: admin_tier or educator_tier
+    define member: supervisory_tier_group or caregiver_tier or student
+
+    # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
+    define can_list_users: supervisory_tier_group
+    define can_read_scores: supervisory_tier_group
+    define can_read_progress: supervisory_tier_group
+
+# ────────────────────────────────────────────────────────────────────────────────
+# family — links parents/guardians to children outside the org hierarchy
+# ────────────────────────────────────────────────────────────────────────────────
+type family
+  relations
+    # Assignable roles
+    define parent: [user with active_membership]
+    define child: [user with active_membership]
+    define member: parent or child
+
+    # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+    
+    define can_list: parent
+    define can_read: parent
+    define can_list_users: parent
+    define can_list_children: parent
+
+    define can_create_child: parent
+    define can_update_child: parent
+    define can_delete_child: parent
+    define can_read_child: parent
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+# group — membership group, not part of the org hierarchy
+#
+# Groups have the same role model as orgs (user_groups has role + enrollment
+# dates) but no parent/child hierarchy.
+# ────────────────────────────────────────────────────────────────────────────────
+type group
+  relations
+    # Assignable roles
+    define system_administrator: [user with active_membership]
+    define site_administrator: [user with active_membership]
+    define district_administrator: [user with active_membership]
+    define administrator: [user with active_membership]
+
+    define principal: [user with active_membership]
+    define counselor: [user with active_membership]
+    define teacher: [user with active_membership]
+    define aide: [user with active_membership]
+    define proctor: [user with active_membership]
+
+    define guardian: [user with active_membership]
+    define parent: [user with active_membership]
+    define relative: [user with active_membership]
+
+    define student: [user with active_membership]
+
+    # Computed role tiers
+    define admin_tier: system_administrator or site_administrator or district_administrator or administrator
+    define educator_tier: principal or counselor or teacher or aide or proctor
+    define caregiver_tier: guardian or parent or relative
+    define supervisory_tier_group: admin_tier or educator_tier
+    define member: supervisory_tier_group or caregiver_tier or student
+
+    # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+
+    define can_list: supervisory_tier_group
+    define can_read: supervisory_tier_group
+    define can_list_users: supervisory_tier_group
+
+# ────────────────────────────────────────────────────────────────────────────────
+# administration — an assessment administration assigned to orgs, classes,
+# or groups. Roles are resolved indirectly through the assigned entities.
+#
+# Individual roles must be enumerated (not tiers) because each resolves through
+# multiple "X from Y" paths (assigned_district, assigned_school, assigned_class).
+# Tiers are defined after role resolution for use in permissions.
+#
+# Ancestor access for supervisory roles: supervisory_tier_group additionally
+# includes subtree_supervisory_tier_group from assigned_district and
+# assigned_school. This lets a school teacher see a district-assigned
+# administration, and a class teacher see a school-assigned administration,
+# without bubbling supervisory roles up into the org types themselves (which
+# would break sibling isolation).
+# ────────────────────────────────────────────────────────────────────────────────
+type administration
+  relations
+    # Assignment links — which orgs/classes/groups this administration targets
+    define assigned_district: [district]
+    define assigned_school: [school]
+    define assigned_class: [class]
+    define assigned_group: [group]
+
+    # Resolved roles — pulled from assigned entities (including groups)
+    define system_administrator: system_administrator from assigned_district or system_administrator from assigned_school or system_administrator from assigned_class or system_administrator from assigned_group
+    define site_administrator: site_administrator from assigned_district or site_administrator from assigned_school or site_administrator from assigned_class or site_administrator from assigned_group
+    define district_administrator: district_administrator from assigned_district or district_administrator from assigned_school or district_administrator from assigned_class or district_administrator from assigned_group
+    define administrator: administrator from assigned_district or administrator from assigned_school or administrator from assigned_class or administrator from assigned_group
+    
+    define principal: principal from assigned_district or principal from assigned_school or principal from assigned_class or principal from assigned_group
+    define counselor: counselor from assigned_district or counselor from assigned_school or counselor from assigned_class or counselor from assigned_group
+    define teacher: teacher from assigned_district or teacher from assigned_school or teacher from assigned_class or teacher from assigned_group
+    define aide: aide from assigned_district or aide from assigned_school or aide from assigned_class or aide from assigned_group
+    define proctor: proctor from assigned_district or proctor from assigned_school or proctor from assigned_class or proctor from assigned_group
+    define student: student from assigned_district or student from assigned_school or student from assigned_class or student from assigned_group
+    define guardian: guardian from assigned_district or guardian from assigned_school or guardian from assigned_class or guardian from assigned_group
+    define parent: parent from assigned_district or parent from assigned_school or parent from assigned_class or parent from assigned_group
+    define relative: relative from assigned_district or relative from assigned_school or relative from assigned_class or relative from assigned_group
+
+    # Computed role tiers (defined after role resolution)
+    define admin_tier: system_administrator or site_administrator or district_administrator or administrator
+    define educator_tier: principal or counselor or teacher or aide or proctor
+    define caregiver_tier: guardian or parent or relative
+    define supervisory_tier_group: admin_tier or educator_tier or subtree_supervisory_tier_group from assigned_district or subtree_supervisory_tier_group from assigned_school or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
+
+    # Permissions
+    define no_one: [user]
+
+    define can_create: no_one
+    define can_update: no_one
+    define can_delete: no_one
+
+    define can_list: supervisory_tier_group or student
+    define can_read: supervisory_tier_group or student
+    define can_read_scores: supervisory_tier_group
+    define can_read_progress: supervisory_tier_group
+    define can_create_run: student
+    
+
+# ────────────────────────────────────────────────────────────────────────────────
+# Conditions
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Tuples are written with grant_start and grant_end timestamps.
+# At check time, current_time is passed as context to enforce time-bound access.
+condition active_membership(current_time: timestamp, grant_start: timestamp, grant_end: timestamp) {
+  current_time >= grant_start && current_time <= grant_end
+}

@@ -1,5 +1,5 @@
 import { and, eq, inArray, type AnyColumn } from 'drizzle-orm';
-import { isEnrollmentActive } from './enrollment.utils';
+import { isEnrollmentActive, isActiveInFamily } from './enrollment.utils';
 
 /**
  * Builds a condition to filter user memberships by userId, allowed roles, and active enrollment.
@@ -26,9 +26,35 @@ import { isEnrollmentActive } from './enrollment.utils';
  * @returns Drizzle SQL condition combining user, role, and enrollment checks
  */
 export function isAuthorizedMembership(
-  table: { userId: AnyColumn; role: AnyColumn; enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
+  table: {
+    userId: AnyColumn;
+    role: AnyColumn;
+    enrollmentStart: AnyColumn;
+    enrollmentEnd: AnyColumn;
+  },
   userId: string,
   allowedRoles: string[],
 ) {
   return and(eq(table.userId, userId), inArray(table.role, allowedRoles), isEnrollmentActive(table));
+}
+
+/**
+ * Builds a condition to filter user memberships by userId, allowed roles, and membership status.
+ *
+ * Combines three authorization checks into a single reusable condition:
+ * - User ID matches the family membership record
+ * - User role in that family is one of the allowed roles
+ * - User is currently active in that family (i.e. leftOn is null or in the future)
+ *
+ * @param table - A user membership table (currently only userFamilies) with userId, role, joinedOn, and leftOn columns.
+ * @param userId - The ID of the user to filter by
+ * @param allowedRoles - Array of roles that grant access for this operation
+ * @returns Drizzle SQL condition combining user, role, and family membership checks
+ */
+export function isAuthorizedFamily(
+  table: { userId: AnyColumn; role: AnyColumn; joinedOn: AnyColumn; leftOn: AnyColumn },
+  userId: string,
+  allowedRoles: string[],
+) {
+  return and(eq(table.userId, userId), inArray(table.role, allowedRoles), isActiveInFamily(table));
 }
