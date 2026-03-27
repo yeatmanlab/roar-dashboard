@@ -14,6 +14,7 @@ Controllers sit between routes and services. Their job is to call the service, t
 
 - Accept `AuthContext` and typed query/params — not raw `req`/`res`
 - Call service methods, passing through `AuthContext`
+- Transform API contract types to service layer types
 - Transform DB entities to API response format (rename fields, `Date` → ISO string, attach embeds)
 - Map `ApiError` to typed ts-rest responses via `toErrorResponse()`
 - Use `as const` on status codes for ts-rest type narrowing
@@ -70,7 +71,11 @@ export const MyResourceController = {
     try {
       const { page, perPage, sortBy, sortOrder, embed, status } = query;
       const result = await service.list(authContext, {
-        page, perPage, sortBy, sortOrder, embed,
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        embed,
         ...(status && { status }),
       });
       return {
@@ -78,7 +83,12 @@ export const MyResourceController = {
         body: {
           data: {
             items: result.items.map(transformItem),
-            pagination: { page, perPage, totalItems: result.totalItems, totalPages: Math.ceil(result.totalItems / perPage) },
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / perPage),
+            },
           },
         },
       };
@@ -120,7 +130,12 @@ function handleSubResourceResponse<T>(
     body: {
       data: {
         items: result.items.map(mapItem),
-        pagination: { page, perPage, totalItems: result.totalItems, totalPages: Math.ceil(result.totalItems / perPage) },
+        pagination: {
+          page,
+          perPage,
+          totalItems: result.totalItems,
+          totalPages: Math.ceil(result.totalItems / perPage),
+        },
       },
     },
   };
