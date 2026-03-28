@@ -12,6 +12,7 @@ import type {
   ProgressStudentsResult,
   ParsedFilter,
 } from './report.types';
+import type { ScoreOverviewQuery, TaskScoreOverview } from '@roar-dashboard/api-contract';
 import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -26,13 +27,18 @@ import type {
   StudentProgressRow,
   ProgressStatusSortParam,
   ProgressStatusFilterParam,
+  StudentOverviewRow,
+  RunScoreRow,
 } from '../../repositories/report.repository';
+import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
 import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType } from '../authorization/fga-constants';
 import { conditionToSql } from '../../utils/condition-to-sql';
+import { getSupportLevel, resolveScoreFieldNames } from '../scoring';
 import type { Condition, ConditionEvaluationUser } from '../task/task.types';
 import type { AuthContext } from '../../types/auth-context';
+import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 
 /** Map sortBy field strings to Drizzle column references for progress students. */
 const PROGRESS_SORT_COLUMNS: Record<ProgressStudentsSortField, Column> = {
@@ -55,6 +61,24 @@ const PROGRESS_FILTER_FIELDS: Record<ProgressStudentsFilterField, PgColumn> = {
 const GRADE_AWARE_FIELDS: ReadonlySet<string> = new Set(['user.grade']);
 
 /**
+ * Map filter field strings to Drizzle column references for score overview.
+ * Only includes user-level fields that can be applied as SQL WHERE conditions.
+ * `taskId` is handled separately in the service layer (it filters task metadata,
+ * not student rows).
+ */
+const SCORE_OVERVIEW_USER_FILTER_FIELDS: Record<string, PgColumn> = {
+  'user.grade': users.grade,
+};
+
+/**
+ * Score overview result with per-task support level distributions.
+ */
+export interface ScoreOverviewResult {
+  totalStudents: number;
+  tasks: TaskScoreOverview[];
+}
+
+/**
  * ReportService
  *
  * Provides business logic for reporting endpoints.
@@ -68,11 +92,13 @@ export function ReportService({
   reportRepository = new ReportRepository(),
   taskService = TaskService(),
   authorizationService = AuthorizationService(),
+  taskVariantParameterRepository = new TaskVariantParameterRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
   reportRepository?: ReportRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
+  taskVariantParameterRepository?: TaskVariantParameterRepository;
 } = {}) {
   /** Map scope types to FGA object type prefixes. */
   const SCOPE_TO_FGA_TYPE: Record<ScopeType, FgaType> = {
@@ -293,7 +319,143 @@ export function ReportService({
     }
   }
 
-  return { listProgressStudents };
+  /**
+   * Get aggregated score overview for an administration.
+   *
+   * Returns per-task support level distributions (achievedSkill, developingSkill,
+   * needsExtraSupport) with counts and percentages, plus totalAssessed and
+   * totalNotAssessed (required/optional) counts.
+   *
+   * Authorization: same 3-layer pattern as listProgressStudents but uses
+   * Reports.Score.READ permission instead of Reports.Progress.READ.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scope, filters)
+   * @returns Score overview with per-task distributions
+   */
+  async function getScoreOverview(
+    authContext: AuthContext,
+    administrationId: string,
+    query: ScoreOverviewQuery,
+  ): Promise<ScoreOverviewResult> {
+    const { userId, isSuperAdmin } = authContext;
+    const { scopeType, scopeId, filter } = query;
+
+    try {
+      // 1. Verify administration exists and user has access
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      // 2. Verify permission and supervisory role for non-super-admins
+      if (!isSuperAdmin) {
+        const adminRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+        const allowedScoreRoles: string[] = rolesForPermission(Permissions.Reports.Score.READ);
+        const hasPermission = adminRoles.some((role) => allowedScoreRoles.includes(role));
+        if (!hasPermission) {
+          logger.warn({ userId, administrationId, adminRoles }, 'User lacks Reports.Score.READ permission');
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, administrationId },
+          });
+        }
+
+        if (!hasSupervisoryRole(adminRoles)) {
+          logger.warn({ userId, administrationId, adminRoles }, 'Supervised user attempted to access score overview');
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, administrationId },
+          });
+        }
+      }
+
+      // 3. Validate scope and authorize
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
+
+      // 4. Get task metadata
+      let taskMetas = await reportRepository.getTaskMetadata(administrationId);
+
+      // 5. Extract taskId filter (if any) and user-level filters separately
+      const taskIdFilter = filter.find((f) => f.field === 'taskId');
+      if (taskIdFilter) {
+        const allowedTaskIds = new Set(taskIdFilter.value.split(',').map((v) => v.trim()));
+        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
+      }
+
+      const userFilters = filter.filter((f) => f.field !== 'taskId');
+      const filterCondition =
+        userFilters.length > 0
+          ? buildFilterConditions(userFilters, SCORE_OVERVIEW_USER_FILTER_FIELDS, {
+              gradeAwareFields: GRADE_AWARE_FIELDS,
+            })
+          : undefined;
+
+      // 6. Get all students in scope (no pagination)
+      const { totalStudents, students } = await reportRepository.getAllStudentsInScope(
+        { scopeType, scopeId },
+        filterCondition,
+      );
+
+      if (totalStudents === 0 || taskMetas.length === 0) {
+        return {
+          totalStudents,
+          tasks: taskMetas.map((t) => buildEmptyTaskOverview(t)),
+        };
+      }
+
+      // 7. Fetch scoring versions from task_variant_parameters
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
+      const scoringVersionByVariant = new Map<string, number>();
+      for (const param of allParams) {
+        if (param.name === 'scoringVersion') {
+          const version = typeof param.value === 'number' ? param.value : Number(param.value);
+          if (!isNaN(version)) {
+            scoringVersionByVariant.set(param.taskVariantId, version);
+          }
+        }
+      }
+
+      // 8. Bulk fetch completed run scores
+      const studentIds = students.map((s) => s.userId);
+      const scoreRows = await reportRepository.getCompletedRunScores(administrationId, studentIds, taskVariantIds);
+
+      // Build a lookup: userId → taskVariantId → Map<scoreName, scoreValue>
+      const scoresByStudentTask = buildScoreLookup(scoreRows);
+
+      // 9. Aggregate per task
+      const tasks: TaskScoreOverview[] = taskMetas.map((task) => {
+        const scoringVersion = scoringVersionByVariant.get(task.taskVariantId) ?? null;
+
+        return aggregateTaskScores(
+          task,
+          students,
+          scoresByStudentTask,
+          scoringVersion,
+          taskService.evaluateTaskVariantEligibility,
+        );
+      });
+
+      return { totalStudents, tasks };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, scopeType, scopeId } },
+        'Failed to retrieve score overview',
+      );
+
+      throw new ApiError('Failed to retrieve score overview', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { listProgressStudents, getScoreOverview };
 }
 
 /** Status priority for progress entries. Higher value = higher priority. */
@@ -510,4 +672,141 @@ export function buildProgressMap(
   }
 
   return progress;
+}
+
+// --- Score overview helpers ---
+
+type ScoreLookup = Map<string, Map<string, Map<string, string>>>;
+
+/**
+ * Build a nested lookup: userId → taskVariantId → Map<scoreName, scoreValue>.
+ * For duplicate score names within the same user-task-variant, the last value wins.
+ */
+function buildScoreLookup(scoreRows: RunScoreRow[]): ScoreLookup {
+  const lookup: ScoreLookup = new Map();
+  for (const row of scoreRows) {
+    if (!lookup.has(row.userId)) {
+      lookup.set(row.userId, new Map());
+    }
+    const userScores = lookup.get(row.userId)!;
+    if (!userScores.has(row.taskVariantId)) {
+      userScores.set(row.taskVariantId, new Map());
+    }
+    userScores.get(row.taskVariantId)!.set(row.scoreName, row.scoreValue);
+  }
+  return lookup;
+}
+
+/**
+ * Build an empty task overview (all zeros) for when there are no students.
+ */
+function buildEmptyTaskOverview(task: ReportTaskMeta): TaskScoreOverview {
+  return {
+    taskId: task.taskId,
+    taskSlug: task.taskSlug,
+    taskName: task.taskName,
+    orderIndex: task.orderIndex,
+    totalAssessed: 0,
+    totalNotAssessed: { required: 0, optional: 0 },
+    supportLevels: {
+      achievedSkill: { count: 0, percentage: 0 },
+      developingSkill: { count: 0, percentage: 0 },
+      needsExtraSupport: { count: 0, percentage: 0 },
+    },
+  };
+}
+
+/**
+ * Aggregate support level distributions for a single task across all students.
+ *
+ * For each student:
+ * - If they have completed run scores → classify support level and count in totalAssessed
+ * - If no completed run → evaluate conditions to determine assigned vs optional → count in totalNotAssessed
+ * - If conditionsAssignment excludes them → skip entirely
+ */
+function aggregateTaskScores(
+  task: ReportTaskMeta,
+  students: StudentOverviewRow[],
+  scoresByStudentTask: ScoreLookup,
+  scoringVersion: number | null,
+  evaluateEligibility: EligibilityEvaluator,
+): TaskScoreOverview {
+  let totalAssessed = 0;
+  let notAssessedRequired = 0;
+  let notAssessedOptional = 0;
+  let achievedCount = 0;
+  let developingCount = 0;
+  let needsSupportCount = 0;
+
+  for (const student of students) {
+    const studentScores = scoresByStudentTask.get(student.userId)?.get(task.taskVariantId);
+
+    if (studentScores && studentScores.size > 0) {
+      // Student has completed run scores — classify support level
+      totalAssessed++;
+
+      const gradeLevel = getGradeAsNumber(student.grade);
+      const fieldNames = resolveScoreFieldNames(task.taskSlug, gradeLevel);
+
+      const percentile = resolveNumericScore(studentScores, fieldNames.percentileFieldNames);
+      const rawScore = resolveNumericScore(studentScores, fieldNames.rawScoreFieldNames);
+
+      const supportLevel = getSupportLevel({
+        grade: student.grade,
+        percentile,
+        rawScore,
+        taskSlug: task.taskSlug,
+        scoringVersion,
+      });
+
+      if (supportLevel === 'achievedSkill') achievedCount++;
+      else if (supportLevel === 'developingSkill') developingCount++;
+      else if (supportLevel === 'needsExtraSupport') needsSupportCount++;
+      // null support level (raw-score-only tasks, unknown tasks) → counted in totalAssessed but not in any bucket
+    } else {
+      // No completed run — evaluate conditions for assigned vs optional
+      const { isAssigned, isOptional } = evaluateEligibility(
+        student,
+        task.conditionsAssignment,
+        task.conditionsRequirements,
+      );
+
+      if (!isAssigned) continue;
+      if (isOptional) notAssessedOptional++;
+      else notAssessedRequired++;
+    }
+  }
+
+  const pct = (count: number) => (totalAssessed > 0 ? Math.round((count / totalAssessed) * 1000) / 10 : 0);
+
+  return {
+    taskId: task.taskId,
+    taskSlug: task.taskSlug,
+    taskName: task.taskName,
+    orderIndex: task.orderIndex,
+    totalAssessed,
+    totalNotAssessed: { required: notAssessedRequired, optional: notAssessedOptional },
+    supportLevels: {
+      achievedSkill: { count: achievedCount, percentage: pct(achievedCount) },
+      developingSkill: { count: developingCount, percentage: pct(developingCount) },
+      needsExtraSupport: { count: needsSupportCount, percentage: pct(needsSupportCount) },
+    },
+  };
+}
+
+/**
+ * Resolve a numeric score from the score map by trying each field name in order.
+ * Returns the first valid numeric value found, or null if none match.
+ */
+function resolveNumericScore(scores: Map<string, string>, fieldNames: string[]): number | null {
+  for (const name of fieldNames) {
+    const value = scores.get(name);
+    if (value !== undefined) {
+      // Handle string values with '<' or '>' (e.g., '<5' from assessment engine)
+      const cleaned = value.replace(/[<>]/g, '');
+      const num = parseFloat(cleaned);
+      if (!isNaN(num)) return num;
+    }
+  }
+  return null;
 }

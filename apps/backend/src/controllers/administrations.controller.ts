@@ -24,6 +24,7 @@ import type {
   ProgressStudentsQuery,
   ReportTaskMetadata,
   ProgressStudent,
+  ScoreOverviewQuery,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org, Class, Group } from '../db/schema';
 import type {
@@ -507,6 +508,38 @@ export const AdministrationsController = {
               totalPages: Math.ceil(result.totalItems / query.perPage),
             },
           },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get aggregated score overview for an administration.
+   *
+   * Delegates to ReportService for authorization and data assembly.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scope, filters)
+   */
+  getScoreOverview: async (authContext: AuthContext, administrationId: string, query: ScoreOverviewQuery) => {
+    try {
+      const result = await reportService.getScoreOverview(authContext, administrationId, query);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
         },
       };
     } catch (error) {

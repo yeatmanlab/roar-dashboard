@@ -9,6 +9,7 @@ import { registerSchoolsRoutes } from './schools';
 import { registerGroupsRoutes } from './groups';
 import { registerTasksRoutes } from './task';
 import { registerClassesRoutes } from './classes';
+import { registerReportsRoutes } from './reports';
 import { registerUserRoutes } from './users';
 import { registerSystemRoutes } from './system';
 import { API_VERSION } from '../constants/api';
@@ -41,6 +42,7 @@ export function registerAllRoutes(app: Express) {
   registerGroupsRoutes(router);
   registerTasksRoutes(router);
   registerClassesRoutes(router);
+  registerReportsRoutes(router);
   registerUserRoutes(router);
   registerSystemRoutes(router);
 

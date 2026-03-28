@@ -20,6 +20,7 @@ import type * as CoreDbSchema from '../db/schema/core';
 import { CoreDbClient } from '../db/clients';
 import { fdwRuns } from '../db/schema/assessment-fdw/runs';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import { fdwRunScores } from '../db/schema/assessment-fdw/run-scores';
 import type { ScopeType } from '../services/report/report.types';
 import type { Condition } from '../services/task/task.types';
 import type { ConditionFieldMap } from '../utils/condition-to-sql';
@@ -130,6 +131,33 @@ export const REPORT_CONDITION_FIELD_MAP: ConditionFieldMap = {
   'studentData.hispanicEthnicity': users.hispanicEthnicity,
   'studentData.homeLanguage': users.homeLanguage,
 };
+
+/**
+ * Raw student data for score overview aggregation.
+ * Includes demographic fields for condition evaluation and grade for scoring.
+ */
+export interface StudentOverviewRow {
+  userId: string;
+  grade: string | null;
+  statusEll: string | null;
+  statusIep: string | null;
+  statusFrl: string | null;
+  dob: string | null;
+  gender: string | null;
+  race: string | null;
+  hispanicEthnicity: boolean | null;
+  homeLanguage: string | null;
+}
+
+/**
+ * Raw run score data from the FDW.
+ */
+export interface RunScoreRow {
+  userId: string;
+  taskVariantId: string;
+  scoreName: string;
+  scoreValue: string;
+}
 
 /**
  * ReportRepository
@@ -928,5 +956,95 @@ export class ReportRepository {
     }
 
     return map;
+  }
+
+  /**
+   * Get all students in scope with demographic fields for score overview aggregation.
+   * Returns all students (no pagination) so the overview can aggregate across the full population.
+   *
+   * @param scope - The scope to query students within
+   * @param filterCondition - Optional SQL filter condition (must reference users table columns only)
+   * @returns Total student count and all student rows with demographic data
+   */
+  async getAllStudentsInScope(
+    scope: ReportScope,
+    filterCondition?: SQL,
+  ): Promise<{ totalStudents: number; students: StudentOverviewRow[] }> {
+    const studentsInScope = this.buildStudentInScopeSubquery(scope);
+
+    const [countRow] = await this.db
+      .select({ total: countDistinct(users.id) })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .where(filterCondition);
+
+    const totalStudents = countRow?.total ?? 0;
+
+    if (totalStudents === 0) {
+      return { totalStudents: 0, students: [] };
+    }
+
+    const studentRows = await this.db
+      .selectDistinct({
+        userId: users.id,
+        grade: users.grade,
+        statusEll: users.statusEll,
+        statusIep: users.statusIep,
+        statusFrl: users.statusFrl,
+        dob: users.dob,
+        gender: users.gender,
+        race: users.race,
+        hispanicEthnicity: users.hispanicEthnicity,
+        homeLanguage: users.homeLanguage,
+      })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .where(filterCondition);
+
+    return { totalStudents, students: studentRows };
+  }
+
+  /**
+   * Bulk fetch completed run scores for a set of students and task variants.
+   * Returns raw score rows (scoreName + scoreValue) that the service layer
+   * resolves into percentile/rawScore using task-specific field mappings.
+   *
+   * Only fetches scores from completed, non-aborted, reporting-eligible runs.
+   *
+   * @param administrationId - The administration ID
+   * @param studentIds - Student user IDs to fetch scores for
+   * @param taskVariantIds - Task variant IDs to fetch scores for
+   * @returns Array of raw score rows
+   */
+  async getCompletedRunScores(
+    administrationId: string,
+    studentIds: string[],
+    taskVariantIds: string[],
+  ): Promise<RunScoreRow[]> {
+    if (studentIds.length === 0 || taskVariantIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.db
+      .select({
+        userId: fdwRuns.userId,
+        taskVariantId: fdwRuns.taskVariantId,
+        scoreName: fdwRunScores.name,
+        scoreValue: fdwRunScores.value,
+      })
+      .from(fdwRuns)
+      .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+      .where(
+        and(
+          eq(fdwRuns.administrationId, administrationId),
+          inArray(fdwRuns.userId, studentIds),
+          inArray(fdwRuns.taskVariantId, taskVariantIds),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          sql`${fdwRuns.completedAt} IS NOT NULL`,
+        ),
+      );
+
+    return rows;
   }
 }

@@ -49,6 +49,7 @@ describe('AdministrationsController', () => {
   const mockListAgreements = vi.fn();
   const mockDeleteById = vi.fn();
   const mockListProgressStudents = vi.fn();
+  const mockGetScoreOverview = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -70,6 +71,7 @@ describe('AdministrationsController', () => {
 
     vi.mocked(ReportService).mockReturnValue({
       listProgressStudents: mockListProgressStudents,
+      getScoreOverview: mockGetScoreOverview,
     });
   });
   describe('list', () => {
