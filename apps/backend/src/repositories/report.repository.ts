@@ -21,6 +21,7 @@ import { CoreDbClient } from '../db/clients';
 import { fdwRuns } from '../db/schema/assessment-fdw/runs';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { ScopeType } from '../services/report/report.types';
+import type { Condition } from '../services/task/task.types';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import type { PaginatedResult } from './base.repository';
@@ -36,6 +37,7 @@ export interface ReportScope {
 
 /**
  * Task metadata resolved from administration_task_variants.
+ * Includes condition JSONB for determining assigned vs optional status.
  */
 export interface ReportTaskMeta {
   taskId: string;
@@ -43,6 +45,10 @@ export interface ReportTaskMeta {
   taskSlug: string;
   taskName: string;
   orderIndex: number;
+  /** assigned_if condition — null means assigned to all students */
+  conditionsAssignment: Condition | null;
+  /** optional_if condition — null means required for all assigned students */
+  conditionsRequirements: Condition | null;
 }
 
 /**
@@ -57,6 +63,15 @@ export interface StudentProgressRow {
   nameLast: string | null;
   grade: string | null;
   schoolName: string | null;
+  /** Demographic fields needed for condition evaluation */
+  statusEll: string | null;
+  statusIep: string | null;
+  statusFrl: string | null;
+  dob: string | null;
+  gender: string | null;
+  race: string | null;
+  hispanicEthnicity: boolean | null;
+  homeLanguage: string | null;
   /** Map of taskVariantId → run info. startedAt is from the FDW runs table's createdAt. */
   runs: Map<string, { completedAt: Date | null; startedAt: Date }>;
 }
@@ -101,6 +116,8 @@ export class ReportRepository {
         taskSlug: tasks.slug,
         taskName: tasks.name,
         orderIndex: administrationTaskVariants.orderIndex,
+        conditionsAssignment: administrationTaskVariants.conditionsAssignment,
+        conditionsRequirements: administrationTaskVariants.conditionsRequirements,
       })
       .from(administrationTaskVariants)
       .innerJoin(taskVariants, eq(administrationTaskVariants.taskVariantId, taskVariants.id))
@@ -108,7 +125,9 @@ export class ReportRepository {
       .where(eq(administrationTaskVariants.administrationId, administrationId))
       .orderBy(asc(administrationTaskVariants.orderIndex));
 
-    return rows;
+    // Drizzle returns JSONB columns as `unknown`. Cast at the repository boundary
+    // where JSONB → domain type conversion belongs.
+    return rows as ReportTaskMeta[];
   }
 
   /**
@@ -354,6 +373,18 @@ export class ReportRepository {
         nameFirst: users.nameFirst,
         nameLast: users.nameLast,
         grade: users.grade,
+        // Demographic fields for condition evaluation (assigned vs optional).
+        // These are small nullable columns fetched for all students regardless of whether
+        // conditions exist — the simplicity of a single query outweighs the marginal data
+        // transfer cost of a conditional two-pass approach.
+        statusEll: users.statusEll,
+        statusIep: users.statusIep,
+        statusFrl: users.statusFrl,
+        dob: users.dob,
+        gender: users.gender,
+        race: users.race,
+        hispanicEthnicity: users.hispanicEthnicity,
+        homeLanguage: users.homeLanguage,
       })
       .from(users)
       .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
@@ -440,6 +471,14 @@ export class ReportRepository {
       nameLast: student.nameLast,
       grade: student.grade,
       schoolName: schoolNamesByUser?.get(student.userId) ?? null,
+      statusEll: student.statusEll,
+      statusIep: student.statusIep,
+      statusFrl: student.statusFrl,
+      dob: student.dob,
+      gender: student.gender,
+      race: student.race,
+      hispanicEthnicity: student.hispanicEthnicity,
+      homeLanguage: student.homeLanguage,
       runs: runsByStudent.get(student.userId) ?? new Map(),
     }));
 
