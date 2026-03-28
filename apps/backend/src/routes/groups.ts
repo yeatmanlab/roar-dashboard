@@ -23,6 +23,16 @@ export function registerGroupsRoutes(routerInstance: Router) {
           params.groupId,
         ),
     },
+    listUsers: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req, params, query }) =>
+        GroupsController.listUsers(
+          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
+          params.groupId,
+          query,
+        ),
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo
