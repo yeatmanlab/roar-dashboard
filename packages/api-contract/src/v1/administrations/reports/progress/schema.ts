@@ -104,11 +104,9 @@ export type ProgressStudentsQuery = z.infer<typeof ProgressStudentsQuerySchema>;
 /**
  * Per-task progress entry for a student.
  *
- * `startedAt` is currently always null because the FDW view (`app_fdw.fdw_runs`)
- * does not expose the assessment runs table's `created_at` column. The backend
- * is fully wired to populate `startedAt` — once the FDW view is migrated to
- * include `created_at`, add it to the `fdwRuns` Drizzle schema and the
- * repository SELECT to activate it. No other code changes needed.
+ * `startedAt` is populated from the FDW runs table's `created_at` column,
+ * which represents when the run was created (i.e., when the student started
+ * the task). It is null only for tasks with no run (assigned/optional status).
  */
 export const ProgressEntrySchema = z.object({
   status: ProgressStatusSchema,

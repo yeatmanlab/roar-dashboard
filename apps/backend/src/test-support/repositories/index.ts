@@ -22,3 +22,4 @@ export {
 export { createMockUserRepository, MockUserRepository } from './user.repository';
 export { createMockClassRepository, MockClassRepository } from './class.repository';
 export { createMockGroupRepository, MockGroupRepository } from './group.repository';
+export { createMockReportRepository, MockReportRepository } from './report.repository';
