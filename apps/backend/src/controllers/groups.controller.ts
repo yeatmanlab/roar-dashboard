@@ -1,12 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
 import { InvitationCodeService } from '../services/invitation-code/invitation-code.service';
-import type { InvitationCode as ApiInvitationCode } from '@roar-dashboard/api-contract';
+import type { InvitationCode as ApiInvitationCode, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
 import type { InvitationCode } from '../db/schema';
+import { GroupService } from '../services/group/group.service';
 import type { AuthContext } from '../types/auth-context';
 import { ApiError } from '../errors/api-error';
+import { handleSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
 const invitationCodeService = InvitationCodeService();
+const groupService = GroupService();
 
 /**
  * Maps a database InvitationCode entity to the API schema.
@@ -59,6 +62,22 @@ export const GroupsController = {
         ]);
       }
       throw error;
+    }
+  },
+
+  /**
+   * Lists users in a group with pagination and filtering.
+   * @param authContext The authentication context.
+   * @param groupId The ID of the group.
+   * @param query The query parameters for listing users.
+   * @returns The list of users in the group.
+   */
+  listUsers: async (authContext: AuthContext, groupId: string, query: EnrolledUsersQuery) => {
+    try {
+      const result = await groupService.listUsers(authContext, groupId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
     }
   },
 };
