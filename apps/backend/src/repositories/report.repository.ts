@@ -1,4 +1,4 @@
-import { and, eq, sql, isNull, asc, desc, countDistinct, inArray } from 'drizzle-orm';
+import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
@@ -22,6 +22,7 @@ import { fdwRuns } from '../db/schema/assessment-fdw/runs';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { ScopeType } from '../services/report/report.types';
 import type { Condition } from '../services/task/task.types';
+import type { ConditionFieldMap } from '../utils/condition-to-sql';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import type { PaginatedResult } from './base.repository';
@@ -85,6 +86,50 @@ export interface ReportPaginationOptions {
   sortColumn?: Column | SQL | undefined;
   sortDirection?: SortOrder | undefined;
 }
+
+/**
+ * Parameters for sorting by progress status.
+ * The repository builds a LEFT JOIN + CASE expression using these.
+ */
+export interface ProgressStatusSortParam {
+  /** The task variant to sort by run status */
+  taskVariantId: string;
+  /** SQL condition for conditionsAssignment (from conditionToSql). undefined = assigned to all. */
+  assignmentSql: SQL | undefined;
+  /** SQL condition for conditionsRequirements (from conditionToSql). undefined = required for all. */
+  requirementsSql: SQL | undefined;
+}
+
+/**
+ * Parameters for filtering by progress status.
+ * Each entry restricts results to students matching specific statuses for a task variant.
+ */
+export interface ProgressStatusFilterParam {
+  /** The task variant to filter by run status */
+  taskVariantId: string;
+  /** Status values to include (e.g., ['completed', 'started']) */
+  statusValues: string[];
+  /** SQL condition for conditionsAssignment. undefined = assigned to all. */
+  assignmentSql: SQL | undefined;
+  /** SQL condition for conditionsRequirements. undefined = required for all. */
+  requirementsSql: SQL | undefined;
+}
+
+/**
+ * Maps JSONB condition field paths to Drizzle columns on the users table.
+ * Used by conditionToSql to translate task variant conditions into SQL WHERE clauses.
+ */
+export const REPORT_CONDITION_FIELD_MAP: ConditionFieldMap = {
+  'studentData.grade': users.grade,
+  'studentData.statusEll': users.statusEll,
+  'studentData.statusIep': users.statusIep,
+  'studentData.statusFrl': users.statusFrl,
+  'studentData.dob': users.dob,
+  'studentData.gender': users.gender,
+  'studentData.race': users.race,
+  'studentData.hispanicEthnicity': users.hispanicEthnicity,
+  'studentData.homeLanguage': users.homeLanguage,
+};
 
 /**
  * ReportRepository
@@ -324,13 +369,20 @@ export class ReportRepository {
    * Students are resolved from the scope entity (org/class/group junction tables),
    * filtered to student roles, and left-joined with FDW runs for completion status.
    *
+   * When `progressStatusSort` is provided, a LEFT JOIN against the target variant's runs
+   * is added to enable SQL-level sorting by completion status (completed > started > optional > assigned).
+   * The CASE expression uses conditionToSql-translated conditions for assigned vs optional distinction.
+   *
+   * When `progressStatusFilters` are provided, similar LEFT JOINs + WHERE conditions restrict
+   * results to students matching specific status values for specific task variants.
+   *
    * @param administrationId - The administration ID
    * @param scope - The scope to query students within
    * @param taskVariantIds - The task variant IDs to get run data for
    * @param options - Pagination and sorting options
-   * @param filterCondition - Optional SQL filter condition. Must only reference columns
-   *   from the `users` table, since that's the only data table in the count and data queries.
-   *   The allowed fields are controlled by PROGRESS_FILTER_FIELDS in the service layer.
+   * @param filterCondition - Optional SQL filter condition (must reference users table columns only)
+   * @param progressStatusSort - Optional: sort by progress status for a specific task variant
+   * @param progressStatusFilters - Optional: filter by progress status for specific task variants
    * @returns Paginated student rows with run data
    */
   async getProgressStudents(
@@ -339,6 +391,8 @@ export class ReportRepository {
     taskVariantIds: string[],
     options: ReportPaginationOptions,
     filterCondition?: SQL,
+    progressStatusSort?: ProgressStatusSortParam,
+    progressStatusFilters?: ProgressStatusFilterParam[],
   ): Promise<PaginatedResult<StudentProgressRow>> {
     const { page, perPage } = options;
     const offset = (page - 1) * perPage;
@@ -346,50 +400,125 @@ export class ReportRepository {
     // Build the student-in-scope subquery
     const studentsInScope = this.buildStudentInScopeSubquery(scope);
 
+    // Build LEFT JOIN subqueries for progress status sort and/or filter.
+    // Sort and filter may target different task variants, requiring separate subqueries.
+    // When they target the same variant, they share one subquery to avoid redundancy.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
+    const buildRunSub = (variantId: string, alias: string): any =>
+      this.db
+        .select({
+          userId: fdwRuns.userId,
+          completedAt: fdwRuns.completedAt,
+        })
+        .from(fdwRuns)
+        .where(
+          and(
+            eq(fdwRuns.administrationId, administrationId),
+            eq(fdwRuns.taskVariantId, variantId),
+            isNull(fdwRuns.deletedAt),
+            isNull(fdwRuns.abortedAt),
+            eq(fdwRuns.useForReporting, true),
+          ),
+        )
+        .as(alias);
+
+    const sortVariantId = progressStatusSort?.taskVariantId;
+    const filterVariantId = progressStatusFilters?.[0]?.taskVariantId;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
+    let sortRunSub: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
+    let filterRunSub: any = null;
+
+    if (sortVariantId && filterVariantId && sortVariantId === filterVariantId) {
+      // Same variant — share one subquery
+      const sharedSub = buildRunSub(sortVariantId, 'status_run');
+      sortRunSub = sharedSub;
+      filterRunSub = sharedSub;
+    } else {
+      if (sortVariantId) sortRunSub = buildRunSub(sortVariantId, 'sort_run');
+      if (filterVariantId) filterRunSub = buildRunSub(filterVariantId, 'filter_run');
+    }
+
+    // Build progress status filter WHERE condition using the filter subquery
+    const statusFilterSql =
+      progressStatusFilters && progressStatusFilters.length > 0 && filterRunSub
+        ? this.buildProgressStatusFilterCondition(progressStatusFilters[0]!, filterRunSub)
+        : undefined;
+
+    // Combined WHERE: user-level filter AND progress status filter
+    const combinedWhere = and(filterCondition, statusFilterSql);
+
     // Get total count — use countDistinct because the UNION-based subquery
-    // can produce duplicate userIds (e.g., a student in both user_orgs and user_classes)
-    const [countRow] = await this.db
+    // can produce duplicate userIds (e.g., a student in both user_orgs and user_classes).
+    // Add filter LEFT JOIN to count query (but not sort-only).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle query builder chain
+    let countQueryBuilder: any = this.db
       .select({ total: countDistinct(users.id) })
       .from(users)
-      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
-      .where(filterCondition);
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
 
-    const totalItems = countRow?.total ?? 0;
+    if (filterRunSub && statusFilterSql) {
+      countQueryBuilder = countQueryBuilder.leftJoin(filterRunSub, eq(users.id, filterRunSub.userId));
+    }
+    const countResult = await countQueryBuilder.where(combinedWhere);
+
+    const totalItems = countResult[0]?.total ?? 0;
 
     if (totalItems === 0) {
       return { items: [], totalItems: 0 };
     }
 
-    // Get paginated students with sorting
+    // Build sort expression.
+    // When sorting by progress status, the CASE expression must be in the SELECT list
+    // because PostgreSQL requires ORDER BY expressions to appear in SELECT DISTINCT.
     const sortFn = options.sortDirection === SortOrder.DESC ? desc : asc;
-    const sortExpr = options.sortColumn ?? users.nameLast;
+    let statusSortExpr: SQL | undefined;
 
-    const studentRows = await this.db
-      .selectDistinct({
-        userId: users.id,
-        assessmentPid: users.assessmentPid,
-        username: users.username,
-        email: users.email,
-        nameFirst: users.nameFirst,
-        nameLast: users.nameLast,
-        grade: users.grade,
-        // Demographic fields for condition evaluation (assigned vs optional).
-        // These are small nullable columns fetched for all students regardless of whether
-        // conditions exist — the simplicity of a single query outweighs the marginal data
-        // transfer cost of a conditional two-pass approach.
-        statusEll: users.statusEll,
-        statusIep: users.statusIep,
-        statusFrl: users.statusFrl,
-        dob: users.dob,
-        gender: users.gender,
-        race: users.race,
-        hispanicEthnicity: users.hispanicEthnicity,
-        homeLanguage: users.homeLanguage,
-      })
+    if (progressStatusSort && sortRunSub) {
+      statusSortExpr = this.buildProgressStatusSortExpression(progressStatusSort, sortRunSub);
+    }
+
+    // Get paginated students with sorting
+    const baseSelectFields = {
+      userId: users.id,
+      assessmentPid: users.assessmentPid,
+      username: users.username,
+      email: users.email,
+      nameFirst: users.nameFirst,
+      nameLast: users.nameLast,
+      grade: users.grade,
+      statusEll: users.statusEll,
+      statusIep: users.statusIep,
+      statusFrl: users.statusFrl,
+      dob: users.dob,
+      gender: users.gender,
+      race: users.race,
+      hispanicEthnicity: users.hispanicEthnicity,
+      homeLanguage: users.homeLanguage,
+    };
+
+    // When sorting by progress status, include the CASE in the SELECT list and
+    // ORDER BY it directly. PostgreSQL requires ORDER BY expressions in SELECT DISTINCT
+    // to be in the select list, and using the same SQL object for both ensures they match.
+    const selectFields = statusSortExpr ? { ...baseSelectFields, status_sort_order: statusSortExpr } : baseSelectFields;
+    const primarySort = statusSortExpr ?? options.sortColumn ?? users.nameLast;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle query builder chain
+    let dataQuery: any = this.db
+      .selectDistinct(selectFields)
       .from(users)
-      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
-      .where(filterCondition)
-      .orderBy(sortFn(sortExpr), asc(users.id))
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
+
+    // Chain LEFT JOINs for sort and/or filter subqueries (may be the same object)
+    if (sortRunSub) dataQuery = dataQuery.leftJoin(sortRunSub, eq(users.id, sortRunSub.userId));
+    if (filterRunSub && filterRunSub !== sortRunSub) {
+      dataQuery = dataQuery.leftJoin(filterRunSub, eq(users.id, filterRunSub.userId));
+    }
+
+    const studentRows = await dataQuery
+      .where(combinedWhere)
+      .orderBy(sortFn(primarySort), asc(users.id))
       .limit(perPage)
       .offset(offset);
 
@@ -397,16 +526,18 @@ export class ReportRepository {
       return { items: [], totalItems };
     }
 
-    const studentIds = studentRows.map((s) => s.userId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dataQuery is any due to dynamic chaining
+    const studentIds = studentRows.map((s: any) => s.userId as string);
 
     // Skip FDW query when there are no task variants — nothing to look up
     if (taskVariantIds.length === 0) {
       return {
-        items: studentRows.map((student) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dataQuery is any due to dynamic chaining
+        items: studentRows.map((student: any) => ({
           ...student,
           schoolName: null,
           runs: new Map(),
-        })),
+        })) as StudentProgressRow[],
         totalItems,
       };
     }
@@ -461,8 +592,9 @@ export class ReportRepository {
       schoolNamesByUser = await this.getSchoolNamesForUsers(studentIds);
     }
 
-    // Assemble results
-    const items: StudentProgressRow[] = studentRows.map((student) => ({
+    // Assemble results — explicit any needed because dynamic LEFT JOIN chain erases types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dataQuery is any due to dynamic chaining
+    const items: StudentProgressRow[] = studentRows.map((student: any) => ({
       userId: student.userId,
       assessmentPid: student.assessmentPid,
       username: student.username,
@@ -483,6 +615,107 @@ export class ReportRepository {
     }));
 
     return { items, totalItems };
+  }
+
+  /**
+   * Build a SQL CASE expression for sorting by progress status.
+   * Maps run state + condition evaluation to a numeric sort order:
+   *   completed (3) > started (2) > assigned (1) > optional (0)
+   *
+   * For students with no run, uses the SQL-translated conditions to distinguish
+   * assigned from optional. Students not assigned to the task sort to -1 (excluded
+   * from visible results by the condition evaluation in buildProgressMap).
+   */
+  private buildProgressStatusSortExpression(
+    sortParam: ProgressStatusSortParam,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery type is complex
+    statusRunSub: any,
+  ): SQL {
+    const { assignmentSql, requirementsSql } = sortParam;
+
+    // Build the CASE levels for no-run students
+    // If both conditions are undefined (null in JSONB = no restriction), all no-run students are "assigned"
+    if (!assignmentSql && !requirementsSql) {
+      return sql`CASE
+        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
+        WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+        ELSE 1
+      END`;
+    }
+
+    if (!requirementsSql) {
+      // Has assignment condition but no requirements — all assigned students are "required" (status = assigned)
+      return sql`CASE
+        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
+        WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+        WHEN (${assignmentSql}) THEN 1
+        ELSE -1
+      END`;
+    }
+
+    if (!assignmentSql) {
+      // No assignment condition (assigned to all) but has requirements — assigned vs optional
+      return sql`CASE
+        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
+        WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+        WHEN (${requirementsSql}) THEN 0
+        ELSE 1
+      END`;
+    }
+
+    // Both conditions present
+    return sql`CASE
+      WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
+      WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+      WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
+      WHEN (${assignmentSql}) THEN 1
+      ELSE -1
+    END`;
+  }
+
+  /**
+   * Build a SQL WHERE condition for filtering by progress status.
+   * Translates status values into run-state + condition SQL conditions.
+   */
+  private buildProgressStatusFilterCondition(
+    filterParam: ProgressStatusFilterParam,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery type is complex
+    statusRunSub: any,
+  ): SQL | undefined {
+    const { statusValues, assignmentSql, requirementsSql } = filterParam;
+    const conditions: SQL[] = [];
+
+    for (const status of statusValues) {
+      switch (status) {
+        case 'completed':
+          conditions.push(isNotNull(statusRunSub.completedAt));
+          break;
+        case 'started':
+          conditions.push(and(isNotNull(statusRunSub.userId), isNull(statusRunSub.completedAt))!);
+          break;
+        case 'assigned': {
+          // No run + assigned + not optional
+          const noRun = isNull(statusRunSub.userId);
+          const assigned = assignmentSql ?? sql`true`;
+          const notOptional = requirementsSql ? sql`NOT (${requirementsSql})` : sql`true`;
+          conditions.push(and(noRun, assigned, notOptional)!);
+          break;
+        }
+        case 'optional': {
+          // No run + assigned + optional
+          const noRun = isNull(statusRunSub.userId);
+          const assigned = assignmentSql ?? sql`true`;
+          const optional = requirementsSql ?? sql`false`; // null requirements = required for all, never optional
+          conditions.push(and(noRun, assigned, optional)!);
+          break;
+        }
+      }
+    }
+
+    if (conditions.length === 0) return undefined;
+    if (conditions.length === 1) return conditions[0];
+    // Multiple status values are ORed (e.g., status:in:completed,started)
+    return or(...conditions);
   }
 
   /**
