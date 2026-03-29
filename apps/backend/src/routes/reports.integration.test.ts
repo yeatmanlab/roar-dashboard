@@ -383,10 +383,8 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       );
       expect(studentRow).toBeDefined();
 
-      // Find the progress entry for variantForAllGrades
-      const taskMeta = res.body.data.tasks.find(
-        (t: { taskId: string }) => t.taskId === baseFixture.variantForAllGrades.id,
-      );
+      // Find the task in the response — progress map is keyed by taskId, not variantId
+      const taskMeta = res.body.data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
       expect(taskMeta).toBeDefined();
       expect(studentRow.progress[taskMeta.taskId].status).toBe('completed');
       expect(studentRow.progress[taskMeta.taskId].completedAt).toBeTruthy();
@@ -415,9 +413,7 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       );
       expect(studentRow).toBeDefined();
 
-      const taskMeta = res.body.data.tasks.find(
-        (t: { taskId: string }) => t.taskId === baseFixture.variantForAllGrades.id,
-      );
+      const taskMeta = res.body.data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
       expect(taskMeta).toBeDefined();
       expect(studentRow.progress[taskMeta.taskId].status).toBe('started');
       expect(studentRow.progress[taskMeta.taskId].startedAt).toBeTruthy();
@@ -439,9 +435,7 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       );
       expect(studentRow).toBeDefined();
 
-      const taskMeta = res.body.data.tasks.find(
-        (t: { taskId: string }) => t.taskId === baseFixture.variantForAllGrades.id,
-      );
+      const taskMeta = res.body.data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
       expect(taskMeta).toBeDefined();
       expect(studentRow.progress[taskMeta.taskId].status).toBe('assigned');
     });

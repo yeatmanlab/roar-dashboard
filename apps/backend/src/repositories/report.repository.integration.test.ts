@@ -254,12 +254,15 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
   });
 
   describe('multiple students with different run states', () => {
+    // Use students whose earlier-seeded runs are invisible to the FDW query
+    // (soft-deleted, aborted, or useForReporting=false), avoiding test isolation
+    // issues from runs accumulated by prior tests in the same file.
     it('returns correct run data per student', async () => {
       const completedAt = new Date('2025-06-15T10:00:00Z');
 
-      // schoolAStudent: completed run
+      // grade3Student: completed run (earlier soft-deleted run is filtered out)
       await RunFactory.create({
-        userId: baseFixture.schoolAStudent.id,
+        userId: baseFixture.grade3Student.id,
         taskId,
         taskVariantId: allGradesVariantId,
         administrationId,
@@ -267,9 +270,9 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
         completedAt,
       });
 
-      // schoolBStudent: started run (no completedAt)
+      // grade5Student: started run (earlier aborted run is filtered out)
       await RunFactory.create({
-        userId: baseFixture.schoolBStudent.id,
+        userId: baseFixture.grade5Student.id,
         taskId,
         taskVariantId: allGradesVariantId,
         administrationId,
@@ -286,13 +289,13 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
         defaultOptions,
       );
 
-      // schoolAStudent should have completed run
-      const completedStudent = result.items.find((item) => item.userId === baseFixture.schoolAStudent.id);
+      // grade3Student should have completed run
+      const completedStudent = result.items.find((item) => item.userId === baseFixture.grade3Student.id);
       expect(completedStudent).toBeDefined();
       expect(completedStudent!.runs.get(allGradesVariantId)?.completedAt).toEqual(completedAt);
 
-      // schoolBStudent should have started run
-      const startedStudent = result.items.find((item) => item.userId === baseFixture.schoolBStudent.id);
+      // grade5Student should have started run
+      const startedStudent = result.items.find((item) => item.userId === baseFixture.grade5Student.id);
       expect(startedStudent).toBeDefined();
       expect(startedStudent!.runs.get(allGradesVariantId)?.completedAt).toBeNull();
       expect(startedStudent!.runs.get(allGradesVariantId)?.startedAt).toBeInstanceOf(Date);
