@@ -21,3 +21,4 @@ export {
 } from './administration-task-variant.repository';
 export { createMockUserRepository, MockUserRepository } from './user.repository';
 export { createMockClassRepository, MockClassRepository } from './class.repository';
+export { createMockGroupRepository, MockGroupRepository } from './group.repository';
