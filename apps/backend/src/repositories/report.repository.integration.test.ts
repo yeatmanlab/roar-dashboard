@@ -1,435 +1,306 @@
 /**
- * Integration tests for ReportRepository.
+ * Integration tests for ReportRepository FDW queries.
  *
- * Tests the reporting-specific data access methods against the real database
- * with the base fixture's org hierarchy, users, and administrations.
- *
- * Note: FDW runs table is a foreign table to a separate database and won't
- * have data in integration tests. Run-related assertions verify empty results
- * and correct SQL structure rather than run data content.
+ * These tests verify the data access layer directly — no HTTP stack, no auth.
+ * Assessment data is seeded via RunFactory into the assessment DB and queried
+ * through the FDW foreign tables in the core DB.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { baseFixture } from '../test-support/fixtures';
 import { ReportRepository } from './report.repository';
+import type { ReportScope } from './report.repository';
+import { baseFixture } from '../test-support/fixtures';
+import { RunFactory } from '../test-support/factories/run.factory';
 
-describe('ReportRepository', () => {
-  let repository: ReportRepository;
+let repo: ReportRepository;
 
-  beforeAll(() => {
-    repository = new ReportRepository();
-  });
+/** Default pagination options for tests. */
+const defaultOptions = { page: 1, perPage: 25 };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // getTaskMetadata
-  // ═══════════════════════════════════════════════════════════════════════════
+/** Shorthand for the district-scoped administration and its variant IDs. */
+let administrationId: string;
+let allGradesVariantId: string;
+let taskId: string;
+let districtScope: ReportScope;
 
-  describe('getTaskMetadata', () => {
-    it('returns task metadata for an administration with task variants', async () => {
-      const result = await repository.getTaskMetadata(baseFixture.administrationAssignedToDistrict.id);
+beforeAll(() => {
+  repo = new ReportRepository();
+  administrationId = baseFixture.administrationAssignedToDistrict.id;
+  allGradesVariantId = baseFixture.variantForAllGrades.id;
+  taskId = baseFixture.task.id;
+  districtScope = { scopeType: 'district', scopeId: baseFixture.district.id };
+});
 
-      expect(result).toHaveLength(4);
+describe('ReportRepository.getProgressStudents — FDW run queries', () => {
+  describe('run status derivation', () => {
+    it('returns completed run data when run has completedAt', async () => {
+      const completedAt = new Date('2025-06-15T10:00:00Z');
 
-      // Verify ordering by orderIndex
-      expect(result[0]!.orderIndex).toBe(0);
-      expect(result[1]!.orderIndex).toBe(1);
-      expect(result[2]!.orderIndex).toBe(2);
-      expect(result[3]!.orderIndex).toBe(3);
-
-      // Verify all fields are populated
-      for (const meta of result) {
-        expect(meta.taskId).toBe(baseFixture.task.id);
-        expect(meta.taskSlug).toBeTruthy();
-        expect(meta.taskName).toBeTruthy();
-        expect(meta.taskVariantId).toBeTruthy();
-      }
-
-      // Verify correct variant IDs are returned
-      const variantIds = result.map((r) => r.taskVariantId);
-      expect(variantIds).toContain(baseFixture.variantForAllGrades.id);
-      expect(variantIds).toContain(baseFixture.variantForGrade5.id);
-      expect(variantIds).toContain(baseFixture.variantForGrade3.id);
-      expect(variantIds).toContain(baseFixture.variantOptionalForEll.id);
-    });
-
-    it('returns empty array for an administration with no task variants', async () => {
-      // administrationAssignedToSchoolA has no task variants assigned in the fixture
-      const result = await repository.getTaskMetadata(baseFixture.administrationAssignedToSchoolA.id);
-
-      expect(result).toHaveLength(0);
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // isScopeAssignedToAdministration
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('isScopeAssignedToAdministration', () => {
-    it('returns true for district scope when district is assigned', async () => {
-      const result = await repository.isScopeAssignedToAdministration(baseFixture.administrationAssignedToDistrict.id, {
-        scopeType: 'district',
-        scopeId: baseFixture.district.id,
+      await RunFactory.create({
+        userId: baseFixture.schoolAStudent.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt,
       });
 
-      expect(result).toBe(true);
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
+      );
+
+      const studentRow = result.items.find((item) => item.userId === baseFixture.schoolAStudent.id);
+      expect(studentRow).toBeDefined();
+
+      const runInfo = studentRow!.runs.get(allGradesVariantId);
+      expect(runInfo).toBeDefined();
+      expect(runInfo!.completedAt).toEqual(completedAt);
+      expect(runInfo!.startedAt).toBeInstanceOf(Date);
     });
 
-    it('returns true for school scope when school is assigned', async () => {
-      const result = await repository.isScopeAssignedToAdministration(baseFixture.administrationAssignedToSchoolA.id, {
-        scopeType: 'school',
-        scopeId: baseFixture.schoolA.id,
+    it('returns started run data when run has no completedAt', async () => {
+      await RunFactory.create({
+        userId: baseFixture.schoolBStudent.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt: null,
       });
 
-      expect(result).toBe(true);
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
+      );
+
+      const studentRow = result.items.find((item) => item.userId === baseFixture.schoolBStudent.id);
+      expect(studentRow).toBeDefined();
+
+      const runInfo = studentRow!.runs.get(allGradesVariantId);
+      expect(runInfo).toBeDefined();
+      expect(runInfo!.completedAt).toBeNull();
+      expect(runInfo!.startedAt).toBeInstanceOf(Date);
     });
 
-    it('returns true for class scope when class is assigned', async () => {
-      const result = await repository.isScopeAssignedToAdministration(baseFixture.administrationAssignedToClassA.id, {
-        scopeType: 'class',
-        scopeId: baseFixture.classInSchoolA.id,
-      });
+    it('returns empty runs map when student has no run for a variant', async () => {
+      // classAStudent has no seeded run — their runs map should have no entry for the variant
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
+      );
 
-      expect(result).toBe(true);
-    });
-
-    it('returns true for group scope when group is assigned', async () => {
-      const result = await repository.isScopeAssignedToAdministration(baseFixture.administrationAssignedToGroup.id, {
-        scopeType: 'group',
-        scopeId: baseFixture.group.id,
-      });
-
-      expect(result).toBe(true);
-    });
-
-    it('returns false for a scope entity not assigned to the administration', async () => {
-      // schoolB is not assigned to administrationAssignedToSchoolA
-      const result = await repository.isScopeAssignedToAdministration(baseFixture.administrationAssignedToSchoolA.id, {
-        scopeType: 'school',
-        scopeId: baseFixture.schoolB.id,
-      });
-
-      expect(result).toBe(false);
-    });
-
-    it('returns true for district scope with class-only assignment via ltree descendant', async () => {
-      // administrationAssignedToClassA is assigned to classInSchoolA (not the district directly).
-      // The district should still be a valid scope because classInSchoolA.orgPath is a
-      // descendant of district.path — the ltree <@ operator catches this.
-      const result = await repository.isScopeAssignedToAdministration(baseFixture.administrationAssignedToClassA.id, {
-        scopeType: 'district',
-        scopeId: baseFixture.district.id,
-      });
-
-      expect(result).toBe(true);
-    });
-
-    it('returns true for class scope when parent org is assigned to administration', async () => {
-      // administrationAssignedToDistrict is assigned to the district org.
-      // classInSchoolA should be a valid scope because the class's school is a descendant
-      // of the assigned district.
-      const result = await repository.isScopeAssignedToAdministration(baseFixture.administrationAssignedToDistrict.id, {
-        scopeType: 'class',
-        scopeId: baseFixture.classInSchoolA.id,
-      });
-
-      expect(result).toBe(true);
+      const studentRow = result.items.find((item) => item.userId === baseFixture.classAStudent.id);
+      expect(studentRow).toBeDefined();
+      expect(studentRow!.runs.has(allGradesVariantId)).toBe(false);
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // getUserRolesAtOrAboveScope
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  describe('getUserRolesAtOrAboveScope', () => {
-    it('returns roles for district admin at district scope', async () => {
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.districtAdmin.id, {
-        scopeType: 'district',
-        scopeId: baseFixture.district.id,
+  describe('run filtering', () => {
+    it('excludes soft-deleted runs', async () => {
+      await RunFactory.create({
+        userId: baseFixture.grade3Student.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt: new Date('2025-06-15T10:00:00Z'),
+        deletedAt: new Date('2025-06-16T10:00:00Z'),
+        deletedBy: baseFixture.districtAdmin.id,
       });
 
-      expect(roles).toContain('administrator');
-      expect(roles.length).toBeGreaterThanOrEqual(1);
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
+      );
+
+      const studentRow = result.items.find((item) => item.userId === baseFixture.grade3Student.id);
+      expect(studentRow).toBeDefined();
+      expect(studentRow!.runs.has(allGradesVariantId)).toBe(false);
     });
 
-    it('returns roles for school teacher at school scope', async () => {
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.schoolATeacher.id, {
-        scopeType: 'school',
-        scopeId: baseFixture.schoolA.id,
+    it('excludes aborted runs', async () => {
+      await RunFactory.create({
+        userId: baseFixture.grade5Student.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt: null,
+        abortedAt: new Date('2025-06-15T12:00:00Z'),
       });
 
-      expect(roles).toContain('teacher');
-      expect(roles.length).toBeGreaterThanOrEqual(1);
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
+      );
+
+      const studentRow = result.items.find((item) => item.userId === baseFixture.grade5Student.id);
+      expect(studentRow).toBeDefined();
+      expect(studentRow!.runs.has(allGradesVariantId)).toBe(false);
     });
 
-    it('returns district admin roles when checking school scope (ancestor role)', async () => {
-      // districtAdmin has administrator role at district level.
-      // When checking school scope, the ancestor query (school path <@ district path)
-      // should find the district-level role.
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.districtAdmin.id, {
-        scopeType: 'school',
-        scopeId: baseFixture.schoolA.id,
+    it('excludes runs with useForReporting = false', async () => {
+      await RunFactory.create({
+        userId: baseFixture.grade5EllStudent.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: false,
+        completedAt: new Date('2025-06-15T10:00:00Z'),
       });
 
-      expect(roles).toContain('administrator');
-    });
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
+      );
 
-    it('returns class teacher roles at class scope', async () => {
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.classATeacher.id, {
-        scopeType: 'class',
-        scopeId: baseFixture.classInSchoolA.id,
-      });
-
-      expect(roles).toContain('teacher');
-    });
-
-    it('returns district admin roles when checking class scope (ancestor role)', async () => {
-      // districtAdmin's org role should be found via the class's orgPath ancestor lookup
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.districtAdmin.id, {
-        scopeType: 'class',
-        scopeId: baseFixture.classInSchoolA.id,
-      });
-
-      expect(roles).toContain('administrator');
-    });
-
-    it('returns group student roles at group scope', async () => {
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.groupStudent.id, {
-        scopeType: 'group',
-        scopeId: baseFixture.group.id,
-      });
-
-      expect(roles).toContain('student');
-    });
-
-    it('returns empty array for unassigned user', async () => {
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.unassignedUser.id, {
-        scopeType: 'district',
-        scopeId: baseFixture.district.id,
-      });
-
-      expect(roles).toHaveLength(0);
-    });
-
-    it('returns empty array for user in a different district', async () => {
-      // districtBAdmin is at districtB, not at district
-      const roles = await repository.getUserRolesAtOrAboveScope(baseFixture.districtBAdmin.id, {
-        scopeType: 'district',
-        scopeId: baseFixture.district.id,
-      });
-
-      expect(roles).toHaveLength(0);
+      const studentRow = result.items.find((item) => item.userId === baseFixture.grade5EllStudent.id);
+      expect(studentRow).toBeDefined();
+      expect(studentRow!.runs.has(allGradesVariantId)).toBe(false);
     });
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // getProgressStudents
-  // ═══════════════════════════════════════════════════════════════════════════
+  describe('run deduplication', () => {
+    it('prefers completed run over started run for same variant', async () => {
+      const studentId = baseFixture.schoolAStudent.id;
+      const completedAt = new Date('2025-06-15T10:00:00Z');
 
-  describe('getProgressStudents', () => {
-    it('returns paginated students for district scope', async () => {
-      const taskVariantIds = [
-        baseFixture.variantForAllGrades.id,
-        baseFixture.variantForGrade5.id,
-        baseFixture.variantForGrade3.id,
-        baseFixture.variantOptionalForEll.id,
-      ];
+      // Started run (created first)
+      await RunFactory.create({
+        userId: studentId,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt: null,
+      });
 
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'district', scopeId: baseFixture.district.id },
-        taskVariantIds,
-        { page: 1, perPage: 100 },
+      // Completed run (created second)
+      await RunFactory.create({
+        userId: studentId,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt,
+      });
+
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
       );
 
-      // District scope should include students from schools under the district:
-      // schoolAStudent (org at schoolA), schoolBStudent (org at schoolB),
-      // classAStudent (class at classInSchoolA), grade5Student, grade3Student,
-      // grade5EllStudent (all org at district level)
-      // multiAssignedUser holds only 'administrator' role on districtA (via user_orgs),
-      // with no 'student' role on any entity — excluded by the student role filter
-      expect(result.totalItems).toBeGreaterThanOrEqual(6);
+      const studentRow = result.items.find((item) => item.userId === studentId);
+      expect(studentRow).toBeDefined();
 
-      const userIds = result.items.map((item) => item.userId);
-      expect(userIds).toContain(baseFixture.schoolAStudent.id);
-      expect(userIds).toContain(baseFixture.schoolBStudent.id);
-      expect(userIds).toContain(baseFixture.classAStudent.id);
-      expect(userIds).toContain(baseFixture.grade5Student.id);
-      expect(userIds).toContain(baseFixture.grade3Student.id);
-      expect(userIds).toContain(baseFixture.grade5EllStudent.id);
-      expect(userIds).not.toContain(baseFixture.multiAssignedUser.id);
+      const runInfo = studentRow!.runs.get(allGradesVariantId);
+      expect(runInfo).toBeDefined();
+      expect(runInfo!.completedAt).toEqual(completedAt);
     });
 
-    it('filters to student roles only (teachers and admins excluded)', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'district', scopeId: baseFixture.district.id },
-        [],
-        { page: 1, perPage: 100 },
+    it('prefers most recent completedAt among completed runs', async () => {
+      const studentId = baseFixture.schoolBStudent.id;
+      const olderCompletedAt = new Date('2025-06-10T10:00:00Z');
+      const newerCompletedAt = new Date('2025-06-15T10:00:00Z');
+
+      // Older completed run
+      await RunFactory.create({
+        userId: studentId,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt: olderCompletedAt,
+      });
+
+      // Newer completed run
+      await RunFactory.create({
+        userId: studentId,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt: newerCompletedAt,
+      });
+
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
       );
 
-      const userIds = result.items.map((item) => item.userId);
+      const studentRow = result.items.find((item) => item.userId === studentId);
+      expect(studentRow).toBeDefined();
 
-      // Teachers and admins should not appear
-      expect(userIds).not.toContain(baseFixture.districtAdmin.id);
-      expect(userIds).not.toContain(baseFixture.schoolAAdmin.id);
-      expect(userIds).not.toContain(baseFixture.schoolATeacher.id);
-      expect(userIds).not.toContain(baseFixture.classATeacher.id);
+      const runInfo = studentRow!.runs.get(allGradesVariantId);
+      expect(runInfo).toBeDefined();
+      expect(runInfo!.completedAt).toEqual(newerCompletedAt);
     });
+  });
 
-    it('excludes students with expired enrollments', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'school', scopeId: baseFixture.schoolA.id },
-        [],
-        { page: 1, perPage: 100 },
+  describe('multiple students with different run states', () => {
+    it('returns correct run data per student', async () => {
+      const completedAt = new Date('2025-06-15T10:00:00Z');
+
+      // schoolAStudent: completed run
+      await RunFactory.create({
+        userId: baseFixture.schoolAStudent.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt,
+      });
+
+      // schoolBStudent: started run (no completedAt)
+      await RunFactory.create({
+        userId: baseFixture.schoolBStudent.id,
+        taskId,
+        taskVariantId: allGradesVariantId,
+        administrationId,
+        useForReporting: true,
+        completedAt: null,
+      });
+
+      // classAStudent: no run at all
+
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [allGradesVariantId],
+        defaultOptions,
       );
 
-      const userIds = result.items.map((item) => item.userId);
+      // schoolAStudent should have completed run
+      const completedStudent = result.items.find((item) => item.userId === baseFixture.schoolAStudent.id);
+      expect(completedStudent).toBeDefined();
+      expect(completedStudent!.runs.get(allGradesVariantId)?.completedAt).toEqual(completedAt);
 
-      // expiredEnrollmentStudent has an expired enrollment at schoolA — should be excluded
-      expect(userIds).not.toContain(baseFixture.expiredEnrollmentStudent.id);
-      // futureEnrollmentStudent has a future enrollment at schoolA — should be excluded
-      expect(userIds).not.toContain(baseFixture.futureEnrollmentStudent.id);
-      // schoolAStudent has an active enrollment — should be included
-      expect(userIds).toContain(baseFixture.schoolAStudent.id);
-    });
+      // schoolBStudent should have started run
+      const startedStudent = result.items.find((item) => item.userId === baseFixture.schoolBStudent.id);
+      expect(startedStudent).toBeDefined();
+      expect(startedStudent!.runs.get(allGradesVariantId)?.completedAt).toBeNull();
+      expect(startedStudent!.runs.get(allGradesVariantId)?.startedAt).toBeInstanceOf(Date);
 
-    it('supports pagination (page 1 vs page 2)', async () => {
-      const page1 = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'district', scopeId: baseFixture.district.id },
-        [],
-        { page: 1, perPage: 2 },
-      );
-
-      const page2 = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'district', scopeId: baseFixture.district.id },
-        [],
-        { page: 2, perPage: 2 },
-      );
-
-      expect(page1.items).toHaveLength(2);
-      expect(page1.totalItems).toBeGreaterThanOrEqual(4);
-
-      // Page 2 should have items (since totalItems >= 4)
-      expect(page2.items.length).toBeGreaterThanOrEqual(1);
-
-      // No overlap between pages
-      const page1Ids = page1.items.map((i) => i.userId);
-      const page2Ids = page2.items.map((i) => i.userId);
-      const overlap = page1Ids.filter((id) => page2Ids.includes(id));
-      expect(overlap).toHaveLength(0);
-    });
-
-    it('returns empty runs map when no FDW runs exist', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'district', scopeId: baseFixture.district.id },
-        [baseFixture.variantForAllGrades.id],
-        { page: 1, perPage: 100 },
-      );
-
-      // FDW table has no data in integration tests — all runs maps should be empty
-      for (const item of result.items) {
-        expect(item.runs.size).toBe(0);
-      }
-    });
-
-    it('returns students for school scope', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToSchoolA.id,
-        { scopeType: 'school', scopeId: baseFixture.schoolA.id },
-        [],
-        { page: 1, perPage: 100 },
-      );
-
-      const userIds = result.items.map((item) => item.userId);
-
-      // schoolAStudent is a student at schoolA via user_orgs
-      expect(userIds).toContain(baseFixture.schoolAStudent.id);
-      // classAStudent is in classInSchoolA (schoolId = schoolA) via user_classes
-      expect(userIds).toContain(baseFixture.classAStudent.id);
-      // schoolBStudent should NOT appear — different school
-      expect(userIds).not.toContain(baseFixture.schoolBStudent.id);
-    });
-
-    it('returns students for class scope', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToClassA.id,
-        { scopeType: 'class', scopeId: baseFixture.classInSchoolA.id },
-        [],
-        { page: 1, perPage: 100 },
-      );
-
-      const userIds = result.items.map((item) => item.userId);
-
-      // classAStudent is enrolled in classInSchoolA
-      expect(userIds).toContain(baseFixture.classAStudent.id);
-      // schoolAStudent is at the org level, not the class — should not appear
-      expect(userIds).not.toContain(baseFixture.schoolAStudent.id);
-    });
-
-    it('returns students for group scope', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToGroup.id,
-        { scopeType: 'group', scopeId: baseFixture.group.id },
-        [],
-        { page: 1, perPage: 100 },
-      );
-
-      const userIds = result.items.map((item) => item.userId);
-
-      expect(userIds).toContain(baseFixture.groupStudent.id);
-      // Students from other scopes should not appear
-      expect(userIds).not.toContain(baseFixture.schoolAStudent.id);
-    });
-
-    it('populates schoolName for district scope', async () => {
-      // Must pass non-empty taskVariantIds to avoid the early-return path
-      // that skips getSchoolNamesForUsers and sets schoolName to null.
-      // FDW run data won't exist in integration tests, but that's fine — we only
-      // need the code to reach the school name resolution step.
-      const taskVariantIds = [baseFixture.variantForAllGrades.id];
-
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'district', scopeId: baseFixture.district.id },
-        taskVariantIds,
-        { page: 1, perPage: 100 },
-      );
-
-      // schoolAStudent is enrolled at schoolA — should have a school name
-      const schoolAStudentRow = result.items.find((i) => i.userId === baseFixture.schoolAStudent.id);
-      expect(schoolAStudentRow).toBeDefined();
-      expect(schoolAStudentRow!.schoolName).toBeTruthy();
-    });
-
-    it('does not populate schoolName for non-district scope', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToSchoolA.id,
-        { scopeType: 'school', scopeId: baseFixture.schoolA.id },
-        [],
-        { page: 1, perPage: 100 },
-      );
-
-      // schoolName should be null for non-district scopes
-      for (const item of result.items) {
-        expect(item.schoolName).toBeNull();
-      }
-    });
-
-    it('excludes students from other districts', async () => {
-      const result = await repository.getProgressStudents(
-        baseFixture.administrationAssignedToDistrict.id,
-        { scopeType: 'district', scopeId: baseFixture.district.id },
-        [],
-        { page: 1, perPage: 100 },
-      );
-
-      const userIds = result.items.map((item) => item.userId);
-
-      // districtBStudent is in a different district — should not appear
-      expect(userIds).not.toContain(baseFixture.districtBStudent.id);
+      // classAStudent should have no run
+      const noRunStudent = result.items.find((item) => item.userId === baseFixture.classAStudent.id);
+      expect(noRunStudent).toBeDefined();
+      expect(noRunStudent!.runs.has(allGradesVariantId)).toBe(false);
     });
   });
 });

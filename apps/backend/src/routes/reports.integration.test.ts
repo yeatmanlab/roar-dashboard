@@ -15,6 +15,7 @@ import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } fro
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { RunFactory } from '../test-support/factories/run.factory';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -355,6 +356,94 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  describe('FDW-backed run status', () => {
+    it('returns completed status for student with a completed run', async () => {
+      await RunFactory.create({
+        userId: baseFixture.schoolAStudent.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-06-15T10:00:00Z'),
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.schoolAStudent.id,
+      );
+      expect(studentRow).toBeDefined();
+
+      // Find the progress entry for variantForAllGrades
+      const taskMeta = res.body.data.tasks.find(
+        (t: { taskId: string }) => t.taskId === baseFixture.variantForAllGrades.id,
+      );
+      expect(taskMeta).toBeDefined();
+      expect(studentRow.progress[taskMeta.taskId].status).toBe('completed');
+      expect(studentRow.progress[taskMeta.taskId].completedAt).toBeTruthy();
+    });
+
+    it('returns started status for student with a started (not completed) run', async () => {
+      await RunFactory.create({
+        userId: baseFixture.schoolBStudent.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: null,
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.schoolBStudent.id,
+      );
+      expect(studentRow).toBeDefined();
+
+      const taskMeta = res.body.data.tasks.find(
+        (t: { taskId: string }) => t.taskId === baseFixture.variantForAllGrades.id,
+      );
+      expect(taskMeta).toBeDefined();
+      expect(studentRow.progress[taskMeta.taskId].status).toBe('started');
+      expect(studentRow.progress[taskMeta.taskId].startedAt).toBeTruthy();
+      expect(studentRow.progress[taskMeta.taskId].completedAt).toBeNull();
+    });
+
+    it('returns assigned status for student with no run', async () => {
+      // classAStudent has no seeded runs
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.classAStudent.id,
+      );
+      expect(studentRow).toBeDefined();
+
+      const taskMeta = res.body.data.tasks.find(
+        (t: { taskId: string }) => t.taskId === baseFixture.variantForAllGrades.id,
+      );
+      expect(taskMeta).toBeDefined();
+      expect(studentRow.progress[taskMeta.taskId].status).toBe('assigned');
     });
   });
 });
