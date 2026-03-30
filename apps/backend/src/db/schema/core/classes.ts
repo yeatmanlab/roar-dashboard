@@ -63,10 +63,6 @@ export const classes = db.table(
     ...timestamps,
   },
   (table) => [
-    // Constraints
-    // - Ensure unique class name per school (case-insensitive)
-    p.uniqueIndex('classes_school_name_lower_uniqIdx').on(table.schoolId, sql`lower(${table.name})`),
-
     // Indexes
     // - Foreign key lookups
     p.index('classes_district_idx').on(table.districtId),
