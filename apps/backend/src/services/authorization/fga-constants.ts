@@ -1,3 +1,5 @@
+import { UserRole } from '../../enums/user-role.enum';
+
 /**
  * FGA object type prefixes used in tuple `user` and `object` fields.
  *
@@ -54,16 +56,16 @@ export type FgaAssignmentRelation = (typeof FgaAssignmentRelation)[keyof typeof 
  * DB rows with admin-tier roles on `user_classes` are valid in Postgres but must be
  * skipped when writing FGA tuples — otherwise the FGA API returns a validation error.
  */
-export const FGA_CLASS_VALID_ROLES = new Set([
-  'principal',
-  'counselor',
-  'teacher',
-  'aide',
-  'proctor',
-  'student',
-  'guardian',
-  'parent',
-  'relative',
+export const FGA_CLASS_VALID_ROLES: ReadonlySet<UserRole> = new Set([
+  UserRole.PRINCIPAL,
+  UserRole.COUNSELOR,
+  UserRole.TEACHER,
+  UserRole.AIDE,
+  UserRole.PROCTOR,
+  UserRole.STUDENT,
+  UserRole.GUARDIAN,
+  UserRole.PARENT,
+  UserRole.RELATIVE,
 ]);
 
 /**
