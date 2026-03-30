@@ -66,7 +66,7 @@ const districtGradeSupportBreakdown = computed(() => {
       const grades = props?.runs?.[level]?.grades ?? {};
       Object.entries(grades).forEach(([grade, count]) => {
         // Trim grades of leading zeros
-        const trimmedGrade = grade.replace(/^0+/, '');
+        const trimmedGrade = grade.replace(/^0+(?=\D|\d)/, '');
         if (!gradeMap.has(trimmedGrade)) {
           gradeMap.set(trimmedGrade, { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 });
         }
@@ -84,7 +84,7 @@ const districtGradeSupportBreakdown = computed(() => {
   for (const run of props.runs) {
     const rawGrade = run?.user?.grade;
     // Trim grades of leading zeros
-    const trimmedGrade = rawGrade.replace(/^0+/, '');
+    const trimmedGrade = rawGrade.replace(/^0+(?=\D|\d)/, '');
     let gradeCounter = gradeCounts.find((g) => g.category === trimmedGrade);
     if (!gradeCounter) {
       gradeCounter = { category: trimmedGrade, support_levels: [0, 0, 0], totalStudents: 0 };
