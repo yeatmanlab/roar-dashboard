@@ -1,5 +1,5 @@
 import type { AuthContext } from '../../types/auth-context';
-import type { User } from '../../db/schema';
+import type { User, NewUserAgreement } from '../../db/schema';
 import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
@@ -12,6 +12,8 @@ import { ApiError } from '../../errors/api-error';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { logger } from '../../logger';
 import { UserRepository } from '../../repositories/user.repository';
+import { UserAgreementRepository } from '../../repositories/user-agreement.repository';
+import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 
 /**
@@ -66,8 +68,12 @@ interface UpdateUserData {
  */
 export function UserService({
   userRepository = new UserRepository(),
+  userAgreementRepository = new UserAgreementRepository(),
+  agreementVersionRepository = new AgreementVersionRepository(),
 }: {
   userRepository?: UserRepository;
+  userAgreementRepository?: UserAgreementRepository;
+  agreementVersionRepository?: AgreementVersionRepository;
 } = {}) {
   /**
    * Verify that a user exists and that the requestor has the required permission.
@@ -305,5 +311,120 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById, update };
+  /**
+   * Record a user agreement (consent record).
+   *
+   * Supports two consent modes:
+   * - **Self-consent**: User consents for themselves (consentingUserId omitted)
+   * - **Guardian consent**: Guardian consents for a family member (consentingUserId provided)
+   *
+   * Authorization:
+   * - Super admins can consent for any user
+   * - Users can consent for themselves
+   * - Guardians can consent for family members (verified via UserRepository access controls)
+   * - Regular admins CANNOT consent for users (privacy requirement)
+   *
+   * @param authContext - Requesting user's authentication context
+   * @param userId - Target user ID (who is consenting)
+   * @param body - Request body (agreementVersionId, consentingUserId optional)
+   * @returns Object with created agreement ID
+   * @throws {ApiError} NOT_FOUND if user or agreement version doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks permission to consent for target user
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if database operation fails
+   */
+  async function recordUserAgreement(
+    authContext: AuthContext,
+    userId: string,
+    body: { agreementVersionId: string; consentingUserId?: string | undefined },
+  ): Promise<{ id: string }> {
+    const { userId: requestingUserId } = authContext;
+    const { agreementVersionId, consentingUserId } = body;
+
+    try {
+      // 1. Verify target user exists
+      const targetUser = await userRepository.getById({ id: userId });
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId, targetUserId: userId },
+        });
+      }
+
+      // 2. Verify agreement version exists
+      const agreementVersion = await agreementVersionRepository.getById({ id: agreementVersionId });
+
+      if (!agreementVersion) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId, agreementVersionId },
+        });
+      }
+
+      // 3. Authorization: only allow self-consent or parent consenting for their child
+      const actualConsentingUserId = consentingUserId ?? requestingUserId;
+
+      // Verify the consenting user is the authenticated user
+      if (actualConsentingUserId !== requestingUserId) {
+        logger.warn(
+          { requestingUserId, targetUserId: userId, consentingUserId: actualConsentingUserId },
+          'User attempted to consent on behalf of another user',
+        );
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { requestingUserId, targetUserId: userId, consentingUserId: actualConsentingUserId },
+        });
+      }
+
+      // Self-consent: user is consenting for themselves
+      if (requestingUserId === userId) {
+        // Allow - no further checks needed
+      }
+      // Parent consent: user is consenting for their child (via family relationship)
+      else {
+        // Use UserRepository's access controls to verify family relationship
+        const allowedRoles = rolesForPermission(Permissions.Users.READ);
+        const authorized = await userRepository.getAuthorizedById({ userId: requestingUserId, allowedRoles }, userId);
+
+        if (!authorized) {
+          logger.warn({ requestingUserId, targetUserId: userId }, 'User attempted to consent for non-family member');
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, targetUserId: userId },
+          });
+        }
+      }
+
+      // 4. Create the user agreement record
+      const agreementData: NewUserAgreement = {
+        userId,
+        agreementVersionId,
+        agreementTimestamp: new Date(),
+      };
+
+      const createdAgreement = await userAgreementRepository.create({ data: agreementData });
+
+      return { id: createdAgreement.id };
+    } catch (error) {
+      // Re-throw ApiErrors as-is
+      if (error instanceof ApiError) throw error;
+
+      // Wrap unexpected errors
+      logger.error(
+        { err: error, context: { requestingUserId, targetUserId: userId, agreementVersionId } },
+        'Failed to create user agreement',
+      );
+      throw new ApiError('Failed to create user agreement', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { requestingUserId, targetUserId: userId, agreementVersionId },
+        cause: error,
+      });
+    }
+  }
+
+  return { findByAuthId, getById, update, recordUserAgreement };
 }
