@@ -428,6 +428,13 @@
       "when": 1774902957976,
       "tag": "0060_drop_orgs_nces_id_unique_constraint",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1774906256554,
+      "tag": "0061_drop_classes_school_name_unique_index",
+      "breakpoints": true
     }
   ]
 }
