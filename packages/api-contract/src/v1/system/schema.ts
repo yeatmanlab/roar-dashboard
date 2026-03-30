@@ -12,15 +12,23 @@ export const SyncFgaQuerySchema = z.object({
 export type SyncFgaQuery = z.infer<typeof SyncFgaQuerySchema>;
 
 /**
+ * Per-category write and delete counts from the sync operation.
+ */
+const SyncCategoryCountsSchema = z.object({
+  write: z.number(),
+  delete: z.number(),
+});
+
+/**
  * Per-category tuple counts from the sync operation.
  */
 export const SyncCategoriesSchema = z.object({
-  orgHierarchy: z.number(),
-  orgMemberships: z.number(),
-  classMemberships: z.number(),
-  groupMemberships: z.number(),
-  familyMemberships: z.number(),
-  administrationAssignments: z.number(),
+  orgHierarchy: SyncCategoryCountsSchema,
+  orgMemberships: SyncCategoryCountsSchema,
+  classMemberships: SyncCategoryCountsSchema,
+  groupMemberships: SyncCategoryCountsSchema,
+  familyMemberships: SyncCategoryCountsSchema,
+  administrationAssignments: SyncCategoryCountsSchema,
 });
 
 export type SyncCategories = z.infer<typeof SyncCategoriesSchema>;
@@ -31,7 +39,8 @@ export type SyncCategories = z.infer<typeof SyncCategoriesSchema>;
 export const SyncFgaResponseSchema = z.object({
   dryRun: z.boolean(),
   categories: SyncCategoriesSchema,
-  totalTuples: z.number(),
+  totalWrites: z.number(),
+  totalDeletes: z.number(),
 });
 
 export type SyncFgaResponse = z.infer<typeof SyncFgaResponseSchema>;

@@ -6,7 +6,12 @@ import { ApiErrorCode } from '../../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 import { ApiError } from '../../../errors/api-error';
 import { logger } from '../../../logger';
-import { createMockFgaClient, type MockFgaClient } from '../../../test-support/clients/fga.client';
+import {
+  createMockFgaClient,
+  mockReadResponse,
+  mockReadImplementation,
+  type MockFgaClient,
+} from '../../../test-support/clients/fga.client';
 import { AuthContextFactory } from '../../../test-support/factories/user.factory';
 import { OrgType } from '../../../enums/org-type.enum';
 import { AuthorizationModule } from './authorization.module';
@@ -118,9 +123,26 @@ const adminGroupRow = {
   groupId: 'group-1',
 };
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Helper to create an empty-tables DB for tests that only care about FGA behavior. */
+function createEmptyDb() {
+  return createMockDb({
+    orgs: [],
+    classes: [],
+    user_orgs: [],
+    user_classes: [],
+    user_groups: [],
+    user_families: [],
+    administration_orgs: [],
+    administration_classes: [],
+    administration_groups: [],
+  });
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
-// Safe cast: the module only calls writeTuples/deleteTuples, which the mock provides
+// Safe cast: the module only calls writeTuples/deleteTuples/read, which the mock provides
 const asOpenFgaClient = (mock: MockFgaClient) => mock as unknown as OpenFgaClient;
 
 describe('AuthorizationModule', () => {
@@ -157,7 +179,7 @@ describe('AuthorizationModule', () => {
   });
 
   describe('dry run', () => {
-    it('returns tuple counts without calling writeTuples', async () => {
+    it('returns write/delete counts without calling writeTuples or deleteTuples', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const db = createMockDb({
         orgs: [schoolRow],
@@ -175,62 +197,47 @@ describe('AuthorizationModule', () => {
       const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(result.dryRun).toBe(true);
-      expect(result.totalTuples).toBeGreaterThan(0);
+      expect(result.totalWrites).toBeGreaterThan(0);
+      expect(result.totalDeletes).toBe(0);
+      expect(mockClient.read).toHaveBeenCalled();
       expect(mockClient.writeTuples).not.toHaveBeenCalled();
+      expect(mockClient.deleteTuples).not.toHaveBeenCalled();
     });
 
-    it('logs tuple counts', async () => {
+    it('logs diff counts', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-      const db = createMockDb({
-        orgs: [],
-        classes: [],
-        user_orgs: [],
-        user_classes: [],
-        user_groups: [],
-        user_families: [],
-        administration_orgs: [],
-        administration_classes: [],
-        administration_groups: [],
-      });
+      const db = createEmptyDb();
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(logger.info).toHaveBeenCalledWith(
-        expect.objectContaining({ dryRun: true, totalTuples: 0 }),
-        'FGA sync tuple counts',
+        expect.objectContaining({ dryRun: true, totalWrites: 0, totalDeletes: 0 }),
+        'FGA sync diff counts',
       );
     });
   });
 
   describe('empty categories', () => {
-    it('returns all zero counts when tables are empty', async () => {
+    it('returns all zero counts when tables are empty and FGA is empty', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-      const db = createMockDb({
-        orgs: [],
-        classes: [],
-        user_orgs: [],
-        user_classes: [],
-        user_groups: [],
-        user_families: [],
-        administration_orgs: [],
-        administration_classes: [],
-        administration_groups: [],
-      });
+      const db = createEmptyDb();
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories).toEqual({
-        orgHierarchy: 0,
-        orgMemberships: 0,
-        classMemberships: 0,
-        groupMemberships: 0,
-        familyMemberships: 0,
-        administrationAssignments: 0,
+        orgHierarchy: { write: 0, delete: 0 },
+        orgMemberships: { write: 0, delete: 0 },
+        classMemberships: { write: 0, delete: 0 },
+        groupMemberships: { write: 0, delete: 0 },
+        familyMemberships: { write: 0, delete: 0 },
+        administrationAssignments: { write: 0, delete: 0 },
       });
-      expect(result.totalTuples).toBe(0);
+      expect(result.totalWrites).toBe(0);
+      expect(result.totalDeletes).toBe(0);
       expect(mockClient.writeTuples).not.toHaveBeenCalled();
+      expect(mockClient.deleteTuples).not.toHaveBeenCalled();
     });
   });
 
@@ -253,7 +260,8 @@ describe('AuthorizationModule', () => {
       const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       // schoolHierarchyTuples returns 2 tuples per school
-      expect(result.categories.orgHierarchy).toBe(2);
+      expect(result.categories.orgHierarchy.write).toBe(2);
+      expect(result.categories.orgHierarchy.delete).toBe(0);
     });
 
     it('creates class hierarchy tuples (2 per class)', async () => {
@@ -273,7 +281,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: true });
 
-      expect(result.categories.orgHierarchy).toBe(2);
+      expect(result.categories.orgHierarchy.write).toBe(2);
     });
   });
 
@@ -295,7 +303,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
-      expect(result.categories.orgMemberships).toBe(1);
+      expect(result.categories.orgMemberships.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -325,7 +333,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
-      expect(result.categories.orgMemberships).toBe(1);
+      expect(result.categories.orgMemberships.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -357,7 +365,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
-      expect(result.categories.familyMemberships).toBe(1);
+      expect(result.categories.familyMemberships.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -395,7 +403,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
-      expect(result.categories.administrationAssignments).toBe(1);
+      expect(result.categories.administrationAssignments.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -425,7 +433,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
-      expect(result.categories.administrationAssignments).toBe(1);
+      expect(result.categories.administrationAssignments.write).toBe(1);
       expect(mockClient.writeTuples).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -455,7 +463,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
-      expect(result.categories.administrationAssignments).toBe(2);
+      expect(result.categories.administrationAssignments.write).toBe(2);
     });
   });
 
@@ -487,7 +495,7 @@ describe('AuthorizationModule', () => {
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
-      expect(result.categories.classMemberships).toBe(250);
+      expect(result.categories.classMemberships.write).toBe(250);
 
       // 250 tuples should be split into 3 batches: 100, 100, 50
       const classBatchCalls = mockClient.writeTuples.mock.calls.filter((call) => call[0].length > 0);
@@ -517,6 +525,233 @@ describe('AuthorizationModule', () => {
       expect(mockClient.writeTuples).toHaveBeenCalledWith(expect.any(Array), {
         conflict: { onDuplicateWrites: ClientWriteRequestOnDuplicateWrites.Ignore },
       });
+    });
+  });
+
+  describe('diff-based reconciliation', () => {
+    it('deletes stale tuples not in Postgres', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const db = createEmptyDb();
+
+      // FGA has a stale group membership
+      const staleTuple = {
+        key: { user: 'user:old-user', relation: 'student', object: 'group:group-1' },
+        timestamp: '2024-01-01T00:00:00Z',
+      };
+
+      mockReadImplementation(mockClient, async (body) => {
+        const obj = body?.object ?? '';
+        if (typeof obj === 'string' && obj.startsWith('group:')) {
+          return mockReadResponse([staleTuple]);
+        }
+        return mockReadResponse([]);
+      });
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
+
+      expect(result.categories.groupMemberships.delete).toBe(1);
+      expect(result.categories.groupMemberships.write).toBe(0);
+      expect(mockClient.deleteTuples).toHaveBeenCalledWith([staleTuple.key]);
+    });
+
+    it('handles condition change as 1 delete + 1 write', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+
+      const db = createMockDb({
+        orgs: [],
+        classes: [],
+        user_orgs: [],
+        user_classes: [],
+        user_groups: [
+          {
+            userId: 'user-4',
+            groupId: 'group-1',
+            role: 'student',
+            enrollmentStart: new Date('2024-01-01'),
+            enrollmentEnd: new Date('2026-01-01'), // updated end date
+          },
+        ],
+        user_families: [],
+        administration_orgs: [],
+        administration_classes: [],
+        administration_groups: [],
+      });
+
+      // FGA has the old version with a different end date
+      const oldTuple = {
+        key: {
+          user: 'user:user-4',
+          relation: 'student',
+          object: 'group:group-1',
+          condition: {
+            name: 'active_membership',
+            context: {
+              grant_start: '2024-01-01T00:00:00.000Z',
+              grant_end: '2025-01-01T00:00:00.000Z', // old end date
+            },
+          },
+        },
+        timestamp: '2024-01-01T00:00:00Z',
+      };
+
+      mockReadImplementation(mockClient, async (body) => {
+        const obj = body?.object ?? '';
+        if (typeof obj === 'string' && obj.startsWith('group:')) {
+          return mockReadResponse([oldTuple]);
+        }
+        return mockReadResponse([]);
+      });
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
+
+      expect(result.categories.groupMemberships.delete).toBe(1);
+      expect(result.categories.groupMemberships.write).toBe(1);
+    });
+
+    it('no-op when FGA matches Postgres exactly', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+
+      const db = createMockDb({
+        orgs: [],
+        classes: [],
+        user_orgs: [],
+        user_classes: [],
+        user_groups: [
+          {
+            userId: 'user-4',
+            groupId: 'group-1',
+            role: 'student',
+            enrollmentStart: new Date('2024-01-01'),
+            enrollmentEnd: null,
+          },
+        ],
+        user_families: [],
+        administration_orgs: [],
+        administration_classes: [],
+        administration_groups: [],
+      });
+
+      // FGA already has the exact same tuple
+      const matchingTuple = {
+        key: {
+          user: 'user:user-4',
+          relation: 'student',
+          object: 'group:group-1',
+          condition: {
+            name: 'active_membership',
+            context: {
+              grant_start: '2024-01-01T00:00:00.000Z',
+              grant_end: '9999-12-31T23:59:59Z',
+            },
+          },
+        },
+        timestamp: '2024-01-01T00:00:00Z',
+      };
+
+      mockReadImplementation(mockClient, async (body) => {
+        const obj = body?.object ?? '';
+        if (typeof obj === 'string' && obj.startsWith('group:')) {
+          return mockReadResponse([matchingTuple]);
+        }
+        return mockReadResponse([]);
+      });
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
+
+      expect(result.categories.groupMemberships.write).toBe(0);
+      expect(result.categories.groupMemberships.delete).toBe(0);
+      expect(result.totalWrites).toBe(0);
+      expect(result.totalDeletes).toBe(0);
+      expect(mockClient.writeTuples).not.toHaveBeenCalled();
+      expect(mockClient.deleteTuples).not.toHaveBeenCalled();
+    });
+
+    it('paginates through continuation tokens', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const db = createEmptyDb();
+
+      const tuple1 = {
+        key: { user: 'user:u1', relation: 'student', object: 'group:g1' },
+        timestamp: '2024-01-01T00:00:00Z',
+      };
+      const tuple2 = {
+        key: { user: 'user:u2', relation: 'student', object: 'group:g2' },
+        timestamp: '2024-01-01T00:00:00Z',
+      };
+
+      let callCount = 0;
+      mockReadImplementation(mockClient, async (body) => {
+        const obj = body?.object ?? '';
+        if (typeof obj === 'string' && obj.startsWith('group:')) {
+          callCount++;
+          if (callCount === 1) {
+            return mockReadResponse([tuple1], 'page2-token');
+          }
+          return mockReadResponse([tuple2]);
+        }
+        return mockReadResponse([]);
+      });
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
+
+      // Both stale tuples should be detected as deletes
+      expect(result.categories.groupMemberships.delete).toBe(2);
+
+      // Should have called read with continuation token
+      expect(mockClient.read).toHaveBeenCalledWith(
+        { object: 'group:' },
+        expect.objectContaining({ continuationToken: 'page2-token' }),
+      );
+    });
+
+    it('deletes execute before writes within a category', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+
+      // Postgres has a hierarchy tuple
+      const db = createMockDb({
+        orgs: [schoolRow],
+        classes: [],
+        user_orgs: [],
+        user_classes: [],
+        user_groups: [],
+        user_families: [],
+        administration_orgs: [],
+        administration_classes: [],
+        administration_groups: [],
+      });
+
+      // FGA has a stale hierarchy tuple that overlaps on district/school prefix
+      const staleTuple = {
+        key: { user: 'district:old-district', relation: 'parent_org', object: 'school:school-1' },
+        timestamp: '2024-01-01T00:00:00Z',
+      };
+
+      mockReadImplementation(mockClient, async (body) => {
+        const obj = body?.object ?? '';
+        if (typeof obj === 'string' && obj.startsWith('school:')) {
+          return mockReadResponse([staleTuple]);
+        }
+        return mockReadResponse([]);
+      });
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      await module.syncFgaStore(authContext, { dryRun: false });
+
+      // Verify delete is called before write
+      const deleteCalls = mockClient.deleteTuples.mock.invocationCallOrder;
+      const writeCalls = mockClient.writeTuples.mock.invocationCallOrder;
+
+      // Find the first delete and first write call
+      const firstDelete = deleteCalls[0];
+      const firstWrite = writeCalls[0];
+
+      expect(firstDelete).toBeDefined();
+      expect(firstWrite).toBeDefined();
+      expect(firstDelete!).toBeLessThan(firstWrite!);
     });
   });
 
@@ -584,6 +819,29 @@ describe('AuthorizationModule', () => {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         }),
+      );
+    });
+
+    it('wraps FGA read errors with EXTERNAL_SERVICE_FAILED', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const fgaError = new Error('FGA read timeout');
+      const db = createEmptyDb();
+
+      const failingClient = createMockFgaClient();
+      failingClient.read.mockRejectedValue(fgaError);
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(failingClient) });
+
+      await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
+        expect.objectContaining({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: fgaError }),
+        'Failed to read existing tuples from FGA',
       );
     });
   });

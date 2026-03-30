@@ -39,10 +39,25 @@ import {
   administrationClassTuple,
   administrationGroupTuple,
 } from '../../authorization/helpers/fga-tuples';
-import { FGA_CLASS_VALID_ROLES } from '../../authorization/fga-constants';
+import { FgaType, FGA_CLASS_VALID_ROLES } from '../../authorization/fga-constants';
+import { categorizeFgaTuples, diffTuples } from './tuple-key.utils';
+import type { SyncCategory, DiffResult } from './tuple-key.utils';
 
-/** Maximum tuples per FGA writeTuples call. */
+/** Maximum tuples per FGA writeTuples / deleteTuples call. */
 const FGA_WRITE_BATCH_SIZE = 100;
+
+/** Page size for FGA read calls. */
+const FGA_READ_PAGE_SIZE = 100;
+
+/** Object type prefixes to read from FGA, covering all 6 sync categories. */
+const FGA_OBJECT_TYPE_PREFIXES = [
+  `${FgaType.DISTRICT}:`,
+  `${FgaType.SCHOOL}:`,
+  `${FgaType.CLASS}:`,
+  `${FgaType.GROUP}:`,
+  `${FgaType.FAMILY}:`,
+  `${FgaType.ADMINISTRATION}:`,
+] as const;
 
 /**
  * Split an array into chunks of the given size.
@@ -62,9 +77,9 @@ function chunk<T>(items: T[], size: number): T[][] {
 /**
  * AuthorizationModule
  *
- * Reads all existing data from Postgres junction tables and writes
- * the corresponding FGA tuples. Used to sync an FGA store from
- * existing Postgres data (e.g., after a dbt migration from Firestore).
+ * Reads all existing data from Postgres junction tables, compares against
+ * current FGA tuples, and writes new / deletes stale tuples. Used to sync
+ * an FGA store from existing Postgres data with diff-based reconciliation.
  *
  * @param db - Core database client (injectable for testing)
  * @param getClient - Callback returning the OpenFGA client
@@ -101,10 +116,65 @@ export function AuthorizationModule({
     }
   }
 
+  /**
+   * Delete tuples from FGA in batches.
+   *
+   * @param tuples - Tuples to delete
+   */
+  async function deleteTuplesInBatches(tuples: TupleKey[]): Promise<void> {
+    const client = getClient();
+    const batches = chunk(tuples, FGA_WRITE_BATCH_SIZE);
+
+    for (const batch of batches) {
+      await client.deleteTuples(batch);
+    }
+  }
+
+  /**
+   * Read all tuples from FGA for a given object type prefix, paginating through
+   * continuation tokens until all tuples are retrieved.
+   *
+   * @param objectTypePrefix - The object type prefix to read (e.g. 'district:')
+   * @returns All tuples matching the prefix
+   */
+  async function readAllTuplesByObjectType(objectTypePrefix: string): Promise<TupleKey[]> {
+    const client = getClient();
+    const allTuples: TupleKey[] = [];
+    let continuationToken = '';
+
+    do {
+      const response = await client.read(
+        { object: objectTypePrefix },
+        {
+          pageSize: FGA_READ_PAGE_SIZE,
+          ...(continuationToken ? { continuationToken } : {}),
+        },
+      );
+
+      for (const tuple of response.tuples) {
+        allTuples.push(tuple.key);
+      }
+
+      continuationToken = response.continuation_token;
+    } while (continuationToken);
+
+    return allTuples;
+  }
+
+  /**
+   * Read all existing FGA tuples across all object type prefixes in parallel.
+   *
+   * @returns All tuples from FGA
+   */
+  async function readAllExistingTuples(): Promise<TupleKey[]> {
+    const results = await Promise.all(FGA_OBJECT_TYPE_PREFIXES.map((prefix) => readAllTuplesByObjectType(prefix)));
+    return results.flat();
+  }
+
   // ── Category builders ──────────────────────────────────────────────────────
 
   /**
-   * Build org hierarchy tuples: school→district and class→school links.
+   * Build org hierarchy tuples: school->district and class->school links.
    */
   async function buildOrgHierarchyTuples(): Promise<TupleKeyWithoutCondition[]> {
     const dbClient = getDb();
@@ -306,14 +376,20 @@ export function AuthorizationModule({
   // ── Main sync method ────────────────────────────────────────────────────────
 
   /**
-   * Sync all FGA tuples from Postgres junction tables.
+   * Sync all FGA tuples from Postgres junction tables with diff-based reconciliation.
+   *
+   * Builds desired tuples from Postgres, reads existing tuples from FGA, diffs per
+   * category, then deletes stale tuples and writes new ones. Deletes execute before
+   * writes per category because FGA keys tuples by {user, relation, object} — if a
+   * condition changed, the old tuple must be removed first.
    *
    * Authorization: super-admin only.
    *
    * @param authContext - The authenticated user's context
    * @param options - Sync options
-   * @param options.dryRun - When true, returns counts without writing to FGA
-   * @returns Sync result with per-category tuple counts
+   * @param options.dryRun - When true, reads FGA and returns diff counts without writing.
+   *                         Requires a live FGA connection even in dry-run mode.
+   * @returns Sync result with per-category write/delete counts
    * @throws {ApiError} FORBIDDEN if the user is not a super admin
    * @throws {ApiError} INTERNAL_SERVER_ERROR if a database or FGA error occurs
    */
@@ -344,7 +420,7 @@ export function AuthorizationModule({
     }
 
     try {
-      // Build all tuples in parallel — per-promise .catch() preserves which category failed
+      // 1. Build desired tuples from Postgres (parallel per-category)
       const [orgHierarchy, orgMemberships, classMemberships, groupMemberships, familyMemberships, adminAssignments] =
         await Promise.all([
           wrapCategoryBuilder(buildOrgHierarchyTuples(), 'orgHierarchy'),
@@ -355,43 +431,85 @@ export function AuthorizationModule({
           wrapCategoryBuilder(buildAdministrationAssignmentTuples(), 'administrationAssignments'),
         ]);
 
-      const categories = {
-        orgHierarchy: orgHierarchy.length,
-        orgMemberships: orgMemberships.length,
-        classMemberships: classMemberships.length,
-        groupMemberships: groupMemberships.length,
-        familyMemberships: familyMemberships.length,
-        administrationAssignments: adminAssignments.length,
+      // 2. Read existing tuples from FGA
+      let existingTuples: TupleKey[];
+      try {
+        existingTuples = await readAllExistingTuples();
+      } catch (err) {
+        const message = 'Failed to read existing tuples from FGA';
+        logger.error({ err, context: { userId } }, message);
+        throw new ApiError(message, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          context: { userId },
+          cause: err,
+        });
+      }
+
+      // 3. Categorize existing tuples and diff per category
+      const existingByCategory = categorizeFgaTuples(existingTuples);
+
+      const desiredByCategory: Record<SyncCategory, (TupleKey | TupleKeyWithoutCondition)[]> = {
+        orgHierarchy,
+        orgMemberships,
+        classMemberships,
+        groupMemberships,
+        familyMemberships,
+        administrationAssignments: adminAssignments,
       };
 
-      const totalTuples =
-        categories.orgHierarchy +
-        categories.orgMemberships +
-        categories.classMemberships +
-        categories.groupMemberships +
-        categories.familyMemberships +
-        categories.administrationAssignments;
+      const categoryNames: SyncCategory[] = [
+        'orgHierarchy',
+        'orgMemberships',
+        'classMemberships',
+        'groupMemberships',
+        'familyMemberships',
+        'administrationAssignments',
+      ];
 
-      logger.info({ categories, totalTuples, dryRun, userId }, 'FGA sync tuple counts');
+      const categories = {} as Record<SyncCategory, { write: number; delete: number }>;
+      const diffs = {} as Record<SyncCategory, DiffResult>;
 
+      for (const name of categoryNames) {
+        const diff = diffTuples(desiredByCategory[name], existingByCategory[name]);
+        diffs[name] = diff;
+        categories[name] = { write: diff.toWrite.length, delete: diff.toDelete.length };
+      }
+
+      const totalWrites = categoryNames.reduce((sum, name) => sum + categories[name].write, 0);
+      const totalDeletes = categoryNames.reduce((sum, name) => sum + categories[name].delete, 0);
+
+      logger.info({ categories, totalWrites, totalDeletes, dryRun, userId }, 'FGA sync diff counts');
+
+      // 4. Execute deletes then writes per category
       if (!dryRun) {
-        // Write all categories sequentially to avoid overwhelming FGA
-        const writeCategories = [
-          { tuples: orgHierarchy, label: 'org hierarchy' },
-          { tuples: orgMemberships, label: 'org membership' },
-          { tuples: classMemberships, label: 'class membership' },
-          { tuples: groupMemberships, label: 'group membership' },
-          { tuples: familyMemberships, label: 'family membership' },
-          { tuples: adminAssignments, label: 'administration assignment' },
+        const syncCategories = [
+          { name: 'orgHierarchy' as const, label: 'org hierarchy' },
+          { name: 'orgMemberships' as const, label: 'org membership' },
+          { name: 'classMemberships' as const, label: 'class membership' },
+          { name: 'groupMemberships' as const, label: 'group membership' },
+          { name: 'familyMemberships' as const, label: 'family membership' },
+          { name: 'administrationAssignments' as const, label: 'administration assignment' },
         ] as const;
 
-        for (const { tuples, label } of writeCategories) {
+        for (const { name, label } of syncCategories) {
+          const diff = diffs[name];
+
           try {
-            await writeTuplesInBatches(tuples);
-            logger.info({ count: tuples.length }, `Wrote ${label} tuples`);
+            // Deletes before writes — required for condition changes
+            if (diff.toDelete.length > 0) {
+              await deleteTuplesInBatches(diff.toDelete);
+              logger.info({ count: diff.toDelete.length }, `Deleted stale ${label} tuples`);
+            }
+
+            if (diff.toWrite.length > 0) {
+              await writeTuplesInBatches(diff.toWrite);
+              logger.info({ count: diff.toWrite.length }, `Wrote new ${label} tuples`);
+            }
           } catch (err) {
-            logger.error({ err, context: { userId, category: label } }, `Failed to write ${label} tuples to FGA`);
-            throw new ApiError(`Failed to write ${label} tuples to FGA`, {
+            if (err instanceof ApiError) throw err;
+            logger.error({ err, context: { userId, category: label } }, `Failed to sync ${label} tuples to FGA`);
+            throw new ApiError(`Failed to sync ${label} tuples to FGA`, {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
               context: { userId, category: label },
@@ -400,10 +518,15 @@ export function AuthorizationModule({
           }
         }
 
-        logger.info({ totalTuples, userId }, 'FGA sync completed successfully');
+        logger.info({ totalWrites, totalDeletes, userId }, 'FGA sync completed successfully');
       }
 
-      return { dryRun, categories, totalTuples };
+      return {
+        dryRun,
+        categories,
+        totalWrites,
+        totalDeletes,
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

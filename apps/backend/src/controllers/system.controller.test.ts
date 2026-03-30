@@ -35,14 +35,15 @@ describe('SystemController', () => {
         const dryRunResult: SyncFgaResponse = {
           dryRun: true,
           categories: {
-            orgHierarchy: 10,
-            orgMemberships: 20,
-            classMemberships: 30,
-            groupMemberships: 5,
-            familyMemberships: 3,
-            administrationAssignments: 15,
+            orgHierarchy: { write: 10, delete: 0 },
+            orgMemberships: { write: 20, delete: 2 },
+            classMemberships: { write: 30, delete: 1 },
+            groupMemberships: { write: 5, delete: 0 },
+            familyMemberships: { write: 3, delete: 0 },
+            administrationAssignments: { write: 15, delete: 3 },
           },
-          totalTuples: 83,
+          totalWrites: 83,
+          totalDeletes: 6,
         };
         mockSyncFgaStore.mockResolvedValue(dryRunResult);
 
