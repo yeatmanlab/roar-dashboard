@@ -29,7 +29,7 @@ export const DistrictsContract = c.router(
         'Use ?includeEnded=true to include organizations with rosteringEnded timestamp. ' +
         'Use ?embed=counts to include aggregated statistics (users, schools, classes).',
     },
-    getById: {
+    get: {
       method: 'GET',
       path: '/:id',
       pathParams: z.object({

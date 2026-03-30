@@ -5,7 +5,6 @@ import { DistrictEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
-import type { PostgreSQLPoint } from '../types/postgres';
 
 const districtService = DistrictService();
 
@@ -16,11 +15,12 @@ const districtService = DistrictService();
 function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
-  if (district.locationLatLong) {
-    const point = district.locationLatLong as unknown as PostgreSQLPoint;
+  const { locationLatLong } = district;
+  if (locationLatLong) {
+    // PostgreSQL point type: { x: longitude, y: latitude }
     coordinates = {
       type: 'Point',
-      coordinates: [point.x, point.y], // [longitude, latitude]
+      coordinates: [locationLatLong.x, locationLatLong.y],
     };
   }
 

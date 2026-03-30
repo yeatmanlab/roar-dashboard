@@ -1890,4 +1890,415 @@ describe('TaskService', () => {
       });
     });
   });
+
+  describe('getTaskVariant', () => {
+    const validTaskId = '123e4567-e89b-12d3-a456-426614174000';
+    const mockTask = TaskFactory.build({ id: validTaskId });
+    const mockVariant = TaskVariantFactory.build({ taskId: mockTask.id });
+    const mockParams = [
+      { taskVariantId: mockVariant.id, name: 'param1', value: 'value1', createdAt: new Date(), updatedAt: new Date() },
+      { taskVariantId: mockVariant.id, name: 'param2', value: 'value2', createdAt: new Date(), updatedAt: new Date() },
+    ];
+
+    describe('successful retrieval with UUID', () => {
+      it('should retrieve variant by task UUID successfully', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id);
+
+        expect(result).toEqual({
+          ...mockVariant,
+          parameters: mockParams.map(({ name, value }) => ({ name, value })),
+          task: {
+            name: mockTask.name,
+            slug: mockTask.slug,
+            image: mockTask.image,
+          },
+        });
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: mockTask.id });
+        expect(taskVariantRepository.getById).toHaveBeenCalledWith({ id: mockVariant.id });
+      });
+    });
+
+    describe('successful retrieval with task slug', () => {
+      it('should retrieve variant by task slug successfully', async () => {
+        const taskSlug = 'test-task-slug';
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, taskSlug, mockVariant.id);
+
+        expect(result).toEqual({
+          ...mockVariant,
+          parameters: mockParams.map(({ name, value }) => ({ name, value })),
+          task: {
+            name: mockTask.name,
+            slug: mockTask.slug,
+            image: mockTask.image,
+          },
+        });
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith(taskSlug);
+      });
+    });
+
+    describe('task not found errors', () => {
+      it('should throw NOT_FOUND when task does not exist by UUID', async () => {
+        taskRepository.getById.mockResolvedValue(null);
+        taskRepository.getBySlug.mockResolvedValue(null);
+
+        await expect(
+          taskService.getTaskVariant(authContext, '00000000-0000-0000-0000-000000000000', mockVariant.id),
+        ).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
+      });
+
+      it('should throw NOT_FOUND when task does not exist by slug', async () => {
+        taskRepository.getById.mockResolvedValue(null);
+        taskRepository.getBySlug.mockResolvedValue(null);
+
+        await expect(taskService.getTaskVariant(authContext, 'nonexistent-slug', mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
+      });
+    });
+
+    describe('variant not found errors', () => {
+      it('should throw NOT_FOUND when variant does not exist', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(null);
+
+        await expect(taskService.getTaskVariant(authContext, mockTask.id, 'nonexistent-variant')).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
+      });
+    });
+
+    describe('authorization - super admin access', () => {
+      it('should allow super admin to retrieve published variant', async () => {
+        const publishedVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'published' });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(publishedVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, mockTask.id, publishedVariant.id);
+
+        expect(result.status).toBe('published');
+      });
+
+      it('should allow super admin to retrieve draft variant', async () => {
+        const draftVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'draft' });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(draftVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, mockTask.id, draftVariant.id);
+
+        expect(result.status).toBe('draft');
+      });
+
+      it('should allow super admin to retrieve deprecated variant', async () => {
+        const deprecatedVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'deprecated' });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(deprecatedVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, mockTask.id, deprecatedVariant.id);
+
+        expect(result.status).toBe('deprecated');
+      });
+    });
+
+    describe('authorization - non-super admin access', () => {
+      const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+
+      it('should allow non-super admin to retrieve published variant', async () => {
+        const publishedVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'published' });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(publishedVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(nonAdminContext, mockTask.id, publishedVariant.id);
+
+        expect(result.status).toBe('published');
+      });
+
+      it('should throw NOT_FOUND when non-super admin tries to retrieve draft variant', async () => {
+        const draftVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'draft' });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(draftVariant);
+
+        await expect(taskService.getTaskVariant(nonAdminContext, mockTask.id, draftVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
+      });
+
+      it('should throw NOT_FOUND when non-super admin tries to retrieve deprecated variant', async () => {
+        const deprecatedVariant = TaskVariantFactory.build({ taskId: mockTask.id, status: 'deprecated' });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(deprecatedVariant);
+
+        await expect(taskService.getTaskVariant(nonAdminContext, mockTask.id, deprecatedVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
+      });
+    });
+
+    describe('variant parameters handling', () => {
+      it('should return empty parameters array when variant has no parameters', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue([]);
+
+        const result = await taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id);
+
+        expect(result.parameters).toEqual([]);
+      });
+
+      it('should return all parameters for variant', async () => {
+        const manyParams = [
+          {
+            taskVariantId: mockVariant.id,
+            name: 'param1',
+            value: 'value1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            taskVariantId: mockVariant.id,
+            name: 'param2',
+            value: { nested: 'object' },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          {
+            taskVariantId: mockVariant.id,
+            name: 'param3',
+            value: [1, 2, 3],
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          { taskVariantId: mockVariant.id, name: 'param4', value: null, createdAt: new Date(), updatedAt: new Date() },
+        ];
+        // Service method maps parameters to name/value only
+        const manyParamsSimplified = manyParams.map(({ name, value }) => ({ name, value }));
+
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(manyParams);
+
+        const result = await taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id);
+
+        expect(result.parameters).toEqual(manyParamsSimplified);
+      });
+    });
+
+    describe('task information inclusion', () => {
+      it('should include task name, slug, and image in result', async () => {
+        const taskWithImage = TaskFactory.build({ id: validTaskId, image: 'https://example.com/image.jpg' });
+        taskRepository.getById.mockResolvedValue(taskWithImage);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, taskWithImage.id, mockVariant.id);
+
+        expect(result.task).toEqual({
+          name: taskWithImage.name,
+          slug: taskWithImage.slug,
+          image: taskWithImage.image,
+        });
+      });
+
+      it('should include task with null image', async () => {
+        const taskWithoutImage = TaskFactory.build({ id: validTaskId, image: null });
+        taskRepository.getById.mockResolvedValue(taskWithoutImage);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, taskWithoutImage.id, mockVariant.id);
+
+        expect(result.task.image).toBeNull();
+      });
+    });
+
+    describe('error handling', () => {
+      it('should wrap database errors from task repository in ApiError', async () => {
+        const dbError = new Error('Database connection failed');
+        taskRepository.getById.mockRejectedValue(dbError);
+
+        await expect(taskService.getTaskVariant(authContext, validTaskId, mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          }),
+        );
+      });
+
+      it('should wrap database errors from variant repository in ApiError', async () => {
+        const dbError = new Error('Database connection failed');
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockRejectedValue(dbError);
+
+        await expect(taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          }),
+        );
+      });
+
+      it('should wrap database errors from parameter repository in ApiError', async () => {
+        const dbError = new Error('Database connection failed');
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockRejectedValue(dbError);
+
+        await expect(taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          }),
+        );
+      });
+
+      it('should propagate existing ApiErrors from task repository', async () => {
+        const apiError = new ApiError('Task access denied', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+        taskRepository.getById.mockRejectedValue(apiError);
+
+        await expect(taskService.getTaskVariant(authContext, validTaskId, mockVariant.id)).rejects.toThrow(apiError);
+      });
+
+      it('should propagate existing ApiErrors from variant repository', async () => {
+        const apiError = new ApiError('Variant access denied', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockRejectedValue(apiError);
+
+        await expect(taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id)).rejects.toThrow(apiError);
+      });
+    });
+
+    describe('UUID validation for variant lookup', () => {
+      it('should fetch variant by exact UUID match', async () => {
+        const variantId = '123e4567-e89b-12d3-a456-426614174000';
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        await taskService.getTaskVariant(authContext, mockTask.id, variantId);
+
+        expect(taskVariantRepository.getById).toHaveBeenCalledWith({ id: variantId });
+      });
+    });
+
+    describe('UUID vs slug detection for task lookup', () => {
+      it('should try getById first for UUID-formatted task ID', async () => {
+        const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        await taskService.getTaskVariant(authContext, validUuid, mockVariant.id);
+
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: validUuid });
+        expect(taskRepository.getBySlug).not.toHaveBeenCalled();
+      });
+
+      it('should use slug lookup for non-UUID formatted task IDs', async () => {
+        const slug = 'reading-comprehension';
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, slug, mockVariant.id);
+
+        expect(taskRepository.getById).not.toHaveBeenCalled();
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith(slug);
+        expect(result.task.slug).toBe(mockTask.slug);
+      });
+
+      it('should handle case-sensitive slug lookup', async () => {
+        const taskWithLowerSlug = TaskFactory.build({ id: mockTask.id, slug: 'swr' });
+        taskRepository.getBySlug.mockImplementation((slug) => {
+          if (slug === 'swr') {
+            return Promise.resolve(taskWithLowerSlug);
+          }
+          return Promise.resolve(null);
+        });
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        // Lowercase slug should work
+        const resultLower = await taskService.getTaskVariant(authContext, 'swr', mockVariant.id);
+
+        expect(resultLower.task.slug).toBe('swr');
+
+        // Uppercase slug should fail (not found)
+        taskRepository.getBySlug.mockResolvedValue(null);
+        await expect(taskService.getTaskVariant(authContext, 'SWR', mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
+
+        // Mixed case slug should fail (not found)
+        await expect(taskService.getTaskVariant(authContext, 'SwR', mockVariant.id)).rejects.toThrow(
+          expect.objectContaining({
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          }),
+        );
+      });
+    });
+
+    describe('response structure', () => {
+      it('should return correct response shape with all required fields', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskVariantRepository.getById.mockResolvedValue(mockVariant);
+        taskVariantParameterRepository.getByTaskVariantId.mockResolvedValue(mockParams);
+
+        const result = await taskService.getTaskVariant(authContext, mockTask.id, mockVariant.id);
+
+        expect(result).toHaveProperty('id');
+        expect(result).toHaveProperty('taskId');
+        expect(result).toHaveProperty('name');
+        expect(result).toHaveProperty('description');
+        expect(result).toHaveProperty('status');
+        expect(result).toHaveProperty('createdAt');
+        expect(result).toHaveProperty('updatedAt');
+        expect(result).toHaveProperty('parameters');
+        expect(result).toHaveProperty('task');
+        expect(result.task).toHaveProperty('name');
+        expect(result.task).toHaveProperty('slug');
+        expect(result.task).toHaveProperty('image');
+      });
+    });
+  });
 });
