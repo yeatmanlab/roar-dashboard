@@ -530,6 +530,8 @@ export function AuthorizationModule({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
+      // Defensive: all known error paths (DB via wrapCategoryBuilder, FGA via per-category catch)
+      // already throw ApiError, so this branch guards against unexpected failures only.
       logger.error({ err: error, context: { userId } }, 'FGA sync failed');
       throw new ApiError('FGA sync failed', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
