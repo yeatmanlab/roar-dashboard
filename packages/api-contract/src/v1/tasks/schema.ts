@@ -408,13 +408,28 @@ export const CreateTaskRequestBodySchema = z.object({
     .min(1, 'Slug is required')
     .max(32, 'Slug must be at most 32 characters')
     .regex(TASK_SLUG_REGEX, 'Slug must be lowercase alphanumeric with hyphens (e.g., "my-task")'),
-  name: z.string().trim().min(1, 'Name is required'),
-  nameSimple: z.string().trim().min(1, 'Simple name is required'),
-  nameTechnical: z.string().trim().min(1, 'Technical name is required'),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Name is required')
+    .max(255)
+    .regex(IDENTIFIER_WITH_SPACES, 'Name must be alphanumeric with spaces (e.g., "My Task")'),
+  nameSimple: z
+    .string()
+    .trim()
+    .min(1, 'Simple name is required')
+    .max(255)
+    .regex(IDENTIFIER_WITH_SPACES, 'Simple name must be alphanumeric with spaces (e.g., "My Task")'),
+  nameTechnical: z
+    .string()
+    .trim()
+    .min(1, 'Technical name is required')
+    .max(255)
+    .regex(IDENTIFIER_WITH_SPACES, 'Technical name must be alphanumeric with spaces (e.g., "My Task")'),
   taskConfig: ValidatedJsonValue,
-  description: z.string().trim().min(1).optional(),
-  image: z.string().url('Image must be a valid URL').optional(),
-  tutorialVideo: z.string().url('Tutorial video must be a valid URL').optional(),
+  description: z.string().trim().min(1).nullish(),
+  image: z.string().url('Image must be a valid URL').nullish(),
+  tutorialVideo: z.string().url('Tutorial video must be a valid URL').nullish(),
 });
 
 export const CreateTaskResponseSchema = z.object({
