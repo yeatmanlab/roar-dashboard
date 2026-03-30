@@ -39,7 +39,7 @@ import {
   administrationClassTuple,
   administrationGroupTuple,
 } from '../../authorization/helpers/fga-tuples';
-import { FgaType, FGA_CLASS_VALID_ROLES } from '../../authorization/fga-constants';
+import { FGA_CLASS_VALID_ROLES } from '../../authorization/fga-constants';
 import { categorizeFgaTuples, diffTuples } from './tuple-key.utils';
 import type { SyncCategory, DiffResult } from './tuple-key.utils';
 
@@ -48,16 +48,6 @@ const FGA_WRITE_BATCH_SIZE = 100;
 
 /** Page size for FGA read calls. */
 const FGA_READ_PAGE_SIZE = 100;
-
-/** Object type prefixes to read from FGA, covering all 6 sync categories. */
-const FGA_OBJECT_TYPE_PREFIXES = [
-  `${FgaType.DISTRICT}:`,
-  `${FgaType.SCHOOL}:`,
-  `${FgaType.CLASS}:`,
-  `${FgaType.GROUP}:`,
-  `${FgaType.FAMILY}:`,
-  `${FgaType.ADMINISTRATION}:`,
-] as const;
 
 /**
  * Split an array into chunks of the given size.
@@ -131,20 +121,21 @@ export function AuthorizationModule({
   }
 
   /**
-   * Read all tuples from FGA for a given object type prefix, paginating through
-   * continuation tokens until all tuples are retrieved.
+   * Read all tuples from the FGA store, paginating through continuation tokens.
    *
-   * @param objectTypePrefix - The object type prefix to read (e.g. 'district:')
-   * @returns All tuples matching the prefix
+   * Passes an empty body so the server returns every tuple regardless of type.
+   * Per-type filtering happens client-side via `categorizeFgaTuples`.
+   *
+   * @returns All tuples currently in the FGA store
    */
-  async function readAllTuplesByObjectType(objectTypePrefix: string): Promise<TupleKey[]> {
+  async function readAllExistingTuples(): Promise<TupleKey[]> {
     const client = getClient();
     const allTuples: TupleKey[] = [];
     let continuationToken = '';
 
     do {
       const response = await client.read(
-        { object: objectTypePrefix },
+        {},
         {
           pageSize: FGA_READ_PAGE_SIZE,
           ...(continuationToken ? { continuationToken } : {}),
@@ -159,16 +150,6 @@ export function AuthorizationModule({
     } while (continuationToken);
 
     return allTuples;
-  }
-
-  /**
-   * Read all existing FGA tuples across all object type prefixes in parallel.
-   *
-   * @returns All tuples from FGA
-   */
-  async function readAllExistingTuples(): Promise<TupleKey[]> {
-    const results = await Promise.all(FGA_OBJECT_TYPE_PREFIXES.map((prefix) => readAllTuplesByObjectType(prefix)));
-    return results.flat();
   }
 
   // ── Category builders ──────────────────────────────────────────────────────

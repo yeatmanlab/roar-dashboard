@@ -593,13 +593,7 @@ describe('AuthorizationModule', () => {
         timestamp: '2024-01-01T00:00:00Z',
       };
 
-      mockReadImplementation(mockClient, async (body) => {
-        const obj = body?.object ?? '';
-        if (typeof obj === 'string' && obj.startsWith('group:')) {
-          return mockReadResponse([staleTuple]);
-        }
-        return mockReadResponse([]);
-      });
+      mockReadImplementation(mockClient, async () => mockReadResponse([staleTuple]));
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
@@ -649,13 +643,7 @@ describe('AuthorizationModule', () => {
         timestamp: '2024-01-01T00:00:00Z',
       };
 
-      mockReadImplementation(mockClient, async (body) => {
-        const obj = body?.object ?? '';
-        if (typeof obj === 'string' && obj.startsWith('group:')) {
-          return mockReadResponse([oldTuple]);
-        }
-        return mockReadResponse([]);
-      });
+      mockReadImplementation(mockClient, async () => mockReadResponse([oldTuple]));
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
@@ -704,13 +692,7 @@ describe('AuthorizationModule', () => {
         timestamp: '2024-01-01T00:00:00Z',
       };
 
-      mockReadImplementation(mockClient, async (body) => {
-        const obj = body?.object ?? '';
-        if (typeof obj === 'string' && obj.startsWith('group:')) {
-          return mockReadResponse([matchingTuple]);
-        }
-        return mockReadResponse([]);
-      });
+      mockReadImplementation(mockClient, async () => mockReadResponse([matchingTuple]));
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
@@ -737,16 +719,12 @@ describe('AuthorizationModule', () => {
       };
 
       let callCount = 0;
-      mockReadImplementation(mockClient, async (body) => {
-        const obj = body?.object ?? '';
-        if (typeof obj === 'string' && obj.startsWith('group:')) {
-          callCount++;
-          if (callCount === 1) {
-            return mockReadResponse([tuple1], 'page2-token');
-          }
-          return mockReadResponse([tuple2]);
+      mockReadImplementation(mockClient, async () => {
+        callCount++;
+        if (callCount === 1) {
+          return mockReadResponse([tuple1], 'page2-token');
         }
-        return mockReadResponse([]);
+        return mockReadResponse([tuple2]);
       });
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
@@ -756,10 +734,7 @@ describe('AuthorizationModule', () => {
       expect(result.categories.groupMemberships.delete).toBe(2);
 
       // Should have called read with continuation token
-      expect(mockClient.read).toHaveBeenCalledWith(
-        { object: 'group:' },
-        expect.objectContaining({ continuationToken: 'page2-token' }),
-      );
+      expect(mockClient.read).toHaveBeenCalledWith({}, expect.objectContaining({ continuationToken: 'page2-token' }));
     });
 
     it('deletes execute before writes within a category', async () => {
@@ -784,13 +759,7 @@ describe('AuthorizationModule', () => {
         timestamp: '2024-01-01T00:00:00Z',
       };
 
-      mockReadImplementation(mockClient, async (body) => {
-        const obj = body?.object ?? '';
-        if (typeof obj === 'string' && obj.startsWith('school:')) {
-          return mockReadResponse([staleTuple]);
-        }
-        return mockReadResponse([]);
-      });
+      mockReadImplementation(mockClient, async () => mockReadResponse([staleTuple]));
 
       const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       await module.syncFgaStore(authContext, { dryRun: false });
