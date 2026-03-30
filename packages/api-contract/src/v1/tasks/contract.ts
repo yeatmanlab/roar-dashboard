@@ -1,17 +1,20 @@
 import { initContract } from '@ts-rest/core';
-import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import {
   CreateTaskVariantRequestBodySchema,
   CreateTaskVariantResponseSchema,
+  CreateTaskVariantPathParamSchema,
   UpdateTaskVariantRequestBodySchema,
   UpdateTaskVariantResponseSchema,
+  UpdateTaskVariantPathParamSchema,
   TasksListQuerySchema,
   TasksListResponseSchema,
   TaskIdParamSchema,
+  GetTaskVariantPathParamSchema,
   TaskSchema,
   ListTaskVariantsQuerySchema,
   ListTaskVariantsResponseSchema,
+  GetTaskVariantResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -83,12 +86,27 @@ export const TasksContract = c.router(
         'Supports pagination (page, perPage), searching by name or description, and sorting by name, status, createdAt, or updatedAt. ' +
         'Returns 404 if the task does not exist.',
     },
+    getTaskVariant: {
+      method: 'GET',
+      path: '/:taskId/variants/:variantId',
+      pathParams: GetTaskVariantPathParamSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(GetTaskVariantResponseSchema),
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a task variant',
+      description:
+        'Returns the variant with the specified ID for the specified task. ' +
+        'Supports task variant lookup by task slug or task UUID. ' +
+        'Returns 404 if the task or variant does not exist. ' +
+        'Returns 500 if an internal server error occurs.',
+    },
     createTaskVariant: {
       method: 'POST',
       path: '/:taskId/variants',
-      pathParams: z.object({
-        taskId: z.string().uuid(),
-      }),
+      pathParams: CreateTaskVariantPathParamSchema,
       contentType: 'application/json',
       body: CreateTaskVariantRequestBodySchema,
       responses: {
@@ -111,10 +129,7 @@ export const TasksContract = c.router(
     updateTaskVariant: {
       method: 'PATCH',
       path: '/:taskId/variants/:variantId',
-      pathParams: z.object({
-        taskId: z.string().uuid(),
-        variantId: z.string().uuid(),
-      }),
+      pathParams: UpdateTaskVariantPathParamSchema,
       contentType: 'application/json',
       body: UpdateTaskVariantRequestBodySchema,
       responses: {

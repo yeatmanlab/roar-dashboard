@@ -195,6 +195,40 @@ export const TasksController = {
   },
 
   /**
+   * Get a task variant by ID
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Super admins see all variants; regular users see only published variants.
+   *
+   * @param authContext - The user's authentication context
+   * @param taskId  - The ID of the task; can be a task ID or a task slug
+   * @param variantId - The ID of the task variant
+   * @returns The requested task variant, if it exists
+   */
+  getTaskVariant: async (authContext: AuthContext, taskId: string, variantId: string) => {
+    try {
+      const result = await taskService.getTaskVariant(authContext, taskId, variantId);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            ...transformTaskVariant(result),
+            taskName: result.task.name,
+            taskSlug: result.task.slug,
+            taskImage: result.task.image,
+            parameters: result.parameters,
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Create a new task-variant for a given task id.
    *
    * Delegates to TaskService for authorization and business logic.
