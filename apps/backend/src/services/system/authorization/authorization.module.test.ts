@@ -6,6 +6,7 @@ import { ApiErrorCode } from '../../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 import { ApiError } from '../../../errors/api-error';
 import { logger } from '../../../logger';
+import { createMockFgaClient, type MockFgaClient } from '../../../test-support/clients/fga.client';
 import { AuthContextFactory } from '../../../test-support/factories/user.factory';
 import { OrgType } from '../../../enums/org-type.enum';
 import { AuthorizationModule } from './authorization.module';
@@ -46,15 +47,6 @@ function createMockDb(mockFromResults: Record<string, unknown[]>) {
       }),
     }),
   };
-}
-
-// ── Mock FGA client ──────────────────────────────────────────────────────────
-
-function createMockFgaClient() {
-  return {
-    writeTuples: vi.fn(),
-    deleteTuples: vi.fn(),
-  } as unknown as OpenFgaClient;
 }
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -128,8 +120,11 @@ const adminGroupRow = {
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
+// Safe cast: the module only calls writeTuples/deleteTuples, which the mock provides
+const asOpenFgaClient = (mock: MockFgaClient) => mock as unknown as OpenFgaClient;
+
 describe('AuthorizationModule', () => {
-  let mockClient: OpenFgaClient;
+  let mockClient: MockFgaClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -140,7 +135,7 @@ describe('AuthorizationModule', () => {
     it('throws 403 for non-super-admin', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const db = createMockDb({});
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
 
       await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
@@ -154,7 +149,7 @@ describe('AuthorizationModule', () => {
     it('does not query the database for non-super-admin', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const db = createMockDb({});
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
 
       await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(ApiError);
       expect(db.select).not.toHaveBeenCalled();
@@ -176,7 +171,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [adminGroupRow],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(result.dryRun).toBe(true);
@@ -198,7 +193,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(logger.info).toHaveBeenCalledWith(
@@ -223,7 +218,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories).toEqual({
@@ -254,7 +249,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       // schoolHierarchyTuples returns 2 tuples per school
@@ -275,7 +270,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: true });
 
       expect(result.categories.orgHierarchy).toBe(2);
@@ -297,7 +292,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.orgMemberships).toBe(1);
@@ -327,7 +322,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.orgMemberships).toBe(1);
@@ -359,7 +354,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.familyMemberships).toBe(1);
@@ -397,7 +392,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(1);
@@ -427,7 +422,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(1);
@@ -457,7 +452,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [adminGroupRow],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.administrationAssignments).toBe(2);
@@ -489,17 +484,15 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       const result = await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(result.categories.classMemberships).toBe(250);
 
       // 250 tuples should be split into 3 batches: 100, 100, 50
-      const classBatchCalls = (mockClient.writeTuples as ReturnType<typeof vi.fn>).mock.calls.filter(
-        (call: unknown[][]) => call[0]!.length > 0,
-      );
+      const classBatchCalls = mockClient.writeTuples.mock.calls.filter((call) => call[0].length > 0);
       // The class batch should have calls with sizes 100, 100, 50
-      const classBatchSizes = classBatchCalls.map((call: unknown[][]) => call[0]!.length);
+      const classBatchSizes = classBatchCalls.map((call) => call[0].length);
       expect(classBatchSizes).toContain(100);
       expect(classBatchSizes).toContain(50);
     });
@@ -518,7 +511,7 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
       await module.syncFgaStore(authContext, { dryRun: false });
 
       expect(mockClient.writeTuples).toHaveBeenCalledWith(expect.any(Array), {
@@ -550,7 +543,7 @@ describe('AuthorizationModule', () => {
         }),
       };
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => mockClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
 
       await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({
@@ -581,12 +574,10 @@ describe('AuthorizationModule', () => {
         administration_groups: [],
       });
 
-      const failingClient = {
-        ...createMockFgaClient(),
-        writeTuples: vi.fn().mockRejectedValue(fgaError),
-      } as unknown as OpenFgaClient;
+      const failingClient = createMockFgaClient();
+      failingClient.writeTuples.mockRejectedValue(fgaError);
 
-      const module = AuthorizationModule({ db: db as never, getClient: () => failingClient });
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(failingClient) });
 
       await expect(module.syncFgaStore(authContext, { dryRun: false })).rejects.toThrow(
         expect.objectContaining({

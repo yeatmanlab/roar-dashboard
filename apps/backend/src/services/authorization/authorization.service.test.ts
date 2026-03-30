@@ -1,14 +1,17 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import { logger } from '../../logger';
+import { createMockFgaClient, type MockFgaClient } from '../../test-support/clients/fga.client';
 import { AuthorizationService } from './authorization.service';
 
-const mockClient = {
-  writeTuples: vi.fn(),
-  deleteTuples: vi.fn(),
-} as unknown as OpenFgaClient;
+let mockClient: MockFgaClient;
 
-const getClient = () => mockClient;
+beforeEach(() => {
+  mockClient = createMockFgaClient();
+});
+
+// Safe cast: the service only calls writeTuples/deleteTuples, which the mock provides
+const getClient = () => mockClient as unknown as OpenFgaClient;
 
 const sampleTuples: TupleKey[] = [
   {
@@ -62,7 +65,7 @@ describe('AuthorizationService', () => {
 
     it('logs error and does not throw on SDK failure', async () => {
       const sdkError = new Error('FGA write failed');
-      (mockClient.writeTuples as ReturnType<typeof vi.fn>).mockRejectedValueOnce(sdkError);
+      mockClient.writeTuples.mockRejectedValueOnce(sdkError);
       const service = AuthorizationService({ getClient });
 
       await expect(service.writeTuples(sampleTuples)).resolves.toBeUndefined();
@@ -98,7 +101,7 @@ describe('AuthorizationService', () => {
 
     it('logs error and does not throw on SDK failure', async () => {
       const sdkError = new Error('FGA delete failed');
-      (mockClient.deleteTuples as ReturnType<typeof vi.fn>).mockRejectedValueOnce(sdkError);
+      mockClient.deleteTuples.mockRejectedValueOnce(sdkError);
       const service = AuthorizationService({ getClient });
 
       await expect(service.deleteTuples(sampleTuplesWithoutCondition)).resolves.toBeUndefined();
