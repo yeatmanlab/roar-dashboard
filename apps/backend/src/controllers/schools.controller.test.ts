@@ -386,7 +386,7 @@ describe('SchoolsController', () => {
         locationStateProvince: 'IL',
         locationPostalCode: '62701',
         locationCountry: 'US',
-        locationLatLong: [-89.6501, 39.7817],
+        locationLatLong: { x: -89.6501, y: 39.7817 },
       });
       mockGetById.mockResolvedValue(mockSchool);
 

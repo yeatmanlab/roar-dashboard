@@ -108,7 +108,7 @@ export function SchoolService({
 
     try {
       // 1. Look up unrestricted first — distinguishes 404 from 403
-      const school = await repo.getUnrestrictedById(schoolId);
+      const school = await schoolRepository.getUnrestrictedById(schoolId);
       if (!school) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
@@ -124,7 +124,7 @@ export function SchoolService({
 
       // 3. Check access via org hierarchy joins
       const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-      const authorized = await repo.getAuthorizedById({ userId, allowedRoles }, schoolId);
+      const authorized = await schoolRepository.getAuthorizedById({ userId, allowedRoles }, schoolId);
       if (!authorized) {
         logger.warn({ userId, schoolId }, 'User attempted to access school without permission');
         throw new ApiError(ApiErrorMessage.FORBIDDEN, {
