@@ -47,7 +47,7 @@ export const SystemController = {
     });
 
     return {
-      status: 202 as const,
+      status: StatusCodes.ACCEPTED as const,
       body: { data: { message: 'FGA sync started. Check server logs for progress.' } },
     };
   },
