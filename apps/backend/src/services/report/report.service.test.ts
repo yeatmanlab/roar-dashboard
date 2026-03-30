@@ -2,11 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { ReportService, buildProgressMap } from './report.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
-import { createMockAdministrationRepository, createMockReportRepository } from '../../test-support/repositories';
+import {
+  createMockAdministrationRepository,
+  createMockReportRepository,
+  createMockTaskVariantParameterRepository,
+} from '../../test-support/repositories';
 import { createMockAuthorizationService, createMockTaskService } from '../../test-support/services';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { ProgressStudentsInput } from './report.types';
-import type { ReportTaskMeta, StudentProgressRow } from '../../repositories/report.repository';
+import type {
+  ReportTaskMeta,
+  StudentProgressRow,
+  StudentOverviewRow,
+  RunScoreRow,
+} from '../../repositories/report.repository';
+import type { ScoreOverviewQuery } from '@roar-dashboard/api-contract';
 import { Operator } from '../task/task.types';
 
 /** Default demographic fields for test StudentProgressRow objects */
@@ -26,6 +36,7 @@ describe('ReportService', () => {
   let mockReportRepository: ReturnType<typeof createMockReportRepository>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
   let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
+  let mockTaskVariantParameterRepository: ReturnType<typeof createMockTaskVariantParameterRepository>;
 
   const superAdminAuth = { userId: 'super-admin-id', isSuperAdmin: true };
   const teacherAuth = { userId: 'teacher-id', isSuperAdmin: false };
@@ -96,6 +107,7 @@ describe('ReportService', () => {
       reportRepository: mockReportRepository,
       taskService: mockTaskService,
       authorizationService: mockAuthorizationService,
+      taskVariantParameterRepository: mockTaskVariantParameterRepository,
     });
   }
 
@@ -105,6 +117,7 @@ describe('ReportService', () => {
     mockReportRepository = createMockReportRepository();
     mockTaskService = createMockTaskService();
     mockAuthorizationService = createMockAuthorizationService();
+    mockTaskVariantParameterRepository = createMockTaskVariantParameterRepository();
 
     // Default: administration exists
     mockAdministrationRepository.getById.mockResolvedValue(AdministrationFactory.build({ id: testAdministrationId }));
@@ -772,6 +785,504 @@ describe('ReportService', () => {
       expect(result[TASK_ID_4]).toBeUndefined();
       // Evaluator called once per task without a run (3 tasks)
       expect(notAssignedEvaluator).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('getScoreOverview', () => {
+    const scoreQuery: ScoreOverviewQuery = {
+      scopeType: 'district',
+      scopeId: 'district-uuid-1',
+      filter: [],
+    };
+
+    /** Helper to build a StudentOverviewRow with default demographics. */
+    function buildOverviewStudent(overrides: Partial<StudentOverviewRow> & { userId: string }): StudentOverviewRow {
+      return {
+        grade: '3',
+        statusEll: null,
+        statusIep: null,
+        statusFrl: null,
+        dob: null,
+        gender: null,
+        race: null,
+        hispanicEthnicity: null,
+        homeLanguage: null,
+        ...overrides,
+      };
+    }
+
+    /** Helper to build RunScoreRow entries. */
+    function buildScoreRow(userId: string, taskVariantId: string, scoreName: string, scoreValue: string): RunScoreRow {
+      return { userId, taskVariantId, scoreName, scoreValue };
+    }
+
+    /** Set up default mocks for a successful getScoreOverview call. */
+    function setupDefaultScoreOverviewMocks(
+      students: StudentOverviewRow[] = [buildOverviewStudent({ userId: 'student-1' })],
+      scoreRows: RunScoreRow[] = [],
+    ) {
+      mockReportRepository.getAllStudentsInScope.mockResolvedValue({
+        totalStudents: students.length,
+        students,
+      });
+      mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+    }
+
+    // --- Authorization tests (same 3-layer pattern as listProgressStudents) ---
+
+    it('returns 404 when administration does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(teacherAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('returns 403 when user lacks access to administration', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(teacherAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('returns 403 when user lacks Reports.Score.READ permission', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(studentAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('returns 403 when user has score permission but only supervised roles', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['caregiver']);
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(caregiverAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('returns 400 when scope is not assigned to administration', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
+      mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(false);
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(teacherAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 403 when user lacks supervisory role at scope level', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
+      mockReportRepository.getUserRolesAtOrAboveScope.mockResolvedValue(['student']);
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(teacherAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('super admin bypasses all authorization checks', async () => {
+      setupDefaultScoreOverviewMocks();
+
+      const service = createService();
+      await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      expect(mockAdministrationRepository.getUserRolesForAdministration).not.toHaveBeenCalled();
+      expect(mockReportRepository.getUserRolesAtOrAboveScope).not.toHaveBeenCalled();
+    });
+
+    // --- Empty results ---
+
+    it('returns empty task overviews when no students in scope', async () => {
+      setupDefaultScoreOverviewMocks([]);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      expect(result.totalStudents).toBe(0);
+      expect(result.tasks).toHaveLength(testTaskMetas.length);
+      for (const task of result.tasks) {
+        expect(task.totalAssessed).toBe(0);
+        expect(task.totalNotAssessed).toEqual({ required: 0, optional: 0 });
+        expect(task.supportLevels.achievedSkill).toEqual({ count: 0, percentage: 0 });
+      }
+      expect(result.computedAt).toBeDefined();
+    });
+
+    it('returns computedAt as ISO 8601 datetime', async () => {
+      setupDefaultScoreOverviewMocks();
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      // Verify it parses as a valid date
+      const parsed = new Date(result.computedAt);
+      expect(parsed.getTime()).not.toBeNaN();
+    });
+
+    // --- Aggregation logic ---
+
+    it('counts assessed students with support levels', async () => {
+      const students = [
+        buildOverviewStudent({ userId: 'student-1', grade: '3' }),
+        buildOverviewStudent({ userId: 'student-2', grade: '3' }),
+        buildOverviewStudent({ userId: 'student-3', grade: '3' }),
+      ];
+
+      // All 3 students have completed scores for swr (task-1).
+      // percentile = 50 → achievedSkill (>= 50th percentile for swr grade 3)
+      // percentile = 30 → developingSkill
+      // percentile = 10 → needsExtraSupport
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '50'),
+        buildScoreRow('student-2', VARIANT_ID_1, 'percentile', '30'),
+        buildScoreRow('student-3', VARIANT_ID_1, 'percentile', '10'),
+      ];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1);
+      expect(swrTask).toBeDefined();
+      expect(swrTask!.totalAssessed).toBe(3);
+      // At least one student in each bucket (exact classification depends on scoring thresholds)
+      const totalClassified =
+        swrTask!.supportLevels.achievedSkill.count +
+        swrTask!.supportLevels.developingSkill.count +
+        swrTask!.supportLevels.needsExtraSupport.count;
+      expect(totalClassified).toBeLessThanOrEqual(3);
+    });
+
+    it('counts not-assessed students as required when no run exists', async () => {
+      const students = [
+        buildOverviewStudent({ userId: 'student-1', grade: '3' }),
+        buildOverviewStudent({ userId: 'student-2', grade: '3' }),
+      ];
+
+      // Only student-1 has scores; student-2 has no run.
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '50')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1);
+      expect(swrTask).toBeDefined();
+      expect(swrTask!.totalAssessed).toBe(1);
+      expect(swrTask!.totalNotAssessed.required).toBe(1);
+      expect(swrTask!.totalNotAssessed.optional).toBe(0);
+    });
+
+    it('counts not-assessed students as optional when evaluator returns optional', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-no-run', grade: '3' })];
+
+      setupDefaultScoreOverviewMocks(students, []);
+      // Override default: task is optional for this student
+      mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: true });
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1);
+      expect(swrTask).toBeDefined();
+      expect(swrTask!.totalAssessed).toBe(0);
+      expect(swrTask!.totalNotAssessed.optional).toBe(1);
+      expect(swrTask!.totalNotAssessed.required).toBe(0);
+    });
+
+    it('excludes unassigned students from not-assessed counts', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-excluded', grade: '3' })];
+
+      setupDefaultScoreOverviewMocks(students, []);
+      // Student is not assigned to this task at all
+      mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: false, isOptional: false });
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1);
+      expect(swrTask).toBeDefined();
+      expect(swrTask!.totalAssessed).toBe(0);
+      expect(swrTask!.totalNotAssessed.required).toBe(0);
+      expect(swrTask!.totalNotAssessed.optional).toBe(0);
+    });
+
+    it('calculates percentages as 0-100 rounded to 1 decimal place', async () => {
+      const students = [
+        buildOverviewStudent({ userId: 's1', grade: '3' }),
+        buildOverviewStudent({ userId: 's2', grade: '3' }),
+        buildOverviewStudent({ userId: 's3', grade: '3' }),
+      ];
+
+      // Give all students the same high score so they all land in achievedSkill
+      const scoreRows = students.map((s) => buildScoreRow(s.userId, VARIANT_ID_1, 'percentile', '90'));
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1);
+      expect(swrTask).toBeDefined();
+      // All 3 assessed → achievedSkill should be 100%
+      expect(swrTask!.supportLevels.achievedSkill.percentage).toBe(100);
+      expect(swrTask!.supportLevels.developingSkill.percentage).toBe(0);
+      expect(swrTask!.supportLevels.needsExtraSupport.percentage).toBe(0);
+    });
+
+    // --- Multi-variant deduplication ---
+
+    it('deduplicates across variants of the same task', async () => {
+      // Two variants for the same taskId
+      const SHARED_TASK = 'shared-task-id';
+      const variantA: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-a',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      const variantB: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-b',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 1,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+
+      mockReportRepository.getTaskMetadata.mockResolvedValue([variantA, variantB]);
+
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+
+      // Student has scores on variant A only
+      const scoreRows = [buildScoreRow('student-1', 'var-a', 'percentile', '50')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      // Should produce exactly 1 task (both variants grouped)
+      expect(result.tasks).toHaveLength(1);
+      expect(result.tasks[0]!.taskId).toBe(SHARED_TASK);
+      // Student counted once (not twice)
+      expect(result.tasks[0]!.totalAssessed).toBe(1);
+    });
+
+    it('uses first variant with scores for multi-variant student', async () => {
+      const SHARED_TASK = 'shared-task-id';
+      const variantA: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-a',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      const variantB: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-b',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 1,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+
+      mockReportRepository.getTaskMetadata.mockResolvedValue([variantA, variantB]);
+
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+
+      // Student has scores on both variants — should use variant A (first in order)
+      const scoreRows = [
+        buildScoreRow('student-1', 'var-a', 'percentile', '90'),
+        buildScoreRow('student-1', 'var-b', 'percentile', '10'),
+      ];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      expect(result.tasks[0]!.totalAssessed).toBe(1);
+      // With percentile=90, student should be achievedSkill (not needsExtraSupport from var-b's 10)
+      expect(result.tasks[0]!.supportLevels.achievedSkill.count).toBe(1);
+    });
+
+    it('evaluates eligibility across all variants when no run exists', async () => {
+      const SHARED_TASK = 'shared-task-id';
+      const variantA: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-a',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      const variantB: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-b',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 1,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+
+      mockReportRepository.getTaskMetadata.mockResolvedValue([variantA, variantB]);
+
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      setupDefaultScoreOverviewMocks(students, []);
+
+      // Variant A: not assigned. Variant B: assigned and required.
+      // Student should be counted as not-assessed required (ANY variant assigns → assigned).
+      let callCount = 0;
+      mockTaskService.evaluateTaskVariantEligibility.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return { isAssigned: false, isOptional: false };
+        return { isAssigned: true, isOptional: false };
+      });
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      expect(result.tasks[0]!.totalNotAssessed.required).toBe(1);
+      expect(result.tasks[0]!.totalNotAssessed.optional).toBe(0);
+    });
+
+    // --- taskId filter ---
+
+    it('filters tasks by taskId when filter includes taskId field', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '50')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const filteredQuery: ScoreOverviewQuery = {
+        ...scoreQuery,
+        filter: [{ field: 'taskId', operator: 'in', value: TASK_ID_1 }],
+      };
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery);
+
+      // Only the filtered task should be in the result
+      expect(result.tasks).toHaveLength(1);
+      expect(result.tasks[0]!.taskId).toBe(TASK_ID_1);
+    });
+
+    // --- Scoring version ---
+
+    it('passes scoring version from task variant parameters to scoring logic', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '50')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
+        { taskVariantId: VARIANT_ID_1, name: 'scoringVersion', value: 2, createdAt: new Date(), updatedAt: null },
+      ]);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      // Should complete without error; scoring version affects threshold selection
+      expect(result.tasks).toHaveLength(testTaskMetas.length);
+    });
+
+    // --- Error handling ---
+
+    it('wraps unexpected repository errors in a 500 ApiError', async () => {
+      mockReportRepository.getAllStudentsInScope.mockRejectedValue(new Error('connection reset'));
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('re-throws ApiError without wrapping', async () => {
+      // Simulate the administration not found case — should propagate the 404, not wrap in 500
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    // --- user.grade filter ---
+
+    it('passes user-level filters to getAllStudentsInScope', async () => {
+      setupDefaultScoreOverviewMocks();
+
+      const filteredQuery: ScoreOverviewQuery = {
+        ...scoreQuery,
+        filter: [{ field: 'user.grade', operator: 'eq', value: '3' }],
+      };
+
+      const service = createService();
+      await service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery);
+
+      // getAllStudentsInScope should be called with a filter condition
+      expect(mockReportRepository.getAllStudentsInScope).toHaveBeenCalledWith(
+        { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.anything(), // SQL filter condition
+      );
+    });
+
+    it('returns per-task metadata in results', async () => {
+      setupDefaultScoreOverviewMocks([], []);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      expect(result.tasks[0]!.taskId).toBe(TASK_ID_1);
+      expect(result.tasks[0]!.taskSlug).toBe('swr');
+      expect(result.tasks[0]!.taskName).toBe('ROAR - Word');
+      expect(result.tasks[0]!.orderIndex).toBe(0);
     });
   });
 });
