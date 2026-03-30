@@ -253,6 +253,85 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
     });
   });
 
+  describe('multi-variant query (same taskId)', () => {
+    // These tests use variantForGrade3 and variantForGrade5 — variants that have
+    // no runs seeded by earlier tests — to avoid cross-test contamination from
+    // the run status and deduplication tests above (which seed on allGradesVariantId).
+    const grade3VariantId = () => baseFixture.variantForGrade3.id;
+    const grade5VariantId = () => baseFixture.variantForGrade5.id;
+
+    it('returns independent run entries per variant when multiple variant IDs are passed', async () => {
+      // classAStudent: completed run on grade3Variant, no run on grade5Variant
+      await RunFactory.create({
+        userId: baseFixture.classAStudent.id,
+        taskId,
+        taskVariantId: grade3VariantId(),
+        administrationId,
+        useForReporting: true,
+        completedAt: new Date('2025-06-15T10:00:00Z'),
+      });
+
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [grade3VariantId(), grade5VariantId()],
+        defaultOptions,
+      );
+
+      const studentRow = result.items.find((item) => item.userId === baseFixture.classAStudent.id);
+      expect(studentRow).toBeDefined();
+
+      // The runs Map should have an entry for the variant with a run
+      const grade3Run = studentRow!.runs.get(grade3VariantId());
+      expect(grade3Run).toBeDefined();
+      expect(grade3Run!.completedAt).toEqual(new Date('2025-06-15T10:00:00Z'));
+
+      // And no entry for the variant without a run
+      expect(studentRow!.runs.has(grade5VariantId())).toBe(false);
+    });
+
+    it('returns runs for both variants when student has runs for each', async () => {
+      // schoolAStudent: completed run on grade3Variant, started run on grade5Variant
+      await RunFactory.create({
+        userId: baseFixture.schoolAStudent.id,
+        taskId,
+        taskVariantId: grade3VariantId(),
+        administrationId,
+        useForReporting: true,
+        completedAt: new Date('2025-06-15T10:00:00Z'),
+      });
+
+      await RunFactory.create({
+        userId: baseFixture.schoolAStudent.id,
+        taskId,
+        taskVariantId: grade5VariantId(),
+        administrationId,
+        useForReporting: true,
+        completedAt: null,
+      });
+
+      const result = await repo.getProgressStudents(
+        administrationId,
+        districtScope,
+        [grade3VariantId(), grade5VariantId()],
+        defaultOptions,
+      );
+
+      const studentRow = result.items.find((item) => item.userId === baseFixture.schoolAStudent.id);
+      expect(studentRow).toBeDefined();
+
+      // Both variants should have entries in the runs Map
+      const grade3Run = studentRow!.runs.get(grade3VariantId());
+      expect(grade3Run).toBeDefined();
+      expect(grade3Run!.completedAt).toEqual(new Date('2025-06-15T10:00:00Z'));
+
+      const grade5Run = studentRow!.runs.get(grade5VariantId());
+      expect(grade5Run).toBeDefined();
+      expect(grade5Run!.completedAt).toBeNull();
+      expect(grade5Run!.startedAt).toBeInstanceOf(Date);
+    });
+  });
+
   describe('multiple students with different run states', () => {
     // Use students whose earlier-seeded runs are invisible to the FDW query
     // (soft-deleted, aborted, or useForReporting=false), avoiding test isolation

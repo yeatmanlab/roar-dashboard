@@ -428,6 +428,92 @@ describe('ReportService', () => {
       expect(result[TASK_ID_2]!.status).toBe('assigned');
     });
 
+    describe('multi-variant priority (same taskId)', () => {
+      const SHARED_TASK_ID = 'ccc00000-0000-0000-0000-000000000001';
+      const VARIANT_A = 'variant-a';
+      const VARIANT_B = 'variant-b';
+      const VARIANT_C = 'variant-c';
+
+      const multiVariantMetas: ReportTaskMeta[] = [
+        { taskId: SHARED_TASK_ID, taskVariantId: VARIANT_A, taskSlug: 'swr', taskName: 'ROAR - Word', orderIndex: 0 },
+        { taskId: SHARED_TASK_ID, taskVariantId: VARIANT_B, taskSlug: 'swr', taskName: 'ROAR - Word', orderIndex: 1 },
+        { taskId: SHARED_TASK_ID, taskVariantId: VARIANT_C, taskSlug: 'swr', taskName: 'ROAR - Word', orderIndex: 2 },
+      ];
+
+      function buildStudent(runs: Map<string, { completedAt: Date | null; startedAt: Date }>): StudentProgressRow {
+        return {
+          userId: 'student-1',
+          assessmentPid: 'pid-1',
+          username: null,
+          email: null,
+          nameFirst: null,
+          nameLast: null,
+          grade: null,
+          schoolName: null,
+          runs,
+        };
+      }
+
+      it('keeps completed when a later variant has no run', () => {
+        // Variant A: completed, Variant B: no run, Variant C: no run
+        const student = buildStudent(
+          new Map([[VARIANT_A, { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }]]),
+        );
+
+        const result = buildProgressMap(student, multiVariantMetas);
+
+        expect(result[SHARED_TASK_ID]!.status).toBe('completed');
+      });
+
+      it('keeps completed when a later variant is started', () => {
+        // Variant A: completed, Variant B: started
+        const student = buildStudent(
+          new Map([
+            [VARIANT_A, { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }],
+            [VARIANT_B, { completedAt: null, startedAt: new Date('2025-09-12') }],
+          ]),
+        );
+
+        const result = buildProgressMap(student, multiVariantMetas);
+
+        expect(result[SHARED_TASK_ID]!.status).toBe('completed');
+      });
+
+      it('keeps started when a later variant has no run', () => {
+        // Variant A: no run, Variant B: started, Variant C: no run
+        const student = buildStudent(new Map([[VARIANT_B, { completedAt: null, startedAt: new Date('2025-09-12') }]]));
+
+        const result = buildProgressMap(student, multiVariantMetas);
+
+        expect(result[SHARED_TASK_ID]!.status).toBe('started');
+      });
+
+      it('promotes from assigned to started to completed across variants', () => {
+        // Variant A: no run (assigned), Variant B: started, Variant C: completed
+        const student = buildStudent(
+          new Map([
+            [VARIANT_B, { completedAt: null, startedAt: new Date('2025-09-12') }],
+            [VARIANT_C, { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-14') }],
+          ]),
+        );
+
+        const result = buildProgressMap(student, multiVariantMetas);
+
+        expect(result[SHARED_TASK_ID]!.status).toBe('completed');
+        expect(result[SHARED_TASK_ID]!.completedAt).toBe('2025-09-15T00:00:00.000Z');
+      });
+
+      it('produces a single progress key even with multiple variants', () => {
+        const student = buildStudent(new Map());
+
+        const result = buildProgressMap(student, multiVariantMetas);
+
+        const keys = Object.keys(result);
+        expect(keys).toHaveLength(1);
+        expect(keys[0]).toBe(SHARED_TASK_ID);
+      });
+    });
+
     it('populates startedAt when available from run data', () => {
       const student: StudentProgressRow = {
         userId: 'student-1',

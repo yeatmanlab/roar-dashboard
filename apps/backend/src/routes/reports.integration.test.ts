@@ -439,5 +439,95 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       expect(taskMeta).toBeDefined();
       expect(studentRow.progress[taskMeta.taskId].status).toBe('assigned');
     });
+
+    it('excludes soft-deleted run from progress status', async () => {
+      await RunFactory.create({
+        userId: baseFixture.grade3Student.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-06-15T10:00:00Z'),
+        deletedAt: new Date('2025-06-16T10:00:00Z'),
+        deletedBy: baseFixture.districtAdmin.id,
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.grade3Student.id,
+      );
+      expect(studentRow).toBeDefined();
+
+      const taskMeta = res.body.data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
+      expect(taskMeta).toBeDefined();
+      // Soft-deleted run should not count — status falls back to assigned
+      expect(studentRow.progress[taskMeta.taskId].status).toBe('assigned');
+    });
+
+    it('excludes aborted run from progress status', async () => {
+      await RunFactory.create({
+        userId: baseFixture.grade5Student.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: null,
+        abortedAt: new Date('2025-06-15T12:00:00Z'),
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.grade5Student.id,
+      );
+      expect(studentRow).toBeDefined();
+
+      const taskMeta = res.body.data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
+      expect(taskMeta).toBeDefined();
+      // Aborted run should not count — status falls back to assigned
+      expect(studentRow.progress[taskMeta.taskId].status).toBe('assigned');
+    });
+
+    it('excludes useForReporting=false run from progress status', async () => {
+      await RunFactory.create({
+        userId: baseFixture.grade5EllStudent.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: false,
+        completedAt: new Date('2025-06-15T10:00:00Z'),
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const studentRow = res.body.data.items.find(
+        (item: { user: { userId: string } }) => item.user.userId === baseFixture.grade5EllStudent.id,
+      );
+      expect(studentRow).toBeDefined();
+
+      const taskMeta = res.body.data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
+      expect(taskMeta).toBeDefined();
+      // useForReporting=false run should not count — status falls back to assigned
+      expect(studentRow.progress[taskMeta.taskId].status).toBe('assigned');
+    });
   });
 });
