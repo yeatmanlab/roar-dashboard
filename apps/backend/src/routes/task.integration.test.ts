@@ -511,6 +511,189 @@ describe('POST /v1/tasks', () => {
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
+
+    it('returns 400 when slug exceeds max length (32 chars)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'this-slug-is-way-too-long-and-exceeds-the-maximum' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when slug starts with a hyphen', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: '-invalid-start' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when slug ends with a hyphen', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'invalid-end-' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when slug has consecutive hyphens', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'invalid--slug' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when name does not start with a letter', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ name: '123 Invalid Name' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when name contains special characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ name: 'Invalid@Name!' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when nameSimple does not start with a letter', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ nameSimple: '1Simple' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when nameSimple contains special characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ nameSimple: 'Simple$Name' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when nameTechnical does not start with a letter', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ nameTechnical: '0-technical' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when nameTechnical contains special characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ nameTechnical: 'Technical#Name' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when description exceeds max length (1024 chars)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ description: 'a'.repeat(1025) }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when unknown fields are provided (strict mode)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ unknownField: 'should be rejected' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when name is empty string', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ name: '' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when slug is empty string', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: '' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  describe('valid edge cases', () => {
+    it('accepts name with hyphens and underscores', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ name: 'My-Task_Name 123' }));
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+    });
+
+    it('accepts slug at exactly 32 characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      // 32 chars: 'abcdefghijklmnopqrstuvwxyz123456'
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'abcdefghijklmnopqrstuvwxyz123456' }));
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+    });
+
+    it('accepts description at exactly 1024 characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ description: 'a'.repeat(1024) }));
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+    });
+
+    it('accepts slug with numbers only after first segment', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post(path)
+        .set('Authorization', 'Bearer token')
+        .send(buildTaskBody({ slug: 'task-123-456' }));
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+    });
   });
 });
 
