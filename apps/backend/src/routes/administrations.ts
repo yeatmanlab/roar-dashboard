@@ -2,7 +2,6 @@ import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { AdministrationsContract } from '@roar-dashboard/api-contract';
 import { AdministrationsController } from '../controllers/administrations.controller';
-import { ReportsController } from '../controllers/reports.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 
 const s = initServer();
@@ -98,7 +97,7 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
         // @ts-expect-error - Express v4/v5 types mismatch in monorepo
         middleware: [AuthGuardMiddleware],
         handler: async ({ req, params, query }) =>
-          ReportsController.listProgressStudents(
+          AdministrationsController.listProgressStudents(
             { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
             params.id,
             query,
