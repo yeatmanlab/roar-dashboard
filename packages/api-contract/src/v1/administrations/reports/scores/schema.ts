@@ -60,6 +60,8 @@ export type TaskScoreOverview = z.infer<typeof TaskScoreOverviewSchema>;
 export const ScoreOverviewResponseSchema = z.object({
   totalStudents: z.number().int(),
   tasks: z.array(TaskScoreOverviewSchema),
+  /** Server timestamp when the aggregation was computed (ISO 8601) */
+  computedAt: z.string().datetime(),
 });
 
 export type ScoreOverviewResponse = z.infer<typeof ScoreOverviewResponseSchema>;

@@ -76,6 +76,7 @@ const SCORE_OVERVIEW_USER_FILTER_FIELDS: Record<string, PgColumn> = {
 export interface ScoreOverviewResult {
   totalStudents: number;
   tasks: TaskScoreOverview[];
+  computedAt: string;
 }
 
 /**
@@ -397,14 +398,20 @@ export function ReportService({
         filterCondition,
       );
 
-      if (totalStudents === 0 || taskMetas.length === 0) {
+      // 7. Group variants by taskId for multi-variant deduplication.
+      // Multiple variants can share a taskId (e.g., grade-specific variants).
+      // Each student should be counted once per task at their best variant's score.
+      const taskGroups = groupVariantsByTaskId(taskMetas);
+
+      if (totalStudents === 0 || taskGroups.length === 0) {
         return {
           totalStudents,
-          tasks: taskMetas.map((t) => buildEmptyTaskOverview(t)),
+          tasks: taskGroups.map(({ representative }) => buildEmptyTaskOverview(representative)),
+          computedAt: new Date().toISOString(),
         };
       }
 
-      // 7. Fetch scoring versions from task_variant_parameters
+      // 8. Fetch scoring versions from task_variant_parameters
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
       const scoringVersionByVariant = new Map<string, number>();
@@ -417,27 +424,26 @@ export function ReportService({
         }
       }
 
-      // 8. Bulk fetch completed run scores
+      // 9. Bulk fetch completed run scores
       const studentIds = students.map((s) => s.userId);
       const scoreRows = await reportRepository.getCompletedRunScores(administrationId, studentIds, taskVariantIds);
 
       // Build a lookup: userId → taskVariantId → Map<scoreName, scoreValue>
       const scoresByStudentTask = buildScoreLookup(scoreRows);
 
-      // 9. Aggregate per task
-      const tasks: TaskScoreOverview[] = taskMetas.map((task) => {
-        const scoringVersion = scoringVersionByVariant.get(task.taskVariantId) ?? null;
-
-        return aggregateTaskScores(
-          task,
+      // 10. Aggregate per task (deduplicated across variants)
+      const tasks: TaskScoreOverview[] = taskGroups.map(({ representative, variants }) =>
+        aggregateTaskGroup(
+          representative,
+          variants,
           students,
           scoresByStudentTask,
-          scoringVersion,
+          scoringVersionByVariant,
           taskService.evaluateTaskVariantEligibility,
-        );
-      });
+        ),
+      );
 
-      return { totalStudents, tasks };
+      return { totalStudents, tasks, computedAt: new Date().toISOString() };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -678,6 +684,36 @@ export function buildProgressMap(
 
 type ScoreLookup = Map<string, Map<string, Map<string, string>>>;
 
+/** A group of task variants sharing the same taskId. */
+interface TaskGroup {
+  /** First variant in orderIndex order — used for taskId, taskSlug, taskName, orderIndex */
+  representative: ReportTaskMeta;
+  /** All variants for this taskId */
+  variants: ReportTaskMeta[];
+}
+
+/**
+ * Group task variants by taskId, preserving orderIndex ordering.
+ * Returns one TaskGroup per unique taskId, using the lowest-orderIndex variant
+ * as the representative (for metadata in the response).
+ */
+function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] {
+  const groups = new Map<string, ReportTaskMeta[]>();
+  for (const meta of taskMetas) {
+    const existing = groups.get(meta.taskId);
+    if (existing) {
+      existing.push(meta);
+    } else {
+      groups.set(meta.taskId, [meta]);
+    }
+  }
+
+  return Array.from(groups.values()).map((variants) => ({
+    representative: variants[0]!,
+    variants,
+  }));
+}
+
 /**
  * Build a nested lookup: userId → taskVariantId → Map<scoreName, scoreValue>.
  * For duplicate score names within the same user-task-variant, the last value wins.
@@ -717,18 +753,23 @@ function buildEmptyTaskOverview(task: ReportTaskMeta): TaskScoreOverview {
 }
 
 /**
- * Aggregate support level distributions for a single task across all students.
+ * Aggregate support level distributions for a task across all its variants.
  *
- * For each student:
- * - If they have completed run scores → classify support level and count in totalAssessed
- * - If no completed run → evaluate conditions to determine assigned vs optional → count in totalNotAssessed
- * - If conditionsAssignment excludes them → skip entirely
+ * Multi-variant deduplication: when a task has multiple variants (e.g., grade-specific),
+ * each student is counted once at the first variant that has completed run scores.
+ * For students with no completed runs on any variant, condition evaluation checks
+ * all variants — the student is "assigned" if ANY variant assigns them, and "optional"
+ * only if ALL matching variants are optional.
+ *
+ * This mirrors the STATUS_PRIORITY logic in buildProgressMap: a student's effective
+ * status is their best across all variants of the same task.
  */
-function aggregateTaskScores(
-  task: ReportTaskMeta,
+function aggregateTaskGroup(
+  representative: ReportTaskMeta,
+  variants: ReportTaskMeta[],
   students: StudentOverviewRow[],
   scoresByStudentTask: ScoreLookup,
-  scoringVersion: number | null,
+  scoringVersionByVariant: Map<string, number>,
   evaluateEligibility: EligibilityEvaluator,
 ): TaskScoreOverview {
   let totalAssessed = 0;
@@ -739,23 +780,24 @@ function aggregateTaskScores(
   let needsSupportCount = 0;
 
   for (const student of students) {
-    const studentScores = scoresByStudentTask.get(student.userId)?.get(task.taskVariantId);
+    // Check all variants for this task — use the first with completed scores
+    const scored = findScoredVariant(student.userId, variants, scoresByStudentTask);
 
-    if (studentScores && studentScores.size > 0) {
-      // Student has completed run scores — classify support level
+    if (scored) {
       totalAssessed++;
 
+      const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
       const gradeLevel = getGradeAsNumber(student.grade);
-      const fieldNames = resolveScoreFieldNames(task.taskSlug, gradeLevel);
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
 
-      const percentile = resolveNumericScore(studentScores, fieldNames.percentileFieldNames);
-      const rawScore = resolveNumericScore(studentScores, fieldNames.rawScoreFieldNames);
+      const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
+      const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
 
       const supportLevel = getSupportLevel({
         grade: student.grade,
         percentile,
         rawScore,
-        taskSlug: task.taskSlug,
+        taskSlug: scored.variant.taskSlug,
         scoringVersion,
       });
 
@@ -764,15 +806,13 @@ function aggregateTaskScores(
       else if (supportLevel === 'needsExtraSupport') needsSupportCount++;
       // null support level (raw-score-only tasks, unknown tasks) → counted in totalAssessed but not in any bucket
     } else {
-      // No completed run — evaluate conditions for assigned vs optional
-      const { isAssigned, isOptional } = evaluateEligibility(
-        student,
-        task.conditionsAssignment,
-        task.conditionsRequirements,
-      );
+      // No completed run on any variant — evaluate conditions across all variants.
+      // Student is "assigned" if ANY variant assigns them; "optional" only if ALL
+      // matching variants are optional. Mirrors buildProgressMap priority logic.
+      const eligibility = evaluateEligibilityAcrossVariants(student, variants, evaluateEligibility);
 
-      if (!isAssigned) continue;
-      if (isOptional) notAssessedOptional++;
+      if (!eligibility.isAssigned) continue;
+      if (eligibility.isOptional) notAssessedOptional++;
       else notAssessedRequired++;
     }
   }
@@ -780,10 +820,10 @@ function aggregateTaskScores(
   const pct = (count: number) => (totalAssessed > 0 ? Math.round((count / totalAssessed) * 1000) / 10 : 0);
 
   return {
-    taskId: task.taskId,
-    taskSlug: task.taskSlug,
-    taskName: task.taskName,
-    orderIndex: task.orderIndex,
+    taskId: representative.taskId,
+    taskSlug: representative.taskSlug,
+    taskName: representative.taskName,
+    orderIndex: representative.orderIndex,
     totalAssessed,
     totalNotAssessed: { required: notAssessedRequired, optional: notAssessedOptional },
     supportLevels: {
@@ -792,6 +832,55 @@ function aggregateTaskScores(
       needsExtraSupport: { count: needsSupportCount, percentage: pct(needsSupportCount) },
     },
   };
+}
+
+/**
+ * Find the first variant with completed run scores for a student.
+ * Returns the variant and its score map, or null if no variant has scores.
+ */
+function findScoredVariant(
+  userId: string,
+  variants: ReportTaskMeta[],
+  scoresByStudentTask: ScoreLookup,
+): { variant: ReportTaskMeta; scores: Map<string, string> } | null {
+  const userScores = scoresByStudentTask.get(userId);
+  if (!userScores) return null;
+
+  for (const variant of variants) {
+    const scores = userScores.get(variant.taskVariantId);
+    if (scores && scores.size > 0) {
+      return { variant, scores };
+    }
+  }
+  return null;
+}
+
+/**
+ * Evaluate eligibility across all variants of a task for a student.
+ * A student is "assigned" if ANY variant assigns them. They are "optional"
+ * only if ALL assigning variants mark them as optional.
+ */
+function evaluateEligibilityAcrossVariants(
+  student: StudentOverviewRow,
+  variants: ReportTaskMeta[],
+  evaluateEligibility: EligibilityEvaluator,
+): { isAssigned: boolean; isOptional: boolean } {
+  let anyAssigned = false;
+  let anyRequired = false;
+
+  for (const variant of variants) {
+    const { isAssigned, isOptional } = evaluateEligibility(
+      student,
+      variant.conditionsAssignment,
+      variant.conditionsRequirements,
+    );
+    if (isAssigned) {
+      anyAssigned = true;
+      if (!isOptional) anyRequired = true;
+    }
+  }
+
+  return { isAssigned: anyAssigned, isOptional: anyAssigned && !anyRequired };
 }
 
 /**
