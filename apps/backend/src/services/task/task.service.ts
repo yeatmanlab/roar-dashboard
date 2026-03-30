@@ -92,9 +92,9 @@ export interface CreateTaskData {
   nameSimple: string;
   nameTechnical: string;
   taskConfig: unknown;
-  description?: string | undefined;
-  image?: string | undefined;
-  tutorialVideo?: string | undefined;
+  description?: string | null | undefined;
+  image?: string | null | undefined;
+  tutorialVideo?: string | null | undefined;
 }
 
 /**
