@@ -2,8 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 import type { SyncFgaQuery } from '@roar-dashboard/api-contract';
 import { SystemService } from '../services/system/system.service';
 import { ApiError } from '../errors/api-error';
-import { ApiErrorCode } from '../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { logger } from '../logger';
 import type { AuthContext } from '../types/auth-context';
@@ -27,17 +25,6 @@ export const SystemController = {
    * @returns Sync result (200) or accepted acknowledgement (202)
    */
   syncFga: async (authContext: AuthContext, query: SyncFgaQuery) => {
-    // Auth check before potentially returning 202 (defense-in-depth — service also checks)
-    if (!authContext.isSuperAdmin) {
-      return toErrorResponse(
-        new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        }),
-        [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR],
-      );
-    }
-
     // Dry-run: synchronous, return counts
     if (query.dryRun) {
       try {

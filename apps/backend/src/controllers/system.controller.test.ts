@@ -18,7 +18,6 @@ import { logger } from '../logger';
 describe('SystemController', () => {
   const mockSyncFgaStore = vi.fn();
   const mockSuperAdminContext = { userId: 'user-123', isSuperAdmin: true };
-  const mockNonSuperAdminContext = { userId: 'user-456', isSuperAdmin: false };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -120,26 +119,6 @@ describe('SystemController', () => {
             'FGA sync failed (async)',
           );
         });
-      });
-    });
-
-    describe('authorization', () => {
-      it('returns 403 when user is not super admin', async () => {
-        const { SystemController } = await import('./system.controller');
-        const result = await SystemController.syncFga(mockNonSuperAdminContext, { dryRun: false });
-
-        expect(result.status).toBe(StatusCodes.FORBIDDEN);
-        expect(result.body).toHaveProperty('error');
-        expect(mockSyncFgaStore).not.toHaveBeenCalled();
-      });
-
-      it('returns 403 for non-super-admin even on dry-run', async () => {
-        const { SystemController } = await import('./system.controller');
-        const result = await SystemController.syncFga(mockNonSuperAdminContext, { dryRun: true });
-
-        expect(result.status).toBe(StatusCodes.FORBIDDEN);
-        expect(result.body).toHaveProperty('error');
-        expect(mockSyncFgaStore).not.toHaveBeenCalled();
       });
     });
   });
