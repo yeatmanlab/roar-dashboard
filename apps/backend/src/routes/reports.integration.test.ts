@@ -4,8 +4,8 @@
  * Tests the full HTTP lifecycle: middleware -> controller -> service -> repository -> DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Note: FDW runs table is a foreign table to a separate database and won't have data
- * in integration tests. Run-related fields will show "assigned" status for all tasks.
+ * FDW tests seed run data via RunFactory into the assessment DB and verify that the
+ * progress status is correctly derived through the full HTTP stack.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';

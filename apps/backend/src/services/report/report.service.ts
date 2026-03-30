@@ -342,10 +342,22 @@ export function ReportService({
   return { listProgressStudents };
 }
 
+/** Status priority for progress entries. Higher value = higher priority. */
+const STATUS_PRIORITY: Record<string, number> = {
+  assigned: 0,
+  started: 1,
+  completed: 2,
+};
+
 /**
  * Build a progress map for a student keyed by taskId.
  * Determines status from run data: completed > started > assigned.
  * Optional status requires condition evaluation (deferred — defaults to assigned).
+ *
+ * When an administration has multiple variants for the same task (e.g., grade-specific
+ * variants), each variant is checked independently but they share the same taskId key.
+ * The highest-priority status wins: completed > started > assigned. This prevents a
+ * variant without a run from overwriting a completed/started entry from another variant.
  *
  * Exported for independent testing.
  */
@@ -358,15 +370,17 @@ export function buildProgressMap(
   for (const task of taskMetas) {
     const run = student.runs.get(task.taskVariantId);
 
+    let entry: ServiceProgressEntry;
+
     if (run?.completedAt) {
-      progress[task.taskId] = {
+      entry = {
         status: 'completed',
         startedAt: run.startedAt.toISOString(),
         completedAt: run.completedAt.toISOString(),
       };
     } else if (run) {
       // Run exists but not completed — a run's existence signals "started"
-      progress[task.taskId] = {
+      entry = {
         status: 'started',
         startedAt: run.startedAt.toISOString(),
         completedAt: null,
@@ -374,11 +388,17 @@ export function buildProgressMap(
     } else {
       // No run — default to assigned. Optional status requires condition evaluation
       // which is deferred for now (see plan: condition evaluation optimization).
-      progress[task.taskId] = {
+      entry = {
         status: 'assigned',
         startedAt: null,
         completedAt: null,
       };
+    }
+
+    // When multiple variants share a taskId, keep the highest-priority status.
+    const existing = progress[task.taskId];
+    if (!existing || (STATUS_PRIORITY[entry.status] ?? 0) > (STATUS_PRIORITY[existing.status] ?? 0)) {
+      progress[task.taskId] = entry;
     }
   }
 
