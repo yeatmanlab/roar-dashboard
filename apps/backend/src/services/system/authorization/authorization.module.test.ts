@@ -467,6 +467,60 @@ describe('AuthorizationModule', () => {
     });
   });
 
+  describe('class membership role filtering', () => {
+    it('skips admin-tier roles on class memberships and logs the count', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+
+      const validRow = {
+        userId: 'user-valid',
+        classId: 'class-1',
+        role: 'student',
+        enrollmentStart: new Date('2024-01-01'),
+        enrollmentEnd: null,
+      };
+      const adminRow = {
+        userId: 'user-admin',
+        classId: 'class-1',
+        role: 'administrator',
+        enrollmentStart: new Date('2024-01-01'),
+        enrollmentEnd: null,
+      };
+
+      const db = createMockDb({
+        orgs: [],
+        classes: [],
+        user_orgs: [],
+        user_classes: [validRow, adminRow],
+        user_groups: [],
+        user_families: [],
+        administration_orgs: [],
+        administration_classes: [],
+        administration_groups: [],
+      });
+
+      const module = AuthorizationModule({ db: db as never, getClient: () => asOpenFgaClient(mockClient) });
+      const result = await module.syncFgaStore(authContext, { dryRun: false });
+
+      // Only the student row should produce a tuple
+      expect(result.categories.classMemberships.write).toBe(1);
+
+      // The writeTuples call should not contain the administrator row
+      const writtenTuples = mockClient.writeTuples.mock.calls.flatMap((call) => call[0]);
+      expect(writtenTuples).not.toContainEqual(
+        expect.objectContaining({ user: 'user:user-admin', object: 'class:class-1' }),
+      );
+      expect(writtenTuples).toContainEqual(
+        expect.objectContaining({ user: 'user:user-valid', object: 'class:class-1', relation: 'student' }),
+      );
+
+      // Should log the skip count
+      expect(logger.info).toHaveBeenCalledWith(
+        { skipped: 1 },
+        'Skipped class membership rows with admin-tier roles (not valid on FGA class type)',
+      );
+    });
+  });
+
   describe('SDK chunking', () => {
     it('splits tuples into batches of 100', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
