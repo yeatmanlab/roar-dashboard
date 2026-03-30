@@ -253,13 +253,15 @@ export function TaskService({
 } = {}) {
   /**
    * List task variants for a given task.
+   * Supports lookup by task ID (UUID) or slug (case-sensitive).
+   * Supports filtering by status and pagination.
    *
    * Authorization:
    * - Super admins can filter by any status or see all variants (no status filter)
    * - Regular users can only see published variants (status defaults to 'published')
    *
    * @param authContext - User's authentication context
-   * @param taskId - The UUID of the parent task
+   * @param taskId - The UUID of the parent task or the task's slug
    * @param options - Pagination, sorting, search, and status filter options
    * @returns Paginated result with task variants and task info
    * @throws {ApiError} NOT_FOUND if the parent task doesn't exist
@@ -273,8 +275,14 @@ export function TaskService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      // Verify the parent task exists (404 before any data access)
-      const task = await taskRepository.getById({ id: taskId });
+      // Parse taskId: if it's a UUID format, look up by ID; otherwise by slug
+      let task: Task | null = null;
+
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
+      } else {
+        task = await taskRepository.getBySlug(taskId);
+      }
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
@@ -287,7 +295,7 @@ export function TaskService({
       // Super admins can use any status filter (or none to see all)
       // Non-super admins are restricted to 'published' only
       const status = isSuperAdmin ? options.status : TaskVariantStatus.PUBLISHED;
-      const filter = status ? { taskId, status } : { taskId };
+      const filter = status ? { taskId: task.id, status } : { taskId: task.id };
       const variants = await taskVariantRepository.listByTaskId(filter, options);
 
       // Fetch all parameters for all variants in a single query
@@ -849,13 +857,13 @@ export function TaskService({
   /**
    * Get a task by ID.
    *
-   * Searches by task ID (UUID).
+   * Searches by task ID (UUID) or slug (case-sensitive).
    *
    * Tasks are global resources (not tied to org hierarchy), so all authenticated
    * users can view any task. No authorization filtering is applied.
    *
    * @param authContext - User's authentication context (used for logging)
-   * @param taskId - The task ID (UUID) to search for
+   * @param taskId - The task ID (UUID) or slug to search for
    * @returns The task with the given ID
    * @throws {ApiError} NOT_FOUND if no task exists with the given ID
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
@@ -864,7 +872,14 @@ export function TaskService({
     const { userId } = authContext;
 
     try {
-      const task = await taskRepository.getById({ id: taskId });
+      // Parse taskId: if it's a UUID format, look up by ID; otherwise by slug
+      let task: Task | null = null;
+
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
+      } else {
+        task = await taskRepository.getBySlug(taskId);
+      }
 
       if (!task) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
