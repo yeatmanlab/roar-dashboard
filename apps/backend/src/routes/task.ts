@@ -26,6 +26,12 @@ export function registerTasksRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, params: { taskId }, query }) =>
         TasksController.listTaskVariants(user!, taskId, query),
     },
+    getTaskVariant: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { taskId, variantId } }) =>
+        TasksController.getTaskVariant(user!, taskId, variantId),
+    },
     createTaskVariant: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
