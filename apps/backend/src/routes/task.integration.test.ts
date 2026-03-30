@@ -23,6 +23,7 @@ import type express from 'express';
 import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { faker } from '@faker-js/faker';
+import { randomUUID } from 'crypto';
 import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
@@ -191,7 +192,7 @@ describe('GET /v1/tasks/:taskId', () => {
     });
 
     it('task slug is case-sensitive', async () => {
-      const uniqueSlug = `get-task-${Date.now()}`;
+      const uniqueSlug = `get-task-${randomUUID()}`;
       const testTask = await TaskFactory.create({ slug: uniqueSlug });
 
       authenticateAs(tiers.superAdmin);
@@ -779,7 +780,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('super admin can filter by status query param', async () => {
-      const testTask = await TaskFactory.create({ slug: `status-filter-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `status-filter-test-${randomUUID()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -808,7 +809,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('super admin can filter by draft status', async () => {
-      const testTask = await TaskFactory.create({ slug: `draft-filter-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `draft-filter-test-${randomUUID()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -832,7 +833,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('non-super admin status filter is ignored (always returns published)', async () => {
-      const testTask = await TaskFactory.create({ slug: `ignore-status-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `ignore-status-test-${randomUUID()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -858,7 +859,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 
     it('siteAdmin tier can only see published variants', async () => {
       // Create a task with known variants for this test
-      const testTask = await TaskFactory.create({ slug: `site-admin-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `site-admin-test-${randomUUID()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -880,7 +881,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('admin tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `admin-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `admin-test-${randomUUID()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -902,7 +903,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('educator tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `educator-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `educator-test-${randomUUID()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -924,7 +925,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('student tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `student-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `student-test-${randomUUID()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -946,7 +947,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('caregiver tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `caregiver-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `caregiver-test-${randomUUID()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -983,7 +984,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('returns all expected variant fields', async () => {
-      const testTask = await TaskFactory.create({ slug: `fields-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `fields-test-${randomUUID()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Fields Test ${Date.now()}`,
@@ -1014,8 +1015,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('returns correct task info for each variant', async () => {
-      const taskName = `Task Name ${Date.now()}`;
-      const taskSlug = `task-slug-${Date.now()}`;
+      const taskName = `Task Name ${randomUUID()}`;
+      const taskSlug = `task-slug-${randomUUID()}`;
       const taskImage = 'https://example.com/image.png';
       const testTask = await TaskFactory.create({ name: taskName, slug: taskSlug, image: taskImage });
       await TaskVariantFactory.create({
@@ -1036,7 +1037,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('returns variant parameters as array of name-value objects', async () => {
-      const testTask = await TaskFactory.create({ slug: `params-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `params-test-${randomUUID()}` });
 
       // Create variant via API to also create parameters
       authenticateAs(tiers.superAdmin);
@@ -1094,8 +1095,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 
   describe('search', () => {
     it('searches by variant name', async () => {
-      const uniqueName = `UniqueSearchName${Date.now()}`;
-      const testTask = await TaskFactory.create({ slug: `search-name-test-${Date.now()}` });
+      const uniqueName = `UniqueSearchName${randomUUID()}`;
+      const testTask = await TaskFactory.create({ slug: `search-name-test-${randomUUID()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: uniqueName,
@@ -1114,8 +1115,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('searches by variant description', async () => {
-      const uniqueDescription = `UniqueSearchDescription${Date.now()}`;
-      const testTask = await TaskFactory.create({ slug: `search-desc-test-${Date.now()}` });
+      const uniqueDescription = `UniqueSearchDescription${randomUUID()}`;
+      const testTask = await TaskFactory.create({ slug: `search-desc-test-${randomUUID()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Variant ${Date.now()}`,
@@ -1135,8 +1136,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('search is case-insensitive', async () => {
-      const uniqueName = `CaseInsensitiveTest${Date.now()}`;
-      const testTask = await TaskFactory.create({ slug: `case-test-${Date.now()}` });
+      const uniqueName = `CaseInsensitiveTest${randomUUID()}`;
+      const testTask = await TaskFactory.create({ slug: `case-test-${randomUUID()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: uniqueName,
@@ -1156,7 +1157,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 
   describe('sorting', () => {
     it('sorts by name ascending by default', async () => {
-      const testTask = await TaskFactory.create({ slug: `sort-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `sort-test-${randomUUID()}` });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'ZZZ Variant', status: 'published' });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'AAA Variant', status: 'published' });
 
@@ -1173,7 +1174,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('sorts by createdAt descending when specified', async () => {
-      const testTask = await TaskFactory.create({ slug: `sort-created-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `sort-created-test-${randomUUID()}` });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'First Created', status: 'published' });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'Second Created', status: 'published' });
 
@@ -1212,7 +1213,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 
   describe('lookup by slug', () => {
     it('returns 200 when task variants are listed by task slug', async () => {
-      const uniqueSlug = `list-variants-slug-${Date.now()}`;
+      const uniqueSlug = `list-variants-slug-${randomUUID()}`;
       const testTask = await TaskFactory.create({ slug: uniqueSlug });
       await TaskVariantFactory.create({ taskId: testTask.id, status: 'published' });
 
@@ -1232,7 +1233,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('task slug is case-sensitive', async () => {
-      const uniqueSlug = `list-variants-case-${Date.now()}`;
+      const uniqueSlug = `list-variants-case-${randomUUID()}`;
       const testTask = await TaskFactory.create({ slug: uniqueSlug });
       await TaskVariantFactory.create({ taskId: testTask.id, status: 'published' });
 
@@ -1278,7 +1279,7 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
     });
 
     it('returns 200 with variant when accessed by task slug', async () => {
-      const testTask = await TaskFactory.create({ slug: `get-variant-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `get-variant-test-${randomUUID()}` });
       const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
 
       authenticateAs(tiers.superAdmin);
@@ -1363,7 +1364,7 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
     it('returns correct task info denormalized with variant', async () => {
       const testTask = await TaskFactory.create({
         name: 'Reading Task',
-        slug: 'reading-task',
+        slug: `reading-task-${randomUUID()}`,
         image: 'https://example.com/image.jpg',
       });
       const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
@@ -1374,7 +1375,7 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.body.data.taskName).toBe('Reading Task');
-      expect(res.body.data.taskSlug).toBe('reading-task');
+      expect(res.body.data.taskSlug).toBe(testTask.slug);
       expect(res.body.data.taskImage).toBe('https://example.com/image.jpg');
     });
   });
@@ -1512,7 +1513,7 @@ describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
 
   describe('lookup by slug', () => {
     it('task slug is case-sensitive', async () => {
-      const uniqueSlug = `reading-task-${Date.now()}`;
+      const uniqueSlug = `reading-task-${randomUUID()}`;
       const testTask = await TaskFactory.create({ slug: uniqueSlug });
       const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
 
