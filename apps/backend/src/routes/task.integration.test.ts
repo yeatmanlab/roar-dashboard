@@ -23,6 +23,7 @@ import type express from 'express';
 import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { faker } from '@faker-js/faker';
+import { randomUUID } from 'crypto';
 import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
@@ -41,18 +42,25 @@ let expectRoute: ReturnType<typeof createRouteHelper>;
 let tiers: TierUsers;
 let taskVariantRepository: TaskVariantRepository;
 let taskVariantParameterRepository: TaskVariantParameterRepository;
+let testTaskId: string;
+let testVariantId: string;
 
 beforeAll(async () => {
   // Route modules must be imported dynamically — they instantiate services at
   // import time, which capture CoreDbClient by value. This must happen after
   // vitest.setup.ts initializes the DB pools.
   const { registerTasksRoutes } = await import('./task');
-
   app = createTestApp(registerTasksRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
   taskVariantRepository = new TaskVariantRepository();
   taskVariantParameterRepository = new TaskVariantParameterRepository();
+
+  // Create test fixtures for getTaskVariant tests
+  const testTask = await TaskFactory.create();
+  testTaskId = testTask.id;
+  const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
+  testVariantId = testVariant.id;
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -61,6 +69,11 @@ beforeAll(async () => {
 
 /** Counter to generate unique variant names across tests. */
 let variantCounter = 0;
+
+/** Generates a unique slug suffix using first 8 characters of UUID. */
+function getUniqueSlugSuffix(): string {
+  return randomUUID().slice(0, 8);
+}
 
 /** Builds a valid create-task-variant request body with a unique name. */
 function buildVariantBody(overrides: Record<string, unknown> = {}) {
@@ -165,6 +178,52 @@ describe('GET /v1/tasks/:taskId', () => {
     });
   });
 
+  describe('lookup by slug', () => {
+    it('returns 200 when task is looked up by slug', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(`/v1/tasks/${baseFixture.task.slug}`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(baseFixture.task.id);
+      expect(res.body.data.slug).toBe(baseFixture.task.slug);
+    });
+
+    it('returns 404 when task slug does not match any task', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get('/v1/tasks/nonexistent-slug').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('task slug is case-sensitive', async () => {
+      const uniqueSlug = `get-task-${getUniqueSlugSuffix()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+
+      authenticateAs(tiers.superAdmin);
+
+      // Correct lowercase slug should succeed
+      const resLower = await request(app).get(`/v1/tasks/${uniqueSlug}`).set('Authorization', 'Bearer token');
+
+      expect(resLower.status).toBe(StatusCodes.OK);
+      expect(resLower.body.data.id).toBe(testTask.id);
+
+      // Uppercase slug should fail (not found)
+      const resUpper = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.toUpperCase()}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resUpper.status).toBe(StatusCodes.NOT_FOUND);
+
+      // Mixed case slug should fail (not found)
+      const resMixed = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.charAt(0).toUpperCase()}${uniqueSlug.slice(1)}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resMixed.status).toBe(StatusCodes.NOT_FOUND);
+    });
+  });
+
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
@@ -178,13 +237,6 @@ describe('GET /v1/tasks/:taskId', () => {
 
       expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-    });
-
-    it('returns 400 when taskId is not a valid UUID', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app).get('/v1/tasks/not-a-valid-uuid').set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
   });
 });
@@ -733,7 +785,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('super admin can filter by status query param', async () => {
-      const testTask = await TaskFactory.create({ slug: `status-filter-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `status-filter-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -762,7 +814,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('super admin can filter by draft status', async () => {
-      const testTask = await TaskFactory.create({ slug: `draft-filter-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `draft-filter-test-${getUniqueSlugSuffix()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -786,7 +838,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('non-super admin status filter is ignored (always returns published)', async () => {
-      const testTask = await TaskFactory.create({ slug: `ignore-status-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `ignore-status-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -812,7 +864,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 
     it('siteAdmin tier can only see published variants', async () => {
       // Create a task with known variants for this test
-      const testTask = await TaskFactory.create({ slug: `site-admin-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `site-admin-test-${getUniqueSlugSuffix()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -834,7 +886,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('admin tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `admin-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `admin-test-${getUniqueSlugSuffix()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -856,7 +908,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('educator tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `educator-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `educator-test-${getUniqueSlugSuffix()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -878,7 +930,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('student tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `student-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `student-test-${getUniqueSlugSuffix()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -900,7 +952,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('caregiver tier can only see published variants', async () => {
-      const testTask = await TaskFactory.create({ slug: `caregiver-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `caregiver-test-${getUniqueSlugSuffix()}` });
       const draftVariant = await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Draft ${Date.now()}`,
@@ -937,7 +989,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('returns all expected variant fields', async () => {
-      const testTask = await TaskFactory.create({ slug: `fields-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `fields-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Fields Test ${Date.now()}`,
@@ -968,8 +1020,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('returns correct task info for each variant', async () => {
-      const taskName = `Task Name ${Date.now()}`;
-      const taskSlug = `task-slug-${Date.now()}`;
+      const taskName = `Task Name ${randomUUID()}`;
+      const taskSlug = `task-slug-${getUniqueSlugSuffix()}`;
       const taskImage = 'https://example.com/image.png';
       const testTask = await TaskFactory.create({ name: taskName, slug: taskSlug, image: taskImage });
       await TaskVariantFactory.create({
@@ -990,7 +1042,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('returns variant parameters as array of name-value objects', async () => {
-      const testTask = await TaskFactory.create({ slug: `params-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `params-test-${getUniqueSlugSuffix()}` });
 
       // Create variant via API to also create parameters
       authenticateAs(tiers.superAdmin);
@@ -1048,8 +1100,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 
   describe('search', () => {
     it('searches by variant name', async () => {
-      const uniqueName = `UniqueSearchName${Date.now()}`;
-      const testTask = await TaskFactory.create({ slug: `search-name-test-${Date.now()}` });
+      const uniqueName = `UniqueSearchName${randomUUID()}`;
+      const testTask = await TaskFactory.create({ slug: `search-name-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: uniqueName,
@@ -1068,8 +1120,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('searches by variant description', async () => {
-      const uniqueDescription = `UniqueSearchDescription${Date.now()}`;
-      const testTask = await TaskFactory.create({ slug: `search-desc-test-${Date.now()}` });
+      const uniqueDescription = `UniqueSearchDescription${randomUUID()}`;
+      const testTask = await TaskFactory.create({ slug: `search-desc-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: `Variant ${Date.now()}`,
@@ -1089,8 +1141,8 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('search is case-insensitive', async () => {
-      const uniqueName = `CaseInsensitiveTest${Date.now()}`;
-      const testTask = await TaskFactory.create({ slug: `case-test-${Date.now()}` });
+      const uniqueName = `CaseInsensitiveTest${randomUUID()}`;
+      const testTask = await TaskFactory.create({ slug: `case-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({
         taskId: testTask.id,
         name: uniqueName,
@@ -1110,7 +1162,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
 
   describe('sorting', () => {
     it('sorts by name ascending by default', async () => {
-      const testTask = await TaskFactory.create({ slug: `sort-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `sort-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'ZZZ Variant', status: 'published' });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'AAA Variant', status: 'published' });
 
@@ -1127,7 +1179,7 @@ describe('GET /v1/tasks/:taskId/variants', () => {
     });
 
     it('sorts by createdAt descending when specified', async () => {
-      const testTask = await TaskFactory.create({ slug: `sort-created-test-${Date.now()}` });
+      const testTask = await TaskFactory.create({ slug: `sort-created-test-${getUniqueSlugSuffix()}` });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'First Created', status: 'published' });
       await TaskVariantFactory.create({ taskId: testTask.id, name: 'Second Created', status: 'published' });
 
@@ -1162,12 +1214,334 @@ describe('GET /v1/tasks/:taskId/variants', () => {
       expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
+  });
 
-    it('returns 400 when taskId is not a valid UUID', async () => {
+  describe('lookup by slug', () => {
+    it('returns 200 when task variants are listed by task slug', async () => {
+      const uniqueSlug = `list-variants-slug-${getUniqueSlugSuffix()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+      await TaskVariantFactory.create({ taskId: testTask.id, status: 'published' });
+
       authenticateAs(tiers.superAdmin);
-      const res = await request(app).get('/v1/tasks/not-a-valid-uuid/variants').set('Authorization', 'Bearer token');
+      const res = await request(app).get(`/v1/tasks/${uniqueSlug}/variants`).set('Authorization', 'Bearer token');
 
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(1);
+    });
+
+    it('returns 404 when task slug does not match any task', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get('/v1/tasks/nonexistent-slug/variants').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('task slug is case-sensitive', async () => {
+      const uniqueSlug = `list-variants-case-${getUniqueSlugSuffix()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+      await TaskVariantFactory.create({ taskId: testTask.id, status: 'published' });
+
+      authenticateAs(tiers.superAdmin);
+
+      // Correct lowercase slug should succeed
+      const resLower = await request(app).get(`/v1/tasks/${uniqueSlug}/variants`).set('Authorization', 'Bearer token');
+
+      expect(resLower.status).toBe(StatusCodes.OK);
+
+      // Uppercase slug should fail (not found)
+      const resUpper = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.toUpperCase()}/variants`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resUpper.status).toBe(StatusCodes.NOT_FOUND);
+
+      // Mixed case slug should fail (not found)
+      const resMixed = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.charAt(0).toUpperCase()}${uniqueSlug.slice(1)}/variants`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resMixed.status).toBe(StatusCodes.NOT_FOUND);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/tasks/:taskId/variants/:variantId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/tasks/:taskId/variants/:variantId', () => {
+  describe('successful retrieval', () => {
+    it('returns 200 with variant when accessed by task UUID', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTaskId}/variants/${testVariantId}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toHaveProperty('id', testVariantId);
+      expect(res.body.data).toHaveProperty('taskId', testTaskId);
+    });
+
+    it('returns 200 with variant when accessed by task slug', async () => {
+      const testTask = await TaskFactory.create({ slug: `get-variant-test-${getUniqueSlugSuffix()}` });
+      const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.slug}/variants/${testVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toHaveProperty('id', testVariant.id);
+    });
+
+    it('task slug is case-sensitive', async () => {
+      const uniqueSlug = `reading-task-${getUniqueSlugSuffix()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+      const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
+
+      authenticateAs(tiers.superAdmin);
+
+      // Test with correct lowercase slug - should succeed
+      const resLower = await request(app)
+        .get(`/v1/tasks/${uniqueSlug}/variants/${testVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resLower.status).toBe(StatusCodes.OK);
+      expect(resLower.body.data.id).toBe(testVariant.id);
+
+      // Test with uppercase - should fail (not found)
+      const resUpper = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.toUpperCase()}/variants/${testVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resUpper.status).toBe(StatusCodes.NOT_FOUND);
+
+      // Test with mixed case - should fail (not found)
+      const resMixed = await request(app)
+        .get(`/v1/tasks/${uniqueSlug.charAt(0).toUpperCase()}${uniqueSlug.slice(1)}/variants/${testVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(resMixed.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('returns all expected variant fields', async () => {
+      const testTask = await TaskFactory.create();
+      const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${testVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.body.data).toHaveProperty('id');
+      expect(res.body.data).toHaveProperty('taskId');
+      expect(res.body.data).toHaveProperty('name');
+      expect(res.body.data).toHaveProperty('description');
+      expect(res.body.data).toHaveProperty('status');
+      expect(res.body.data).toHaveProperty('createdAt');
+      expect(res.body.data).toHaveProperty('updatedAt');
+      expect(res.body.data).toHaveProperty('taskName');
+      expect(res.body.data).toHaveProperty('taskSlug');
+      expect(res.body.data).toHaveProperty('taskImage');
+      expect(res.body.data).toHaveProperty('parameters');
+    });
+
+    it('returns ISO date strings for timestamps', async () => {
+      const testTask = await TaskFactory.create();
+      const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${testVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.body.data.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      if (res.body.data.updatedAt) {
+        expect(res.body.data.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+      }
+    });
+
+    it('returns variant parameters as array of name-value objects', async () => {
+      const testTask = await TaskFactory.create();
+      authenticateAs(tiers.superAdmin);
+      const createRes = await request(app)
+        .post(`/v1/tasks/${testTask.id}/variants`)
+        .set('Authorization', 'Bearer token')
+        .send({
+          name: `variant-with-params-${Date.now()}`,
+          description: 'Test variant with parameters',
+          status: 'published',
+          parameters: [
+            { name: 'difficulty', value: 'hard' },
+            { name: 'timeLimit', value: 60 },
+            { name: 'shuffleItems', value: true },
+          ],
+        });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${createRes.body.data.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.body.data.parameters).toHaveLength(3);
+      expect(res.body.data.parameters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'difficulty', value: 'hard' }),
+          expect.objectContaining({ name: 'timeLimit', value: 60 }),
+          expect.objectContaining({ name: 'shuffleItems', value: true }),
+        ]),
+      );
+    });
+
+    it('returns correct task info denormalized with variant', async () => {
+      const testTask = await TaskFactory.create({
+        name: 'Reading Task',
+        slug: `reading-task-${getUniqueSlugSuffix()}`,
+        image: 'https://example.com/image.jpg',
+      });
+      const testVariant = await TaskVariantFactory.create({ taskId: testTask.id });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${testVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.body.data.taskName).toBe('Reading Task');
+      expect(res.body.data.taskSlug).toBe(testTask.slug);
+      expect(res.body.data.taskImage).toBe('https://example.com/image.jpg');
+    });
+  });
+
+  describe('authorization and status filtering', () => {
+    it('super admin can see published variant', async () => {
+      const testTask = await TaskFactory.create();
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${publishedVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.status).toBe('published');
+    });
+
+    it('super admin can see draft variant', async () => {
+      const testTask = await TaskFactory.create();
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'draft',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${draftVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.status).toBe('draft');
+    });
+
+    it('super admin can see deprecated variant', async () => {
+      const testTask = await TaskFactory.create();
+      const deprecatedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'deprecated',
+      });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${deprecatedVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.status).toBe('deprecated');
+    });
+
+    it('non-super admin can see published variant', async () => {
+      const testTask = await TaskFactory.create();
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'published',
+      });
+
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${publishedVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.status).toBe('published');
+    });
+
+    it('non-super admin cannot see draft variant', async () => {
+      const testTask = await TaskFactory.create();
+      const draftVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'draft',
+      });
+
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${draftVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('non-super admin cannot see deprecated variant', async () => {
+      const testTask = await TaskFactory.create();
+      const deprecatedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'deprecated',
+      });
+
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/${deprecatedVariant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 404 when task does not exist', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/00000000-0000-0000-0000-000000000000/variants/${testVariantId}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('returns 404 when variant does not exist', async () => {
+      const testTask = await TaskFactory.create();
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants/00000000-0000-0000-0000-000000000000`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('returns 404 when variant belongs to different task', async () => {
+      const task1 = await TaskFactory.create();
+      const task2 = await TaskFactory.create();
+      const variant = await TaskVariantFactory.create({ taskId: task2.id });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(`/v1/tasks/${task1.id}/variants/${variant.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
     });
   });
 });

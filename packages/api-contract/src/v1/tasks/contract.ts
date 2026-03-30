@@ -1,17 +1,20 @@
 import { initContract } from '@ts-rest/core';
-import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import {
   CreateTaskVariantRequestBodySchema,
   CreateTaskVariantResponseSchema,
+  CreateTaskVariantPathParamSchema,
   UpdateTaskVariantRequestBodySchema,
   UpdateTaskVariantResponseSchema,
+  UpdateTaskVariantPathParamSchema,
   TasksListQuerySchema,
   TasksListResponseSchema,
-  TaskIdParamSchema,
+  GetTaskPathParamSchema,
+  GetTaskVariantPathParamSchema,
   TaskSchema,
   ListTaskVariantsQuerySchema,
   ListTaskVariantsResponseSchema,
+  GetTaskVariantResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -45,28 +48,26 @@ export const TasksContract = c.router(
     get: {
       method: 'GET',
       path: '/:taskId',
-      pathParams: TaskIdParamSchema,
+      pathParams: GetTaskPathParamSchema,
       responses: {
         200: SuccessEnvelopeSchema(TaskSchema),
-        400: ErrorEnvelopeSchema,
         401: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
-      summary: 'Get a task by ID',
+      summary: 'Get a task by ID or slug',
       description:
-        'Returns a single task by its UUID. ' +
-        'The taskId path parameter must be a valid UUID. ' +
+        'Returns a single task by its UUID or slug. ' +
+        'Supports task lookup by task UUID or slug (case-sensitive). ' +
         'Returns 200 with the task on success. ' +
-        'Returns 400 if the ID is invalid. ' +
-        'Returns 404 if no task exists with the given ID. ' +
+        'Returns 404 if no task exists with the given ID or slug. ' +
         'Returns 500 if a server error occurs.',
     },
     listTaskVariants: {
       method: 'GET',
       path: '/:taskId/variants',
-      pathParams: TaskIdParamSchema,
+      pathParams: GetTaskPathParamSchema,
       query: ListTaskVariantsQuerySchema,
       responses: {
         200: SuccessEnvelopeSchema(ListTaskVariantsResponseSchema),
@@ -79,16 +80,32 @@ export const TasksContract = c.router(
       summary: 'List variants for a task',
       description:
         'Returns a paginated list of variants for the specified task. ' +
+        'Supports task lookup by task UUID or slug (case-sensitive). ' +
         'All users can see published variants. Super admins can see all variants (draft, published, deprecated). ' +
         'Supports pagination (page, perPage), searching by name or description, and sorting by name, status, createdAt, or updatedAt. ' +
         'Returns 404 if the task does not exist.',
     },
+    getTaskVariant: {
+      method: 'GET',
+      path: '/:taskId/variants/:variantId',
+      pathParams: GetTaskVariantPathParamSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(GetTaskVariantResponseSchema),
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a task variant',
+      description:
+        'Returns the variant with the specified ID for the specified task. ' +
+        'Supports task variant lookup by task slug or task UUID. ' +
+        'Returns 404 if the task or variant does not exist. ' +
+        'Returns 500 if an internal server error occurs.',
+    },
     createTaskVariant: {
       method: 'POST',
       path: '/:taskId/variants',
-      pathParams: z.object({
-        taskId: z.string().uuid(),
-      }),
+      pathParams: CreateTaskVariantPathParamSchema,
       contentType: 'application/json',
       body: CreateTaskVariantRequestBodySchema,
       responses: {
@@ -111,10 +128,7 @@ export const TasksContract = c.router(
     updateTaskVariant: {
       method: 'PATCH',
       path: '/:taskId/variants/:variantId',
-      pathParams: z.object({
-        taskId: z.string().uuid(),
-        variantId: z.string().uuid(),
-      }),
+      pathParams: UpdateTaskVariantPathParamSchema,
       contentType: 'application/json',
       body: UpdateTaskVariantRequestBodySchema,
       responses: {
