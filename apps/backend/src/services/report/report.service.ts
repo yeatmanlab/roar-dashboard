@@ -13,13 +13,12 @@ import type {
   ParsedFilter,
 } from './report.types';
 import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
-import { Permissions } from '../../constants/permissions';
-import { rolesForPermission } from '../../constants/role-permissions';
-import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
+import type { CheckResponse } from '@openfga/sdk';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
+import { FgaClient } from '../../clients/fga.client';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { AdministrationRepository } from '../../repositories/administration.repository';
@@ -34,6 +33,21 @@ import { TaskService } from '../task/task.service';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../task/task.types';
 import type { AuthContext } from '../../types/auth-context';
+
+/**
+ * Minimal interface for the FGA client methods used by this service.
+ *
+ * Narrower than `OpenFgaClient` so unit tests can mock with simple return values
+ * like `{ allowed: true }` without satisfying the SDK's `$response` metadata type.
+ */
+export interface FgaCheckClient {
+  check(body: {
+    user: string;
+    relation: string;
+    object: string;
+    context?: Record<string, string>;
+  }): Promise<CheckResponse>;
+}
 
 /** Map sortBy field strings to Drizzle column references for progress students. */
 const PROGRESS_SORT_COLUMNS: Record<ProgressStudentsSortField, Column> = {
@@ -68,14 +82,58 @@ export function ReportService({
   administrationRepository = new AdministrationRepository(),
   reportRepository = new ReportRepository(),
   taskService = TaskService(),
+  fgaClient,
 }: {
   administrationRepository?: AdministrationRepository;
   reportRepository?: ReportRepository;
   taskService?: ReturnType<typeof TaskService>;
+  fgaClient?: FgaCheckClient;
 } = {}) {
+  const fga: FgaCheckClient = fgaClient ?? FgaClient.getClient();
+
+  /** Map scope types to FGA object type prefixes. */
+  const SCOPE_TO_FGA_TYPE: Record<ScopeType, string> = {
+    district: 'district',
+    school: 'school',
+    class: 'class',
+    group: 'group',
+  };
+
   /**
-   * Verify that an administration exists and the user has access to it.
-   * Follows the 404-before-403 pattern from AdministrationService.
+   * Check an FGA permission and throw FORBIDDEN if denied.
+   *
+   * Centralizes the FGA check pattern — builds the request with `current_time` context
+   * (required for `active_membership` condition evaluation) and maps denial to ApiError.
+   *
+   * @param userId - The user to check permission for
+   * @param relation - The FGA relation to check (e.g., 'can_read_progress')
+   * @param object - The FGA object (e.g., 'administration:uuid')
+   * @throws {ApiError} FORBIDDEN if the FGA check returns allowed=false
+   */
+  async function checkFgaPermission(userId: string, relation: string, object: string): Promise<void> {
+    const { allowed } = await fga.check({
+      user: `user:${userId}`,
+      relation,
+      object,
+      context: { current_time: new Date().toISOString() },
+    });
+
+    if (!allowed) {
+      logger.warn({ userId, relation, object }, 'FGA permission check denied');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, relation, object },
+      });
+    }
+  }
+
+  /**
+   * Verify that an administration exists and the user has read-progress access.
+   *
+   * Follows the 404-before-403 pattern: checks existence via SQL first, then
+   * delegates authorization to OpenFGA. The `can_read_progress` check subsumes
+   * the general `can_read` check (supervisory-only is stricter than supervisory+student).
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration ID to verify
@@ -96,31 +154,23 @@ export function ReportService({
 
     if (isSuperAdmin) return;
 
-    const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-    const authorized = await administrationRepository.getAuthorizedById({ userId, allowedRoles }, administrationId);
-    if (!authorized) {
-      logger.warn({ userId, administrationId }, 'User attempted to access administration without permission');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, administrationId },
-      });
-    }
+    // FGA can_read_progress covers both administration access and supervisory role requirement
+    await checkFgaPermission(userId, 'can_read_progress', `administration:${administrationId}`);
   }
 
   /**
    * Validate scope and authorize the user to access data at the requested scope level.
    *
    * Checks:
-   * 1. The scope entity is assigned to the administration
-   * 2. The user holds a supervisory role at or above the scope level
+   * 1. The scope entity is assigned to the administration (SQL validation)
+   * 2. The user has can_read_progress on the scope entity (FGA authorization)
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration ID
    * @param scopeType - The scope type (district, school, class, group)
    * @param scopeId - The scope entity ID
    * @throws {ApiError} BAD_REQUEST if scope is not assigned to the administration
-   * @throws {ApiError} FORBIDDEN if user lacks a supervisory role at the scope level
+   * @throws {ApiError} FORBIDDEN if user lacks permission at the scope level
    */
   async function authorizeScopeAccess(
     authContext: AuthContext,
@@ -130,7 +180,7 @@ export function ReportService({
   ) {
     const { userId, isSuperAdmin } = authContext;
 
-    // Validate scope is assigned to the administration
+    // Validate scope is assigned to the administration (data validation, not auth)
     const isAssigned = await reportRepository.isScopeAssignedToAdministration(administrationId, {
       scopeType,
       scopeId,
@@ -146,48 +196,32 @@ export function ReportService({
     // Super admins bypass scope authorization
     if (isSuperAdmin) return;
 
-    // Verify user has a supervisory role at or above the scope level
-    const userRoles = await reportRepository.getUserRolesAtOrAboveScope(userId, { scopeType, scopeId });
-
-    if (!hasSupervisoryRole(userRoles)) {
-      logger.warn(
-        { userId, administrationId, scopeType, scopeId, userRoles },
-        'User lacks supervisory role at the requested scope level',
-      );
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, administrationId, scopeType, scopeId },
-      });
-    }
+    // FGA checks the user has supervisory-tier access at or above the scope level.
+    // The FGA model's hierarchy traversal (via parent_org) replaces the SQL ltree queries.
+    const fgaType = SCOPE_TO_FGA_TYPE[scopeType];
+    await checkFgaPermission(userId, 'can_read_progress', `${fgaType}:${scopeId}`);
   }
 
   /**
    * List paginated student progress for an administration.
    *
-   * Authorization flow (three layers, checked in order):
+   * Authorization flow (two FGA checks, in order):
    *
-   * 1. **Administration access** (verifyAdministrationAccess):
-   *    Checks the user can see the administration via the standard access control
-   *    UNION query (same 6-path pattern used by AdministrationService).
+   * 1. **Administration access + report permission** (verifyAdministrationAccess):
+   *    Checks existence via SQL, then delegates to FGA `can_read_progress` on the
+   *    administration. This single FGA check covers both administration access and
+   *    the supervisory role requirement (students and caregivers are excluded by
+   *    the FGA model's `supervisory_tier_group` definition).
    *
-   * 2. **Report permission + supervisory role** (admin-level):
-   *    `getUserRolesForAdministration` returns the user's roles on the administration
-   *    (via org/class/group membership). We check both `Reports.Progress.READ` permission
-   *    and `hasSupervisoryRole`. This catches students (no permission) and caregivers
-   *    (have permission but not supervisory).
+   * 2. **Scope-level authorization** (authorizeScopeAccess):
+   *    Validates the scope entity is part of the administration (SQL), then checks
+   *    FGA `can_read_progress` on the scope entity. FGA's hierarchy traversal
+   *    (via `parent_org`) replaces the SQL ltree ancestor queries.
    *
-   * 3. **Scope-level authorization** (authorizeScopeAccess):
-   *    `getUserRolesAtOrAboveScope` checks the user holds a supervisory role at or
-   *    above the requested scope entity using ltree ancestor queries. A district admin
-   *    accessing a school scope within their district passes because `school_path <@ district_path`
-   *    is true — the ltree `<@` operator includes descendants.
-   *
-   * These are intentionally separate role lookups querying different paths. A user could
-   * pass the admin-level check (they have a role on the administration) but fail the
-   * scope check (they don't have a role at that specific scope level). This prevents
-   * e.g., a teacher at School A from viewing School B's report within a shared district
-   * administration.
+   * These are intentionally separate FGA checks. A user could pass the administration-level
+   * check but fail the scope check if they don't have a role at that specific scope level.
+   * This prevents e.g., a teacher at School A from viewing School B's report within a
+   * shared district administration.
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration to report on
@@ -202,48 +236,21 @@ export function ReportService({
     administrationId: string,
     query: ProgressStudentsInput,
   ): Promise<ProgressStudentsResult> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
     const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
 
     try {
-      // 1. Verify administration exists and user has access
+      // 1. Verify administration exists and user has can_read_progress permission
       await verifyAdministrationAccess(authContext, administrationId);
 
-      // 2. Verify permission and supervisory role for non-super-admins
-      if (!isSuperAdmin) {
-        const adminRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
-        const allowedReportRoles: string[] = rolesForPermission(Permissions.Reports.Progress.READ);
-        const hasPermission = adminRoles.some((role) => allowedReportRoles.includes(role));
-        if (!hasPermission) {
-          logger.warn(
-            { userId, administrationId, adminRoles },
-            'User lacks Reports.Progress.READ permission on administration',
-          );
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-
-        if (!hasSupervisoryRole(adminRoles)) {
-          logger.warn({ userId, administrationId, adminRoles }, 'Supervised user attempted to access progress report');
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-      }
-
-      // 3. Validate scope and authorize
+      // 2. Validate scope and authorize via FGA
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
 
-      // 4. Get task metadata
+      // 3. Get task metadata
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
 
-      // 5. Resolve sort column, progress sort, user filters, and progress filters.
+      // 4. Resolve sort column, progress sort, user filters, and progress filters.
       const { sortColumn, progressStatusSort } = resolveProgressSort(sortBy, taskMetas);
       const { userFilters, progressStatusFilters } = resolveProgressFilters(filter, taskMetas);
 
@@ -252,7 +259,7 @@ export function ReportService({
           ? buildFilterConditions(userFilters, PROGRESS_FILTER_FIELDS, { gradeAwareFields: GRADE_AWARE_FIELDS })
           : undefined;
 
-      // 6. Get paginated students with run data.
+      // 5. Get paginated students with run data.
       // Progress status sort/filter is handled via LEFT JOIN + CASE in the repository.
       const result = await reportRepository.getProgressStudents(
         administrationId,
@@ -264,7 +271,7 @@ export function ReportService({
         progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
       );
 
-      // 7. Transform to response shape
+      // 6. Transform to response shape
       const tasks: ServiceTaskMetadata[] = taskMetas.map((t) => ({
         taskId: t.taskId,
         taskSlug: t.taskSlug,

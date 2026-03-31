@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
 import type { OpenFgaClient, ReadResponse, TupleKey } from '@openfga/sdk';
+import type { FgaCheckClient } from '../../services/report/report.service';
 
 /** The subset of OpenFgaClient methods used by AuthorizationService and AuthorizationModule. */
 type FgaClientTestSurface = Pick<OpenFgaClient, 'writeTuples' | 'deleteTuples' | 'read'>;
@@ -22,6 +23,23 @@ export function createMockFgaClient(): MockedObject<FgaClientTestSurface> {
 }
 
 export type MockFgaClient = ReturnType<typeof createMockFgaClient>;
+
+/**
+ * Creates a mock FGA check client for report service unit tests.
+ *
+ * Uses the `FgaCheckClient` interface (defined in report.service.ts) so that
+ * `mockResolvedValue({ allowed: true })` works without satisfying the full SDK
+ * `$response` metadata type that service code doesn't use.
+ *
+ * @returns A mock FGA check client with vi.fn() stubs
+ */
+export function createMockFgaCheckClient() {
+  return {
+    check: vi.fn<FgaCheckClient['check']>(),
+  };
+}
+
+export type MockFgaCheckClient = ReturnType<typeof createMockFgaCheckClient>;
 
 /**
  * Build a mock FGA read response.
