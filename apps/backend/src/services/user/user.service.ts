@@ -4,6 +4,7 @@ import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import type { Permission } from '../../constants/permissions';
+import { CARETAKER_ROLES } from '../../constants/role-classifications';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { Permissions } from '../../constants/permissions';
@@ -333,7 +334,7 @@ export function UserService({
    *
    * @param authContext - Requesting user's authentication context
    * @param userId - Target user ID (who is consenting)
-   * @param body - Request body (agreementVersionId, consentingUserId optional)
+   * @param body - Request body (agreementVersionId)
    * @returns Object with created agreement ID
    * @throws {ApiError} NOT_FOUND if user, agreement version, or agreement doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks family relationship to consent for target user, if the agreement type is inappropriate for the user's age, or if a parent attempts to consent for a non-minor or non-assent agreement
@@ -342,10 +343,10 @@ export function UserService({
   async function recordUserAgreement(
     authContext: AuthContext,
     userId: string,
-    body: { agreementVersionId: string; consentingUserId?: string | undefined },
+    body: { agreementVersionId: string },
   ): Promise<{ id: string }> {
     const { userId: requestingUserId } = authContext;
-    const { agreementVersionId, consentingUserId } = body;
+    const { agreementVersionId } = body;
 
     try {
       // 1. Verify target user exists
@@ -380,23 +381,7 @@ export function UserService({
         });
       }
 
-      // 3. Authorization: only allow self-consent or parent consenting for their child
-      const actualConsentingUserId = consentingUserId ?? requestingUserId;
-
-      // Verify the consenting user is the authenticated user
-      if (actualConsentingUserId !== requestingUserId) {
-        logger.warn(
-          { requestingUserId, targetUserId: userId, consentingUserId: actualConsentingUserId },
-          'User attempted to consent on behalf of another user',
-        );
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { requestingUserId, targetUserId: userId, consentingUserId: actualConsentingUserId },
-        });
-      }
-
-      // 4. Validate agreement type is appropriate for user's age
+      // 3. Validate agreement type is appropriate for user's age
       // Fetch requesting user to determine their age
       const requestingUser = await userRepository.getById({ id: requestingUserId });
 
@@ -432,8 +417,11 @@ export function UserService({
       // Parent consent: user is consenting for their child (via family relationship)
       else {
         // Use UserRepository's access controls to verify family relationship
-        const allowedRoles = rolesForPermission(Permissions.Users.READ);
-        const authorized = await userRepository.getAuthorizedById({ userId: requestingUserId, allowedRoles }, userId);
+        // Allowed roles are defined as any caretaker role (e.g. parent, guardian) that would have access to consent on behalf of the child
+        const authorized = await userRepository.getAuthorizedById(
+          { userId: requestingUserId, allowedRoles: CARETAKER_ROLES },
+          userId,
+        );
 
         if (!authorized) {
           logger.warn({ requestingUserId, targetUserId: userId }, 'User attempted to consent for non-family member');

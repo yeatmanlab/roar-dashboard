@@ -530,16 +530,6 @@ describe('UsersController', () => {
       expect(mockRecordUserAgreement).toHaveBeenCalledTimes(1);
     });
 
-    it('should pass consentingUserId when provided', async () => {
-      mockRecordUserAgreement.mockResolvedValue({ id: 'agreement-123' });
-      const bodyWithConsenting = { agreementVersionId, consentingUserId: 'consenting-user-999' };
-
-      const { UsersController: Controller } = await import('./users.controller');
-      await Controller.recordUserAgreement(authContext, targetUserId, bodyWithConsenting);
-
-      expect(mockRecordUserAgreement).toHaveBeenCalledWith(authContext, targetUserId, bodyWithConsenting);
-    });
-
     it('should return 400 when service throws REQUEST_VALIDATION_FAILED', async () => {
       const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
         statusCode: StatusCodes.BAD_REQUEST,

@@ -905,6 +905,32 @@ describe('POST /v1/users/:userId/agreements', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
+    it('should reject teacher with class access but no family relationship', async () => {
+      const teacher = await UserFactory.create({ dob: '1980-01-01' });
+      const targetChild = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+
+      // Create class relationship: both teacher and student in same class
+      await UserClassFactory.create({
+        userId: teacher.id,
+        classId: baseFixture.classInSchoolA.id,
+        role: UserRole.TEACHER,
+      });
+      await UserClassFactory.create({
+        userId: targetChild.id,
+        classId: baseFixture.classInSchoolA.id,
+        role: UserRole.STUDENT,
+      });
+
+      authenticateAs({ authId: teacher.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${targetChild.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
     it('should reject parent attempting to consent for adult child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');

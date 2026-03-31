@@ -447,16 +447,18 @@ describe('UserService', () => {
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
         });
       });
-    });
 
-    describe('consenting user validation', () => {
-      it('should throw FORBIDDEN when consentingUserId does not match authenticated user', async () => {
+      it('should throw NOT_FOUND when requesting user does not exist in database', async () => {
         const authContext = AuthContextFactory.build({ userId: 'user-123' });
         const targetUser = UserFactory.build({ id: 'target-456' });
         const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
         const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
 
-        mockUserRepository.getById.mockResolvedValue(targetUser);
+        // First call for target user succeeds, second call for requesting user returns null
+        mockUserRepository.getById
+          .mockResolvedValueOnce(targetUser) // Target user exists
+          .mockResolvedValueOnce(null); // Requesting user does not exist
+
         mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
         mockAgreementRepository.getById.mockResolvedValue(agreement);
 
@@ -470,12 +472,11 @@ describe('UserService', () => {
         await expect(
           userService.recordUserAgreement(authContext, targetUser.id, {
             agreementVersionId: agreementVersion.id,
-            consentingUserId: 'different-user-789', // Not the authenticated user
           }),
         ).rejects.toMatchObject({
-          message: ApiErrorMessage.FORBIDDEN,
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
         });
       });
     });

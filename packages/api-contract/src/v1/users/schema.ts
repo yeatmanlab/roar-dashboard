@@ -103,12 +103,11 @@ export type UpdateUserRequestBody = z.infer<typeof UpdateUserRequestBodySchema>;
  *
  * Records a user's consent to a specific agreement version.
  * Supports two modes:
- * - **Self-consent:** User consents for themselves (consentingUserId omitted)
- * - **Guardian consent:** Guardian consents for a family member (consentingUserId = authenticated user)
+ * - **Self-consent:** User consents for themselves (authenticated user = target user)
+ * - **Parent consent:** Parent consents for their child (authenticated user = parent, target = child via family relationship)
  */
 export const RecordUserAgreementRequestBodySchema = z.object({
   agreementVersionId: z.string().uuid(),
-  consentingUserId: z.string().uuid().optional(),
 });
 
 export type RecordUserAgreementRequestBody = z.infer<typeof RecordUserAgreementRequestBodySchema>;
