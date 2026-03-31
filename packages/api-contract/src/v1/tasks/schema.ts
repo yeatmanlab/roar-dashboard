@@ -376,4 +376,67 @@ export type CreateTaskVariantPathParam = z.infer<typeof CreateTaskVariantPathPar
 /**
  * Type for task variant path parameters in update operations.
  */
+
 export type UpdateTaskVariantPathParam = z.infer<typeof UpdateTaskVariantPathParamSchema>;
+
+/**
+ * Slug format regex: lowercase alphanumeric with hyphens between segments.
+ * Must match the database constraint: ^[a-z0-9]+(-[a-z0-9]+)*$
+ *
+ * Examples: "swr", "letter-task", "phoneme-awareness-1"
+ */
+const TASK_SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * Task Create Request Schema
+ *
+ * Creates a new task with the specified configuration.
+ *
+ * @property slug - URL-friendly identifier (lowercase alphanumeric with hyphens, max 32 chars)
+ * @property name - Display name for the task
+ * @property nameSimple - Simplified name for the task
+ * @property nameTechnical - Technical/internal name for the task
+ * @property taskConfig - JSON configuration object for the task
+ * @property description - Optional human-readable description
+ * @property image - Optional URL to task image
+ * @property tutorialVideo - Optional URL to tutorial video
+ */
+export const CreateTaskRequestBodySchema = z
+  .object({
+    slug: z
+      .string()
+      .trim()
+      .min(1, 'Slug is required')
+      .max(32, 'Slug must be at most 32 characters')
+      .regex(TASK_SLUG_REGEX, 'Slug must be lowercase alphanumeric with hyphens (e.g., "my-task")'),
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Name is required')
+      .max(255)
+      .regex(IDENTIFIER_WITH_SPACES, 'Name must be alphanumeric with spaces (e.g., "My Task")'),
+    nameSimple: z
+      .string()
+      .trim()
+      .min(1, 'Simple name is required')
+      .max(255)
+      .regex(IDENTIFIER_WITH_SPACES, 'Simple name must be alphanumeric with spaces (e.g., "My Task")'),
+    nameTechnical: z
+      .string()
+      .trim()
+      .min(1, 'Technical name is required')
+      .max(255)
+      .regex(IDENTIFIER_WITH_SPACES, 'Technical name must be alphanumeric with spaces (e.g., "My Task")'),
+    taskConfig: ValidatedJsonValue,
+    description: z.string().trim().min(1).max(1024).nullish(),
+    image: z.string().url('Image must be a valid URL').nullish(),
+    tutorialVideo: z.string().url('Tutorial video must be a valid URL').nullish(),
+  })
+  .strict();
+
+export const CreateTaskResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type CreateTaskRequestBody = z.infer<typeof CreateTaskRequestBodySchema>;
+export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
