@@ -10,6 +10,8 @@ import {
   TasksListQuerySchema,
   TasksListResponseSchema,
   GetTaskPathParamSchema,
+  CreateTaskRequestBodySchema,
+  CreateTaskResponseSchema,
   GetTaskVariantPathParamSchema,
   TaskSchema,
   ListTaskVariantsQuerySchema,
@@ -62,6 +64,30 @@ export const TasksContract = c.router(
         'Supports task lookup by task UUID or slug (case-sensitive). ' +
         'Returns 200 with the task on success. ' +
         'Returns 404 if no task exists with the given ID or slug. ' +
+        'Returns 500 if a server error occurs.',
+    },
+    create: {
+      method: 'POST',
+      path: '/',
+      contentType: 'application/json',
+      body: CreateTaskRequestBodySchema,
+      responses: {
+        201: SuccessEnvelopeSchema(CreateTaskResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Create a new task',
+      description:
+        'Creates a new task. Requires super admin privileges. ' +
+        'The slug must be unique and follow the format: lowercase alphanumeric with hyphens. ' +
+        'Returns 201 with the created task ID on success. ' +
+        'Returns 400 if the request body is malformed. ' +
+        'Returns 403 if the user is not a super admin. ' +
+        'Returns 409 if a task with the same slug already exists. ' +
         'Returns 500 if a server error occurs.',
     },
     listTaskVariants: {

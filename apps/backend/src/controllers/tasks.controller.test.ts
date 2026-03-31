@@ -22,6 +22,7 @@ describe('TasksController', () => {
   const mockUpdateTaskVariant = vi.fn();
   const mockListVariants = vi.fn();
   const mockGetTaskVariant = vi.fn();
+  const mockCreate = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -30,6 +31,7 @@ describe('TasksController', () => {
     vi.mocked(TaskService).mockReturnValue({
       list: mockList,
       getById: mockGetById,
+      create: mockCreate,
       createTaskVariant: mockCreateTaskVariant,
       updateTaskVariant: mockUpdateTaskVariant,
       listTaskVariants: mockListVariants,
@@ -1031,6 +1033,95 @@ describe('TasksController', () => {
       await Controller.listTaskVariants(mockAuthContext, 'swr', query);
 
       expect(mockListVariants).toHaveBeenCalledWith(mockAuthContext, 'swr', expect.any(Object));
+    });
+  });
+
+  describe('create', () => {
+    const validBody = {
+      slug: 'new-task',
+      name: 'New Task',
+      nameSimple: 'New',
+      nameTechnical: 'new-task-technical',
+      taskConfig: { difficulty: 'easy' },
+      description: 'A new task',
+    };
+
+    it('should return 201 with created task id on success', async () => {
+      const mockTaskId = { id: 'task-123' };
+      mockCreate.mockResolvedValue(mockTaskId);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      expect(result).toEqual({
+        status: StatusCodes.CREATED,
+        body: {
+          data: mockTaskId,
+        },
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, validBody);
+      expect(mockCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return 403 when service throws FORBIDDEN error', async () => {
+      const forbiddenError = new ApiError('Forbidden', {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      mockCreate.mockRejectedValue(forbiddenError);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      if (result.status === StatusCodes.FORBIDDEN) {
+        expect(result.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      }
+    });
+
+    it('should return 409 when service throws CONFLICT error', async () => {
+      const conflictError = new ApiError('Task already exists', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+
+      mockCreate.mockRejectedValue(conflictError);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      if (result.status === StatusCodes.CONFLICT) {
+        expect(result.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+      }
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const internalError = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      mockCreate.mockRejectedValue(internalError);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      if (result.status === StatusCodes.INTERNAL_SERVER_ERROR) {
+        expect(result.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      }
+    });
+
+    it('should re-throw non-ApiError errors', async () => {
+      const unexpectedError = new Error('Unexpected error');
+
+      mockCreate.mockRejectedValue(unexpectedError);
+
+      const { TasksController: Controller } = await import('./tasks.controller');
+      await expect(Controller.create(mockAuthContext, validBody)).rejects.toThrow(unexpectedError);
     });
   });
 
