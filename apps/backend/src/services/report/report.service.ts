@@ -148,7 +148,11 @@ export function ReportService({
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks access
    */
-  async function verifyAdministrationAccess(authContext: AuthContext, administrationId: string) {
+  async function verifyAdministrationAccess(
+    authContext: AuthContext,
+    administrationId: string,
+    relation: string = 'can_read_progress',
+  ) {
     const { userId, isSuperAdmin } = authContext;
 
     const administration = await administrationRepository.getById({ id: administrationId });
@@ -162,8 +166,8 @@ export function ReportService({
 
     if (isSuperAdmin) return;
 
-    // FGA can_read_progress covers both administration access and supervisory role requirement
-    await checkFgaPermission(userId, 'can_read_progress', `${FgaType.ADMINISTRATION}:${administrationId}`);
+    // FGA check covers both administration access and supervisory role requirement
+    await checkFgaPermission(userId, relation, `${FgaType.ADMINISTRATION}:${administrationId}`);
   }
 
   /**
@@ -185,6 +189,7 @@ export function ReportService({
     administrationId: string,
     scopeType: ScopeType,
     scopeId: string,
+    relation: string = 'can_read_progress',
   ) {
     const { userId, isSuperAdmin } = authContext;
 
@@ -207,7 +212,7 @@ export function ReportService({
     // FGA checks the user has supervisory-tier access at or above the scope level.
     // The FGA model's hierarchy traversal (via parent_org) replaces the SQL ltree queries.
     const fgaType = SCOPE_TO_FGA_TYPE[scopeType];
-    await checkFgaPermission(userId, 'can_read_progress', `${fgaType}:${scopeId}`);
+    await checkFgaPermission(userId, relation, `${fgaType}:${scopeId}`);
   }
 
   /**
@@ -330,8 +335,8 @@ export function ReportService({
    * needsExtraSupport) with counts and percentages, plus totalAssessed and
    * totalNotAssessed (required/optional) counts.
    *
-   * Authorization: same 3-layer pattern as listProgressStudents but uses
-   * Reports.Score.READ permission instead of Reports.Progress.READ.
+   * Authorization: same pattern as listProgressStudents but uses FGA
+   * `can_read_scores` relation instead of `can_read_progress`.
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration to report on
@@ -343,39 +348,15 @@ export function ReportService({
     administrationId: string,
     query: ScoreOverviewQuery,
   ): Promise<ScoreOverviewResult> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
     const { scopeType, scopeId, filter } = query;
 
     try {
-      // 1. Verify administration exists and user has access
-      await verifyAdministrationAccess(authContext, administrationId);
+      // 1. Verify administration exists and user has access (can_read_scores)
+      await verifyAdministrationAccess(authContext, administrationId, 'can_read_scores');
 
-      // 2. Verify permission and supervisory role for non-super-admins
-      if (!isSuperAdmin) {
-        const adminRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
-        const allowedScoreRoles: string[] = rolesForPermission(Permissions.Reports.Score.READ);
-        const hasPermission = adminRoles.some((role) => allowedScoreRoles.includes(role));
-        if (!hasPermission) {
-          logger.warn({ userId, administrationId, adminRoles }, 'User lacks Reports.Score.READ permission');
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-
-        if (!hasSupervisoryRole(adminRoles)) {
-          logger.warn({ userId, administrationId, adminRoles }, 'Supervised user attempted to access score overview');
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-      }
-
-      // 3. Validate scope and authorize
-      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
+      // 2. Validate scope and authorize (can_read_scores)
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, 'can_read_scores');
 
       // 4. Get task metadata
       let taskMetas = await reportRepository.getTaskMetadata(administrationId);

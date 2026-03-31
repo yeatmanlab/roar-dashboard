@@ -842,8 +842,8 @@ describe('ReportService', () => {
       });
     });
 
-    it('returns 403 when user lacks access to administration', async () => {
-      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(null);
+    it('returns 403 when FGA denies can_read_scores on administration', async () => {
+      mockFgaClient.check.mockResolvedValue({ allowed: false });
 
       const service = createService();
 
@@ -851,41 +851,17 @@ describe('ReportService', () => {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
-    });
 
-    it('returns 403 when user lacks Reports.Score.READ permission', async () => {
-      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
-        AdministrationFactory.build({ id: testAdministrationId }),
+      expect(mockFgaClient.check).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: `user:${teacherAuth.userId}`,
+          relation: 'can_read_scores',
+          object: `administration:${testAdministrationId}`,
+        }),
       );
-      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
-
-      const service = createService();
-
-      await expect(service.getScoreOverview(studentAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-    });
-
-    it('returns 403 when user has score permission but only supervised roles', async () => {
-      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
-        AdministrationFactory.build({ id: testAdministrationId }),
-      );
-      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['caregiver']);
-
-      const service = createService();
-
-      await expect(service.getScoreOverview(caregiverAuth, testAdministrationId, scoreQuery)).rejects.toMatchObject({
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
     });
 
     it('returns 400 when scope is not assigned to administration', async () => {
-      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
-        AdministrationFactory.build({ id: testAdministrationId }),
-      );
-      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
       mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(false);
 
       const service = createService();
@@ -896,12 +872,9 @@ describe('ReportService', () => {
       });
     });
 
-    it('returns 403 when user lacks supervisory role at scope level', async () => {
-      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
-        AdministrationFactory.build({ id: testAdministrationId }),
-      );
-      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
-      mockReportRepository.getUserRolesAtOrAboveScope.mockResolvedValue(['student']);
+    it('returns 403 when FGA denies can_read_scores at scope level', async () => {
+      // First check (administration) passes, second check (scope) fails
+      mockFgaClient.check.mockResolvedValueOnce({ allowed: true }).mockResolvedValueOnce({ allowed: false });
 
       const service = createService();
 
@@ -911,14 +884,13 @@ describe('ReportService', () => {
       });
     });
 
-    it('super admin bypasses all authorization checks', async () => {
+    it('super admin bypasses FGA checks', async () => {
       setupDefaultScoreOverviewMocks();
 
       const service = createService();
       await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
 
-      expect(mockAdministrationRepository.getUserRolesForAdministration).not.toHaveBeenCalled();
-      expect(mockReportRepository.getUserRolesAtOrAboveScope).not.toHaveBeenCalled();
+      expect(mockFgaClient.check).not.toHaveBeenCalled();
     });
 
     // --- Empty results ---
