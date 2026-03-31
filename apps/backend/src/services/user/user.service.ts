@@ -5,6 +5,7 @@ import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import type { Permission } from '../../constants/permissions';
 import { StatusCodes } from 'http-status-codes';
+import { AgreementType } from '../../enums/agreement-type.enum';
 import { Permissions } from '../../constants/permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -14,7 +15,9 @@ import { logger } from '../../logger';
 import { UserRepository } from '../../repositories/user.repository';
 import { UserAgreementRepository } from '../../repositories/user-agreement.repository';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
+import { AgreementRepository } from '../../repositories/agreement.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
+import { isMajorityAge } from '../../utils/is-majority-age.util';
 
 /**
  * The subset of user fields that may be updated via PATCH /users/:id.
@@ -70,10 +73,12 @@ export function UserService({
   userRepository = new UserRepository(),
   userAgreementRepository = new UserAgreementRepository(),
   agreementVersionRepository = new AgreementVersionRepository(),
+  agreementRepository = new AgreementRepository(),
 }: {
   userRepository?: UserRepository;
   userAgreementRepository?: UserAgreementRepository;
   agreementVersionRepository?: AgreementVersionRepository;
+  agreementRepository?: AgreementRepository;
 } = {}) {
   /**
    * Verify that a user exists and that the requestor has the required permission.
@@ -315,21 +320,23 @@ export function UserService({
    * Record a user agreement (consent record).
    *
    * Supports two consent modes:
-   * - **Self-consent**: User consents for themselves (consentingUserId omitted)
-   * - **Guardian consent**: Guardian consents for a family member (consentingUserId provided)
+   * - **Self-consent**: User consents for themselves
+   * - **Parent consent**: Parent consents for their minor child (via family relationship)
    *
-   * Authorization:
-   * - Super admins can consent for any user
-   * - Users can consent for themselves
-   * - Guardians can consent for family members (verified via UserRepository access controls)
-   * - Regular admins CANNOT consent for users (privacy requirement)
+   * Authorization rules:
+   * - Self-consent: User can consent for themselves if agreement type matches their age
+   *   - Adults (majority age): Can agree to CONSENT or TOS agreements
+   *   - Minors (under majority age): Can agree to ASSENT agreements only
+   * - Parent consent: User can consent for their child via family relationship
+   *   - Target must be a minor
+   *   - Agreement type must be ASSENT
    *
    * @param authContext - Requesting user's authentication context
    * @param userId - Target user ID (who is consenting)
    * @param body - Request body (agreementVersionId, consentingUserId optional)
    * @returns Object with created agreement ID
-   * @throws {ApiError} NOT_FOUND if user or agreement version doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks permission to consent for target user
+   * @throws {ApiError} NOT_FOUND if user, agreement version, or agreement doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks family relationship to consent for target user, if the agreement type is inappropriate for the user's age, or if a parent attempts to consent for a non-minor or non-assent agreement
    * @throws {ApiError} INTERNAL_SERVER_ERROR if database operation fails
    */
   async function recordUserAgreement(
@@ -351,7 +358,7 @@ export function UserService({
         });
       }
 
-      // 2. Verify agreement version exists
+      // 2. Verify agreement version exists and fetch agreement type
       const agreementVersion = await agreementVersionRepository.getById({ id: agreementVersionId });
 
       if (!agreementVersion) {
@@ -359,6 +366,17 @@ export function UserService({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId: requestingUserId, agreementVersionId },
+        });
+      }
+
+      // Fetch the agreement to get the agreement type
+      const agreement = await agreementRepository.getById({ id: agreementVersion.agreementId });
+
+      if (!agreement) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId, agreementId: agreementVersion.agreementId },
         });
       }
 
@@ -378,9 +396,38 @@ export function UserService({
         });
       }
 
+      // 4. Validate agreement type is appropriate for user's age
+      // Fetch requesting user to determine their age
+      const requestingUser = await userRepository.getById({ id: requestingUserId });
+
+      if (!requestingUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId },
+        });
+      }
+
+      const isOfMajorityAge = isMajorityAge({ dob: requestingUser.dob, grade: requestingUser.grade });
+      const isAdult = isOfMajorityAge === true;
+      const majorityAgeAgreementTypes = [AgreementType.CONSENT, AgreementType.TOS];
+      const minorityAgeAgreementTypes = [AgreementType.ASSENT];
+      const allowedAgreementTypes: AgreementType[] = isAdult ? majorityAgeAgreementTypes : minorityAgeAgreementTypes;
+
       // Self-consent: user is consenting for themselves
       if (requestingUserId === userId) {
-        // Allow - no further checks needed
+        // Validate agreement type is appropriate for user's age
+        if (!allowedAgreementTypes.includes(agreement.agreementType)) {
+          logger.warn(
+            { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType, isAdult },
+            'User attempted to consent to an agreement type not allowed for their age',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType },
+          });
+        }
       }
       // Parent consent: user is consenting for their child (via family relationship)
       else {
@@ -396,9 +443,38 @@ export function UserService({
             context: { requestingUserId, targetUserId: userId },
           });
         }
+
+        // For parent consent, validate that the target user is a minor and agreement type is assent
+        const targetUserAge = isMajorityAge({ dob: targetUser.dob, grade: targetUser.grade });
+        const targetIsMinor = targetUserAge !== true;
+
+        if (!targetIsMinor) {
+          logger.warn(
+            { requestingUserId, targetUserId: userId },
+            'Parent attempted to consent for user who is not a minor',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, targetUserId: userId },
+          });
+        }
+
+        // Parent can only consent to assent agreements for their child
+        if (agreement.agreementType !== AgreementType.ASSENT) {
+          logger.warn(
+            { requestingUserId, targetUserId: userId, agreementType: agreement.agreementType },
+            'Parent attempted to consent to non-assent agreement for child',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, targetUserId: userId, agreementType: agreement.agreementType },
+          });
+        }
       }
 
-      // 4. Create the user agreement record
+      // 5. Create the user agreement record
       const agreementData: NewUserAgreement = {
         userId,
         agreementVersionId,
