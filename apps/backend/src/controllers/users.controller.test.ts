@@ -540,8 +540,8 @@ describe('UsersController', () => {
       expect(mockRecordUserAgreement).toHaveBeenCalledWith(authContext, targetUserId, bodyWithConsenting);
     });
 
-    it('should return 400 when service throws BAD_REQUEST', async () => {
-      const error = new ApiError(ApiErrorMessage.BAD_REQUEST, {
+    it('should return 400 when service throws REQUEST_VALIDATION_FAILED', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_INVALID,
       });
@@ -551,7 +551,7 @@ describe('UsersController', () => {
       const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
 
       const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
-      expect(errorBody.message).toBe(ApiErrorMessage.BAD_REQUEST);
+      expect(errorBody.message).toBe(ApiErrorMessage.REQUEST_VALIDATION_FAILED);
       expect(errorBody.code).toBe(ApiErrorCode.REQUEST_INVALID);
       expect(errorBody.traceId).toBeDefined();
     });

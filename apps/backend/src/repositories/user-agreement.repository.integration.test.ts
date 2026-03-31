@@ -28,10 +28,14 @@ describe('UserAgreementRepository Integration', () => {
         name: 'Test Agreement',
         agreementType: AgreementType.TOS,
       });
-      const version = await AgreementVersionFactory.create(undefined, {
-        transient: { agreementId: agreement.id },
-        locale: 'en-US',
-      });
+      const version = await AgreementVersionFactory.create(
+        {
+          locale: 'en-US',
+        },
+        {
+          transient: { agreementId: agreement.id },
+        },
+      );
 
       const agreementTimestamp = new Date();
       const { id: userAgreementId } = await repository.create({
@@ -62,10 +66,14 @@ describe('UserAgreementRepository Integration', () => {
         name: 'Child Assent',
         agreementType: AgreementType.ASSENT,
       });
-      const version = await AgreementVersionFactory.create(undefined, {
-        transient: { agreementId: agreement.id },
-        locale: 'en-US',
-      });
+      const version = await AgreementVersionFactory.create(
+        {
+          locale: 'en-US',
+        },
+        {
+          transient: { agreementId: agreement.id },
+        },
+      );
 
       const specificTimestamp = new Date('2024-01-15T10:30:00Z');
       const { id: userAgreementId } = await repository.create({
@@ -91,10 +99,14 @@ describe('UserAgreementRepository Integration', () => {
         name: 'Annual Reconsent Agreement',
         agreementType: AgreementType.CONSENT,
       });
-      const version = await AgreementVersionFactory.create(undefined, {
-        transient: { agreementId: agreement.id },
-        locale: 'en-US',
-      });
+      const version = await AgreementVersionFactory.create(
+        {
+          locale: 'en-US',
+        },
+        {
+          transient: { agreementId: agreement.id },
+        },
+      );
 
       // Create first consent
       const firstTimestamp = new Date('2024-01-01T00:00:00Z');
@@ -140,10 +152,14 @@ describe('UserAgreementRepository Integration', () => {
         name: 'Lookup Test Agreement',
         agreementType: AgreementType.TOS,
       });
-      const version = await AgreementVersionFactory.create(undefined, {
-        transient: { agreementId: agreement.id },
-        locale: 'en-US',
-      });
+      const version = await AgreementVersionFactory.create(
+        {
+          locale: 'en-US',
+        },
+        {
+          transient: { agreementId: agreement.id },
+        },
+      );
 
       const { id: userAgreementId } = await repository.create({
         data: {

@@ -28,6 +28,7 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
 
@@ -744,23 +745,35 @@ describe('POST /v1/users/:userId/agreements', () => {
       agreementType: AgreementType.ASSENT,
     });
 
-    tosAgreementVersion = await AgreementVersionFactory.create(undefined, {
-      transient: { agreementId: tosAgreement.id },
-      locale: 'en-US',
-      isCurrent: true,
-    });
+    tosAgreementVersion = await AgreementVersionFactory.create(
+      {
+        locale: 'en-US',
+        isCurrent: true,
+      },
+      {
+        transient: { agreementId: tosAgreement.id },
+      },
+    );
 
-    consentAgreementVersion = await AgreementVersionFactory.create(undefined, {
-      transient: { agreementId: consentAgreement.id },
-      locale: 'en-US',
-      isCurrent: true,
-    });
+    consentAgreementVersion = await AgreementVersionFactory.create(
+      {
+        locale: 'en-US',
+        isCurrent: true,
+      },
+      {
+        transient: { agreementId: consentAgreement.id },
+      },
+    );
 
-    assentAgreementVersion = await AgreementVersionFactory.create(undefined, {
-      transient: { agreementId: assentAgreement.id },
-      locale: 'en-US',
-      isCurrent: true,
-    });
+    assentAgreementVersion = await AgreementVersionFactory.create(
+      {
+        locale: 'en-US',
+        isCurrent: true,
+      },
+      {
+        transient: { agreementId: assentAgreement.id },
+      },
+    );
 
     // Create test users
     adultUser = await UserFactory.create({ dob: '1990-01-01', grade: null });

@@ -27,11 +27,15 @@ describe('AgreementVersionRepository Integration', () => {
         agreementType: AgreementType.TOS,
       });
 
-      const version = await AgreementVersionFactory.create(undefined, {
-        transient: { agreementId: agreement.id },
-        locale: 'en-US',
-        isCurrent: true,
-      });
+      const version = await AgreementVersionFactory.create(
+        {
+          locale: 'en-US',
+          isCurrent: true,
+        },
+        {
+          transient: { agreementId: agreement.id },
+        },
+      );
 
       const result = await repository.getById({ id: version.id });
 
@@ -78,10 +82,14 @@ describe('AgreementVersionRepository Integration', () => {
         agreementType: AgreementType.ASSENT,
       });
 
-      const version = await AgreementVersionFactory.create(undefined, {
-        transient: { agreementId: agreement.id },
-        locale: 'es-MX',
-      });
+      const version = await AgreementVersionFactory.create(
+        {
+          locale: 'es-MX',
+        },
+        {
+          transient: { agreementId: agreement.id },
+        },
+      );
 
       const result = await repository.getById({ id: version.id });
 
