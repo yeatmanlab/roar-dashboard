@@ -84,7 +84,7 @@ tuples:
     relation: assigned_group
     object: administration:admin-at-group
 
-  # ─── Group membership ─────────────────────────────────────────────
+  # ─── Group memberships (specific roles) ──────────────────────────
   - user: user:group-member
     relation: student
     object: group:group-g
@@ -95,6 +95,14 @@ tuples:
         grant_end: "9999-12-31T23:59:59Z"
   - user: user:group-teacher
     relation: teacher
+    object: group:group-g
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:group-admin
+    relation: administrator
     object: group:group-g
     condition:
       name: active_membership
@@ -489,6 +497,34 @@ tests:
           can_read_scores: false
           can_delete: false
 
+  - name: Group teacher has supervisory access on group-assigned administration
+    check:
+      - user: user:group-teacher
+        object: administration:admin-at-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create_run: false
+          can_delete: false
+
+  - name: Group admin has admin-tier access on group-assigned administration
+    check:
+      - user: user:group-admin
+        object: administration:admin-at-group
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_delete: false
+          can_read_scores: true
+          can_read_progress: true
+          can_create_run: false
+
   - name: Group member does NOT see class-assigned administration
     check:
       - user: user:group-member
@@ -860,6 +896,28 @@ tests:
             - administration:admin-at-group
             - administration:admin-school-and-group
 
+  - name: Group teacher sees only group administration
+    list_objects:
+      - user: user:group-teacher
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-at-group
+            - administration:admin-school-and-group
+
+  - name: Group admin sees only group administration
+    list_objects:
+      - user: user:group-admin
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-at-group
+            - administration:admin-school-and-group
+
   - name: Admin B sees only tree B administrations
     list_objects:
       - user: user:admin-b
@@ -925,7 +983,7 @@ tests:
               - user:student-x
               - user:cross-tree-user
 
-  - name: Group-assigned administration lists only group members
+  - name: Group-assigned administration lists all group role holders
     list_users:
       - object: administration:admin-at-group
         user_filter:
@@ -937,3 +995,4 @@ tests:
             users:
               - user:group-member
               - user:group-teacher
+              - user:group-admin

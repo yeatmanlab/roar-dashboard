@@ -8,6 +8,7 @@ import { registerGroupsRoutes } from './groups';
 import { registerTasksRoutes } from './task';
 import { registerClassesRoutes } from './classes';
 import { registerUserRoutes } from './users';
+import { registerSystemRoutes } from './system';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
@@ -38,6 +39,7 @@ export function registerAllRoutes(app: Express) {
   registerTasksRoutes(router);
   registerClassesRoutes(router);
   registerUserRoutes(router);
+  registerSystemRoutes(router);
 
   app.use(`/${API_VERSION.V1}`, router);
 }
