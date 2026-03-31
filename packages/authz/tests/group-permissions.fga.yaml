@@ -2,7 +2,7 @@ name: Group Permissions
 model_file: ../authorization-model.fga
 
 tuples:
-  # ─── Group memberships ────────────────────────────────────────────
+  # ─── Group memberships (specific roles, not flat "member") ───────
   - user: user:group-student
     relation: student
     object: group:group-a
@@ -124,6 +124,16 @@ tests:
   - name: Group student sees only group administration
     list_objects:
       - user: user:group-student
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - administration:admin-via-group
+
+  - name: Group teacher sees only group administration
+    list_objects:
+      - user: user:group-teacher
         type: administration
         context:
           current_time: "2025-06-15T12:00:00Z"
