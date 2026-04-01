@@ -20,6 +20,9 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
+import { Permissions } from '../../constants/permissions';
+import { rolesForPermission } from '../../constants/role-permissions';
+import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { ReportRepository, REPORT_CONDITION_FIELD_MAP } from '../../repositories/report.repository';
 import type {
