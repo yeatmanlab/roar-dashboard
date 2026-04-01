@@ -20,7 +20,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
-  WriteTrialTrialCommandInput,
+  WriteTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
@@ -538,7 +538,6 @@ export async function writeTrial(
   trialData: TrialData,
   computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
-  // TODO: Invoke callback with raw scores once score computation is implemented
   void computedScoreCallback;
 
   const facade = getFirekitCompat();
@@ -561,7 +560,7 @@ export async function writeTrial(
     });
   }
 
-  const assessmentStage = trialDataRecord['assessmentStage'] as string;
+  const assessmentStage = trialDataRecord['assessmentStage'];
   const validStages = [
     ASSESSMENT_STAGE_PRACTICE,
     ASSESSMENT_STAGE_PRACTICE_RESPONSE,
@@ -584,21 +583,19 @@ export async function writeTrial(
   }
 
   // Coerce boolean correct values (legacy Firekit) to numbers
-  const normalizedTrialData = {
-    ...trialData,
-    correct:
-      typeof trialDataRecord['correct'] === 'boolean'
-        ? trialDataRecord['correct']
-          ? 1
-          : 0
-        : trialDataRecord['correct'],
-  };
+  const correct =
+    typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
   const cmd = new WriteTrialCommand(api);
 
   await invoker.run(cmd, {
     runId,
     type: RUN_EVENT_TRIAL,
-    trial: normalizedTrialData as WriteTrialTrialCommandInput,
-  });
+    interactions: trialData.interactions,
+    trial: {
+      assessmentStage,
+      ...trialData,
+      correct,
+    },
+  } as WriteTrialCommandInput);
 }
