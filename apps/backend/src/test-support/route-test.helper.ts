@@ -44,16 +44,19 @@ import { errorHandler } from '../error-handler';
 import { UserRole } from '../enums/user-role.enum';
 import { UserFactory } from './factories/user.factory';
 import { UserOrgFactory } from './factories/user-org.factory';
-
+import { UserGroupFactory } from './factories/user-group.factory';
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * A user identity for route tests — only `authId` is needed since
- * AuthGuardMiddleware looks up the full user record from the DB.
+ * A user identity for route tests.
+ *
+ * - `id` is the user's UUID (for creating related records like class memberships)
+ * - `authId` is used by AuthGuardMiddleware to look up the full user record from the DB
  */
 export interface TierUser {
+  id: string;
   authId: string;
 }
 
@@ -157,12 +160,50 @@ export async function createTierUsers(orgId: string): Promise<TierUsers> {
   ]);
 
   return {
-    superAdmin: { authId: superAdminUser.authId! },
-    siteAdmin: { authId: siteAdminUser.authId! },
-    admin: { authId: adminUser.authId! },
-    educator: { authId: educatorUser.authId! },
-    student: { authId: studentUser.authId! },
-    caregiver: { authId: caregiverUser.authId! },
+    superAdmin: { id: superAdminUser.id, authId: superAdminUser.authId! },
+    siteAdmin: { id: siteAdminUser.id, authId: siteAdminUser.authId! },
+    admin: { id: adminUser.id, authId: adminUser.authId! },
+    educator: { id: educatorUser.id, authId: educatorUser.authId! },
+    student: { id: studentUser.id, authId: studentUser.authId! },
+    caregiver: { id: caregiverUser.id, authId: caregiverUser.authId! },
+  };
+}
+
+/**
+ * Creates one user per permission tier, all enrolled at the given group.
+ *
+ * Call once in `beforeAll` after DB pools are initialized. The returned
+ * users can be passed to `expectRoute(...).as(tiers.admin)`.
+ *
+ * @param groupId - The group to enroll all tier users at (e.g., baseFixture.group.id)
+ * @returns TierUsers with one representative per permission tier
+ */
+export async function createGroupTierUsers(groupId: string): Promise<TierUsers> {
+  const [superAdminUser, siteAdminUser, adminUser, educatorUser, studentUser, caregiverUser] = await Promise.all([
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SuperAdmin', isSuperAdmin: true }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SiteAdmin' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Admin' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Educator' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Student' }),
+    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Caregiver' }),
+  ]);
+
+  await Promise.all([
+    UserGroupFactory.create({ userId: superAdminUser.id, groupId, role: UserRole.ADMINISTRATOR }),
+    UserGroupFactory.create({ userId: siteAdminUser.id, groupId, role: UserRole.SITE_ADMINISTRATOR }),
+    UserGroupFactory.create({ userId: adminUser.id, groupId, role: UserRole.ADMINISTRATOR }),
+    UserGroupFactory.create({ userId: educatorUser.id, groupId, role: UserRole.TEACHER }),
+    UserGroupFactory.create({ userId: studentUser.id, groupId, role: UserRole.STUDENT }),
+    UserGroupFactory.create({ userId: caregiverUser.id, groupId, role: UserRole.GUARDIAN }),
+  ]);
+
+  return {
+    superAdmin: { id: superAdminUser.id, authId: superAdminUser.authId! },
+    siteAdmin: { id: siteAdminUser.id, authId: siteAdminUser.authId! },
+    admin: { id: adminUser.id, authId: adminUser.authId! },
+    educator: { id: educatorUser.id, authId: educatorUser.authId! },
+    student: { id: studentUser.id, authId: studentUser.authId! },
+    caregiver: { id: caregiverUser.id, authId: caregiverUser.authId! },
   };
 }
 

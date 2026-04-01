@@ -18,6 +18,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL, RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
@@ -66,14 +67,13 @@ export function _resetFirekitCompat(): void {
  * ```
  */
 export class FirekitFacade {
-  private static instance: FirekitFacade | undefined;
-  private ctx: CommandContext | undefined;
-  private api: RoarApi | undefined;
-  private invoker: Invoker | undefined;
-  private runId: string | undefined;
-  private taskInfo: CompatTaskInfo | undefined;
-  /** Buffer for interaction events, flushed when writeTrial() is called */
-  private interactionBuffer: AddInteractionInput[] = [];
+  static #instance: FirekitFacade | undefined;
+  #ctx: CommandContext | undefined;
+  #api: RoarApi | undefined;
+  #invoker: Invoker | undefined;
+  #runId: string | undefined;
+  #taskInfo: CompatTaskInfo | undefined;
+  interactionBuffer: AddInteractionInput[] = [];
 
   private constructor() {}
 
@@ -84,10 +84,10 @@ export class FirekitFacade {
    * @returns FirekitFacade singleton instance
    */
   static getInstance(): FirekitFacade {
-    if (!FirekitFacade.instance) {
-      FirekitFacade.instance = new FirekitFacade();
+    if (!FirekitFacade.#instance) {
+      FirekitFacade.#instance = new FirekitFacade();
     }
-    return FirekitFacade.instance;
+    return FirekitFacade.#instance;
   }
 
   /**
@@ -99,14 +99,13 @@ export class FirekitFacade {
    * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous flag
    */
   initialize(ctx: CommandContext, taskInfo: CompatTaskInfo): void {
-    this.ctx = ctx;
-    this.api = new RoarApi(ctx);
-    this.invoker = new Invoker(ctx);
+    this.#ctx = ctx;
+    this.#api = new RoarApi(ctx);
+    this.#invoker = new Invoker(ctx);
 
     // Reset compat state on re-init to avoid leaking state across tests / consumers
-    this.runId = undefined;
-    this.taskInfo = taskInfo;
-    this.interactionBuffer = [];
+    this.#runId = undefined;
+    this.#taskInfo = taskInfo;
   }
 
   /**
@@ -117,10 +116,10 @@ export class FirekitFacade {
    * @throws {SDKError} If facade not initialized
    */
   getContext(): CommandContext {
-    if (!this.ctx) {
+    if (!this.#ctx) {
       throw new SDKError('FirekitFacade not initialized. Call initFirekitCompat() first.');
     }
-    return this.ctx;
+    return this.#ctx;
   }
 
   /**
@@ -131,10 +130,10 @@ export class FirekitFacade {
    * @throws {SDKError} If facade not initialized
    */
   getApi(): RoarApi {
-    if (!this.api) {
+    if (!this.#api) {
       throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
     }
-    return this.api;
+    return this.#api;
   }
 
   /**
@@ -145,10 +144,10 @@ export class FirekitFacade {
    * @throws {SDKError} If facade not initialized
    */
   getInvoker(): Invoker {
-    if (!this.invoker) {
+    if (!this.#invoker) {
       throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
     }
-    return this.invoker;
+    return this.#invoker;
   }
 
   /**
@@ -157,7 +156,7 @@ export class FirekitFacade {
    * @internal
    */
   static _resetInstance(): void {
-    FirekitFacade.instance = undefined;
+    FirekitFacade.#instance = undefined;
   }
 
   /**
@@ -165,7 +164,7 @@ export class FirekitFacade {
    * @internal
    */
   _getRunId(): string | undefined {
-    return this.runId;
+    return this.#runId;
   }
 
   /**
@@ -173,7 +172,7 @@ export class FirekitFacade {
    * @internal
    */
   _setRunId(runId: string | undefined): void {
-    this.runId = runId;
+    this.#runId = runId;
   }
 
   /**
@@ -181,7 +180,7 @@ export class FirekitFacade {
    * @internal
    */
   _getTaskInfo(): CompatTaskInfo | undefined {
-    return this.taskInfo;
+    return this.#taskInfo;
   }
 
   /**
@@ -599,7 +598,6 @@ export async function writeTrial(
   trialData: TrialData,
   computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
-  // TODO: Invoke callback with raw scores once score computation is implemented
   void computedScoreCallback;
 
   const facade = getFirekitCompat();
@@ -622,7 +620,7 @@ export async function writeTrial(
     });
   }
 
-  const assessmentStage = trialDataRecord['assessmentStage'] as string;
+  const assessmentStage = trialDataRecord['assessmentStage'];
   const validStages = [
     ASSESSMENT_STAGE_PRACTICE,
     ASSESSMENT_STAGE_PRACTICE_RESPONSE,
@@ -645,44 +643,19 @@ export async function writeTrial(
   }
 
   // Coerce boolean correct values (legacy Firekit) to numbers
-  const normalizedTrialData = {
-    ...trialData,
-    correct:
-      typeof trialDataRecord['correct'] === 'boolean'
-        ? trialDataRecord['correct']
-          ? 1
-          : 0
-        : trialDataRecord['correct'],
-  };
+  const correct =
+    typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
   const cmd = new WriteTrialCommand(api);
 
-  // Capture interactions before the attempt, but only drain after success.
-  // This ensures interactions are retried if the network call fails.
-  // To prevent duplicate interactions in concurrent writeTrial calls, we use a temporary
-  // buffer that's only committed after the invoker succeeds.
-  const bufferedInteractions = facade._drainInteractionBuffer();
-  try {
-    await invoker.run(cmd, {
-      runId,
-      type: RUN_EVENT_TRIAL,
-      trial: normalizedTrialData as {
-        assessmentStage: 'practice' | 'test' | 'practice_response' | 'test_response';
-        correct: number;
-        payload?: Json;
-        [key: string]: unknown;
-      },
-      ...(bufferedInteractions.length > 0
-        ? {
-            interactions: bufferedInteractions,
-          }
-        : {}),
-    });
-  } catch (error) {
-    // Restore interactions to buffer if the write trial fails, so they can be retried
-    for (const interaction of bufferedInteractions) {
-      facade._pushInteraction(interaction);
-    }
-    throw error;
-  }
+  await invoker.run(cmd, {
+    runId,
+    type: RUN_EVENT_TRIAL,
+    interactions: trialData.interactions,
+    trial: {
+      assessmentStage,
+      ...trialData,
+      correct,
+    },
+  } as WriteTrialCommandInput);
 }

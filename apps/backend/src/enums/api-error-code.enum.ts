@@ -31,6 +31,9 @@ export enum ApiErrorCode {
   // Database errors
   DATABASE_QUERY_FAILED = 'database/query-failed',
 
+  // External service errors
+  EXTERNAL_SERVICE_FAILED = 'external/service-failed',
+
   // Internal errors
   INTERNAL = 'internal/error',
 }

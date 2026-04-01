@@ -27,6 +27,7 @@ export const GroupFactory = Factory.define<Group>(({ onCreate }) => {
       locationStateProvince: group.locationStateProvince,
       locationPostalCode: group.locationPostalCode,
       locationCountry: group.locationCountry,
+      rosteringEnded: group.rosteringEnded,
     };
 
     const [inserted] = await CoreDbClient.insert(groups).values(insertData).returning();

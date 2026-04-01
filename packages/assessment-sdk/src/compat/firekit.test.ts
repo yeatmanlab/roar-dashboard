@@ -46,24 +46,27 @@ function createMockContext(fetchImpl?: typeof fetch): CommandContext {
  */
 function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn();
-  fetchMock.mockImplementation((url: string) => {
-    // Return 201 CREATED for startRun (POST /runs)
-    if (url.includes('/runs') && !url.includes('/event')) {
-      return Promise.resolve({
-        status: StatusCodes.CREATED,
-        json: async () => ({ data: { id: runId } }),
-        headers: new Headers([['content-type', 'application/json']]),
-      });
-    }
-    // Return 200 OK for event endpoints (POST /runs/:runId/event)
-    if (url.includes('/event')) {
+  fetchMock.mockImplementation((url: string | Request) => {
+    // Extract URL string from Request object if needed
+    const urlString = typeof url === 'string' ? url : url.url;
+
+    // Return 200 OK for event endpoints (POST /runs/:runId/event) - check this first
+    if (urlString.includes('/event')) {
       return Promise.resolve({
         status: StatusCodes.OK,
         json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
         headers: new Headers([['content-type', 'application/json']]),
-      });
+      } as Response);
     }
-    return Promise.reject(new Error('Unexpected fetch call'));
+    // Return 201 CREATED for startRun (POST /runs)
+    if (urlString.includes('/runs')) {
+      return Promise.resolve({
+        status: StatusCodes.CREATED,
+        json: async () => ({ data: { id: runId } }),
+        headers: new Headers([['content-type', 'application/json']]),
+      } as Response);
+    }
+    return Promise.reject(new Error(`Unexpected fetch call: ${urlString}`));
   });
   return fetchMock;
 }
