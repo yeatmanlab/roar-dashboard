@@ -92,6 +92,18 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       handler: async ({ req, params }) =>
         AdministrationsController.delete({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
     },
+    progressReports: {
+      getStudentProgress: {
+        // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+        middleware: [AuthGuardMiddleware],
+        handler: async ({ req, params, query }) =>
+          AdministrationsController.listProgressStudents(
+            { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
+            params.id,
+            query,
+          ),
+      },
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo

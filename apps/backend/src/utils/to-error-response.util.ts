@@ -1,5 +1,6 @@
 import type { ApiError } from '../errors/api-error';
-import { type ApiErrorBody, formatApiError } from './format-api-error.util';
+import type { ApiErrorBody } from './format-api-error.util';
+import { formatApiError } from './format-api-error.util';
 
 /**
  * Convert an ApiError into a typed ts-rest error response.
