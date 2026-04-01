@@ -89,7 +89,13 @@ export function ReportService({
   taskService?: ReturnType<typeof TaskService>;
   fgaClient?: FgaCheckClient;
 } = {}) {
-  const fga: FgaCheckClient = fgaClient ?? FgaClient.getClient();
+  // Lazy FGA client — deferred to first use so module-level instantiation
+  // (e.g., in the controller) doesn't crash when FGA env vars aren't set.
+  let resolvedFga: FgaCheckClient | undefined = fgaClient;
+  function getFga(): FgaCheckClient {
+    resolvedFga ??= FgaClient.getClient();
+    return resolvedFga;
+  }
 
   /** Map scope types to FGA object type prefixes. */
   const SCOPE_TO_FGA_TYPE: Record<ScopeType, string> = {
@@ -111,7 +117,7 @@ export function ReportService({
    * @throws {ApiError} FORBIDDEN if the FGA check returns allowed=false
    */
   async function checkFgaPermission(userId: string, relation: string, object: string): Promise<void> {
-    const { allowed } = await fga.check({
+    const { allowed } = await getFga().check({
       user: `user:${userId}`,
       relation,
       object,
