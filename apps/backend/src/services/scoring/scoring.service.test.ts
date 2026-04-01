@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { getSupportLevel } from './scoring.service';
-import { getRawScoreThreshold, resolveScoreFieldNames } from './scoring.constants';
+import {
+  getSupportLevel,
+  getRawScoreThreshold,
+  resolveScoreFieldNames,
+  resolveScoreFieldName,
+} from './scoring.service';
 
 describe('getSupportLevel', () => {
   describe('raw-score-only tasks', () => {
@@ -210,6 +214,26 @@ describe('getSupportLevel', () => {
       ).toBeNull();
     });
   });
+
+  describe('non-classifiable tasks', () => {
+    it('letter returns null', () => {
+      expect(
+        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter', scoringVersion: null }),
+      ).toBeNull();
+    });
+
+    it('letter-es returns null', () => {
+      expect(
+        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-es', scoringVersion: null }),
+      ).toBeNull();
+    });
+
+    it('letter-en-ca returns null', () => {
+      expect(
+        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'letter-en-ca', scoringVersion: null }),
+      ).toBeNull();
+    });
+  });
 });
 
 describe('getRawScoreThreshold', () => {
@@ -313,7 +337,95 @@ describe('resolveScoreFieldNames', () => {
 
   it('handles null grade level', () => {
     const result = resolveScoreFieldNames('sre', null);
-    // null grade treated as >= 6 path
+    // null grade treated as >= 6 path (default in grade-conditional)
     expect(result.percentileFieldNames).toContain('sprPercentile');
+  });
+});
+
+describe('resolveScoreFieldName', () => {
+  describe('swr (simple versioned fields)', () => {
+    it('returns "percentile" for v >= 7', () => {
+      expect(resolveScoreFieldName('swr', 3, 'percentile', 7)).toBe('percentile');
+    });
+
+    it('returns "wjPercentile" for legacy version', () => {
+      expect(resolveScoreFieldName('swr', 3, 'percentile', null)).toBe('wjPercentile');
+      expect(resolveScoreFieldName('swr', 3, 'percentile', 6)).toBe('wjPercentile');
+    });
+
+    it('returns "roarScore" for rawScore (all versions)', () => {
+      expect(resolveScoreFieldName('swr', 3, 'rawScore', null)).toBe('roarScore');
+      expect(resolveScoreFieldName('swr', 3, 'rawScore', 7)).toBe('roarScore');
+    });
+
+    it('returns "standardScore" for standardScore (all versions)', () => {
+      expect(resolveScoreFieldName('swr', 3, 'standardScore', null)).toBe('standardScore');
+    });
+  });
+
+  describe('pa (grade-conditional fields)', () => {
+    it('returns "percentile" for grade < 6', () => {
+      expect(resolveScoreFieldName('pa', 3, 'percentile', null)).toBe('percentile');
+    });
+
+    it('returns "sprPercentile" for grade >= 6', () => {
+      expect(resolveScoreFieldName('pa', 8, 'percentile', null)).toBe('sprPercentile');
+    });
+
+    it('returns "sprPercentileString" for percentileDisplay grade >= 6', () => {
+      expect(resolveScoreFieldName('pa', 8, 'percentileDisplay', null)).toBe('sprPercentileString');
+    });
+
+    it('returns "sprStandardScore" for standardScore grade >= 6', () => {
+      expect(resolveScoreFieldName('pa', 8, 'standardScore', null)).toBe('sprStandardScore');
+    });
+
+    it('returns "sprStandardScoreString" for standardScoreDisplay grade >= 6', () => {
+      expect(resolveScoreFieldName('pa', 8, 'standardScoreDisplay', null)).toBe('sprStandardScoreString');
+    });
+
+    it('uses default for null gradeLevel', () => {
+      expect(resolveScoreFieldName('pa', null, 'percentile', null)).toBe('sprPercentile');
+    });
+  });
+
+  describe('sre (versioned + grade-conditional)', () => {
+    it('returns "percentile" for v >= 4 regardless of grade', () => {
+      expect(resolveScoreFieldName('sre', 3, 'percentile', 4)).toBe('percentile');
+      expect(resolveScoreFieldName('sre', 8, 'percentile', 4)).toBe('percentile');
+    });
+
+    it('returns "tosrecPercentile" for legacy grade < 6', () => {
+      expect(resolveScoreFieldName('sre', 3, 'percentile', null)).toBe('tosrecPercentile');
+    });
+
+    it('returns "sprPercentile" for legacy grade >= 6', () => {
+      expect(resolveScoreFieldName('sre', 8, 'percentile', null)).toBe('sprPercentile');
+    });
+
+    it('returns "tosrecSS" for legacy standardScore grade < 6', () => {
+      expect(resolveScoreFieldName('sre', 3, 'standardScore', null)).toBe('tosrecSS');
+    });
+
+    it('returns "sprStandardScore" for legacy standardScore grade >= 6', () => {
+      expect(resolveScoreFieldName('sre', 8, 'standardScore', null)).toBe('sprStandardScore');
+    });
+  });
+
+  describe('letter (null fields)', () => {
+    it('returns null for standardScore', () => {
+      expect(resolveScoreFieldName('letter', 3, 'standardScore', null)).toBeNull();
+    });
+
+    it('returns "totalPercentCorrect" for percentile', () => {
+      expect(resolveScoreFieldName('letter', 3, 'percentile', null)).toBe('totalPercentCorrect');
+    });
+  });
+
+  describe('unknown task', () => {
+    it('returns null for all field types', () => {
+      expect(resolveScoreFieldName('unknown-task', 3, 'percentile', null)).toBeNull();
+      expect(resolveScoreFieldName('unknown-task', 3, 'rawScore', null)).toBeNull();
+    });
   });
 });

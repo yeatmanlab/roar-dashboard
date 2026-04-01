@@ -1,0 +1,25 @@
+{
+  "taskSlugs": ["swr-es"],
+  "scoreFields": {
+    "percentile": [
+      { "minVersion": 1, "fieldName": "percentile" },
+      { "minVersion": 0, "fieldName": "wjPercentile" }
+    ],
+    "percentileDisplay": [
+      { "minVersion": 1, "fieldName": "percentile" },
+      { "minVersion": 0, "fieldName": "wjPercentile" }
+    ],
+    "standardScore": [{ "minVersion": 0, "fieldName": "standardScore" }],
+    "standardScoreDisplay": [{ "minVersion": 0, "fieldName": "standardScore" }],
+    "rawScore": [{ "minVersion": 0, "fieldName": "roarScore" }]
+  },
+  "stripAngleBrackets": ["percentile", "standardScore"],
+  "classification": {
+    "type": "percentile-then-rawscore",
+    "percentileCutoffs": [
+      { "minVersion": 1, "cutoffs": { "achieved": 40, "developing": 20 } },
+      { "minVersion": 0, "cutoffs": { "achieved": 50, "developing": 25 } }
+    ],
+    "rawScoreThresholds": [{ "minVersion": 1, "thresholds": { "above": 547, "some": 447 } }]
+  }
+}

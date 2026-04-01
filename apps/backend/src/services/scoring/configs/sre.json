@@ -1,0 +1,70 @@
+{
+  "taskSlugs": ["sre"],
+  "scoreFields": {
+    "percentile": [
+      { "minVersion": 4, "fieldName": "percentile" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecPercentile" },
+            { "default": true, "value": "sprPercentile" }
+          ]
+        }
+      }
+    ],
+    "percentileDisplay": [
+      { "minVersion": 4, "fieldName": "percentile" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecPercentile" },
+            { "default": true, "value": "sprPercentile" }
+          ]
+        }
+      }
+    ],
+    "standardScore": [
+      { "minVersion": 4, "fieldName": "standardScore" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecSS" },
+            { "default": true, "value": "sprStandardScore" }
+          ]
+        }
+      }
+    ],
+    "standardScoreDisplay": [
+      { "minVersion": 4, "fieldName": "standardScore" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecSS" },
+            { "default": true, "value": "sprStandardScore" }
+          ]
+        }
+      }
+    ],
+    "rawScore": [{ "minVersion": 0, "fieldName": "sreScore" }]
+  },
+  "stripAngleBrackets": ["percentile", "standardScore"],
+  "classification": {
+    "type": "percentile-then-rawscore",
+    "percentileCutoffs": [
+      { "minVersion": 4, "cutoffs": { "achieved": 40, "developing": 20 } },
+      { "minVersion": 0, "cutoffs": { "achieved": 50, "developing": 25 } }
+    ],
+    "rawScoreThresholds": [
+      { "minVersion": 4, "thresholds": { "above": 41, "some": 23 } },
+      { "minVersion": 0, "thresholds": { "above": 70, "some": 47 } }
+    ]
+  }
+}

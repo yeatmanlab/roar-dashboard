@@ -1,0 +1,63 @@
+{
+  "taskSlugs": ["pa"],
+  "scoreFields": {
+    "percentile": [
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "percentile" },
+            { "default": true, "value": "sprPercentile" }
+          ]
+        }
+      }
+    ],
+    "percentileDisplay": [
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "percentile" },
+            { "default": true, "value": "sprPercentileString" }
+          ]
+        }
+      }
+    ],
+    "standardScore": [
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "standardScore" },
+            { "default": true, "value": "sprStandardScore" }
+          ]
+        }
+      }
+    ],
+    "standardScoreDisplay": [
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "standardScore" },
+            { "default": true, "value": "sprStandardScoreString" }
+          ]
+        }
+      }
+    ],
+    "rawScore": [{ "minVersion": 0, "fieldName": "roarScore" }]
+  },
+  "stripAngleBrackets": ["percentile", "standardScore"],
+  "classification": {
+    "type": "percentile-then-rawscore",
+    "percentileCutoffs": [
+      { "minVersion": 4, "cutoffs": { "achieved": 40, "developing": 20 } },
+      { "minVersion": 0, "cutoffs": { "achieved": 50, "developing": 25 } }
+    ],
+    "rawScoreThresholds": [{ "minVersion": 0, "thresholds": { "above": 55, "some": 45 } }]
+  }
+}
