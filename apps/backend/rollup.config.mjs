@@ -46,7 +46,17 @@ export default defineConfig({
     // In dev, externalize node_modules (except our workspace package) to keep rebuilds fast.
     // In production, skip externals entirely so rollup bundles everything into a single server.js — no node_modules
     // needed at runtime.
-    isDev && externals({ exclude: ['@roar-dashboard/api-contract'] }),
+    isDev &&
+      externals({
+        exclude: [
+          // Workspace package — must be compiled from TS source via the alias below
+          '@roar-dashboard/api-contract',
+          // CJS package without an `exports` field — Node's ESM resolver can't
+          // resolve the bare specifier at runtime, so we bundle it through the
+          // commonjs() plugin instead
+          '@openfga/sdk',
+        ],
+      }),
 
     alias({
       entries: [

@@ -47,7 +47,7 @@ export const orgs = db.table(
     locationLatLong: p.point(),
 
     mdrNumber: p.text(),
-    ncesId: p.text().unique(),
+    ncesId: p.text(),
     stateId: p.text(),
     schoolNumber: p.text(),
 

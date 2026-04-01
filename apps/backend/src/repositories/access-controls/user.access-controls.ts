@@ -30,10 +30,10 @@ import {
  * ```
  * Requesting user belongs to:    Can see users in:
  * ───────────────────────────    ─────────────────────────────────────────
- * District (admin role)          → That district and descendant orgs
- * School (admin role)            → That school and descendant orgs
- * Class (any supervisory role)   → That class
- * Group (any supervisory role)   → That group
+ * District (supervisory role)    → That district and descendant orgs
+ * School (supervisory role)      → That school and descendant orgs
+ * Class (supervisory role)       → That class
+ * Group (supervisory role)       → That group
  * Family (any role)              → That family
  * ```
  *
@@ -47,9 +47,9 @@ import {
  * - Students with no supervisory roles rely on service-layer self-access check
  *
  * **Supervisory users** — Access users through multiple paths:
- * - **PATH 1 - Via org hierarchy**: Admins see users in descendant orgs (teachers excluded)
- * - **PATH 2 - Via org→class**: Admins see users in classes under their orgs (teachers excluded)
- * - **PATH 3 - Via direct class**: Teachers/admins see users in their directly assigned classes
+ * - **PATH 1 - Via org hierarchy**: District/school admins see users in descendant orgs
+ * - **PATH 2 - Via org→class**: District/school admins see users in classes under their orgs
+ * - **PATH 3 - Via direct class**: Teachers see users in their directly assigned classes
  * - **PATH 4 - Via direct group**: Group leaders see users in their groups
  * - **PATH 5 - Via family**: Family members see each other (no supervisory role required)
  *
@@ -104,10 +104,10 @@ export class UserAccessControls {
     const caretakerAllowedRoles = filterCaretakerRoles(allowedRoles);
     const hierarchicalUserAccessRoles = filterHierarchicalUserAccessRoles(allowedRoles);
 
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
     // NON-SUPERVISORY, NON-CARETAKER ACCESS: Return empty result set
     // Self-access is handled at the service layer
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
     if (supervisoryAllowedRoles.length === 0 && caretakerAllowedRoles.length === 0) {
       // Return a query that matches no users (service layer handles self-access)
       return this.db
@@ -116,10 +116,10 @@ export class UserAccessControls {
         .where(sql`false`);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
     // SUPERVISORY/CARETAKER ACCESS: Multiple paths through memberships
     // Note: Self-access is handled at service layer, not in these queries
-    // ─────────────────────────────────────────────────────────────────────────–––────
+    // ─────────────────────────────────────────────────────────────────────────–––––
 
     let query;
 

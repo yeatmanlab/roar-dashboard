@@ -7,6 +7,7 @@ import type {
   Task as ContractTask,
   TaskVariant as ContractTaskVariant,
   Json,
+  CreateTaskRequestBody,
 } from '@roar-dashboard/api-contract';
 import type { Task, TaskVariant } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
@@ -139,6 +140,38 @@ export const TasksController = {
   },
 
   /**
+   * Create a new task.
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Requires super admin privileges.
+   *
+   * @param authContext - User's authentication context (requires super admin)
+   * @param body - Request body with task details (slug, name, nameSimple, nameTechnical, taskConfig, etc.)
+   * @returns Response with status 201 and the newly created task's UUID
+   */
+  create: async (authContext: AuthContext, body: CreateTaskRequestBody) => {
+    try {
+      const result = await taskService.create(authContext, body);
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
    * List variants for a given task.
    *
    * Delegates to TaskService for authorization and business logic.
@@ -189,6 +222,40 @@ export const TasksController = {
           StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a task variant by ID
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Super admins see all variants; regular users see only published variants.
+   *
+   * @param authContext - The user's authentication context
+   * @param taskId  - The ID of the task; can be a task ID or a task slug
+   * @param variantId - The ID of the task variant
+   * @returns The requested task variant, if it exists
+   */
+  getTaskVariant: async (authContext: AuthContext, taskId: string, variantId: string) => {
+    try {
+      const result = await taskService.getTaskVariant(authContext, taskId, variantId);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            ...transformTaskVariant(result),
+            taskName: result.task.name,
+            taskSlug: result.task.slug,
+            taskImage: result.task.image,
+            parameters: result.parameters,
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }

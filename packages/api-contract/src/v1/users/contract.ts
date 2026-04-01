@@ -1,13 +1,14 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
-import { UserResponseSchema } from './schema';
+import { UserResponseSchema, UpdateUserRequestBodySchema } from './schema';
 
 const c = initContract();
 
 /**
  * Contract for the /users endpoints.
  * Provides access to user related data that an authenticated user can view.
+ * Provides the ability to update user profile data for authorized users.
  */
 export const UsersContract = c.router(
   {
@@ -30,6 +31,35 @@ export const UsersContract = c.router(
         ' Returns a 403 if the requesting user is not authorized to view the requested user. ' +
         ' Returns a 404 if the requested user is not found. ' +
         ' Returns a 500 if an internal server error occurs.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:id',
+      pathParams: z.object({ id: z.string().uuid() }),
+      contentType: 'application/json',
+      body: UpdateUserRequestBodySchema,
+      responses: {
+        204: z.undefined(),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update a user by ID',
+      description:
+        'Partially updates a user by their ID. ' +
+        'Only the fields present in the request body are updated — omitted fields are left unchanged. ' +
+        'Nullable fields may be explicitly set to null to clear their value. ' +
+        'Returns a 204 No Content on success. ' +
+        'Returns a 400 if the request body is missing or contains invalid field values. ' +
+        'Returns a 401 if the requesting user is not authenticated. ' +
+        'Returns a 403 if the requesting user is not authorized to update the requested user. ' +
+        'Returns a 404 if the requested user is not found. ' +
+        'Returns a 409 if a unique field (email or username) conflicts with an existing user. ' +
+        'Returns a 500 if an internal server error occurs.',
     },
   },
   { pathPrefix: '/users' },

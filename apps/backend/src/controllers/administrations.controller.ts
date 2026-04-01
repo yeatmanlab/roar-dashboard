@@ -3,6 +3,7 @@ import {
   AdministrationService,
   type AdministrationWithEmbeds,
 } from '../services/administration/administration.service';
+import { ReportService } from '../services/report/report.service';
 import type {
   AdministrationsListQuery,
   AdministrationDistrictsListQuery,
@@ -20,6 +21,9 @@ import type {
   AdministrationTaskVariantItem,
   Condition,
   AdministrationAgreement,
+  ProgressStudentsQuery,
+  ReportTaskMetadata,
+  ProgressStudent,
 } from '@roar-dashboard/api-contract';
 import type { Administration, Org, Class, Group } from '../db/schema';
 import type {
@@ -32,6 +36,7 @@ import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
 
 const administrationService = AdministrationService();
+const reportService = ReportService();
 
 /**
  * Type guard to check if an assignment has the pre-evaluated optional flag.
@@ -468,6 +473,52 @@ export const AdministrationsController = {
       };
     } catch (error) {
       return handleSubResourceError(error);
+    }
+  },
+
+  /**
+   * List paginated student progress for an administration.
+   *
+   * Delegates to ReportService for authorization and data assembly.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scope, filters, pagination, sort)
+   */
+  listProgressStudents: async (authContext: AuthContext, administrationId: string, query: ProgressStudentsQuery) => {
+    try {
+      const result = await reportService.listProgressStudents(authContext, administrationId, query);
+
+      // Map service types to contract types for the response.
+      // Shapes are structurally identical — this is a type boundary, not a data transformation.
+      const tasks: ReportTaskMetadata[] = result.tasks;
+      const items: ProgressStudent[] = result.items;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            tasks,
+            items,
+            pagination: {
+              page: query.page,
+              perPage: query.perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / query.perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
     }
   },
 
