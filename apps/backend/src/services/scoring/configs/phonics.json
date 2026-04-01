@@ -1,0 +1,13 @@
+{
+  "taskSlugs": ["phonics"],
+  "scoreFields": {
+    "percentile": [{ "minVersion": 0, "fieldName": "totalPercentCorrect" }],
+    "percentileDisplay": [{ "minVersion": 0, "fieldName": "totalPercentCorrect" }],
+    "standardScore": [{ "minVersion": 0, "fieldName": "totalPercentCorrect" }],
+    "standardScoreDisplay": [{ "minVersion": 0, "fieldName": "totalPercentCorrect" }],
+    "rawScore": [{ "minVersion": 0, "fieldName": "totalCorrect" }]
+  },
+  "classification": {
+    "type": "rawscore-only"
+  }
+}
