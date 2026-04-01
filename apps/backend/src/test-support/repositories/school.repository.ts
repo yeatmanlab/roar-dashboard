@@ -13,6 +13,8 @@ export function createMockSchoolRepository(): MockedObject<SchoolRepository> {
     ...createMockBaseRepositoryMethods(),
     listAll: vi.fn(),
     listAuthorized: vi.fn(),
+    getUnrestrictedById: vi.fn(),
+    getAuthorizedById: vi.fn(),
     fetchSchoolCounts: vi.fn(),
   } as unknown as MockedObject<SchoolRepository>;
 }

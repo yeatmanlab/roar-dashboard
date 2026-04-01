@@ -1,5 +1,6 @@
 import { initContract } from '@ts-rest/core';
-import { SchoolsListQuerySchema, SchoolsListResponseSchema } from './schema';
+import { z } from 'zod';
+import { SchoolsListQuerySchema, SchoolsListResponseSchema, SchoolDetailSchema } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -27,6 +28,27 @@ export const SchoolsContract = c.router(
         'Unauthorized users receive an empty result set (not a 403 error). ' +
         'Use ?includeEnded=true to include organizations with rosteringEnded timestamp. ' +
         'Use ?embed=counts to include aggregated statistics (users, classes).',
+    },
+    get: {
+      method: 'GET',
+      path: '/:schoolId',
+      pathParams: z.object({
+        schoolId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(SchoolDetailSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get school by ID',
+      description:
+        'Returns a single school by ID. ' +
+        'Returns 401 if the requesting user is not authenticated. ' +
+        'Returns 403 if the requesting user lacks permission to access the school. ' +
+        'Returns 404 if the requested school does not exist.',
     },
   },
   { pathPrefix: '/schools' },

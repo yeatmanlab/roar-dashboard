@@ -376,4 +376,168 @@ describe('SchoolRepository', () => {
       });
     });
   });
+
+  describe('getUnrestrictedById', () => {
+    it('returns school by ID without authorization checks', async () => {
+      const result = await repository.getUnrestrictedById(baseFixture.schoolA.id);
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(baseFixture.schoolA.id);
+      expect(result?.orgType).toBe(OrgType.SCHOOL);
+      expect(result?.name).toBe(baseFixture.schoolA.name);
+    });
+
+    it('returns null for non-existent ID', async () => {
+      const result = await repository.getUnrestrictedById('00000000-0000-0000-0000-000000000000');
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for district ID (wrong orgType)', async () => {
+      const result = await repository.getUnrestrictedById(baseFixture.district.id);
+
+      // Should return null because district is not a school
+      expect(result).toBeNull();
+    });
+
+    it('returns school even if it has rosteringEnded', async () => {
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Ended School for Unrestricted Test',
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const result = await repository.getUnrestrictedById(endedSchool.id);
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(endedSchool.id);
+      expect(result?.rosteringEnded).not.toBeNull();
+    });
+
+    it('returns school with all expected fields', async () => {
+      const result = await repository.getUnrestrictedById(baseFixture.schoolA.id);
+
+      expect(result).toBeDefined();
+      expect(result).toHaveProperty('id');
+      expect(result).toHaveProperty('name');
+      expect(result).toHaveProperty('abbreviation');
+      expect(result).toHaveProperty('orgType');
+      expect(result).toHaveProperty('parentOrgId');
+      expect(result).toHaveProperty('isRosteringRootOrg');
+      expect(result).toHaveProperty('createdAt');
+      expect(result).toHaveProperty('updatedAt');
+    });
+  });
+
+  describe('getAuthorizedById', () => {
+    it('returns school when user has direct org-level access', async () => {
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.schoolAStudent.id, allowedRoles: [UserRole.STUDENT] },
+        baseFixture.schoolA.id,
+      );
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(baseFixture.schoolA.id);
+      expect(result?.orgType).toBe(OrgType.SCHOOL);
+    });
+
+    it('returns school when user has class-level access (via org hierarchy)', async () => {
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.classAStudent.id, allowedRoles: [UserRole.STUDENT] },
+        baseFixture.schoolA.id,
+      );
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(baseFixture.schoolA.id);
+    });
+
+    it('returns school when district admin accesses child school (descendant access)', async () => {
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.schoolA.id,
+      );
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(baseFixture.schoolA.id);
+    });
+
+    it('returns null when user has no access to the school', async () => {
+      const isolatedUser = await UserFactory.create({
+        nameFirst: 'No',
+        nameLast: 'Access',
+      });
+
+      const result = await repository.getAuthorizedById(
+        { userId: isolatedUser.id, allowedRoles: [UserRole.STUDENT] },
+        baseFixture.schoolA.id,
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when user tries to access different school', async () => {
+      // School A student should not see School B
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.schoolAStudent.id, allowedRoles: [UserRole.STUDENT] },
+        baseFixture.schoolB.id,
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for non-existent school ID', async () => {
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        '00000000-0000-0000-0000-000000000000',
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null for district ID (wrong orgType)', async () => {
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.district.id,
+      );
+
+      // Should return null because district is not a school
+      expect(result).toBeNull();
+    });
+
+    it('filters by orgType=school correctly', async () => {
+      // Create a class with same ID pattern to ensure orgType filtering works
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.classAStudent.id, allowedRoles: [UserRole.STUDENT] },
+        baseFixture.schoolA.id,
+      );
+
+      expect(result).toBeDefined();
+      expect(result?.orgType).toBe(OrgType.SCHOOL);
+    });
+
+    it('respects role filtering', async () => {
+      // User has STUDENT role but we only allow ADMINISTRATOR
+      const result = await repository.getAuthorizedById(
+        { userId: baseFixture.schoolAStudent.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.schoolA.id,
+      );
+
+      // Should return null because user doesn't have the required role
+      expect(result).toBeNull();
+    });
+
+    it('returns school when user has one of multiple allowed roles', async () => {
+      const result = await repository.getAuthorizedById(
+        {
+          userId: baseFixture.schoolAStudent.id,
+          allowedRoles: [UserRole.ADMINISTRATOR, UserRole.TEACHER, UserRole.STUDENT],
+        },
+        baseFixture.schoolA.id,
+      );
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(baseFixture.schoolA.id);
+    });
+  });
 });
