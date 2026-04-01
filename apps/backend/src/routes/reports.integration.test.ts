@@ -2,12 +2,16 @@
  * Route integration tests for /v1/administrations/:id/reports endpoints.
  *
  * Tests the full HTTP lifecycle: middleware -> controller -> service -> repository -> DB.
- * Only Firebase token verification is mocked — everything else runs for real.
+ * Firebase token verification and FGA authorization are mocked — everything else runs for real.
+ *
+ * FGA mock: `FgaClient.getClient()` returns a mock whose `check` method resolves
+ * based on `allowedFgaUsers` — a set of user IDs that should pass FGA checks.
+ * Tests configure this set to match their authorization expectations.
  *
  * FDW tests seed run data via RunFactory into the assessment DB and verify that the
  * progress status is correctly derived through the full HTTP stack.
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import type express from 'express';
 import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
@@ -16,6 +20,25 @@ import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { RunFactory } from '../test-support/factories/run.factory';
+import { FgaClient } from '../clients/fga.client';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FGA mock
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Set of user IDs that FGA should allow for any relation/object.
+ * Configure per-test or per-describe block via `allowedFgaUsers.add(userId)`.
+ */
+const allowedFgaUsers = new Set<string>();
+
+const mockFgaCheck = vi.fn().mockImplementation(async (req: { user: string }) => {
+  // req.user is formatted as "user:<userId>"
+  const userId = req.user.replace('user:', '');
+  return { allowed: allowedFgaUsers.has(userId) };
+});
+
+vi.spyOn(FgaClient, 'getClient').mockReturnValue({ check: mockFgaCheck } as never);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -51,6 +74,12 @@ beforeAll(async () => {
   tiers = await createTierUsers(baseFixture.district.id);
 });
 
+beforeEach(() => {
+  // Reset FGA mock state — each test configures its own allowed users
+  allowedFgaUsers.clear();
+  mockFgaCheck.mockClear();
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/administrations/:id/reports/progress/students
 // ═══════════════════════════════════════════════════════════════════════════
@@ -77,6 +106,7 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
     });
 
     it('admin (administrator role) at district can access', async () => {
+      allowedFgaUsers.add(tiers.admin.id);
       authenticateAs(tiers.admin);
       const res = await request(app)
         .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
@@ -88,6 +118,7 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
     });
 
     it('site admin (site_administrator role) at district can access', async () => {
+      allowedFgaUsers.add(tiers.siteAdmin.id);
       authenticateAs(tiers.siteAdmin);
       const res = await request(app)
         .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
@@ -99,6 +130,7 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
     });
 
     it('educator (teacher role) at district can access', async () => {
+      allowedFgaUsers.add(tiers.educator.id);
       authenticateAs(tiers.educator);
       const res = await request(app)
         .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
@@ -132,8 +164,7 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
 
     it('returns 403 when class teacher requests school scope', async () => {
       // classATeacher has a teacher role on classInSchoolA but not on schoolA itself.
-      // Requesting school scope should fail because the ltree ancestor query finds
-      // no role at or above the school level.
+      // FGA denies can_read_progress at the school scope level.
       authenticateAs(baseFixture.classATeacher);
       const res = await request(app)
         .get(progressStudentsPath(baseFixture.administrationAssignedToSchoolA.id))
