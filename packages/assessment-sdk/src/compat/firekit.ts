@@ -488,7 +488,6 @@ export async function updateEngagementFlags(flagNames: string[], markAsReliable?
     engagementFlags,
     reliableRun: markAsReliable ?? false,
   });
-  facade._setRunId(undefined);
 }
 
 /**
