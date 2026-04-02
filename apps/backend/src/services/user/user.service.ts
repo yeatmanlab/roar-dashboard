@@ -394,19 +394,50 @@ export function UserService({
         });
       }
 
-      const isOfMajorityAge = isMajorityAge({ dob: requestingUser.dob, grade: requestingUser.grade });
-      const isAdult = isOfMajorityAge === true;
-      const majorityAgeAgreementTypes = [AgreementType.CONSENT, AgreementType.TOS];
-      const minorityAgeAgreementTypes = [AgreementType.ASSENT];
-      const allowedAgreementTypes: AgreementType[] = isAdult ? majorityAgeAgreementTypes : minorityAgeAgreementTypes;
+      // Age category enum for type-safe age classification
+      enum AgeCategory {
+        ADULT = 'ADULT',
+        MINOR = 'MINOR',
+        UNKNOWN = 'UNKNOWN',
+      }
+
+      // Determine user's age category
+      // TODO: This is necessary because we do not enforce non-null DoB in the database schema; this is a temporary measure until the issue below is resolved:
+      // TODO: https://github.com/yeatmanlab/roar-project-management/issues/1732
+      const ageStatus = isMajorityAge({ dob: requestingUser.dob, grade: requestingUser.grade });
+      const ageCategory =
+        ageStatus === true ? AgeCategory.ADULT : ageStatus === null ? AgeCategory.UNKNOWN : AgeCategory.MINOR;
+
+      // Determine allowed agreement types based on age category
+      const getAllowedAgreementTypes = (category: AgeCategory): AgreementType[] => {
+        switch (category) {
+          case AgeCategory.ADULT:
+            return [AgreementType.CONSENT, AgreementType.TOS];
+          case AgeCategory.UNKNOWN:
+            // Allow all types for unknown age (with warning) to handle adults with null DOB
+            return Object.values(AgreementType);
+          case AgeCategory.MINOR:
+            return [AgreementType.ASSENT];
+        }
+      };
+
+      const allowedAgreementTypes = getAllowedAgreementTypes(ageCategory);
 
       // Self-consent: user is consenting for themselves
       if (requestingUserId === userId) {
-        // Validate agreement type is appropriate for user's age
+        // Log warning for unknown age users
+        if (ageCategory === AgeCategory.UNKNOWN) {
+          logger.warn(
+            { requestingUserId, agreementId: agreement.id },
+            'User with unknown age (null DOB and no grade) is consenting - allowing all agreement types',
+          );
+        }
+
+        // Validate agreement type is appropriate for user's age category
         if (!allowedAgreementTypes.includes(agreement.agreementType)) {
           logger.warn(
-            { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType, isAdult },
-            'User attempted to consent to an agreement type not allowed for their age',
+            { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType, ageCategory },
+            'User attempted to consent to an agreement type not allowed for their age category',
           );
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
