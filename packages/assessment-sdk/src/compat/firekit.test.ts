@@ -435,6 +435,58 @@ describe('firekit compat', () => {
       expect(body.reliableRun).toBe(true);
     });
 
+    it('preserves run ID after updating engagement flags', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-preserve-id' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+      await updateEngagementFlags(['incomplete']);
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      const calls = fetchMock.mock.calls;
+      const eventCalls = calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls.length).toBeGreaterThanOrEqual(2);
+    });
+
     it('matches Firekit signature', () => {
       expect(typeof updateEngagementFlags).toBe('function');
       expectTypeOf(updateEngagementFlags).toEqualTypeOf<
