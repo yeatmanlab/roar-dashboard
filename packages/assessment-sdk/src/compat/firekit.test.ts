@@ -516,15 +516,16 @@ describe('firekit compat', () => {
       vi.clearAllMocks();
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockImplementation((url: string) => {
-          if (url.includes('/runs') && !url.includes('/event')) {
+        vi.fn().mockImplementation((url: string | Request) => {
+          const urlString = typeof url === 'string' ? url : url.url;
+          if (urlString.includes('/runs') && !urlString.includes('/event')) {
             return Promise.resolve({
               status: StatusCodes.CREATED,
               json: async () => ({ data: { id: 'run-interaction-test' } }),
               headers: new Headers([['content-type', 'application/json']]),
             });
           }
-          if (url.includes('/event')) {
+          if (urlString.includes('/event')) {
             return Promise.resolve({
               status: StatusCodes.OK,
               json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
@@ -562,15 +563,16 @@ describe('firekit compat', () => {
     });
 
     it('accumulates multiple interactions in buffer', async () => {
-      const fetchMock = vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/runs') && !url.includes('/event')) {
+      const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-accumulate' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
-        if (url.includes('/event')) {
+        if (urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.OK,
             json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
@@ -609,15 +611,16 @@ describe('firekit compat', () => {
     });
 
     it('clears buffer after writeTrial', async () => {
-      const fetchMock = vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/runs') && !url.includes('/event')) {
+      const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-buffer-clear' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
-        if (url.includes('/event')) {
+        if (urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.OK,
             json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
@@ -655,15 +658,16 @@ describe('firekit compat', () => {
 
     it('restores interactions to buffer if writeTrial fails', async () => {
       let callCount = 0;
-      const fetchMock = vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/runs') && !url.includes('/event')) {
+      const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
             json: async () => ({ data: { id: 'run-buffer-restore' } }),
             headers: new Headers([['content-type', 'application/json']]),
           });
         }
-        if (url.includes('/event')) {
+        if (urlString.includes('/event')) {
           callCount++;
           // First call fails, second call succeeds
           if (callCount === 1) {
