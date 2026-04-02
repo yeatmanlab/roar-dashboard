@@ -719,6 +719,7 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
     });
 
     it('admin (administrator role) at district can access', async () => {
+      allowedFgaUsers.add(tiers.admin.id);
       authenticateAs(tiers.admin);
       const res = await request(app)
         .get(scoreOverviewPath(baseFixture.administrationAssignedToDistrict.id))
@@ -730,6 +731,7 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
     });
 
     it('educator (teacher role) at district can access', async () => {
+      allowedFgaUsers.add(tiers.educator.id);
       authenticateAs(tiers.educator);
       const res = await request(app)
         .get(scoreOverviewPath(baseFixture.administrationAssignedToDistrict.id))
