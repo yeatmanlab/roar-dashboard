@@ -24,6 +24,8 @@ import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { ReportRepository, type ReportTaskMeta, type StudentProgressRow } from '../../repositories/report.repository';
+import { TaskService } from '../task/task.service';
+import type { Condition, ConditionEvaluationUser } from '../task/task.types';
 import type { AuthContext } from '../../types/auth-context';
 
 /** Map sortBy field strings to Drizzle column references for progress students. */
@@ -58,9 +60,11 @@ const GRADE_AWARE_FIELDS: ReadonlySet<string> = new Set(['user.grade']);
 export function ReportService({
   administrationRepository = new AdministrationRepository(),
   reportRepository = new ReportRepository(),
+  taskService = TaskService(),
 }: {
   administrationRepository?: AdministrationRepository;
   reportRepository?: ReportRepository;
+  taskService?: ReturnType<typeof TaskService>;
 } = {}) {
   /**
    * Verify that an administration exists and the user has access to it.
@@ -255,21 +259,10 @@ export function ReportService({
 
       // Separate user-level filters from progress.<taskId>.status filters.
       // User-level filters become SQL WHERE conditions.
-      // Progress status filters are validated but not yet applied at the SQL level
-      // (wired in the progress-task-status-sort-filter branch).
-      // Only one progress status filter is supported per request.
+      // Progress status filters are validated but not yet applied at the SQL level.
       const userFilters: ParsedFilter[] = [];
-      let progressFilterCount = 0;
       for (const f of filter) {
         if (PROGRESS_TASK_STATUS_PATTERN.test(f.field)) {
-          progressFilterCount++;
-          if (progressFilterCount > 1) {
-            throw new ApiError('Only one progress status filter is supported per request', {
-              statusCode: StatusCodes.BAD_REQUEST,
-              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-              context: { field: f.field },
-            });
-          }
           const taskId = f.field.split('.')[1]!;
           const validTaskIds = new Set(taskMetas.map((t) => t.taskId));
           if (!validTaskIds.has(taskId)) {
@@ -318,9 +311,13 @@ export function ReportService({
           grade: student.grade,
           schoolName: scopeType === 'district' ? (student.schoolName ?? null) : null,
         },
-        progress: buildProgressMap(student, taskMetas),
+        progress: buildProgressMap(student, taskMetas, taskService.evaluateTaskVariantEligibility),
       }));
 
+      // totalItems reflects the DB student count, not post-condition-evaluation count.
+      // Students with an empty progress map (all tasks excluded by conditionsAssignment)
+      // are intentionally included — they are enrolled in the scope and the empty row is
+      // meaningful to teachers. Excluding them would cause pagination instability.
       return { tasks, items, totalItems: result.totalItems };
     } catch (error) {
       if (error instanceof ApiError) throw error;
@@ -344,15 +341,33 @@ export function ReportService({
 
 /** Status priority for progress entries. Higher value = higher priority. */
 const STATUS_PRIORITY: Record<string, number> = {
-  assigned: 0,
-  started: 1,
-  completed: 2,
+  optional: 0,
+  assigned: 1,
+  started: 2,
+  completed: 3,
 };
 
 /**
+ * Type for the evaluateTaskVariantEligibility function from TaskService.
+ * Uses ConditionEvaluationUser (the narrow interface) so callers can pass
+ * either a full User entity or a StudentProgressRow without casting.
+ */
+type EligibilityEvaluator = (
+  user: ConditionEvaluationUser,
+  conditionsAssignment: Condition | null,
+  conditionsRequirements: Condition | null,
+) => { isAssigned: boolean; isOptional: boolean };
+
+/**
  * Build a progress map for a student keyed by taskId.
- * Determines status from run data: completed > started > assigned.
- * Optional status requires condition evaluation (deferred — defaults to assigned).
+ * Determines status from run data and condition evaluation:
+ * - completed: run exists with completedAt
+ * - started: run exists without completedAt
+ * - optional: no run, but task variant conditions mark it optional for this student
+ * - assigned: no run, task variant is assigned (not optional) for this student
+ *
+ * Tasks where conditionsAssignment evaluates to false for the student are excluded
+ * from the progress map entirely — the task is not visible to that student.
  *
  * When an administration has multiple variants for the same task (e.g., grade-specific
  * variants), each variant is checked independently but they share the same taskId key.
@@ -360,10 +375,15 @@ const STATUS_PRIORITY: Record<string, number> = {
  * variant without a run from overwriting a completed/started entry from another variant.
  *
  * Exported for independent testing.
+ *
+ * @param student - Student data with demographic fields for condition evaluation
+ * @param taskMetas - Task metadata including condition JSONB
+ * @param evaluateEligibility - Function to evaluate task variant conditions against user data
  */
 export function buildProgressMap(
   student: StudentProgressRow,
   taskMetas: ReportTaskMeta[],
+  evaluateEligibility: EligibilityEvaluator,
 ): Record<string, ServiceProgressEntry> {
   const progress: Record<string, ServiceProgressEntry> = {};
 
@@ -386,10 +406,22 @@ export function buildProgressMap(
         completedAt: null,
       };
     } else {
-      // No run — default to assigned. Optional status requires condition evaluation
-      // which is deferred for now (see plan: condition evaluation optimization).
+      // No run — evaluate conditions to determine assigned vs optional.
+      // StudentProgressRow satisfies ConditionEvaluationUser (the narrow interface),
+      // so no cast is needed.
+      const { isAssigned, isOptional } = evaluateEligibility(
+        student,
+        task.conditionsAssignment,
+        task.conditionsRequirements,
+      );
+
+      if (!isAssigned) {
+        // Task is not assigned to this student — skip it entirely
+        continue;
+      }
+
       entry = {
-        status: 'assigned',
+        status: isOptional ? 'optional' : 'assigned',
         startedAt: null,
         completedAt: null,
       };

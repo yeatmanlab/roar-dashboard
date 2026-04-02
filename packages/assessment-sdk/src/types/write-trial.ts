@@ -77,8 +77,8 @@ export type WriteTrialInteractionEvent = 'blur' | 'focus' | 'fullscreenenter' | 
 export interface WriteTrialInteractionCommandInput {
   /** The type of interaction event */
   event: WriteTrialInteractionEvent;
-  /** Trial number this interaction occurred in (optional, used only by compat layer) */
-  trial?: number;
+  /** Trial number this interaction occurred in */
+  trial: number;
   /** Timestamp in milliseconds when the interaction occurred */
   time: number;
 }

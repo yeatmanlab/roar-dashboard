@@ -73,9 +73,23 @@ export class FirekitFacade {
   #invoker: Invoker | undefined;
   #runId: string | undefined;
   #taskInfo: CompatTaskInfo | undefined;
-  interactionBuffer: AddInteractionInput[] = [];
+  #interactionBuffer: AddInteractionInput[] = [];
 
   private constructor() {}
+
+  /**
+   * Resets all state to initial values.
+   * Called during initialization to prevent state leakage between sessions.
+   * @internal
+   */
+  private _reset(): void {
+    this.#ctx = undefined;
+    this.#api = undefined;
+    this.#invoker = undefined;
+    this.#runId = undefined;
+    this.#taskInfo = undefined;
+    this.#interactionBuffer = [];
+  }
 
   /**
    * Returns the singleton instance of FirekitFacade.
@@ -99,12 +113,10 @@ export class FirekitFacade {
    * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous flag
    */
   initialize(ctx: CommandContext, taskInfo: CompatTaskInfo): void {
+    this._reset();
     this.#ctx = ctx;
     this.#api = new RoarApi(ctx);
     this.#invoker = new Invoker(ctx);
-
-    // Reset compat state on re-init to avoid leaking state across tests / consumers
-    this.#runId = undefined;
     this.#taskInfo = taskInfo;
   }
 
@@ -190,8 +202,8 @@ export class FirekitFacade {
    * @returns Array of buffered interaction events
    */
   _drainInteractionBuffer(): AddInteractionInput[] {
-    const buffer = this.interactionBuffer;
-    this.interactionBuffer = [];
+    const buffer = this.#interactionBuffer;
+    this.#interactionBuffer = [];
     return buffer;
   }
 
@@ -202,7 +214,7 @@ export class FirekitFacade {
    * @param interaction - The interaction event to buffer
    */
   _pushInteraction(interaction: AddInteractionInput): void {
-    this.interactionBuffer.push(interaction);
+    this.#interactionBuffer.push(interaction);
   }
 }
 
@@ -646,16 +658,25 @@ export async function writeTrial(
   const correct =
     typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
+  // Drain buffered interactions from addInteraction() calls
+  const bufferedInteractions = facade._drainInteractionBuffer();
+
   const cmd = new WriteTrialCommand(api);
 
-  await invoker.run(cmd, {
-    runId,
-    type: RUN_EVENT_TRIAL,
-    interactions: trialData.interactions,
-    trial: {
-      assessmentStage,
-      ...trialData,
-      correct,
-    },
-  } as WriteTrialCommandInput);
+  try {
+    await invoker.run(cmd, {
+      runId,
+      type: RUN_EVENT_TRIAL,
+      interactions: bufferedInteractions.length > 0 ? bufferedInteractions : undefined,
+      trial: {
+        assessmentStage,
+        ...trialData,
+        correct,
+      },
+    } as WriteTrialCommandInput);
+  } catch (error) {
+    // Restore interactions to buffer if writeTrial fails
+    bufferedInteractions.forEach((interaction) => facade._pushInteraction(interaction));
+    throw error;
+  }
 }
