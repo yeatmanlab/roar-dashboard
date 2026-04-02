@@ -41,15 +41,13 @@ export class GetTaskVariantCommand implements Command<GetTaskVariantInput, GetTa
       return {
         variantId: variant.id,
         taskId: variant.taskId,
-        variantParams: Object.fromEntries(
-          variant.parameters.map((param: { name: string; value: unknown }) => [param.name, param.value]),
-        ),
+        variantParams: Object.fromEntries(variant.parameters.map(({ name, value }) => [name, value])),
       };
     }
 
-    // Handle error responses (404, 500)
-    const errorBody = result.body as { error?: { message?: string } };
-    throw new SDKError(errorBody?.error?.message ?? `Failed to get variant with status ${result.status}`, {
+    // Handle error responses (404, 500) - body is narrowed by strictStatusCodes
+    const errorMessage = (result.body as { error?: { message?: string } }).error?.message;
+    throw new SDKError(errorMessage ?? `Failed to get variant with status ${result.status}`, {
       code: SdkErrorCode.GET_VARIANT_ID_FAILED,
     });
   }
