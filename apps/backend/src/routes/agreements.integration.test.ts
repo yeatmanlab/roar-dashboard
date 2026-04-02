@@ -6,6 +6,11 @@
  *
  * Because agreements are system-wide resources required for consent/onboarding flows,
  * all authenticated users see the same list regardless of role or org membership.
+ *
+ * Note: 500/DATABASE_QUERY_FAILED is not covered here because there is no established
+ * pattern in this test suite for forcing a real DB failure without affecting other tests.
+ * The 500 error path is covered at the controller unit test layer
+ * (agreements.controller.test.ts: 'returns 500 when service throws an ApiError').
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';

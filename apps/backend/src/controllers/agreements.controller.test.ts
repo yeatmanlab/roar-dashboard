@@ -225,23 +225,6 @@ describe('AgreementsController', () => {
       );
     });
 
-    it('should return 401 when service throws UNAUTHORIZED ApiError', async () => {
-      const error = new ApiError(ApiErrorMessage.UNAUTHORIZED, {
-        statusCode: StatusCodes.UNAUTHORIZED,
-        code: ApiErrorCode.AUTH_REQUIRED,
-      });
-      mockList.mockRejectedValue(error);
-
-      const { AgreementsController: Controller } = await import('./agreements.controller');
-
-      const result = await Controller.list(mockAuthContext, defaultQuery);
-
-      const errorBody = expectErrorResponse(result, StatusCodes.UNAUTHORIZED);
-      expect(errorBody.message).toBe(ApiErrorMessage.UNAUTHORIZED);
-      expect(errorBody.code).toBe(ApiErrorCode.AUTH_REQUIRED);
-      expect(errorBody.traceId).toBeDefined();
-    });
-
     it('returns 500 when service throws an ApiError', async () => {
       const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

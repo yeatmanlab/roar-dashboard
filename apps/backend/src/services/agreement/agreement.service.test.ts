@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import { AgreementService, AgreementsListOptions } from './agreement.service';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
 import { AuthContextFactory } from '../../test-support/factories/user.factory';
@@ -126,11 +127,14 @@ describe('AgreementService', () => {
       await expect(service.list(authContext, defaultOptions)).rejects.toThrow(apiError);
     });
 
-    it('wraps unexpected errors in ApiError', async () => {
+    it('wraps unexpected errors in ApiError with 500/DATABASE_QUERY_FAILED', async () => {
       const authContext = AuthContextFactory.build();
       mockRepository.listAll.mockRejectedValue(new Error('DB connection lost'));
 
-      await expect(service.list(authContext, defaultOptions)).rejects.toBeInstanceOf(ApiError);
+      await expect(service.list(authContext, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
     });
   });
 });
