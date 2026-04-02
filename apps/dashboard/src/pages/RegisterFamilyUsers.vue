@@ -27,7 +27,7 @@
       </header>
       <div>
         <div v-if="spinner === false">
-          <Register :code="code" :consent="consent" @submit="handleSubmit($event)" />
+          <Register :code="code" @submit="handleSubmit($event)" />
           <div
             v-if="isSuperAdmin"
             class="flex flex-row justify-content-center align-content-center z-2 absolute ml-5"
@@ -157,8 +157,6 @@ async function handleSubmit(event) {
 function updateState() {
   isTestData.value = !isTestData.value;
 }
-
-// Removed watcher - parent registration now happens immediately in handleParentSubmit
 
 onMounted(async () => {
   document.body.classList.add('page-register');

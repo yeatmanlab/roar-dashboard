@@ -96,7 +96,10 @@
 
     <!-- No Assignments Message -->
     <div v-else class="flex p-4 border-t border-gray-200">
-      <div class="text-sm text-gray-500 text-center w-full">No assignment score data found.</div>
+      <div class="text-sm text-gray-500 text-center w-full">
+        No assignments available at the moment. If you have just registered, please wait a few minutes and refresh the
+        page.
+      </div>
     </div>
   </article>
 </template>

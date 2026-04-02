@@ -453,6 +453,7 @@ import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
+import { DEFAULT_ACTIVATION_CODE } from '@/constants/activation';
 import PvAutoComplete from 'primevue/autocomplete';
 import { ChallengeV3 } from 'vue-recaptcha';
 
@@ -526,7 +527,7 @@ const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      activationCode: activationCodeRef.value || '626cb856',
+      activationCode: activationCodeRef.value || DEFAULT_ACTIVATION_CODE,
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -582,7 +583,7 @@ const response = ref(null);
 
 function addStudent() {
   state.students.push({
-    activationCode: '626cb856',
+    activationCode: DEFAULT_ACTIVATION_CODE,
     studentUsername: '',
     password: '',
     confirmPassword: '',
@@ -649,13 +650,16 @@ const handleFormSubmit = async (isFormValid) => {
   }
 
   const validationPromises = toRaw(state).students.map(async (student, index) => {
-    const isCodeValid = await validateCode(student.activationCode, index);
-    if (!isCodeValid && isCodeValid) {
+    try {
+      await validateCode(student.activationCode, index);
+      return true; // Code is valid if no error thrown
+    } catch {
+      // Code validation failed
       if (student.noActivationCode) {
         return false;
       }
+      return false;
     }
-    return true;
   });
 
   const validationResults = await Promise.all(validationPromises);
@@ -682,7 +686,9 @@ const handleFormSubmit = async (isFormValid) => {
 
 const validateCode = async (studentCode, outerIndex = 0) => {
   // @TODO: Add proper error handling.
-  if (!studentCode || studentCode === '') return;
+  if (!studentCode || studentCode === '') {
+    throw new Error('Activation code is required');
+  }
 
   try {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
@@ -694,7 +700,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
         dialogMessage.value = 'The code has expired. Please enter a valid code."';
         showErrorDialog();
         submitted.value = false;
-        return;
+        throw new Error('Activation code has expired');
       }
     }
     // if no dateExpired, fallback to dateCreated to check for validity
@@ -706,7 +712,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
         dialogMessage.value = 'The code has expired. Please enter a valid code."';
         showErrorDialog();
         submitted.value = false;
-        return;
+        throw new Error('Activation code has expired');
       }
     }
     if (activationCode.orgId) {

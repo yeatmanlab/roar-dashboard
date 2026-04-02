@@ -97,16 +97,17 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import AppSpinner from '@/components/AppSpinner.vue';
 import StudentCardSimple from '@/components/StudentCardSimple.vue';
 import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import RegisterChildren from '@/components/auth/RegisterChildren.vue';
-import { ref } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
-import { useRouter } from 'vue-router';
+import { useQueryClient } from '@tanstack/vue-query';
+import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 
 defineOptions({
   name: 'HomeParentStudentView',
@@ -144,10 +145,10 @@ defineProps({
   },
 });
 
-const router = useRouter();
 const isEnrollmentModalVisible = ref(false);
 const isSubmitting = ref(false);
 const toast = useToast();
+const queryClient = useQueryClient();
 const consentName = ref('consent-behavioral-eye-tracking');
 const emit = defineEmits(['refresh-registration']);
 
@@ -249,8 +250,8 @@ async function handleStudentEnrollment(studentData) {
       detail: 'Student successfully enrolled',
       life: 3000,
     });
-    // Use Vue Router to refresh the current route
-    router.go(0);
+    // Invalidate queries to refresh data without full page reload
+    queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
   } catch (error) {
     console.error('Error enrolling student:', error);
     toast.add({
@@ -259,9 +260,8 @@ async function handleStudentEnrollment(studentData) {
       detail: 'Failed to enroll student(s). Please try again.',
       life: 3000,
     });
-  } finally {
     isSubmitting.value = false;
-    isEnrollmentModalVisible.value = false;
+    // Don't close modal on error so user can see the error and retry
   }
 }
 </script>

@@ -95,12 +95,17 @@ const MAX_RETRIES = 3;
 const { isActive, pause, resume } = useTimeoutPoll(
   async () => {
     try {
+      console.log('Polling: Checking parent registration status...');
       parentRegistrationComplete.value = await authStore.verifyParentRegistration();
+      console.log('Polling: Registration status result:', parentRegistrationComplete.value);
 
       if (parentRegistrationComplete.value) {
+        console.log('Polling: Registration complete! Setting initialized to true');
         initialized.value = true;
         registrationError.value = null;
         pause();
+      } else {
+        console.log('Polling: Registration not complete yet, will retry...');
       }
     } catch (error) {
       console.error('Registration verification failed:', error);
@@ -113,19 +118,18 @@ const { isActive, pause, resume } = useTimeoutPoll(
       }
     }
   },
-  5000,
+  10000,
   { immediate: false },
 );
 
 const queryClient = useQueryClient();
 // Handler for refreshing registration status after student enrollment
 const handleRefreshRegistration = () => {
-  console.log('handle refresh called');
   registrationRetryCount.value = 0;
   queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
   setTimeout(() => {
     resume();
-  }, 5000);
+  }, 15000);
 };
 
 let unsubscribe;
