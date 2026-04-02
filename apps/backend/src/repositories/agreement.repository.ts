@@ -1,12 +1,14 @@
 import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 import type { Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { AgreementSortFieldType } from '@roar-dashboard/api-contract';
 import type { AgreementType } from '../enums/agreement-type.enum';
 import type * as CoreDbSchema from '../db/schema/core';
-import { SortOrder } from '../constants/sort-order';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { CoreDbClient } from '../db/clients';
 import { agreements, agreementVersions, type Agreement, type AgreementVersion } from '../db/schema';
 import { BaseRepository, type PaginatedResult } from './base.repository';
+import { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 
 /**
  * Agreement with its current version for the requested locale.
@@ -20,13 +22,7 @@ export interface AgreementWithCurrentVersion extends Agreement {
 /**
  * Options for listing agreements.
  */
-export interface ListAgreementsOptions {
-  page: number;
-  perPage: number;
-  orderBy?: {
-    field: string;
-    direction: 'asc' | 'desc';
-  };
+export interface ListAgreementsOptions extends BasePaginatedQueryParams {
   locale: string;
   agreementType?: AgreementType;
 }
@@ -35,14 +31,12 @@ export interface ListAgreementsOptions {
  * Explicit mapping from API sort field names to agreements table columns.
  * Ensures only valid columns are used for sorting, even if API validation is bypassed.
  */
-const AGREEMENT_SORT_COLUMNS = {
+const AGREEMENT_SORT_COLUMNS: Record<AgreementSortFieldType, Column> = {
   name: agreements.name,
   agreementType: agreements.agreementType,
   createdAt: agreements.createdAt,
   updatedAt: agreements.updatedAt,
-} as const satisfies Record<string, Column>;
-
-type AgreementSortField = keyof typeof AGREEMENT_SORT_COLUMNS;
+};
 
 /**
  * Agreement Repository
@@ -99,7 +93,7 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
 
     // Resolve sort column, falling back to createdAt for unknown fields.
     // Cast is safe: the API contract validates sortBy before it reaches the repository.
-    const sortField = orderBy?.field as AgreementSortField | undefined;
+    const sortField = orderBy?.field as AgreementSortFieldType | undefined;
     const sortColumn = (sortField && AGREEMENT_SORT_COLUMNS[sortField]) || agreements.createdAt;
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
