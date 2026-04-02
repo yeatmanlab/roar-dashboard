@@ -3,6 +3,7 @@ import { MeContract } from './me/index';
 import { AdministrationsContract } from './administrations/index';
 import { RunsContract } from './runs/index';
 import { DistrictsContract } from './districts/index';
+import { SchoolsContract } from './schools/index';
 import { GroupsContract } from './groups/index';
 import { TasksContract } from './tasks/index';
 import { ClassesContract } from './classes/index';
@@ -18,6 +19,7 @@ export const ApiContractV1 = c.router({
   administrations: AdministrationsContract,
   runs: RunsContract,
   districts: DistrictsContract,
+  schools: SchoolsContract,
   groups: GroupsContract,
   tasks: TasksContract,
   classes: ClassesContract,
@@ -29,6 +31,7 @@ export * from './me/index';
 export * from './administrations/index';
 export * from './runs/index';
 export * from './districts/index';
+export * from './schools/index';
 export * from './groups/index';
 export * from './tasks/index';
 export * from './classes/index';

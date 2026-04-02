@@ -18,7 +18,6 @@ export const DistrictsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(DistrictsListResponseSchema),
         401: ErrorEnvelopeSchema,
-        403: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -26,10 +25,11 @@ export const DistrictsContract = c.router(
       description:
         'Returns a paginated list of districts the authenticated user has access to. ' +
         'Super admins can access all districts. Regular users only see districts they belong to. ' +
+        'Unauthorized users receive an empty result set (not a 403 error). ' +
         'Use ?includeEnded=true to include organizations with rosteringEnded timestamp. ' +
         'Use ?embed=counts to include aggregated statistics (users, schools, classes).',
     },
-    getById: {
+    get: {
       method: 'GET',
       path: '/:id',
       pathParams: z.object({
@@ -38,6 +38,7 @@ export const DistrictsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(DistrictDetailSchema),
         401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },

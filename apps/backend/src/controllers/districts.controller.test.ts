@@ -67,7 +67,7 @@ describe('DistrictsController', () => {
       const result = await Controller.list(mockAuthContext, {
         page: 1,
         perPage: 25,
-        sortBy: 'createdAt',
+        sortBy: 'name',
         sortOrder: 'desc',
         embed: [],
       });
@@ -128,10 +128,6 @@ describe('DistrictsController', () => {
           stateProvince: 'IL',
           postalCode: '62701',
           country: 'USA',
-        },
-        dates: {
-          created: '2023-06-15T10:30:00.000Z',
-          updated: '2023-06-16T11:00:00.000Z',
         },
         isRosteringRootOrg: true,
       });
@@ -217,27 +213,6 @@ describe('DistrictsController', () => {
           includeEnded: true,
         }),
       );
-    });
-
-    it('should handle ApiError with 403 Forbidden', async () => {
-      const error = new ApiError('Access denied', {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-      mockList.mockRejectedValue(error);
-
-      const { DistrictsController: Controller } = await import('./districts.controller');
-
-      const result = await Controller.list(mockAuthContext, {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-        embed: [],
-      });
-
-      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
-      expect(errorBody).toBeDefined();
     });
 
     it('should handle ApiError with 500 Internal Server Error', async () => {
@@ -342,7 +317,7 @@ describe('DistrictsController', () => {
         id: 'district-123',
         name: 'Test District',
         abbreviation: 'TD',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         createdAt: new Date('2024-01-01'),
@@ -371,7 +346,7 @@ describe('DistrictsController', () => {
         id: 'district-123',
         name: 'Test District',
         abbreviation: 'TD',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         locationAddressLine1: '123 Main St',
@@ -411,7 +386,7 @@ describe('DistrictsController', () => {
         id: 'district-123',
         name: 'Test District',
         abbreviation: 'TD',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         mdrNumber: 'MDR123',
@@ -444,7 +419,7 @@ describe('DistrictsController', () => {
         id: 'district-123',
         name: 'Ended District',
         abbreviation: 'ED',
-        orgType: 'district',
+        orgType: OrgType.DISTRICT,
         parentOrgId: null,
         isRosteringRootOrg: true,
         rosteringEnded: new Date('2023-12-31'),
