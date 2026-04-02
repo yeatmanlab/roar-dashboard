@@ -13,12 +13,10 @@ import type {
   ParsedFilter,
 } from './report.types';
 import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
-import type { CheckResponse } from '@openfga/sdk';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
-import { FgaClient } from '../../clients/fga.client';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { AdministrationRepository } from '../../repositories/administration.repository';
@@ -30,24 +28,11 @@ import type {
   ProgressStatusFilterParam,
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType } from '../authorization/fga-constants';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../task/task.types';
 import type { AuthContext } from '../../types/auth-context';
-
-/**
- * Minimal interface for the FGA client methods used by this service.
- *
- * Narrower than `OpenFgaClient` so unit tests can mock with simple return values
- * like `{ allowed: true }` without satisfying the SDK's `$response` metadata type.
- */
-export interface FgaCheckClient {
-  check(body: {
-    user: string;
-    relation: string;
-    object: string;
-    context?: Record<string, string>;
-  }): Promise<CheckResponse>;
-}
 
 /** Map sortBy field strings to Drizzle column references for progress students. */
 const PROGRESS_SORT_COLUMNS: Record<ProgressStudentsSortField, Column> = {
@@ -82,34 +67,26 @@ export function ReportService({
   administrationRepository = new AdministrationRepository(),
   reportRepository = new ReportRepository(),
   taskService = TaskService(),
-  fgaClient,
+  authorizationService = AuthorizationService(),
 }: {
   administrationRepository?: AdministrationRepository;
   reportRepository?: ReportRepository;
   taskService?: ReturnType<typeof TaskService>;
-  fgaClient?: FgaCheckClient;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
-  // Lazy FGA client — deferred to first use so module-level instantiation
-  // (e.g., in the controller) doesn't crash when FGA env vars aren't set.
-  let resolvedFga: FgaCheckClient | undefined = fgaClient;
-  function getFga(): FgaCheckClient {
-    resolvedFga ??= FgaClient.getClient();
-    return resolvedFga;
-  }
-
   /** Map scope types to FGA object type prefixes. */
-  const SCOPE_TO_FGA_TYPE: Record<ScopeType, string> = {
-    district: 'district',
-    school: 'school',
-    class: 'class',
-    group: 'group',
+  const SCOPE_TO_FGA_TYPE: Record<ScopeType, FgaType> = {
+    district: FgaType.DISTRICT,
+    school: FgaType.SCHOOL,
+    class: FgaType.CLASS,
+    group: FgaType.GROUP,
   };
 
   /**
    * Check an FGA permission and throw FORBIDDEN if denied.
    *
-   * Centralizes the FGA check pattern — builds the request with `current_time` context
-   * (required for `active_membership` condition evaluation) and maps denial to ApiError.
+   * Delegates to AuthorizationService.hasPermission() which handles `current_time`
+   * context and `user:` prefix formatting. Maps denial to ApiError.
    *
    * @param userId - The user to check permission for
    * @param relation - The FGA relation to check (e.g., 'can_read_progress')
@@ -117,12 +94,7 @@ export function ReportService({
    * @throws {ApiError} FORBIDDEN if the FGA check returns allowed=false
    */
   async function checkFgaPermission(userId: string, relation: string, object: string): Promise<void> {
-    const { allowed } = await getFga().check({
-      user: `user:${userId}`,
-      relation,
-      object,
-      context: { current_time: new Date().toISOString() },
-    });
+    const allowed = await authorizationService.hasPermission(userId, relation, object);
 
     if (!allowed) {
       logger.warn({ userId, relation, object }, 'FGA permission check denied');
@@ -161,7 +133,7 @@ export function ReportService({
     if (isSuperAdmin) return;
 
     // FGA can_read_progress covers both administration access and supervisory role requirement
-    await checkFgaPermission(userId, 'can_read_progress', `administration:${administrationId}`);
+    await checkFgaPermission(userId, 'can_read_progress', `${FgaType.ADMINISTRATION}:${administrationId}`);
   }
 
   /**

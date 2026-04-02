@@ -3,8 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ReportService, buildProgressMap } from './report.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { createMockAdministrationRepository, createMockReportRepository } from '../../test-support/repositories';
-import { createMockTaskService } from '../../test-support/services';
-import { createMockFgaCheckClient } from '../../test-support/clients';
+import { createMockAuthorizationService, createMockTaskService } from '../../test-support/services';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { ProgressStudentsInput } from './report.types';
 import type { ReportTaskMeta, StudentProgressRow } from '../../repositories/report.repository';
@@ -26,7 +25,7 @@ describe('ReportService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockReportRepository: ReturnType<typeof createMockReportRepository>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
-  let mockFgaClient: ReturnType<typeof createMockFgaCheckClient>;
+  let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
 
   const superAdminAuth = { userId: 'super-admin-id', isSuperAdmin: true };
   const teacherAuth = { userId: 'teacher-id', isSuperAdmin: false };
@@ -96,7 +95,7 @@ describe('ReportService', () => {
       administrationRepository: mockAdministrationRepository,
       reportRepository: mockReportRepository,
       taskService: mockTaskService,
-      fgaClient: mockFgaClient,
+      authorizationService: mockAuthorizationService,
     });
   }
 
@@ -105,12 +104,12 @@ describe('ReportService', () => {
     mockAdministrationRepository = createMockAdministrationRepository();
     mockReportRepository = createMockReportRepository();
     mockTaskService = createMockTaskService();
-    mockFgaClient = createMockFgaCheckClient();
+    mockAuthorizationService = createMockAuthorizationService();
 
     // Default: administration exists
     mockAdministrationRepository.getById.mockResolvedValue(AdministrationFactory.build({ id: testAdministrationId }));
     // Default: FGA allows all checks (non-super-admin path)
-    mockFgaClient.check.mockResolvedValue({ allowed: true });
+    mockAuthorizationService.hasPermission.mockResolvedValue(true);
     // Default: scope is assigned
     mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(true);
     // Default: task metadata
@@ -165,7 +164,7 @@ describe('ReportService', () => {
 
     it('returns 403 when FGA denies can_read_progress on administration', async () => {
       // First FGA check (administration-level) denies access
-      mockFgaClient.check.mockResolvedValue({ allowed: false });
+      mockAuthorizationService.hasPermission.mockResolvedValue(false);
 
       const service = createService();
 
@@ -174,13 +173,12 @@ describe('ReportService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      // Verify FGA was called with correct arguments
-      expect(mockFgaClient.check).toHaveBeenCalledWith({
-        user: `user:${teacherAuth.userId}`,
-        relation: 'can_read_progress',
-        object: `administration:${testAdministrationId}`,
-        context: { current_time: expect.any(String) },
-      });
+      // Verify AuthorizationService.hasPermission was called with correct arguments
+      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+        teacherAuth.userId,
+        'can_read_progress',
+        `administration:${testAdministrationId}`,
+      );
 
       // Scope validation should not have been reached
       expect(mockReportRepository.isScopeAssignedToAdministration).not.toHaveBeenCalled();
@@ -199,9 +197,9 @@ describe('ReportService', () => {
 
     it('returns 403 when FGA denies can_read_progress at scope level', async () => {
       // Administration-level FGA check passes, scope-level denies
-      mockFgaClient.check
-        .mockResolvedValueOnce({ allowed: true }) // administration check
-        .mockResolvedValueOnce({ allowed: false }); // scope check
+      mockAuthorizationService.hasPermission
+        .mockResolvedValueOnce(true) // administration check
+        .mockResolvedValueOnce(false); // scope check
 
       const service = createService();
 
@@ -210,14 +208,13 @@ describe('ReportService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      // Verify scope-level FGA check was called with the correct scope type and ID
-      expect(mockFgaClient.check).toHaveBeenCalledTimes(2);
-      expect(mockFgaClient.check).toHaveBeenLastCalledWith({
-        user: `user:${teacherAuth.userId}`,
-        relation: 'can_read_progress',
-        object: `district:${testQuery.scopeId}`,
-        context: { current_time: expect.any(String) },
-      });
+      // Verify scope-level AuthorizationService.hasPermission was called with the correct scope type and ID
+      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledTimes(2);
+      expect(mockAuthorizationService.hasPermission).toHaveBeenLastCalledWith(
+        teacherAuth.userId,
+        'can_read_progress',
+        `district:${testQuery.scopeId}`,
+      );
     });
 
     it('maps started runs correctly', async () => {
@@ -361,7 +358,7 @@ describe('ReportService', () => {
       await service.listProgressStudents(superAdminAuth, testAdministrationId, testQuery);
 
       // Super admin should NOT trigger FGA checks
-      expect(mockFgaClient.check).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
     });
 
     it('wraps unexpected repository errors in a 500 ApiError', async () => {

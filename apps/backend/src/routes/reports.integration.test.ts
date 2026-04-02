@@ -4,9 +4,10 @@
  * Tests the full HTTP lifecycle: middleware -> controller -> service -> repository -> DB.
  * Firebase token verification and FGA authorization are mocked — everything else runs for real.
  *
- * FGA mock: `FgaClient.getClient()` returns a mock whose `check` method resolves
- * based on `allowedFgaUsers` — a set of user IDs that should pass FGA checks.
- * Tests configure this set to match their authorization expectations.
+ * FGA mock: `FgaClient.getClient()` is intercepted so that `AuthorizationService`
+ * receives a mock whose `check` method resolves based on `allowedFgaUsers` — a set
+ * of user IDs that should pass FGA permission checks. Tests configure this set to
+ * match their authorization expectations.
  *
  * FDW tests seed run data via RunFactory into the assessment DB and verify that the
  * progress status is correctly derived through the full HTTP stack.
