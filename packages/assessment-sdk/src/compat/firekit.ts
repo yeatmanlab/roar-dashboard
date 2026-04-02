@@ -616,16 +616,25 @@ export async function writeTrial(
   const correct =
     typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
+  // Drain buffered interactions from addInteraction() calls
+  const interactions = facade._drainInteractionBuffer();
+
   const cmd = new WriteTrialCommand(api);
 
-  await invoker.run(cmd, {
-    runId,
-    type: RUN_EVENT_TRIAL,
-    interactions: trialData.interactions,
-    trial: {
-      assessmentStage,
-      ...trialData,
-      correct,
-    },
-  } as WriteTrialCommandInput);
+  try {
+    await invoker.run(cmd, {
+      runId,
+      type: RUN_EVENT_TRIAL,
+      interactions: interactions.length > 0 ? interactions : undefined,
+      trial: {
+        assessmentStage,
+        ...trialData,
+        correct,
+      },
+    } as WriteTrialCommandInput);
+  } catch (error) {
+    // Restore interactions to buffer if writeTrial fails
+    interactions.forEach((interaction) => facade._pushInteraction(interaction));
+    throw error;
+  }
 }

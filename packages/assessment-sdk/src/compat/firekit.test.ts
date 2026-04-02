@@ -65,8 +65,8 @@ function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
         headers: new Headers([['content-type', 'application/json']]),
       } as Response);
     }
-    // Return 201 CREATED for startRun (POST /runs)
-    if (urlString.includes('/runs')) {
+    // Return 201 CREATED for startRun (POST /runs) - but not for /event
+    if (urlString.includes('/runs') && !urlString.includes('/event')) {
       return Promise.resolve({
         status: StatusCodes.CREATED,
         json: async () => ({ data: { id: runId } }),
@@ -98,7 +98,8 @@ function initializeFirekit(
   options: { isAnonymous?: boolean; administrationId?: string } = {},
 ): { mockContext: CommandContext; fetchMock: ReturnType<typeof vi.fn> } {
   const fetchMock = setupFetchMock(runId);
-  const mockContext = createMockContext(fetchMock as typeof fetch);
+  vi.stubGlobal('fetch', fetchMock);
+  const mockContext = createMockContext();
 
   initFirekitCompat(mockContext, {
     variantId: 'variant-123',
