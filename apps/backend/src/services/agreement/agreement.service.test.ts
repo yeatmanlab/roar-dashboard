@@ -5,7 +5,9 @@ import { AuthContextFactory } from '../../test-support/factories/user.factory';
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { ApiError } from '../../errors/api-error';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
+import { AgreementEmbedOptionType } from '@roar-dashboard/api-contract';
 
 describe('AgreementService', () => {
   let mockRepository: ReturnType<typeof createMockAgreementRepository>;
@@ -17,7 +19,7 @@ describe('AgreementService', () => {
     sortBy: 'createdAt',
     sortOrder: 'desc' as const,
     locale: 'en-US',
-    embed: [] as string[],
+    embed: [] as AgreementEmbedOptionType[],
   };
 
   beforeEach(() => {
@@ -118,7 +120,7 @@ describe('AgreementService', () => {
 
     it('re-throws ApiError from repository without wrapping', async () => {
       const authContext = AuthContextFactory.build();
-      const apiError = new ApiError('Not found', { statusCode: 404, code: 'RESOURCE_NOT_FOUND' });
+      const apiError = new ApiError('Not found', { statusCode: 404, code: ApiErrorCode.RESOURCE_NOT_FOUND });
       mockRepository.listAll.mockRejectedValue(apiError);
 
       await expect(service.list(authContext, defaultOptions)).rejects.toThrow(apiError);

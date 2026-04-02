@@ -1,12 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
 import type { AgreementEmbedOptionType, PaginatedResult } from '@roar-dashboard/api-contract';
-import { AgreementEmbedOption } from '@roar-dashboard/api-contract';
+import type { AuthContext } from '../../types/auth-context';
+import type { AgreementType } from '../../enums/agreement-type.enum';
 import type { AgreementVersion } from '../../db/schema';
+import { AgreementEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { AgreementRepository, type AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
-import type { AuthContext } from '../../types/auth-context';
 
 /**
  * Agreement with optional embedded versions array.
@@ -25,7 +26,7 @@ export interface ListOptions {
   sortOrder: 'asc' | 'desc';
   locale: string;
   embed: AgreementEmbedOptionType[];
-  agreementType?: string;
+  agreementType?: AgreementType | undefined;
 }
 
 /**

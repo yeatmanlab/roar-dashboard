@@ -2,8 +2,9 @@ import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 import type { Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AgreementSortFieldType } from '@roar-dashboard/api-contract';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import type { AgreementType } from '../enums/agreement-type.enum';
 import type * as CoreDbSchema from '../db/schema/core';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { CoreDbClient } from '../db/clients';
 import { agreements, agreementVersions, type Agreement, type AgreementVersion } from '../db/schema';
 import { BaseRepository, type PaginatedResult } from './base.repository';
@@ -28,7 +29,7 @@ export interface ListAgreementsOptions {
     direction: 'asc' | 'desc';
   };
   locale: string;
-  agreementType?: string;
+  agreementType?: AgreementType;
 }
 
 /**
