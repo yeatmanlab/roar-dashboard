@@ -91,13 +91,13 @@ export class UpdateRunEngagementFlagsCommand
       throw new SDKError(
         result.body.error?.message ?? `Failed to update run engagement flags with status ${result.status}`,
         {
-          code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+          code: SdkErrorCode.UPDATE_ENGAGEMENT_FLAGS_FAILED,
         },
       );
     }
 
     throw new SDKError(`Failed to update run engagement flags with status ${result.status}`, {
-      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+      code: SdkErrorCode.UPDATE_ENGAGEMENT_FLAGS_FAILED,
     });
   }
 }

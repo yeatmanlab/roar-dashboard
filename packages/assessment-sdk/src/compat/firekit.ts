@@ -30,7 +30,7 @@ import { AbortRunCommand } from '../commands/abort-run.command';
 import { FinishRunCommand } from '../commands/finish-run.command';
 import { WriteTrialCommand } from '../commands/write-trial.command';
 import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
-import { GetVariantIDCommand } from '../commands/get-variant-id.command';
+import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -684,7 +684,7 @@ export async function writeTrial(
 }
 
 /**
- * Retrieves variant parameters by variant ID.
+ * Retrieves task variant parameters by variant ID.
  *
  * This function supports the new parameter-passing approach where the launcher
  * passes only the variant_id, and the assessment app looks up the variant's
@@ -721,7 +721,7 @@ export async function getVariantParamsById(taskId: string, variantId: string): P
   const api = facade.getApi();
   const invoker = facade.getInvoker();
 
-  const cmd = new GetVariantIDCommand(api);
-  const variant = await invoker.run(cmd, { task_id: taskId, variant_id: variantId });
-  return variant.variant_params;
+  const cmd = new GetTaskVariantCommand(api);
+  const variant = await invoker.run(cmd, { taskId, variantId });
+  return variant.variantParams;
 }

@@ -149,7 +149,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     await expect(command.execute(input)).rejects.toThrow(SDKError);
     await expect(command.execute(input)).rejects.toMatchObject({
       message: 'Invalid engagement flags',
-      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+      code: SdkErrorCode.UPDATE_ENGAGEMENT_FLAGS_FAILED,
     });
   });
 
@@ -171,7 +171,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     await expect(command.execute(input)).rejects.toThrow(SDKError);
     await expect(command.execute(input)).rejects.toMatchObject({
       message: 'Failed to update run engagement flags with status 500',
-      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+      code: SdkErrorCode.UPDATE_ENGAGEMENT_FLAGS_FAILED,
     });
   });
 
@@ -193,7 +193,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     await expect(command.execute(input)).rejects.toThrow(SDKError);
     await expect(command.execute(input)).rejects.toMatchObject({
       message: 'Failed to update run engagement flags with status 404',
-      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+      code: SdkErrorCode.UPDATE_ENGAGEMENT_FLAGS_FAILED,
     });
   });
 

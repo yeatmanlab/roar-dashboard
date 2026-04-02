@@ -1,76 +1,95 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
-import { GetVariantIDCommand } from './get-variant-id.command';
+import { GetTaskVariantCommand } from './get-variant-id.command';
 import { createMockRoarApi } from '../test-support';
-import type { GetVariantIDInput, GetVariantIDOutput } from './get-variant-id.command';
+import type { GetTaskVariantInput, GetTaskVariantOutput } from './get-variant-id.command';
 
-describe('GetVariantIDCommand', () => {
-  let command: GetVariantIDCommand;
+describe('GetTaskVariantCommand', () => {
+  let command: GetTaskVariantCommand;
   let mockApi: ReturnType<typeof createMockRoarApi>;
-  let getVariantById: Mock;
+  let getTaskVariant: Mock;
 
   beforeEach(() => {
     mockApi = createMockRoarApi();
-    getVariantById = mockApi.getVariantById as Mock;
-    command = new GetVariantIDCommand(mockApi);
+    getTaskVariant = mockApi.client.tasks.getTaskVariant as Mock;
+    command = new GetTaskVariantCommand(mockApi);
   });
 
   it('has correct properties', () => {
-    expect(command.name).toBe('GetVariantID');
+    expect(command.name).toBe('GetTaskVariant');
     expect(command.idempotent).toBe(true);
   });
 
-  it('calls api.getVariantById and returns variant data', async () => {
-    const input: GetVariantIDInput = {
-      task_id: 'task-456',
-      variant_id: 'variant-123',
+  it('calls client.tasks.getTaskVariant and returns variant data', async () => {
+    const input: GetTaskVariantInput = {
+      taskId: 'task-456',
+      variantId: 'variant-123',
     };
 
-    const expected: GetVariantIDOutput = {
-      variant_id: 'variant-123',
-      task_id: 'task-456',
-      task_version: '1.0.0',
-      variant_params: {
+    const expected: GetTaskVariantOutput = {
+      variantId: 'variant-123',
+      taskId: 'task-456',
+      variantParams: {
+        difficulty: 'hard',
         timeLimit: 120,
-        random: true,
+        shuffleItems: true,
       },
     };
 
-    getVariantById.mockResolvedValue(expected);
+    getTaskVariant.mockResolvedValue({
+      status: 200,
+      body: {
+        data: {
+          id: 'variant-123',
+          taskId: 'task-456',
+          parameters: [
+            { name: 'difficulty', value: 'hard' },
+            { name: 'timeLimit', value: 120 },
+            { name: 'shuffleItems', value: true },
+          ],
+        },
+      },
+    });
 
     const result = await command.execute(input);
 
-    expect(getVariantById).toHaveBeenCalledTimes(1);
-    expect(getVariantById).toHaveBeenCalledWith('task-456', 'variant-123');
+    expect(getTaskVariant).toHaveBeenCalledTimes(1);
+    expect(getTaskVariant).toHaveBeenCalledWith({
+      params: { taskId: 'task-456', variantId: 'variant-123' },
+    });
     expect(result).toEqual(expected);
   });
 
   it('returns variant data with empty params', async () => {
-    const input: GetVariantIDInput = {
-      task_id: 'task-999',
-      variant_id: 'variant-789',
+    const input: GetTaskVariantInput = {
+      taskId: 'task-999',
+      variantId: 'variant-789',
     };
 
-    const expected: GetVariantIDOutput = {
-      variant_id: 'variant-789',
-      task_id: 'task-999',
-      task_version: '2.0.0',
-      variant_params: {},
+    const expected: GetTaskVariantOutput = {
+      variantId: 'variant-789',
+      taskId: 'task-999',
+      variantParams: {},
     };
 
-    getVariantById.mockResolvedValue(expected);
+    getTaskVariant.mockResolvedValue({
+      status: 200,
+      body: { data: { id: 'variant-789', taskId: 'task-999', parameters: [] } },
+    });
 
     const result = await command.execute(input);
 
-    expect(getVariantById).toHaveBeenCalledWith('task-999', 'variant-789');
+    expect(getTaskVariant).toHaveBeenCalledWith({
+      params: { taskId: 'task-999', variantId: 'variant-789' },
+    });
     expect(result).toEqual(expected);
-    expect(result.variant_params).toEqual({});
+    expect(result.variantParams).toEqual({});
   });
 
   it('returns variant data with complex params', async () => {
-    const input: GetVariantIDInput = {
-      task_id: 'task-complex',
-      variant_id: 'variant-complex',
+    const input: GetTaskVariantInput = {
+      taskId: 'task-complex',
+      variantId: 'variant-complex',
     };
 
     const complexParams = {
@@ -85,40 +104,55 @@ describe('GetVariantIDCommand', () => {
       stimuli: ['word1', 'word2', 'word3'],
     };
 
-    const expected: GetVariantIDOutput = {
-      variant_id: 'variant-complex',
-      task_id: 'task-complex',
-      task_version: '1.5.0',
-      variant_params: complexParams,
+    const expected: GetTaskVariantOutput = {
+      variantId: 'variant-complex',
+      taskId: 'task-complex',
+      variantParams: complexParams,
     };
 
-    getVariantById.mockResolvedValue(expected);
+    getTaskVariant.mockResolvedValue({
+      status: 200,
+      body: {
+        data: {
+          id: 'variant-complex',
+          taskId: 'task-complex',
+          parameters: [
+            { name: 'difficulty', value: 'medium' },
+            { name: 'timeLimit', value: 180 },
+            { name: 'config', value: complexParams.config },
+            { name: 'stimuli', value: complexParams.stimuli },
+          ],
+        },
+      },
+    });
 
     const result = await command.execute(input);
 
     expect(result).toEqual(expected);
-    expect(result.variant_params).toEqual(complexParams);
+    expect(result.variantParams).toEqual(complexParams);
   });
 
-  it('propagates errors from api.getVariantById', async () => {
-    const input: GetVariantIDInput = {
-      task_id: 'task-456',
-      variant_id: 'variant-123',
+  it('propagates errors from client.tasks.getTaskVariant', async () => {
+    const input: GetTaskVariantInput = {
+      taskId: 'task-456',
+      variantId: 'variant-123',
     };
 
-    getVariantById.mockRejectedValue(new Error('Variant not found'));
+    getTaskVariant.mockResolvedValue({
+      status: 404,
+      body: { error: { message: 'Variant not found' } },
+    });
 
     await expect(command.execute(input)).rejects.toThrow('Variant not found');
   });
 
   it('propagates network errors', async () => {
-    const input: GetVariantIDInput = {
-      task_id: 'task-456',
-      variant_id: 'variant-123',
+    const input: GetTaskVariantInput = {
+      taskId: 'task-456',
+      variantId: 'variant-123',
     };
 
-    const networkError = new Error('Network request failed');
-    getVariantById.mockRejectedValue(networkError);
+    getTaskVariant.mockRejectedValue(new Error('Network request failed'));
 
     await expect(command.execute(input)).rejects.toThrow('Network request failed');
   });
