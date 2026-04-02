@@ -20,6 +20,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialAssessmentStage,
   WriteTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL } from '../types/run-event-status';
@@ -602,21 +603,21 @@ export async function writeTrial(
     });
   }
 
-  const assessmentStage = trialDataRecord['assessmentStage'];
   const validStages = [
     ASSESSMENT_STAGE_PRACTICE,
     ASSESSMENT_STAGE_PRACTICE_RESPONSE,
     ASSESSMENT_STAGE_TEST,
     ASSESSMENT_STAGE_TEST_RESPONSE,
   ] as const;
-  if (!validStages.includes(assessmentStage as (typeof validStages)[number])) {
+  if (!validStages.includes(trialDataRecord['assessmentStage'] as (typeof validStages)[number])) {
     throw new SDKError(
-      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${assessmentStage}`,
+      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${trialDataRecord['assessmentStage']}`,
       {
         code: SdkErrorCode.WRITE_TRIAL_FAILED,
       },
     );
   }
+  const assessmentStage = trialDataRecord['assessmentStage'] as WriteTrialAssessmentStage;
 
   if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
     throw new SDKError('writeTrial requires correct in trial data.', {
