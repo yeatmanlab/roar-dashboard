@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AgreementService } from './agreement.service';
+import { AgreementService, AgreementsListOptions } from './agreement.service';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
 import { AuthContextFactory } from '../../test-support/factories/user.factory';
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
@@ -7,7 +7,7 @@ import { AgreementVersionFactory } from '../../test-support/factories/agreement-
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
-import { AgreementEmbedOptionType } from '@roar-dashboard/api-contract';
+import type { AgreementEmbedOptionType } from './agreement.service';
 
 describe('AgreementService', () => {
   let mockRepository: ReturnType<typeof createMockAgreementRepository>;
@@ -20,7 +20,7 @@ describe('AgreementService', () => {
     sortOrder: 'desc' as const,
     locale: 'en-US',
     embed: [] as AgreementEmbedOptionType[],
-  };
+  } as AgreementsListOptions;
 
   beforeEach(() => {
     vi.clearAllMocks();

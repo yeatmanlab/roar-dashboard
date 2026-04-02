@@ -1,13 +1,24 @@
 import { StatusCodes } from 'http-status-codes';
-import type { AgreementEmbedOptionType, PaginatedResult } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../../types/auth-context';
 import type { AgreementType } from '../../enums/agreement-type.enum';
 import type { AgreementVersion } from '../../db/schema';
-import { AgreementEmbedOption } from '@roar-dashboard/api-contract';
+import type { PaginatedResult } from '../../repositories/base.repository';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { AgreementRepository, type AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
+
+/**
+ * Options for embedding agreement versions.
+ */
+const AgreementEmbedOption = {
+  VERSIONS: 'versions',
+} as const;
+
+/**
+ * Type for agreement embed options.
+ */
+export type AgreementEmbedOptionType = (typeof AgreementEmbedOption)[keyof typeof AgreementEmbedOption];
 
 /**
  * Agreement with optional embedded versions array.
@@ -19,7 +30,7 @@ export interface AgreementWithEmbeds extends AgreementWithCurrentVersion {
 /**
  * Options for listing agreements.
  */
-export interface ListOptions {
+export interface AgreementsListOptions {
   page: number;
   perPage: number;
   sortBy: string;
@@ -58,7 +69,10 @@ export function AgreementService({
    * @returns Paginated result with agreements and their current versions
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
-  async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<AgreementWithEmbeds>> {
+  async function list(
+    authContext: AuthContext,
+    options: AgreementsListOptions,
+  ): Promise<PaginatedResult<AgreementWithEmbeds>> {
     const { userId } = authContext;
 
     try {
