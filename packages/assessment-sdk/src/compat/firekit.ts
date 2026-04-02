@@ -74,7 +74,6 @@ export class FirekitFacade {
   #invoker: Invoker | undefined;
   #runId: string | undefined;
   #taskInfo: CompatTaskInfo | undefined;
-  interactionBuffer: AddInteractionInput[] = [];
 
   private constructor() {}
 
@@ -182,28 +181,6 @@ export class FirekitFacade {
    */
   _getTaskInfo(): CompatTaskInfo | undefined {
     return this.#taskInfo;
-  }
-
-  /**
-   * Atomically retrieves and clears the interaction buffer.
-   * This prevents race conditions when writeTrial() is called concurrently.
-   * @internal
-   * @returns Array of buffered interaction events
-   */
-  _drainInteractionBuffer(): AddInteractionInput[] {
-    const buffer = this.interactionBuffer;
-    this.interactionBuffer = [];
-    return buffer;
-  }
-
-  /**
-   * Adds an interaction event to the buffer.
-   * Interactions are accumulated and flushed when writeTrial() is called.
-   * @internal
-   * @param interaction - The interaction event to buffer
-   */
-  _pushInteraction(interaction: AddInteractionInput): void {
-    this.interactionBuffer.push(interaction);
   }
 }
 
@@ -616,25 +593,16 @@ export async function writeTrial(
   const correct =
     typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
-  // Drain buffered interactions from addInteraction() calls
-  const interactions = facade._drainInteractionBuffer();
-
   const cmd = new WriteTrialCommand(api);
 
-  try {
-    await invoker.run(cmd, {
-      runId,
-      type: RUN_EVENT_TRIAL,
-      interactions: interactions.length > 0 ? interactions : undefined,
-      trial: {
-        assessmentStage,
-        ...trialData,
-        correct,
-      },
-    } as WriteTrialCommandInput);
-  } catch (error) {
-    // Restore interactions to buffer if writeTrial fails
-    interactions.forEach((interaction) => facade._pushInteraction(interaction));
-    throw error;
-  }
+  await invoker.run(cmd, {
+    runId,
+    type: RUN_EVENT_TRIAL,
+    interactions: trialData.interactions,
+    trial: {
+      assessmentStage,
+      ...trialData,
+      correct,
+    },
+  } as WriteTrialCommandInput);
 }
