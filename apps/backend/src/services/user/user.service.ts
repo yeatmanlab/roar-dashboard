@@ -383,9 +383,8 @@ export function UserService({
 
       // 3. Validate agreement type is appropriate for user's age
       // Fetch requesting user to determine their age
-      const requestingUser = requestingUserId === userId
-  ? targetUser
-  : await userRepository.getById({ id: requestingUserId });
+      const requestingUser =
+        requestingUserId === userId ? targetUser : await userRepository.getById({ id: requestingUserId });
 
       if (!requestingUser) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
