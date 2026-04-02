@@ -47,6 +47,7 @@ export class GetTaskVariantCommand implements Command<GetTaskVariantInput, GetTa
       };
     }
 
+    // Handle error responses (404, 500)
     const errorBody = result.body as { error?: { message?: string } };
     throw new SDKError(errorBody?.error?.message ?? `Failed to get variant with status ${result.status}`, {
       code: SdkErrorCode.GET_VARIANT_ID_FAILED,
