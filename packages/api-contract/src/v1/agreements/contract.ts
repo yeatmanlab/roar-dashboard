@@ -17,7 +17,6 @@ export const AgreementsContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(AgreementsListResponseSchema),
         401: ErrorEnvelopeSchema,
-        403: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,

@@ -210,12 +210,6 @@ export function UserService({
    * Nullable fields may be set to null to clear their stored value.
    *
    * Authorization: currently restricted to super admins only.
-   * To expand access to lower-tiered roles when ready:
-   *   1. Assign Permissions.Users.UPDATE to the appropriate roles in role-permissions.ts
-   *   2. Remove the isSuperAdmin guard below
-   *   3. Remove the manual getById 404 check below
-   *   4. Replace both with: await verifyUserAccess(authContext, id, Permissions.Users.UPDATE)
-   *      which already handles 404-before-403, super-admin bypass, self-access, and role-based checks
    *
    * @param authContext - Requesting user's authentication context.
    * @param id - UUID of the user to update.
