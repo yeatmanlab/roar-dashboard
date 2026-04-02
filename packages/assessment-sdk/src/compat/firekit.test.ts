@@ -107,6 +107,30 @@ function initializeFirekit(
   return { mockContext, fetchMock };
 }
 
+/**
+ * Helper to initialize firekit compat and start a run in one call.
+ * Eliminates repetitive setup in tests that need an active run.
+ *
+ * **Usage:**
+ * ```ts
+ * const { fetchMock } = await initializeFirekitAndStartRun('run-123');
+ * await writeTrial(trialData);
+ * expect(fetchMock).toHaveBeenCalled();
+ * ```
+ *
+ * @param runId - The run ID to return for startRun requests
+ * @param options - Optional configuration for the run (isAnonymous, administrationId)
+ * @returns Object containing the mock context and fetch mock for assertions
+ */
+async function initializeFirekitAndStartRun(
+  runId: string,
+  options: { isAnonymous?: boolean; administrationId?: string } = {},
+): Promise<{ mockContext: CommandContext; fetchMock: ReturnType<typeof vi.fn> }> {
+  const { mockContext, fetchMock } = initializeFirekit(runId, options);
+  await startRun();
+  return { mockContext, fetchMock };
+}
+
 describe('firekit compat', () => {
   describe('abortRun', () => {
     beforeEach(() => {
@@ -232,7 +256,7 @@ describe('firekit compat', () => {
         vi.fn().mockImplementation(async () => {
           callCount++;
           return {
-            status: 201,
+            status: StatusCodes.CREATED,
             json: async () => ({ data: { id: `run-${callCount}` } }),
             headers: new Headers([['content-type', 'application/json']]),
           };
@@ -353,14 +377,128 @@ describe('firekit compat', () => {
   });
 
   describe('writeTrial', () => {
-    it('throws SDKError when called (stub not yet implemented)', async () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when called without an active run', async () => {
       const trialData: TrialData = { response: 'correct', rt: 500 };
       await expect(writeTrial(trialData)).rejects.toBeInstanceOf(SDKError);
+    });
 
+    it('throws SDKError when called with callback but no active run', async () => {
+      const trialData: TrialData = { response: 'correct', rt: 500 };
       const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
         return { computed: rawScores };
       };
       await expect(writeTrial(trialData, callback)).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('successfully submits trial data when run is active', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-trial-test');
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify fetch was called with the trial event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-trial-test/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('trial'),
+        }),
+      );
+    });
+
+    it('accepts optional computed score callback', async () => {
+      await initializeFirekitAndStartRun('run-trial-callback');
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'correct',
+        rt: 500,
+      };
+      const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
+        return { computed: rawScores };
+      };
+
+      await expect(writeTrial(trialData, callback)).resolves.toBeUndefined();
+    });
+
+    it('coerces boolean correct: true to 1', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-bool-true');
+
+      const trialDataWithBooleanCorrect: TrialData = {
+        assessmentStage: 'test',
+        correct: true,
+        response: 'A',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialDataWithBooleanCorrect)).resolves.toBeUndefined();
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-bool-true/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"correct":1'),
+        }),
+      );
+    });
+
+    it('coerces boolean correct: false to 0', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-bool-false');
+
+      const trialDataWithBooleanCorrect: TrialData = {
+        assessmentStage: 'test',
+        correct: false,
+        response: 'B',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialDataWithBooleanCorrect)).resolves.toBeUndefined();
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-bool-false/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"correct":0'),
+        }),
+      );
+    });
+
+    it('allows multiple trials to be written in sequence without clearing runId', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-multi-trial');
+
+      const firstTrial: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      };
+
+      const secondTrial: TrialData = {
+        assessmentStage: 'test',
+        correct: 0,
+        response: 'B',
+        rt: 2000,
+      };
+
+      await expect(writeTrial(firstTrial)).resolves.toBeUndefined();
+      await expect(writeTrial(secondTrial)).resolves.toBeUndefined();
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
     it('matches Firekit signature (with optional computed score callback)', () => {
