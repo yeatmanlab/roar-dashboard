@@ -1,4 +1,4 @@
-import type { NewTaskVariant, NewTaskVariantParameter, User, Task, TaskVariant, NewTask } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter, Task, TaskVariant, NewTask } from '../../db/schema';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
@@ -13,7 +13,8 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { isValidUuid } from '../../utils/is-valid-uuid.util';
-import { Operator, type Condition, type FieldCondition, type CompositeCondition } from './task.types';
+import type { Condition, ConditionEvaluationUser, FieldCondition, CompositeCondition } from './task.types';
+import { Operator } from './task.types';
 
 /**
  * Parameter data for creating task variant parameters.
@@ -771,10 +772,10 @@ export function TaskService({
    * (user.grade, user.statusEll), so we wrap them in { studentData: { ... } } to match
    * the expected path structure.
    *
-   * @param user - The User entity from the database
+   * @param user - Any object with the demographic fields needed for condition evaluation
    * @returns The user data in the format expected by condition evaluation
    */
-  function mapUserToConditionData(user: User): ConditionUserData {
+  function mapUserToConditionData(user: ConditionEvaluationUser): ConditionUserData {
     return {
       studentData: {
         grade: user.grade,
@@ -799,13 +800,13 @@ export function TaskService({
    * - `conditionsRequirements` (optional_if): Determines if an assigned variant is OPTIONAL for the user.
    *   A null value means the variant is required for all assigned users.
    *
-   * @param user - The User entity to evaluate
+   * @param user - Any object with the demographic fields needed for condition evaluation
    * @param conditionsAssignment - assigned_if condition (null = assigned to all)
    * @param conditionsRequirements - optional_if condition (null = required for all)
    * @returns Object with isAssigned and isOptional flags
    */
   function evaluateTaskVariantEligibility(
-    user: User,
+    user: ConditionEvaluationUser,
     conditionsAssignment: Condition | null,
     conditionsRequirements: Condition | null,
   ): TaskVariantEligibilityResult {
@@ -832,7 +833,7 @@ export function TaskService({
    * @param condition - The condition to evaluate (or null)
    * @returns True if the condition passes (or is null), false otherwise
    */
-  function evaluateConditionForUser(user: User, condition: Condition | null): boolean {
+  function evaluateConditionForUser(user: ConditionEvaluationUser, condition: Condition | null): boolean {
     if (!condition) {
       return true;
     }

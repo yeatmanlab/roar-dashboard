@@ -10,12 +10,14 @@ import {
 /**
  * Completion status for a student on a specific task.
  *
- * - `assigned` — task is assigned but not yet started
+ * - `assigned` — task is assigned and required, but not yet started
  * - `started` — a run exists but is not completed
  * - `completed` — a run with a completedAt timestamp exists
- * - `optional` — reserved for future use; will be produced when task condition
- *   evaluation is implemented (e.g., tasks conditionally assigned based on grade/ELL status).
- *   Currently never returned by the API.
+ * - `optional` — task conditions mark it optional for this student (e.g., based on
+ *   grade/ELL status). Produced when conditionsRequirements evaluates to true.
+ *
+ * Tasks where conditionsAssignment evaluates to false for a student are excluded
+ * from that student's progress map entirely — they are not visible.
  */
 export const ProgressStatusSchema = z.enum(['assigned', 'started', 'completed', 'optional']);
 

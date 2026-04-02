@@ -3,13 +3,28 @@ import { StatusCodes } from 'http-status-codes';
 import { ReportService, buildProgressMap } from './report.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { createMockAdministrationRepository, createMockReportRepository } from '../../test-support/repositories';
+import { createMockTaskService } from '../../test-support/services';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { ProgressStudentsInput } from './report.types';
 import type { ReportTaskMeta, StudentProgressRow } from '../../repositories/report.repository';
+import { Operator } from '../task/task.types';
+
+/** Default demographic fields for test StudentProgressRow objects */
+const DEFAULT_DEMOGRAPHICS = {
+  statusEll: null,
+  statusIep: null,
+  statusFrl: null,
+  dob: null,
+  gender: null,
+  race: null,
+  hispanicEthnicity: null,
+  homeLanguage: null,
+} as const;
 
 describe('ReportService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockReportRepository: ReturnType<typeof createMockReportRepository>;
+  let mockTaskService: ReturnType<typeof createMockTaskService>;
 
   const superAdminAuth = { userId: 'super-admin-id', isSuperAdmin: true };
   const teacherAuth = { userId: 'teacher-id', isSuperAdmin: false };
@@ -27,19 +42,32 @@ describe('ReportService', () => {
     filter: [],
   };
 
-  // Use proper UUIDs for task IDs so progress.<taskId>.status patterns match the regex
-  const TASK_ID_1 = 'ae557e88-582d-55fe-b41d-ba826adce70e';
-  const TASK_ID_2 = 'b1234567-abcd-5678-efab-123456789012';
-
   const testTaskMetas: ReportTaskMeta[] = [
-    { taskId: TASK_ID_1, taskVariantId: 'tv-1', taskSlug: 'swr', taskName: 'ROAR - Word', orderIndex: 0 },
-    { taskId: TASK_ID_2, taskVariantId: 'tv-2', taskSlug: 'sre', taskName: 'ROAR - Sentence', orderIndex: 1 },
+    {
+      taskId: 'task-1',
+      taskVariantId: 'tv-1',
+      taskSlug: 'swr',
+      taskName: 'ROAR - Word',
+      orderIndex: 0,
+      conditionsAssignment: null,
+      conditionsRequirements: null,
+    },
+    {
+      taskId: 'task-2',
+      taskVariantId: 'tv-2',
+      taskSlug: 'sre',
+      taskName: 'ROAR - Sentence',
+      orderIndex: 1,
+      conditionsAssignment: null,
+      conditionsRequirements: null,
+    },
   ];
 
   function createService() {
     return ReportService({
       administrationRepository: mockAdministrationRepository,
       reportRepository: mockReportRepository,
+      taskService: mockTaskService,
     });
   }
 
@@ -47,6 +75,7 @@ describe('ReportService', () => {
     vi.clearAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
     mockReportRepository = createMockReportRepository();
+    mockTaskService = createMockTaskService();
 
     // Default: administration exists
     mockAdministrationRepository.getById.mockResolvedValue(AdministrationFactory.build({ id: testAdministrationId }));
@@ -54,6 +83,8 @@ describe('ReportService', () => {
     mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(true);
     // Default: task metadata
     mockReportRepository.getTaskMetadata.mockResolvedValue(testTaskMetas);
+    // Default: all tasks assigned and required (not optional)
+    mockTaskService.evaluateTaskVariantEligibility.mockReturnValue({ isAssigned: true, isOptional: false });
   });
 
   describe('listProgressStudents', () => {
@@ -67,6 +98,7 @@ describe('ReportService', () => {
         nameLast: 'Doe',
         grade: '3',
         schoolName: 'Lincoln Elementary',
+        ...DEFAULT_DEMOGRAPHICS,
         runs: new Map([['tv-1', { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }]]),
       };
 
@@ -81,8 +113,8 @@ describe('ReportService', () => {
       expect(result.tasks).toHaveLength(2);
       expect(result.items).toHaveLength(1);
       expect(result.items[0]!.user.firstName).toBe('Jane');
-      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('completed');
-      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('assigned');
+      expect(result.items[0]!.progress['task-1']!.status).toBe('completed');
+      expect(result.items[0]!.progress['task-2']!.status).toBe('assigned');
       expect(result.totalItems).toBe(1);
     });
 
@@ -204,6 +236,7 @@ describe('ReportService', () => {
         nameLast: 'Doe',
         grade: '3',
         schoolName: null,
+        ...DEFAULT_DEMOGRAPHICS,
         runs: new Map([['tv-1', { completedAt: null, startedAt: new Date('2025-09-10') }]]),
       };
 
@@ -215,8 +248,8 @@ describe('ReportService', () => {
       const service = createService();
       const result = await service.listProgressStudents(teacherAuth, testAdministrationId, testQuery);
 
-      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('started');
-      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('assigned');
+      expect(result.items[0]!.progress['task-1']!.status).toBe('started');
+      expect(result.items[0]!.progress['task-2']!.status).toBe('assigned');
     });
 
     it('returns progress data for non-super-admin with supervisory role', async () => {
@@ -235,6 +268,7 @@ describe('ReportService', () => {
         nameLast: 'Doe',
         grade: '3',
         schoolName: 'Lincoln Elementary',
+        ...DEFAULT_DEMOGRAPHICS,
         runs: new Map([
           ['tv-1', { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }],
           ['tv-2', { completedAt: null, startedAt: new Date('2025-09-12') }],
@@ -262,8 +296,8 @@ describe('ReportService', () => {
         grade: '3',
         schoolName: 'Lincoln Elementary',
       });
-      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('completed');
-      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('started');
+      expect(result.items[0]!.progress['task-1']!.status).toBe('completed');
+      expect(result.items[0]!.progress['task-2']!.status).toBe('started');
 
       // Verify repository was called with correct scope and pagination
       expect(mockReportRepository.getProgressStudents).toHaveBeenCalledWith(
@@ -311,7 +345,8 @@ describe('ReportService', () => {
         nameFirst: 'Jane',
         nameLast: 'Doe',
         grade: '3',
-        schoolName: 'Lincoln Elementary', // repository returns a school name
+        schoolName: 'Lincoln Elementary',
+        ...DEFAULT_DEMOGRAPHICS,
         runs: new Map(),
       };
 
@@ -338,49 +373,53 @@ describe('ReportService', () => {
       expect(mockReportRepository.getUserRolesAtOrAboveScope).not.toHaveBeenCalled();
     });
 
-    it('returns 400 when multiple progress status filters are provided', async () => {
-      const multiFilterQuery: ProgressStudentsInput = {
-        ...testQuery,
-        filter: [
-          { field: `progress.${TASK_ID_1}.status`, operator: 'eq', value: 'completed' },
-          { field: `progress.${TASK_ID_2}.status`, operator: 'eq', value: 'started' },
-        ],
-      };
+    it('wraps unexpected repository errors in a 500 ApiError', async () => {
+      mockReportRepository.getProgressStudents.mockRejectedValue(new Error('connection reset'));
 
       const service = createService();
-      await expect(
-        service.listProgressStudents(superAdminAuth, testAdministrationId, multiFilterQuery),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.BAD_REQUEST,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
+
+      await expect(service.listProgressStudents(superAdminAuth, testAdministrationId, testQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        },
+      );
     });
   });
 
   describe('buildProgressMap', () => {
+    const defaultStudent: StudentProgressRow = {
+      userId: 'student-1',
+      assessmentPid: 'pid-student-1',
+      username: null,
+      email: null,
+      nameFirst: null,
+      nameLast: null,
+      grade: null,
+      schoolName: null,
+      ...DEFAULT_DEMOGRAPHICS,
+      runs: new Map(),
+    };
+
+    // Creates a fresh evaluator mock — must be called inside each test since beforeEach resets mocks
+    const makeAssignedEvaluator = () => vi.fn().mockReturnValue({ isAssigned: true, isOptional: false });
+
     it('maps completed runs correctly', () => {
       const student: StudentProgressRow = {
-        userId: 'student-1',
-        assessmentPid: 'pid-student-1',
-        username: null,
-        email: null,
-        nameFirst: null,
-        nameLast: null,
-        grade: null,
-        schoolName: null,
+        ...defaultStudent,
         runs: new Map([
           ['tv-1', { completedAt: new Date('2025-09-15T10:00:00Z'), startedAt: new Date('2025-09-10T08:00:00Z') }],
         ]),
       };
 
-      const result = buildProgressMap(student, testTaskMetas);
+      const result = buildProgressMap(student, testTaskMetas, makeAssignedEvaluator());
 
-      expect(result[TASK_ID_1]).toEqual({
+      expect(result['task-1']).toEqual({
         status: 'completed',
         startedAt: '2025-09-10T08:00:00.000Z',
         completedAt: '2025-09-15T10:00:00.000Z',
       });
-      expect(result[TASK_ID_2]).toEqual({
+      expect(result['task-2']).toEqual({
         status: 'assigned',
         startedAt: null,
         completedAt: null,
@@ -389,43 +428,66 @@ describe('ReportService', () => {
 
     it('maps started runs correctly', () => {
       const student: StudentProgressRow = {
-        userId: 'student-1',
-        assessmentPid: 'pid-student-1',
-        username: null,
-        email: null,
-        nameFirst: null,
-        nameLast: null,
-        grade: null,
-        schoolName: null,
+        ...defaultStudent,
         runs: new Map([['tv-1', { completedAt: null, startedAt: new Date('2025-09-10T08:00:00Z') }]]),
       };
 
-      const result = buildProgressMap(student, testTaskMetas);
+      const result = buildProgressMap(student, testTaskMetas, makeAssignedEvaluator());
 
-      expect(result[TASK_ID_1]).toEqual({
+      expect(result['task-1']).toEqual({
         status: 'started',
         startedAt: '2025-09-10T08:00:00.000Z',
         completedAt: null,
       });
     });
 
-    it('returns assigned for tasks with no runs', () => {
-      const student: StudentProgressRow = {
-        userId: 'student-1',
-        assessmentPid: 'pid-student-1',
-        username: null,
-        email: null,
-        nameFirst: null,
-        nameLast: null,
-        grade: null,
-        schoolName: null,
-        runs: new Map(),
-      };
+    it('returns assigned for tasks with no runs when conditions are null', () => {
+      const result = buildProgressMap(defaultStudent, testTaskMetas, makeAssignedEvaluator());
 
-      const result = buildProgressMap(student, testTaskMetas);
+      expect(result['task-1']!.status).toBe('assigned');
+      expect(result['task-2']!.status).toBe('assigned');
+    });
 
-      expect(result[TASK_ID_1]!.status).toBe('assigned');
-      expect(result[TASK_ID_2]!.status).toBe('assigned');
+    it('returns optional when conditionsRequirements evaluates to true', () => {
+      const optionalEvaluator = vi.fn().mockReturnValue({ isAssigned: true, isOptional: true });
+
+      const result = buildProgressMap(defaultStudent, testTaskMetas, optionalEvaluator);
+
+      expect(result['task-1']!.status).toBe('optional');
+      expect(result['task-2']!.status).toBe('optional');
+    });
+
+    it('excludes tasks where conditionsAssignment evaluates to false', () => {
+      const notAssignedEvaluator = vi.fn().mockReturnValue({ isAssigned: false, isOptional: false });
+
+      const result = buildProgressMap(defaultStudent, testTaskMetas, notAssignedEvaluator);
+
+      expect(result['task-1']).toBeUndefined();
+      expect(result['task-2']).toBeUndefined();
+    });
+
+    it('mixes assigned and optional statuses per task variant conditions', () => {
+      // First task: assigned and required. Second task: assigned but optional.
+      const mixedEvaluator = vi.fn().mockImplementation((_user, conditionsAssignment, conditionsRequirements) => {
+        if (conditionsRequirements !== null) {
+          return { isAssigned: true, isOptional: true };
+        }
+        return { isAssigned: true, isOptional: false };
+      });
+
+      const tasksWithConditions: ReportTaskMeta[] = [
+        { ...testTaskMetas[0]!, conditionsAssignment: null, conditionsRequirements: null },
+        {
+          ...testTaskMetas[1]!,
+          conditionsAssignment: null,
+          conditionsRequirements: { field: 'studentData.statusEll', op: Operator.EQUAL, value: 'active' },
+        },
+      ];
+
+      const result = buildProgressMap(defaultStudent, tasksWithConditions, mixedEvaluator);
+
+      expect(result['task-1']!.status).toBe('assigned');
+      expect(result['task-2']!.status).toBe('optional');
     });
 
     describe('multi-variant priority (same taskId)', () => {
@@ -435,21 +497,38 @@ describe('ReportService', () => {
       const VARIANT_C = 'variant-c';
 
       const multiVariantMetas: ReportTaskMeta[] = [
-        { taskId: SHARED_TASK_ID, taskVariantId: VARIANT_A, taskSlug: 'swr', taskName: 'ROAR - Word', orderIndex: 0 },
-        { taskId: SHARED_TASK_ID, taskVariantId: VARIANT_B, taskSlug: 'swr', taskName: 'ROAR - Word', orderIndex: 1 },
-        { taskId: SHARED_TASK_ID, taskVariantId: VARIANT_C, taskSlug: 'swr', taskName: 'ROAR - Word', orderIndex: 2 },
+        {
+          taskId: SHARED_TASK_ID,
+          taskVariantId: VARIANT_A,
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+        {
+          taskId: SHARED_TASK_ID,
+          taskVariantId: VARIANT_B,
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 1,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+        {
+          taskId: SHARED_TASK_ID,
+          taskVariantId: VARIANT_C,
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 2,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
       ];
 
       function buildStudent(runs: Map<string, { completedAt: Date | null; startedAt: Date }>): StudentProgressRow {
         return {
-          userId: 'student-1',
-          assessmentPid: 'pid-1',
-          username: null,
-          email: null,
-          nameFirst: null,
-          nameLast: null,
-          grade: null,
-          schoolName: null,
+          ...defaultStudent,
           runs,
         };
       }
@@ -460,7 +539,7 @@ describe('ReportService', () => {
           new Map([[VARIANT_A, { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }]]),
         );
 
-        const result = buildProgressMap(student, multiVariantMetas);
+        const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
         expect(result[SHARED_TASK_ID]!.status).toBe('completed');
       });
@@ -474,7 +553,7 @@ describe('ReportService', () => {
           ]),
         );
 
-        const result = buildProgressMap(student, multiVariantMetas);
+        const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
         expect(result[SHARED_TASK_ID]!.status).toBe('completed');
       });
@@ -483,7 +562,7 @@ describe('ReportService', () => {
         // Variant A: no run, Variant B: started, Variant C: no run
         const student = buildStudent(new Map([[VARIANT_B, { completedAt: null, startedAt: new Date('2025-09-12') }]]));
 
-        const result = buildProgressMap(student, multiVariantMetas);
+        const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
         expect(result[SHARED_TASK_ID]!.status).toBe('started');
       });
@@ -497,7 +576,7 @@ describe('ReportService', () => {
           ]),
         );
 
-        const result = buildProgressMap(student, multiVariantMetas);
+        const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
         expect(result[SHARED_TASK_ID]!.status).toBe('completed');
         expect(result[SHARED_TASK_ID]!.completedAt).toBe('2025-09-15T00:00:00.000Z');
@@ -506,7 +585,7 @@ describe('ReportService', () => {
       it('produces a single progress key even with multiple variants', () => {
         const student = buildStudent(new Map());
 
-        const result = buildProgressMap(student, multiVariantMetas);
+        const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
         const keys = Object.keys(result);
         expect(keys).toHaveLength(1);
@@ -516,24 +595,55 @@ describe('ReportService', () => {
 
     it('populates startedAt when available from run data', () => {
       const student: StudentProgressRow = {
-        userId: 'student-1',
-        assessmentPid: 'pid-student-1',
-        username: null,
-        email: null,
-        nameFirst: null,
-        nameLast: null,
-        grade: null,
-        schoolName: null,
+        ...defaultStudent,
         runs: new Map([
           ['tv-1', { completedAt: new Date('2025-09-15T12:00:00Z'), startedAt: new Date('2025-09-15T10:00:00Z') }],
           ['tv-2', { completedAt: null, startedAt: new Date('2025-09-15T11:00:00Z') }],
         ]),
       };
 
-      const result = buildProgressMap(student, testTaskMetas);
+      const result = buildProgressMap(student, testTaskMetas, makeAssignedEvaluator());
 
-      expect(result[TASK_ID_1]!.startedAt).toBe('2025-09-15T10:00:00.000Z');
-      expect(result[TASK_ID_2]!.startedAt).toBe('2025-09-15T11:00:00.000Z');
+      expect(result['task-1']!.startedAt).toBe('2025-09-15T10:00:00.000Z');
+      expect(result['task-2']!.startedAt).toBe('2025-09-15T11:00:00.000Z');
+    });
+
+    it('does not call evaluator for tasks with runs', () => {
+      const evaluator = vi.fn().mockReturnValue({ isAssigned: true, isOptional: false });
+      const student: StudentProgressRow = {
+        ...defaultStudent,
+        runs: new Map([
+          ['tv-1', { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }],
+          ['tv-2', { completedAt: null, startedAt: new Date('2025-09-11') }],
+        ]),
+      };
+
+      buildProgressMap(student, testTaskMetas, evaluator);
+
+      // Both tasks have runs, so evaluator should not be called
+      expect(evaluator).not.toHaveBeenCalled();
+    });
+
+    it('shows run status even when conditionsAssignment would exclude the student', () => {
+      // If a student somehow has a run for a task whose conditionsAssignment would
+      // exclude them (e.g., data changed after the run was created), we still show
+      // the run — the student's actual progress takes precedence over conditions.
+      const notAssignedEvaluator = vi.fn().mockReturnValue({ isAssigned: false, isOptional: false });
+      const student: StudentProgressRow = {
+        ...defaultStudent,
+        runs: new Map([
+          ['tv-1', { completedAt: new Date('2025-09-15T10:00:00Z'), startedAt: new Date('2025-09-10T08:00:00Z') }],
+        ]),
+      };
+
+      const result = buildProgressMap(student, testTaskMetas, notAssignedEvaluator);
+
+      // Task-1 has a run → completed (conditions not checked)
+      expect(result['task-1']!.status).toBe('completed');
+      // Task-2 has no run and conditionsAssignment returns false → excluded
+      expect(result['task-2']).toBeUndefined();
+      // Evaluator only called for task-2 (the one without a run)
+      expect(notAssignedEvaluator).toHaveBeenCalledTimes(1);
     });
   });
 });
