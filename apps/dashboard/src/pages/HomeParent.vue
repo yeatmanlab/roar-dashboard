@@ -113,7 +113,7 @@ const { isActive, pause, resume } = useTimeoutPoll(
 
       if (registrationRetryCount.value >= MAX_RETRIES) {
         console.error('Registration verification failed, maximum retries reached:', error);
-        registrationError.value = error;
+        registrationError.value = error instanceof Error ? error : new Error(String(error));
         pause();
       }
     }

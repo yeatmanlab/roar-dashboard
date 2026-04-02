@@ -22,7 +22,7 @@
       <PvMessage severity="error">
         <div class="text-lg font-bold text-gray-600">Error while completing registration:</div>
         <div class="text-sm font-light text-gray-800">
-          {{ registrationError instanceof Error ? registrationError.message : String(registrationError) }}
+          {{ registrationError.message }}
         </div>
       </PvMessage>
     </div>
@@ -135,7 +135,7 @@ defineProps({
     required: true,
   },
   registrationError: {
-    type: [String, Error],
+    type: Error,
     required: false,
     default: null,
   },
