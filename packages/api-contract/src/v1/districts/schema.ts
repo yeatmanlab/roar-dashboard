@@ -39,16 +39,6 @@ export const DistrictIdentifiersSchema = z.object({
 export type DistrictIdentifiers = z.infer<typeof DistrictIdentifiersSchema>;
 
 /**
- * District dates schema.
- */
-export const DistrictDatesSchema = z.object({
-  created: z.string().datetime(),
-  updated: z.string().datetime(),
-});
-
-export type DistrictDates = z.infer<typeof DistrictDatesSchema>;
-
-/**
  * District counts schema (embedded via ?embed=counts).
  */
 export const DistrictCountsSchema = z.object({
@@ -66,11 +56,10 @@ export const DistrictDetailBaseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   abbreviation: z.string(),
-  orgType: z.string(),
+  orgType: z.literal('district'),
   parentOrgId: z.string().uuid().nullable(),
   location: DistrictLocationSchema.optional(),
   identifiers: DistrictIdentifiersSchema.optional(),
-  dates: DistrictDatesSchema,
   isRosteringRootOrg: z.boolean(),
   rosteringEnded: z.string().datetime().optional(),
 });
@@ -89,7 +78,7 @@ export type DistrictDetail = z.infer<typeof DistrictDetailSchema>;
 /**
  * Allowed sort fields for district details.
  */
-export const DISTRICT_DETAIL_SORT_FIELDS = ['name', 'abbreviation', 'createdAt'] as const;
+export const DISTRICT_DETAIL_SORT_FIELDS = ['name', 'abbreviation'] as const;
 
 /**
  * Sort field type for districts.
@@ -102,7 +91,6 @@ export type DistrictSortFieldType = (typeof DISTRICT_DETAIL_SORT_FIELDS)[number]
 export const DistrictDetailSortField = {
   NAME: 'name',
   ABBREVIATION: 'abbreviation',
-  CREATED_AT: 'createdAt',
 } as const satisfies Record<string, (typeof DISTRICT_DETAIL_SORT_FIELDS)[number]>;
 
 /**
@@ -121,7 +109,7 @@ export const DistrictEmbedOption = {
  * Query parameters for listing districts.
  */
 export const DistrictsListQuerySchema = PaginationQuerySchema.merge(
-  createSortQuerySchema(DISTRICT_DETAIL_SORT_FIELDS, 'createdAt'),
+  createSortQuerySchema(DISTRICT_DETAIL_SORT_FIELDS, 'name'),
 )
   .merge(createEmbedQuerySchema(DISTRICT_EMBED_OPTIONS))
   .extend({
