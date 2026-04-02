@@ -850,6 +850,44 @@ describe('POST /v1/users/:userId/agreements', () => {
     });
   });
 
+  describe('self-consent - unknown age', () => {
+    it('should allow user with unknown age (null dob + null grade) to consent to TOS agreement', async () => {
+      const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
+      authenticateAs({ authId: unknownAgeUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should allow user with unknown age to consent to ASSENT agreement', async () => {
+      const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
+      authenticateAs({ authId: unknownAgeUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should allow user with unknown age to consent to CONSENT agreement', async () => {
+      const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
+      authenticateAs({ authId: unknownAgeUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: consentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+  });
+
   describe('parent consent', () => {
     it('should allow parent to consent to ASSENT agreement for minor child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');

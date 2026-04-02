@@ -14,6 +14,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
+import { logger } from '../../logger';
 
 describe('UserService', () => {
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
@@ -570,6 +571,97 @@ describe('UserService', () => {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
         });
+      });
+    });
+
+    describe('self-consent - unknown age user', () => {
+      it('should allow user with unknown age (null dob + null grade) to consent to TOS agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const unknownAgeUser = UserFactory.build({ id: authContext.userId, dob: null, grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: unknownAgeUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const loggerWarnSpy = vi.spyOn(logger, 'warn');
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+        expect(loggerWarnSpy).toHaveBeenCalledWith(
+          { requestingUserId: authContext.userId, agreementId: agreement.id },
+          'User with unknown age (null DOB and no grade) is consenting - allowing all agreement types',
+        );
+
+        loggerWarnSpy.mockRestore();
+      });
+
+      it('should allow user with unknown age to consent to ASSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const unknownAgeUser = UserFactory.build({ id: authContext.userId, dob: null, grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: unknownAgeUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
+      });
+
+      it('should allow user with unknown age to consent to CONSENT agreement', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const unknownAgeUser = UserFactory.build({ id: authContext.userId, dob: null, grade: null });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.CONSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+        const createdAgreement = UserAgreementFactory.build({ userId: unknownAgeUser.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(unknownAgeUser); // Requesting user
+        mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        const result = await userService.recordUserAgreement(authContext, authContext.userId, {
+          agreementVersionId: agreementVersion.id,
+        });
+
+        expect(result).toEqual({ id: createdAgreement.id });
       });
     });
 

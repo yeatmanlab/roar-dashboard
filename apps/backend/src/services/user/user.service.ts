@@ -20,6 +20,14 @@ import { AgreementRepository } from '../../repositories/agreement.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
 
+// Age category for type-safe age classification in agreement consent logic
+const AgeCategory = {
+  ADULT: 'ADULT',
+  MINOR: 'MINOR',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+type AgeCategory = (typeof AgeCategory)[keyof typeof AgeCategory];
+
 /**
  * The subset of user fields that may be updated via PATCH /users/:id.
  *
@@ -392,13 +400,6 @@ export function UserService({
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId: requestingUserId },
         });
-      }
-
-      // Age category enum for type-safe age classification
-      enum AgeCategory {
-        ADULT = 'ADULT',
-        MINOR = 'MINOR',
-        UNKNOWN = 'UNKNOWN',
       }
 
       // Determine user's age category
