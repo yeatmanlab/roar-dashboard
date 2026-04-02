@@ -1,4 +1,5 @@
-import { type SQL, sql, and, or, eq, ne, gt, gte, lt, lte, inArray } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+import { sql, and, or, eq, ne, gt, gte, lt, lte, inArray } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { Condition, FieldCondition, CompositeCondition } from '../services/task/task.types';
 import { Operator } from '../services/task/task.types';
