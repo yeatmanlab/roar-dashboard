@@ -8,6 +8,8 @@ import type * as CoreDbSchema from '../db/schema/core';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
+import { OrgType } from '../enums/org-type.enum';
 
 /**
  * District-specific type (Org with orgType = 'district')
@@ -37,7 +39,6 @@ export interface DistrictWithCounts extends District {
 const DISTRICT_SORT_COLUMNS = {
   name: orgs.name,
   abbreviation: orgs.abbreviation,
-  createdAt: orgs.createdAt,
 } as const satisfies Record<DistrictSortFieldType, Column>;
 
 /**
@@ -47,7 +48,7 @@ export interface ListAuthorizedOptions {
   page: number;
   perPage: number;
   orderBy?: {
-    field: string;
+    field: DistrictSortFieldType;
     direction: 'asc' | 'desc';
   };
   includeEnded?: boolean;
@@ -82,7 +83,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
     // Build where clause for district type and rostering status
-    const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
@@ -105,7 +106,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
       const districtsWithCounts = result.items.map((district) => ({
         ...district,
-        counts: countsMap.get(district.id),
+        counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
       })) as DistrictWithCounts[];
 
       return {
@@ -143,7 +144,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .as('accessible_orgs');
 
     // Build where conditions
-    const whereConditions: SQL[] = [eq(orgs.orgType, 'district')];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
@@ -161,7 +162,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause);
 
-    const totalItems = countResult[0]?.count ?? 0;
+    const totalItems = Number(countResult[0]?.count ?? 0);
 
     if (totalItems === 0) {
       return { items: [], totalItems: 0 };
@@ -169,8 +170,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     // Resolve sort column
     const sortField = orderBy?.field as DistrictSortFieldType | undefined;
-    const sortColumn = sortField ? DISTRICT_SORT_COLUMNS[sortField] : orgs.createdAt;
-    const sortDirection = orderBy?.direction === 'asc' ? asc(sortColumn) : desc(sortColumn);
+    const sortColumn =
+      sortField && sortField in DISTRICT_SORT_COLUMNS
+        ? DISTRICT_SORT_COLUMNS[sortField as keyof typeof DISTRICT_SORT_COLUMNS]
+        : orgs.name;
+    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query: join districts with the accessible IDs subquery
     const dataResult = await this.db
@@ -178,7 +182,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .from(orgs)
       .innerJoin(accessibleOrgs, baseCondition)
       .where(whereClause)
-      .orderBy(sortDirection, orgs.id)
+      .orderBy(sortDirection, asc(orgs.id))
       .limit(perPage)
       .offset(offset);
 
@@ -191,7 +195,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
       districts = districts.map((district) => ({
         ...district,
-        counts: countsMap.get(district.id),
+        counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
       }));
     }
 
@@ -209,37 +213,67 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * - schools: COUNT of schools where parentOrgId = district.id and rosteringEnded IS NULL
    * - classes: COUNT of classes in district schools (via classes joined through schools)
    *
+   * Uses pre-aggregated subqueries with left joins for better performance at scale
+   * instead of correlated subqueries (O(n) vs O(n*m)).
+   *
    * @param districtIds - Array of district IDs to fetch counts for
    * @param includeEnded - Whether to include ended organizations in school counts
    * @returns Map of district ID to counts
    */
-  async fetchDistrictCounts(districtIds: string[], includeEnded: boolean): Promise<Map<string, DistrictCounts>> {
-    // Query to get counts for all districts in one go
-    // We use separate subqueries for each count to handle the different join conditions
+  private async fetchDistrictCounts(
+    districtIds: string[],
+    includeEnded: boolean,
+  ): Promise<Map<string, DistrictCounts>> {
+    // Pre-aggregate user counts per district
+    const userCounts = this.db
+      .select({
+        districtId: userOrgs.orgId,
+        users: countDistinct(userOrgs.userId).as('users'),
+      })
+      .from(userOrgs)
+      .where(and(inArray(userOrgs.orgId, districtIds), isNull(userOrgs.enrollmentEnd)))
+      .groupBy(userOrgs.orgId)
+      .as('user_counts');
+
+    // Pre-aggregate school counts per district
+    const schoolCountsWhere = includeEnded
+      ? and(inArray(orgs.parentOrgId, districtIds), eq(orgs.orgType, OrgType.SCHOOL))
+      : and(inArray(orgs.parentOrgId, districtIds), eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded));
+
+    const schoolCounts = this.db
+      .select({
+        districtId: orgs.parentOrgId,
+        schools: countDistinct(orgs.id).as('schools'),
+      })
+      .from(orgs)
+      .where(schoolCountsWhere)
+      .groupBy(orgs.parentOrgId)
+      .as('school_counts');
+
+    // Pre-aggregate class counts per district (only active classes)
+    const classCounts = this.db
+      .select({
+        districtId: classes.districtId,
+        classes: countDistinct(classes.id).as('classes'),
+      })
+      .from(classes)
+      .where(and(inArray(classes.districtId, districtIds), isNull(classes.rosteringEnded)))
+      .groupBy(classes.districtId)
+      .as('class_counts');
+
+    // Query to get counts for all districts using left joins to the aggregates
     const results = await this.db
       .select({
         districtId: orgs.id,
-        users: sql<number>`(
-          SELECT COUNT(DISTINCT ${userOrgs.userId})
-          FROM app.user_orgs
-          WHERE ${userOrgs.orgId} = ${orgs.id}
-            AND ${userOrgs.enrollmentEnd} IS NULL
-        )`.as('users'),
-        schools: sql<number>`(
-          SELECT COUNT(DISTINCT id)
-          FROM app.orgs
-          WHERE parent_org_id = ${orgs.id}
-            AND org_type = 'school'
-            ${includeEnded ? sql`` : sql`AND rostering_ended IS NULL`}
-        )`.as('schools'),
-        classes: sql<number>`(
-          SELECT COUNT(DISTINCT ${classes.id})
-          FROM app.classes
-          WHERE ${classes.districtId} = ${orgs.id}
-        )`.as('classes'),
+        users: sql<number>`COALESCE(${userCounts.users}, 0)`.as('users'),
+        schools: sql<number>`COALESCE(${schoolCounts.schools}, 0)`.as('schools'),
+        classes: sql<number>`COALESCE(${classCounts.classes}, 0)`.as('classes'),
       })
       .from(orgs)
-      .where(and(eq(orgs.orgType, 'district'), inArray(orgs.id, districtIds)));
+      .leftJoin(userCounts, eq(orgs.id, userCounts.districtId))
+      .leftJoin(schoolCounts, eq(orgs.id, schoolCounts.districtId))
+      .leftJoin(classCounts, eq(orgs.id, classCounts.districtId))
+      .where(and(eq(orgs.orgType, OrgType.DISTRICT), inArray(orgs.id, districtIds)));
 
     // Convert to Map for efficient lookup
     const countsMap = new Map<string, DistrictCounts>();
@@ -265,7 +299,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const result = await this.db
       .select()
       .from(orgs)
-      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, 'district')))
+      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, OrgType.DISTRICT)))
       .limit(1);
 
     return result[0] ?? null;
@@ -275,42 +309,20 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * Get a district by ID with authorization checks.
    * Only returns the district if the user has access via org/class/group membership.
    *
-   * @param districtId - UUID of the district to retrieve
    * @param filter - Access control filter with userId and allowed roles
+   * @param districtId - UUID of the district to retrieve
    * @returns The district if found and authorized, null otherwise
    */
-  async getAuthorizedById(districtId: string, filter: AccessControlFilter): Promise<District | null> {
+  async getAuthorizedById(filter: AccessControlFilter, districtId: string): Promise<District | null> {
     const accessibleOrgs = this.accessControls.buildUserAccessibleOrgIdsQuery(filter).as('accessible_orgs');
 
     const result = await this.db
       .select({ org: orgs })
       .from(orgs)
       .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
-      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, 'district')))
+      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, OrgType.DISTRICT)))
       .limit(1);
 
     return result[0]?.org ?? null;
-  }
-
-  /**
-   * Get child organizations of a district.
-   *
-   * Returns all organizations that have the given district as their parent.
-   * By default, excludes organizations with rosteringEnded timestamp.
-   *
-   * @param districtId - District ID to get children for
-   * @param includeEnded - Whether to include organizations with rosteringEnded timestamp
-   * @returns Array of child organizations sorted by name ascending
-   */
-  async getChildren(districtId: string, includeEnded = false): Promise<Org[]> {
-    const whereConditions: SQL[] = [eq(orgs.parentOrgId, districtId)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
-
-    return this.db.select().from(orgs).where(where).orderBy(asc(orgs.name));
   }
 }
