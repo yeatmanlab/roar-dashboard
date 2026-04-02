@@ -1,4 +1,5 @@
-import { type SQL, sql, and, eq, ne, inArray, gte, lte, ilike } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+import { sql, and, eq, ne, inArray, gte, lte, ilike } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { ParsedFilter } from '../types/filter';
 import { StatusCodes } from 'http-status-codes';
