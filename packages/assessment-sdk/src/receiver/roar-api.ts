@@ -53,4 +53,42 @@ export class RoarApi {
   constructor(ctx: CommandContext) {
     this.client = createClient(ctx);
   }
+
+  /**
+   * Retrieves variant information by variant ID and task ID.
+   * Calls the GET /v1/tasks/:taskId/variants/:variantId endpoint to fetch variant details
+   * including task information and variant parameters.
+   *
+   * @param taskId - The UUID of the parent task
+   * @param variantId - The UUID of the variant to retrieve
+   * @returns Variant information including variant_id, task_id, task_version, and variant_params
+   * @throws Error if the variant is not found or the request fails
+   */
+  async getVariantById(
+    taskId: string,
+    variantId: string,
+  ): Promise<{
+    variant_id: string;
+    task_id: string;
+    task_version: string;
+    variant_params: Record<string, unknown>;
+  }> {
+    const result = await this.client.tasks.getTaskVariant({ params: { taskId, variantId } });
+
+    if (result.status === 200) {
+      const variant = result.body.data;
+      // Transform the variant response to the expected output format
+      return {
+        variant_id: variant.id,
+        task_id: variant.taskId,
+        task_version: '1.0.0', // TODO: Add task_version to variant response once available in backend
+        variant_params: Object.fromEntries(
+          variant.parameters.map((param: { name: string; value: unknown }) => [param.name, param.value]),
+        ),
+      };
+    }
+
+    const errorBody = result.body as { error?: { message?: string } };
+    throw new Error(errorBody?.error?.message ?? `Failed to get variant with status ${result.status}`);
+  }
 }

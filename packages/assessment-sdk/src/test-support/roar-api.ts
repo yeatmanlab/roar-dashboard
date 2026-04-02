@@ -10,6 +10,7 @@ import type { RoarApi } from '../receiver/roar-api';
 export function createMockRoarApi() {
   const createRunMock = vi.fn() as Mock;
   const eventMock = vi.fn() as Mock;
+  const getVariantByIdMock = vi.fn() as Mock;
 
   return {
     client: {
@@ -18,6 +19,7 @@ export function createMockRoarApi() {
         event: eventMock,
       },
     },
+    getVariantById: getVariantByIdMock,
   } as unknown as RoarApi;
 }
 
