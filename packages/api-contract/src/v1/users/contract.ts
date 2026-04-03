@@ -80,6 +80,7 @@ export const UsersContract = c.router(
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -92,6 +93,7 @@ export const UsersContract = c.router(
         'Returns 401 if the user is not authenticated. ' +
         'Returns 403 if the user lacks permission to consent for the target user. ' +
         'Returns 404 if the user or agreement version does not exist. ' +
+        'Returns 409 if the user has already consented to the given agreement version. ' +
         'Returns 500 if an internal server error occurs.',
     },
   },

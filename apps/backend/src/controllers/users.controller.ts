@@ -154,6 +154,7 @@ export const UsersController = {
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
+          StatusCodes.CONFLICT,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

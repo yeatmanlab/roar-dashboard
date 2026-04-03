@@ -345,6 +345,7 @@ export function UserService({
    * @param body - Request body (agreementVersionId)
    * @returns Object with created agreement ID
    * @throws {ApiError} NOT_FOUND if user, agreement version, or agreement doesn't exist
+   * @throws {ApiError} CONFLICT if the user has already consented to the given agreement version
    * @throws {ApiError} FORBIDDEN if user lacks family relationship to consent for target user, if the agreement type is inappropriate for the user's age, or if a parent attempts to consent for a non-minor or non-assent agreement
    * @throws {ApiError} INTERNAL_SERVER_ERROR if database operation fails
    */
@@ -378,6 +379,24 @@ export function UserService({
         });
       }
 
+      // 3. Check for duplicate — user already consented to this version
+      const existingAgreement = await userAgreementRepository.findByUserIdAndAgreementVersionId(
+        userId,
+        agreementVersionId,
+      );
+
+      if (existingAgreement) {
+        logger.warn(
+          { requestingUserId, targetUserId: userId, agreementVersionId },
+          'User attempted to consent to an agreement version they have already signed',
+        );
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { requestingUserId, targetUserId: userId, agreementVersionId },
+        });
+      }
+
       // Fetch the agreement to get the agreement type
       const agreement = await agreementRepository.getById({ id: agreementVersion.agreementId });
 
@@ -389,7 +408,7 @@ export function UserService({
         });
       }
 
-      // 3. Validate agreement type is appropriate for user's age
+      // 4. Validate agreement type is appropriate for user's age
       // Fetch requesting user to determine their age
       const requestingUser =
         requestingUserId === userId ? targetUser : await userRepository.getById({ id: requestingUserId });
@@ -495,7 +514,7 @@ export function UserService({
         }
       }
 
-      // 5. Create the user agreement record
+      // 6. Create the user agreement record
       const agreementData: NewUserAgreement = {
         userId,
         agreementVersionId,

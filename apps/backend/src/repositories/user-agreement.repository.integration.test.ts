@@ -184,4 +184,96 @@ describe('UserAgreementRepository Integration', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('findByUserIdAndAgreementVersionId', () => {
+    it('should return null when no matching record exists', async () => {
+      const user = await UserFactory.create();
+      const agreement = await AgreementFactory.create({
+        name: 'No Match Agreement',
+        agreementType: AgreementType.TOS,
+      });
+      const version = await AgreementVersionFactory.create(
+        { locale: 'en-US' },
+        { transient: { agreementId: agreement.id } },
+      );
+
+      const result = await repository.findByUserIdAndAgreementVersionId(user.id, version.id);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return the existing record when one exists', async () => {
+      const user = await UserFactory.create();
+      const agreement = await AgreementFactory.create({
+        name: 'Existing Match Agreement',
+        agreementType: AgreementType.CONSENT,
+      });
+      const version = await AgreementVersionFactory.create(
+        { locale: 'en-US' },
+        { transient: { agreementId: agreement.id } },
+      );
+
+      const { id: userAgreementId } = await repository.create({
+        data: {
+          userId: user.id,
+          agreementVersionId: version.id,
+          agreementTimestamp: new Date(),
+        },
+      });
+
+      const result = await repository.findByUserIdAndAgreementVersionId(user.id, version.id);
+
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(userAgreementId);
+      expect(result!.userId).toBe(user.id);
+      expect(result!.agreementVersionId).toBe(version.id);
+    });
+
+    it('should return null for a different user with the same agreement version', async () => {
+      const user1 = await UserFactory.create();
+      const user2 = await UserFactory.create();
+      const agreement = await AgreementFactory.create({
+        name: 'Cross-User Agreement',
+        agreementType: AgreementType.TOS,
+      });
+      const version = await AgreementVersionFactory.create(
+        { locale: 'en-US' },
+        { transient: { agreementId: agreement.id } },
+      );
+
+      // Create consent for user1 only
+      await repository.create({
+        data: { userId: user1.id, agreementVersionId: version.id, agreementTimestamp: new Date() },
+      });
+
+      const result = await repository.findByUserIdAndAgreementVersionId(user2.id, version.id);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null for the same user with a different agreement version', async () => {
+      const user = await UserFactory.create();
+      const agreement = await AgreementFactory.create({
+        name: 'Multi-Version Agreement',
+        agreementType: AgreementType.TOS,
+      });
+      const version1 = await AgreementVersionFactory.create(
+        { locale: 'en-US' },
+        { transient: { agreementId: agreement.id } },
+      );
+      const version2 = await AgreementVersionFactory.create(
+        { locale: 'es-MX' },
+        { transient: { agreementId: agreement.id } },
+      );
+
+      // Create consent for version1 only
+      await repository.create({
+        data: { userId: user.id, agreementVersionId: version1.id, agreementTimestamp: new Date() },
+      });
+
+      const result = await repository.findByUserIdAndAgreementVersionId(user.id, version2.id);
+
+      expect(result).toBeNull();
+    });
+  });
 });

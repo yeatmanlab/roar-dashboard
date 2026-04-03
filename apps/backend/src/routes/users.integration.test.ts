@@ -16,6 +16,13 @@
  * - Validation (empty body, invalid UUID, invalid enum value)
  * - Unique constraint violations (email, username → 409)
  * - Error cases (401, 404)
+ *
+ * POST /v1/users/:userId/agreements
+ * - Authorization (who can consent for whom)
+ * - Age-based agreement type restrictions
+ * - Parent/guardian consent for minor children
+ * - Duplicate consent detection (same user+version → 409)
+ * - Error cases (400, 401, 403, 404, 409)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
@@ -1044,29 +1051,56 @@ describe('POST /v1/users/:userId/agreements', () => {
   });
 
   describe('duplicate consent', () => {
-    it('should allow duplicate consents (annual reconsent)', async () => {
-      authenticateAs({ authId: adultUser.authId! });
+    it('returns 409 when user attempts to consent to an agreement version they already have', async () => {
+      const freshAdult = await UserFactory.create({ dob: '1990-01-01', grade: null });
+      authenticateAs({ authId: freshAdult.authId! });
 
-      // First consent
+      // First consent succeeds
       const res1 = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
+        .post(`/v1/users/${freshAdult.id}/agreements`)
         .set('Authorization', 'Bearer token')
         .send({ agreementVersionId: tosAgreementVersion.id });
 
       expect(res1.status).toBe(StatusCodes.CREATED);
-      const firstId = res1.body.data.id;
 
-      // Second consent to same agreement
+      // Second consent to the same version returns 409
       const res2 = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
+        .post(`/v1/users/${freshAdult.id}/agreements`)
         .set('Authorization', 'Bearer token')
         .send({ agreementVersionId: tosAgreementVersion.id });
 
-      expect(res2.status).toBe(StatusCodes.CREATED);
-      const secondId = res2.body.data.id;
+      expect(res2.status).toBe(StatusCodes.CONFLICT);
+      expect(res2.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
 
-      // Should create separate records
-      expect(secondId).not.toBe(firstId);
+    it('returns 409 when parent attempts to re-consent to the same agreement version for child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+      const parent = await UserFactory.create({ dob: '1985-01-01' });
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      authenticateAs({ authId: parent.authId! });
+
+      // First consent succeeds
+      const res1 = await request(app)
+        .post(`/v1/users/${child.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res1.status).toBe(StatusCodes.CREATED);
+
+      // Second consent to the same version returns 409
+      const res2 = await request(app)
+        .post(`/v1/users/${child.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res2.status).toBe(StatusCodes.CONFLICT);
+      expect(res2.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
   });
 });
