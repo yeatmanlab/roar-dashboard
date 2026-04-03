@@ -843,7 +843,7 @@ describe('ReportService', () => {
     });
 
     it('returns 403 when FGA denies can_read_scores on administration', async () => {
-      mockFgaClient.check.mockResolvedValue({ allowed: false });
+      mockAuthorizationService.hasPermission.mockResolvedValue(false);
 
       const service = createService();
 
@@ -852,12 +852,10 @@ describe('ReportService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      expect(mockFgaClient.check).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user: `user:${teacherAuth.userId}`,
-          relation: 'can_read_scores',
-          object: `administration:${testAdministrationId}`,
-        }),
+      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+        teacherAuth.userId,
+        'can_read_scores',
+        `administration:${testAdministrationId}`,
       );
     });
 
@@ -874,7 +872,7 @@ describe('ReportService', () => {
 
     it('returns 403 when FGA denies can_read_scores at scope level', async () => {
       // First check (administration) passes, second check (scope) fails
-      mockFgaClient.check.mockResolvedValueOnce({ allowed: true }).mockResolvedValueOnce({ allowed: false });
+      mockAuthorizationService.hasPermission.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
       const service = createService();
 
@@ -890,7 +888,7 @@ describe('ReportService', () => {
       const service = createService();
       await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
 
-      expect(mockFgaClient.check).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
     });
 
     // --- Empty results ---
