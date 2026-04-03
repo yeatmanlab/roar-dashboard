@@ -17,16 +17,16 @@ import { SdkErrorCode } from '../enums';
  *
  * **Idempotency:**
  * This command is non-idempotent; the Invoker will execute it exactly once.
- * 409 Conflict is treated as success since the run is already in a terminal state.
  *
  * **Behavior:**
  * - Sends a POST request to `/runs/:runId/event` with type `engagement`
- * - Returns an empty object on success (HTTP 200 or 409 Conflict)
+ * - Returns an empty object on success (HTTP 200 OK)
  * - Throws `SDKError` with code `UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED` on failure
  *
  * **Error handling:**
- * - HTTP 200 OK or 409 Conflict → Success
+ * - HTTP 200 OK → Success
  * - HTTP 400 Bad Request → Extracts error message from response body (type-narrowed by status check)
+ * - HTTP 409 Conflict → Throws error (run is in a terminal state, engagement flags cannot be updated)
  * - Other status codes → Generic error message with HTTP status code
  *
  * The API contract's `strictStatusCodes: true` configuration enables TypeScript to
@@ -83,7 +83,7 @@ export class UpdateRunEngagementFlagsCommand
       },
     });
 
-    if (result.status === StatusCodes.OK || result.status === StatusCodes.CONFLICT) {
+    if (result.status === StatusCodes.OK) {
       return {};
     }
 
