@@ -3,6 +3,13 @@
  */
 
 /**
+ * Matches valid BCP-47 locale codes.
+ * ISO 639-1 two-letter language code with optional ISO 3166-1 two-letter region code.
+ * Examples: "en", "en-US", "es", "es-MX"
+ */
+export const BCP47_LOCALE = /^[a-z]{2}(-[A-Z]{2})?$/;
+
+/**
  * Matches valid identifiers that:
  * - Start with a letter (a-z, A-Z)
  * - Followed by letters, digits, underscores, hyphens, or spaces

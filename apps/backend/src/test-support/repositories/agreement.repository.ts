@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
 import { createMockBaseRepositoryMethods } from './base.repository';
 import type { AgreementRepository } from '../../repositories/agreement.repository';
@@ -10,6 +11,8 @@ import type { AgreementRepository } from '../../repositories/agreement.repositor
 export function createMockAgreementRepository(): MockedObject<AgreementRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
+    listAll: vi.fn(),
+    getVersionsByAgreementIds: vi.fn(),
   } as MockedObject<AgreementRepository>;
 }
 
