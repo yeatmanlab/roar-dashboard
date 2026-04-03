@@ -212,7 +212,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     await expect(command.execute(input)).rejects.toThrow('Network error');
   });
 
-  it('treats 409 Conflict as success', async () => {
+  it('throws SDKError when run is in terminal state (409 Conflict)', async () => {
     const input: UpdateRunEngagementFlagsCommandInput = {
       runId: 'run-123',
       type: RUN_EVENT_ENGAGEMENT,
@@ -227,8 +227,10 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       body: {},
     });
 
-    const result = await command.execute(input);
-
-    expect(result).toEqual({});
+    await expect(command.execute(input)).rejects.toThrow(SDKError);
+    await expect(command.execute(input)).rejects.toMatchObject({
+      message: 'Failed to update run engagement flags with status 409',
+      code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+    });
   });
 });
