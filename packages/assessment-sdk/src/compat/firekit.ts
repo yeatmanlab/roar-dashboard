@@ -447,7 +447,7 @@ export function abortRun(): void {
  * Use `markAsReliable` to mark the entire run as reliable instead.
  *
  * @param flagNames - Array of engagement flag names to set (e.g., 'incomplete', 'response_time_too_fast')
- * @param markAsReliable - Optional flag to mark the run as reliable (defaults to false)
+ * @param markAsReliable - Flag to mark the run as reliable (defaults to false)
  * @returns Promise that resolves when the engagement flags have been sent to the backend
  * @throws {SDKError} If no active run exists
  *
@@ -456,7 +456,7 @@ export function abortRun(): void {
  * await updateEngagementFlags(['incomplete', 'response_time_too_fast'], true);
  * ```
  */
-export async function updateEngagementFlags(flagNames: string[], markAsReliable?: boolean): Promise<void> {
+export async function updateEngagementFlags(flagNames: string[], markAsReliable: boolean = false): Promise<void> {
   const facade = getFirekitCompat();
   const runId = facade._getRunId();
 
@@ -486,7 +486,7 @@ export async function updateEngagementFlags(flagNames: string[], markAsReliable?
     runId,
     type: RUN_EVENT_ENGAGEMENT,
     engagementFlags,
-    reliableRun: markAsReliable ?? false,
+    reliableRun: markAsReliable,
   });
 }
 
