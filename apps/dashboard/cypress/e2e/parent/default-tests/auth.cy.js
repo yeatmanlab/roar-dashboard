@@ -22,13 +22,13 @@ describe('Parent: Auth', () => {
     cy.logout();
   });
 
-  it.skip('Shows an error when using invalid invitation codes during sign-up', () => {
+  it('Shows an error when using invalid invitation codes during student enrollment', () => {
     const invalidActivationCode = '123456';
 
-    // Visit the sign-up page with the activation code.
+    // Visit the sign-up page with the invalid activation code.
     cy.visit(`${APP_ROUTES.REGISTER}/?code=${invalidActivationCode}`);
 
-    // Fill out parent form.
+    // Fill out parent form (code validation now happens during student enrollment).
     cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
     cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
     cy.get('[data-cy="signup__parent-email"]').type(NEW_PARENT_USERNAME);
@@ -41,23 +41,42 @@ describe('Parent: Auth', () => {
     // Verify consent dialog.
     cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
 
-    // Submit parent form.
-    cy.get('button').contains('Next').click();
+    // Submit parent form (should succeed - validation moved to student enrollment).
+    cy.get('button').contains('Register').click();
 
-    // Validate failure message.
+    // Wait for parent dashboard to load.
+    cy.waitForParentHomepage();
+
+    // Click "Add Child" to open enrollment modal.
+    cy.get('[data-cy="add-student-btn"]').click();
+
+    // Verify the invalid code is pre-populated in the student enrollment form.
+    cy.get('[data-cy="activation-code-input"]').should('have.value', invalidActivationCode);
+
+    // Fill out student form.
+    cy.get('[data-cy="student-username-input"]').type('teststudent');
+    cy.get('[data-cy="student-password-input"]').type('TestPassword123!');
+    cy.get('[data-cy="student-confirm-password-input"]').type('TestPassword123!');
+    // Note: First name and last name selectors need to be checked in the component
+
+    // Validate the activation code (should fail).
+    cy.get('button').contains('Validate').click();
+
+    // Validate failure message appears.
     cy.findByTestId('dialog__header').should('be.visible').contains('Error');
     cy.findByTestId('dialog__content')
       .should('be.visible')
       .contains(`The code ${invalidActivationCode} does not belong to any organization`);
   });
 
-  it.skip('Validates invitation codes during sign-up', () => {
+  it('Validates invitation codes during student enrollment', () => {
     const ORG_CODE = Cypress.env('ACTIVATION_CODE');
     const ORG_NAME = Cypress.env('testInviteGroupName');
 
+    // Visit the sign-up page with valid activation code.
     cy.visit(`${APP_ROUTES.REGISTER}/?code=${ORG_CODE}`);
 
-    // Fill out parent form.
+    // Fill out parent form (code is stored for later use).
     cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
     cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
     cy.get('[data-cy="signup__parent-email"]').type(NEW_PARENT_USERNAME);
@@ -70,10 +89,34 @@ describe('Parent: Auth', () => {
     // Verify consent dialog.
     cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
 
-    // Submit parent form.
-    cy.get('button').contains('Next').click();
+    // Submit parent form (should succeed - code stored for student enrollment).
+    cy.get('button').contains('Register').click();
 
-    // Validate success message.
+    // Wait for parent dashboard to load.
+    cy.waitForParentHomepage();
+
+    // Click "Add Child" to open enrollment modal.
+    cy.get('[data-cy="add-student-btn"]').click();
+
+    // Verify the valid code is pre-populated in the student enrollment form.
+    cy.get('[data-cy="activation-code-input"]').should('have.value', ORG_CODE);
+
+    // Fill out student form.
+    cy.get('[data-cy="student-username-input"]').type('teststudent');
+    cy.get('[data-cy="student-password-input"]').type('TestPassword123!');
+    cy.get('[data-cy="student-confirm-password-input"]').type('TestPassword123!');
+    // Note: First name and last name selectors need to be checked in the component
+
+    // Validate the activation code (should succeed).
+    cy.get('button').contains('Validate').click();
+
+    // Validate success - organization name should be displayed.
     cy.get('[data-cy="child-registration__org-name"]').should('contain.text', ORG_NAME);
+
+    // Submit student enrollment.
+    cy.get('button').contains('Submit').click();
+
+    // Verify success toast message appears.
+    cy.get('.p-toast-message').should('be.visible').contains('Student successfully enrolled');
   });
 });
