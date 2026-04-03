@@ -1,5 +1,7 @@
-import { Router, type Express } from 'express';
+import type { Express } from 'express';
+import { Router } from 'express';
 import { registerMeRoutes } from './me';
+import { registerAgreementsRoutes } from './agreements';
 import { registerAdministrationsRoutes } from './administrations';
 import { registerRunsRoutes } from './runs';
 import { registerDistrictsRoutes } from './districts';
@@ -31,6 +33,7 @@ export function registerAllRoutes(app: Express) {
   });
 
   registerMeRoutes(router);
+  registerAgreementsRoutes(router);
   registerAdministrationsRoutes(router);
   registerRunsRoutes(router);
   registerDistrictsRoutes(router);

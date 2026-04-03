@@ -74,12 +74,14 @@ export class UpdateRunEngagementFlagsCommand
    *         The error includes the code UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED.
    */
   async execute(input: UpdateRunEngagementFlagsCommandInput): Promise<UpdateRunEngagementFlagsCommandOutput> {
+    const { runId, type, engagementFlags, reliableRun = false } = input;
+
     const result = await this.api.client.runs.event({
-      params: { runId: input.runId },
+      params: { runId },
       body: {
-        type: input.type,
-        engagementFlags: input.engagementFlags,
-        reliableRun: input.reliableRun ?? false,
+        type,
+        engagementFlags,
+        reliableRun,
       },
     });
 

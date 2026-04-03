@@ -1,8 +1,10 @@
 import { eq, asc, desc, countDistinct, and, isNull, sql, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseRepository, type PaginatedResult } from './base.repository';
-import { orgs, type Org, userOrgs, classes } from '../db/schema';
+import type { PaginatedResult } from './base.repository';
+import { BaseRepository } from './base.repository';
+import type { Org } from '../db/schema';
+import { orgs, userOrgs, classes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { OrgAccessControls } from './access-controls/org.access-controls';

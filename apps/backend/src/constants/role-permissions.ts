@@ -9,8 +9,10 @@
  * Note: Caregiver access is handled separately via family relationships.
  */
 
-import { Permissions, type Permission } from './permissions';
-import { UserRole, type UserRole as UserRoleType } from '../enums/user-role.enum';
+import type { Permission } from './permissions';
+import { Permissions } from './permissions';
+import type { UserRole as UserRoleType } from '../enums/user-role.enum';
+import { UserRole } from '../enums/user-role.enum';
 
 /**
  * Permissions granted to each role.

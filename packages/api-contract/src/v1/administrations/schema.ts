@@ -6,6 +6,8 @@ import {
   createEmbedQuerySchema,
   createPaginatedResponseSchema,
 } from '../common/query';
+import { AgreementTypeSchema, LocaleSchema } from '../agreements/schema';
+export type { AgreementType, Locale } from '../agreements/schema';
 
 /**
  * Administration status values for filtering.
@@ -451,30 +453,6 @@ export const AdministrationTaskVariantsListResponseSchema = createPaginatedRespo
 );
 
 export type AdministrationTaskVariantsListResponse = z.infer<typeof AdministrationTaskVariantsListResponseSchema>;
-
-/**
- * Agreement type values for filtering.
- */
-export const AGREEMENT_TYPE_VALUES = ['tos', 'assent', 'consent'] as const;
-
-/**
- * Schema for agreement type filter.
- */
-export const AgreementTypeSchema = z.enum(AGREEMENT_TYPE_VALUES);
-
-export type AgreementType = z.infer<typeof AgreementTypeSchema>;
-
-/**
- * BCP-47 locale code schema.
- * Validates ISO 639-1 language code with optional ISO 3166-1 region code.
- * Examples: "en", "en-US", "es", "es-MX"
- */
-export const LocaleSchema = z
-  .string()
-  .max(5)
-  .regex(/^[a-z]{2}(-[A-Z]{2})?$/, 'Invalid locale format. Expected BCP-47 format (e.g., "en", "en-US", "es-MX")');
-
-export type Locale = z.infer<typeof LocaleSchema>;
 
 /**
  * Agreement version schema (current version for requested locale).

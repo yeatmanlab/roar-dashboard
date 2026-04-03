@@ -16,6 +16,13 @@
  * - Validation (empty body, invalid UUID, invalid enum value)
  * - Unique constraint violations (email, username → 409)
  * - Error cases (401, 404)
+ *
+ * POST /v1/users/:userId/agreements
+ * - Authorization (who can consent for whom)
+ * - Age-based agreement type restrictions
+ * - Parent/guardian consent for minor children
+ * - Duplicate consent detection (same user+version → 409)
+ * - Error cases (400, 401, 403, 404, 409)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
@@ -28,6 +35,7 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
 
@@ -713,6 +721,386 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/users/:userId/agreements
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/users/:userId/agreements', () => {
+  let tosAgreementVersion: Awaited<ReturnType<typeof AgreementVersionFactory.create>>;
+  let consentAgreementVersion: Awaited<ReturnType<typeof AgreementVersionFactory.create>>;
+  let assentAgreementVersion: Awaited<ReturnType<typeof AgreementVersionFactory.create>>;
+  let adultUser: Awaited<ReturnType<typeof UserFactory.create>>;
+  let minorUser: Awaited<ReturnType<typeof UserFactory.create>>;
+
+  beforeAll(async () => {
+    const { AgreementFactory } = await import('../test-support/factories/agreement.factory');
+    const { AgreementVersionFactory } = await import('../test-support/factories/agreement-version.factory');
+    const { AgreementType } = await import('../enums/agreement-type.enum');
+
+    // Create agreements and versions
+    const tosAgreement = await AgreementFactory.create({ name: 'Terms of Service', agreementType: AgreementType.TOS });
+    const consentAgreement = await AgreementFactory.create({
+      name: 'Parent Consent',
+      agreementType: AgreementType.CONSENT,
+    });
+    const assentAgreement = await AgreementFactory.create({
+      name: 'Child Assent',
+      agreementType: AgreementType.ASSENT,
+    });
+
+    tosAgreementVersion = await AgreementVersionFactory.create(
+      {
+        locale: 'en-US',
+        isCurrent: true,
+      },
+      {
+        transient: { agreementId: tosAgreement.id },
+      },
+    );
+
+    consentAgreementVersion = await AgreementVersionFactory.create(
+      {
+        locale: 'en-US',
+        isCurrent: true,
+      },
+      {
+        transient: { agreementId: consentAgreement.id },
+      },
+    );
+
+    assentAgreementVersion = await AgreementVersionFactory.create(
+      {
+        locale: 'en-US',
+        isCurrent: true,
+      },
+      {
+        transient: { agreementId: assentAgreement.id },
+      },
+    );
+
+    // Create test users
+    adultUser = await UserFactory.create({ dob: '1990-01-01', grade: null });
+    minorUser = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+  });
+
+  describe('self-consent - adult', () => {
+    it('should allow adult to consent to TOS agreement', async () => {
+      authenticateAs({ authId: adultUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${adultUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should allow adult to consent to CONSENT agreement', async () => {
+      authenticateAs({ authId: adultUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${adultUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: consentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should reject adult attempting to consent to ASSENT agreement', async () => {
+      authenticateAs({ authId: adultUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${adultUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('self-consent - minor', () => {
+    it('should allow minor to consent to ASSENT agreement', async () => {
+      authenticateAs({ authId: minorUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${minorUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should reject minor attempting to consent to TOS agreement', async () => {
+      authenticateAs({ authId: minorUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${minorUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should reject minor attempting to consent to CONSENT agreement', async () => {
+      authenticateAs({ authId: minorUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${minorUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: consentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('self-consent - unknown age', () => {
+    it('should allow user with unknown age (null dob + null grade) to consent to TOS agreement', async () => {
+      const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
+      authenticateAs({ authId: unknownAgeUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should allow user with unknown age to consent to ASSENT agreement', async () => {
+      const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
+      authenticateAs({ authId: unknownAgeUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should allow user with unknown age to consent to CONSENT agreement', async () => {
+      const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
+      authenticateAs({ authId: unknownAgeUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: consentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+  });
+
+  describe('parent consent', () => {
+    it('should allow parent to consent to ASSENT agreement for minor child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+      const parent = await UserFactory.create({ dob: '1985-01-01' });
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      authenticateAs({ authId: parent.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${child.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toBeDefined();
+    });
+
+    it('should reject parent attempting to consent to TOS for child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+      const parent = await UserFactory.create({ dob: '1985-01-01' });
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      authenticateAs({ authId: parent.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${child.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should reject user without family relationship attempting to consent', async () => {
+      const unrelatedUser = await UserFactory.create({ dob: '1985-01-01' });
+      const targetChild = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+
+      authenticateAs({ authId: unrelatedUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${targetChild.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should reject teacher with class access but no family relationship', async () => {
+      const teacher = await UserFactory.create({ dob: '1980-01-01' });
+      const targetChild = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+
+      // Create class relationship: both teacher and student in same class
+      await UserClassFactory.create({
+        userId: teacher.id,
+        classId: baseFixture.classInSchoolA.id,
+        role: UserRole.TEACHER,
+      });
+      await UserClassFactory.create({
+        userId: targetChild.id,
+        classId: baseFixture.classInSchoolA.id,
+        role: UserRole.STUDENT,
+      });
+
+      authenticateAs({ authId: teacher.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${targetChild.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should reject parent attempting to consent for adult child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+      const parent = await UserFactory.create({ dob: '1960-01-01' });
+      const adultChild = await UserFactory.create({ dob: '1995-01-01', grade: null });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: adultChild.id, familyId: family.id, role: 'child' });
+
+      authenticateAs({ authId: parent.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${adultChild.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('validation', () => {
+    it('should return 404 when target user does not exist', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/users/00000000-0000-0000-0000-000000000000/agreements')
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('should return 404 when agreement version does not exist', async () => {
+      authenticateAs({ authId: adultUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${adultUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: '00000000-0000-0000-0000-000000000000' });
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('should return 401 when unauthenticated', async () => {
+      const res = await request(app)
+        .post(`/v1/users/${adultUser.id}/agreements`)
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('should return 400 when agreementVersionId is missing', async () => {
+      authenticateAs({ authId: adultUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${adultUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({});
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('should return 400 when agreementVersionId is invalid UUID', async () => {
+      authenticateAs({ authId: adultUser.authId! });
+      const res = await request(app)
+        .post(`/v1/users/${adultUser.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: 'not-a-uuid' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  describe('duplicate consent', () => {
+    it('returns 409 when user attempts to consent to an agreement version they already have', async () => {
+      const freshAdult = await UserFactory.create({ dob: '1990-01-01', grade: null });
+      authenticateAs({ authId: freshAdult.authId! });
+
+      // First consent succeeds
+      const res1 = await request(app)
+        .post(`/v1/users/${freshAdult.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res1.status).toBe(StatusCodes.CREATED);
+
+      // Second consent to the same version returns 409
+      const res2 = await request(app)
+        .post(`/v1/users/${freshAdult.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: tosAgreementVersion.id });
+
+      expect(res2.status).toBe(StatusCodes.CONFLICT);
+      expect(res2.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('returns 409 when parent attempts to re-consent to the same agreement version for child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+      const parent = await UserFactory.create({ dob: '1985-01-01' });
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      authenticateAs({ authId: parent.authId! });
+
+      // First consent succeeds
+      const res1 = await request(app)
+        .post(`/v1/users/${child.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res1.status).toBe(StatusCodes.CREATED);
+
+      // Second consent to the same version returns 409
+      const res2 = await request(app)
+        .post(`/v1/users/${child.id}/agreements`)
+        .set('Authorization', 'Bearer token')
+        .send({ agreementVersionId: assentAgreementVersion.id });
+
+      expect(res2.status).toBe(StatusCodes.CONFLICT);
+      expect(res2.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
   });
 });

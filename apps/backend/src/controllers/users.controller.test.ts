@@ -39,6 +39,7 @@ function expectErrorResponse(
 describe('UsersController', () => {
   const mockGetById = vi.fn();
   const mockUpdate = vi.fn();
+  const mockRecordUserAgreement = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
@@ -49,6 +50,7 @@ describe('UsersController', () => {
       findByAuthId: vi.fn(),
       getById: mockGetById,
       update: mockUpdate,
+      recordUserAgreement: mockRecordUserAgreement,
     } as MockedUserService);
   });
 
@@ -489,6 +491,187 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
 
       await expect(Controller.update(superAdminContext, targetUserId, validBody)).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('recordUserAgreement', () => {
+    const authContext = AuthContextFactory.build({ userId: 'user-123' });
+    const targetUserId = 'target-456';
+    const agreementVersionId = 'version-789';
+    const validBody = { agreementVersionId };
+
+    /**
+     * Helper to expect 201 Created response with agreement ID
+     */
+    function expectCreatedResponse(result: { status: number; body: { data: { id: string } } | { error: unknown } }) {
+      expect(result.status).toBe(StatusCodes.CREATED);
+      expect(result.body).toHaveProperty('data');
+      return (result.body as { data: { id: string } }).data;
+    }
+
+    it('should return 201 Created with agreement ID on success', async () => {
+      const createdAgreementId = 'agreement-abc-123';
+      mockRecordUserAgreement.mockResolvedValue({ id: createdAgreementId });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const data = expectCreatedResponse(result);
+      expect(data.id).toBe(createdAgreementId);
+    });
+
+    it('should delegate to the service with the correct arguments', async () => {
+      mockRecordUserAgreement.mockResolvedValue({ id: 'agreement-123' });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      expect(mockRecordUserAgreement).toHaveBeenCalledWith(authContext, targetUserId, validBody);
+      expect(mockRecordUserAgreement).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return 400 when service throws REQUEST_VALIDATION_FAILED', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_INVALID,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      expect(errorBody.message).toBe(ApiErrorMessage.REQUEST_VALIDATION_FAILED);
+      expect(errorBody.code).toBe(ApiErrorCode.REQUEST_INVALID);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should return 401 when service throws UNAUTHORIZED', async () => {
+      const error = new ApiError(ApiErrorMessage.UNAUTHORIZED, {
+        statusCode: StatusCodes.UNAUTHORIZED,
+        code: ApiErrorCode.AUTH_REQUIRED,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.UNAUTHORIZED);
+      expect(errorBody.message).toBe(ApiErrorMessage.UNAUTHORIZED);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('should return 403 when service throws FORBIDDEN (wrong agreement type for age)', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should return 404 when target user does not exist', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('should return 404 when agreement version does not exist', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, {
+        agreementVersionId: 'non-existent-version',
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+    });
+
+    it('should return 409 when service throws CONFLICT (duplicate agreement version)', async () => {
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.CONFLICT);
+      expect(errorBody.message).toBe(ApiErrorMessage.CONFLICT);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected database connection error');
+      mockRecordUserAgreement.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.recordUserAgreement(authContext, targetUserId, validBody)).rejects.toThrow(
+        'Unexpected database connection error',
+      );
+    });
+
+    it('should handle self-consent scenario', async () => {
+      const selfUserId = 'self-user-123';
+      const selfAuthContext = AuthContextFactory.build({ userId: selfUserId });
+      mockRecordUserAgreement.mockResolvedValue({ id: 'agreement-self-123' });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(selfAuthContext, selfUserId, validBody);
+
+      const data = expectCreatedResponse(result);
+      expect(data.id).toBe('agreement-self-123');
+      expect(mockRecordUserAgreement).toHaveBeenCalledWith(selfAuthContext, selfUserId, validBody);
+    });
+
+    it('should handle parent consent scenario', async () => {
+      const parentAuthContext = AuthContextFactory.build({ userId: 'parent-123' });
+      const childUserId = 'child-456';
+      mockRecordUserAgreement.mockResolvedValue({ id: 'agreement-parent-child-123' });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(parentAuthContext, childUserId, validBody);
+
+      const data = expectCreatedResponse(result);
+      expect(data.id).toBe('agreement-parent-child-123');
+      expect(mockRecordUserAgreement).toHaveBeenCalledWith(parentAuthContext, childUserId, validBody);
     });
   });
 });
