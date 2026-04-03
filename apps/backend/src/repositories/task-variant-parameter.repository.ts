@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, inArray } from 'drizzle-orm';
-import { taskVariantParameters, type TaskVariantParameter, type NewTaskVariantParameter } from '../db/schema';
+import type { TaskVariantParameter, NewTaskVariantParameter } from '../db/schema';
+import { taskVariantParameters } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';

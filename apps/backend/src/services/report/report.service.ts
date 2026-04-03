@@ -23,8 +23,15 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { AdministrationRepository } from '../../repositories/administration.repository';
-import { ReportRepository, type ReportTaskMeta, type StudentProgressRow } from '../../repositories/report.repository';
+import { ReportRepository, REPORT_CONDITION_FIELD_MAP } from '../../repositories/report.repository';
+import type {
+  ReportTaskMeta,
+  StudentProgressRow,
+  ProgressStatusSortParam,
+  ProgressStatusFilterParam,
+} from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
+import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../task/task.types';
 import type { AuthContext } from '../../types/auth-context';
 
@@ -236,60 +243,25 @@ export function ReportService({
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
 
-      // 5. Resolve sort column and filter conditions.
-      // sortBy is either a static user field or a dynamic progress.<taskId>.status field.
-      // Static fields are mapped to columns; dynamic fields are validated and will be
-      // wired to SQL CASE expressions in the progress-task-status-sort-filter branch.
-      const sortColumn = PROGRESS_SORT_COLUMNS[sortBy as ProgressStudentsSortField];
-      if (!sortColumn && PROGRESS_TASK_STATUS_PATTERN.test(sortBy)) {
-        // Dynamic progress.<taskId>.status sort — validate the taskId exists.
-        // The actual SQL-level sort is implemented in a downstream branch.
-        const taskId = sortBy.split('.')[1]!;
-        const validTaskIds = new Set(taskMetas.map((t) => t.taskId));
-        if (!validTaskIds.has(taskId)) {
-          throw new ApiError('Invalid task ID in sort field', {
-            statusCode: StatusCodes.BAD_REQUEST,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { sortBy, taskId, availableTaskIds: [...validTaskIds] },
-          });
-        }
-        // TODO: Wire progress status sort to a SQL CASE expression via the repository.
-        // For now, validated but falls through to default sort (users.nameLast).
-      }
+      // 5. Resolve sort column, progress sort, user filters, and progress filters.
+      const { sortColumn, progressStatusSort } = resolveProgressSort(sortBy, taskMetas);
+      const { userFilters, progressStatusFilters } = resolveProgressFilters(filter, taskMetas);
 
-      // Separate user-level filters from progress.<taskId>.status filters.
-      // User-level filters become SQL WHERE conditions.
-      // Progress status filters are validated but not yet applied at the SQL level.
-      const userFilters: ParsedFilter[] = [];
-      for (const f of filter) {
-        if (PROGRESS_TASK_STATUS_PATTERN.test(f.field)) {
-          const taskId = f.field.split('.')[1]!;
-          const validTaskIds = new Set(taskMetas.map((t) => t.taskId));
-          if (!validTaskIds.has(taskId)) {
-            throw new ApiError('Invalid task ID in filter field', {
-              statusCode: StatusCodes.BAD_REQUEST,
-              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-              context: { field: f.field, taskId, availableTaskIds: [...validTaskIds] },
-            });
-          }
-          // TODO: Wire progress status filter to SQL CASE expression via the repository.
-          // For now, validated but not applied.
-        } else {
-          userFilters.push(f);
-        }
-      }
       const filterCondition =
         userFilters.length > 0
           ? buildFilterConditions(userFilters, PROGRESS_FILTER_FIELDS, { gradeAwareFields: GRADE_AWARE_FIELDS })
           : undefined;
 
-      // 6. Get paginated students with run data
+      // 6. Get paginated students with run data.
+      // Progress status sort/filter is handled via LEFT JOIN + CASE in the repository.
       const result = await reportRepository.getProgressStudents(
         administrationId,
         { scopeType, scopeId },
         taskVariantIds,
         { page, perPage, sortColumn, sortDirection: sortOrder },
         filterCondition,
+        progressStatusSort ?? undefined,
+        progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
       );
 
       // 7. Transform to response shape
@@ -347,6 +319,124 @@ const STATUS_PRIORITY: Record<string, number> = {
   completed: 3,
 };
 
+// --- Progress sort/filter resolution helpers ---
+
+/**
+ * Extract a taskId UUID from a `progress.<uuid>.status` field string.
+ * Returns null if the field doesn't match the expected pattern.
+ */
+function extractTaskIdFromField(field: string): string | null {
+  if (!PROGRESS_TASK_STATUS_PATTERN.test(field)) return null;
+  return field.split('.')[1] ?? null;
+}
+
+/**
+ * Find a task in the administration's task metadata by taskId.
+ * Throws 400 if the taskId is not found.
+ */
+function findTaskOrThrow(taskId: string, taskMetas: ReportTaskMeta[]): ReportTaskMeta {
+  const task = taskMetas.find((t) => t.taskId === taskId);
+  if (!task) {
+    throw new ApiError('Invalid task ID in sort/filter field', {
+      statusCode: StatusCodes.BAD_REQUEST,
+      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      context: { taskId, availableTaskIds: taskMetas.map((t) => t.taskId) },
+    });
+  }
+  return task;
+}
+
+/**
+ * Build SQL conditions from a task's JSONB conditions for use in the repository's
+ * progress status CASE expression.
+ */
+function buildConditionSqlParams(task: ReportTaskMeta): {
+  assignmentSql: ReturnType<typeof conditionToSql>;
+  requirementsSql: ReturnType<typeof conditionToSql>;
+} {
+  return {
+    assignmentSql: conditionToSql(task.conditionsAssignment, REPORT_CONDITION_FIELD_MAP),
+    requirementsSql: conditionToSql(task.conditionsRequirements, REPORT_CONDITION_FIELD_MAP),
+  };
+}
+
+/**
+ * Resolve the sort column for progress students.
+ * Static user fields map to Drizzle columns. Dynamic `progress.<taskId>.status`
+ * fields resolve to a ProgressStatusSortParam for the repository.
+ */
+function resolveProgressSort(
+  sortBy: string,
+  taskMetas: ReportTaskMeta[],
+): { sortColumn: Column | undefined; progressStatusSort: ProgressStatusSortParam | null } {
+  const staticColumn = PROGRESS_SORT_COLUMNS[sortBy as ProgressStudentsSortField];
+  if (staticColumn) {
+    return { sortColumn: staticColumn, progressStatusSort: null };
+  }
+
+  const taskId = extractTaskIdFromField(sortBy);
+  if (taskId) {
+    const task = findTaskOrThrow(taskId, taskMetas);
+    const { assignmentSql, requirementsSql } = buildConditionSqlParams(task);
+    return {
+      sortColumn: undefined,
+      progressStatusSort: {
+        taskVariantId: task.taskVariantId,
+        assignmentSql,
+        requirementsSql,
+      },
+    };
+  }
+
+  // Unrecognized field — contract validates, so this shouldn't happen. Fall back to default.
+  return { sortColumn: undefined, progressStatusSort: null };
+}
+
+/**
+ * Separate user-level filters from progress.<taskId>.status filters.
+ * User-level filters become SQL WHERE conditions via buildFilterConditions.
+ * Progress status filters become ProgressStatusFilterParam for the repository.
+ *
+ * Only one progress status filter is supported per request. Filtering by status
+ * across multiple tasks simultaneously would require multiple LEFT JOINs against
+ * the FDW runs table, adding significant query complexity. The frontend currently
+ * handles multi-task status filtering client-side.
+ *
+ * @throws {ApiError} BAD_REQUEST if more than one progress status filter is provided
+ */
+function resolveProgressFilters(
+  filters: ParsedFilter[],
+  taskMetas: ReportTaskMeta[],
+): { userFilters: ParsedFilter[]; progressStatusFilters: ProgressStatusFilterParam[] } {
+  const userFilters: ParsedFilter[] = [];
+  const progressStatusFilters: ProgressStatusFilterParam[] = [];
+
+  for (const f of filters) {
+    const taskId = extractTaskIdFromField(f.field);
+    if (taskId) {
+      if (progressStatusFilters.length > 0) {
+        throw new ApiError('Only one progress status filter is supported per request', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { field: f.field },
+        });
+      }
+      const task = findTaskOrThrow(taskId, taskMetas);
+      const { assignmentSql, requirementsSql } = buildConditionSqlParams(task);
+      const statusValues = f.operator === 'in' ? f.value.split(',').map((v) => v.trim()) : [f.value];
+      progressStatusFilters.push({
+        taskVariantId: task.taskVariantId,
+        statusValues,
+        assignmentSql,
+        requirementsSql,
+      });
+    } else {
+      userFilters.push(f);
+    }
+  }
+
+  return { userFilters, progressStatusFilters };
+}
 /**
  * Type for the evaluateTaskVariantEligibility function from TaskService.
  * Uses ConditionEvaluationUser (the narrow interface) so callers can pass

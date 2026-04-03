@@ -1,4 +1,5 @@
-import { Router, type Express } from 'express';
+import type { Express } from 'express';
+import { Router } from 'express';
 import { registerMeRoutes } from './me';
 import { registerAgreementsRoutes } from './agreements';
 import { registerAdministrationsRoutes } from './administrations';

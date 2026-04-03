@@ -10,7 +10,8 @@ vi.mock('../services/school/school.service', () => ({
   SchoolService: vi.fn(),
 }));
 
-import { SchoolService, type ISchoolService } from '../services/school/school.service';
+import type { ISchoolService } from '../services/school/school.service';
+import { SchoolService } from '../services/school/school.service';
 
 /**
  * Type-safe assertion helper for success responses.

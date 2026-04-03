@@ -1,9 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Column, SQL } from 'drizzle-orm';
 import { eq, and, or, ilike, asc, desc, count, sql } from 'drizzle-orm';
-import { taskVariants, type TaskVariant } from '../db/schema';
+import type { TaskVariant } from '../db/schema';
+import { taskVariants } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
-import { BaseRepository, type PaginatedResult } from './base.repository';
+import type { PaginatedResult } from './base.repository';
+import { BaseRepository } from './base.repository';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { TaskVariantSortFieldType, TaskVariantStatus } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';

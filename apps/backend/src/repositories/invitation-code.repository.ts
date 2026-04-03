@@ -1,7 +1,8 @@
 import { and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseRepository } from './base.repository';
-import { invitationCodes, type InvitationCode } from '../db/schema';
+import type { InvitationCode } from '../db/schema';
+import { invitationCodes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 

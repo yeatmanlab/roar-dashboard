@@ -449,6 +449,68 @@ describe('UserService', () => {
         });
       });
 
+      it('should throw CONFLICT when user has already consented to the agreement version', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const targetUser = UserFactory.build({ id: authContext.userId });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: 'agreement-123' });
+        const existingAgreement = UserAgreementFactory.build({
+          userId: authContext.userId,
+          agreementVersionId: agreementVersion.id,
+        });
+
+        mockUserRepository.getById.mockResolvedValue(targetUser);
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockUserAgreementRepository.findByUserIdAndAgreementVersionId.mockResolvedValue(existingAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, authContext.userId, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+      });
+
+      it('should throw CONFLICT when parent attempts to re-consent for child to same agreement version', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'parent-123' });
+        const childUser = UserFactory.build({ id: 'child-456' });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: 'agreement-123' });
+        const existingAgreement = UserAgreementFactory.build({
+          userId: childUser.id,
+          agreementVersionId: agreementVersion.id,
+        });
+
+        mockUserRepository.getById.mockResolvedValue(childUser);
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockUserAgreementRepository.findByUserIdAndAgreementVersionId.mockResolvedValue(existingAgreement);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, childUser.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+      });
+
       it('should throw NOT_FOUND when requesting user does not exist in database', async () => {
         const authContext = AuthContextFactory.build({ userId: 'user-123' });
         const targetUser = UserFactory.build({ id: 'target-456' });

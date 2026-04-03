@@ -607,6 +607,21 @@ describe('UsersController', () => {
       expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
     });
 
+    it('should return 409 when service throws CONFLICT (duplicate agreement version)', async () => {
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+      mockRecordUserAgreement.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.recordUserAgreement(authContext, targetUserId, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.CONFLICT);
+      expect(errorBody.message).toBe(ApiErrorMessage.CONFLICT);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
     it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
       const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
