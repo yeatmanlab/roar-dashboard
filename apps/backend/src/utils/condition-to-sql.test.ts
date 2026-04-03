@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { conditionToSql, type ConditionFieldMap } from './condition-to-sql';
+import type { ConditionFieldMap } from './condition-to-sql';
+import { conditionToSql } from './condition-to-sql';
 import { Operator } from '../services/task/task.types';
 import type { FieldCondition, CompositeCondition } from '../services/task/task.types';
 import { users } from '../db/schema';

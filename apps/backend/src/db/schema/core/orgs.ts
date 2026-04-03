@@ -1,6 +1,7 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { ltree, timestamps, type PostgreSQLPoint } from '../common';
+import type { PostgreSQLPoint } from '../common';
+import { ltree, timestamps } from '../common';
 import { orgTypeEnum } from '../enums';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 

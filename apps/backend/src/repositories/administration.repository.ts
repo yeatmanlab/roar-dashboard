@@ -41,7 +41,8 @@ import type {
   AdministrationStatus,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
-import { BaseRepository, type PaginatedResult } from './base.repository';
+import type { PaginatedResult } from './base.repository';
+import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 import { AdministrationAccessControls } from './access-controls/administration.access-controls';
 import { OrgAccessControls } from './access-controls/org.access-controls';

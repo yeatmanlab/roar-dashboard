@@ -3,7 +3,8 @@ import { faker } from '@faker-js/faker';
 import type { Org, NewOrg } from '../../db/schema';
 import { CoreDbClient } from '../../db/clients';
 import { orgs } from '../../db/schema/core';
-import { OrgType, type OrgType as OrgTypeValue } from '../../enums/org-type.enum';
+import type { OrgType as OrgTypeValue } from '../../enums/org-type.enum';
+import { OrgType } from '../../enums/org-type.enum';
 
 /**
  * Generates a realistic org name based on org type using location data.

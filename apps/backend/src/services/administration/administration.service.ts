@@ -13,7 +13,8 @@ import {
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
-import { Permissions, type Permission } from '../../constants/permissions';
+import type { Permission } from '../../constants/permissions';
+import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { AgreementType } from '../../enums/agreement-type.enum';

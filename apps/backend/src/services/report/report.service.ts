@@ -23,13 +23,12 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { AdministrationRepository } from '../../repositories/administration.repository';
-import {
-  ReportRepository,
-  REPORT_CONDITION_FIELD_MAP,
-  type ReportTaskMeta,
-  type StudentProgressRow,
-  type ProgressStatusSortParam,
-  type ProgressStatusFilterParam,
+import { ReportRepository, REPORT_CONDITION_FIELD_MAP } from '../../repositories/report.repository';
+import type {
+  ReportTaskMeta,
+  StudentProgressRow,
+  ProgressStatusSortParam,
+  ProgressStatusFilterParam,
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
 import { conditionToSql } from '../../utils/condition-to-sql';
