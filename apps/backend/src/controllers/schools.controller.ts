@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import { SchoolService, type SchoolWithEmbeds } from '../services/school/school.service';
+import type { SchoolWithEmbeds } from '../services/school/school.service';
+import { SchoolService } from '../services/school/school.service';
 import type { SchoolsListQuery, SchoolDetail as ApiSchool } from '@roar-dashboard/api-contract';
 import { SchoolEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';

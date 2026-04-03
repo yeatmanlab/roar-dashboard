@@ -36,22 +36,30 @@ const GRADE_MAP: Record<string, number> = {
 
 /**
  * Returns all grade enum strings whose numeric value satisfies a comparison
- * against the given reference grade. Used to convert gte/lte filter operations
- * on grade into an IN clause with correct numeric ordering.
+ * against the given reference grade. Used to convert range filter/condition
+ * operations on grade into an IN clause with correct numeric ordering.
+ *
+ * Supports both inclusive (gte/lte) and exclusive (gt/lt) operators.
  *
  * Grades without a numeric mapping ('', 'Ungraded', 'Other') are excluded
  * from the result since they can't be meaningfully compared.
  *
- * @param operator - 'gte' or 'lte'
+ * @param operator - 'gt', 'gte', 'lt', or 'lte'
  * @param referenceGrade - The grade value to compare against (e.g., '3', 'Kindergarten')
  * @returns Array of grade enum strings that satisfy the comparison, or null if
  *   the reference grade has no numeric mapping
  */
-export function getGradesInRange(operator: 'gte' | 'lte', referenceGrade: string): string[] | null {
+export function getGradesInRange(operator: 'gt' | 'gte' | 'lt' | 'lte', referenceGrade: string): string[] | null {
   const refNumeric = getGradeAsNumber(referenceGrade);
   if (refNumeric === null) return null;
 
-  const compareFn = operator === 'gte' ? (n: number) => n >= refNumeric : (n: number) => n <= refNumeric;
+  const compareFns: Record<string, (n: number) => boolean> = {
+    gt: (n: number) => n > refNumeric,
+    gte: (n: number) => n >= refNumeric,
+    lt: (n: number) => n < refNumeric,
+    lte: (n: number) => n <= refNumeric,
+  };
+  const compareFn = compareFns[operator]!;
 
   return Object.entries(GRADE_MAP)
     .filter(([, numericValue]) => compareFn(numericValue))
