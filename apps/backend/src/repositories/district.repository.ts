@@ -1,18 +1,27 @@
-import { eq, asc, desc, countDistinct, and, isNull, sql, inArray } from 'drizzle-orm';
+import { eq, asc, desc, countDistinct, and, isNull, sql, inArray, count } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { alias } from 'drizzle-orm/pg-core';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { Org } from '../db/schema';
-import { orgs, userOrgs, classes } from '../db/schema';
+import { orgs, users, userOrgs, classes, userClasses } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
-import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
-import { SortOrder } from '@roar-dashboard/api-contract';
 import { OrgType } from '../enums/org-type.enum';
 
+import type { DistrictSortFieldType, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
+import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+import {
+  getEnrolledUsersFilterConditions,
+  ENROLLED_USERS_SORT_COLUMNS,
+  UserJunctionTable,
+} from './utils/enrolled-users-query.utils';
+import { isEnrollmentActive } from './utils/enrollment.utils';
+import type { UserRole } from '../enums/user-role.enum';
 /**
  * District-specific type (Org with orgType = 'district')
  */
@@ -41,7 +50,7 @@ export interface DistrictWithCounts extends District {
 const DISTRICT_SORT_COLUMNS = {
   name: orgs.name,
   abbreviation: orgs.abbreviation,
-} as const satisfies Record<DistrictSortFieldType, Column>;
+} as const satisfies Record<'name' | 'abbreviation', Column>;
 
 /**
  * Options for listing districts with authorization
@@ -326,5 +335,101 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .limit(1);
 
     return result[0]?.org ?? null;
+  }
+
+  /**
+   * Get users enrolled in a district.
+   *
+   * @param districtId - District ID to get users for
+   * @param options - Options for filtering and pagination
+   * @returns Paginated result of users enrolled in the district
+   */
+  async getUsersByDistrictId(
+    districtId: string,
+    options: ListEnrolledUsersOptions,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    // Check if user has access to the district with Permissions.Users.LIST
+    // Get userOrgs.role, check if role contains Permissions.Users.LIST
+
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const districtPath = (await this.getUnrestrictedById(districtId))?.path;
+
+    if (!districtPath) {
+      throw new Error(`District with ID ${districtId} not found`);
+    }
+
+    const districtOrgs = alias(orgs, 'districtOrgs');
+
+    const orgConditions = and(
+      isEnrollmentActive(userOrgs),
+      isNull(orgs.rosteringEnded),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_ORGS),
+    );
+
+    const orgUsersQuery = this.db
+      .select({
+        userId: users.id,
+        enrollmentStart: userOrgs.enrollmentStart,
+        role: userOrgs.role,
+      })
+      .from(userOrgs)
+      .innerJoin(users, eq(users.id, userOrgs.userId))
+      .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
+      .innerJoin(districtOrgs, sql`${districtPath}  @> ${orgs.path}`)
+      .where(orgConditions);
+
+    const classConditions = and(
+      isEnrollmentActive(userClasses),
+      isNull(classes.rosteringEnded),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES),
+    );
+
+    const classUsersQuery = this.db
+      .select({
+        userId: users.id,
+        enrollmentStart: userClasses.enrollmentStart,
+        role: userClasses.role,
+      })
+      .from(userClasses)
+      .innerJoin(users, eq(userClasses.userId, users.id))
+      .innerJoin(classes, eq(userClasses.classId, classes.id))
+      .innerJoin(districtOrgs, sql`${districtPath} @> ${classes.orgPath}`)
+      .where(classConditions);
+
+    const combinedUsersQuery = orgUsersQuery.union(classUsersQuery).as('combined_users');
+    const countResult = await this.db.select({ count: count() }).from(combinedUsersQuery);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
+    const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({
+        user: users,
+        enrollmentStart: sql<Date>`combined_users.enrollment_start`,
+        role: sql<string>`combined_users.role`,
+      })
+      .from(users)
+      .innerJoin(combinedUsersQuery, eq(users.id, combinedUsersQuery.userId))
+      .orderBy(primaryOrder, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => ({
+        ...row.user,
+        enrollmentStart: new Date(row.enrollmentStart as unknown as string),
+        role: row.role as UserRole,
+      })),
+      totalItems,
+    };
   }
 }
