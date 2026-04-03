@@ -718,6 +718,6 @@ export async function getVariantParamsById(taskId: string, variantId: string): P
   const invoker = facade.getInvoker();
 
   const cmd = new GetTaskVariantCommand(api);
-  const variant = await invoker.run(cmd, { taskId, variantId });
-  return variant.variantParams;
+  const { variantParams } = await invoker.run(cmd, { taskId, variantId });
+  return variantParams;
 }

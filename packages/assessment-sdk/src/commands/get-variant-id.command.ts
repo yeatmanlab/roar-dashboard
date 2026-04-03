@@ -32,12 +32,13 @@ export class GetTaskVariantCommand implements Command<GetTaskVariantInput, GetTa
   constructor(private api: RoarApi) {}
 
   async execute(input: GetTaskVariantInput): Promise<GetTaskVariantOutput> {
-    const result = await this.api.client.tasks.getTaskVariant({
-      params: { taskId: input.taskId, variantId: input.variantId },
+    const { taskId, variantId } = input;
+    const { status, body } = await this.api.client.tasks.getTaskVariant({
+      params: { taskId, variantId },
     });
 
-    if (result.status === StatusCodes.OK) {
-      const variant = result.body.data;
+    if (status === StatusCodes.OK) {
+      const variant = body.data;
       return {
         variantId: variant.id,
         taskId: variant.taskId,
@@ -45,13 +46,13 @@ export class GetTaskVariantCommand implements Command<GetTaskVariantInput, GetTa
       };
     }
 
-    if (result.status === StatusCodes.NOT_FOUND) {
-      throw new SDKError(result.body.error?.message ?? `Failed to get variant with status ${result.status}`, {
+    if (status === StatusCodes.NOT_FOUND) {
+      throw new SDKError(body.error?.message ?? `Failed to get variant with status ${status}`, {
         code: SdkErrorCode.GET_VARIANT_ID_FAILED,
       });
     }
 
-    throw new SDKError(result.body.error?.message ?? `Failed to get variant with status ${result.status}`, {
+    throw new SDKError(body.error?.message ?? `Failed to get variant with status ${status}`, {
       code: SdkErrorCode.GET_VARIANT_ID_FAILED,
     });
   }
