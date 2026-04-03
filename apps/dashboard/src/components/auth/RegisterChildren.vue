@@ -471,7 +471,6 @@ const activationCodeRef = ref('');
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
   code: { type: String, default: null },
-  consent: { type: Object, default: null },
   submitting: { type: Boolean, default: false },
   invitationCodes: { type: Array, default: () => [] },
 });
@@ -626,7 +625,8 @@ function deleteStudentForm(student) {
     state.students.splice(student, 1); // Remove the student at the specified index
     showConsent.value.splice(student, 1);
   } else {
-    alert('At least one student is required.'); // Prevent deleting the last student form
+    dialogMessage.value = 'At least one student is required.';
+    showErrorDialog();
     submitted.value = false;
   }
 }

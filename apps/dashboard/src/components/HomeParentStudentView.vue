@@ -233,7 +233,7 @@ async function handleStudentEnrollment(studentData) {
 
     await authStore.createNewFamily(
       email, // careTakerEmail
-      'dummyPassword123!', // Filler password since we're using an existing account
+      null,
       careTakerData,
       formattedStudentData, // properly formatted students array
       consentData, // proper consent data
