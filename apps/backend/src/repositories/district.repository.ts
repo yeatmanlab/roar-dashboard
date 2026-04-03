@@ -338,6 +338,20 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   }
 
   /**
+   * Get user roles for a specific district.
+   * Only checks direct org membership (no ancestor/descendant access for districts).
+   *
+   * User can only hold one role per district technically.
+   *
+   * @param userId - User ID to get roles for
+   * @param districtId - District ID to check roles in
+   * @returns Array of user roles in the district
+   */
+  async getUserRolesForDistrict(userId: string, districtId: string): Promise<UserRole[]> {
+    return this.accessControls.getUserRolesForDistrict(userId, districtId);
+  }
+
+  /**
    * Get users enrolled in a district.
    *
    * @param districtId - District ID to get users for

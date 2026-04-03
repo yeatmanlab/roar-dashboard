@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { userOrgs, userClasses, orgs, classes } from '../../db/schema';
@@ -11,6 +11,9 @@ import { isDescendantOrEqual } from '../utils/is-descendant-or-equal.utils';
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
 import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
+import type { UserRole } from '../../enums/user-role.enum';
+import { OrgType } from '../../enums/org-type.enum';
+import { isEnrollmentActive } from '../utils/enrollment.utils';
 
 /**
  * Org Access Controls
@@ -134,5 +137,37 @@ export class OrgAccessControls {
       .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
 
     return ancestorUnion.union(viaUserOrgDescendants);
+  }
+
+  /**
+   * Get user roles for a specific district.
+   * Only checks direct org membership (no ancestor/descendant access for districts).
+   *
+   * @param userId - User ID to get roles for
+   * @param districtId - District ID to check roles in
+   * @returns Array of user roles in the district
+   */
+  async getUserRolesForDistrict(userId: string, districtId: string): Promise<UserRole[]> {
+    // Only check direct org membership (no descendant access for districts)
+    const rolesViaDirectOrg = this.db
+      .selectDistinct({
+        role: userOrgs.role,
+      })
+      .from(userOrgs)
+      .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
+      .where(
+        and(
+          eq(orgs.orgType, OrgType.DISTRICT),
+          eq(userOrgs.userId, userId),
+          eq(orgs.id, districtId),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
+
+    const result = await this.db
+      .select({ role: rolesViaDirectOrg.as('roles').role })
+      .from(rolesViaDirectOrg.as('roles'));
+
+    return result.map((r) => r.role);
   }
 }

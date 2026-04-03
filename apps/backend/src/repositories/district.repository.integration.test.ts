@@ -817,4 +817,18 @@ describe('DistrictRepository', () => {
       });
     });
   });
+
+  describe('getUserRolesForDistrict', () => {
+    it('delegates to access controls and returns roles', async () => {
+      const roles = await repository.getUserRolesForDistrict(baseFixture.districtAdmin.id, baseFixture.district.id);
+
+      expect(roles).toContain(UserRole.ADMINISTRATOR);
+    });
+
+    it('returns empty array for user with no district membership', async () => {
+      const roles = await repository.getUserRolesForDistrict(baseFixture.schoolAStudent.id, baseFixture.district.id);
+
+      expect(roles).toHaveLength(0);
+    });
+  });
 });

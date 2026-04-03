@@ -256,4 +256,112 @@ describe('OrgAccessControls', () => {
       });
     });
   });
+
+  // Add this describe block to org.access-controls.integration.test.ts
+
+  describe('getUserRolesForDistrict', () => {
+    describe('direct district membership', () => {
+      it('returns role for user with direct district membership', async () => {
+        // districtAdmin has ADMINISTRATOR role in district
+        const roles = await accessControls.getUserRolesForDistrict(
+          baseFixture.districtAdmin.id,
+          baseFixture.district.id,
+        );
+
+        expect(roles).toContain(UserRole.ADMINISTRATOR);
+      });
+
+      it('returns role for student with direct district membership', async () => {
+        // districtBStudent has STUDENT role in districtB
+        const roles = await accessControls.getUserRolesForDistrict(
+          baseFixture.districtBStudent.id,
+          baseFixture.districtB.id,
+        );
+
+        expect(roles).toContain(UserRole.STUDENT);
+      });
+    });
+
+    describe('no access scenarios', () => {
+      it('returns empty array for user with no memberships', async () => {
+        const roles = await accessControls.getUserRolesForDistrict(
+          baseFixture.unassignedUser.id,
+          baseFixture.district.id,
+        );
+
+        expect(roles).toHaveLength(0);
+      });
+
+      it('returns empty array for user in different district', async () => {
+        // districtBAdmin has no access to district (different branch)
+        const roles = await accessControls.getUserRolesForDistrict(
+          baseFixture.districtBAdmin.id,
+          baseFixture.district.id,
+        );
+
+        expect(roles).toHaveLength(0);
+      });
+
+      it('returns empty array for user with only school membership', async () => {
+        // schoolAStudent is enrolled in schoolA, not directly in district
+        const roles = await accessControls.getUserRolesForDistrict(
+          baseFixture.schoolAStudent.id,
+          baseFixture.district.id,
+        );
+
+        expect(roles).toHaveLength(0);
+      });
+
+      it('returns empty array for user with only class membership', async () => {
+        // classAStudent is enrolled in classInSchoolA, not directly in district
+        const roles = await accessControls.getUserRolesForDistrict(
+          baseFixture.classAStudent.id,
+          baseFixture.district.id,
+        );
+
+        expect(roles).toHaveLength(0);
+      });
+    });
+
+    describe('enrollment date boundaries', () => {
+      it('excludes roles from expired org enrollment', async () => {
+        const expiredDistrictUser = await UserFactory.create();
+        await UserOrgFactory.create({
+          userId: expiredDistrictUser.id,
+          orgId: baseFixture.district.id,
+          role: UserRole.ADMINISTRATOR,
+          enrollmentStart: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+          enrollmentEnd: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+        });
+
+        const roles = await accessControls.getUserRolesForDistrict(expiredDistrictUser.id, baseFixture.district.id);
+
+        expect(roles).toHaveLength(0);
+      });
+
+      it('excludes roles from future org enrollment', async () => {
+        const futureDistrictUser = await UserFactory.create();
+        await UserOrgFactory.create({
+          userId: futureDistrictUser.id,
+          orgId: baseFixture.district.id,
+          role: UserRole.ADMINISTRATOR,
+          enrollmentStart: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        });
+
+        const roles = await accessControls.getUserRolesForDistrict(futureDistrictUser.id, baseFixture.district.id);
+
+        expect(roles).toHaveLength(0);
+      });
+
+      it('includes roles from active org enrollment', async () => {
+        // districtAdmin has active enrollment in district
+        const roles = await accessControls.getUserRolesForDistrict(
+          baseFixture.districtAdmin.id,
+          baseFixture.district.id,
+        );
+
+        expect(roles).toContain(UserRole.ADMINISTRATOR);
+      });
+    });
+  });
 });
