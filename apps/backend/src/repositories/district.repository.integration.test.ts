@@ -11,7 +11,8 @@ import { baseFixture } from '../test-support/fixtures';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
-import { DistrictRepository, type DistrictWithCounts } from './district.repository';
+import type { DistrictWithCounts } from './district.repository';
+import { DistrictRepository } from './district.repository';
 import { UserRole } from '../enums/user-role.enum';
 import { OrgType } from '../enums/org-type.enum';
 

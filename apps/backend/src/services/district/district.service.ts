@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import { DistrictRepository, type District, type DistrictWithCounts } from '../../repositories/district.repository';
+import type { District, DistrictWithCounts } from '../../repositories/district.repository';
+import { DistrictRepository } from '../../repositories/district.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';

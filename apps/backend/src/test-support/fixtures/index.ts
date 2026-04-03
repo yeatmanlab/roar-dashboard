@@ -1,4 +1,5 @@
-import { seedBaseFixture as _seedBaseFixture, type BaseFixture } from './base.fixture';
+import type { BaseFixture } from './base.fixture';
+import { seedBaseFixture as _seedBaseFixture } from './base.fixture';
 
 export type { BaseFixture };
 
