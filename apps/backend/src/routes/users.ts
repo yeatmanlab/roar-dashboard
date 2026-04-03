@@ -24,6 +24,12 @@ export function registerUserRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, body }) => UsersController.update(user!, id, body),
     },
+    recordUserAgreement: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId }, body }) =>
+        UsersController.recordUserAgreement(user!, userId, body),
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo

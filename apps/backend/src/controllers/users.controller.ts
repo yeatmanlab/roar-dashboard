@@ -1,6 +1,6 @@
 import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
-import type { UserResponse, UpdateUserRequestBody } from '@roar-dashboard/api-contract';
+import type { UserResponse, UpdateUserRequestBody, RecordUserAgreementRequestBody } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
 import { ApiError } from '../errors/api-error';
@@ -115,6 +115,42 @@ export const UsersController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Record a user agreement (record consent).
+   *
+   * Records a user's consent to a specific agreement version.
+   * Supports both self-consent and guardian consent for family members.
+   * Delegates to UserService for authorization and the create operation.
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param userId - UUID of the user who is consenting.
+   * @param body - Agreement version ID and optional consenting user ID.
+   */
+  recordUserAgreement: async (authContext: AuthContext, userId: string, body: RecordUserAgreementRequestBody) => {
+    try {
+      const { id } = await userService.recordUserAgreement(authContext, userId, body);
+
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
