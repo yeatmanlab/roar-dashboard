@@ -5,7 +5,8 @@ import { AgreementVersionFactory } from '../test-support/factories/agreement-ver
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
-import { AgreementEmbedOptionType, AgreementService } from '../services/agreement/agreement.service';
+import type { AgreementEmbedOptionType } from '../enums/agreement-embed-option.enum';
+import { AgreementService } from '../services/agreement/agreement.service';
 
 // Mock the AgreementService module
 vi.mock('../services/agreement/agreement.service', () => ({

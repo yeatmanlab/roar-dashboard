@@ -3,22 +3,12 @@ import type { AuthContext } from '../../types/auth-context';
 import type { AgreementType } from '../../enums/agreement-type.enum';
 import type { AgreementVersion } from '../../db/schema';
 import type { PaginatedResult } from '../../repositories/base.repository';
+import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-option.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
+import { AgreementEmbedOption } from '../../enums/agreement-embed-option.enum';
 import { AgreementRepository, type AgreementWithCurrentVersion } from '../../repositories/agreement.repository';
-
-/**
- * Options for embedding agreement versions.
- */
-const AgreementEmbedOption = {
-  VERSIONS: 'versions',
-} as const;
-
-/**
- * Type for agreement embed options.
- */
-export type AgreementEmbedOptionType = (typeof AgreementEmbedOption)[keyof typeof AgreementEmbedOption];
 
 /**
  * Agreement with optional embedded versions array.

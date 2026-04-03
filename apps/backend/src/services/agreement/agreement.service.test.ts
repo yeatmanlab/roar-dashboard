@@ -8,7 +8,7 @@ import { AgreementVersionFactory } from '../../test-support/factories/agreement-
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
-import type { AgreementEmbedOptionType } from './agreement.service';
+import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-option.enum';
 
 describe('AgreementService', () => {
   let mockRepository: ReturnType<typeof createMockAgreementRepository>;
