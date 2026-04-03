@@ -420,6 +420,22 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       expect(res.status).toBe(StatusCodes.OK);
     });
 
+    it('returns 200 with sort and filter targeting different task variants', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          sortBy: `progress.${baseFixture.task.id}.status`,
+          filter: `progress.${baseFixture.task2.id}.status:eq:assigned`,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.body.error ?? 'no error').toBe('no error');
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+    });
+
     it('returns 400 for unknown task ID in filter', async () => {
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
