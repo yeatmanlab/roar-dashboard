@@ -95,17 +95,12 @@ const MAX_RETRIES = 3;
 const { isActive, pause, resume } = useTimeoutPoll(
   async () => {
     try {
-      console.log('Polling: Checking parent registration status...');
       parentRegistrationComplete.value = await authStore.verifyParentRegistration();
-      console.log('Polling: Registration status result:', parentRegistrationComplete.value);
 
       if (parentRegistrationComplete.value) {
-        console.log('Polling: Registration complete! Setting initialized to true');
         initialized.value = true;
         registrationError.value = null;
         pause();
-      } else {
-        console.log('Polling: Registration not complete yet, will retry...');
       }
     } catch (error) {
       console.error('Registration verification failed:', error);
