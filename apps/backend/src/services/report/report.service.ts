@@ -10,6 +10,9 @@ import type {
   ServiceProgressStudent,
   ServiceProgressEntry,
   ProgressStudentsResult,
+  ProgressOverviewInput,
+  ProgressOverviewResult,
+  ServiceTaskOverview,
   ParsedFilter,
 } from './report.types';
 import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
@@ -308,7 +311,168 @@ export function ReportService({
     }
   }
 
-  return { listProgressStudents };
+  /**
+   * Get aggregated completion statistics for each task in an administration.
+   *
+   * Returns per-task breakdowns of assigned, started, completed, and optional counts,
+   * plus aggregate totals. Powers the summary counts at the top of the progress report page.
+   *
+   * Authorization flow is identical to listProgressStudents (three layers):
+   * 1. Administration access
+   * 2. Report permission + supervisory role
+   * 3. Scope-level authorization
+   *
+   * Multi-variant dedup: when multiple variants share a taskId, each student is counted
+   * once at their highest-priority status (completed > started > assigned > optional),
+   * consistent with buildProgressMap.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scopeType, scopeId)
+   * @returns Aggregated completion statistics per task
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or permission
+   * @throws {ApiError} BAD_REQUEST if scope is invalid
+   */
+  async function getProgressOverview(
+    authContext: AuthContext,
+    administrationId: string,
+    query: ProgressOverviewInput,
+  ): Promise<ProgressOverviewResult> {
+    const { userId, isSuperAdmin } = authContext;
+    const { scopeType, scopeId } = query;
+
+    try {
+      // 1. Verify administration exists and user has access
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      // 2. Verify permission and supervisory role for non-super-admins
+      if (!isSuperAdmin) {
+        const adminRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+        const allowedReportRoles: string[] = rolesForPermission(Permissions.Reports.Progress.READ);
+        const hasPermission = adminRoles.some((role) => allowedReportRoles.includes(role));
+        if (!hasPermission) {
+          logger.warn(
+            { userId, administrationId, adminRoles },
+            'User lacks Reports.Progress.READ permission on administration',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, administrationId },
+          });
+        }
+
+        if (!hasSupervisoryRole(adminRoles)) {
+          logger.warn(
+            { userId, administrationId, adminRoles },
+            'Supervised user attempted to access progress overview',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, administrationId },
+          });
+        }
+      }
+
+      // 3. Validate scope and authorize
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
+
+      // 4. Get task metadata
+      const taskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+
+      // 5. Fetch all students with run data (no pagination)
+      const allStudents = await reportRepository.getAllStudentsWithRuns(
+        administrationId,
+        { scopeType, scopeId },
+        taskVariantIds,
+      );
+
+      // 6. Build per-task counters from unique taskIds (preserving order)
+      const taskIdOrder: string[] = [];
+      const taskMetaByTaskId = new Map<string, ServiceTaskMetadata>();
+      for (const t of taskMetas) {
+        if (!taskMetaByTaskId.has(t.taskId)) {
+          taskIdOrder.push(t.taskId);
+          taskMetaByTaskId.set(t.taskId, {
+            taskId: t.taskId,
+            taskSlug: t.taskSlug,
+            taskName: t.taskName,
+            orderIndex: t.orderIndex,
+          });
+        }
+      }
+
+      const taskCounters = new Map<
+        string,
+        { assigned: number; started: number; completed: number; optional: number }
+      >();
+      for (const taskId of taskIdOrder) {
+        taskCounters.set(taskId, { assigned: 0, started: 0, completed: 0, optional: 0 });
+      }
+
+      // 7. Aggregate: iterate over all students, build progress maps, count statuses
+      for (const student of allStudents) {
+        const progressMap = buildProgressMap(student, taskMetas, taskService.evaluateTaskVariantEligibility);
+        for (const [taskId, entry] of Object.entries(progressMap)) {
+          const counters = taskCounters.get(taskId);
+          if (counters) {
+            counters[entry.status]++;
+          }
+        }
+      }
+
+      // 8. Assemble response
+      let totalAssigned = 0;
+      let totalStarted = 0;
+      let totalCompleted = 0;
+
+      const byTask: ServiceTaskOverview[] = taskIdOrder.map((taskId) => {
+        const meta = taskMetaByTaskId.get(taskId)!;
+        const counts = taskCounters.get(taskId)!;
+        totalAssigned += counts.assigned;
+        totalStarted += counts.started;
+        totalCompleted += counts.completed;
+        return {
+          taskId: meta.taskId,
+          taskSlug: meta.taskSlug,
+          taskName: meta.taskName,
+          orderIndex: meta.orderIndex,
+          assigned: counts.assigned,
+          started: counts.started,
+          completed: counts.completed,
+          optional: counts.optional,
+        };
+      });
+
+      return {
+        totalStudents: allStudents.length,
+        assigned: totalAssigned,
+        started: totalStarted,
+        completed: totalCompleted,
+        byTask,
+        computedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, scopeType, scopeId } },
+        'Failed to retrieve progress overview report',
+      );
+
+      throw new ApiError('Failed to retrieve progress overview', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { listProgressStudents, getProgressOverview };
 }
 
 /** Status priority for progress entries. Higher value = higher priority. */

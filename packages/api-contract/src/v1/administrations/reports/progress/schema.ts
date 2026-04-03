@@ -139,3 +139,50 @@ export const ProgressStudentsResponseSchema = z.object({
 });
 
 export type ProgressStudentsResponse = z.infer<typeof ProgressStudentsResponseSchema>;
+
+// --- Progress Overview schemas ---
+
+/**
+ * Query schema for the progress overview endpoint.
+ * Only requires scope parameters — no pagination, sorting, or filtering.
+ */
+export const ProgressOverviewQuerySchema = ReportScopeQuerySchema;
+
+export type ProgressOverviewQuery = z.infer<typeof ProgressOverviewQuerySchema>;
+
+/**
+ * Per-task aggregation in the progress overview response.
+ * Counts are mutually exclusive: each student is counted once per task at their
+ * highest-priority status (completed > started > assigned > optional).
+ */
+export const ProgressTaskOverviewSchema = z.object({
+  taskId: z.string().uuid(),
+  taskSlug: z.string(),
+  taskName: z.string(),
+  orderIndex: z.number().int(),
+  assigned: z.number().int(),
+  started: z.number().int(),
+  completed: z.number().int(),
+  optional: z.number().int(),
+});
+
+export type ProgressTaskOverview = z.infer<typeof ProgressTaskOverviewSchema>;
+
+/**
+ * Response schema for the progress overview endpoint.
+ *
+ * - `totalStudents`: distinct student count in scope (regardless of task assignment)
+ * - `assigned`, `started`, `completed`: aggregate sums across all tasks in `byTask`
+ * - `byTask`: ordered array (by orderIndex) with per-task counts
+ * - `computedAt`: server timestamp for freshness display
+ */
+export const ProgressOverviewResponseSchema = z.object({
+  totalStudents: z.number().int(),
+  assigned: z.number().int(),
+  started: z.number().int(),
+  completed: z.number().int(),
+  byTask: z.array(ProgressTaskOverviewSchema),
+  computedAt: z.string().datetime(),
+});
+
+export type ProgressOverviewResponse = z.infer<typeof ProgressOverviewResponseSchema>;

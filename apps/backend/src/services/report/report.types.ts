@@ -80,3 +80,31 @@ export interface ProgressStudentsResult {
   items: ServiceProgressStudent[];
   totalItems: number;
 }
+
+/** Query input for getProgressOverview. */
+export interface ProgressOverviewInput {
+  scopeType: ScopeType;
+  scopeId: string;
+}
+
+/** Per-task aggregation in overview results. */
+export interface ServiceTaskOverview {
+  taskId: string;
+  taskSlug: string;
+  taskName: string;
+  orderIndex: number;
+  assigned: number;
+  started: number;
+  completed: number;
+  optional: number;
+}
+
+/** Return type for getProgressOverview. */
+export interface ProgressOverviewResult {
+  totalStudents: number;
+  assigned: number;
+  started: number;
+  completed: number;
+  byTask: ServiceTaskOverview[];
+  computedAt: string;
+}

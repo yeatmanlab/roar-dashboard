@@ -929,4 +929,105 @@ export class ReportRepository {
 
     return map;
   }
+
+  /**
+   * Get all students within a scope with their run data for the given task variants.
+   * Unlike getProgressStudents, this fetches ALL students (no pagination, no sort, no filter)
+   * for use in aggregation queries like the progress overview.
+   *
+   * @param administrationId - The administration ID
+   * @param scope - The scope to query students within
+   * @param taskVariantIds - The task variant IDs to get run data for
+   * @returns All student rows with run data (no pagination)
+   */
+  async getAllStudentsWithRuns(
+    administrationId: string,
+    scope: ReportScope,
+    taskVariantIds: string[],
+  ): Promise<StudentProgressRow[]> {
+    const studentsInScope = this.buildStudentInScopeSubquery(scope);
+
+    // Get all students — no pagination, no sort/filter joins
+    const studentRows = await this.db
+      .selectDistinct({
+        userId: users.id,
+        assessmentPid: users.assessmentPid,
+        username: users.username,
+        email: users.email,
+        nameFirst: users.nameFirst,
+        nameLast: users.nameLast,
+        grade: users.grade,
+        statusEll: users.statusEll,
+        statusIep: users.statusIep,
+        statusFrl: users.statusFrl,
+        dob: users.dob,
+        gender: users.gender,
+        race: users.race,
+        hispanicEthnicity: users.hispanicEthnicity,
+        homeLanguage: users.homeLanguage,
+      })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
+
+    if (studentRows.length === 0) {
+      return [];
+    }
+
+    const studentIds = studentRows.map((s) => s.userId);
+
+    // Skip FDW query when there are no task variants
+    if (taskVariantIds.length === 0) {
+      return studentRows.map((student) => ({
+        ...student,
+        schoolName: null,
+        runs: new Map(),
+      }));
+    }
+
+    // Bulk fetch runs — same filtering as getProgressStudents
+    const runRows = await this.db
+      .select({
+        userId: fdwRuns.userId,
+        taskVariantId: fdwRuns.taskVariantId,
+        completedAt: fdwRuns.completedAt,
+        createdAt: fdwRuns.createdAt,
+      })
+      .from(fdwRuns)
+      .where(
+        and(
+          eq(fdwRuns.administrationId, administrationId),
+          inArray(fdwRuns.userId, studentIds),
+          inArray(fdwRuns.taskVariantId, taskVariantIds),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+        ),
+      );
+
+    // Build run maps per student — same dedup logic as getProgressStudents
+    const runsByStudent = new Map<string, Map<string, { completedAt: Date | null; startedAt: Date }>>();
+    for (const run of runRows) {
+      if (!runsByStudent.has(run.userId)) {
+        runsByStudent.set(run.userId, new Map());
+      }
+      const studentRuns = runsByStudent.get(run.userId)!;
+      const existing = studentRuns.get(run.taskVariantId);
+      const shouldReplace =
+        !existing ||
+        (run.completedAt && !existing.completedAt) ||
+        (run.completedAt && existing.completedAt && run.completedAt > existing.completedAt);
+      if (shouldReplace) {
+        studentRuns.set(run.taskVariantId, {
+          completedAt: run.completedAt,
+          startedAt: run.createdAt,
+        });
+      }
+    }
+
+    return studentRows.map((student) => ({
+      ...student,
+      schoolName: null,
+      runs: runsByStudent.get(student.userId) ?? new Map(),
+    }));
+  }
 }

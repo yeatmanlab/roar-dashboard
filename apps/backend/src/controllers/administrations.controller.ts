@@ -22,6 +22,7 @@ import type {
   Condition,
   AdministrationAgreement,
   ProgressStudentsQuery,
+  ProgressOverviewQuery,
   ReportTaskMetadata,
   ProgressStudent,
 } from '@roar-dashboard/api-contract';
@@ -507,6 +508,38 @@ export const AdministrationsController = {
               totalPages: Math.ceil(result.totalItems / query.perPage),
             },
           },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get aggregated progress overview for an administration.
+   *
+   * Delegates to ReportService for authorization and aggregation.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scopeType, scopeId)
+   */
+  getProgressOverview: async (authContext: AuthContext, administrationId: string, query: ProgressOverviewQuery) => {
+    try {
+      const result = await reportService.getProgressOverview(authContext, administrationId, query);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
         },
       };
     } catch (error) {
