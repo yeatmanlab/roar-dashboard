@@ -231,9 +231,8 @@ async function handleStudentEnrollment(studentData) {
       throw new Error('formattedStudentData must be an array');
     }
 
-    await authStore.createNewFamily(
+    await authStore.addStudentsToFamily(
       email, // careTakerEmail
-      null,
       careTakerData,
       formattedStudentData, // properly formatted students array
       consentData, // proper consent data
