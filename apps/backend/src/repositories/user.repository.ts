@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
-import { users, type User } from '../db/schema';
+import type { User } from '../db/schema';
+import { users } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';

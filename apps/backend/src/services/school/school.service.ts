@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import { SchoolRepository, type SchoolWithCounts } from '../../repositories/school.repository';
+import type { SchoolWithCounts } from '../../repositories/school.repository';
+import { SchoolRepository } from '../../repositories/school.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
