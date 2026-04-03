@@ -314,7 +314,7 @@ describe('RunsController', () => {
 
       const engagementBody = {
         type: 'engagement' as const,
-        engagementFlags: { incomplete: 'incomplete' as const },
+        engagementFlags: { incomplete: true },
         reliableRun: true,
       };
       const result = await ReloadedController.event(mockAuthContext, validRunId, engagementBody);
