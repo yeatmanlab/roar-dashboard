@@ -1,9 +1,13 @@
+import type { WriteTrialInteractionEvent } from './write-trial';
+
 /**
  * Firekit-compatible input for appkit.addInteraction
  * Matches: addInteraction(interaction: InteractionEvent)
+ * Note: trial field is not required here as it's added during writeTrial
  */
 export type AddInteractionInput = {
-  [key: string]: unknown;
+  event: WriteTrialInteractionEvent;
+  time: number;
 };
 
 export type AddInteractionOutput = void;
