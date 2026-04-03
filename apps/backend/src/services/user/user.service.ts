@@ -1,10 +1,12 @@
 import type { AuthContext } from '../../types/auth-context';
-import type { User } from '../../db/schema';
+import type { User, NewUserAgreement } from '../../db/schema';
 import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import type { Permission } from '../../constants/permissions';
+import { CARETAKER_ROLES } from '../../constants/role-classifications';
 import { StatusCodes } from 'http-status-codes';
+import { AgreementType } from '../../enums/agreement-type.enum';
 import { Permissions } from '../../constants/permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -12,7 +14,19 @@ import { ApiError } from '../../errors/api-error';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { logger } from '../../logger';
 import { UserRepository } from '../../repositories/user.repository';
+import { UserAgreementRepository } from '../../repositories/user-agreement.repository';
+import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
+import { AgreementRepository } from '../../repositories/agreement.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
+import { isMajorityAge } from '../../utils/is-majority-age.util';
+
+// Age category for type-safe age classification in agreement consent logic
+const AgeCategory = {
+  ADULT: 'ADULT',
+  MINOR: 'MINOR',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+type AgeCategory = (typeof AgeCategory)[keyof typeof AgeCategory];
 
 /**
  * The subset of user fields that may be updated via PATCH /users/:id.
@@ -66,8 +80,14 @@ interface UpdateUserData {
  */
 export function UserService({
   userRepository = new UserRepository(),
+  userAgreementRepository = new UserAgreementRepository(),
+  agreementVersionRepository = new AgreementVersionRepository(),
+  agreementRepository = new AgreementRepository(),
 }: {
   userRepository?: UserRepository;
+  userAgreementRepository?: UserAgreementRepository;
+  agreementVersionRepository?: AgreementVersionRepository;
+  agreementRepository?: AgreementRepository;
 } = {}) {
   /**
    * Verify that a user exists and that the requestor has the required permission.
@@ -190,12 +210,6 @@ export function UserService({
    * Nullable fields may be set to null to clear their stored value.
    *
    * Authorization: currently restricted to super admins only.
-   * To expand access to lower-tiered roles when ready:
-   *   1. Assign Permissions.Users.UPDATE to the appropriate roles in role-permissions.ts
-   *   2. Remove the isSuperAdmin guard below
-   *   3. Remove the manual getById 404 check below
-   *   4. Replace both with: await verifyUserAccess(authContext, id, Permissions.Users.UPDATE)
-   *      which already handles 404-before-403, super-admin bypass, self-access, and role-based checks
    *
    * @param authContext - Requesting user's authentication context.
    * @param id - UUID of the user to update.
@@ -305,5 +319,222 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById, update };
+  /**
+   * Record a user agreement (consent record).
+   *
+   * Supports two consent modes:
+   * - **Self-consent**: User consents for themselves
+   * - **Parent consent**: Parent consents for their minor child (via family relationship)
+   *
+   * Authorization rules:
+   * - Self-consent: User can consent for themselves if agreement type matches their age
+   *   - Adults (majority age): Can agree to CONSENT or TOS agreements
+   *   - Minors (under majority age): Can agree to ASSENT agreements only
+   * - Parent consent: User can consent for their child via family relationship
+   *   - Target must be a minor
+   *   - Agreement type must be ASSENT
+   *
+   * @param authContext - Requesting user's authentication context
+   * @param userId - Target user ID (who is consenting)
+   * @param body - Request body (agreementVersionId)
+   * @returns Object with created agreement ID
+   * @throws {ApiError} NOT_FOUND if user, agreement version, or agreement doesn't exist
+   * @throws {ApiError} CONFLICT if the user has already consented to the given agreement version
+   * @throws {ApiError} FORBIDDEN if user lacks family relationship to consent for target user, if the agreement type is inappropriate for the user's age, or if a parent attempts to consent for a non-minor or non-assent agreement
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if database operation fails
+   */
+  async function recordUserAgreement(
+    authContext: AuthContext,
+    userId: string,
+    body: { agreementVersionId: string },
+  ): Promise<{ id: string }> {
+    const { userId: requestingUserId } = authContext;
+    const { agreementVersionId } = body;
+
+    try {
+      // 1. Verify target user exists
+      const targetUser = await userRepository.getById({ id: userId });
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId, targetUserId: userId },
+        });
+      }
+
+      // 2. Verify agreement version exists and fetch agreement type
+      const agreementVersion = await agreementVersionRepository.getById({ id: agreementVersionId });
+
+      if (!agreementVersion) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId, agreementVersionId },
+        });
+      }
+
+      // 3. Check for duplicate — user already consented to this version
+      const existingAgreement = await userAgreementRepository.findByUserIdAndAgreementVersionId(
+        userId,
+        agreementVersionId,
+      );
+
+      if (existingAgreement) {
+        logger.warn(
+          { requestingUserId, targetUserId: userId, agreementVersionId },
+          'User attempted to consent to an agreement version they have already signed',
+        );
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { requestingUserId, targetUserId: userId, agreementVersionId },
+        });
+      }
+
+      // Fetch the agreement to get the agreement type
+      const agreement = await agreementRepository.getById({ id: agreementVersion.agreementId });
+
+      if (!agreement) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId, agreementId: agreementVersion.agreementId },
+        });
+      }
+
+      // 4. Validate agreement type is appropriate for user's age
+      // Fetch requesting user to determine their age
+      const requestingUser =
+        requestingUserId === userId ? targetUser : await userRepository.getById({ id: requestingUserId });
+
+      if (!requestingUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId },
+        });
+      }
+
+      // Determine user's age category
+      // TODO: This is necessary because we do not enforce non-null DoB in the database schema; this is a temporary measure until the issue below is resolved:
+      // TODO: https://github.com/yeatmanlab/roar-project-management/issues/1732
+      const ageStatus = isMajorityAge({ dob: requestingUser.dob, grade: requestingUser.grade });
+      const ageCategory =
+        ageStatus === true ? AgeCategory.ADULT : ageStatus === null ? AgeCategory.UNKNOWN : AgeCategory.MINOR;
+
+      // Determine allowed agreement types based on age category
+      const getAllowedAgreementTypes = (category: AgeCategory): AgreementType[] => {
+        switch (category) {
+          case AgeCategory.ADULT:
+            return [AgreementType.CONSENT, AgreementType.TOS];
+          case AgeCategory.UNKNOWN:
+            // Allow all types for unknown age (with warning) to handle adults with null DOB
+            return Object.values(AgreementType);
+          case AgeCategory.MINOR:
+            return [AgreementType.ASSENT];
+        }
+      };
+
+      const allowedAgreementTypes = getAllowedAgreementTypes(ageCategory);
+
+      // Self-consent: user is consenting for themselves
+      if (requestingUserId === userId) {
+        // Log warning for unknown age users
+        if (ageCategory === AgeCategory.UNKNOWN) {
+          logger.warn(
+            { requestingUserId, agreementId: agreement.id },
+            'User with unknown age (null DOB and no grade) is consenting - allowing all agreement types',
+          );
+        }
+
+        // Validate agreement type is appropriate for user's age category
+        if (!allowedAgreementTypes.includes(agreement.agreementType)) {
+          logger.warn(
+            { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType, ageCategory },
+            'User attempted to consent to an agreement type not allowed for their age category',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, agreementId: agreement.id, agreementType: agreement.agreementType },
+          });
+        }
+      }
+      // Parent consent: user is consenting for their child (via family relationship)
+      else {
+        // Use UserRepository's access controls to verify family relationship
+        // Allowed roles are defined as any caretaker role (e.g. parent, guardian) that would have access to consent on behalf of the child
+        const authorized = await userRepository.getAuthorizedById(
+          { userId: requestingUserId, allowedRoles: CARETAKER_ROLES },
+          userId,
+        );
+
+        if (!authorized) {
+          logger.warn({ requestingUserId, targetUserId: userId }, 'User attempted to consent for non-family member');
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, targetUserId: userId },
+          });
+        }
+
+        // For parent consent, validate that the target user is a minor and agreement type is assent
+        const targetUserAge = isMajorityAge({ dob: targetUser.dob, grade: targetUser.grade });
+        const targetIsMinor = targetUserAge !== true;
+
+        if (!targetIsMinor) {
+          logger.warn(
+            { requestingUserId, targetUserId: userId },
+            'Parent attempted to consent for user who is not a minor',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, targetUserId: userId },
+          });
+        }
+
+        // Parent can only consent to assent agreements for their child
+        if (agreement.agreementType !== AgreementType.ASSENT) {
+          logger.warn(
+            { requestingUserId, targetUserId: userId, agreementType: agreement.agreementType },
+            'Parent attempted to consent to non-assent agreement for child',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, targetUserId: userId, agreementType: agreement.agreementType },
+          });
+        }
+      }
+
+      // 6. Create the user agreement record
+      const agreementData: NewUserAgreement = {
+        userId,
+        agreementVersionId,
+        agreementTimestamp: new Date(),
+      };
+
+      const createdAgreement = await userAgreementRepository.create({ data: agreementData });
+
+      return { id: createdAgreement.id };
+    } catch (error) {
+      // Re-throw ApiErrors as-is
+      if (error instanceof ApiError) throw error;
+
+      // Wrap unexpected errors
+      logger.error(
+        { err: error, context: { requestingUserId, targetUserId: userId, agreementVersionId } },
+        'Failed to create user agreement',
+      );
+      throw new ApiError('Failed to create user agreement', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { requestingUserId, targetUserId: userId, agreementVersionId },
+        cause: error,
+      });
+    }
+  }
+
+  return { findByAuthId, getById, update, recordUserAgreement };
 }

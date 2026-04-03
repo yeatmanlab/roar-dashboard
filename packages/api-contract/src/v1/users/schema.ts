@@ -97,3 +97,28 @@ export const UpdateUserRequestBodySchema = z
   });
 
 export type UpdateUserRequestBody = z.infer<typeof UpdateUserRequestBodySchema>;
+
+/**
+ * Request body for POST /users/:userId/agreements
+ *
+ * Records a user's consent to a specific agreement version.
+ * Supports two modes:
+ * - **Self-consent:** User consents for themselves (authenticated user = target user)
+ * - **Parent consent:** Parent consents for their child (authenticated user = parent, target = child via family relationship)
+ */
+export const RecordUserAgreementRequestBodySchema = z.object({
+  agreementVersionId: z.string().uuid(),
+});
+
+export type RecordUserAgreementRequestBody = z.infer<typeof RecordUserAgreementRequestBodySchema>;
+
+/**
+ * Response payload for POST /users/:userId/agreements
+ *
+ * Returns the created user agreement ID.
+ */
+export const RecordUserAgreementResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type RecordUserAgreementResponse = z.infer<typeof RecordUserAgreementResponseSchema>;
