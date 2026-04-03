@@ -475,10 +475,7 @@ export async function updateEngagementFlags(flagNames: string[], markAsReliable:
     not_enough_responses: 'notEnoughResponses',
   };
 
-  const engagementFlags = Object.fromEntries(flagNames.map((flag) => [flagNameMap[flag] || flag, true])) as Record<
-    string,
-    boolean
-  >;
+  const engagementFlags = Object.fromEntries(flagNames.map((flag) => [flagNameMap[flag] || flag, true]));
 
   const cmd = new UpdateRunEngagementFlagsCommand(api);
 
