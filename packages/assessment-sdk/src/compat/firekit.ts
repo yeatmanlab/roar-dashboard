@@ -20,6 +20,7 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialAssessmentStage,
   WriteTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL } from '../types/run-event-status';
@@ -74,8 +75,23 @@ export class FirekitFacade {
   #invoker: Invoker | undefined;
   #runId: string | undefined;
   #taskInfo: CompatTaskInfo | undefined;
+  #interactionBuffer: AddInteractionInput[] = [];
 
   private constructor() {}
+
+  /**
+   * Resets all state to initial values.
+   * Called during initialization to prevent state leakage between sessions.
+   * @internal
+   */
+  private _reset(): void {
+    this.#ctx = undefined;
+    this.#api = undefined;
+    this.#invoker = undefined;
+    this.#runId = undefined;
+    this.#taskInfo = undefined;
+    this.#interactionBuffer = [];
+  }
 
   /**
    * Returns the singleton instance of FirekitFacade.
@@ -99,12 +115,10 @@ export class FirekitFacade {
    * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous flag
    */
   initialize(ctx: CommandContext, taskInfo: CompatTaskInfo): void {
+    this._reset();
     this.#ctx = ctx;
     this.#api = new RoarApi(ctx);
     this.#invoker = new Invoker(ctx);
-
-    // Reset compat state on re-init to avoid leaking state across tests / consumers
-    this.#runId = undefined;
     this.#taskInfo = taskInfo;
   }
 
@@ -181,6 +195,28 @@ export class FirekitFacade {
    */
   _getTaskInfo(): CompatTaskInfo | undefined {
     return this.#taskInfo;
+  }
+
+  /**
+   * Atomically retrieves and clears the interaction buffer.
+   * This prevents race conditions when writeTrial() is called concurrently.
+   * @internal
+   * @returns Array of buffered interaction events
+   */
+  _drainInteractionBuffer(): AddInteractionInput[] {
+    const buffer = this.#interactionBuffer;
+    this.#interactionBuffer = [];
+    return buffer;
+  }
+
+  /**
+   * Adds an interaction event to the buffer.
+   * Interactions are accumulated and flushed when writeTrial() is called.
+   * @internal
+   * @param interaction - The interaction event to buffer
+   */
+  _pushInteraction(interaction: AddInteractionInput): void {
+    this.#interactionBuffer.push(interaction);
   }
 }
 
@@ -426,18 +462,25 @@ export async function updateEngagementFlags({
 }
 
 /**
- * Firekit compatibility stub for recording an interaction.
+ * Firekit compatibility method for buffering interaction events.
  *
  * From @bdelab/roar-firekit:
  * addInteraction(interaction: InteractionEvent) { […] }
  *
- * @param interaction - The interaction event to record.
+ * Interactions are buffered in memory and later flushed with `writeTrial()`.
+ *
+ * @param interaction - The interaction event to record
  * @returns void
- * @throws {SDKError} Always, until implemented.
  */
 export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
-  void interaction;
-  throw new SDKError('appkit.addInteraction not yet implemented');
+  const facade = getFirekitCompat();
+  if (!facade._getTaskInfo()) {
+    throw new SDKError('appkit.addInteraction requires initialization. Call appkit.initFirekitCompat() first.');
+  }
+  if (!facade._getRunId()) {
+    throw new SDKError('appkit.addInteraction requires an active run. Call appkit.startRun() first.');
+  }
+  facade._pushInteraction(interaction);
 }
 
 /**
@@ -560,21 +603,21 @@ export async function writeTrial(
     });
   }
 
-  const assessmentStage = trialDataRecord['assessmentStage'];
   const validStages = [
     ASSESSMENT_STAGE_PRACTICE,
     ASSESSMENT_STAGE_PRACTICE_RESPONSE,
     ASSESSMENT_STAGE_TEST,
     ASSESSMENT_STAGE_TEST_RESPONSE,
   ] as const;
-  if (!validStages.includes(assessmentStage as (typeof validStages)[number])) {
+  if (!validStages.includes(trialDataRecord['assessmentStage'] as (typeof validStages)[number])) {
     throw new SDKError(
-      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${assessmentStage}`,
+      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${trialDataRecord['assessmentStage']}`,
       {
         code: SdkErrorCode.WRITE_TRIAL_FAILED,
       },
     );
   }
+  const assessmentStage = trialDataRecord['assessmentStage'] as WriteTrialAssessmentStage;
 
   if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
     throw new SDKError('writeTrial requires correct in trial data.', {
@@ -586,16 +629,25 @@ export async function writeTrial(
   const correct =
     typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
 
+  // Drain buffered interactions from addInteraction() calls
+  const bufferedInteractions = facade._drainInteractionBuffer();
+
   const cmd = new WriteTrialCommand(api);
 
-  await invoker.run(cmd, {
-    runId,
-    type: RUN_EVENT_TRIAL,
-    interactions: trialData.interactions,
-    trial: {
-      assessmentStage,
-      ...trialData,
-      correct,
-    },
-  } as WriteTrialCommandInput);
+  try {
+    await invoker.run(cmd, {
+      runId,
+      type: RUN_EVENT_TRIAL,
+      interactions: bufferedInteractions.length > 0 ? bufferedInteractions : undefined,
+      trial: {
+        assessmentStage,
+        ...trialData,
+        correct,
+      },
+    } as WriteTrialCommandInput);
+  } catch (error) {
+    // Restore interactions to buffer if writeTrial fails
+    bufferedInteractions.forEach((interaction) => facade._pushInteraction(interaction));
+    throw error;
+  }
 }

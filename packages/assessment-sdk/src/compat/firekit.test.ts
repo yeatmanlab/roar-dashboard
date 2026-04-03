@@ -30,12 +30,13 @@ import { RUN_EVENT_STATUS_OK } from '../types';
  *
  * @returns A CommandContext configured for testing with localhost baseUrl
  */
-function createMockContext(): CommandContext {
+function createMockContext(fetchImpl?: typeof fetch): CommandContext {
   return {
     baseUrl: 'http://localhost:3000',
     auth: {
       getToken: vi.fn().mockResolvedValue('test-token'),
     },
+    ...(fetchImpl ? { fetchImpl } : {}),
   };
 }
 
@@ -52,24 +53,27 @@ function createMockContext(): CommandContext {
  */
 function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn();
-  fetchMock.mockImplementation((url: string) => {
-    // Return 201 CREATED for startRun (POST /runs)
-    if (url.includes('/runs') && !url.includes('/event')) {
-      return Promise.resolve({
-        status: StatusCodes.CREATED,
-        json: async () => ({ data: { id: runId } }),
-        headers: new Headers([['content-type', 'application/json']]),
-      });
-    }
-    // Return 200 OK for event endpoints (POST /runs/:runId/event)
-    if (url.includes('/event')) {
+  fetchMock.mockImplementation((url: string | Request) => {
+    // Extract URL string from Request object if needed
+    const urlString = typeof url === 'string' ? url : url.url;
+
+    // Return 200 OK for event endpoints (POST /runs/:runId/event) - check this first
+    if (urlString.includes('/event')) {
       return Promise.resolve({
         status: StatusCodes.OK,
         json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
         headers: new Headers([['content-type', 'application/json']]),
-      });
+      } as Response);
     }
-    return Promise.reject(new Error('Unexpected fetch call'));
+    // Return 201 CREATED for startRun (POST /runs) - but not for /event
+    if (urlString.includes('/runs') && !urlString.includes('/event')) {
+      return Promise.resolve({
+        status: StatusCodes.CREATED,
+        json: async () => ({ data: { id: runId } }),
+        headers: new Headers([['content-type', 'application/json']]),
+      } as Response);
+    }
+    return Promise.reject(new Error(`Unexpected fetch call: ${urlString}`));
   });
   return fetchMock;
 }
@@ -93,9 +97,9 @@ function initializeFirekit(
   runId: string,
   options: { isAnonymous?: boolean; administrationId?: string } = {},
 ): { mockContext: CommandContext; fetchMock: ReturnType<typeof vi.fn> } {
-  const mockContext = createMockContext();
   const fetchMock = setupFetchMock(runId);
   vi.stubGlobal('fetch', fetchMock);
+  const mockContext = createMockContext();
 
   initFirekitCompat(mockContext, {
     variantId: 'variant-123',
@@ -331,21 +335,6 @@ describe('firekit compat', () => {
     });
   });
 
-  describe('addInteraction', () => {
-    it('throws SDKError when called (stub not yet implemented)', () => {
-      expect(() => addInteraction({ type: 'click' })).toThrow(SDKError);
-      expect(() => addInteraction({ foo: 'bar' })).toThrow(SDKError);
-    });
-
-    it('matches Firekit signature', () => {
-      // runtime assertion to satisfy vitest/expect-expect
-      expect(typeof addInteraction).toBe('function');
-
-      // compile-time signature check
-      expectTypeOf(addInteraction).toEqualTypeOf<(interaction: AddInteractionInput) => void>();
-    });
-  });
-
   describe('updateUser', () => {
     it('throws SDKError when called (stub not yet implemented)', async () => {
       await expect(updateUser({ assessmentPid: 'test-pid' })).rejects.toBeInstanceOf(SDKError);
@@ -512,6 +501,225 @@ describe('firekit compat', () => {
           computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
         ) => Promise<void>
       >();
+    });
+  });
+
+  describe('addInteraction', () => {
+    const mockContext: CommandContext = {
+      baseUrl: 'http://localhost:3000',
+      auth: {
+        getToken: vi.fn().mockResolvedValue('test-token'),
+      },
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url: string | Request) => {
+          const urlString = typeof url === 'string' ? url : url.url;
+          if (urlString.includes('/runs') && !urlString.includes('/event')) {
+            return Promise.resolve({
+              status: StatusCodes.CREATED,
+              json: async () => ({ data: { id: 'run-interaction-test' } }),
+              headers: new Headers([['content-type', 'application/json']]),
+            });
+          }
+          if (urlString.includes('/event')) {
+            return Promise.resolve({
+              status: StatusCodes.OK,
+              json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+              headers: new Headers([['content-type', 'application/json']]),
+            });
+          }
+          return Promise.reject(new Error('Unexpected fetch call'));
+        }),
+      );
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when called before initFirekitCompat', () => {
+      _resetFirekitCompat();
+      expect(() => addInteraction({ event: 'focus', time: 100 })).toThrow(SDKError);
+    });
+
+    it('throws SDKError when called before startRun', () => {
+      // beforeEach leaves us initialized but without a run
+      expect(() => addInteraction({ event: 'focus', time: 100 })).toThrow(SDKError);
+    });
+
+    it('buffers interaction events', async () => {
+      await startRun();
+      const interaction: AddInteractionInput = { event: 'focus', time: 100 };
+      expect(() => addInteraction(interaction)).not.toThrow();
+    });
+
+    it('accumulates multiple interactions in buffer', async () => {
+      const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-accumulate' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      await startRun();
+      addInteraction({ event: 'focus', time: 100 });
+      addInteraction({ event: 'blur', time: 200 });
+      addInteraction({ event: 'fullscreenenter', time: 300 });
+      addInteraction({ event: 'fullscreenexit', time: 400 });
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      await writeTrial(trialData);
+
+      // Verify all 4 interactions were sent in the writeTrial call
+      const eventCalls = fetchMock.mock.calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls).toHaveLength(1);
+      const body = JSON.parse(eventCalls[0]![1].body as string);
+      expect(body.interactions).toHaveLength(4);
+      expect(body.interactions[0]!.event).toBe('focus');
+      expect(body.interactions[1]!.event).toBe('blur');
+      expect(body.interactions[2]!.event).toBe('fullscreen_enter');
+      expect(body.interactions[3]!.event).toBe('fullscreen_exit');
+    });
+
+    it('clears buffer after writeTrial', async () => {
+      const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-buffer-clear' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      await startRun();
+
+      addInteraction({ event: 'focus', time: 100 });
+      addInteraction({ event: 'blur', time: 200 });
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      await writeTrial(trialData);
+
+      addInteraction({ event: 'fullscreenenter', time: 300 });
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify second call only sent 1 interaction (buffer was cleared)
+      const eventCalls = fetchMock.mock.calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls).toHaveLength(2);
+      const secondBody = JSON.parse(eventCalls[1]![1].body as string);
+      expect(secondBody.interactions).toHaveLength(1);
+    });
+
+    it('restores interactions to buffer if writeTrial fails', async () => {
+      let callCount = 0;
+      const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-buffer-restore' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (urlString.includes('/event')) {
+          callCount++;
+          // First call fails, second call succeeds
+          if (callCount === 1) {
+            return Promise.reject(new Error('Network error'));
+          }
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      await startRun();
+
+      addInteraction({ event: 'focus', time: 100 });
+      addInteraction({ event: 'blur', time: 200 });
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      // First writeTrial call fails
+      await expect(writeTrial(trialData)).rejects.toThrow();
+
+      // Add another interaction after the failure
+      addInteraction({ event: 'fullscreenenter', time: 300 });
+
+      // Second writeTrial call should succeed and include all 3 interactions
+      // (the 2 from before + 1 new, since the first 2 were restored to buffer)
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify second call sent all 3 interactions (buffer was restored after failure)
+      const eventCalls = fetchMock.mock.calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls).toHaveLength(2);
+      const secondBody = JSON.parse(eventCalls[1]![1].body as string);
+      expect(secondBody.interactions).toHaveLength(3);
+      expect(secondBody.interactions[0]!.event).toBe('focus');
+      expect(secondBody.interactions[1]!.event).toBe('blur');
+      expect(secondBody.interactions[2]!.event).toBe('fullscreen_enter');
+    });
+
+    it('matches Firekit signature', () => {
+      expect(typeof addInteraction).toBe('function');
+
+      expectTypeOf(addInteraction).toEqualTypeOf<(interaction: AddInteractionInput) => void>();
     });
   });
 });
