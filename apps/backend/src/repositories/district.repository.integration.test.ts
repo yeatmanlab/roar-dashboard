@@ -7,6 +7,7 @@
  * Verifies SQL correctness and proper filtering by orgType, rosteringEnded, etc.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { baseFixture } from '../test-support/fixtures';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
@@ -503,6 +504,316 @@ describe('DistrictRepository', () => {
         users: 0,
         schools: 0,
         classes: 0,
+      });
+    });
+  });
+
+  describe('getUsersByDistrictId', () => {
+    describe('includes users from descendant orgs and classes', () => {
+      it('returns users enrolled at the district level', async () => {
+        const result = await repository.getUsersByDistrictId(baseFixture.districtB.id, {
+          page: 1,
+          perPage: 100,
+        });
+
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(baseFixture.districtBAdmin.id);
+      });
+
+      it('includes users enrolled at school level under the district', async () => {
+        const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+          page: 1,
+          perPage: 100,
+        });
+
+        const userIds = result.items.map((u) => u.id);
+        // School A users
+        expect(userIds).toContain(baseFixture.schoolAAdmin.id);
+        expect(userIds).toContain(baseFixture.schoolATeacher.id);
+        expect(userIds).toContain(baseFixture.schoolAStudent.id);
+        // School B users
+        expect(userIds).toContain(baseFixture.schoolBStudent.id);
+      });
+
+      it('includes users enrolled at class level under the district', async () => {
+        const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+          page: 1,
+          perPage: 100,
+        });
+
+        const userIds = result.items.map((u) => u.id);
+        // Class A users (classInSchoolA is under schoolA which is under district)
+        expect(userIds).toContain(baseFixture.classAStudent.id);
+        expect(userIds).toContain(baseFixture.classATeacher.id);
+      });
+    });
+
+    it('does not include users from other districts', async () => {
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      const userIds = result.items.map((u) => u.id);
+      // Users from districtB should not appear
+      expect(userIds).not.toContain(baseFixture.districtBAdmin.id);
+      expect(userIds).not.toContain(baseFixture.districtBStudent.id);
+    });
+
+    it('returns enrollmentStart and role for each user', async () => {
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items.length).toBeGreaterThan(0);
+
+      const districtAdmin = result.items.find((u) => u.id === baseFixture.districtAdmin.id);
+      const classStudent = result.items.find((u) => u.id === baseFixture.classAStudent.id);
+
+      expect(districtAdmin?.role).toBe(UserRole.ADMINISTRATOR);
+      expect(districtAdmin?.enrollmentStart).toBeInstanceOf(Date);
+      expect(classStudent?.role).toBe(UserRole.STUDENT);
+      expect(classStudent?.enrollmentStart).toBeInstanceOf(Date);
+    });
+
+    it('returns empty for district with no enrolled users', async () => {
+      // Create an empty district
+      const emptyDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'Empty District for getUsersByDistrictId',
+      });
+
+      const result = await repository.getUsersByDistrictId(emptyDistrict.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('respects pagination', async () => {
+      const page1 = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 2,
+      });
+
+      expect(page1.items.length).toBeLessThanOrEqual(2);
+      expect(page1.totalItems).toBeGreaterThan(2);
+
+      const page2 = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 2,
+        perPage: 2,
+      });
+
+      expect(page2.items.length).toBeLessThanOrEqual(2);
+      expect(page2.totalItems).toBeGreaterThan(2);
+
+      // Pages should have different users
+      const page1Ids = page1.items.map((u) => u.id);
+      const page2Ids = page2.items.map((u) => u.id);
+      expect(page1Ids.some((id) => page2Ids.includes(id))).toBe(false);
+    });
+
+    it('applies default sorting by nameLast ascending when no orderBy specified', async () => {
+      // Create a district with users having known lastNames for precise sorting verification
+      const sortTestDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'getUsersByDistrictId Sort Test District',
+      });
+      const studentZ = await UserFactory.create({ nameLast: 'Zulu' });
+      const studentA = await UserFactory.create({ nameLast: 'Alpha' });
+      const studentM = await UserFactory.create({ nameLast: 'Mike' });
+      await UserOrgFactory.create({ userId: studentZ.id, orgId: sortTestDistrict.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: studentA.id, orgId: sortTestDistrict.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: studentM.id, orgId: sortTestDistrict.id, role: UserRole.STUDENT });
+
+      const result = await repository.getUsersByDistrictId(sortTestDistrict.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items).toHaveLength(3);
+      expect(result.items[0]!.nameLast).toBe('Alpha');
+      expect(result.items[1]!.nameLast).toBe('Mike');
+      expect(result.items[2]!.nameLast).toBe('Zulu');
+    });
+
+    it('applies sorting by username descending', async () => {
+      // Create a district with users having known usernames for precise sorting verification
+      const usernameTestDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'getUsersByDistrictId Username Sort Test',
+      });
+      const userA = await UserFactory.create({ username: 'aaa_district_user' });
+      const userZ = await UserFactory.create({ username: 'zzz_district_user' });
+      const userM = await UserFactory.create({ username: 'mmm_district_user' });
+      await UserOrgFactory.create({ userId: userA.id, orgId: usernameTestDistrict.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: userZ.id, orgId: usernameTestDistrict.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: userM.id, orgId: usernameTestDistrict.id, role: UserRole.STUDENT });
+
+      const result = await repository.getUsersByDistrictId(usernameTestDistrict.id, {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'username', direction: SortOrder.DESC },
+      });
+
+      expect(result.items).toHaveLength(3);
+      expect(result.items[0]!.username).toBe('zzz_district_user');
+      expect(result.items[1]!.username).toBe('mmm_district_user');
+      expect(result.items[2]!.username).toBe('aaa_district_user');
+    });
+
+    it('excludes users with expired enrollment', async () => {
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      const userIds = result.items.map((u) => u.id);
+      // Expired org enrollment
+      expect(userIds).not.toContain(baseFixture.expiredEnrollmentStudent.id);
+      // Expired class enrollment
+      expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
+    });
+
+    it('excludes users with future enrollment', async () => {
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      const userIds = result.items.map((u) => u.id);
+      expect(userIds).not.toContain(baseFixture.futureEnrollmentStudent.id);
+    });
+
+    describe('filters', () => {
+      it('filters by role', async () => {
+        // Create a district with users having different roles
+        const filterTestDistrict = await OrgFactory.create({
+          orgType: OrgType.DISTRICT,
+          name: 'Filter Role Test District',
+        });
+        const student1 = await UserFactory.create({ nameLast: 'FilterDistrictStudent1' });
+        const student2 = await UserFactory.create({ nameLast: 'FilterDistrictStudent2' });
+        const teacher = await UserFactory.create({ nameLast: 'FilterDistrictTeacher' });
+        await UserOrgFactory.create({ userId: student1.id, orgId: filterTestDistrict.id, role: UserRole.STUDENT });
+        await UserOrgFactory.create({ userId: student2.id, orgId: filterTestDistrict.id, role: UserRole.STUDENT });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: filterTestDistrict.id, role: UserRole.TEACHER });
+
+        const result = await repository.getUsersByDistrictId(filterTestDistrict.id, {
+          page: 1,
+          perPage: 100,
+          role: UserRole.STUDENT,
+        });
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(student1.id);
+        expect(userIds).toContain(student2.id);
+        expect(userIds).not.toContain(teacher.id);
+
+        // Verify all returned users have the filtered role in EnrolledUserEntity
+        for (const user of result.items) {
+          expect(user.role).toBe(UserRole.STUDENT);
+        }
+      });
+
+      it('filters by grade', async () => {
+        // Create a district with users having different grades
+        const filterGradeDistrict = await OrgFactory.create({
+          orgType: OrgType.DISTRICT,
+          name: 'Filter Grade Test District',
+        });
+        const grade3Student = await UserFactory.create({ nameLast: 'Grade3District', grade: '3' });
+        const grade5Student = await UserFactory.create({ nameLast: 'Grade5District', grade: '5' });
+        const grade5Student2 = await UserFactory.create({ nameLast: 'Grade5DistrictSecond', grade: '5' });
+        await UserOrgFactory.create({
+          userId: grade3Student.id,
+          orgId: filterGradeDistrict.id,
+          role: UserRole.STUDENT,
+        });
+        await UserOrgFactory.create({
+          userId: grade5Student.id,
+          orgId: filterGradeDistrict.id,
+          role: UserRole.STUDENT,
+        });
+        await UserOrgFactory.create({
+          userId: grade5Student2.id,
+          orgId: filterGradeDistrict.id,
+          role: UserRole.STUDENT,
+        });
+
+        const result = await repository.getUsersByDistrictId(filterGradeDistrict.id, {
+          page: 1,
+          perPage: 100,
+          grade: ['5'],
+        });
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(grade5Student.id);
+        expect(userIds).toContain(grade5Student2.id);
+        expect(userIds).not.toContain(grade3Student.id);
+      });
+
+      it('filters by both role and grade', async () => {
+        // Create a district with users having different roles and grades
+        const filterBothDistrict = await OrgFactory.create({
+          orgType: OrgType.DISTRICT,
+          name: 'Filter Both Test District',
+        });
+        const grade3Student = await UserFactory.create({ nameLast: 'G3DistrictStudent', grade: '3' });
+        const grade5Student = await UserFactory.create({ nameLast: 'G5DistrictStudent', grade: '5' });
+        const grade5Teacher = await UserFactory.create({ nameLast: 'G5DistrictTeacher', grade: '5' });
+        await UserOrgFactory.create({
+          userId: grade3Student.id,
+          orgId: filterBothDistrict.id,
+          role: UserRole.STUDENT,
+        });
+        await UserOrgFactory.create({
+          userId: grade5Student.id,
+          orgId: filterBothDistrict.id,
+          role: UserRole.STUDENT,
+        });
+        await UserOrgFactory.create({
+          userId: grade5Teacher.id,
+          orgId: filterBothDistrict.id,
+          role: UserRole.TEACHER,
+        });
+
+        const result = await repository.getUsersByDistrictId(filterBothDistrict.id, {
+          page: 1,
+          perPage: 100,
+          role: UserRole.STUDENT,
+          grade: ['5'],
+        });
+
+        expect(result.totalItems).toBe(1);
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(grade5Student.id);
+      });
+
+      it('returns empty when no users match filter', async () => {
+        // Create a district with only students
+        const noMatchDistrict = await OrgFactory.create({
+          orgType: OrgType.DISTRICT,
+          name: 'No Match Filter Test District',
+        });
+        const student = await UserFactory.create({ nameLast: 'OnlyDistrictStudent' });
+        await UserOrgFactory.create({ userId: student.id, orgId: noMatchDistrict.id, role: UserRole.STUDENT });
+
+        const result = await repository.getUsersByDistrictId(noMatchDistrict.id, {
+          page: 1,
+          perPage: 100,
+          role: UserRole.ADMINISTRATOR,
+        });
+
+        expect(result.totalItems).toBe(0);
+        expect(result.items).toEqual([]);
       });
     });
   });
