@@ -6,6 +6,8 @@ import {
   SearchQuerySchema,
   createSortQuerySchema,
   createPaginatedResponseSchema,
+  createFilterQuerySchema,
+  createEmbedQuerySchema,
 } from '../common/query';
 
 /**
@@ -440,3 +442,99 @@ export const CreateTaskResponseSchema = z.object({
 
 export type CreateTaskRequestBody = z.infer<typeof CreateTaskRequestBodySchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
+
+// ─── Task Variants List (cross-task, super-admin only) ──────────────────────
+
+/**
+ * Allowed sort fields for the cross-task variant list endpoint.
+ * Uses dotted notation to distinguish variant and task fields.
+ */
+export const TASK_VARIANTS_SORT_FIELDS = [
+  'variant.name',
+  'variant.createdAt',
+  'variant.updatedAt',
+  'task.name',
+  'task.slug',
+] as const;
+
+/** Sort field type for the cross-task variant list. */
+export type TaskVariantsSortFieldType = (typeof TASK_VARIANTS_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access in service and repository layers.
+ */
+export const TaskVariantsSortField = {
+  VARIANT_NAME: 'variant.name',
+  VARIANT_CREATED_AT: 'variant.createdAt',
+  VARIANT_UPDATED_AT: 'variant.updatedAt',
+  TASK_NAME: 'task.name',
+  TASK_SLUG: 'task.slug',
+} as const satisfies Record<string, TaskVariantsSortFieldType>;
+
+/**
+ * Allowed filter fields for the cross-task variant list endpoint.
+ */
+export const TASK_VARIANTS_FILTER_FIELDS = ['task.id', 'task.slug'] as const;
+
+/** Filter field type for the cross-task variant list. */
+export type TaskVariantsFilterFieldType = (typeof TASK_VARIANTS_FILTER_FIELDS)[number];
+
+/**
+ * Allowed embed options for the cross-task variant list endpoint.
+ */
+export const TASK_VARIANTS_EMBED_OPTIONS = ['parameters'] as const;
+
+/** Embed option type for the cross-task variant list. */
+export type TaskVariantsEmbedOptionType = (typeof TASK_VARIANTS_EMBED_OPTIONS)[number];
+
+/**
+ * Embed option constants for type-safe access in the service layer.
+ */
+export const TaskVariantsEmbedOption = {
+  PARAMETERS: 'parameters',
+} as const satisfies Record<string, TaskVariantsEmbedOptionType>;
+
+/**
+ * Schema for a single item in the cross-task variant list response.
+ * Extends the base variant shape with denormalized task fields and optional parameters.
+ *
+ * `parameters` is only present when `?embed=parameters` is requested.
+ */
+export const TaskVariantListItemSchema = z.object({
+  id: z.string().uuid(),
+  taskId: z.string().uuid(),
+  name: z.string().nullable(),
+  description: z.string().nullable(),
+  status: TaskVariantStatusSchema,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
+  taskName: z.string(),
+  taskSlug: z.string(),
+  taskImage: z.string().nullable(),
+  parameters: TaskVariantParametersArraySchema.optional(),
+});
+
+/** Type for a single item in the cross-task variant list response. */
+export type TaskVariantListItem = z.infer<typeof TaskVariantListItemSchema>;
+
+/**
+ * Query parameters for the cross-task published variant list endpoint.
+ * Composes pagination, sort, search, embed, and filter schemas.
+ */
+export const TaskVariantsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(TASK_VARIANTS_SORT_FIELDS, 'variant.name', 'asc'),
+)
+  .merge(SearchQuerySchema)
+  .merge(createEmbedQuerySchema(TASK_VARIANTS_EMBED_OPTIONS))
+  .merge(createFilterQuerySchema(TASK_VARIANTS_FILTER_FIELDS));
+
+/** Query type for the cross-task variant list endpoint. */
+export type TaskVariantsListQuery = z.infer<typeof TaskVariantsListQuerySchema>;
+
+/**
+ * Paginated response schema for the cross-task variant list endpoint.
+ */
+export const TaskVariantsListResponseSchema = createPaginatedResponseSchema(TaskVariantListItemSchema);
+
+/** Response type for the cross-task variant list endpoint. */
+export type TaskVariantsListResponse = z.infer<typeof TaskVariantsListResponseSchema>;
