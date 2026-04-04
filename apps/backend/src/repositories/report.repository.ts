@@ -419,7 +419,7 @@ export class ReportRepository {
     const offset = (page - 1) * perPage;
 
     // Build the student-in-scope subquery
-    const studentsInScope = this.buildStudentInScopeSubquery(scope);
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
 
     // Build LEFT JOIN subqueries for progress status sort and filter.
     // Each progress status filter targets a specific task variant and needs its own
@@ -774,20 +774,19 @@ export class ReportRepository {
   }
 
   /**
-   * Builds a subquery that returns student userIds within a scope.
+   * Builds a Drizzle query that returns student userIds within a scope.
    * Filters to student roles and excludes rosteringEnded entities.
    * UNION (not UNION ALL) handles deduplication across branches.
+   *
+   * Returns the query without `.as()` so callers can either:
+   * - Add `.as('students_in_scope')` for use as a Drizzle subquery alias
+   * - Embed directly in a `sql` template literal for use as a CTE
    *
    * No `deletedAt` filter on users is needed because the users table has no
    * soft-delete column. Instead, rostered users are protected from hard deletion
    * by the `prevent_rostered_entity_delete` DB trigger.
-   *
-   * IMPORTANT: This is the Drizzle version of the student-in-scope query.
-   * A raw SQL equivalent exists in buildStudentInScopeSql (needed because Drizzle
-   * subquery aliases can't be reused across UNION branches). Any changes to
-   * student-in-scope filtering logic must be applied to both methods.
    */
-  private buildStudentInScopeSubquery(scope: ReportScope) {
+  private buildStudentInScopeQuery(scope: ReportScope) {
     switch (scope.scopeType) {
       case 'district':
         // Students in user_orgs where org path is at or below the district
@@ -818,8 +817,7 @@ export class ReportRepository {
                   sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
                 ),
               ),
-          )
-          .as('students_in_scope');
+          );
 
       case 'school':
         // Students in user_orgs where orgId = schoolId
@@ -849,8 +847,7 @@ export class ReportRepository {
                   eq(classes.schoolId, scope.scopeId),
                 ),
               ),
-          )
-          .as('students_in_scope');
+          );
 
       case 'class':
         return this.db
@@ -864,8 +861,7 @@ export class ReportRepository {
               isNull(classes.rosteringEnded),
               eq(userClasses.classId, scope.scopeId),
             ),
-          )
-          .as('students_in_scope');
+          );
 
       case 'group':
         return this.db
@@ -879,8 +875,7 @@ export class ReportRepository {
               isNull(groups.rosteringEnded),
               eq(userGroups.groupId, scope.scopeId),
             ),
-          )
-          .as('students_in_scope');
+          );
 
       default:
         // Exhaustive check — this should never be reached since ScopeType is validated by Zod
@@ -981,7 +976,7 @@ export class ReportRepository {
     scope: ReportScope,
     taskMetas: ReportTaskMeta[],
   ): Promise<ProgressOverviewCountsResult> {
-    const studentsInScope = this.buildStudentInScopeSubquery(scope);
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
 
     // 1. Count total students in scope
     const countResult = await this.db
@@ -997,9 +992,9 @@ export class ReportRepository {
 
     // 2. Build UNION ALL of per-variant status subqueries.
     // Each subquery LEFT JOINs students with runs for one variant and computes
-    // a status priority via CASE. The students-in-scope subquery is inlined via SQL
-    // to allow reuse across UNION branches (Drizzle subquery aliases can't be reused).
-    const studentsInScopeSql = this.buildStudentInScopeSql(scope);
+    // a status priority via CASE. The students-in-scope query is defined as a CTE
+    // (sis) so it's written once by Drizzle and referenced by name in each branch.
+    const studentsInScopeQuery = this.buildStudentInScopeQuery(scope);
 
     const variantQueries: SQL[] = taskMetas.map((meta) => {
       const statusCase = this.buildOverviewStatusCase(meta);
@@ -1012,7 +1007,7 @@ export class ReportRepository {
           ${meta.taskId}::text AS task_id,
           (${statusCase}) AS status_priority
         FROM ${users}
-        INNER JOIN (${studentsInScopeSql}) sis ON ${users.id} = sis.user_id
+        INNER JOIN sis ON ${users.id} = sis.user_id
         LEFT JOIN app_assessment_fdw.runs r ON r.user_id = ${users.id}
           AND r.administration_id = ${administrationId}
           AND r.task_variant_id = ${meta.taskVariantId}
@@ -1030,7 +1025,10 @@ export class ReportRepository {
     //   Outer: GROUP BY task_id, max_priority → COUNT for final per-task status counts
     //   Filter out status_priority = -1 (excluded students)
     const aggregationQuery = sql`
-      WITH variant_statuses AS (
+      WITH sis AS (
+        ${studentsInScopeQuery}
+      ),
+      variant_statuses AS (
         ${unionSql}
       ),
       deduped AS (
@@ -1120,88 +1118,5 @@ export class ReportRepository {
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
     END`;
-  }
-
-  /**
-   * Build raw SQL for the students-in-scope subquery.
-   * Unlike buildStudentInScopeSubquery (which returns a Drizzle subquery alias),
-   * this returns a raw SQL fragment that can be inlined into multiple UNION branches.
-   * Drizzle subquery aliases can only be used once in a query — raw SQL avoids this limitation.
-   *
-   * IMPORTANT: This is the raw SQL equivalent of buildStudentInScopeSubquery.
-   * Any changes to student-in-scope filtering logic must be applied to both methods.
-   * See buildStudentInScopeSubquery for the Drizzle version.
-   */
-  private buildStudentInScopeSql(scope: ReportScope): SQL {
-    // Enrollment active check mirrors isEnrollmentActive:
-    //   enrollment_start <= NOW() AND (enrollment_end >= NOW() OR enrollment_end IS NULL)
-    const enrollmentActiveOrg = sql`uo.enrollment_start <= NOW() AND (uo.enrollment_end >= NOW() OR uo.enrollment_end IS NULL)`;
-    const enrollmentActiveClass = sql`uc.enrollment_start <= NOW() AND (uc.enrollment_end >= NOW() OR uc.enrollment_end IS NULL)`;
-    const enrollmentActiveGroup = sql`ug.enrollment_start <= NOW() AND (ug.enrollment_end >= NOW() OR ug.enrollment_end IS NULL)`;
-
-    switch (scope.scopeType) {
-      case 'district':
-        return sql`
-          SELECT uo.user_id
-          FROM app.user_orgs uo
-          INNER JOIN app.orgs o ON uo.org_id = o.id
-          WHERE uo.role = 'student'
-            AND ${enrollmentActiveOrg}
-            AND o.rostering_ended IS NULL
-            AND o.path <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})
-          UNION
-          SELECT uc.user_id
-          FROM app.user_classes uc
-          INNER JOIN app.classes c ON uc.class_id = c.id
-          WHERE uc.role = 'student'
-            AND ${enrollmentActiveClass}
-            AND c.rostering_ended IS NULL
-            AND c.org_path <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})
-        `;
-
-      case 'school':
-        return sql`
-          SELECT uo.user_id
-          FROM app.user_orgs uo
-          INNER JOIN app.orgs o ON uo.org_id = o.id
-          WHERE uo.role = 'student'
-            AND ${enrollmentActiveOrg}
-            AND o.rostering_ended IS NULL
-            AND uo.org_id = ${scope.scopeId}
-          UNION
-          SELECT uc.user_id
-          FROM app.user_classes uc
-          INNER JOIN app.classes c ON uc.class_id = c.id
-          WHERE uc.role = 'student'
-            AND ${enrollmentActiveClass}
-            AND c.rostering_ended IS NULL
-            AND c.school_id = ${scope.scopeId}
-        `;
-
-      case 'class':
-        return sql`
-          SELECT uc.user_id
-          FROM app.user_classes uc
-          INNER JOIN app.classes c ON uc.class_id = c.id
-          WHERE uc.role = 'student'
-            AND ${enrollmentActiveClass}
-            AND c.rostering_ended IS NULL
-            AND uc.class_id = ${scope.scopeId}
-        `;
-
-      case 'group':
-        return sql`
-          SELECT ug.user_id
-          FROM app.user_groups ug
-          INNER JOIN app.groups g ON ug.group_id = g.id
-          WHERE ug.role = 'student'
-            AND ${enrollmentActiveGroup}
-            AND g.rostering_ended IS NULL
-            AND ug.group_id = ${scope.scopeId}
-        `;
-
-      default:
-        throw new Error(`Unsupported scope type: ${scope.scopeType satisfies never}`);
-    }
   }
 }
