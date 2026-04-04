@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { AgreementService, AgreementsListOptions } from './agreement.service';
+import type { AgreementsListOptions } from './agreement.service';
+import { AgreementService } from './agreement.service';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
 import { AuthContextFactory } from '../../test-support/factories/user.factory';
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
@@ -12,6 +13,7 @@ import type { AgreementEmbedOptionType } from '../../enums/agreement-embed-optio
 
 describe('AgreementService', () => {
   let mockRepository: ReturnType<typeof createMockAgreementRepository>;
+  let mockFetchContent: ReturnType<typeof vi.fn>;
   let service: ReturnType<typeof AgreementService>;
 
   const defaultOptions = {
@@ -26,7 +28,8 @@ describe('AgreementService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRepository = createMockAgreementRepository();
-    service = AgreementService({ agreementRepository: mockRepository });
+    mockFetchContent = vi.fn();
+    service = AgreementService({ agreementRepository: mockRepository, fetchContent: mockFetchContent });
   });
 
   describe('list', () => {
@@ -134,6 +137,88 @@ describe('AgreementService', () => {
       await expect(service.list(authContext, defaultOptions)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
+  describe('getVersionContent', () => {
+    it('returns version content when agreement and version exist', async () => {
+      const authContext = AuthContextFactory.build();
+      const agreement = AgreementFactory.build();
+      const version = AgreementVersionFactory.build({ agreementId: agreement.id });
+      const markdownContent = '# Terms of Service\n\nBy using ROAR, you agree to...';
+
+      mockRepository.getById.mockResolvedValue(agreement);
+      mockRepository.getVersionByIdForAgreement.mockResolvedValue(version);
+      mockFetchContent.mockResolvedValue(markdownContent);
+
+      const result = await service.getVersionContent(authContext, agreement.id, version.id);
+
+      expect(result.id).toBe(version.id);
+      expect(result.agreementId).toBe(agreement.id);
+      expect(result.locale).toBe(version.locale);
+      expect(result.content).toBe(markdownContent);
+      expect(result.githubCommitSha).toBe(version.githubCommitSha);
+      expect(mockFetchContent).toHaveBeenCalledWith(
+        version.githubOrgRepo,
+        version.githubCommitSha,
+        version.githubFilename,
+      );
+    });
+
+    it('throws 404 when agreement does not exist', async () => {
+      const authContext = AuthContextFactory.build();
+      mockRepository.getById.mockResolvedValue(null);
+
+      await expect(service.getVersionContent(authContext, 'missing-id', 'version-id')).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockRepository.getVersionByIdForAgreement).not.toHaveBeenCalled();
+    });
+
+    it('throws 404 when version does not exist or belongs to different agreement', async () => {
+      const authContext = AuthContextFactory.build();
+      const agreement = AgreementFactory.build();
+
+      mockRepository.getById.mockResolvedValue(agreement);
+      mockRepository.getVersionByIdForAgreement.mockResolvedValue(null);
+
+      await expect(service.getVersionContent(authContext, agreement.id, 'missing-version')).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('re-throws ApiError from fetchContent without wrapping', async () => {
+      const authContext = AuthContextFactory.build();
+      const agreement = AgreementFactory.build();
+      const version = AgreementVersionFactory.build({ agreementId: agreement.id });
+      const fetchError = new ApiError('Failed to fetch', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+
+      mockRepository.getById.mockResolvedValue(agreement);
+      mockRepository.getVersionByIdForAgreement.mockResolvedValue(version);
+      mockFetchContent.mockRejectedValue(fetchError);
+
+      await expect(service.getVersionContent(authContext, agreement.id, version.id)).rejects.toThrow(fetchError);
+    });
+
+    it('wraps unexpected errors in ApiError with 500/EXTERNAL_SERVICE_FAILED', async () => {
+      const authContext = AuthContextFactory.build();
+      const agreement = AgreementFactory.build();
+      const version = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+      mockRepository.getById.mockResolvedValue(agreement);
+      mockRepository.getVersionByIdForAgreement.mockResolvedValue(version);
+      mockFetchContent.mockRejectedValue(new Error('Network timeout'));
+
+      await expect(service.getVersionContent(authContext, agreement.id, version.id)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
       });
     });
   });

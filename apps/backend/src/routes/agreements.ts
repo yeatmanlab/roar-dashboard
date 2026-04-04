@@ -11,7 +11,7 @@ const s = initServer();
  *
  * All routes require authentication (AuthGuardMiddleware).
  * Authorization is handled in the service layer — all authenticated users
- * may list agreements, as they are system-wide resources required for
+ * may list and read agreements, as they are system-wide resources required for
  * consent/onboarding flows.
  */
 export function registerAgreementsRoutes(routerInstance: Router) {
@@ -20,6 +20,11 @@ export function registerAgreementsRoutes(routerInstance: Router) {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => AgreementsController.list(user!, query),
+    },
+    getVersionContent: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params }) => AgreementsController.getVersionContent(user!, params),
     },
   });
 

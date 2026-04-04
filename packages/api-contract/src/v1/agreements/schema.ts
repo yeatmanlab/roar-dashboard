@@ -139,3 +139,28 @@ export type AgreementsListQuery = z.infer<typeof AgreementsListQuerySchema>;
 export const AgreementsListResponseSchema = createPaginatedResponseSchema(AgreementSchema);
 
 export type AgreementsListResponse = z.infer<typeof AgreementsListResponseSchema>;
+
+/**
+ * Path parameters for fetching a single agreement version's content.
+ */
+export const AgreementVersionContentParamsSchema = z.object({
+  agreementId: z.string().uuid(),
+  versionId: z.string().uuid(),
+});
+
+export type AgreementVersionContentParams = z.infer<typeof AgreementVersionContentParamsSchema>;
+
+/**
+ * Agreement version content response.
+ * Includes the raw markdown content fetched from GitHub alongside version metadata.
+ */
+export const AgreementVersionContentSchema = z.object({
+  id: z.string().uuid(),
+  agreementId: z.string().uuid(),
+  locale: LocaleSchema,
+  content: z.string(),
+  githubCommitSha: z.string(),
+  createdAt: z.string().datetime(),
+});
+
+export type AgreementVersionContent = z.infer<typeof AgreementVersionContentSchema>;

@@ -3,6 +3,7 @@ import type {
   AgreementsListQuery,
   Agreement as ContractAgreement,
   AgreementVersionBase,
+  AgreementVersionContentParams,
 } from '@roar-dashboard/api-contract';
 import type { AgreementVersion } from '../db/schema';
 import type { AgreementWithEmbeds } from '../services/agreement/agreement.service';
@@ -92,6 +93,40 @@ export const AgreementsController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get agreement version content.
+   *
+   * Fetches the raw markdown content for a specific agreement version from GitHub.
+   * Sets aggressive caching headers since content is immutable (tied to a commit SHA).
+   *
+   * @param authContext - User's authentication context
+   * @param params - Path parameters (agreementId, versionId)
+   */
+  getVersionContent: async (authContext: AuthContext, params: AgreementVersionContentParams) => {
+    try {
+      const result = await agreementService.getVersionContent(authContext, params.agreementId, params.versionId);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            id: result.id,
+            agreementId: result.agreementId,
+            locale: result.locale,
+            content: result.content,
+            githubCommitSha: result.githubCommitSha,
+            createdAt: result.createdAt.toISOString(),
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }

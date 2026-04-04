@@ -120,6 +120,23 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
   }
 
   /**
+   * Look up a single agreement version by ID, verifying it belongs to the specified agreement.
+   *
+   * @param agreementId - The agreement the version must belong to
+   * @param versionId - The version ID to look up
+   * @returns The version record, or null if not found or agreementId doesn't match
+   */
+  async getVersionByIdForAgreement(agreementId: string, versionId: string): Promise<AgreementVersion | null> {
+    const [version] = await this.db
+      .select()
+      .from(agreementVersions)
+      .where(and(eq(agreementVersions.id, versionId), eq(agreementVersions.agreementId, agreementId)))
+      .limit(1);
+
+    return version ?? null;
+  }
+
+  /**
    * Fetch all versions for the given agreement IDs, grouped by agreementId.
    *
    * Used for embed resolution when ?embed=versions is requested.
