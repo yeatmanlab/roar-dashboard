@@ -16,11 +16,16 @@ export const MeContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(MeSchema),
         401: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
       summary: 'Get current user profile',
-      description: 'Returns the authenticated user profile including id, userType, and name.',
+      description:
+        'Returns the authenticated user profile including id, userType, name, and unsigned TOS agreements. ' +
+        'The unsignedAgreements array contains TOS agreements the user must sign before using the platform. ' +
+        'Each agreement includes all current locale variants so the frontend can present the appropriate one. ' +
+        'Returns 401 if not authenticated. Returns 404 if the user record is not found.',
     },
   },
   { pathPrefix: '/me' },

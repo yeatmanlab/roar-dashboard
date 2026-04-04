@@ -536,5 +536,44 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById, update, recordUserAgreement };
+  /**
+   * Get unsigned TOS agreements for a user.
+   *
+   * Returns TOS agreements where the user has not signed any current version
+   * (cross-locale satisfaction: signing any locale satisfies the requirement).
+   * Each agreement includes all current locale variants.
+   *
+   * @param userId - The user to check unsigned agreements for
+   * @returns Array of unsigned agreements with their current version metadata
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function getUnsignedTosAgreements(
+    userId: string,
+  ): Promise<Array<{ agreementId: string; agreementName: string; versions: Array<{ versionId: string; locale: string }> }>> {
+    try {
+      const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
+
+      return unsignedAgreements.map((item) => ({
+        agreementId: item.agreement.id,
+        agreementName: item.agreement.name,
+        versions: item.currentVersions.map((v) => ({
+          versionId: v.id,
+          locale: v.locale,
+        })),
+      }));
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to get unsigned TOS agreements');
+
+      throw new ApiError('Failed to retrieve unsigned agreements', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
+  return { findByAuthId, getById, update, recordUserAgreement, getUnsignedTosAgreements };
 }
