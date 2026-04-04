@@ -1,12 +1,20 @@
 import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
-import type { UserResponse, UpdateUserRequestBody, RecordUserAgreementRequestBody } from '@roar-dashboard/api-contract';
+import type {
+  UserResponse,
+  UpdateUserRequestBody,
+  RecordUserAgreementRequestBody,
+  AdministrationsListQuery,
+} from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
+import { AdministrationService } from '../services/administration/administration.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
+import { transformAdministration } from './utils/administration.transform';
 
 const userService = UserService();
+const administrationService = AdministrationService();
 
 /**
  * Transform a User database record into a UserResponse API schema.
@@ -155,6 +163,60 @@ export const UsersController = {
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
           StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List administrations assigned to a specific user.
+   *
+   * Delegates to AdministrationService for authorization and data retrieval.
+   * Super admins see all administrations for the user.
+   * The user themselves sees their own administrations.
+   * Supervisory users see the intersection of target user and their own accessible administrations.
+   * Supervised roles receive 403.
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param userId - UUID of the target user.
+   * @param query - Query parameters (pagination, sorting, embed options, status filter).
+   */
+  listUserAdministrations: async (
+    authContext: AuthContext,
+    userId: string,
+    query: AdministrationsListQuery,
+  ) => {
+    try {
+      const result = await administrationService.listUserAdministrations(authContext, userId, {
+        page: query.page,
+        perPage: query.perPage,
+        sortBy: query.sortBy,
+        sortOrder: query.sortOrder,
+        embed: query.embed,
+        status: query.status,
+      });
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items: result.items.map(transformAdministration),
+            pagination: {
+              page: query.page,
+              perPage: query.perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / query.perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

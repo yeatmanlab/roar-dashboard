@@ -985,6 +985,160 @@ export function AdministrationService({
     }
   }
 
+  /**
+   * List administrations assigned to a specific user with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all administrations assigned to the target user
+   * - Same user (req.user.userId === userId): sees their own (delegates to list)
+   * - Supervisory roles with Administrations.LIST: sees intersection of target user's
+   *   and requester's accessible administrations
+   * - Supervised roles: returns 403 Forbidden
+   *
+   * @param authContext - Requester's auth context
+   * @param targetUserId - The user whose administrations to retrieve
+   * @param options - Query options (pagination, sorting, status filter, embeds)
+   * @returns Paginated result with administrations
+   * @throws {ApiError} NOT_FOUND if target user doesn't exist
+   * @throws {ApiError} FORBIDDEN if requester lacks access
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listUserAdministrations(
+    authContext: AuthContext,
+    targetUserId: string,
+    options: ListOptions,
+  ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Verify target user exists
+      const targetUser = await userRepository.getById({ id: targetUserId });
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, targetUserId },
+        });
+      }
+
+      // Self-access: delegate to list() which handles own administrations
+      if (userId === targetUserId) {
+        return list(authContext, options);
+      }
+
+      // Transform API contract format to repository format
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        ...(options.status && { status: options.status }),
+      };
+
+      let result;
+      if (isSuperAdmin) {
+        // Super admin: get all administrations the target user can access
+        const targetObjects = await authorizationService.listAccessibleObjects(
+          targetUserId,
+          FgaRelation.CAN_LIST,
+          FgaType.ADMINISTRATION,
+        );
+        const targetIds = targetObjects.map(extractFgaObjectId);
+        if (targetIds.length === 0) {
+          return { items: [], totalItems: 0 };
+        }
+        result = await administrationRepository.getByIds(targetIds, queryParams);
+      } else {
+        // Non-super-admin viewing another user: intersection of both users' accessible administrations
+        const [targetObjects, requesterObjects] = await Promise.all([
+          authorizationService.listAccessibleObjects(
+            targetUserId,
+            FgaRelation.CAN_LIST,
+            FgaType.ADMINISTRATION,
+          ).catch((err) => {
+            throw new ApiError('Failed to resolve target user administrations', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+              context: { userId, targetUserId },
+              cause: err,
+            });
+          }),
+          authorizationService.listAccessibleObjects(
+            userId,
+            FgaRelation.CAN_LIST,
+            FgaType.ADMINISTRATION,
+          ).catch((err) => {
+            throw new ApiError('Failed to resolve requester administrations', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+              context: { userId, targetUserId },
+              cause: err,
+            });
+          }),
+        ]);
+
+        const targetIds = new Set(targetObjects.map(extractFgaObjectId));
+        const requesterIds = new Set(requesterObjects.map(extractFgaObjectId));
+
+        // Intersection: only administrations both users can access
+        const intersectedIds = [...targetIds].filter((id) => requesterIds.has(id));
+        if (intersectedIds.length === 0) {
+          return { items: [], totalItems: 0 };
+        }
+
+        result = await administrationRepository.getByIds(intersectedIds, queryParams);
+      }
+
+      // Resolve embeds (reuse existing logic)
+      const embedOptions = options.embed ?? [];
+      if (embedOptions.length === 0 || result.items.length === 0) {
+        return result;
+      }
+
+      const administrationIds = result.items.map((admin) => admin.id);
+      const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+
+      const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
+      const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
+
+      const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
+        const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
+
+        if (statsMap) {
+          adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
+        }
+
+        if (tasksMap) {
+          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+        }
+
+        return adminWithEmbeds;
+      });
+
+      return {
+        items: itemsWithEmbeds,
+        totalItems: result.totalItems,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, targetUserId } },
+        'Failed to list user administrations',
+      );
+
+      throw new ApiError('Failed to retrieve user administrations', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, targetUserId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     verifyAdministrationAccess,
     list,
@@ -996,5 +1150,6 @@ export function AdministrationService({
     listTaskVariants,
     listAgreements,
     deleteById,
+    listUserAdministrations,
   };
 }

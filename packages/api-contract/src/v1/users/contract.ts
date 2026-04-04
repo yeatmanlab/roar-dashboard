@@ -7,6 +7,10 @@ import {
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
+import {
+  AdministrationsListQuerySchema,
+  AdministrationsListResponseSchema,
+} from '../administrations/schema';
 
 const c = initContract();
 
@@ -95,6 +99,28 @@ export const UsersContract = c.router(
         'Returns 404 if the user or agreement version does not exist. ' +
         'Returns 409 if the user has already consented to the given agreement version. ' +
         'Returns 500 if an internal server error occurs.',
+    },
+    listUserAdministrations: {
+      method: 'GET',
+      path: '/:userId/administrations',
+      pathParams: z.object({ userId: z.string().uuid() }),
+      query: AdministrationsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationsListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List administrations for a user',
+      description:
+        'Returns a paginated list of administrations assigned to the specified user. ' +
+        'Super admins see all administrations for the user. ' +
+        'The user themselves sees their own administrations. ' +
+        'Supervisory users see the intersection of the target user\'s and their own accessible administrations. ' +
+        'Supervised roles receive 403. ' +
+        'Returns 404 if the target user does not exist.',
     },
   },
   { pathPrefix: '/users' },
