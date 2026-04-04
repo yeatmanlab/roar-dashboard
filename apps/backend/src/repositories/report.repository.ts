@@ -26,6 +26,8 @@ import { conditionToSql } from '../utils/condition-to-sql';
 import type { ConditionFieldMap } from '../utils/condition-to-sql';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
+import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
+import type { ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 
@@ -779,6 +781,11 @@ export class ReportRepository {
    * No `deletedAt` filter on users is needed because the users table has no
    * soft-delete column. Instead, rostered users are protected from hard deletion
    * by the `prevent_rostered_entity_delete` DB trigger.
+   *
+   * IMPORTANT: This is the Drizzle version of the student-in-scope query.
+   * A raw SQL equivalent exists in buildStudentInScopeSql (needed because Drizzle
+   * subquery aliases can't be reused across UNION branches). Any changes to
+   * student-in-scope filtering logic must be applied to both methods.
    */
   private buildStudentInScopeSubquery(scope: ReportScope) {
     switch (scope.scopeType) {
@@ -1047,17 +1054,11 @@ export class ReportRepository {
     const rows = await this.db.execute(aggregationQuery);
 
     // Map priority numbers back to status strings
-    const priorityToStatus: Record<number, TaskStatusCount['status']> = {
-      0: 'optional',
-      1: 'assigned',
-      2: 'started',
-      3: 'completed',
-    };
 
     const taskStatusCounts: TaskStatusCount[] = [];
     for (const row of rows.rows) {
       const r = row as { task_id: string; max_priority: number; cnt: number };
-      const status = priorityToStatus[r.max_priority];
+      const status = PROGRESS_PRIORITY_TO_STATUS[r.max_priority as ProgressStatusPriority];
       if (status) {
         taskStatusCounts.push({
           taskId: r.task_id,
@@ -1126,6 +1127,10 @@ export class ReportRepository {
    * Unlike buildStudentInScopeSubquery (which returns a Drizzle subquery alias),
    * this returns a raw SQL fragment that can be inlined into multiple UNION branches.
    * Drizzle subquery aliases can only be used once in a query — raw SQL avoids this limitation.
+   *
+   * IMPORTANT: This is the raw SQL equivalent of buildStudentInScopeSubquery.
+   * Any changes to student-in-scope filtering logic must be applied to both methods.
+   * See buildStudentInScopeSubquery for the Drizzle version.
    */
   private buildStudentInScopeSql(scope: ReportScope): SQL {
     // Enrollment active check mirrors isEnrollmentActive:

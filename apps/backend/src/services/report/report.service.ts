@@ -17,6 +17,7 @@ import type {
 } from './report.types';
 import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
 import { Permissions } from '../../constants/permissions';
+import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
@@ -471,13 +472,8 @@ export function ReportService({
   return { listProgressStudents, getProgressOverview };
 }
 
-/** Status priority for progress entries. Higher value = higher priority. */
-const STATUS_PRIORITY: Record<string, number> = {
-  optional: 0,
-  assigned: 1,
-  started: 2,
-  completed: 3,
-};
+/** Re-export for use in buildProgressMap. */
+const STATUS_PRIORITY: Record<string, number> = PROGRESS_STATUS_PRIORITY;
 
 // --- Progress sort/filter resolution helpers ---
 

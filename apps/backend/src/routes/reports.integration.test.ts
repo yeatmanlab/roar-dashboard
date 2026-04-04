@@ -949,6 +949,49 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       expect(data.byTask).toBeInstanceOf(Array);
     });
 
+    it('resolves conditionsAssignment in SQL without column resolution errors', async () => {
+      // The district administration has variants with conditionsAssignment JSONB
+      // (grade=5, grade=3). conditionToSql translates these into Drizzle SQL referencing
+      // "app"."users"."grade". This test proves the generated SQL resolves correctly
+      // against the fully-qualified table names used in the UNION branches.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      // Task 1 has conditionsAssignment variants (grade 5, grade 3) — students not matching
+      // either condition should be excluded from that variant's count, not assigned.
+      // Task 2 has no conditions — all students in scope should be counted.
+      const task2Overview = data.byTask.find((t: { taskId: string }) => t.taskId === baseFixture.task2.id);
+      expect(task2Overview).toBeDefined();
+      // Task 2 has no conditions, so assigned + started + completed + optional = totalStudents
+      const task2Total =
+        task2Overview.assigned + task2Overview.started + task2Overview.completed + task2Overview.optional;
+      expect(task2Total).toBe(data.totalStudents);
+    });
+
+    it('resolves conditionsRequirements in SQL for optional status', async () => {
+      // The district administration has a variant with conditionsRequirements (statusEll=active).
+      // This test verifies the SQL handles the requirements condition without errors.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      // The optional variant (conditionsRequirements: statusEll=active) should produce
+      // valid counts — some students may be optional if they match the ELL condition
+      const taskWithOptional = data.byTask.find((t: { optional: number }) => t.optional !== undefined);
+      expect(taskWithOptional).toBeDefined();
+    });
+
     it('returns overview for class scope', async () => {
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
