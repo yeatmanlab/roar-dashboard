@@ -1,7 +1,9 @@
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
+import { logger } from '../../logger';
 import { AuthService } from '../../services/auth/auth.service';
 import { UserService } from '../../services/user';
 import { extractJwt } from './jwt-extractor';
@@ -21,7 +23,7 @@ const userService = UserService();
  * @param next - The Express next function. If successful, the user information is attached to the request.
  *
  * @returns The next function.
- * @throws {ApiError} If the token is missing, invalid, or the user is not found in the database.
+ * @throws {ApiError} If the token is missing, invalid, the user is not found, or the user's rostering has ended.
  */
 export async function AuthGuardMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
@@ -45,6 +47,18 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
         new ApiError('User not found.', {
           statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_USER_NOT_FOUND,
+        }),
+      );
+    }
+
+    // Block users whose rostering has ended — rosteringEnded is non-null and in the past
+    if (user.rosteringEnded && user.rosteringEnded <= new Date()) {
+      logger.warn({ userId: user.id }, 'Rostering-ended user attempted authentication');
+      return next(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_ROSTERING_ENDED,
+          context: { userId: user.id, rosteringEnded: user.rosteringEnded },
         }),
       );
     }

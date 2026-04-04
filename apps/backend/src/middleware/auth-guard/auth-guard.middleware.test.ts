@@ -6,6 +6,7 @@ import { AuthGuardMiddleware } from './auth-guard.middleware';
 import { AuthService } from '../../services/auth/auth.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { DecodedUserFactory } from '../../test-support/factories/auth.factory';
 import { UserFactory } from '../../test-support/factories/user.factory';
 
@@ -105,6 +106,91 @@ describe('AuthGuardMiddleware', () => {
     expect(response.body.message).toBe('User not found.');
     expect(response.body.code).toBe(ApiErrorCode.AUTH_USER_NOT_FOUND);
     expect(response.body.traceId).toBeDefined();
+  });
+
+  describe('rostering ended', () => {
+    it('should return 403 when user rosteringEnded is in the past', async () => {
+      const mockDecodedUser = DecodedUserFactory.build();
+      const pastDate = new Date('2024-01-01T00:00:00Z');
+      const mockUser = UserFactory.build({
+        authId: mockDecodedUser.uid,
+        rosteringEnded: pastDate,
+      });
+
+      authServiceMock.mockResolvedValue(mockDecodedUser);
+      mockFindByAuthId.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .get('/')
+        .set('Authorization', 'Bearer mock-valid-jwt-token')
+        .expect(StatusCodes.FORBIDDEN);
+
+      expect(response.body.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(response.body.code).toBe(ApiErrorCode.AUTH_ROSTERING_ENDED);
+      expect(response.body.traceId).toBeDefined();
+    });
+
+    it('should return 403 when user rosteringEnded is exactly now', async () => {
+      const mockDecodedUser = DecodedUserFactory.build();
+      const now = new Date();
+      const mockUser = UserFactory.build({
+        authId: mockDecodedUser.uid,
+        rosteringEnded: now,
+      });
+
+      authServiceMock.mockResolvedValue(mockDecodedUser);
+      mockFindByAuthId.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .get('/')
+        .set('Authorization', 'Bearer mock-valid-jwt-token')
+        .expect(StatusCodes.FORBIDDEN);
+
+      expect(response.body.code).toBe(ApiErrorCode.AUTH_ROSTERING_ENDED);
+    });
+
+    it('should allow access when user rosteringEnded is in the future', async () => {
+      const mockDecodedUser = DecodedUserFactory.build();
+      const futureDate = new Date(Date.now() + 86400000); // 24 hours from now
+      const mockUser = UserFactory.build({
+        authId: mockDecodedUser.uid,
+        rosteringEnded: futureDate,
+      });
+
+      authServiceMock.mockResolvedValue(mockDecodedUser);
+      mockFindByAuthId.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .get('/')
+        .set('Authorization', 'Bearer mock-valid-jwt-token')
+        .expect(StatusCodes.OK);
+
+      expect(response.body.user).toEqual({
+        userId: mockUser.id,
+        isSuperAdmin: mockUser.isSuperAdmin ?? false,
+      });
+    });
+
+    it('should allow access when user rosteringEnded is null', async () => {
+      const mockDecodedUser = DecodedUserFactory.build();
+      const mockUser = UserFactory.build({
+        authId: mockDecodedUser.uid,
+        rosteringEnded: null,
+      });
+
+      authServiceMock.mockResolvedValue(mockDecodedUser);
+      mockFindByAuthId.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .get('/')
+        .set('Authorization', 'Bearer mock-valid-jwt-token')
+        .expect(StatusCodes.OK);
+
+      expect(response.body.user).toEqual({
+        userId: mockUser.id,
+        isSuperAdmin: mockUser.isSuperAdmin ?? false,
+      });
+    });
   });
 
   describe('error handling', () => {
