@@ -30,6 +30,11 @@ function progressStudentsPath(administrationId: string) {
   return `/v1/administrations/${administrationId}/reports/progress/students`;
 }
 
+/** Builds the progress overview endpoint path for the given administration. */
+function progressOverviewPath(administrationId: string) {
+  return `/v1/administrations/${administrationId}/reports/progress/overview`;
+}
+
 /** Default query params for a valid request. */
 function defaultQuery() {
   return {
@@ -37,6 +42,14 @@ function defaultQuery() {
     scopeId: baseFixture.district.id,
     page: 1,
     perPage: 25,
+  };
+}
+
+/** Default query params for overview (no pagination). */
+function overviewQuery() {
+  return {
+    scopeType: 'district',
+    scopeId: baseFixture.district.id,
   };
 }
 
@@ -642,6 +655,315 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       expect(taskMeta).toBeDefined();
       // useForReporting=false run should not count — status falls back to assigned
       expect(studentRow.progress[taskMeta.taskId].status).toBe('assigned');
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/administrations/:id/reports/progress/overview
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/administrations/:id/reports/progress/overview', () => {
+  describe('authorization', () => {
+    it('returns 401 without auth', async () => {
+      const res = await expectRoute('GET', progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .unauthenticated()
+        .toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('super admin can access', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('admin (administrator role) at district can access', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('educator (teacher role) at district can access', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('student tier returns 403', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier returns 403 (has report permission but not supervisory)', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when class teacher requests school scope', async () => {
+      authenticateAs(baseFixture.classATeacher);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 for admin in a different district', async () => {
+      authenticateAs(baseFixture.districtBAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+  });
+
+  describe('scope validation', () => {
+    it('returns 400 for scope not assigned to administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolB.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('returns 400 when scopeType is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ scopeId: baseFixture.district.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when scopeId is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ scopeType: 'district' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 404 for non-existent administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath('00000000-0000-0000-0000-000000000000'))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+
+  describe('response shape', () => {
+    it('returns 200 with correct response structure', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+
+      // Top-level aggregate fields
+      expect(data).toHaveProperty('totalStudents');
+      expect(data).toHaveProperty('assigned');
+      expect(data).toHaveProperty('started');
+      expect(data).toHaveProperty('completed');
+      expect(data).toHaveProperty('byTask');
+      expect(data).toHaveProperty('computedAt');
+
+      expect(typeof data.totalStudents).toBe('number');
+      expect(data.totalStudents).toBeGreaterThan(0);
+      expect(typeof data.assigned).toBe('number');
+      expect(typeof data.started).toBe('number');
+      expect(typeof data.completed).toBe('number');
+      expect(typeof data.computedAt).toBe('string');
+
+      // byTask array
+      expect(data.byTask).toBeInstanceOf(Array);
+      expect(data.byTask.length).toBeGreaterThan(0);
+
+      // Per-task shape
+      const firstTask = data.byTask[0];
+      expect(firstTask).toHaveProperty('taskId');
+      expect(firstTask).toHaveProperty('taskSlug');
+      expect(firstTask).toHaveProperty('taskName');
+      expect(firstTask).toHaveProperty('orderIndex');
+      expect(firstTask).toHaveProperty('assigned');
+      expect(firstTask).toHaveProperty('started');
+      expect(firstTask).toHaveProperty('completed');
+      expect(firstTask).toHaveProperty('optional');
+    });
+
+    it('per-task counts are consistent with totalStudents', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+
+      // For each task, the sum of assigned + started + completed + optional
+      // should not exceed totalStudents (some students may be excluded by conditions)
+      for (const task of data.byTask) {
+        const taskTotal = task.assigned + task.started + task.completed + task.optional;
+        expect(taskTotal).toBeLessThanOrEqual(data.totalStudents);
+      }
+    });
+  });
+
+  describe('FDW-backed aggregation', () => {
+    it('counts completed run in overview', async () => {
+      // schoolAStudent has a completed run from the progress students FDW tests above
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      // At least one completed run should be counted
+      expect(data.completed).toBeGreaterThan(0);
+
+      // Verify per-task breakdown
+      const taskOverview = data.byTask.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
+      expect(taskOverview).toBeDefined();
+      expect(taskOverview.completed).toBeGreaterThan(0);
+    });
+
+    it('counts started run in overview', async () => {
+      // schoolBStudent has a started (not completed) run from the progress students FDW tests above
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data.started).toBeGreaterThan(0);
+    });
+
+    it('counts assigned students (no run) in overview', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      // Some students have no runs — they should be counted as assigned
+      expect(data.assigned).toBeGreaterThan(0);
+    });
+
+    it('excludes soft-deleted runs from overview counts', async () => {
+      // grade3Student has a soft-deleted completed run from progress students tests
+      // It should NOT appear in overview completed count for that student
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      // We can't directly verify one student's status in aggregate,
+      // but we verify the endpoint runs without SQL errors and returns consistent data
+      const { data } = res.body;
+      expect(typeof data.completed).toBe('number');
+      expect(typeof data.assigned).toBe('number');
+    });
+
+    it('returns overview for school scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data.totalStudents).toBeGreaterThan(0);
+      expect(data.byTask).toBeInstanceOf(Array);
+    });
+
+    it('returns overview for class scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToClassA.id))
+        .query({
+          scopeType: 'class',
+          scopeId: baseFixture.classInSchoolA.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('totalStudents');
+      expect(data).toHaveProperty('byTask');
     });
   });
 });

@@ -379,18 +379,16 @@ export function ReportService({
       // 3. Validate scope and authorize
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
 
-      // 4. Get task metadata
+      // 4. Get task metadata and run SQL-level aggregation
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
-      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
 
-      // 5. Fetch all students with run data (no pagination)
-      const allStudents = await reportRepository.getAllStudentsWithRuns(
+      const { totalStudents, taskStatusCounts } = await reportRepository.getProgressOverviewCounts(
         administrationId,
         { scopeType, scopeId },
-        taskVariantIds,
+        taskMetas,
       );
 
-      // 6. Build per-task counters from unique taskIds (preserving order)
+      // 5. Build per-task counters from unique taskIds (preserving order from metadata)
       const taskIdOrder: string[] = [];
       const taskMetaByTaskId = new Map<string, ServiceTaskMetadata>();
       for (const t of taskMetas) {
@@ -405,6 +403,7 @@ export function ReportService({
         }
       }
 
+      // Initialize counters for all tasks (ensures tasks with zero counts appear in response)
       const taskCounters = new Map<
         string,
         { assigned: number; started: number; completed: number; optional: number }
@@ -413,18 +412,15 @@ export function ReportService({
         taskCounters.set(taskId, { assigned: 0, started: 0, completed: 0, optional: 0 });
       }
 
-      // 7. Aggregate: iterate over all students, build progress maps, count statuses
-      for (const student of allStudents) {
-        const progressMap = buildProgressMap(student, taskMetas, taskService.evaluateTaskVariantEligibility);
-        for (const [taskId, entry] of Object.entries(progressMap)) {
-          const counters = taskCounters.get(taskId);
-          if (counters) {
-            counters[entry.status]++;
-          }
+      // 6. Populate counters from SQL aggregation results
+      for (const { taskId, status, count } of taskStatusCounts) {
+        const counters = taskCounters.get(taskId);
+        if (counters) {
+          counters[status] += count;
         }
       }
 
-      // 8. Assemble response
+      // 7. Assemble response
       let totalAssigned = 0;
       let totalStarted = 0;
       let totalCompleted = 0;
@@ -448,7 +444,7 @@ export function ReportService({
       });
 
       return {
-        totalStudents: allStudents.length,
+        totalStudents,
         assigned: totalAssigned,
         started: totalStarted,
         completed: totalCompleted,
