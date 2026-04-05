@@ -1,10 +1,15 @@
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums/sdk-error-code.enum';
+import {
+  ASSESSMENT_STAGE_PRACTICE,
+  ASSESSMENT_STAGE_PRACTICE_RESPONSE,
+  ASSESSMENT_STAGE_TEST,
+  ASSESSMENT_STAGE_TEST_RESPONSE,
+} from '../enums';
 import type {
   StartRunInput,
   FinishRunInput,
-  UpdateEngagementFlagsInput,
-  UpdateEngagementFlagsOutput,
   AddInteractionInput,
   AddInteractionOutput,
   UpdateUserInput,
@@ -13,14 +18,18 @@ import type {
   RawScores,
   ComputedScores,
   WriteTrialOutput,
+  WriteTrialAssessmentStage,
+  WriteTrialCommandInput,
 } from '../types';
-import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE } from '../types/run-event-status';
+import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL, RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
 import type { Json } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
 import { AbortRunCommand } from '../commands/abort-run.command';
 import { FinishRunCommand } from '../commands/finish-run.command';
+import { WriteTrialCommand } from '../commands/write-trial.command';
+import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -59,14 +68,29 @@ export function _resetFirekitCompat(): void {
  * ```
  */
 export class FirekitFacade {
-  private static instance: FirekitFacade | undefined;
-  private ctx: CommandContext | undefined;
-  private api: RoarApi | undefined;
-  private invoker: Invoker | undefined;
-  private runId: string | undefined;
-  private taskInfo: CompatTaskInfo | undefined;
+  static #instance: FirekitFacade | undefined;
+  #ctx: CommandContext | undefined;
+  #api: RoarApi | undefined;
+  #invoker: Invoker | undefined;
+  #runId: string | undefined;
+  #taskInfo: CompatTaskInfo | undefined;
+  #interactionBuffer: AddInteractionInput[] = [];
 
   private constructor() {}
+
+  /**
+   * Resets all state to initial values.
+   * Called during initialization to prevent state leakage between sessions.
+   * @internal
+   */
+  private _reset(): void {
+    this.#ctx = undefined;
+    this.#api = undefined;
+    this.#invoker = undefined;
+    this.#runId = undefined;
+    this.#taskInfo = undefined;
+    this.#interactionBuffer = [];
+  }
 
   /**
    * Returns the singleton instance of FirekitFacade.
@@ -75,10 +99,10 @@ export class FirekitFacade {
    * @returns FirekitFacade singleton instance
    */
   static getInstance(): FirekitFacade {
-    if (!FirekitFacade.instance) {
-      FirekitFacade.instance = new FirekitFacade();
+    if (!FirekitFacade.#instance) {
+      FirekitFacade.#instance = new FirekitFacade();
     }
-    return FirekitFacade.instance;
+    return FirekitFacade.#instance;
   }
 
   /**
@@ -90,13 +114,11 @@ export class FirekitFacade {
    * @param taskInfo - Task information including variantId, taskVersion, administrationId, and isAnonymous flag
    */
   initialize(ctx: CommandContext, taskInfo: CompatTaskInfo): void {
-    this.ctx = ctx;
-    this.api = new RoarApi(ctx);
-    this.invoker = new Invoker(ctx);
-
-    // Reset compat state on re-init to avoid leaking state across tests / consumers
-    this.runId = undefined;
-    this.taskInfo = taskInfo;
+    this._reset();
+    this.#ctx = ctx;
+    this.#api = new RoarApi(ctx);
+    this.#invoker = new Invoker(ctx);
+    this.#taskInfo = taskInfo;
   }
 
   /**
@@ -107,10 +129,10 @@ export class FirekitFacade {
    * @throws {SDKError} If facade not initialized
    */
   getContext(): CommandContext {
-    if (!this.ctx) {
+    if (!this.#ctx) {
       throw new SDKError('FirekitFacade not initialized. Call initFirekitCompat() first.');
     }
-    return this.ctx;
+    return this.#ctx;
   }
 
   /**
@@ -121,10 +143,10 @@ export class FirekitFacade {
    * @throws {SDKError} If facade not initialized
    */
   getApi(): RoarApi {
-    if (!this.api) {
+    if (!this.#api) {
       throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
     }
-    return this.api;
+    return this.#api;
   }
 
   /**
@@ -135,10 +157,10 @@ export class FirekitFacade {
    * @throws {SDKError} If facade not initialized
    */
   getInvoker(): Invoker {
-    if (!this.invoker) {
+    if (!this.#invoker) {
       throw new SDKError('Firekit compat has not been initialized. Call initFirekitCompat() first.');
     }
-    return this.invoker;
+    return this.#invoker;
   }
 
   /**
@@ -147,7 +169,7 @@ export class FirekitFacade {
    * @internal
    */
   static _resetInstance(): void {
-    FirekitFacade.instance = undefined;
+    FirekitFacade.#instance = undefined;
   }
 
   /**
@@ -155,7 +177,7 @@ export class FirekitFacade {
    * @internal
    */
   _getRunId(): string | undefined {
-    return this.runId;
+    return this.#runId;
   }
 
   /**
@@ -163,7 +185,7 @@ export class FirekitFacade {
    * @internal
    */
   _setRunId(runId: string | undefined): void {
-    this.runId = runId;
+    this.#runId = runId;
   }
 
   /**
@@ -171,7 +193,29 @@ export class FirekitFacade {
    * @internal
    */
   _getTaskInfo(): CompatTaskInfo | undefined {
-    return this.taskInfo;
+    return this.#taskInfo;
+  }
+
+  /**
+   * Atomically retrieves and clears the interaction buffer.
+   * This prevents race conditions when writeTrial() is called concurrently.
+   * @internal
+   * @returns Array of buffered interaction events
+   */
+  _drainInteractionBuffer(): AddInteractionInput[] {
+    const buffer = this.#interactionBuffer;
+    this.#interactionBuffer = [];
+    return buffer;
+  }
+
+  /**
+   * Adds an interaction event to the buffer.
+   * Interactions are accumulated and flushed when writeTrial() is called.
+   * @internal
+   * @param interaction - The interaction event to buffer
+   */
+  _pushInteraction(interaction: AddInteractionInput): void {
+    this.#interactionBuffer.push(interaction);
   }
 }
 
@@ -394,41 +438,75 @@ export function abortRun(): void {
 }
 
 /**
- * Firekit compatibility stub for updating engagement flags.
+ * Firekit compatibility method for updating engagement flags on a run.
  *
- * From @bdelab/roar-firekit:
- * async updateEngagementFlags(flagNames: string[], markAsReliable = false, reliableByBlock = undefined) { […] }
+ * Marks a run with quality flags such as incomplete responses, response times that are too fast,
+ * accuracy that is too low, or insufficient number of responses. Optionally marks the run as reliable.
  *
- * @param flagNames - Array of engagement flag names to update.
- * @param markAsReliable - Whether to mark the run as reliable (default: false).
- * @param reliableByBlock - Optional block-level reliability data.
- * @returns Promise<void>
- * @throws {SDKError} Always, until implemented.
+ * **Breaking Change**: The `reliableByBlock` parameter from the original Firekit API is no longer supported.
+ * Use `markAsReliable` to mark the entire run as reliable instead.
+ *
+ * @param flagNames - Array of engagement flag names to set (e.g., 'incomplete', 'response_time_too_fast')
+ * @param markAsReliable - Flag to mark the run as reliable (defaults to false)
+ * @returns Promise that resolves when the engagement flags have been sent to the backend
+ * @throws {SDKError} If no active run exists
+ *
+ * @example
+ * ```typescript
+ * await updateEngagementFlags(['incomplete', 'response_time_too_fast'], true);
+ * ```
  */
-export async function updateEngagementFlags({
-  flagNames,
-  markAsReliable = false,
-  reliableByBlock = undefined,
-}: UpdateEngagementFlagsInput): UpdateEngagementFlagsOutput {
-  void flagNames;
-  void markAsReliable;
-  void reliableByBlock;
-  throw new SDKError('appkit.updateEngagementFlags not yet implemented');
+export async function updateEngagementFlags(flagNames: string[], markAsReliable: boolean = false): Promise<void> {
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.updateEngagementFlags requires an active run. Call appkit.startRun() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  // Map snake_case Firekit flag names to camelCase SDK property names
+  const flagNameMap: Record<string, string> = {
+    incomplete: 'incomplete',
+    response_time_too_fast: 'responseTimeTooFast',
+    accuracy_too_low: 'accuracyTooLow',
+    not_enough_responses: 'notEnoughResponses',
+  };
+
+  const engagementFlags = Object.fromEntries(flagNames.map((flag) => [flagNameMap[flag] || flag, true]));
+
+  const cmd = new UpdateRunEngagementFlagsCommand(api);
+
+  await invoker.run(cmd, {
+    runId,
+    type: RUN_EVENT_ENGAGEMENT,
+    engagementFlags,
+    reliableRun: markAsReliable,
+  });
 }
 
 /**
- * Firekit compatibility stub for recording an interaction.
+ * Firekit compatibility method for buffering interaction events.
  *
  * From @bdelab/roar-firekit:
  * addInteraction(interaction: InteractionEvent) { […] }
  *
- * @param interaction - The interaction event to record.
+ * Interactions are buffered in memory and later flushed with `writeTrial()`.
+ *
+ * @param interaction - The interaction event to record
  * @returns void
- * @throws {SDKError} Always, until implemented.
  */
 export function addInteraction(interaction: AddInteractionInput): AddInteractionOutput {
-  void interaction;
-  throw new SDKError('appkit.addInteraction not yet implemented');
+  const facade = getFirekitCompat();
+  if (!facade._getTaskInfo()) {
+    throw new SDKError('appkit.addInteraction requires initialization. Call appkit.initFirekitCompat() first.');
+  }
+  if (!facade._getRunId()) {
+    throw new SDKError('appkit.addInteraction requires an active run. Call appkit.startRun() first.');
+  }
+  facade._pushInteraction(interaction);
 }
 
 /**
@@ -455,23 +533,147 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
 }
 
 /**
- * Firekit compatibility stub for writing trial data.
+ * Firekit compatibility method for writing trial data.
  *
  * From @bdelab/roar-firekit:
+ * ```ts
  * async writeTrial(trialData: TrialData, computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>) { […] }
+ * ```
  *
- * Writes trial data to the backend and optionally computes scores via callback.
+ * Records a trial event for the active run in the ROAR assessment backend.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ * - `startRun()` must be called to create an active run
+ *
+ * **Behavior:**
+ * - Validates required fields (assessmentStage, correct) to prevent silent failures
+ * - Coerces boolean correct values to numbers (true → 1, false → 0) for Firekit compatibility
+ * - Normalizes assessment stages and interaction events to backend format
+ * - Submits trial data via the WriteTrialCommand
+ * - Supports optional computed score callback (not yet implemented)
+ *
+ * **Required trial data fields:**
+ * - `assessmentStage`: ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, or ASSESSMENT_STAGE_TEST_RESPONSE
+ * - `correct`: 1 (correct), 0 (incorrect), or boolean (true/false)
+ *
+ * **Optional trial data fields:**
+ * - `response`: User's response
+ * - `rt`: Reaction time in milliseconds
+ * - `payload`: Custom JSON data
+ * - Any other assessment-specific fields
  *
  * @param trialData - Trial data object containing assessment-specific trial information
- * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores
- * @returns Promise<void>
- * @throws {SDKError} Always, until implemented.
+ * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores (not yet implemented)
+ * @returns Promise<void> - Resolves when the trial event has been successfully submitted
+ *
+ * @throws {SDKError}
+ * - If no active run exists (call appkit.startRun() first)
+ * - If assessmentStage is missing or not a string
+ * - If assessmentStage is not one of the valid values (ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, ASSESSMENT_STAGE_TEST_RESPONSE)
+ * - If correct is missing or not a number/boolean
+ * - If the backend request fails
+ *
+ * @example
+ * ```typescript
+ * // Basic trial submission
+ * const trialData = {
+ *   assessmentStage: 'test',
+ *   correct: 1,
+ *   response: 'A',
+ *   rt: 1500
+ * };
+ * await writeTrial(trialData);
+ *
+ * // With boolean correct value (legacy Firekit)
+ * await writeTrial({
+ *   assessmentStage: 'test',
+ *   correct: true,  // Coerced to 1
+ *   response: 'B',
+ *   rt: 1200
+ * });
+ *
+ * // With custom payload
+ * await writeTrial({
+ *   assessmentStage: 'practice',
+ *   correct: 0,
+ *   response: 'C',
+ *   rt: 2000,
+ *   payload: { difficulty: 'hard', hint_used: true }
+ * });
+ * ```
  */
 export async function writeTrial(
   trialData: TrialData,
   computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
-  void trialData;
   void computedScoreCallback;
-  throw new SDKError('appkit.writeTrial not yet implemented');
+
+  const facade = getFirekitCompat();
+  const runId = facade._getRunId();
+
+  if (!runId) {
+    throw new SDKError('appkit.writeTrial requires an active run. Call appkit.startRun() first.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  // Validate required fields to prevent silent failures
+  const trialDataRecord = trialData as Record<string, unknown>;
+  if (typeof trialDataRecord['assessmentStage'] !== 'string') {
+    throw new SDKError('writeTrial requires assessmentStage in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
+  }
+
+  const validStages = [
+    ASSESSMENT_STAGE_PRACTICE,
+    ASSESSMENT_STAGE_PRACTICE_RESPONSE,
+    ASSESSMENT_STAGE_TEST,
+    ASSESSMENT_STAGE_TEST_RESPONSE,
+  ] as const;
+  if (!validStages.includes(trialDataRecord['assessmentStage'] as (typeof validStages)[number])) {
+    throw new SDKError(
+      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${trialDataRecord['assessmentStage']}`,
+      {
+        code: SdkErrorCode.WRITE_TRIAL_FAILED,
+      },
+    );
+  }
+  const assessmentStage = trialDataRecord['assessmentStage'] as WriteTrialAssessmentStage;
+
+  if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
+    throw new SDKError('writeTrial requires correct in trial data.', {
+      code: SdkErrorCode.WRITE_TRIAL_FAILED,
+    });
+  }
+
+  // Coerce boolean correct values (legacy Firekit) to numbers
+  const correct =
+    typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
+
+  // Drain buffered interactions from addInteraction() calls
+  const bufferedInteractions = facade._drainInteractionBuffer();
+
+  const cmd = new WriteTrialCommand(api);
+
+  try {
+    await invoker.run(cmd, {
+      runId,
+      type: RUN_EVENT_TRIAL,
+      interactions: bufferedInteractions.length > 0 ? bufferedInteractions : undefined,
+      trial: {
+        assessmentStage,
+        ...trialData,
+        correct,
+      },
+    } as WriteTrialCommandInput);
+  } catch (error) {
+    // Restore interactions to buffer if writeTrial fails
+    bufferedInteractions.forEach((interaction) => facade._pushInteraction(interaction));
+    throw error;
+  }
 }

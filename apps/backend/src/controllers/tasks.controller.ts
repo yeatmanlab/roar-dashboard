@@ -7,6 +7,7 @@ import type {
   Task as ContractTask,
   TaskVariant as ContractTaskVariant,
   Json,
+  CreateTaskRequestBody,
 } from '@roar-dashboard/api-contract';
 import type { Task, TaskVariant } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
@@ -133,6 +134,38 @@ export const TasksController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new task.
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Requires super admin privileges.
+   *
+   * @param authContext - User's authentication context (requires super admin)
+   * @param body - Request body with task details (slug, name, nameSimple, nameTechnical, taskConfig, etc.)
+   * @returns Response with status 201 and the newly created task's UUID
+   */
+  create: async (authContext: AuthContext, body: CreateTaskRequestBody) => {
+    try {
+      const result = await taskService.create(authContext, body);
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }

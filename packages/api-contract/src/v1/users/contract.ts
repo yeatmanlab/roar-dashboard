@@ -1,7 +1,12 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
-import { UserResponseSchema, UpdateUserRequestBodySchema } from './schema';
+import {
+  UserResponseSchema,
+  UpdateUserRequestBodySchema,
+  RecordUserAgreementRequestBodySchema,
+  RecordUserAgreementResponseSchema,
+} from './schema';
 
 const c = initContract();
 
@@ -9,6 +14,7 @@ const c = initContract();
  * Contract for the /users endpoints.
  * Provides access to user related data that an authenticated user can view.
  * Provides the ability to update user profile data for authorized users.
+ * Provides the ability to manage user agreements (consent records).
  */
 export const UsersContract = c.router(
   {
@@ -60,6 +66,35 @@ export const UsersContract = c.router(
         'Returns a 404 if the requested user is not found. ' +
         'Returns a 409 if a unique field (email or username) conflicts with an existing user. ' +
         'Returns a 500 if an internal server error occurs.',
+    },
+    recordUserAgreement: {
+      method: 'POST',
+      path: '/:userId/agreements',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+      }),
+      body: RecordUserAgreementRequestBodySchema,
+      responses: {
+        201: SuccessEnvelopeSchema(RecordUserAgreementResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Record user agreement',
+      description:
+        "Records a user's consent to a specific agreement version. " +
+        'Users can consent for themselves, and guardians can consent for family members. ' +
+        'Returns 201 Created with the agreement ID. ' +
+        'Returns 400 if the request body is invalid. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user lacks permission to consent for the target user. ' +
+        'Returns 404 if the user or agreement version does not exist. ' +
+        'Returns 409 if the user has already consented to the given agreement version. ' +
+        'Returns 500 if an internal server error occurs.',
     },
   },
   { pathPrefix: '/users' },

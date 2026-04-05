@@ -1,9 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
-import { DistrictRepository, type District, type DistrictWithCounts } from '../../repositories/district.repository';
+import type { District, DistrictWithCounts } from '../../repositories/district.repository';
+import { DistrictRepository } from '../../repositories/district.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
@@ -14,7 +16,7 @@ import type { AuthContext } from '../../types/auth-context';
 export interface ListOptions {
   page: number;
   perPage: number;
-  sortBy: 'name' | 'abbreviation' | 'createdAt';
+  sortBy: 'name' | 'abbreviation';
   sortOrder: 'asc' | 'desc';
   includeEnded?: boolean;
   embedCounts?: boolean;
@@ -22,10 +24,9 @@ export interface ListOptions {
 
 /**
  * District with optional embeds
+ * Note: children embed will be added in future GET /districts/:id implementation
  */
-export interface DistrictWithEmbeds extends DistrictWithCounts {
-  children?: District[];
-}
+export type DistrictWithEmbeds = DistrictWithCounts;
 
 /**
  * District Service
@@ -34,12 +35,10 @@ export interface DistrictWithEmbeds extends DistrictWithCounts {
  * Handles authorization (super admin vs regular user) and delegates to repository.
  */
 export function DistrictService({
-  districtRepository,
+  districtRepository = new DistrictRepository(),
 }: {
   districtRepository?: DistrictRepository;
 } = {}) {
-  // Lazy initialize repository to avoid creating it before database is initialized
-  const repo = districtRepository ?? new DistrictRepository();
   /**
    * List districts accessible to a user with pagination and sorting.
    *
@@ -54,7 +53,7 @@ export function DistrictService({
   async function list(authContext: AuthContext, options: ListOptions): Promise<PaginatedResult<DistrictWithEmbeds>> {
     const { userId, isSuperAdmin } = authContext;
 
-    let result;
+    let result: PaginatedResult<DistrictWithEmbeds>;
 
     try {
       // Transform API contract format to repository format
@@ -71,10 +70,10 @@ export function DistrictService({
 
       // Fetch districts based on user role and authorization
       if (isSuperAdmin) {
-        result = await repo.listAll(queryParams);
+        result = await districtRepository.listAll(queryParams);
       } else {
         const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await repo.listAuthorized({ userId, allowedRoles }, queryParams);
+        result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) {
@@ -103,31 +102,39 @@ export function DistrictService({
    * @param authContext - User's auth context (id and super admin flag)
    * @param districtId - UUID of the district to retrieve
    * @returns The district if found and authorized
-   * @throws {ApiError} 404 if not found or not authorized, 500 on database errors
+   * @throws {ApiError} 404 if not found, 403 if unauthorized, 500 on database errors
    */
   async function getById(authContext: AuthContext, districtId: string): Promise<District> {
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      let district;
-
-      if (isSuperAdmin) {
-        district = await repo.getUnrestrictedById(districtId);
-      } else {
-        const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-        district = await repo.getAuthorizedById(districtId, { userId, allowedRoles });
-      }
+      // 1. Look up unrestricted first — distinguishes 404 from 403
+      const district = await districtRepository.getUnrestrictedById(districtId);
 
       if (!district) {
-        logger.warn({ districtId, userId }, 'District not found or access denied');
-        throw new ApiError('District not found', {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { districtId, userId },
+          context: { userId, districtId },
         });
       }
 
-      return district;
+      // 2. Super admins bypass access checks
+      if (isSuperAdmin) return district;
+
+      // 3. Check access via org hierarchy joins
+      const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
+      const authorized = await districtRepository.getAuthorizedById({ userId, allowedRoles }, districtId);
+      if (!authorized) {
+        logger.warn({ userId, districtId }, 'User attempted to access district without permission');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, districtId },
+        });
+      }
+
+      return authorized;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

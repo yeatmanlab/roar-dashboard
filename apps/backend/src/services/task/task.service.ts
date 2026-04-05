@@ -1,19 +1,22 @@
-import type { NewTaskVariant, NewTaskVariantParameter, User, Task, TaskVariant } from '../../db/schema';
+import type { NewTaskVariant, NewTaskVariantParameter, Task, TaskVariant, NewTask } from '../../db/schema';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../logger';
-import { TaskVariantRepository, type ListTaskVariantsOptions } from '../../repositories/task-variant.repository';
+import type { ListTaskVariantsOptions } from '../../repositories/task-variant.repository';
+import { TaskVariantRepository } from '../../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
-import { TaskRepository, type ListTasksOptions } from '../../repositories/task.repository';
+import type { ListTasksOptions } from '../../repositories/task.repository';
+import { TaskRepository } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { isValidUuid } from '../../utils/is-valid-uuid.util';
-import { Operator, type Condition, type FieldCondition, type CompositeCondition } from './task.types';
+import type { Condition, ConditionEvaluationUser, FieldCondition, CompositeCondition } from './task.types';
+import { Operator } from './task.types';
 
 /**
  * Parameter data for creating task variant parameters.
@@ -79,6 +82,23 @@ export type TaskFields = Pick<Task, 'name' | 'slug' | 'image'>;
 export type TaskVariantWithParameters = TaskVariant & {
   parameters: TaskVariantParameter[];
 };
+
+/**
+ * Data required to create a new task.
+ *
+ * NOTE: While identical to the request body schema, this interface maintains
+ * a clear separation between API contract and service layer implementation.
+ */
+export interface CreateTaskData {
+  slug: string;
+  name: string;
+  nameSimple: string;
+  nameTechnical: string;
+  taskConfig: unknown;
+  description?: string | null | undefined;
+  image?: string | null | undefined;
+  tutorialVideo?: string | null | undefined;
+}
 
 /**
  * Data structure expected by condition evaluation.
@@ -754,10 +774,10 @@ export function TaskService({
    * (user.grade, user.statusEll), so we wrap them in { studentData: { ... } } to match
    * the expected path structure.
    *
-   * @param user - The User entity from the database
+   * @param user - Any object with the demographic fields needed for condition evaluation
    * @returns The user data in the format expected by condition evaluation
    */
-  function mapUserToConditionData(user: User): ConditionUserData {
+  function mapUserToConditionData(user: ConditionEvaluationUser): ConditionUserData {
     return {
       studentData: {
         grade: user.grade,
@@ -782,13 +802,13 @@ export function TaskService({
    * - `conditionsRequirements` (optional_if): Determines if an assigned variant is OPTIONAL for the user.
    *   A null value means the variant is required for all assigned users.
    *
-   * @param user - The User entity to evaluate
+   * @param user - Any object with the demographic fields needed for condition evaluation
    * @param conditionsAssignment - assigned_if condition (null = assigned to all)
    * @param conditionsRequirements - optional_if condition (null = required for all)
    * @returns Object with isAssigned and isOptional flags
    */
   function evaluateTaskVariantEligibility(
-    user: User,
+    user: ConditionEvaluationUser,
     conditionsAssignment: Condition | null,
     conditionsRequirements: Condition | null,
   ): TaskVariantEligibilityResult {
@@ -815,7 +835,7 @@ export function TaskService({
    * @param condition - The condition to evaluate (or null)
    * @returns True if the condition passes (or is null), false otherwise
    */
-  function evaluateConditionForUser(user: User, condition: Condition | null): boolean {
+  function evaluateConditionForUser(user: ConditionEvaluationUser, condition: Condition | null): boolean {
     if (!condition) {
       return true;
     }
@@ -904,9 +924,75 @@ export function TaskService({
     }
   }
 
+  /**
+   * Creates a new task.
+   *
+   * Only super admins can create tasks.
+   *
+   * @param authContext - User's auth context (requires super admin privileges)
+   * @param body - Task data including slug, name, nameSimple, nameTechnical, taskConfig, and optional fields
+   * @returns An object containing the created task's UUID
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} CONFLICT if a task with the same slug already exists
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function create(authContext: AuthContext, body: CreateTaskData): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    try {
+      const taskData: NewTask = {
+        slug: body.slug,
+        name: body.name,
+        nameSimple: body.nameSimple,
+        nameTechnical: body.nameTechnical,
+        taskConfig: body.taskConfig,
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.image !== undefined && { image: body.image }),
+        ...(body.tutorialVideo !== undefined && { tutorialVideo: body.tutorialVideo }),
+      };
+
+      const result = await taskRepository.create({ data: taskData });
+
+      logger.info({ userId, taskId: result.id, slug: body.slug }, 'Created task');
+
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      const dbError = unwrapDrizzleError(error);
+
+      if (isUniqueViolation(dbError)) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, slug: body.slug },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, slug: body.slug } }, 'Failed to create task');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, slug: body.slug },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
+    create,
     listTaskVariants,
     getTaskVariant,
     createTaskVariant,

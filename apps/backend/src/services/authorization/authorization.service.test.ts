@@ -1,7 +1,8 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import { logger } from '../../logger';
-import { createMockFgaClient, type MockFgaClient } from '../../test-support/clients/fga.client';
+import type { MockFgaClient } from '../../test-support/clients/fga.client';
+import { createMockFgaClient } from '../../test-support/clients/fga.client';
 import { AuthorizationService } from './authorization.service';
 
 let mockClient: MockFgaClient;

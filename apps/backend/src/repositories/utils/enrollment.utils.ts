@@ -1,4 +1,5 @@
-import { and, lte, gte, or, isNull, sql, type AnyColumn } from 'drizzle-orm';
+import type { AnyColumn } from 'drizzle-orm';
+import { and, lte, gte, or, isNull, sql } from 'drizzle-orm';
 
 /**
  * Builds enrollment date boundary conditions for user membership tables.

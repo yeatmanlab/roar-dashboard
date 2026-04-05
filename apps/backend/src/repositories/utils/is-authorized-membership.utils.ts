@@ -1,4 +1,5 @@
-import { and, eq, inArray, type AnyColumn } from 'drizzle-orm';
+import type { AnyColumn } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { isEnrollmentActive, isActiveInFamily } from './enrollment.utils';
 
 /**

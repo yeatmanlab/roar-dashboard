@@ -1,8 +1,10 @@
 import { initContract } from '@ts-rest/core';
 import { MeContract } from './me/index';
 import { AdministrationsContract } from './administrations/index';
+import { AgreementsContract } from './agreements/index';
 import { RunsContract } from './runs/index';
 import { DistrictsContract } from './districts/index';
+import { SchoolsContract } from './schools/index';
 import { GroupsContract } from './groups/index';
 import { TasksContract } from './tasks/index';
 import { ClassesContract } from './classes/index';
@@ -16,8 +18,10 @@ const c = initContract();
 export const ApiContractV1 = c.router({
   me: MeContract,
   administrations: AdministrationsContract,
+  agreements: AgreementsContract,
   runs: RunsContract,
   districts: DistrictsContract,
+  schools: SchoolsContract,
   groups: GroupsContract,
   tasks: TasksContract,
   classes: ClassesContract,
@@ -27,8 +31,10 @@ export const ApiContractV1 = c.router({
 
 export * from './me/index';
 export * from './administrations/index';
+export * from './agreements/index';
 export * from './runs/index';
 export * from './districts/index';
+export * from './schools/index';
 export * from './groups/index';
 export * from './tasks/index';
 export * from './classes/index';

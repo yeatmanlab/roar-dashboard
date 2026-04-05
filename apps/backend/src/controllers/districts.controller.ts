@@ -1,6 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
-import { DistrictService, type DistrictWithEmbeds } from '../services/district/district.service';
+import type { DistrictWithEmbeds } from '../services/district/district.service';
+import { DistrictService } from '../services/district/district.service';
 import type { DistrictsListQuery, DistrictDetail as ApiDistrict } from '@roar-dashboard/api-contract';
+import { DistrictEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
@@ -14,11 +16,12 @@ const districtService = DistrictService();
 function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
-  if (district.locationLatLong) {
-    const point = district.locationLatLong as unknown as { x: number; y: number };
+  const { locationLatLong } = district;
+  if (locationLatLong) {
+    // PostgreSQL point type: { x: longitude, y: latitude }
     coordinates = {
       type: 'Point',
-      coordinates: [point.x, point.y], // [longitude, latitude]
+      coordinates: [locationLatLong.x, locationLatLong.y],
     };
   }
 
@@ -45,14 +48,10 @@ function transformDistrictBase(district: DistrictWithEmbeds): ApiDistrict {
     id: district.id,
     name: district.name,
     abbreviation: district.abbreviation,
-    orgType: district.orgType,
+    orgType: 'district' as const,
     parentOrgId: district.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
-    dates: {
-      created: district.createdAt.toISOString(),
-      updated: district.updatedAt?.toISOString() ?? district.createdAt.toISOString(),
-    },
     isRosteringRootOrg: district.isRosteringRootOrg,
     ...(district.rosteringEnded && { rosteringEnded: district.rosteringEnded.toISOString() }),
   };
@@ -92,7 +91,7 @@ export const DistrictsController = {
       const { page, perPage, sortBy, sortOrder, includeEnded, embed } = query;
 
       // Check if counts embed is requested
-      const embedCounts = embed?.includes('counts') ?? false;
+      const embedCounts = embed?.includes(DistrictEmbedOption.COUNTS) ?? false;
 
       const result = await districtService.list(authContext, {
         page,
@@ -124,7 +123,7 @@ export const DistrictsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
       }
       throw error;
     }
@@ -150,7 +149,11 @@ export const DistrictsController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }

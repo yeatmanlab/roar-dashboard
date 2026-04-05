@@ -10,12 +10,14 @@ import {
 /**
  * Completion status for a student on a specific task.
  *
- * - `assigned` — task is assigned but not yet started
+ * - `assigned` — task is assigned and required, but not yet started
  * - `started` — a run exists but is not completed
  * - `completed` — a run with a completedAt timestamp exists
- * - `optional` — reserved for future use; will be produced when task condition
- *   evaluation is implemented (e.g., tasks conditionally assigned based on grade/ELL status).
- *   Currently never returned by the API.
+ * - `optional` — task conditions mark it optional for this student (e.g., based on
+ *   grade/ELL status). Produced when conditionsRequirements evaluates to true.
+ *
+ * Tasks where conditionsAssignment evaluates to false for a student are excluded
+ * from that student's progress map entirely — they are not visible.
  */
 export const ProgressStatusSchema = z.enum(['assigned', 'started', 'completed', 'optional']);
 
@@ -104,11 +106,9 @@ export type ProgressStudentsQuery = z.infer<typeof ProgressStudentsQuerySchema>;
 /**
  * Per-task progress entry for a student.
  *
- * `startedAt` is currently always null because the FDW view (`app_fdw.fdw_runs`)
- * does not expose the assessment runs table's `created_at` column. The backend
- * is fully wired to populate `startedAt` — once the FDW view is migrated to
- * include `created_at`, add it to the `fdwRuns` Drizzle schema and the
- * repository SELECT to activate it. No other code changes needed.
+ * `startedAt` is populated from the FDW runs table's `created_at` column,
+ * which represents when the run was created (i.e., when the student started
+ * the task). It is null only for tasks with no run (assigned/optional status).
  */
 export const ProgressEntrySchema = z.object({
   status: ProgressStatusSchema,

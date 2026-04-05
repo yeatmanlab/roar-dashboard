@@ -18,7 +18,8 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
-import { Operator, type Condition } from './task.types';
+import type { Condition } from './task.types';
+import { Operator } from './task.types';
 import type { User } from '../../db/schema';
 import { SortOrder, TaskSortField } from '@roar-dashboard/api-contract';
 
@@ -1752,6 +1753,121 @@ describe('TaskService', () => {
         taskRepository.getById.mockRejectedValue(apiError);
 
         await expect(taskService.getById(authContext, validTaskId)).rejects.toThrow(apiError);
+      });
+    });
+  });
+
+  describe('create', () => {
+    const validCreateData = {
+      slug: 'new-task',
+      name: 'New Task',
+      nameSimple: 'New',
+      nameTechnical: 'new-task-technical',
+      taskConfig: { difficulty: 'easy' },
+      description: 'A new task',
+      image: 'https://example.com/image.png',
+      tutorialVideo: 'https://example.com/video.mp4',
+    };
+
+    describe('successful creation', () => {
+      it('should create a new task with all fields', async () => {
+        const mockCreatedTask = { id: 'new-task-id' };
+        taskRepository.create.mockResolvedValueOnce(mockCreatedTask);
+
+        const result = await taskService.create(authContext, validCreateData);
+
+        expect(result).toEqual({ id: 'new-task-id' });
+        expect(taskRepository.create).toHaveBeenCalledWith({
+          data: {
+            slug: 'new-task',
+            name: 'New Task',
+            nameSimple: 'New',
+            nameTechnical: 'new-task-technical',
+            taskConfig: { difficulty: 'easy' },
+            description: 'A new task',
+            image: 'https://example.com/image.png',
+            tutorialVideo: 'https://example.com/video.mp4',
+          },
+        });
+      });
+
+      it('should create a task with only required fields', async () => {
+        const mockCreatedTask = { id: 'minimal-task-id' };
+        taskRepository.create.mockResolvedValueOnce(mockCreatedTask);
+
+        const minimalData = {
+          slug: 'minimal-task',
+          name: 'Minimal Task',
+          nameSimple: 'Minimal',
+          nameTechnical: 'minimal-technical',
+          taskConfig: {},
+        };
+
+        const result = await taskService.create(authContext, minimalData);
+
+        expect(result).toEqual({ id: 'minimal-task-id' });
+        expect(taskRepository.create).toHaveBeenCalledWith({
+          data: {
+            slug: 'minimal-task',
+            name: 'Minimal Task',
+            nameSimple: 'Minimal',
+            nameTechnical: 'minimal-technical',
+            taskConfig: {},
+          },
+        });
+      });
+    });
+
+    describe('authorization', () => {
+      it('should throw FORBIDDEN error when user is not super admin', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+
+        await expect(taskService.create(nonAdminContext, validCreateData)).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'user-1', isSuperAdmin: false },
+        });
+
+        expect(taskRepository.create).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('error handling', () => {
+      it('should throw CONFLICT error when slug already exists', async () => {
+        const uniqueViolationError = new Error('duplicate key value');
+        (uniqueViolationError as Error & { code: string }).code = PostgresErrorCode.UNIQUE_VIOLATION;
+        taskRepository.create.mockRejectedValueOnce(uniqueViolationError);
+
+        await expect(taskService.create(authContext, validCreateData)).rejects.toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId: 'admin-1', slug: 'new-task' },
+        });
+      });
+
+      it('should throw INTERNAL_SERVER_ERROR for unexpected database errors', async () => {
+        const dbError = new Error('Database connection failed');
+        taskRepository.create.mockRejectedValueOnce(dbError);
+
+        await expect(taskService.create(authContext, validCreateData)).rejects.toMatchObject({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: 'admin-1', slug: 'new-task' },
+          cause: dbError,
+        });
+      });
+
+      it('should propagate existing ApiErrors', async () => {
+        const apiError = new ApiError('Custom error', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+        taskRepository.create.mockRejectedValueOnce(apiError);
+
+        await expect(taskService.create(authContext, validCreateData)).rejects.toThrow(apiError);
       });
     });
   });
