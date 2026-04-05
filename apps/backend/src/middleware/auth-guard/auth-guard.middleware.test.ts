@@ -191,6 +191,27 @@ describe('AuthGuardMiddleware', () => {
         isSuperAdmin: mockUser.isSuperAdmin ?? false,
       });
     });
+
+    it('should return 403 when super admin has rosteringEnded in the past', async () => {
+      const mockDecodedUser = DecodedUserFactory.build();
+      const pastDate = new Date('2024-01-01T00:00:00Z');
+      const mockUser = UserFactory.build({
+        authId: mockDecodedUser.uid,
+        rosteringEnded: pastDate,
+        isSuperAdmin: true,
+      });
+
+      authServiceMock.mockResolvedValue(mockDecodedUser);
+      mockFindByAuthId.mockResolvedValue(mockUser);
+
+      const response = await request(app)
+        .get('/')
+        .set('Authorization', 'Bearer mock-valid-jwt-token')
+        .expect(StatusCodes.FORBIDDEN);
+
+      expect(response.body.code).toBe(ApiErrorCode.AUTH_ROSTERING_ENDED);
+      expect(response.body.message).toBe(ApiErrorMessage.FORBIDDEN);
+    });
   });
 
   describe('error handling', () => {

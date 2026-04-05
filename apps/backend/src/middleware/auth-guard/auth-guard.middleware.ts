@@ -53,7 +53,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
 
     // Block users whose rostering has ended — rosteringEnded is non-null and in the past
     if (user.rosteringEnded && user.rosteringEnded <= new Date()) {
-      logger.warn({ userId: user.id }, 'Rostering-ended user attempted authentication');
+      logger.warn({ userId: user.id, rosteringEnded: user.rosteringEnded }, 'Rostering-ended user attempted authentication');
       return next(
         new ApiError(ApiErrorMessage.FORBIDDEN, {
           statusCode: StatusCodes.FORBIDDEN,
