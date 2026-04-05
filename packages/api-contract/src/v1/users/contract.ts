@@ -7,10 +7,7 @@ import {
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
-import {
-  AdministrationsListQuerySchema,
-  AdministrationsListResponseSchema,
-} from '../administrations/schema';
+import { AdministrationsListQuerySchema, AdministrationsListResponseSchema } from '../administrations/schema';
 
 const c = initContract();
 
@@ -118,7 +115,7 @@ export const UsersContract = c.router(
         'Returns a paginated list of administrations assigned to the specified user. ' +
         'Super admins see all administrations for the user. ' +
         'The user themselves sees their own administrations. ' +
-        'Supervisory users see the intersection of the target user\'s and their own accessible administrations. ' +
+        "Supervisory users see the intersection of the target user's and their own accessible administrations. " +
         'Supervised roles receive 403. ' +
         'Returns 404 if the target user does not exist.',
     },

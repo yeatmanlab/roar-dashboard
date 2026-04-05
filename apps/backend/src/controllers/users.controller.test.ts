@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import type { UpdateUserRequestBody } from '@roar-dashboard/api-contract';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
+import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { MockedUserService } from '../test-support/services/user.service';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -12,7 +13,13 @@ vi.mock('../services/user', () => ({
   UserService: vi.fn(),
 }));
 
+// Mock the AdministrationService module
+vi.mock('../services/administration/administration.service', () => ({
+  AdministrationService: vi.fn(),
+}));
+
 import { UserService } from '../services/user';
+import { AdministrationService } from '../services/administration/administration.service';
 
 /**
  * Type-safe assertion helper for success responses.
@@ -40,6 +47,7 @@ describe('UsersController', () => {
   const mockGetById = vi.fn();
   const mockUpdate = vi.fn();
   const mockRecordUserAgreement = vi.fn();
+  const mockListUserAdministrations = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
@@ -52,6 +60,20 @@ describe('UsersController', () => {
       update: mockUpdate,
       recordUserAgreement: mockRecordUserAgreement,
     } as MockedUserService);
+
+    vi.mocked(AdministrationService).mockReturnValue({
+      verifyAdministrationAccess: vi.fn(),
+      list: vi.fn(),
+      getById: vi.fn(),
+      listDistricts: vi.fn(),
+      listSchools: vi.fn(),
+      listClasses: vi.fn(),
+      listGroups: vi.fn(),
+      listTaskVariants: vi.fn(),
+      listAgreements: vi.fn(),
+      deleteById: vi.fn(),
+      listUserAdministrations: mockListUserAdministrations,
+    });
   });
 
   describe('get', () => {
@@ -672,6 +694,176 @@ describe('UsersController', () => {
       const data = expectCreatedResponse(result);
       expect(data.id).toBe('agreement-parent-child-123');
       expect(mockRecordUserAgreement).toHaveBeenCalledWith(parentAuthContext, childUserId, validBody);
+    });
+  });
+
+  describe('listUserAdministrations', () => {
+    const targetUserId = 'target-user-456';
+    const defaultQuery = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'createdAt' as const,
+      sortOrder: 'desc' as const,
+      embed: [] as ('stats' | 'tasks')[],
+    };
+
+    it('should return 200 with paginated administrations', async () => {
+      const mockAdmins = [
+        AdministrationFactory.build({
+          namePublic: 'Public Name',
+          dateStart: new Date('2025-01-01T00:00:00.000Z'),
+          dateEnd: new Date('2025-06-01T00:00:00.000Z'),
+          createdAt: new Date('2024-12-01T00:00:00.000Z'),
+          updatedAt: new Date('2024-12-15T00:00:00.000Z'),
+        }),
+      ];
+
+      mockListUserAdministrations.mockResolvedValue({
+        items: mockAdmins,
+        totalItems: 1,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      const body = (result.body as { data: { items: unknown[]; pagination: unknown } }).data;
+      expect(body.items).toHaveLength(1);
+      expect(body.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 1,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform administration fields to API format', async () => {
+      const mockAdmin = AdministrationFactory.build({
+        namePublic: 'Public Assessment',
+        dateStart: new Date('2025-01-01T00:00:00.000Z'),
+        dateEnd: new Date('2025-06-01T00:00:00.000Z'),
+        createdAt: new Date('2024-12-01T00:00:00.000Z'),
+      });
+
+      mockListUserAdministrations.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const body = (result.body as { data: { items: Record<string, unknown>[] } }).data;
+      const item = body.items[0] as Record<string, unknown>;
+      // Transform maps namePublic → publicName and nests dates
+      expect(item.publicName).toBe('Public Assessment');
+      const dates = item.dates as Record<string, string>;
+      expect(dates.start).toBe('2025-01-01T00:00:00.000Z');
+      expect(dates.end).toBe('2025-06-01T00:00:00.000Z');
+      expect(dates.created).toBe('2024-12-01T00:00:00.000Z');
+    });
+
+    it('should pass query options to service with conditional status spread', async () => {
+      mockListUserAdministrations.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await Controller.listUserAdministrations(mockAuthContext, targetUserId, {
+        ...defaultQuery,
+        status: 'active',
+      });
+
+      expect(mockListUserAdministrations).toHaveBeenCalledWith(mockAuthContext, targetUserId, {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: [],
+        status: 'active',
+      });
+    });
+
+    it('should not include status when undefined', async () => {
+      mockListUserAdministrations.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const callArgs = mockListUserAdministrations.mock.calls[0]![2];
+      expect(callArgs).not.toHaveProperty('status');
+    });
+
+    it('should return 401 when service throws UNAUTHORIZED', async () => {
+      mockListUserAdministrations.mockRejectedValue(
+        new ApiError(ApiErrorMessage.UNAUTHORIZED, {
+          statusCode: StatusCodes.UNAUTHORIZED,
+          code: ApiErrorCode.AUTH_REQUIRED,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const error = expectErrorResponse(result, StatusCodes.UNAUTHORIZED);
+      expect(error.message).toBe(ApiErrorMessage.UNAUTHORIZED);
+    });
+
+    it('should return 403 when service throws FORBIDDEN', async () => {
+      mockListUserAdministrations.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const error = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(error.message).toBe(ApiErrorMessage.FORBIDDEN);
+    });
+
+    it('should return 404 when service throws NOT_FOUND', async () => {
+      mockListUserAdministrations.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const error = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(error.message).toBe(ApiErrorMessage.NOT_FOUND);
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      mockListUserAdministrations.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const error = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(error.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+    });
+
+    it('should rethrow non-ApiError exceptions', async () => {
+      mockListUserAdministrations.mockRejectedValue(new Error('Unexpected error'));
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery)).rejects.toThrow(
+        'Unexpected error',
+      );
     });
   });
 });

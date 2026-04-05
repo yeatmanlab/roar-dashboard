@@ -1053,30 +1053,26 @@ export function AdministrationService({
       } else {
         // Non-super-admin viewing another user: intersection of both users' accessible administrations
         const [targetObjects, requesterObjects] = await Promise.all([
-          authorizationService.listAccessibleObjects(
-            targetUserId,
-            FgaRelation.CAN_LIST,
-            FgaType.ADMINISTRATION,
-          ).catch((err) => {
-            throw new ApiError('Failed to resolve target user administrations', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-              context: { userId, targetUserId },
-              cause: err,
-            });
-          }),
-          authorizationService.listAccessibleObjects(
-            userId,
-            FgaRelation.CAN_LIST,
-            FgaType.ADMINISTRATION,
-          ).catch((err) => {
-            throw new ApiError('Failed to resolve requester administrations', {
-              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-              code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-              context: { userId, targetUserId },
-              cause: err,
-            });
-          }),
+          authorizationService
+            .listAccessibleObjects(targetUserId, FgaRelation.CAN_LIST, FgaType.ADMINISTRATION)
+            .catch((err) => {
+              throw new ApiError('Failed to resolve target user administrations', {
+                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+                code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+                context: { userId, targetUserId },
+                cause: err,
+              });
+            }),
+          authorizationService
+            .listAccessibleObjects(userId, FgaRelation.CAN_LIST, FgaType.ADMINISTRATION)
+            .catch((err) => {
+              throw new ApiError('Failed to resolve requester administrations', {
+                statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+                code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+                context: { userId, targetUserId },
+                cause: err,
+              });
+            }),
         ]);
 
         const targetIds = new Set(targetObjects.map(extractFgaObjectId));
@@ -1125,10 +1121,7 @@ export function AdministrationService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error(
-        { err: error, context: { userId, targetUserId } },
-        'Failed to list user administrations',
-      );
+      logger.error({ err: error, context: { userId, targetUserId } }, 'Failed to list user administrations');
 
       throw new ApiError('Failed to retrieve user administrations', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

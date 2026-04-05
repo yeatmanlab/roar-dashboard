@@ -183,11 +183,7 @@ export const UsersController = {
    * @param userId - UUID of the target user.
    * @param query - Query parameters (pagination, sorting, embed options, status filter).
    */
-  listUserAdministrations: async (
-    authContext: AuthContext,
-    userId: string,
-    query: AdministrationsListQuery,
-  ) => {
+  listUserAdministrations: async (authContext: AuthContext, userId: string, query: AdministrationsListQuery) => {
     try {
       const result = await administrationService.listUserAdministrations(authContext, userId, {
         page: query.page,
@@ -195,7 +191,7 @@ export const UsersController = {
         sortBy: query.sortBy,
         sortOrder: query.sortOrder,
         embed: query.embed,
-        status: query.status,
+        ...(query.status && { status: query.status }),
       });
 
       return {
@@ -215,6 +211,7 @@ export const UsersController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
