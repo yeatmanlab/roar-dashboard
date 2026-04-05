@@ -472,9 +472,6 @@ export function ReportService({
   return { listProgressStudents, getProgressOverview };
 }
 
-/** Re-export for use in buildProgressMap. */
-const STATUS_PRIORITY: Record<string, number> = PROGRESS_STATUS_PRIORITY;
-
 // --- Progress sort/filter resolution helpers ---
 
 /**
@@ -675,7 +672,9 @@ export function buildProgressMap(
 
     // When multiple variants share a taskId, keep the highest-priority status.
     const existing = progress[task.taskId];
-    if (!existing || (STATUS_PRIORITY[entry.status] ?? 0) > (STATUS_PRIORITY[existing.status] ?? 0)) {
+    const entryPriority = PROGRESS_STATUS_PRIORITY[entry.status];
+    const existingPriority = existing ? PROGRESS_STATUS_PRIORITY[existing.status] : -1;
+    if (!existing || entryPriority > existingPriority) {
       progress[task.taskId] = entry;
     }
   }

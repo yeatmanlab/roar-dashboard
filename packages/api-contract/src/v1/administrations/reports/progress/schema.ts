@@ -171,8 +171,12 @@ export type ProgressTaskOverview = z.infer<typeof ProgressTaskOverviewSchema>;
 /**
  * Response schema for the progress overview endpoint.
  *
- * - `totalStudents`: distinct student count in scope (regardless of task assignment)
- * - `assigned`, `started`, `completed`: aggregate sums across all tasks in `byTask`
+ * - `totalStudents`: distinct student count in scope (regardless of task assignment).
+ *   Students excluded from all tasks by `conditionsAssignment` are counted here
+ *   but not in any per-task count.
+ * - `assigned`, `started`, `completed`: aggregate sums across all tasks in `byTask`.
+ *   `optional` is excluded from top-level totals — it represents non-required tasks
+ *   and doesn't contribute to completion goals.
  * - `byTask`: ordered array (by orderIndex) with per-task counts
  * - `computedAt`: server timestamp for freshness display
  */

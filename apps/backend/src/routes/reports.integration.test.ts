@@ -866,8 +866,30 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
   });
 
   describe('FDW-backed aggregation', () => {
+    // Seed dedicated runs for overview tests so they don't depend on the
+    // progress/students FDW tests above. Uses classAStudent (completed) and
+    // groupStudent (started) — neither is used in the students FDW block.
+    beforeAll(async () => {
+      await RunFactory.create({
+        userId: baseFixture.classAStudent.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-07-01T10:00:00Z'),
+      });
+
+      await RunFactory.create({
+        userId: baseFixture.groupStudent.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: null,
+      });
+    });
+
     it('counts completed run in overview', async () => {
-      // schoolAStudent has a completed run from the progress students FDW tests above
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
         .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
@@ -877,7 +899,6 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       expect(res.status).toBe(StatusCodes.OK);
 
       const { data } = res.body;
-      // At least one completed run should be counted
       expect(data.completed).toBeGreaterThan(0);
 
       // Verify per-task breakdown
@@ -887,7 +908,6 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
     });
 
     it('counts started run in overview', async () => {
-      // schoolBStudent has a started (not completed) run from the progress students FDW tests above
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
         .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
@@ -910,13 +930,23 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       expect(res.status).toBe(StatusCodes.OK);
 
       const { data } = res.body;
-      // Some students have no runs — they should be counted as assigned
+      // Students with no runs should be counted as assigned
       expect(data.assigned).toBeGreaterThan(0);
     });
 
     it('excludes soft-deleted runs from overview counts', async () => {
-      // grade3Student has a soft-deleted completed run from progress students tests
-      // It should NOT appear in overview completed count for that student
+      // Create a soft-deleted completed run for grade3Student — should not be counted
+      await RunFactory.create({
+        userId: baseFixture.grade3Student.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-07-01T10:00:00Z'),
+        deletedAt: new Date('2025-07-02T10:00:00Z'),
+        deletedBy: baseFixture.districtAdmin.id,
+      });
+
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
         .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
@@ -925,8 +955,6 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
 
       expect(res.status).toBe(StatusCodes.OK);
 
-      // We can't directly verify one student's status in aggregate,
-      // but we verify the endpoint runs without SQL errors and returns consistent data
       const { data } = res.body;
       expect(typeof data.completed).toBe('number');
       expect(typeof data.assigned).toBe('number');
