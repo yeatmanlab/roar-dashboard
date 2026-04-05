@@ -13,14 +13,7 @@ import {
   _resetFirekitCompat,
 } from './firekit';
 import { SDKError } from '../errors/sdk-error';
-import type {
-  UpdateEngagementFlagsInput,
-  AddInteractionInput,
-  UpdateUserInput,
-  TrialData,
-  RawScores,
-  ComputedScores,
-} from '../types';
+import type { AddInteractionInput, UpdateUserInput, TrialData, RawScores, ComputedScores } from '../types';
 import type { CommandContext } from '../command/command';
 import { RUN_EVENT_STATUS_OK } from '../types';
 
@@ -316,22 +309,188 @@ describe('firekit compat', () => {
   });
 
   describe('updateEngagementFlags', () => {
-    it('throws SDKError when called (stub not yet implemented)', async () => {
-      await expect(updateEngagementFlags({ flagNames: ['flag1'] })).rejects.toBeInstanceOf(SDKError);
-      await expect(
-        updateEngagementFlags({ flagNames: ['flag1', 'flag2'], markAsReliable: true }),
-      ).rejects.toBeInstanceOf(SDKError);
-      await expect(
-        updateEngagementFlags({ flagNames: ['flag1'], markAsReliable: false, reliableByBlock: { block1: true } }),
-      ).rejects.toBeInstanceOf(SDKError);
+    /**
+     * Test suite for the updateEngagementFlags Firekit compatibility function.
+     *
+     * Tests the function's ability to:
+     * - Throw SDKError when no active run exists
+     * - Send engagement flags to the backend when a run is active
+     * - Handle the optional markAsReliable parameter
+     * - Match the expected Firekit function signature
+     */
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when no active run', async () => {
+      await expect(updateEngagementFlags(['incomplete'])).rejects.toBeInstanceOf(SDKError);
+    });
+
+    it('sends engagement flags to backend when run is active', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-engagement-test' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+      await updateEngagementFlags(['incomplete', 'response_time_too_fast']);
+
+      const calls = fetchMock.mock.calls;
+      const eventCall = calls.find((call) => call[0].includes('/event'));
+      expect(eventCall).toBeDefined();
+
+      const body = JSON.parse(eventCall![1].body as string);
+      expect(body.type).toBe('engagement');
+      expect(body.engagementFlags).toEqual({
+        incomplete: true,
+        responseTimeTooFast: true,
+      });
+      expect(body.reliableRun).toBe(false);
+      expect(body.engagementFlags.incomplete).toBe(true);
+      expect(body.engagementFlags.responseTimeTooFast).toBe(true);
+    });
+
+    it('sends engagement flags with markAsReliable when provided', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-reliable-test' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+      await updateEngagementFlags(['incomplete'], true);
+
+      const calls = fetchMock.mock.calls;
+      const eventCall = calls.find((call) => call[0].includes('/event'));
+      expect(eventCall).toBeDefined();
+
+      const body = JSON.parse(eventCall![1].body as string);
+      expect(body.type).toBe('engagement');
+      expect(body.engagementFlags).toEqual({
+        incomplete: true,
+      });
+      expect(body.reliableRun).toBe(true);
+    });
+
+    it('preserves run ID after updating engagement flags', async () => {
+      const mockContext: CommandContext = {
+        baseUrl: 'http://localhost:3000',
+        auth: {
+          getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+      };
+
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string) => {
+        if (url.includes('/runs') && !url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-preserve-id' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        if (url.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({ data: { status: RUN_EVENT_STATUS_OK } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          });
+        }
+        return Promise.reject(new Error('Unexpected fetch call'));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await startRun();
+      await updateEngagementFlags(['incomplete']);
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 500,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      const calls = fetchMock.mock.calls;
+      const eventCalls = calls.filter((call) => call[0].includes('/event'));
+      expect(eventCalls.length).toBeGreaterThanOrEqual(2);
     });
 
     it('matches Firekit signature', () => {
-      // runtime assertion to satisfy vitest/expect-expect
       expect(typeof updateEngagementFlags).toBe('function');
-
-      // compile-time signature check
-      expectTypeOf(updateEngagementFlags).toEqualTypeOf<(input: UpdateEngagementFlagsInput) => Promise<void>>();
+      expectTypeOf(updateEngagementFlags).toEqualTypeOf<
+        (flagNames: string[], markAsReliable?: boolean) => Promise<void>
+      >();
     });
   });
 

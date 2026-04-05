@@ -372,8 +372,8 @@ describe('RunEventService', () => {
     const validBody = {
       type: 'engagement' as const,
       engagementFlags: {
-        incomplete: 'incomplete' as const,
-        response_time_too_fast: 'response_time_too_fast' as const,
+        incomplete: true,
+        responseTimeTooFast: true,
       },
       reliableRun: true,
     };
@@ -429,10 +429,10 @@ describe('RunEventService', () => {
       const bodyWithMultipleFlags = {
         type: 'engagement' as const,
         engagementFlags: {
-          incomplete: 'incomplete' as const,
-          response_time_too_fast: 'response_time_too_fast' as const,
-          accuracy_too_low: 'accuracy_too_low' as const,
-          not_enough_responses: 'not_enough_responses' as const,
+          incomplete: true,
+          responseTimeTooFast: true,
+          accuracyTooLow: true,
+          notEnoughResponses: true,
         },
         reliableRun: false,
       };
