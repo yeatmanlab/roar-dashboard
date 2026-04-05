@@ -1020,6 +1020,30 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       expect(taskWithOptional).toBeDefined();
     });
 
+    it('resolves both conditionsAssignment and conditionsRequirements in SQL', async () => {
+      // variantForTask2Grade5OptionalEll has both conditionsAssignment (grade=5)
+      // and conditionsRequirements (statusEll=active). This exercises the
+      // buildOverviewStatusCase branch where both conditions are present.
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      const task2Overview = data.byTask.find((t: { taskId: string }) => t.taskId === baseFixture.task2.id);
+      expect(task2Overview).toBeDefined();
+      // Task 2 now has two variants: one with no conditions (assigned to all) and one
+      // with both conditions (grade 5 + ELL optional). Multi-variant dedup takes the
+      // highest-priority status per student, so the no-conditions variant guarantees
+      // all students are at least "assigned" — total should still equal totalStudents.
+      const task2Total =
+        task2Overview.assigned + task2Overview.started + task2Overview.completed + task2Overview.optional;
+      expect(task2Total).toBe(data.totalStudents);
+    });
+
     it('returns overview for class scope', async () => {
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
@@ -1035,6 +1059,26 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       const { data } = res.body;
       expect(data).toHaveProperty('totalStudents');
       expect(data).toHaveProperty('byTask');
+    });
+
+    it('returns overview for group scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToGroup.id))
+        .query({
+          scopeType: 'group',
+          scopeId: baseFixture.group.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('totalStudents');
+      expect(data.totalStudents).toBeGreaterThan(0);
+      expect(data).toHaveProperty('byTask');
+      // Group administration has no task variants — byTask is empty but query succeeds
+      expect(data.byTask).toHaveLength(0);
     });
   });
 });
