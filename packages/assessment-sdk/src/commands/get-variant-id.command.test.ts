@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
+import { StatusCodes } from 'http-status-codes';
 import { GetTaskVariantCommand } from './get-variant-id.command';
 import { createMockRoarApi } from '../test-support';
 import type { GetTaskVariantInput, GetTaskVariantOutput } from './get-variant-id.command';
@@ -37,7 +38,7 @@ describe('GetTaskVariantCommand', () => {
     };
 
     getTaskVariant.mockResolvedValue({
-      status: 200,
+      status: StatusCodes.OK,
       body: {
         data: {
           id: 'variant-123',
@@ -73,7 +74,7 @@ describe('GetTaskVariantCommand', () => {
     };
 
     getTaskVariant.mockResolvedValue({
-      status: 200,
+      status: StatusCodes.OK,
       body: { data: { id: 'variant-789', taskId: 'task-999', parameters: [] } },
     });
 
@@ -111,7 +112,7 @@ describe('GetTaskVariantCommand', () => {
     };
 
     getTaskVariant.mockResolvedValue({
-      status: 200,
+      status: StatusCodes.OK,
       body: {
         data: {
           id: 'variant-complex',
@@ -139,7 +140,7 @@ describe('GetTaskVariantCommand', () => {
     };
 
     getTaskVariant.mockResolvedValue({
-      status: 404,
+      status: StatusCodes.NOT_FOUND,
       body: { error: { message: 'Variant not found' } },
     });
 
@@ -155,5 +156,19 @@ describe('GetTaskVariantCommand', () => {
     getTaskVariant.mockRejectedValue(new Error('Network request failed'));
 
     await expect(command.execute(input)).rejects.toThrow('Network request failed');
+  });
+
+  it('throws SDKError on 500 response', async () => {
+    const input: GetTaskVariantInput = {
+      taskId: 'task-456',
+      variantId: 'variant-123',
+    };
+
+    getTaskVariant.mockResolvedValue({
+      status: StatusCodes.INTERNAL_SERVER_ERROR,
+      body: { error: { message: 'Internal server error' } },
+    });
+
+    await expect(command.execute(input)).rejects.toThrow('Internal server error');
   });
 });
