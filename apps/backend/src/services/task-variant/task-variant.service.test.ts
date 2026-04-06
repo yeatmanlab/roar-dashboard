@@ -10,6 +10,7 @@ import { TaskVariantParameterFactory } from '../../test-support/factories/task-v
 import { buildTaskVariantWithDetails } from '../../test-support/factories/task-variant.factory';
 import { TaskVariantService, TaskVariantSortField } from './task-variant.service';
 import type { AuthContext } from '../../types/auth-context';
+
 describe('TaskVariantService', () => {
   let mockTaskVariantRepository: MockTaskVariantRepository;
   let mockTaskVariantParameterRepository: MockTaskVariantParameterRepository;
