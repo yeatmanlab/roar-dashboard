@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
+import type { TaskVariantsListQuery } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { TaskVariantParameterFactory } from '../test-support/factories/task-variant-parameter.factory';
 import { buildTaskVariantWithDetails } from '../test-support/factories/task-variant.factory';
-import { createMockTaskVariantService } from '../test-support/services/task-variant.service';
 import type { MockTaskVariantService } from '../test-support/services/task-variant.service';
-import type { TaskVariantsListQuery } from '@roar-dashboard/api-contract';
 import type { AuthContext } from '../types/auth-context';
 
 vi.mock('../services/task-variant/task-veriant.service', () => ({
@@ -18,12 +17,15 @@ import { TaskVariantService } from '../services/task-variant/task-veriant.servic
 describe('TaskVariantsController', () => {
   const superAdminContext: AuthContext = { userId: 'super-admin-1', isSuperAdmin: true };
 
-  let mockService: MockTaskVariantService;
+  // Module-level vi.fn() so the controller (cached after first import) always
+  // references the same function — matching the pattern in tasks.controller.test.ts.
+  const mockListAllPublished = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockService = createMockTaskVariantService();
-    vi.mocked(TaskVariantService).mockReturnValue(mockService);
+    vi.mocked(TaskVariantService).mockReturnValue({
+      listAllPublished: mockListAllPublished,
+    } as MockTaskVariantService);
   });
 
   describe('list', () => {
@@ -38,7 +40,7 @@ describe('TaskVariantsController', () => {
 
     it('returns 200 with paginated items on success', async () => {
       const variant = buildTaskVariantWithDetails();
-      mockService.listAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
+      mockListAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
 
       const { TaskVariantsController } = await import('./task-variants.controller');
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
@@ -59,7 +61,7 @@ describe('TaskVariantsController', () => {
       const createdAt = new Date('2024-01-01T00:00:00Z');
       const updatedAt = new Date('2024-01-02T00:00:00Z');
       const variant = buildTaskVariantWithDetails({ createdAt, updatedAt });
-      mockService.listAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
+      mockListAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
 
       const { TaskVariantsController } = await import('./task-variants.controller');
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
@@ -73,7 +75,7 @@ describe('TaskVariantsController', () => {
 
     it('returns null for updatedAt when the variant has no updatedAt', async () => {
       const variant = buildTaskVariantWithDetails({ updatedAt: null });
-      mockService.listAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
+      mockListAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
 
       const { TaskVariantsController } = await import('./task-variants.controller');
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
@@ -87,7 +89,7 @@ describe('TaskVariantsController', () => {
     it('passes parameters through when embed includes parameters', async () => {
       const variant = buildTaskVariantWithDetails();
       const param = TaskVariantParameterFactory.build({ taskVariantId: variant.id, name: 'difficulty', value: 'easy' });
-      mockService.listAllPublished.mockResolvedValue({
+      mockListAllPublished.mockResolvedValue({
         items: [{ ...variant, parameters: [{ name: param.name, value: param.value }] }],
         totalItems: 1,
       });
@@ -106,7 +108,7 @@ describe('TaskVariantsController', () => {
 
     it('does not include parameters key when embed is not requested', async () => {
       const variant = buildTaskVariantWithDetails();
-      mockService.listAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
+      mockListAllPublished.mockResolvedValue({ items: [variant], totalItems: 1 });
 
       const { TaskVariantsController } = await import('./task-variants.controller');
       const result = await TaskVariantsController.list(superAdminContext, baseQuery);
@@ -118,20 +120,21 @@ describe('TaskVariantsController', () => {
     });
 
     it('maps query filter to service filters', async () => {
-      mockService.listAllPublished.mockResolvedValue({ items: [], totalItems: 0 });
+      mockListAllPublished.mockResolvedValue({ items: [], totalItems: 0 });
 
       const filter = [{ field: 'task.id', operator: 'eq' as const, value: 'task-abc' }];
+
       const { TaskVariantsController } = await import('./task-variants.controller');
       await TaskVariantsController.list(superAdminContext, { ...baseQuery, filter });
 
-      expect(mockService.listAllPublished).toHaveBeenCalledWith(
+      expect(mockListAllPublished).toHaveBeenCalledWith(
         superAdminContext,
         expect.objectContaining({ filters: filter }),
       );
     });
 
     it('returns 403 when the service throws a FORBIDDEN ApiError', async () => {
-      mockService.listAllPublished.mockRejectedValue(
+      mockListAllPublished.mockRejectedValue(
         new ApiError('Forbidden', {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -145,7 +148,7 @@ describe('TaskVariantsController', () => {
     });
 
     it('returns 500 when the service throws an INTERNAL_SERVER_ERROR ApiError', async () => {
-      mockService.listAllPublished.mockRejectedValue(
+      mockListAllPublished.mockRejectedValue(
         new ApiError('Internal error', {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
@@ -160,7 +163,7 @@ describe('TaskVariantsController', () => {
 
     it('re-throws unknown errors', async () => {
       const unknown = new Error('Unexpected failure');
-      mockService.listAllPublished.mockRejectedValue(unknown);
+      mockListAllPublished.mockRejectedValue(unknown);
 
       const { TaskVariantsController } = await import('./task-variants.controller');
       await expect(TaskVariantsController.list(superAdminContext, baseQuery)).rejects.toBe(unknown);
