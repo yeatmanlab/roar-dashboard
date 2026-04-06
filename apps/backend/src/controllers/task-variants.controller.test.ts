@@ -8,11 +8,11 @@ import { buildTaskVariantWithDetails } from '../test-support/factories/task-vari
 import type { MockTaskVariantService } from '../test-support/services/task-variant.service';
 import type { AuthContext } from '../types/auth-context';
 
-vi.mock('../services/task-variant/task-veriant.service', () => ({
+vi.mock('../services/task-variant/task-variant.service', () => ({
   TaskVariantService: vi.fn(),
 }));
 
-import { TaskVariantService } from '../services/task-variant/task-veriant.service';
+import { TaskVariantService } from '../services/task-variant/task-variant.service';
 
 describe('TaskVariantsController', () => {
   const superAdminContext: AuthContext = { userId: 'super-admin-1', isSuperAdmin: true };

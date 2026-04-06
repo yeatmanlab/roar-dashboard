@@ -8,7 +8,7 @@ import type { MockTaskVariantRepository } from '../../test-support/repositories/
 import type { MockTaskVariantParameterRepository } from '../../test-support/repositories/task-variant-parameter.repository';
 import { TaskVariantParameterFactory } from '../../test-support/factories/task-variant-parameter.factory';
 import { buildTaskVariantWithDetails } from '../../test-support/factories/task-variant.factory';
-import { TaskVariantService, TaskVariantSortField } from './task-veriant.service';
+import { TaskVariantService, TaskVariantSortField } from './task-variant.service';
 import type { AuthContext } from '../../types/auth-context';
 describe('TaskVariantService', () => {
   let mockTaskVariantRepository: MockTaskVariantRepository;

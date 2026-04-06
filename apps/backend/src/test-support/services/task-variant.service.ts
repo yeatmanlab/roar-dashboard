@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
-import type { TaskVariantService } from '../../services/task-variant/task-veriant.service';
+import type { TaskVariantService } from '../../services/task-variant/task-variant.service';
 
 /**
  * Mock TaskVariant Service

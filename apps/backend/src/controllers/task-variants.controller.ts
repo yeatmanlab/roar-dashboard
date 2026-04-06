@@ -4,7 +4,7 @@ import type {
 } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
-import { TaskVariantService, type TaskVariantListItem } from '../services/task-variant/task-veriant.service';
+import { TaskVariantService, type TaskVariantListItem } from '../services/task-variant/task-variant.service';
 import type { AuthContext } from '../types/auth-context';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
