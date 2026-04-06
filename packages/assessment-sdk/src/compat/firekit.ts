@@ -30,6 +30,7 @@ import { AbortRunCommand } from '../commands/abort-run.command';
 import { FinishRunCommand } from '../commands/finish-run.command';
 import { WriteTrialCommand } from '../commands/write-trial.command';
 import { UpdateRunEngagementFlagsCommand } from '../commands/update-engagement-flags.command';
+import { GetTaskVariantCommand } from '../commands/get-variant-id.command';
 
 type CompatTaskInfo = {
   variantId: string;
@@ -676,4 +677,47 @@ export async function writeTrial(
     bufferedInteractions.forEach((interaction) => facade._pushInteraction(interaction));
     throw error;
   }
+}
+
+/**
+ * Retrieves task variant parameters by variant ID.
+ *
+ * This function supports the new parameter-passing approach where the launcher
+ * passes only the variant_id, and the assessment app looks up the variant's
+ * parameters using this method.
+ *
+ * **Initialization requirement:**
+ * - `initFirekitCompat()` must be called before invoking this function
+ *
+ * @param taskId - The UUID of the parent task
+ * @param variantId - The UUID of the variant to retrieve
+ * @returns Promise that resolves with the variant parameters (Record<string, unknown>)
+ * @throws {SDKError} If the facade has not been initialized
+ * @throws {SDKError} If the variant lookup fails
+ *
+ * @example
+ * ```ts
+ * initFirekitCompat(ctx, {
+ *   variantId: 'variant-123',
+ *   taskVersion: '1.0.0',
+ *   isAnonymous: true
+ * });
+ *
+ * const params = await getVariantParamsById('task-456', 'variant-456');
+ * console.log(params); // { difficulty: 'hard', timeLimit: 120, ... }
+ * ```
+ */
+export async function getVariantParamsById(taskId: string, variantId: string): Promise<Record<string, unknown>> {
+  const facade = getFirekitCompat();
+
+  if (!facade._getTaskInfo()) {
+    throw new SDKError('appkit.getVariantParamsById requires initialization. Call initFirekitCompat() first.');
+  }
+
+  const api = facade.getApi();
+  const invoker = facade.getInvoker();
+
+  const cmd = new GetTaskVariantCommand(api);
+  const { variantParams } = await invoker.run(cmd, { taskId, variantId });
+  return variantParams;
 }

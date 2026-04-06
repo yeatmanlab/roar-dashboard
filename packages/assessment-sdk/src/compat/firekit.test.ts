@@ -8,6 +8,7 @@ import {
   addInteraction,
   updateUser,
   writeTrial,
+  getVariantParamsById,
   initFirekitCompat,
   getFirekitCompat,
   _resetFirekitCompat,
@@ -879,6 +880,158 @@ describe('firekit compat', () => {
       expect(typeof addInteraction).toBe('function');
 
       expectTypeOf(addInteraction).toEqualTypeOf<(interaction: AddInteractionInput) => void>();
+    });
+  });
+
+  describe('getVariantParamsById', () => {
+    beforeEach(() => {
+      _resetFirekitCompat();
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      _resetFirekitCompat();
+    });
+
+    it('throws SDKError when facade is not initialized', async () => {
+      await expect(getVariantParamsById('task-123', 'variant-456')).rejects.toThrow(SDKError);
+      await expect(getVariantParamsById('task-123', 'variant-456')).rejects.toThrow(
+        'appkit.getVariantParamsById requires initialization. Call initFirekitCompat() first.',
+      );
+    });
+
+    it('retrieves variant params with happy path', async () => {
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+
+        // Handle variant lookup
+        if (urlString.includes('/tasks/task-123/variants/variant-456')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({
+              data: {
+                id: 'variant-456',
+                taskId: 'task-123',
+                parameters: [
+                  { name: 'difficulty', value: 'hard' },
+                  { name: 'timeLimit', value: 120 },
+                ],
+              },
+            }),
+            headers: new Headers([['content-type', 'application/json']]),
+          } as Response);
+        }
+
+        // Handle startRun
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-123' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          } as Response);
+        }
+
+        return Promise.reject(new Error(`Unexpected fetch call: ${urlString}`));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+      const mockContext = createMockContext();
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      const params = await getVariantParamsById('task-123', 'variant-456');
+
+      expect(params).toEqual({
+        difficulty: 'hard',
+        timeLimit: 120,
+      });
+    });
+
+    it('returns empty params when variant has no parameters', async () => {
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+
+        if (urlString.includes('/tasks/task-123/variants/variant-456')) {
+          return Promise.resolve({
+            status: StatusCodes.OK,
+            json: async () => ({
+              data: {
+                id: 'variant-456',
+                taskId: 'task-123',
+                parameters: [],
+              },
+            }),
+            headers: new Headers([['content-type', 'application/json']]),
+          } as Response);
+        }
+
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-123' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          } as Response);
+        }
+
+        return Promise.reject(new Error(`Unexpected fetch call: ${urlString}`));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+      const mockContext = createMockContext();
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      const params = await getVariantParamsById('task-123', 'variant-456');
+
+      expect(params).toEqual({});
+    });
+
+    it('propagates SDKError from command on variant not found', async () => {
+      const fetchMock = vi.fn();
+      fetchMock.mockImplementation((url: string | Request) => {
+        const urlString = typeof url === 'string' ? url : url.url;
+
+        if (urlString.includes('/tasks/task-123/variants/variant-456')) {
+          return Promise.resolve({
+            status: StatusCodes.NOT_FOUND,
+            json: async () => ({
+              error: { message: 'Variant not found' },
+            }),
+            headers: new Headers([['content-type', 'application/json']]),
+          } as Response);
+        }
+
+        if (urlString.includes('/runs') && !urlString.includes('/event')) {
+          return Promise.resolve({
+            status: StatusCodes.CREATED,
+            json: async () => ({ data: { id: 'run-123' } }),
+            headers: new Headers([['content-type', 'application/json']]),
+          } as Response);
+        }
+
+        return Promise.reject(new Error(`Unexpected fetch call: ${urlString}`));
+      });
+
+      vi.stubGlobal('fetch', fetchMock);
+      const mockContext = createMockContext();
+
+      initFirekitCompat(mockContext, {
+        variantId: 'variant-123',
+        taskVersion: '1.0.0',
+        isAnonymous: true,
+      });
+
+      await expect(getVariantParamsById('task-123', 'variant-456')).rejects.toThrow(SDKError);
     });
   });
 });

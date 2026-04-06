@@ -159,6 +159,17 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
    * Executes the write trial command.
    *
    * @param input - The write trial input containing runId, trial data, and optional interactions
+   * @param input.runId - The ID of the assessment run
+   * @param input.type - The event type (should be RUN_EVENT_TRIAL)
+   * @param input.trial - Trial data including assessment stage, response, correctness, and reaction time
+   * @param input.trial.assessmentStage - The assessment stage (practice, practice_response, test, or test_response)
+   * @param input.trial.correct - Whether the response was correct (0 or 1)
+   * @param input.trial.response - The participant's response
+   * @param input.trial.rt - The reaction time in milliseconds
+   * @param input.interactions - Optional array of interaction events (focus, blur, fullscreen changes)
+   * @param input.interactions[].event - The interaction event type
+   * @param input.interactions[].trial - The trial number when the interaction occurred
+   * @param input.interactions[].time - The time in milliseconds when the interaction occurred
    * @returns Promise<WriteTrialCommandOutput> - Empty object on success
    * @throws {SDKError} If the backend request fails, with code `WRITE_TRIAL_FAILED`
    */
