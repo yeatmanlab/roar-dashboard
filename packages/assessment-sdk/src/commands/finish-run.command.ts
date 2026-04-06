@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Command, CommandContext } from '../command/command';
+import type { Command } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type { FinishRunInput, FinishRunOutput } from '../types/finish-run';
 import { SDKError } from '../errors/sdk-error';
@@ -51,26 +51,16 @@ export class FinishRunCommand implements Command<FinishRunInput, FinishRunOutput
   readonly name = 'FinishRun';
   readonly idempotent = false;
 
-  constructor(
-    private api: RoarApi,
-    private ctx: CommandContext,
-  ) {}
+  constructor(private api: RoarApi) {}
 
   /**
    * Executes the finish run command.
    *
    * @param input - The finish run input containing runId, event type, and optional metadata
    * @returns Promise<FinishRunOutput> - Status object on success
-   * @throws {SDKError} If participantId is missing, with code `FINISH_RUN_FAILED`
    * @throws {SDKError} If the backend request fails, with code `FINISH_RUN_FAILED`
    */
   async execute(input: FinishRunInput): Promise<FinishRunOutput> {
-    if (!this.ctx.participant?.participantId) {
-      throw new SDKError('participantId is required to finish a run', {
-        code: SdkErrorCode.FINISH_RUN_FAILED,
-      });
-    }
-
     const result = await this.api.client.runs.event({
       params: { runId: input.runId },
       body: {

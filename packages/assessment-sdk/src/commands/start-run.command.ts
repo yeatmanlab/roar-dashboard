@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Command, CommandContext } from '../command/command';
+import type { Command } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type { StartRunInput, StartRunOutput } from '../types/start-run';
 import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
@@ -27,10 +27,7 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
   readonly name = 'StartRun';
   readonly idempotent = false;
 
-  constructor(
-    private api: RoarApi,
-    private ctx: CommandContext,
-  ) {}
+  constructor(private api: RoarApi) {}
 
   /**
    * Creates a new assessment run.
@@ -46,12 +43,6 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
    * @throws {SDKError} If the run creation fails, with code `START_RUN_FAILED`
    */
   async execute(input: StartRunInput): Promise<StartRunOutput> {
-    if (!this.ctx.participant?.participantId) {
-      throw new SDKError('participantId is required to start a run', {
-        code: SdkErrorCode.START_RUN_FAILED,
-      });
-    }
-
     const isAnonymous = input.isAnonymous ?? false;
     const body: CreateRunRequestBody = {
       taskVariantId: input.variantId,

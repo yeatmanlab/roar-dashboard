@@ -7,7 +7,6 @@ import type { WriteTrialCommandInput } from '../types/write-trial';
 import { RUN_EVENT_TRIAL } from '../types/run-event-status';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums';
-import type { CommandContext } from '../command/command';
 
 /**
  * Test suite for WriteTrialCommand.
@@ -22,22 +21,12 @@ describe('WriteTrialCommand', () => {
   let command: WriteTrialCommand;
   let mockApi: ReturnType<typeof createMockRoarApi>;
   let eventMock: Mock;
-  let mockContext: CommandContext;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
-    mockContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: 'participant-123',
-      },
-    };
-    command = new WriteTrialCommand(mockApi, mockContext);
+    command = new WriteTrialCommand(mockApi);
   });
 
   it('has correct properties', () => {
@@ -349,31 +338,5 @@ describe('WriteTrialCommand', () => {
     eventMock.mockRejectedValue(new Error('Network error'));
 
     await expect(command.execute(input)).rejects.toThrow('Network error');
-  });
-
-  it('throws error when participantId is missing', async () => {
-    const contextWithoutParticipant: CommandContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: '',
-      },
-    };
-    const cmdWithoutParticipant = new WriteTrialCommand(mockApi, contextWithoutParticipant);
-
-    const input: WriteTrialCommandInput = {
-      runId: 'run-123',
-      type: RUN_EVENT_TRIAL,
-      trial: {
-        assessmentStage: 'test',
-        correct: 1,
-        response: 'A',
-        rt: 1500,
-      },
-    };
-
-    await expect(cmdWithoutParticipant.execute(input)).rejects.toThrow('participantId is required to write a trial');
   });
 });

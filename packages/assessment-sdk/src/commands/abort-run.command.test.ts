@@ -6,28 +6,16 @@ import { createMockRoarApi } from '../test-support';
 import type { AbortRunInput } from '../types/abort-run';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums';
-import type { CommandContext } from '../command/command';
-
 describe('AbortRunCommand', () => {
   let command: AbortRunCommand;
   let mockApi: ReturnType<typeof createMockRoarApi>;
   let eventMock: Mock;
-  let mockContext: CommandContext;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
-    mockContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: 'participant-123',
-      },
-    };
-    command = new AbortRunCommand(mockApi, mockContext);
+    command = new AbortRunCommand(mockApi);
   });
 
   it('has correct properties', () => {
@@ -130,25 +118,5 @@ describe('AbortRunCommand', () => {
       params: { runId: 'run-123' },
       body: { type: 'abort' },
     });
-  });
-
-  it('throws error when participantId is missing', async () => {
-    const contextWithoutParticipant: CommandContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: '',
-      },
-    };
-    const cmdWithoutParticipant = new AbortRunCommand(mockApi, contextWithoutParticipant);
-
-    const input: AbortRunInput = {
-      runId: 'run-123',
-      type: 'abort',
-    };
-
-    await expect(cmdWithoutParticipant.execute(input)).rejects.toThrow('participantId is required to abort a run');
   });
 });

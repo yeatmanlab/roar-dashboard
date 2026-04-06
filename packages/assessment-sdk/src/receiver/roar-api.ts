@@ -1,6 +1,8 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-dashboard/api-contract';
 import type { CommandContext } from '../command/command';
+import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums/sdk-error-code.enum';
 
 /**
  * Creates a ts-rest client configured with ROAR API contract and authentication.
@@ -8,24 +10,22 @@ import type { CommandContext } from '../command/command';
  * The client automatically injects:
  * - Authorization header with Bearer token (when available)
  * - x-request-id header for request tracing (when requestId is defined)
- * - participantId into the baseUrl path (e.g., /v1/users/{participantId}/runs)
  * - Custom fetch implementation (if provided in context)
  *
  * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, optional logger, and optional custom fetch
  * @returns Initialized ts-rest client for ApiContractV1
  */
 function createClient(ctx: CommandContext) {
-  // Inject participantId into the baseUrl to scope all API requests to the participant
-  // This transforms the baseUrl from /v1 to /v1/users/{participantId}
-  const participantId = ctx.participant?.participantId;
-  if (!participantId) {
-    throw new Error('participantId is required in CommandContext to create API client');
+  // Validate participantId is present at client creation time
+  // This is the single enforcement point for the requirement
+  if (!ctx.participant?.participantId) {
+    throw new SDKError('participantId is required in CommandContext to create API client', {
+      code: SdkErrorCode.START_RUN_FAILED,
+    });
   }
 
-  const baseUrlWithParticipant = `${ctx.baseUrl}/users/${participantId}`;
-
   return initClient(ApiContractV1, {
-    baseUrl: baseUrlWithParticipant,
+    baseUrl: ctx.baseUrl,
     baseHeaders: {},
     api: async (args) => {
       const token = await ctx.auth.getToken();

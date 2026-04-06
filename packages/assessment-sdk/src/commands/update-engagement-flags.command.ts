@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Command, CommandContext } from '../command/command';
+import type { Command } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type {
   UpdateRunEngagementFlagsCommandInput,
@@ -60,10 +60,7 @@ export class UpdateRunEngagementFlagsCommand
    * @param api - The ROAR API client instance
    * @param ctx - The command context containing participant identity
    */
-  constructor(
-    private api: RoarApi,
-    private ctx: CommandContext,
-  ) {}
+  constructor(private api: RoarApi) {}
 
   /**
    * Executes the command to update engagement flags for a run.
@@ -80,12 +77,6 @@ export class UpdateRunEngagementFlagsCommand
    *         The error includes the code UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED.
    */
   async execute(input: UpdateRunEngagementFlagsCommandInput): Promise<UpdateRunEngagementFlagsCommandOutput> {
-    if (!this.ctx.participant?.participantId) {
-      throw new SDKError('participantId is required to update engagement flags', {
-        code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
-      });
-    }
-
     const { runId, type, engagementFlags, reliableRun = false } = input;
 
     const result = await this.api.client.runs.event({

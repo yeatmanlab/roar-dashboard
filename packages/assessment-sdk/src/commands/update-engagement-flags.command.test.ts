@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { UpdateRunEngagementFlagsCommand } from './update-engagement-flags.command';
 import { StatusCodes } from 'http-status-codes';
@@ -7,7 +7,6 @@ import type { UpdateRunEngagementFlagsCommandInput } from '../types/update-engag
 import { RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums';
-import type { CommandContext } from '../command/command';
 
 /**
  * Test suite for UpdateRunEngagementFlagsCommand.
@@ -16,27 +15,18 @@ import type { CommandContext } from '../command/command';
  * - Submit engagement flags to the backend
  * - Handle optional reliability status
  * - Properly handle success and error responses
- * - Default reliableRun to false when not provided
+ * - Default reliableRun to false
  */
 describe('UpdateRunEngagementFlagsCommand', () => {
   let command: UpdateRunEngagementFlagsCommand;
   let mockApi: ReturnType<typeof createMockRoarApi>;
   let eventMock: Mock;
-  let mockContext: CommandContext;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
-    mockContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: 'participant-123',
-      },
-    };
-    command = new UpdateRunEngagementFlagsCommand(mockApi, mockContext);
+    command = new UpdateRunEngagementFlagsCommand(mockApi);
   });
 
   it('has correct properties', () => {
@@ -243,30 +233,5 @@ describe('UpdateRunEngagementFlagsCommand', () => {
       message: 'Failed to update run engagement flags with status 409',
       code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
     });
-  });
-
-  it('throws error when participantId is missing', async () => {
-    const contextWithoutParticipant: CommandContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: '',
-      },
-    };
-    const cmdWithoutParticipant = new UpdateRunEngagementFlagsCommand(mockApi, contextWithoutParticipant);
-
-    const input: UpdateRunEngagementFlagsCommandInput = {
-      runId: 'run-123',
-      type: RUN_EVENT_ENGAGEMENT,
-      engagementFlags: {
-        incomplete: true,
-      },
-    };
-
-    await expect(cmdWithoutParticipant.execute(input)).rejects.toThrow(
-      'participantId is required to update engagement flags',
-    );
   });
 });

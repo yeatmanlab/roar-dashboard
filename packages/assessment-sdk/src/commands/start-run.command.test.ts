@@ -1,30 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { StartRunCommand } from './start-run.command';
 import { StatusCodes } from 'http-status-codes';
 import { createMockRoarApi } from '../test-support';
 import type { StartRunInput, StartRunOutput } from '../types/start-run';
-import type { CommandContext } from '../command/command';
 
 describe('StartRunCommand', () => {
   let command: StartRunCommand;
   let mockApi: ReturnType<typeof createMockRoarApi>;
   let createRun: Mock;
-  let mockContext: CommandContext;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockApi = createMockRoarApi();
     createRun = mockApi.client.runs.create as Mock;
-    mockContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: 'participant-123',
-      },
-    };
-    command = new StartRunCommand(mockApi, mockContext);
+    command = new StartRunCommand(mockApi);
   });
 
   it('has correct properties', () => {
@@ -141,48 +131,5 @@ describe('StartRunCommand', () => {
     });
 
     await expect(command.execute(input)).rejects.toThrow('Failed to start run with status 404');
-  });
-
-  it('throws error when participantId is missing', async () => {
-    const contextWithoutParticipant: CommandContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        participantId: '',
-      },
-    };
-    const cmdWithoutParticipant = new StartRunCommand(mockApi, contextWithoutParticipant);
-
-    const input: StartRunInput = {
-      variantId: 'variant-123',
-      taskVersion: '1.0.0',
-      isAnonymous: true,
-    };
-
-    await expect(cmdWithoutParticipant.execute(input)).rejects.toThrow('participantId is required to start a run');
-  });
-
-  it('throws error when participant context is missing', async () => {
-    const contextWithoutParticipant: CommandContext = {
-      baseUrl: 'https://api.example.com',
-      auth: {
-        getToken: async () => 'test-token',
-      },
-      participant: {
-        // @ts-expect-error - Testing missing participantId scenario
-        participantId: undefined,
-      },
-    };
-    const cmdWithoutParticipant = new StartRunCommand(mockApi, contextWithoutParticipant);
-
-    const input: StartRunInput = {
-      variantId: 'variant-123',
-      taskVersion: '1.0.0',
-      isAnonymous: true,
-    };
-
-    await expect(cmdWithoutParticipant.execute(input)).rejects.toThrow('participantId is required to start a run');
   });
 });
