@@ -37,8 +37,7 @@ let globalApi: RoarApi | undefined;
  *     refreshToken: async () => { ... }
  *   },
  *   participant: {
- *     participantId: 'participant-123',
- *     administrationId: 'admin-456'
+ *     participantId: 'participant-123'
  *   },
  *   requestId: () => crypto.randomUUID(),
  *   logger: console

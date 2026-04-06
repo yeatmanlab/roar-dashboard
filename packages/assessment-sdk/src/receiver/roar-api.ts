@@ -18,9 +18,9 @@ import { SdkErrorCode } from '../enums/sdk-error-code.enum';
 function createClient(ctx: CommandContext) {
   // Validate participantId is present at client creation time
   // This is the single enforcement point for the requirement
-  if (!ctx.participant?.participantId) {
+  if (!ctx.participant.participantId) {
     throw new SDKError('participantId is required in CommandContext to create API client', {
-      code: SdkErrorCode.START_RUN_FAILED,
+      code: SdkErrorCode.INVALID_CONTEXT,
     });
   }
 

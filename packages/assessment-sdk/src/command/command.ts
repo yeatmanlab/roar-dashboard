@@ -18,7 +18,7 @@ export interface Logger {
  * @property auth - Authentication callbacks for token management
  * @property auth.getToken - Retrieves current auth token (called before each request)
  * @property auth.refreshToken - Optional token refresh callback (called on 401 Unauthorized)
- * @property participant - Required participant identity context containing participantId and optional metadata
+ * @property participant - Required participant identity context containing participantId
  * @property requestId - Optional function to generate request IDs for tracing
  * @property fetchImpl - Optional custom fetch implementation (defaults to global fetch)
  * @property logger - Optional logger for debugging and monitoring
