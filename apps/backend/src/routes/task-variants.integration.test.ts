@@ -253,4 +253,33 @@ describe('GET /v1/task-variants', () => {
       expect(ids.every((id: string) => id !== taskB.id)).toBe(true);
     });
   });
+
+  describe('error handling', () => {
+    it('returns 400 for an invalid filter format (missing colon separator)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(PATH)
+        .query({ 'filter[]': 'no-colon-separator' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 for an invalid filter format (incomplete field:operator)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app).get(PATH).query({ 'filter[]': 'task.id:eq' }).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 for an unknown filter field', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(PATH)
+        .query({ 'filter[]': 'invalid.field:eq:value' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
 });

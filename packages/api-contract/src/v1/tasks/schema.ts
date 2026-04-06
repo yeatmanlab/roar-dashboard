@@ -161,7 +161,9 @@ export type TaskVariant = z.infer<typeof TaskVariantSchema>;
 export const GetTaskVariantResponseSchema = TaskVariantSchema;
 
 /**
- * Allowed sort fields for task variants.
+ * Allowed sort fields for the PER-TASK variant list endpoint (GET /tasks/:taskId/variants).
+ * Simple field names without prefixes since all results belong to the same task.
+ * Note: TASK_VARIANTS_SORT_FIELDS (with 's') is a different constant for the cross-task endpoint.
  */
 export const TASK_VARIANT_SORT_FIELDS = ['createdAt', 'name', 'updatedAt', 'status'] as const;
 
@@ -446,8 +448,10 @@ export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 // ─── Task Variants List (cross-task, super-admin only) ──────────────────────
 
 /**
- * Allowed sort fields for the cross-task variant list endpoint.
- * Uses dotted notation to distinguish variant and task fields.
+ * Allowed sort fields for the CROSS-TASK variant list endpoint (GET /task-variants).
+ * Uses dotted notation (variant.* and task.*) to distinguish variant vs task fields
+ * since results span multiple tasks.
+ * Note: TASK_VARIANT_SORT_FIELDS (without 's') is a different constant for the per-task endpoint.
  */
 export const TASK_VARIANTS_SORT_FIELDS = [
   'variant.name',

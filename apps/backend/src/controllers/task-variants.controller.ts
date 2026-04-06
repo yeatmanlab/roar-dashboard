@@ -29,6 +29,10 @@ function transformTaskVariantListItem(item: TaskVariantListItem): ContractTaskVa
     taskName: item.taskName,
     taskSlug: item.taskSlug,
     taskImage: item.taskImage,
+    // Only include 'parameters' key when embed=parameters was requested.
+    // Preserves the distinction between "not requested" (key absent) and
+    // "requested but empty" (key present, value []). Matches the contract's
+    // .optional() modifier, which allows the key itself to be omitted.
     ...(item.parameters !== undefined && { parameters: item.parameters }),
   };
 }

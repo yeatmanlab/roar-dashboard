@@ -163,6 +163,57 @@ describe('TaskVariantRepository', () => {
     });
   });
 
+  describe('listByTaskId', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      orderBy: { field: 'name' as const, direction: 'asc' as const },
+    };
+
+    it('returns empty result when task has no variants', async () => {
+      const task = await TaskFactory.create();
+
+      const result = await repository.listByTaskId({ taskId: task.id }, defaultOptions);
+
+      expect(result.items).toHaveLength(0);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('returns empty result when task has no variants matching status filter', async () => {
+      const task = await TaskFactory.create();
+      await TaskVariantFactory.create({ taskId: task.id, status: 'published' });
+
+      const result = await repository.listByTaskId({ taskId: task.id, status: 'draft' }, defaultOptions);
+
+      expect(result.items).toHaveLength(0);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('returns empty result when search term matches no variants', async () => {
+      const task = await TaskFactory.create();
+      await TaskVariantFactory.create({ taskId: task.id, name: 'Alpha Variant', status: 'published' });
+
+      const result = await repository.listByTaskId(
+        { taskId: task.id },
+        { ...defaultOptions, search: 'NonexistentSearchTerm' },
+      );
+
+      expect(result.items).toHaveLength(0);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('returns variants when task has variants', async () => {
+      const task = await TaskFactory.create();
+      const variant = await TaskVariantFactory.create({ taskId: task.id, status: 'published' });
+
+      const result = await repository.listByTaskId({ taskId: task.id }, defaultOptions);
+
+      expect(result.items.length).toBeGreaterThan(0);
+      expect(result.items.map((v) => v.id)).toContain(variant.id);
+      expect(result.totalItems).toBeGreaterThan(0);
+    });
+  });
+
   describe('listAllPublished', () => {
     const defaultOptions = {
       page: 1,
