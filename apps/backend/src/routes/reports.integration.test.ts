@@ -359,6 +359,120 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
     });
   });
 
+  describe('progress status sort and filter', () => {
+    it('returns 200 when sorting by progress.<taskId>.status', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          sortBy: `progress.${baseFixture.task.id}.status`,
+        })
+        .set('Authorization', 'Bearer token');
+
+      // Include response body in failure message to diagnose SQL errors
+      expect(res.body.error ?? 'no error').toBe('no error');
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+    });
+
+    it('returns 200 when filtering by progress.<taskId>.status:eq:assigned', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          // Without FDW run data, all students have "assigned" status for tasks they're eligible for
+          filter: `progress.${baseFixture.task.id}.status:eq:assigned`,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      // Students matching the "assigned" status for this task should be returned
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+    });
+
+    it('returns 200 when filtering by progress.<taskId>.status:in:assigned,completed', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          filter: `progress.${baseFixture.task.id}.status:in:assigned,completed`,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('returns 200 with sort and filter targeting the same task variant', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          sortBy: `progress.${baseFixture.task.id}.status`,
+          filter: `progress.${baseFixture.task.id}.status:eq:assigned`,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('returns 200 with sort and filter targeting different task variants', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          sortBy: `progress.${baseFixture.task.id}.status`,
+          filter: `progress.${baseFixture.task2.id}.status:eq:assigned`,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.body.error ?? 'no error').toBe('no error');
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+    });
+
+    it('returns 400 for unknown task ID in filter', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          filter: 'progress.00000000-0000-0000-0000-000000000000.status:eq:completed',
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when more than 3 progress status filters are provided', async () => {
+      authenticateAs(tiers.superAdmin);
+      // The fixture only has one task, so we'd need to fabricate UUIDs.
+      // But unknown task IDs return 400 before the count check. Use the real task ID
+      // for the first 3 and a fourth to trigger the cap. Since the cap is checked before
+      // task validation, we can use duplicates of the same task ID.
+      const taskId = baseFixture.task.id;
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...defaultQuery(),
+          filter: [
+            `progress.${taskId}.status:eq:assigned`,
+            `progress.${taskId}.status:eq:completed`,
+            `progress.${taskId}.status:eq:started`,
+            `progress.${taskId}.status:eq:optional`,
+          ],
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
   describe('FDW-backed run status', () => {
     it('returns completed status for student with a completed run', async () => {
       await RunFactory.create({

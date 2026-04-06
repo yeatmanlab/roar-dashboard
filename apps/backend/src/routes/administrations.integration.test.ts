@@ -541,7 +541,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('superAdmin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(4);
+      expect(res.body.data.items).toHaveLength(5);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -550,7 +550,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('siteAdmin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.siteAdmin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(4);
+      expect(res.body.data.items).toHaveLength(5);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -559,7 +559,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('admin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(4);
+      expect(res.body.data.items).toHaveLength(5);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -568,7 +568,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('educator tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(4);
+      expect(res.body.data.items).toHaveLength(5);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
     });
