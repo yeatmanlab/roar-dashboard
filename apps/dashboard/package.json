@@ -35,7 +35,7 @@
     "@bdelab/roav-crowding": "1.1.35",
     "@bdelab/roav-mep": "1.2.9",
     "@bdelab/roav-ran": "1.0.33",
-    "@bdelab/roav-apps": "0.2.1",
+    "@bdelab/roav-apps": "0.2.2",
     "@dotenvx/dotenvx": "^1.24.4",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
