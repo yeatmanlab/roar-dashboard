@@ -130,7 +130,7 @@ export function TaskVariantService({
       const variantIds = result.items.map((v) => v.id);
 
       const allParameters = await taskVariantParameterRepository.getByTaskVariantIds(variantIds).catch((err) => {
-        throw new ApiError('Failed to fetch task variant parameters', {
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
           context: { userId, variantIds },
@@ -160,7 +160,7 @@ export function TaskVariantService({
 
       logger.error({ err: error, context: { userId, page, perPage } }, 'Failed to list all published task variants');
 
-      throw new ApiError('Failed to list all published task variants', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
