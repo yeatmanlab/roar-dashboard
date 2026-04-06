@@ -149,6 +149,7 @@ const isEnrollmentModalVisible = ref(false);
 const isSubmitting = ref(false);
 const toast = useToast();
 const queryClient = useQueryClient();
+const authStore = useAuthStore();
 const consentName = ref('consent-behavioral-eye-tracking');
 const emit = defineEmits(['refresh-registration']);
 
@@ -157,7 +158,6 @@ function showEnrollmentModal() {
 }
 
 async function handleStudentEnrollment(studentData) {
-  const authStore = useAuthStore();
   isSubmitting.value = true;
 
   try {
@@ -166,7 +166,7 @@ async function handleStudentEnrollment(studentData) {
       await authStore.initFirekit();
     }
     // Get current user's data for family association
-    const { email } = authStore.firebaseUser.adminFirebaseUser;
+    const { email: parentEmail } = authStore.firebaseUser.adminFirebaseUser;
 
     // Format caretaker data according to CreateParentInput interface
     const careTakerData = {
@@ -192,12 +192,12 @@ async function handleStudentEnrollment(studentData) {
 
     const formattedStudentData = studentData.map((student) => {
       // Extract email from studentUsername if it's already in email format
-      const email = student.studentUsername.includes('@')
+      const studentEmail = student.studentUsername.includes('@')
         ? student.studentUsername
         : `${student.studentUsername}@roar-auth.com`;
 
       return {
-        email,
+        email: studentEmail,
         password: student.password,
         userData: {
           name: {
@@ -232,7 +232,7 @@ async function handleStudentEnrollment(studentData) {
     }
 
     await authStore.addStudentsToFamily(
-      email, // careTakerEmail
+      parentEmail, // careTakerEmail
       careTakerData,
       formattedStudentData, // properly formatted students array
       consentData, // proper consent data

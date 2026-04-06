@@ -655,9 +655,6 @@ const handleFormSubmit = async (isFormValid) => {
       return true; // Code is valid if no error thrown
     } catch {
       // Code validation failed
-      if (student.noActivationCode) {
-        return false;
-      }
       return false;
     }
   });
@@ -671,16 +668,14 @@ const handleFormSubmit = async (isFormValid) => {
 
   if (await validateRoarUsername()) {
     // format username as an email
-    if (isFormValid) {
-      const computedStudents = toRaw(state).students.map((student) => {
-        const { studentUsername, ...studentData } = student;
-        return {
-          studentUsername: `${studentUsername}@roar-auth.com`,
-          ...studentData,
-        };
-      });
-      emit('submit', computedStudents);
-    }
+    const computedStudents = toRaw(state).students.map((student) => {
+      const { studentUsername, ...studentData } = student;
+      return {
+        studentUsername: `${studentUsername}@roar-auth.com`,
+        ...studentData,
+      };
+    });
+    emit('submit', computedStudents);
   }
 };
 

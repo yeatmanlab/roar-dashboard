@@ -112,13 +112,15 @@ import PvButton from 'primevue/button';
 import PvTag from 'primevue/tag';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
-import router from '@/router/index.js';
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
   orgType: { type: String, required: true },
   orgId: { type: String, required: true },
   userId: { type: String, required: true },
 });
+
+const router = useRouter();
 
 const { data: userData } = useUserDataQuery(props.userId);
 

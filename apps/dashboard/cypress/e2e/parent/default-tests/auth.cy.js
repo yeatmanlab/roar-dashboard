@@ -38,32 +38,34 @@ describe('Parent: Auth', () => {
     // Accept terms and conditions.
     cy.findByTestId('checkbox__input').click();
 
-    // Verify consent dialog.
-    cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
+    // Verify consent dialog and click Continue.
+    cy.get('[data-cy="consent-modal"]').should('be.visible');
+    cy.get('[data-cy="consent-modal"]').find('button').contains('Continue').click();
+    // Wait for consent dialog to close.
+    cy.get('[data-cy="consent-modal"]').should('not.exist');
 
     // Submit parent form (should succeed - validation moved to student enrollment).
-    cy.get('button').contains('Register').click();
+    cy.get('form').find('button').contains('Register').click();
 
-    // Wait for parent dashboard to load.
+    // Wait for parent dashboard to load and enrollment modal to close.
     cy.waitForParentHomepage();
-
-    cy.get('button').contains('Continue').click();
     // Click "Add Child" to open enrollment modal.
     cy.get('[data-cy="add-student-btn"]').click();
 
-    // Verify the invalid code is pre-populated in the student enrollment form.
+    // Wait for enrollment modal to be visible and verify the invalid code is pre-populated.
+    cy.get('[data-cy="enrollment-modal"]').should('be.visible');
     cy.get('[data-cy="activation-code-input"]').should('have.value', invalidActivationCode);
 
     // Fill out student form.
     cy.get('[data-cy="student-username-input"]').type('teststudent');
     cy.get('[data-cy="student-password-input"]').type('TestPassword123!');
     cy.get('[data-cy="student-confirm-password-input"]').type('TestPassword123!');
-    // Note: First name and last name selectors need to be checked in the component
 
     // Validate the activation code (should fail).
-    cy.get('button').contains('Validate').click();
+    cy.get('[data-cy="enrollment-modal"]').find('button').contains('Validate').click();
 
-    // Validate failure message appears.
+    // Validate failure message appears in error dialog.
+    cy.get('[data-cy="enrollment-modal"]').should('exist');
     cy.findByTestId('dialog__content')
       .should('be.visible')
       .contains(`The code ${invalidActivationCode} does not belong to any organization`);
