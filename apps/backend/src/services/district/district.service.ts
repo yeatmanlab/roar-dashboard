@@ -9,7 +9,10 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
-
+import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import type { EnrolledUsersQuery } from '@roar-dashboard/api-contract';
+import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 /**
  * Options for listing districts
  */
@@ -151,8 +154,87 @@ export function DistrictService({
     }
   }
 
+  /**
+   * Performs authorization checks for sub-resource listing (supervisory roles only).
+   * Throws if user lacks access or is a supervised user.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param districtId - The class ID to verify access for
+   * @throws {ApiError} NOT_FOUND if class doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
+   */
+  async function authorizeSubResourceAccess(authContext: AuthContext, districtId: string): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Verifies user has access to organizations
+    await getById(authContext, districtId);
+
+    if (isSuperAdmin) return;
+
+    const userRoles = await repo.getUserRolesForDistrict(userId, districtId);
+
+    if (!hasSupervisoryRole(userRoles)) {
+      logger.warn({ userId, districtId, userRoles }, 'Supervised user attempted to list district sub-resources');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, districtId, userRoles },
+      });
+    }
+  }
+
+  /**
+   * Get users enrolled in a district.
+   *
+   * Returns all users who have an active enrollment in the specified district.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param districtId - The district ID to get users for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with users
+   */
+  async function listUsers(
+    authContext: AuthContext,
+    districtId: string,
+    options: EnrolledUsersQuery,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { userId, isSuperAdmin } = authContext;
+    try {
+      await authorizeSubResourceAccess(authContext, districtId);
+
+      const queryParams: ListEnrolledUsersOptions = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        ...(options.role && { role: options.role }),
+        ...(options.grade && { grade: options.grade }),
+      };
+
+      if (isSuperAdmin) {
+        return await repo.getUsersByDistrictId(districtId, queryParams);
+      }
+
+      const allowedRoles = rolesForPermission(Permissions.Users.LIST);
+      return await repo.getAuthorizedUsersByDistrictId({ userId, allowedRoles }, districtId, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      throw new ApiError('Failed to retrieve district users', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, districtId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
+    listUsers,
     getById,
   };
 }

@@ -831,4 +831,108 @@ describe('DistrictRepository', () => {
       expect(roles).toHaveLength(0);
     });
   });
+
+  describe('getAuthorizedUsersByDistrictId', () => {
+    it('returns users when requesting user has authorized membership in district', async () => {
+      const result = await repository.getAuthorizedUsersByDistrictId(
+        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.district.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.items.length).toBeGreaterThan(0);
+      const userIds = result.items.map((u) => u.id);
+      expect(userIds).toContain(baseFixture.districtAdmin.id);
+    });
+
+    it('returns empty when requesting user has no membership in district', async () => {
+      const result = await repository.getAuthorizedUsersByDistrictId(
+        { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.district.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('returns empty when requesting user has membership but role not in allowedRoles', async () => {
+      const result = await repository.getAuthorizedUsersByDistrictId(
+        { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        baseFixture.district.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('returns empty when requesting user has expired enrollment in district', async () => {
+      const expiredDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'Expired Enrollment Auth Test District',
+      });
+      const expiredUser = await UserFactory.create({ username: 'expired_auth_user' });
+      const activeAdmin = await UserFactory.create({ username: 'active_admin_auth' });
+
+      // Expired enrollment for the requesting user
+      await UserOrgFactory.create({
+        userId: expiredUser.id,
+        orgId: expiredDistrict.id,
+        role: UserRole.ADMINISTRATOR,
+        enrollmentStart: new Date('2020-01-01'),
+        enrollmentEnd: new Date('2020-12-31'),
+      });
+      // Active enrollment for another user (to verify they would be returned if authorized)
+      await UserOrgFactory.create({
+        userId: activeAdmin.id,
+        orgId: expiredDistrict.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+
+      const result = await repository.getAuthorizedUsersByDistrictId(
+        { userId: expiredUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        expiredDistrict.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('returns empty when requesting user has future enrollment in district', async () => {
+      const futureDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'Future Enrollment Auth Test District',
+      });
+      const futureUser = await UserFactory.create({ username: 'future_auth_user' });
+      const activeAdmin = await UserFactory.create({ username: 'active_admin_future' });
+
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+
+      // Future enrollment for the requesting user
+      await UserOrgFactory.create({
+        userId: futureUser.id,
+        orgId: futureDistrict.id,
+        role: UserRole.ADMINISTRATOR,
+        enrollmentStart: futureDate,
+      });
+      // Active enrollment for another user
+      await UserOrgFactory.create({
+        userId: activeAdmin.id,
+        orgId: futureDistrict.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+
+      const result = await repository.getAuthorizedUsersByDistrictId(
+        { userId: futureUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
+        futureDistrict.id,
+        { page: 1, perPage: 100 },
+      );
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+  });
 });

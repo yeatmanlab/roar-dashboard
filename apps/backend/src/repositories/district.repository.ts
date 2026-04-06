@@ -22,6 +22,7 @@ import {
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 import type { UserRole } from '../enums/user-role.enum';
+import { isAuthorizedMembership } from './utils/is-authorized-membership.utils';
 /**
  * District-specific type (Org with orgType = 'district')
  */
@@ -354,6 +355,10 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   /**
    * Get users enrolled in a district.
    *
+   * Returns all users who have an active enrollment in the specified district.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
    * @param districtId - District ID to get users for
    * @param options - Options for filtering and pagination
    * @returns Paginated result of users enrolled in the district
@@ -445,5 +450,38 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       })),
       totalItems,
     };
+  }
+
+  /**
+   * Get users enrolled in a district if district is accessible.
+   *
+   * Returns all users who have an active enrollment in the specified district.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param accessControlFilter - Filter for authorized access control
+   * @param districtId - District ID to get users for
+   * @param options - Options for filtering and pagination
+   * @returns Paginated result of users enrolled in the district
+   */
+  async getAuthorizedUsersByDistrictId(
+    accessControlFilter: AccessControlFilter,
+    districtId: string,
+    options: ListEnrolledUsersOptions,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { userId, allowedRoles } = accessControlFilter;
+
+    const accessibleDistrictsCount = await this.db.select({ count: count() }).from(
+      this.db
+        .select({ districtId: userOrgs.orgId })
+        .from(userOrgs)
+        .where(and(eq(userOrgs.orgId, districtId), isAuthorizedMembership(userOrgs, userId, allowedRoles)))
+        .as('accessible_districts'),
+    );
+    if (accessibleDistrictsCount[0]?.count === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    return this.getUsersByDistrictId(districtId, options);
   }
 }
