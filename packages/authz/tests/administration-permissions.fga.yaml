@@ -231,6 +231,7 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+          can_list_users: false
 
           can_read_scores: false
 
@@ -275,8 +276,9 @@ tests:
           can_read: true
           can_create: false
           can_update: false
-          can_delete: false
+          can_delete: true
 
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create_run: false
@@ -292,7 +294,8 @@ tests:
           can_read: true
           can_create: false
           can_update: false
-          can_delete: false
+          can_delete: true
+          can_list_users: true
 
   - name: District admin sees class-level administration (descendant access)
     check:
@@ -305,7 +308,8 @@ tests:
           can_read: true
           can_create: false
           can_update: false
-          can_delete: false
+          can_delete: true
+          can_list_users: true
 
           can_read_scores: true
           can_create_run: false
@@ -322,6 +326,7 @@ tests:
           can_list: true
           can_read: true
 
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -338,6 +343,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_create: false
           can_update: false
           can_delete: false
@@ -351,6 +357,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -369,6 +376,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -385,6 +393,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -401,6 +410,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -419,6 +429,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -450,6 +461,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_list_users: false
           can_read_scores: false
           can_read_progress: false
           can_create: false
@@ -506,6 +518,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create_run: false
@@ -520,7 +533,8 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_delete: false
+          can_delete: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create_run: false
@@ -639,11 +653,12 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
           can_update: false
-          can_delete: false
+          can_delete: true
           can_create_run: false
 
   - name: Site administrator sees class-assigned administration (descendant access)
@@ -655,10 +670,11 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_create: false
           can_update: false
-          can_delete: false
+          can_delete: true
 
   # ─── Non-teacher educator role spot-checks ───────────────────────
 
@@ -671,6 +687,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -697,6 +714,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -723,6 +741,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_users: true
           can_read_scores: true
           can_read_progress: true
           can_create: false
@@ -776,6 +795,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_list_users: false
           can_create: false
           can_update: false
           can_delete: false
@@ -822,6 +842,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_list_users: false
           can_create: false
           can_update: false
           can_create_run: false

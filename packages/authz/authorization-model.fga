@@ -301,14 +301,15 @@ type administration
 
     define can_create: no_one
     define can_update: no_one
-    define can_delete: no_one
+    define can_delete: admin_tier
 
     define can_list: supervisory_tier_group or student
     define can_read: supervisory_tier_group or student
+    define can_list_users: supervisory_tier_group
     define can_read_scores: supervisory_tier_group
     define can_read_progress: supervisory_tier_group
     define can_create_run: student
-    
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Conditions

@@ -365,17 +365,23 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * @param administrationId - The administration ID to get orgs for
    * @param orgType - The org type to filter by (e.g., 'district', 'school')
    * @param options - Pagination and sorting options
+   * @param filterIds - Optional array of org IDs to constrain results (FGA-resolved accessible IDs)
    * @returns Paginated result with orgs
    */
   private async getOrgsByAdministrationId(
     administrationId: string,
     orgType: OrgType,
     options: ListOrgsByAdministrationOptions,
+    filterIds?: string[],
   ): Promise<PaginatedResult<Org>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
-    const baseCondition = and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, orgType));
+    const conditions: SQL[] = [eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, orgType)];
+    if (filterIds) {
+      conditions.push(inArray(orgs.id, filterIds));
+    }
+    const baseCondition = and(...conditions);
 
     const countResult = await this.db
       .select({ count: count() })
@@ -476,13 +482,15 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    *
    * @param administrationId - The administration ID to get districts for
    * @param options - Pagination and sorting options
+   * @param filterIds - Optional array of district IDs to constrain results (FGA-resolved accessible IDs)
    * @returns Paginated result with districts
    */
   async getDistrictsByAdministrationId(
     administrationId: string,
     options: ListOrgsByAdministrationOptions,
+    filterIds?: string[],
   ): Promise<PaginatedResult<Org>> {
-    return this.getOrgsByAdministrationId(administrationId, OrgType.DISTRICT, options);
+    return this.getOrgsByAdministrationId(administrationId, OrgType.DISTRICT, options, filterIds);
   }
 
   /**
@@ -506,13 +514,15 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    *
    * @param administrationId - The administration ID to get schools for
    * @param options - Pagination and sorting options
+   * @param filterIds - Optional array of school IDs to constrain results (FGA-resolved accessible IDs)
    * @returns Paginated result with schools
    */
   async getSchoolsByAdministrationId(
     administrationId: string,
     options: ListOrgsByAdministrationOptions,
+    filterIds?: string[],
   ): Promise<PaginatedResult<Org>> {
-    return this.getOrgsByAdministrationId(administrationId, OrgType.SCHOOL, options);
+    return this.getOrgsByAdministrationId(administrationId, OrgType.SCHOOL, options, filterIds);
   }
 
   /**
@@ -536,16 +546,22 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    *
    * @param administrationId - The administration ID to get classes for
    * @param options - Pagination and sorting options
+   * @param filterIds - Optional array of class IDs to constrain results (FGA-resolved accessible IDs)
    * @returns Paginated result with classes
    */
   async getClassesByAdministrationId(
     administrationId: string,
     options: ListClassesByAdministrationOptions,
+    filterIds?: string[],
   ): Promise<PaginatedResult<Class>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
-    const baseCondition = eq(administrationClasses.administrationId, administrationId);
+    const conditions: SQL[] = [eq(administrationClasses.administrationId, administrationId)];
+    if (filterIds) {
+      conditions.push(inArray(classes.id, filterIds));
+    }
+    const baseCondition = and(...conditions);
 
     const countResult = await this.db
       .select({ count: count() })
@@ -662,16 +678,22 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    *
    * @param administrationId - The administration ID to get groups for
    * @param options - Pagination and sorting options
+   * @param filterIds - Optional array of group IDs to constrain results (FGA-resolved accessible IDs)
    * @returns Paginated result with groups
    */
   async getGroupsByAdministrationId(
     administrationId: string,
     options: ListGroupsByAdministrationOptions,
+    filterIds?: string[],
   ): Promise<PaginatedResult<Group>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
-    const baseCondition = eq(administrationGroups.administrationId, administrationId);
+    const conditions: SQL[] = [eq(administrationGroups.administrationId, administrationId)];
+    if (filterIds) {
+      conditions.push(inArray(groups.id, filterIds));
+    }
+    const baseCondition = and(...conditions);
 
     const countResult = await this.db
       .select({ count: count() })
