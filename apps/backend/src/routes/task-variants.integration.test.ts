@@ -121,7 +121,7 @@ describe('GET /v1/task-variants', () => {
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
         .get(PATH)
-        .query({ 'filter[]': `task.id:eq:${task.id}` })
+        .query({ filter: `task.id:eq:${task.id}` })
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.OK);
