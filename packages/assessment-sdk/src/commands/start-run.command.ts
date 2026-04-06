@@ -28,6 +28,18 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
 
   constructor(private api: RoarApi) {}
 
+  /**
+   * Creates a new assessment run.
+   *
+   * @param input - The start run input containing variant ID, task version, and run mode
+   * @param input.variantId - The ID of the task variant to run
+   * @param input.taskVersion - The version of the task
+   * @param input.isAnonymous - Whether the run is anonymous (optional, defaults to false for authenticated runs)
+   * @param input.administrationId - Required for authenticated runs (when isAnonymous is false or omitted)
+   * @param input.metadata - Optional metadata to attach to the run
+   * @returns The run output containing the created runId
+   * @throws {SDKError} If the run creation fails, with code `START_RUN_FAILED`
+   */
   async execute(input: StartRunInput): Promise<StartRunOutput> {
     const isAnonymous = input.isAnonymous ?? false;
     const body: CreateRunRequestBody = {
