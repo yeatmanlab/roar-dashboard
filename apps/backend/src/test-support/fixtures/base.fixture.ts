@@ -106,10 +106,12 @@ import { AdministrationTaskVariantFactory } from '../factories/administration-ta
  *
  * Tasks and Task Variants (assigned to administrationAssignedToDistrict):
  * - task: base task for testing
+ * - task2: second task for cross-task sort/filter testing
  * - variantForAllGrades: no conditions (assigned to all students)
  * - variantForGrade5: assigned only to grade 5 students
  * - variantForGrade3: assigned only to grade 3 students
  * - variantOptionalForEll: optional for ELL students
+ * - variantForTask2: no conditions, belongs to task2 (assigned to all students)
  *
  * Administration assignments:
  * - administrationAssignedToDistrict: visible to all users in district hierarchy
@@ -231,6 +233,9 @@ export interface BaseFixture {
   /** Base task for testing task variant endpoints */
   task: Task;
 
+  /** Second task for testing cross-task sort/filter combinations */
+  task2: Task;
+
   /** Variant assigned to all grades (no conditions) - orderIndex: 0 */
   variantForAllGrades: TaskVariant;
 
@@ -242,6 +247,9 @@ export interface BaseFixture {
 
   /** Variant that is optional for ELL students - orderIndex: 3 */
   variantOptionalForEll: TaskVariant;
+
+  /** Variant for task2, assigned to all grades (no conditions) - orderIndex: 4 */
+  variantForTask2: TaskVariant;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // ADMINISTRATIONS
@@ -483,14 +491,19 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   // Step 6: Create Tasks & Task Variants
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const task = await TaskFactory.create({ name: 'Base Fixture Task' });
-
-  const [variantForAllGrades, variantForGrade5, variantForGrade3, variantOptionalForEll] = await Promise.all([
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For All Grades' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 5' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 3' }),
-    TaskVariantFactory.create({ taskId: task.id, name: 'Variant Optional For ELL' }),
+  const [task, task2] = await Promise.all([
+    TaskFactory.create({ name: 'Base Fixture Task' }),
+    TaskFactory.create({ name: 'Base Fixture Task 2' }),
   ]);
+
+  const [variantForAllGrades, variantForGrade5, variantForGrade3, variantOptionalForEll, variantForTask2] =
+    await Promise.all([
+      TaskVariantFactory.create({ taskId: task.id, name: 'Variant For All Grades' }),
+      TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 5' }),
+      TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 3' }),
+      TaskVariantFactory.create({ taskId: task.id, name: 'Variant Optional For ELL' }),
+      TaskVariantFactory.create({ taskId: task2.id, name: 'Variant For Task 2' }),
+    ]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 7: Assign Task Variants to District Administration
@@ -523,6 +536,12 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
       taskVariantId: variantOptionalForEll.id,
       orderIndex: 3,
       conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
+    }),
+    // Task 2: no conditions — assigned to all students
+    AdministrationTaskVariantFactory.create({
+      administrationId: administrationAssignedToDistrict.id,
+      taskVariantId: variantForTask2.id,
+      orderIndex: 4,
     }),
   ]);
 
@@ -571,10 +590,12 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
 
     // Tasks & Task Variants
     task,
+    task2,
     variantForAllGrades,
     variantForGrade5,
     variantForGrade3,
     variantOptionalForEll,
+    variantForTask2,
 
     // Administrations
     administrationAssignedToDistrict,

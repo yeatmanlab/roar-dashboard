@@ -400,9 +400,10 @@ export class ReportRepository {
     // Build the student-in-scope subquery
     const studentsInScope = this.buildStudentInScopeSubquery(scope);
 
-    // Build LEFT JOIN subqueries for progress status sort and/or filter.
-    // Sort and filter may target different task variants, requiring separate subqueries.
-    // When they target the same variant, they share one subquery to avoid redundancy.
+    // Build LEFT JOIN subqueries for progress status sort and filter.
+    // Each progress status filter targets a specific task variant and needs its own
+    // subquery against the FDW runs table. The sort may also need one. When the sort
+    // targets the same variant as a filter, they share a subquery to avoid redundancy.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
     const buildRunSub = (variantId: string, alias: string): any =>
       this.db
@@ -422,44 +423,73 @@ export class ReportRepository {
         )
         .as(alias);
 
-    const sortVariantId = progressStatusSort?.taskVariantId;
-    const filterVariantId = progressStatusFilters?.[0]?.taskVariantId;
-
+    // Build filter subqueries — one per progress status filter (up to 3).
+    // Track variant→subquery mapping so the sort can reuse one if it targets the same variant.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
-    let sortRunSub: any = null;
+    const variantSubqueryMap = new Map<string, any>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
-    let filterRunSub: any = null;
+    const filterSubs: { sub: any; filter: ProgressStatusFilterParam }[] = [];
 
-    if (sortVariantId && filterVariantId && sortVariantId === filterVariantId) {
-      // Same variant — share one subquery
-      const sharedSub = buildRunSub(sortVariantId, 'status_run');
-      sortRunSub = sharedSub;
-      filterRunSub = sharedSub;
-    } else {
-      if (sortVariantId) sortRunSub = buildRunSub(sortVariantId, 'sort_run');
-      if (filterVariantId) filterRunSub = buildRunSub(filterVariantId, 'filter_run');
+    if (progressStatusFilters) {
+      for (let i = 0; i < progressStatusFilters.length; i++) {
+        const pf = progressStatusFilters[i]!;
+        const alias = `filter_run_${i}`;
+        const sub = buildRunSub(pf.taskVariantId, alias);
+        variantSubqueryMap.set(pf.taskVariantId, sub);
+        filterSubs.push({ sub, filter: pf });
+      }
     }
 
-    // Build progress status filter WHERE condition using the filter subquery
-    const statusFilterSql =
-      progressStatusFilters && progressStatusFilters.length > 0 && filterRunSub
-        ? this.buildProgressStatusFilterCondition(progressStatusFilters[0]!, filterRunSub)
-        : undefined;
+    // Build sort subquery — reuse a filter subquery if it targets the same variant.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
+    let sortRunSub: any = null;
+    if (progressStatusSort) {
+      const existing = variantSubqueryMap.get(progressStatusSort.taskVariantId);
+      sortRunSub = existing ?? buildRunSub(progressStatusSort.taskVariantId, 'sort_run');
+    }
 
-    // Combined WHERE: user-level filter AND progress status filter
+    // Collect all unique subqueries that need LEFT JOINs.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics are complex
+    const allJoinSubs: any[] = [];
+    const addedAliases = new Set<string>();
+
+    for (const { sub } of filterSubs) {
+      const alias = sub._.alias as string;
+      if (!addedAliases.has(alias)) {
+        allJoinSubs.push(sub);
+        addedAliases.add(alias);
+      }
+    }
+    if (sortRunSub) {
+      const alias = sortRunSub._.alias as string;
+      if (!addedAliases.has(alias)) {
+        allJoinSubs.push(sortRunSub);
+        addedAliases.add(alias);
+      }
+    }
+
+    // Build progress status filter SQL — AND all filter conditions together.
+    const statusFilterConditions: SQL[] = [];
+    for (const { sub, filter } of filterSubs) {
+      const condition = this.buildProgressStatusFilterCondition(filter, sub);
+      if (condition) statusFilterConditions.push(condition);
+    }
+    const statusFilterSql = statusFilterConditions.length > 0 ? and(...statusFilterConditions) : undefined;
+
+    // Combined WHERE: user-level filter AND all progress status filters
     const combinedWhere = and(filterCondition, statusFilterSql);
 
     // Get total count — use countDistinct because the UNION-based subquery
     // can produce duplicate userIds (e.g., a student in both user_orgs and user_classes).
-    // Add filter LEFT JOIN to count query (but not sort-only).
+    // Apply filter LEFT JOINs to the count query (but not sort-only JOINs).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle query builder chain
     let countQueryBuilder: any = this.db
       .select({ total: countDistinct(users.id) })
       .from(users)
       .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
 
-    if (filterRunSub && statusFilterSql) {
-      countQueryBuilder = countQueryBuilder.leftJoin(filterRunSub, eq(users.id, filterRunSub.userId));
+    for (const { sub } of filterSubs) {
+      countQueryBuilder = countQueryBuilder.leftJoin(sub, eq(users.id, sub.userId));
     }
     const countResult = await countQueryBuilder.where(combinedWhere);
 
@@ -479,7 +509,12 @@ export class ReportRepository {
       statusSortExpr = this.buildProgressStatusSortExpression(progressStatusSort, sortRunSub);
     }
 
-    // Get paginated students with sorting
+    // Get paginated students with sorting.
+    // When sorting by progress status, we use a two-step approach:
+    // 1. Inner query: SELECT DISTINCT with the CASE in the select list (satisfies PG DISTINCT rule)
+    // 2. Use the CASE expression directly in ORDER BY (Drizzle handles the expression matching)
+    //
+    // Without progress status sort, this is a straightforward selectDistinct + orderBy.
     const baseSelectFields = {
       userId: users.id,
       assessmentPid: users.assessmentPid,
@@ -510,10 +545,9 @@ export class ReportRepository {
       .from(users)
       .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
 
-    // Chain LEFT JOINs for sort and/or filter subqueries (may be the same object)
-    if (sortRunSub) dataQuery = dataQuery.leftJoin(sortRunSub, eq(users.id, sortRunSub.userId));
-    if (filterRunSub && filterRunSub !== sortRunSub) {
-      dataQuery = dataQuery.leftJoin(filterRunSub, eq(users.id, filterRunSub.userId));
+    // Chain all LEFT JOINs (filter + sort subqueries, deduplicated by alias)
+    for (const sub of allJoinSubs) {
+      dataQuery = dataQuery.leftJoin(sub, eq(users.id, sub.userId));
     }
 
     const studentRows = await dataQuery
