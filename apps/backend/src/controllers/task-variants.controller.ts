@@ -60,9 +60,9 @@ export const TaskVariantsController = {
         perPage,
         sortBy,
         sortOrder,
-        ...(search && { search }),
-        ...(embed && { embed }),
-        filters: filter ?? [],
+        ...(search !== undefined && { search }),
+        embed,
+        filters: filter,
       });
 
       return {

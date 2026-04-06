@@ -133,6 +133,28 @@ describe('TaskVariantsController', () => {
       );
     });
 
+    it('passes search to service when provided', async () => {
+      mockListAllPublished.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { TaskVariantsController } = await import('./task-variants.controller');
+      await TaskVariantsController.list(superAdminContext, { ...baseQuery, search: 'Awareness' });
+
+      expect(mockListAllPublished).toHaveBeenCalledWith(
+        superAdminContext,
+        expect.objectContaining({ search: 'Awareness' }),
+      );
+    });
+
+    it('omits search from service options when not provided', async () => {
+      mockListAllPublished.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { TaskVariantsController } = await import('./task-variants.controller');
+      await TaskVariantsController.list(superAdminContext, baseQuery);
+
+      const callArg = mockListAllPublished.mock.calls[0]![1]!;
+      expect('search' in callArg).toBe(false);
+    });
+
     it('returns 403 when the service throws a FORBIDDEN ApiError', async () => {
       mockListAllPublished.mockRejectedValue(
         new ApiError('Forbidden', {

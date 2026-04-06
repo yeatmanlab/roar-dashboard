@@ -101,7 +101,7 @@ export interface ListAllPublishedOptions {
   page: number;
   perPage: number;
   sortBy: TaskVariantsSortFieldType;
-  sortOrder: string;
+  sortOrder: SortOrder;
   search?: string;
   filters: ParsedFilter[];
 }
