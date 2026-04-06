@@ -1,6 +1,7 @@
 export * from './abort-run';
 export * from './add-interaction';
 export * from './finish-run';
+export * from './participant-context';
 export * from './run-event-status';
 export * from './start-run';
 export * from './update-engagement-flags';

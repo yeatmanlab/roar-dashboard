@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Command } from '../command/command';
+import type { Command, CommandContext } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type { FinishRunInput, FinishRunOutput } from '../types/finish-run';
 import { SDKError } from '../errors/sdk-error';
@@ -17,6 +17,7 @@ import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
  * 409 Conflict is treated as success since the run is already in a terminal state.
  *
  * **Behavior:**
+ * - Validates that participantId is present in the SDK context
  * - Sends a POST request to `/runs/:runId/event` with type `complete`
  * - Includes any provided metadata in the request body
  * - Returns a status object on success (HTTP 200 or 409 Conflict)
@@ -36,7 +37,7 @@ import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
  * @example
  * ```ts
  * const api = new RoarApi(context);
- * const cmd = new FinishRunCommand(api);
+ * const cmd = new FinishRunCommand(api, context);
  * const invoker = new Invoker(context);
  *
  * await invoker.run(cmd, {
@@ -50,16 +51,26 @@ export class FinishRunCommand implements Command<FinishRunInput, FinishRunOutput
   readonly name = 'FinishRun';
   readonly idempotent = false;
 
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private ctx: CommandContext,
+  ) {}
 
   /**
    * Executes the finish run command.
    *
    * @param input - The finish run input containing runId, event type, and optional metadata
    * @returns Promise<FinishRunOutput> - Status object on success
+   * @throws {SDKError} If participantId is missing, with code `FINISH_RUN_FAILED`
    * @throws {SDKError} If the backend request fails, with code `FINISH_RUN_FAILED`
    */
   async execute(input: FinishRunInput): Promise<FinishRunOutput> {
+    if (!this.ctx.participant?.participantId) {
+      throw new SDKError('participantId is required to finish a run', {
+        code: SdkErrorCode.FINISH_RUN_FAILED,
+      });
+    }
+
     const result = await this.api.client.runs.event({
       params: { runId: input.runId },
       body: {

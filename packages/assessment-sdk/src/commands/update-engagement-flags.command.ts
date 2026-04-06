@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Command } from '../command/command';
+import type { Command, CommandContext } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type {
   UpdateRunEngagementFlagsCommandInput,
@@ -19,6 +19,7 @@ import { SdkErrorCode } from '../enums';
  * This command is non-idempotent; the Invoker will execute it exactly once.
  *
  * **Behavior:**
+ * - Validates that participantId is present in the SDK context
  * - Sends a POST request to `/runs/:runId/event` with type `engagement`
  * - Returns an empty object on success (HTTP 200 OK)
  * - Throws `SDKError` with code `UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED` on failure
@@ -35,7 +36,7 @@ import { SdkErrorCode } from '../enums';
  *
  * @example
  * ```typescript
- * const cmd = new UpdateRunEngagementFlagsCommand(api);
+ * const cmd = new UpdateRunEngagementFlagsCommand(api, context);
  * await invoker.run(cmd, {
  *   runId: 'run-123',
  *   type: 'engagement',
@@ -57,8 +58,12 @@ export class UpdateRunEngagementFlagsCommand
    * Creates a new UpdateRunEngagementFlagsCommand.
    *
    * @param api - The ROAR API client instance
+   * @param ctx - The command context containing participant identity
    */
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private ctx: CommandContext,
+  ) {}
 
   /**
    * Executes the command to update engagement flags for a run.
@@ -68,12 +73,19 @@ export class UpdateRunEngagementFlagsCommand
    *
    * @param input - The command input containing run ID, event type, engagement flags, and reliability status
    * @returns Promise<UpdateRunEngagementFlagsCommandOutput> - Empty object on successful execution
+   * @throws {SDKError} If participantId is missing, with code UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED
    * @throws {SDKError} If the backend request fails or returns a non-OK status.
    *         - HTTP 400 Bad Request: Extracts error message from response body
    *         - Other status codes: Generic error message with HTTP status code
    *         The error includes the code UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED.
    */
   async execute(input: UpdateRunEngagementFlagsCommandInput): Promise<UpdateRunEngagementFlagsCommandOutput> {
+    if (!this.ctx.participant?.participantId) {
+      throw new SDKError('participantId is required to update engagement flags', {
+        code: SdkErrorCode.UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED,
+      });
+    }
+
     const { runId, type, engagementFlags, reliableRun = false } = input;
 
     const result = await this.api.client.runs.event({

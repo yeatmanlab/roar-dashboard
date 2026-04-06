@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Command } from '../command/command';
+import type { Command, CommandContext } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type {
   WriteTrialAssessmentStage,
@@ -110,6 +110,7 @@ function normalizeInteractionEvent(
  * This command is non-idempotent; the Invoker will execute it exactly once.
  *
  * **Behavior:**
+ * - Validates that participantId is present in the SDK context
  * - Sends a POST request to `/runs/:runId/event` with type `trial`
  * - Normalizes assessment stages and interaction events to backend format
  * - Transforms interaction `time` field to `timeMs` for the backend
@@ -130,7 +131,7 @@ function normalizeInteractionEvent(
  * @example
  * ```ts
  * const api = new RoarApi(context);
- * const cmd = new WriteTrialCommand(api);
+ * const cmd = new WriteTrialCommand(api, context);
  * const invoker = new Invoker(context);
  *
  * await invoker.run(cmd, {
@@ -153,7 +154,10 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
   readonly name = 'WriteTrial';
   readonly idempotent = false;
 
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private ctx: CommandContext,
+  ) {}
 
   /**
    * Executes the write trial command.
@@ -171,9 +175,16 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
    * @param input.interactions[].trial - The trial number when the interaction occurred
    * @param input.interactions[].time - The time in milliseconds when the interaction occurred
    * @returns Promise<WriteTrialCommandOutput> - Empty object on success
+   * @throws {SDKError} If participantId is missing, with code `WRITE_TRIAL_FAILED`
    * @throws {SDKError} If the backend request fails, with code `WRITE_TRIAL_FAILED`
    */
   async execute(input: WriteTrialCommandInput): Promise<WriteTrialCommandOutput> {
+    if (!this.ctx.participant?.participantId) {
+      throw new SDKError('participantId is required to write a trial', {
+        code: SdkErrorCode.WRITE_TRIAL_FAILED,
+      });
+    }
+
     const { assessmentStage, ...restTrial } = input.trial;
 
     const result = await this.api.client.runs.event({

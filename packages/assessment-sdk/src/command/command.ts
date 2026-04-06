@@ -1,3 +1,5 @@
+import type { ParticipantContext } from '../types/participant-context';
+
 /**
  * Logger interface for SDK observability.
  * Allows host applications to integrate their own logging solution (Winston, Pino, console, etc.)
@@ -16,6 +18,7 @@ export interface Logger {
  * @property auth - Authentication callbacks for token management
  * @property auth.getToken - Retrieves current auth token (called before each request)
  * @property auth.refreshToken - Optional token refresh callback (called on 401 Unauthorized)
+ * @property participant - Required participant identity context containing participantId and optional metadata
  * @property requestId - Optional function to generate request IDs for tracing
  * @property fetchImpl - Optional custom fetch implementation (defaults to global fetch)
  * @property logger - Optional logger for debugging and monitoring
@@ -26,6 +29,7 @@ export interface CommandContext {
     getToken(): Promise<string | undefined>;
     refreshToken?(): Promise<string | undefined>;
   };
+  participant: ParticipantContext;
   requestId?: () => string;
   fetchImpl?: typeof fetch;
   logger?: Logger;

@@ -324,6 +324,7 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
 
   const api = facade.getApi();
   const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
 
   const input: StartRunInput = isAnonymous
     ? {
@@ -340,7 +341,7 @@ export async function startRun(additionalRunMetadata?: Record<string, unknown>):
         isAnonymous: false,
       };
 
-  const cmd = new StartRunCommand(api);
+  const cmd = new StartRunCommand(api, ctx);
   const result = await invoker.run(cmd, input);
 
   facade._setRunId(result.runId);
@@ -394,6 +395,7 @@ export async function finishRun(finishingMetadata?: Record<string, unknown>): Pr
 
   const api = facade.getApi();
   const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
 
   const input: FinishRunInput = {
     runId,
@@ -401,7 +403,7 @@ export async function finishRun(finishingMetadata?: Record<string, unknown>): Pr
     ...(finishingMetadata ? { metadata: finishingMetadata as Json } : {}),
   };
 
-  const cmd = new FinishRunCommand(api);
+  const cmd = new FinishRunCommand(api, ctx);
   await invoker.run(cmd, input);
   facade._setRunId(undefined);
 }
@@ -429,8 +431,9 @@ export function abortRun(): void {
   void (async () => {
     const api = facade.getApi();
     const invoker = facade.getInvoker();
+    const ctx = facade.getContext();
 
-    const cmd = new AbortRunCommand(api);
+    const cmd = new AbortRunCommand(api, ctx);
     await invoker.run(cmd, { runId, type: RUN_EVENT_ABORT });
     facade._setRunId(undefined);
   })().catch((err) => {
@@ -467,6 +470,7 @@ export async function updateEngagementFlags(flagNames: string[], markAsReliable:
 
   const api = facade.getApi();
   const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
 
   // Map snake_case Firekit flag names to camelCase SDK property names
   const flagNameMap: Record<string, string> = {
@@ -478,7 +482,7 @@ export async function updateEngagementFlags(flagNames: string[], markAsReliable:
 
   const engagementFlags = Object.fromEntries(flagNames.map((flag) => [flagNameMap[flag] || flag, true]));
 
-  const cmd = new UpdateRunEngagementFlagsCommand(api);
+  const cmd = new UpdateRunEngagementFlagsCommand(api, ctx);
 
   await invoker.run(cmd, {
     runId,
@@ -621,6 +625,7 @@ export async function writeTrial(
 
   const api = facade.getApi();
   const invoker = facade.getInvoker();
+  const ctx = facade.getContext();
 
   // Validate required fields to prevent silent failures
   const trialDataRecord = trialData as Record<string, unknown>;
@@ -659,7 +664,7 @@ export async function writeTrial(
   // Drain buffered interactions from addInteraction() calls
   const bufferedInteractions = facade._drainInteractionBuffer();
 
-  const cmd = new WriteTrialCommand(api);
+  const cmd = new WriteTrialCommand(api, ctx);
 
   try {
     await invoker.run(cmd, {

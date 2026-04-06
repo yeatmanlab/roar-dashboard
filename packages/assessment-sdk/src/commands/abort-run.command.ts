@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { Command } from '../command/command';
+import type { Command, CommandContext } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type { AbortRunInput, AbortRunOutput } from '../types/abort-run';
 import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
@@ -13,6 +13,7 @@ import { SdkErrorCode } from '../enums';
  * 409 Conflict is treated as success since the run is already in a terminal state.
  *
  * Responsibilities:
+ * - Validate that participantId is present in the SDK context
  * - Call the ts-rest client to post a run abort event
  * - Interpret the HTTP response (200 OK or 409 Conflict = success)
  * - Extract error messages from BAD_REQUEST responses when available
@@ -33,16 +34,26 @@ export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
   readonly name = 'AbortRun';
   readonly idempotent = false;
 
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private ctx: CommandContext,
+  ) {}
 
   /**
    * Executes the abort run command.
    *
    * @param input - AbortRunInput containing the runId and event type
    * @returns Promise<AbortRunOutput> - Empty object on success
+   * @throws {SDKError} If participantId is missing, with error code ABORT_RUN_FAILED
    * @throws {SDKError} If the abort request fails with error code ABORT_RUN_FAILED
    */
   async execute(input: AbortRunInput): Promise<AbortRunOutput> {
+    if (!this.ctx.participant?.participantId) {
+      throw new SDKError('participantId is required to abort a run', {
+        code: SdkErrorCode.ABORT_RUN_FAILED,
+      });
+    }
+
     const result = await this.api.client.runs.event({
       params: { runId: input.runId },
       body: { type: input.type },

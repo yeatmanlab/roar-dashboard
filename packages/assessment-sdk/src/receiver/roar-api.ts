@@ -8,14 +8,24 @@ import type { CommandContext } from '../command/command';
  * The client automatically injects:
  * - Authorization header with Bearer token (when available)
  * - x-request-id header for request tracing (when requestId is defined)
+ * - participantId into the baseUrl path (e.g., /v1/users/{participantId}/runs)
  * - Custom fetch implementation (if provided in context)
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, optional logger, and optional custom fetch
+ * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, optional logger, and optional custom fetch
  * @returns Initialized ts-rest client for ApiContractV1
  */
 function createClient(ctx: CommandContext) {
+  // Inject participantId into the baseUrl to scope all API requests to the participant
+  // This transforms the baseUrl from /v1 to /v1/users/{participantId}
+  const participantId = ctx.participant?.participantId;
+  if (!participantId) {
+    throw new Error('participantId is required in CommandContext to create API client');
+  }
+
+  const baseUrlWithParticipant = `${ctx.baseUrl}/users/${participantId}`;
+
   return initClient(ApiContractV1, {
-    baseUrl: ctx.baseUrl,
+    baseUrl: baseUrlWithParticipant,
     baseHeaders: {},
     api: async (args) => {
       const token = await ctx.auth.getToken();
