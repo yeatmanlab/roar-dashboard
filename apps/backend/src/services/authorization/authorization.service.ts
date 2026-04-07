@@ -1,5 +1,9 @@
+import { StatusCodes } from 'http-status-codes';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import { FgaClient } from '../../clients/fga.client';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { FgaType } from './fga-constants';
 
@@ -83,6 +87,30 @@ export function AuthorizationService({
   }
 
   /**
+   * Check an FGA permission and throw FORBIDDEN if denied.
+   *
+   * Convenience wrapper around `hasPermission` for the common check-and-throw pattern.
+   * Use `hasPermission` directly when branching on the result instead of throwing.
+   *
+   * @param userId - The user ID (without the `user:` prefix)
+   * @param relation - The FGA relation to check (e.g., `can_read`)
+   * @param object - The fully-qualified FGA object (e.g., `administration:abc-123`)
+   * @throws {ApiError} FORBIDDEN if the user does not have the relation on the object
+   */
+  async function requirePermission(userId: string, relation: string, object: string): Promise<void> {
+    const allowed = await hasPermission(userId, relation, object);
+
+    if (!allowed) {
+      logger.warn({ userId, relation, object }, 'FGA permission check denied');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, relation, object },
+      });
+    }
+  }
+
+  /**
    * List all objects of a given type that a user has a specific relation on.
    *
    * Passes `current_time` context so the `active_membership` condition evaluates
@@ -106,5 +134,5 @@ export function AuthorizationService({
     return result.objects;
   }
 
-  return { writeTuples, deleteTuples, hasPermission, listAccessibleObjects };
+  return { writeTuples, deleteTuples, hasPermission, requirePermission, listAccessibleObjects };
 }

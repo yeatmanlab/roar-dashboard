@@ -18,7 +18,6 @@ import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
@@ -147,20 +146,7 @@ export function AdministrationService({
     }
 
     // Check access via FGA permission check
-    const allowed = await authorizationService.hasPermission(
-      userId,
-      fgaRelation,
-      `${FgaType.ADMINISTRATION}:${administrationId}`,
-    );
-
-    if (!allowed) {
-      logger.warn({ userId, administrationId }, 'User attempted to access administration without permission');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, administrationId },
-      });
-    }
+    await authorizationService.requirePermission(userId, fgaRelation, `${FgaType.ADMINISTRATION}:${administrationId}`);
 
     return administration;
   }
@@ -212,19 +198,11 @@ export function AdministrationService({
       }
 
       // Check if user has supervisory access to list sub-resources
-      const canListUsers = await authorizationService.hasPermission(
+      await authorizationService.requirePermission(
         userId,
         FgaRelation.CAN_LIST_USERS,
         `${FgaType.ADMINISTRATION}:${administrationId}`,
       );
-
-      if (!canListUsers) {
-        logger.warn({ userId, administrationId }, `Supervised user attempted to list administration ${orgTypeName}`);
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        });
-      }
 
       // Get user's accessible orgs via FGA, then intersect with administration's orgs in Postgres
       const accessibleObjects = await authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_LIST, fgaType);
@@ -520,19 +498,11 @@ export function AdministrationService({
 
     if (isSuperAdmin) return;
 
-    const canListUsers = await authorizationService.hasPermission(
+    await authorizationService.requirePermission(
       userId,
       FgaRelation.CAN_LIST_USERS,
       `${FgaType.ADMINISTRATION}:${administrationId}`,
     );
-
-    if (!canListUsers) {
-      logger.warn({ userId, administrationId }, 'Supervised user attempted to list administration sub-resources');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-    }
   }
 
   /**
@@ -741,20 +711,11 @@ export function AdministrationService({
 
       // For non-supervisory users, only students (can_create_run) can access task variants
       // Other roles (guardian, parent, relative) get 403 Forbidden
-      const canCreateRun = await authorizationService.hasPermission(
+      await authorizationService.requirePermission(
         userId,
         FgaRelation.CAN_CREATE_RUN,
         `${FgaType.ADMINISTRATION}:${administrationId}`,
       );
-
-      if (!canCreateRun) {
-        logger.warn({ userId, administrationId }, 'Non-student supervised role attempted to access task variants');
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, administrationId },
-        });
-      }
 
       // Students only see published task variants
       const result = await administrationRepository.getTaskVariantsByAdministrationId(
@@ -895,20 +856,11 @@ export function AdministrationService({
 
       // For non-supervisory users, only students (can_create_run) can access agreements
       // Other roles (guardian, parent, relative) get 403 Forbidden
-      const canCreateRun = await authorizationService.hasPermission(
+      await authorizationService.requirePermission(
         userId,
         FgaRelation.CAN_CREATE_RUN,
         `${FgaType.ADMINISTRATION}:${administrationId}`,
       );
-
-      if (!canCreateRun) {
-        logger.warn({ userId, administrationId }, 'Non-student supervised role attempted to access agreements');
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, administrationId },
-        });
-      }
 
       // Students: filter by age (assent for minors, consent for adults)
       // Fetch user data for age determination

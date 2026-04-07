@@ -12,6 +12,7 @@ import { AdministrationTaskVariantFactory } from '../../test-support/factories/a
 import { AgreementFactory } from '../../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../../test-support/factories/agreement-version.factory';
 import { RunFactory } from '../../test-support/factories/run.factory';
+import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import type { AssignmentWithOptional, TaskVariantWithAssignment } from '../../repositories/administration.repository';
@@ -690,14 +691,14 @@ describe('AdministrationService', () => {
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
       // Super admins bypass FGA — no permission check should be made
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(result).toEqual(mockAdmin);
     });
 
-    it('should use FGA hasPermission for non-super admin users', async () => {
+    it('should use FGA requirePermission for non-super admin users', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(true);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -707,7 +708,7 @@ describe('AdministrationService', () => {
       const result = await service.getById({ userId: 'user-123', isSuperAdmin: false }, 'admin-123');
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_read',
         'administration:admin-123',
@@ -731,7 +732,13 @@ describe('AdministrationService', () => {
     it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(false);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'user-123', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -755,7 +762,7 @@ describe('AdministrationService', () => {
         'Administration not found',
       );
       // FGA should not be called when admin doesn't exist (404 before 403)
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
     it('should throw ApiError when database query fails', async () => {
@@ -806,7 +813,7 @@ describe('AdministrationService', () => {
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
       // Super admins bypass FGA — no permission check should be made
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getDistrictsByAdministrationId).toHaveBeenCalledWith('admin-123', {
         page: 1,
         perPage: 25,
@@ -820,8 +827,8 @@ describe('AdministrationService', () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       const mockDistricts = [OrgFactory.build({ id: 'district-1', name: 'District A', orgType: 'district' })];
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      // First hasPermission call: can_read (verifyAdministrationAccess), Second: can_list_users (supervisory check)
-      mockAuthorizationService.hasPermission.mockResolvedValue(true);
+      // requirePermission: can_read (verifyAdministrationAccess) and can_list_users (supervisory check) both pass
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['district:district-1']);
       mockAdministrationRepository.getDistrictsByAdministrationId.mockResolvedValue({
         items: mockDistricts,
@@ -840,12 +847,12 @@ describe('AdministrationService', () => {
       );
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_read',
         'administration:admin-123',
       );
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_list_users',
         'administration:admin-123',
@@ -921,7 +928,13 @@ describe('AdministrationService', () => {
     it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(false);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'user-123', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -945,7 +958,7 @@ describe('AdministrationService', () => {
       await expect(
         service.listDistricts({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
       ).rejects.toThrow('Administration not found');
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getDistrictsByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -982,10 +995,16 @@ describe('AdministrationService', () => {
       it('should throw forbidden error when user lacks can_list_users permission', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // can_read passes, can_list_users fails
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false); // can_list_users
+        // can_read passes (first requirePermission), can_list_users fails (second requirePermission)
+        mockAuthorizationService.requirePermission
+          .mockResolvedValueOnce(undefined) // can_read
+          .mockRejectedValueOnce(
+            new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId: 'student-user', relation: 'can_list_users', object: 'administration:admin-123' },
+            }),
+          ); // can_list_users
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -1004,7 +1023,7 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockDistricts = [OrgFactory.build({ id: 'district-1', orgType: 'district' })];
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['district:district-1']);
         mockAdministrationRepository.getDistrictsByAdministrationId.mockResolvedValue({
           items: mockDistricts,
@@ -1038,7 +1057,7 @@ describe('AdministrationService', () => {
       it('should return empty results when FGA returns no accessible districts', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
         const service = AdministrationService({
@@ -1091,7 +1110,7 @@ describe('AdministrationService', () => {
       );
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getSchoolsByAdministrationId).toHaveBeenCalledWith('admin-123', {
         page: 1,
         perPage: 25,
@@ -1105,7 +1124,8 @@ describe('AdministrationService', () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       const mockSchools = [OrgFactory.build({ id: 'school-1', name: 'School A', orgType: 'school' })];
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(true);
+      // requirePermission: can_read (verifyAdministrationAccess) and can_list_users (supervisory check) both pass
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['school:school-1']);
       mockAdministrationRepository.getSchoolsByAdministrationId.mockResolvedValue({
         items: mockSchools,
@@ -1124,12 +1144,12 @@ describe('AdministrationService', () => {
       );
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_read',
         'administration:admin-123',
       );
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_list_users',
         'administration:admin-123',
@@ -1204,7 +1224,13 @@ describe('AdministrationService', () => {
     it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(false);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'user-123', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -1228,7 +1254,7 @@ describe('AdministrationService', () => {
       await expect(
         service.listSchools({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
       ).rejects.toThrow('Administration not found');
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getSchoolsByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -1265,10 +1291,16 @@ describe('AdministrationService', () => {
       it('should throw forbidden error when user lacks can_list_users permission', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // can_read passes, can_list_users fails
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false); // can_list_users
+        // can_read passes (first requirePermission), can_list_users fails (second requirePermission)
+        mockAuthorizationService.requirePermission
+          .mockResolvedValueOnce(undefined) // can_read
+          .mockRejectedValueOnce(
+            new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId: 'relative-user', relation: 'can_list_users', object: 'administration:admin-123' },
+            }),
+          ); // can_list_users
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -1286,7 +1318,7 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockSchools = [OrgFactory.build({ id: 'school-1', orgType: 'school' })];
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['school:school-1']);
         mockAdministrationRepository.getSchoolsByAdministrationId.mockResolvedValue({
           items: mockSchools,
@@ -1320,7 +1352,7 @@ describe('AdministrationService', () => {
       it('should return empty results when FGA returns no accessible schools', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
         const service = AdministrationService({
@@ -1373,7 +1405,7 @@ describe('AdministrationService', () => {
       );
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getClassesByAdministrationId).toHaveBeenCalledWith('admin-123', {
         page: 1,
         perPage: 25,
@@ -1387,7 +1419,8 @@ describe('AdministrationService', () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       const mockClasses = [ClassFactory.build({ id: 'class-1', name: 'Class A' })];
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(true);
+      // requirePermission: can_read (verifyAdministrationAccess) and can_list_users (authorizeSubResourceAccess) both pass
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['class:class-1']);
       mockAdministrationRepository.getClassesByAdministrationId.mockResolvedValue({
         items: mockClasses,
@@ -1406,12 +1439,12 @@ describe('AdministrationService', () => {
       );
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_read',
         'administration:admin-123',
       );
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_list_users',
         'administration:admin-123',
@@ -1486,7 +1519,13 @@ describe('AdministrationService', () => {
     it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(false);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'user-123', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -1510,7 +1549,7 @@ describe('AdministrationService', () => {
       await expect(
         service.listClasses({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
       ).rejects.toThrow('Administration not found');
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getClassesByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -1547,10 +1586,16 @@ describe('AdministrationService', () => {
       it('should throw forbidden error when user lacks can_list_users permission', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // can_read passes, can_list_users fails
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false); // can_list_users
+        // can_read passes (first requirePermission), can_list_users fails (second requirePermission)
+        mockAuthorizationService.requirePermission
+          .mockResolvedValueOnce(undefined) // can_read
+          .mockRejectedValueOnce(
+            new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId: 'student-user', relation: 'can_list_users', object: 'administration:admin-123' },
+            }),
+          ); // can_list_users
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -1569,7 +1614,7 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockClasses = [ClassFactory.build({ id: 'class-1' })];
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['class:class-1']);
         mockAdministrationRepository.getClassesByAdministrationId.mockResolvedValue({
           items: mockClasses,
@@ -1603,7 +1648,7 @@ describe('AdministrationService', () => {
       it('should return empty results when FGA returns no accessible classes', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
         const service = AdministrationService({
@@ -1656,7 +1701,7 @@ describe('AdministrationService', () => {
       );
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getGroupsByAdministrationId).toHaveBeenCalledWith('admin-123', {
         page: 1,
         perPage: 25,
@@ -1670,7 +1715,8 @@ describe('AdministrationService', () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       const mockGroups = [GroupFactory.build({ id: 'group-1', name: 'Group A' })];
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(true);
+      // requirePermission: can_read (verifyAdministrationAccess) and can_list_users (authorizeSubResourceAccess) both pass
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['group:group-1']);
       mockAdministrationRepository.getGroupsByAdministrationId.mockResolvedValue({
         items: mockGroups,
@@ -1685,12 +1731,12 @@ describe('AdministrationService', () => {
       const result = await service.listGroups({ userId: 'user-123', isSuperAdmin: false }, 'admin-123', defaultOptions);
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_read',
         'administration:admin-123',
       );
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_list_users',
         'administration:admin-123',
@@ -1765,7 +1811,13 @@ describe('AdministrationService', () => {
     it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      mockAuthorizationService.hasPermission.mockResolvedValue(false);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'user-123', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -1789,7 +1841,7 @@ describe('AdministrationService', () => {
       await expect(
         service.listGroups({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
       ).rejects.toThrow('Administration not found');
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getGroupsByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -1826,9 +1878,16 @@ describe('AdministrationService', () => {
       it('should throw forbidden error when user lacks can_list_users permission', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false); // can_list_users
+        // can_read passes (first requirePermission), can_list_users fails (second requirePermission)
+        mockAuthorizationService.requirePermission
+          .mockResolvedValueOnce(undefined) // can_read
+          .mockRejectedValueOnce(
+            new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId: 'student-user', relation: 'can_list_users', object: 'administration:admin-123' },
+            }),
+          ); // can_list_users
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -1847,7 +1906,7 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockGroups = [GroupFactory.build({ id: 'group-1' })];
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['group:group-1']);
         mockAdministrationRepository.getGroupsByAdministrationId.mockResolvedValue({
           items: mockGroups,
@@ -1881,7 +1940,7 @@ describe('AdministrationService', () => {
       it('should return empty results when FGA returns no accessible groups', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
         mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
         const service = AdministrationService({
@@ -1996,6 +2055,7 @@ describe('AdministrationService', () => {
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
       // Super admin bypasses FGA permission checks
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
       // Super admin sees all variants including draft/deprecated (publishedOnly: false)
       expect(mockAdministrationRepository.getTaskVariantsByAdministrationId).toHaveBeenCalledWith(
@@ -2010,10 +2070,10 @@ describe('AdministrationService', () => {
     it('should return task variants for non-super admin with administration access (supervisory role)', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      // FGA: can_read (verifyAdministrationAccess) = true, can_list_users (supervisory check) = true
-      mockAuthorizationService.hasPermission
-        .mockResolvedValueOnce(true) // can_read
-        .mockResolvedValueOnce(true); // can_list_users
+      // requirePermission: can_read (verifyAdministrationAccess) passes
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      // hasPermission: can_list_users (supervisory check) = true
+      mockAuthorizationService.hasPermission.mockResolvedValue(true);
       mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
         items: mockTaskVariants,
         totalItems: 2,
@@ -2033,13 +2093,13 @@ describe('AdministrationService', () => {
       );
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      // FGA permission check for can_read
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      // FGA requirePermission check for can_read
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
         'can_read',
         'administration:admin-123',
       );
-      // FGA permission check for can_list_users (supervisory check)
+      // FGA hasPermission check for can_list_users (supervisory branching check)
       expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
         'user-123',
         'can_list_users',
@@ -2117,8 +2177,14 @@ describe('AdministrationService', () => {
     it('should throw forbidden error when non-super admin has no access to existing administration', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      // FGA: can_read permission denied
-      mockAuthorizationService.hasPermission.mockResolvedValue(false);
+      // FGA: can_read permission denied via requirePermission
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'user-123', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -2154,10 +2220,10 @@ describe('AdministrationService', () => {
       it('should allow user with can_list_users permission to list all task variants (supervisory - no filtering)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = true (supervisory role)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(true); // can_list_users
+        // requirePermission: can_read (verifyAdministrationAccess) passes
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = true (supervisory role)
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: mockTaskVariants,
           totalItems: 2,
@@ -2176,7 +2242,7 @@ describe('AdministrationService', () => {
           defaultOptions,
         );
 
-        // FGA permission check for can_list_users (supervisory check)
+        // FGA hasPermission check for can_list_users (supervisory branching check)
         expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
           'teacher-user',
           'can_list_users',
@@ -2196,11 +2262,10 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false (not supervisory), can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: mockTaskVariants,
           totalItems: 2,
@@ -2224,8 +2289,8 @@ describe('AdministrationService', () => {
           defaultOptions,
         );
 
-        // FGA permission checks: can_read, can_list_users (false), can_create_run (true)
-        expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+        // FGA permission checks: requirePermission for can_read and can_create_run, hasPermission for can_list_users (false)
+        expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
           'student-user',
           'can_create_run',
           'administration:admin-123',
@@ -2249,11 +2314,10 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockUser = UserFactory.build({ id: 'student-user', grade: '1' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: mockTaskVariants,
           totalItems: 2,
@@ -2283,11 +2347,10 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         const mockUser = UserFactory.build({ id: 'student-user', grade: '5' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: mockTaskVariants,
           totalItems: 2,
@@ -2319,11 +2382,10 @@ describe('AdministrationService', () => {
       it('should throw error when user not found during eligibility filtering', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: mockTaskVariants,
           totalItems: 2,
@@ -2359,11 +2421,10 @@ describe('AdministrationService', () => {
           assignmentOverrides: { updatedAt: null },
         });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: [variantWithConditions],
           totalItems: 1,
@@ -2408,11 +2469,10 @@ describe('AdministrationService', () => {
           assignmentOverrides: { updatedAt: null },
         });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: [variantWithNullConditions],
           totalItems: 1,
@@ -2468,11 +2528,10 @@ describe('AdministrationService', () => {
           assignmentOverrides: { updatedAt: null },
         });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
           items: [variantWithMalformedCondition, variantWithValidCondition],
           totalItems: 2,
@@ -2507,11 +2566,18 @@ describe('AdministrationService', () => {
       it('should throw forbidden error for non-student supervised roles (can_list_users and can_create_run both denied)', async () => {
         const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = false (non-student supervised role)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(false); // can_create_run
+        // requirePermission: can_read passes, can_create_run rejects
+        mockAuthorizationService.requirePermission
+          .mockResolvedValueOnce(undefined) // can_read
+          .mockRejectedValueOnce(
+            new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId: 'guardian-user', relation: 'can_create_run', object: 'administration:admin-123' },
+            }),
+          ); // can_create_run
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -2547,10 +2613,10 @@ describe('AdministrationService', () => {
         const mockVersion = AgreementVersionFactory.build({ locale: 'en-US' });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = true (supervisory role)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(true); // can_list_users
+        // requirePermission: can_read (verifyAdministrationAccess) passes
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = true (supervisory role)
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [{ agreement: mockAgreement, currentVersion: mockVersion }],
           totalItems: 1,
@@ -2568,7 +2634,7 @@ describe('AdministrationService', () => {
         );
 
         expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: mockAdmin.id });
-        expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+        expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
           'user-123',
           'can_read',
           `administration:${mockAdmin.id}`,
@@ -2599,8 +2665,14 @@ describe('AdministrationService', () => {
       it('should return 403 when user lacks access to administration', async () => {
         const mockAdmin = AdministrationFactory.build();
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read permission denied
-        mockAuthorizationService.hasPermission.mockResolvedValue(false);
+        // FGA: can_read permission denied via requirePermission
+        mockAuthorizationService.requirePermission.mockRejectedValue(
+          new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId: 'user-123', relation: 'can_read', object: `administration:${mockAdmin.id}` },
+          }),
+        );
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
@@ -2638,6 +2710,7 @@ describe('AdministrationService', () => {
         );
 
         // Super admin bypasses FGA permission checks
+        expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
         expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
         expect(result.items).toHaveLength(1);
       });
@@ -2799,6 +2872,7 @@ describe('AdministrationService', () => {
 
         expect(result.items).toHaveLength(3);
         // Super admin bypasses FGA permission checks
+        expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
         expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
       });
 
@@ -2809,10 +2883,10 @@ describe('AdministrationService', () => {
         const consentAgreement = AgreementFactory.build({ agreementType: 'consent' });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = true (supervisory role)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(true); // can_list_users
+        // requirePermission: can_read (verifyAdministrationAccess) passes
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = true (supervisory role)
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: tosAgreement, currentVersion: null },
@@ -2843,10 +2917,10 @@ describe('AdministrationService', () => {
         const consentAgreement = AgreementFactory.build({ agreementType: 'consent', name: 'Consent Agreement' });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = true (supervisory role takes precedence)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(true); // can_list_users
+        // requirePermission: can_read (verifyAdministrationAccess) passes
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = true (supervisory role takes precedence)
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: tosAgreement, currentVersion: null },
@@ -2886,11 +2960,10 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ dob: dobString, grade: null });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: tosAgreement, currentVersion: null },
@@ -2931,11 +3004,10 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ dob: dobString, grade: null });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: tosAgreement, currentVersion: null },
@@ -2971,11 +3043,10 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ dob: null, grade: '11' });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: assentAgreement, currentVersion: null },
@@ -3010,11 +3081,10 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ dob: null, grade: '12' });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: assentAgreement, currentVersion: null },
@@ -3050,11 +3120,10 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ dob: null, grade: '13' });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: assentAgreement, currentVersion: null },
@@ -3089,11 +3158,10 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ dob: null, grade: null });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [
             { agreement: assentAgreement, currentVersion: null },
@@ -3130,11 +3198,10 @@ describe('AdministrationService', () => {
         const mockUser = UserFactory.build({ dob: dobString, grade: null });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [{ agreement: tosAgreement, currentVersion: null }],
           totalItems: 1,
@@ -3162,11 +3229,10 @@ describe('AdministrationService', () => {
         const assentAgreement = AgreementFactory.build({ agreementType: 'assent' });
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = true (student)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(true); // can_create_run
+        // requirePermission: can_read (verifyAdministrationAccess) and can_create_run both pass
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({
           items: [{ agreement: assentAgreement, currentVersion: null }],
           totalItems: 1,
@@ -3195,11 +3261,18 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build();
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = false (non-student supervised role)
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(false); // can_create_run
+        // requirePermission: can_read passes, can_create_run rejects
+        mockAuthorizationService.requirePermission
+          .mockResolvedValueOnce(undefined) // can_read
+          .mockRejectedValueOnce(
+            new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId: 'guardian-123', relation: 'can_create_run', object: `administration:${mockAdmin.id}` },
+            }),
+          ); // can_create_run
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
 
         const service = AdministrationService({
@@ -3222,11 +3295,18 @@ describe('AdministrationService', () => {
         const mockAdmin = AdministrationFactory.build();
 
         mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-        // FGA: can_read = true, can_list_users = false, can_create_run = false
-        mockAuthorizationService.hasPermission
-          .mockResolvedValueOnce(true) // can_read
-          .mockResolvedValueOnce(false) // can_list_users
-          .mockResolvedValueOnce(false); // can_create_run
+        // requirePermission: can_read passes, can_create_run rejects
+        mockAuthorizationService.requirePermission
+          .mockResolvedValueOnce(undefined) // can_read
+          .mockRejectedValueOnce(
+            new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId: 'parent-123', relation: 'can_create_run', object: `administration:${mockAdmin.id}` },
+            }),
+          ); // can_create_run
+        // hasPermission: can_list_users = false (not supervisory)
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
         mockAdministrationRepository.getAgreementsByAdministrationId.mockResolvedValue({ items: [], totalItems: 0 });
 
         const service = AdministrationService({
@@ -3260,7 +3340,7 @@ describe('AdministrationService', () => {
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
       // Super admin bypasses FGA permission checks
-      expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockRunRepository.getByAdministrationId).toHaveBeenCalledWith('admin-123');
       expect(mockAdministrationRepository.delete).toHaveBeenCalledWith({ id: 'admin-123' });
     });
@@ -3268,8 +3348,8 @@ describe('AdministrationService', () => {
     it('should delete administration for authorized non-super admin with can_delete permission', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      // FGA: can_delete permission granted
-      mockAuthorizationService.hasPermission.mockResolvedValue(true);
+      // FGA: can_delete permission granted via requirePermission
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
       mockRunRepository.getByAdministrationId.mockResolvedValue(null);
       mockAdministrationRepository.delete.mockResolvedValue(undefined);
 
@@ -3282,8 +3362,8 @@ describe('AdministrationService', () => {
       await service.deleteById({ userId: 'admin-user', isSuperAdmin: false }, 'admin-123');
 
       expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
-      // Should check can_delete permission via FGA
-      expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+      // Should check can_delete permission via FGA requirePermission
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'admin-user',
         'can_delete',
         'administration:admin-123',
@@ -3314,8 +3394,14 @@ describe('AdministrationService', () => {
     it('should throw forbidden error when non-super admin lacks can_delete permission', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
-      // FGA: can_delete permission denied
-      mockAuthorizationService.hasPermission.mockResolvedValue(false);
+      // FGA: can_delete permission denied via requirePermission
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'teacher-user', relation: 'can_delete', object: 'administration:admin-123' },
+        }),
+      );
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
