@@ -157,7 +157,7 @@ export function TaskBundleService({
       const allVariants = await taskBundleVariantRepository
         .getVariantsWithTaskDetailsByBundleIds(bundleIds)
         .catch((err) => {
-          throw new ApiError('Failed to retrieve task bundle variants', {
+          throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
             code: ApiErrorCode.DATABASE_QUERY_FAILED,
             context: { userId, bundleIds },
@@ -237,7 +237,7 @@ export function TaskBundleService({
 
       logger.error({ err: error, context: { userId, page, perPage } }, 'Failed to list task bundles');
 
-      throw new ApiError('Failed to retrieve task bundles', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
