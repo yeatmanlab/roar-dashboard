@@ -548,7 +548,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
       orderIndex: 3,
       conditionsRequirements: { field: 'studentData.statusEll', op: 'EQUAL', value: 'active' },
     }),
-    // Task 2: no conditions — assigned to all students
+    // Task 2: no conditions - assigned to all students
     AdministrationTaskVariantFactory.create({
       administrationId: administrationAssignedToDistrict.id,
       taskVariantId: variantForTask2.id,
