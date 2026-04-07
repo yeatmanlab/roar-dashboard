@@ -1,8 +1,7 @@
 import type { NewTaskVariant, NewTaskVariantParameter, Task, TaskVariant, NewTask } from '../../db/schema';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
-import type { ConditionEvaluationUser } from './task.types';
-import type { Condition, FieldCondition, CompositeCondition } from '../../types/condition';
+import type { Condition, FieldCondition, CompositeCondition, ConditionEvaluationUser } from '../../types/condition';
 import type { ListTaskVariantsOptions } from '../../repositories/task-variant.repository';
 import type { ListTasksOptions } from '../../repositories/task.repository';
 import { TaskVariantStatus } from '../../enums/task-variant-status.enum';

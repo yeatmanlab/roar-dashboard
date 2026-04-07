@@ -40,3 +40,20 @@ export type SelectAllCondition = true;
  * Can be a field comparison, a composite (AND/OR) condition, or a "select all" condition.
  */
 export type Condition = FieldCondition | CompositeCondition | SelectAllCondition;
+
+/**
+ * Narrow interface for the demographic fields that condition evaluation reads.
+ * Both the full `User` entity and `StudentProgressRow` (from report queries)
+ * satisfy this interface, so callers can pass either without casting.
+ */
+export interface ConditionEvaluationUser {
+  grade: string | null;
+  statusEll: string | null;
+  statusIep: string | null;
+  statusFrl: string | null;
+  dob: string | null;
+  gender: string | null;
+  race: string | null;
+  hispanicEthnicity: boolean | null;
+  homeLanguage: string | null;
+}
