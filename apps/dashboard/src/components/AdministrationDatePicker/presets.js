@@ -118,8 +118,13 @@ export function generateDatePresets(referenceDate = new Date()) {
     // Calculate year offset based on whether we've wrapped around
     let yearOffset = 0;
     if (i > 0 && seasonIndex < currentSeasonIndex) {
-      // We've wrapped around, so this season is in the next year
-      yearOffset = 1;
+      // We've wrapped around, so this season might be in the next year
+      // Exception: if we're in winter and it's Jan-Mar, seasons spring/summer/fall
+      // are still in the current year (they haven't happened yet this year)
+      const inWinterJanMar = currentSeasonIndex === 3 && currentMonth <= 2;
+      if (!inWinterJanMar) {
+        yearOffset = 1;
+      }
     }
 
     if (i === 0) {
@@ -132,7 +137,10 @@ export function generateDatePresets(referenceDate = new Date()) {
       }
       // Current season end date is in the same year, unless it's Winter which crosses the year
       if (season.crossesYear) {
-        endDate = createUTCDate(baseYear + 1, season.endMonth, season.endDay);
+        // If we're in Jan-Mar, we're in the winter that started last year, so end is this year
+        // If we're in Dec, we're in the winter that started this year, so end is next year
+        const endYearOffset = currentMonth <= 2 ? 0 : 1;
+        endDate = createUTCDate(baseYear + endYearOffset, season.endMonth, season.endDay);
       } else {
         endDate = createUTCDate(baseYear, season.endMonth, season.endDay);
       }
