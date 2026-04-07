@@ -65,15 +65,6 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-      openfga:
-        image: openfga/openfga:v1.12.1
-        ports:
-          - 8080:8080
-        options: >-
-          --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1"
-          --health-interval=5s
-          --health-timeout=3s
-          --health-retries=10
 
     steps:
       - name: Checkout repository
@@ -81,6 +72,16 @@ jobs:
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Install OpenFGA
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
+        with:
+          repo: openfga/openfga
+          tag: v1.12.1
+          cache: enable
+
+      - name: Start OpenFGA
+        run: openfga run &
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
