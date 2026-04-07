@@ -836,6 +836,10 @@ export function AdministrationService({
         locale: options.locale,
       };
 
+      // Fetch agreements before the second-level auth check. This is safe because
+      // verifyAdministrationAccess already confirmed read permissions on the
+      // administration itself. The agreements will be filtered in-memory after
+      // fetching based on the user's role and age.
       const result = await administrationRepository.getAgreementsByAdministrationId(administrationId, queryParams);
 
       // Super admins see all agreements without filtering
