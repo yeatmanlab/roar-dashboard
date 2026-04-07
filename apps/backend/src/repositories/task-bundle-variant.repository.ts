@@ -75,6 +75,6 @@ export class TaskBundleVariantRepository {
       .where(inArray(taskBundleVariants.taskBundleId, bundleIds))
       .orderBy(taskBundleVariants.taskBundleId, taskBundleVariants.sortOrder);
 
-    return rows as TaskBundleVariantWithTaskDetails[];
+    return rows satisfies TaskBundleVariantWithTaskDetails[];
   }
 }

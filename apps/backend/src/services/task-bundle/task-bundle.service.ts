@@ -138,14 +138,23 @@ export function TaskBundleService({
     const { page, perPage, sortBy, sortOrder, search, embed = [], filters } = options;
 
     try {
-      const bundleResult = await taskBundleRepository.listAll({
-        page,
-        perPage,
-        sortBy,
-        sortOrder,
-        ...(search !== undefined && { search }),
-        filters,
-      });
+      const bundleResult = await taskBundleRepository
+        .listAll({
+          page,
+          perPage,
+          sortBy,
+          sortOrder,
+          ...(search !== undefined && { search }),
+          filters,
+        })
+        .catch((err) => {
+          throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, page, perPage },
+            cause: err,
+          });
+        });
 
       if (bundleResult.totalItems === 0) {
         return { items: [], totalItems: 0 };
