@@ -20,6 +20,18 @@ import { AgreementRepository } from '../../repositories/agreement.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
 
+// Types for the unsigned TOS agreements response
+interface TosAgreementVersion {
+  versionId: string;
+  locale: string;
+}
+
+interface UnsignedTosAgreement {
+  agreementId: string;
+  agreementName: string;
+  versions: TosAgreementVersion[];
+}
+
 // Age category for type-safe age classification in agreement consent logic
 const AgeCategory = {
   ADULT: 'ADULT',
@@ -549,9 +561,7 @@ export function UserService({
    */
   async function getUnsignedTosAgreements(
     userId: string,
-  ): Promise<
-    Array<{ agreementId: string; agreementName: string; versions: Array<{ versionId: string; locale: string }> }>
-  > {
+  ): Promise<UnsignedTosAgreement[]> {
     try {
       const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
 
