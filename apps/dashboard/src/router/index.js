@@ -543,7 +543,7 @@ const routes = [
       launchId: route.params.launchId,
     }),
     meta: {
-      pageTitle: 'ROAR Survey',
+      pageTitle: 'ROAR MP',
       permission: Permissions.Tasks.LAUNCH,
     },
   },
