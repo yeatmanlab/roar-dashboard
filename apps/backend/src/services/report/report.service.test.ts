@@ -45,8 +45,12 @@ describe('ReportService', () => {
   // Use proper UUIDs for task IDs so progress.<taskId>.status patterns match the regex
   const TASK_ID_1 = 'ae557e88-582d-55fe-b41d-ba826adce70e';
   const TASK_ID_2 = 'b1234567-abcd-5678-efab-123456789012';
+  const TASK_ID_3 = 'c2345678-bcde-6789-fab0-234567890123';
+  const TASK_ID_4 = 'd3456789-cdef-7890-0abc-345678901234';
   const VARIANT_ID_1 = 'tv-uuid-1111-1111-1111-111111111111';
   const VARIANT_ID_2 = 'tv-uuid-2222-2222-2222-222222222222';
+  const VARIANT_ID_3 = 'tv-uuid-3333-3333-3333-333333333333';
+  const VARIANT_ID_4 = 'tv-uuid-4444-4444-4444-444444444444';
 
   const testTaskMetas: ReportTaskMeta[] = [
     {
@@ -64,6 +68,24 @@ describe('ReportService', () => {
       taskSlug: 'sre',
       taskName: 'ROAR - Sentence',
       orderIndex: 1,
+      conditionsAssignment: null,
+      conditionsRequirements: null,
+    },
+    {
+      taskId: TASK_ID_3,
+      taskVariantId: VARIANT_ID_3,
+      taskSlug: 'pa',
+      taskName: 'ROAR - Phoneme',
+      orderIndex: 2,
+      conditionsAssignment: null,
+      conditionsRequirements: null,
+    },
+    {
+      taskId: TASK_ID_4,
+      taskVariantId: VARIANT_ID_4,
+      taskSlug: 'vocab',
+      taskName: 'ROAR - Vocab',
+      orderIndex: 3,
       conditionsAssignment: null,
       conditionsRequirements: null,
     },
@@ -116,7 +138,7 @@ describe('ReportService', () => {
       const service = createService();
       const result = await service.listProgressStudents(superAdminAuth, testAdministrationId, testQuery);
 
-      expect(result.tasks).toHaveLength(2);
+      expect(result.tasks).toHaveLength(testTaskMetas.length);
       expect(result.items).toHaveLength(1);
       expect(result.items[0]!.user.firstName).toBe('Jane');
       expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('completed');
@@ -289,7 +311,7 @@ describe('ReportService', () => {
       const service = createService();
       const result = await service.listProgressStudents(teacherAuth, testAdministrationId, testQuery);
 
-      expect(result.tasks).toHaveLength(2);
+      expect(result.tasks).toHaveLength(testTaskMetas.length);
       expect(result.items).toHaveLength(1);
       expect(result.totalItems).toBe(1);
       expect(result.items[0]!.user).toEqual({
@@ -309,7 +331,7 @@ describe('ReportService', () => {
       expect(mockReportRepository.getProgressStudents).toHaveBeenCalledWith(
         testAdministrationId,
         { scopeType: 'district', scopeId: 'district-uuid-1' },
-        [VARIANT_ID_1, VARIANT_ID_2],
+        testTaskMetas.map((t) => t.taskVariantId),
         expect.objectContaining({ page: 1, perPage: 25, sortDirection: 'asc' }),
         undefined,
         undefined, // no progress status sort
@@ -332,7 +354,7 @@ describe('ReportService', () => {
       expect(mockReportRepository.getProgressStudents).toHaveBeenCalledWith(
         testAdministrationId,
         { scopeType: 'district', scopeId: 'district-uuid-1' },
-        [VARIANT_ID_1, VARIANT_ID_2],
+        testTaskMetas.map((t) => t.taskVariantId),
         expect.objectContaining({ page: 1, perPage: 25, sortDirection: 'asc' }),
         expect.anything(), // filter condition SQL object
         undefined, // no progress status sort
@@ -484,18 +506,40 @@ describe('ReportService', () => {
       });
     });
 
-    it('returns 400 when multiple progress status filters are provided', async () => {
-      const multiFilterQuery: ProgressStudentsInput = {
+    it('accepts up to 3 progress status filters', async () => {
+      mockReportRepository.getProgressStudents.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const threeFilterQuery: ProgressStudentsInput = {
         ...testQuery,
         filter: [
           { field: `progress.${TASK_ID_1}.status`, operator: 'eq', value: 'completed' },
           { field: `progress.${TASK_ID_2}.status`, operator: 'eq', value: 'started' },
+          { field: `progress.${TASK_ID_3}.status`, operator: 'eq', value: 'assigned' },
+        ],
+      };
+
+      const service = createService();
+      await service.listProgressStudents(superAdminAuth, testAdministrationId, threeFilterQuery);
+
+      const callArgs = mockReportRepository.getProgressStudents.mock.calls[0]!;
+      // arg[6] is progressStatusFilters
+      expect(callArgs[6]).toHaveLength(3);
+    });
+
+    it('returns 400 when more than 3 progress status filters are provided', async () => {
+      const tooManyFilterQuery: ProgressStudentsInput = {
+        ...testQuery,
+        filter: [
+          { field: `progress.${TASK_ID_1}.status`, operator: 'eq', value: 'completed' },
+          { field: `progress.${TASK_ID_2}.status`, operator: 'eq', value: 'started' },
+          { field: `progress.${TASK_ID_3}.status`, operator: 'eq', value: 'assigned' },
+          { field: `progress.${TASK_ID_4}.status`, operator: 'eq', value: 'optional' },
         ],
       };
 
       const service = createService();
       await expect(
-        service.listProgressStudents(superAdminAuth, testAdministrationId, multiFilterQuery),
+        service.listProgressStudents(superAdminAuth, testAdministrationId, tooManyFilterQuery),
       ).rejects.toMatchObject({
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
@@ -739,12 +783,14 @@ describe('ReportService', () => {
         runs: new Map([
           [VARIANT_ID_1, { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }],
           [VARIANT_ID_2, { completedAt: null, startedAt: new Date('2025-09-11') }],
+          [VARIANT_ID_3, { completedAt: new Date('2025-09-16'), startedAt: new Date('2025-09-12') }],
+          [VARIANT_ID_4, { completedAt: null, startedAt: new Date('2025-09-13') }],
         ]),
       };
 
       buildProgressMap(student, testTaskMetas, evaluator);
 
-      // Both tasks have runs, so evaluator should not be called
+      // All tasks have runs, so evaluator should not be called
       expect(evaluator).not.toHaveBeenCalled();
     });
 
@@ -756,7 +802,7 @@ describe('ReportService', () => {
       const student: StudentProgressRow = {
         ...defaultStudent,
         runs: new Map([
-          [VARIANT_ID_1, { completedAt: new Date('2025-09-15T10:00:00Z'), startedAt: new Date('2025-09-12') }],
+          [VARIANT_ID_1, { completedAt: new Date('2025-09-15T10:00:00Z'), startedAt: new Date('2025-09-14') }],
         ]),
       };
 
@@ -764,10 +810,12 @@ describe('ReportService', () => {
 
       // Task-1 has a run → completed (conditions not checked)
       expect(result[TASK_ID_1]!.status).toBe('completed');
-      // Task-2 has no run and conditionsAssignment returns false → excluded
+      // Tasks 2-4 have no runs and conditionsAssignment returns false → excluded
       expect(result[TASK_ID_2]).toBeUndefined();
-      // Evaluator only called for task-2 (the one without a run)
-      expect(notAssignedEvaluator).toHaveBeenCalledTimes(1);
+      expect(result[TASK_ID_3]).toBeUndefined();
+      expect(result[TASK_ID_4]).toBeUndefined();
+      // Evaluator called once per task without a run (3 tasks)
+      expect(notAssignedEvaluator).toHaveBeenCalledTimes(3);
     });
   });
 });

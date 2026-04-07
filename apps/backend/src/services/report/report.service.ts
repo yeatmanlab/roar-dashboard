@@ -397,28 +397,28 @@ function resolveProgressSort(
  * User-level filters become SQL WHERE conditions via buildFilterConditions.
  * Progress status filters become ProgressStatusFilterParam for the repository.
  *
- * Only one progress status filter is supported per request. Filtering by status
- * across multiple tasks simultaneously would require multiple LEFT JOINs against
- * the FDW runs table, adding significant query complexity. The frontend currently
- * handles multi-task status filtering client-side.
+ * Up to 3 progress status filters are supported per request. Each adds a LEFT JOIN
+ * against the FDW runs table for a specific task variant. More than 3 would add
+ * excessive query complexity with diminishing value.
  *
- * @throws {ApiError} BAD_REQUEST if more than one progress status filter is provided
+ * @throws {ApiError} BAD_REQUEST if more than 3 progress status filters are provided
  */
 function resolveProgressFilters(
   filters: ParsedFilter[],
   taskMetas: ReportTaskMeta[],
 ): { userFilters: ParsedFilter[]; progressStatusFilters: ProgressStatusFilterParam[] } {
+  const MAX_PROGRESS_FILTERS = 3;
   const userFilters: ParsedFilter[] = [];
   const progressStatusFilters: ProgressStatusFilterParam[] = [];
 
   for (const f of filters) {
     const taskId = extractTaskIdFromField(f.field);
     if (taskId) {
-      if (progressStatusFilters.length > 0) {
-        throw new ApiError('Only one progress status filter is supported per request', {
+      if (progressStatusFilters.length >= MAX_PROGRESS_FILTERS) {
+        throw new ApiError(`At most ${MAX_PROGRESS_FILTERS} progress status filters are supported per request`, {
           statusCode: StatusCodes.BAD_REQUEST,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { field: f.field },
+          context: { field: f.field, maxProgressFilters: MAX_PROGRESS_FILTERS },
         });
       }
       const task = findTaskOrThrow(taskId, taskMetas);
