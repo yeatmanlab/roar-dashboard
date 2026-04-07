@@ -10,6 +10,9 @@ const s = initServer();
  * Middleware that sets aggressive cache headers for immutable agreement version content.
  * Agreement version content is tied to a specific Git commit SHA and never changes.
  *
+ * Uses `public` because TOS content is not user-specific — all users see the same
+ * markdown for a given version. CDNs and shared caches can safely store the response.
+ *
  * @param _req - The Express request object (unused)
  * @param res - The Express response object
  * @param next - The Express next function
