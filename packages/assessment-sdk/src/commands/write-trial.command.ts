@@ -110,7 +110,6 @@ function normalizeInteractionEvent(
  * This command is non-idempotent; the Invoker will execute it exactly once.
  *
  * **Behavior:**
- * - Validates that participantId is present in the SDK context
  * - Sends a POST request to `/runs/:runId/event` with type `trial`
  * - Normalizes assessment stages and interaction events to backend format
  * - Transforms interaction `time` field to `timeMs` for the backend

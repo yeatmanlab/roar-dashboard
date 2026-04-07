@@ -15,7 +15,6 @@ import { SdkErrorCode } from '../enums';
  * Normalizes `isAnonymous` to `false` when omitted (authenticated run mode).
  *
  * Responsibilities:
- * - Validate that participantId is present in the SDK context
  * - Validate the discriminated union input (anonymous vs authenticated)
  * - Normalize isAnonymous flag for request body
  * - Build the request body for the create-run endpoint

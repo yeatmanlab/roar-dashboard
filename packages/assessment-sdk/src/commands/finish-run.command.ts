@@ -17,7 +17,6 @@ import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
  * 409 Conflict is treated as success since the run is already in a terminal state.
  *
  * **Behavior:**
- * - Validates that participantId is present in the SDK context
  * - Sends a POST request to `/runs/:runId/event` with type `complete`
  * - Includes any provided metadata in the request body
  * - Returns a status object on success (HTTP 200 or 409 Conflict)

@@ -13,7 +13,6 @@ import { SdkErrorCode } from '../enums';
  * 409 Conflict is treated as success since the run is already in a terminal state.
  *
  * Responsibilities:
- * - Validate that participantId is present in the SDK context
  * - Call the ts-rest client to post a run abort event
  * - Interpret the HTTP response (200 OK or 409 Conflict = success)
  * - Extract error messages from BAD_REQUEST responses when available

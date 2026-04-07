@@ -19,7 +19,6 @@ import { SdkErrorCode } from '../enums';
  * This command is non-idempotent; the Invoker will execute it exactly once.
  *
  * **Behavior:**
- * - Validates that participantId is present in the SDK context
  * - Sends a POST request to `/runs/:runId/event` with type `engagement`
  * - Returns an empty object on success (HTTP 200 OK)
  * - Throws `SDKError` with code `UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED` on failure

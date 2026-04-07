@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RoarApi } from './roar-api';
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums/sdk-error-code.enum';
 
 describe('RoarApi', () => {
   it('throws SDKError when participantId is missing', () => {
@@ -20,7 +21,7 @@ describe('RoarApi', () => {
       expect.fail('Should have thrown SDKError');
     } catch (error) {
       expect(error).toBeInstanceOf(SDKError);
-      expect((error as SDKError).code).toBe('INVALID_CONTEXT');
+      expect((error as SDKError).code).toBe(SdkErrorCode.INVALID_CONTEXT);
     }
   });
 
