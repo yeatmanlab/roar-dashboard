@@ -420,6 +420,19 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const combinedUsersQuery = orgUsersQuery.union(classUsersQuery).as('combined_users');
     const countResult = await this.db.select({ count: count() }).from(combinedUsersQuery);
 
+    /**
+     * Deduplicate users who have multiple roles across district
+     * const distinctUsersQuery = this.db
+      .selectDistinctOn([combinedUsersQuery.userId], {
+        userId: combinedUsersQuery.userId,
+        enrollmentStart: combinedUsersQuery.enrollmentStart,
+        role: combinedUsersQuery.role,
+      })
+      .from(combinedUsersQuery)
+      .orderBy(combinedUsersQuery.userId, desc(combinedUsersQuery.enrollmentStart)) // Choose which row to keep
+      .as('distinct_users');
+     */
+
     const totalItems = countResult[0]?.count ?? 0;
 
     if (totalItems === 0) {
