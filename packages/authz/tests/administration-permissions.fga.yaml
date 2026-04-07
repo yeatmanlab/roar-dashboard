@@ -60,7 +60,7 @@ tuples:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
 
-  # ─── District-level educator (edge case for can_delete) ────────────
+  # ─── District-level educator ────────────
   - user: user:district-teacher
     relation: teacher
     object: district:district-a
@@ -276,7 +276,7 @@ tests:
           can_read: true
           can_create: false
           can_update: false
-          can_delete: true
+          can_delete: false
 
           can_list_users: true
           can_read_scores: true
@@ -294,7 +294,7 @@ tests:
           can_read: true
           can_create: false
           can_update: false
-          can_delete: true
+          can_delete: false
           can_list_users: true
 
   - name: District admin sees class-level administration (descendant access)
@@ -308,7 +308,7 @@ tests:
           can_read: true
           can_create: false
           can_update: false
-          can_delete: true
+          can_delete: false
           can_list_users: true
 
           can_read_scores: true
@@ -533,7 +533,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_delete: true
+          can_delete: false
           can_list_users: true
           can_read_scores: true
           can_read_progress: true
@@ -672,7 +672,7 @@ tests:
           can_read_progress: true
           can_create: false
           can_update: false
-          can_delete: true
+          can_delete: false
           can_create_run: false
 
   - name: Site administrator sees class-assigned administration (descendant access)
@@ -688,7 +688,7 @@ tests:
           can_read_scores: true
           can_create: false
           can_update: false
-          can_delete: true
+          can_delete: false
 
   # ─── Non-teacher educator role spot-checks ───────────────────────
 

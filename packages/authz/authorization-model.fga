@@ -306,7 +306,7 @@ type administration
 
     define can_create: no_one
     define can_update: no_one
-    define can_delete: admin_tier
+    define can_delete: no_one
 
     define can_list: supervisory_tier_group or student
     define can_read: supervisory_tier_group or student
