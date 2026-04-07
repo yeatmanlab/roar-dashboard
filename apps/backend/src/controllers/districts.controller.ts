@@ -1,7 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 import type { DistrictWithEmbeds } from '../services/district/district.service';
 import { DistrictService } from '../services/district/district.service';
-import type { DistrictsListQuery, DistrictDetail as ApiDistrict, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
+import type {
+  DistrictsListQuery,
+  DistrictDetail as ApiDistrict,
+  EnrolledUsersQuery,
+} from '@roar-dashboard/api-contract';
 import { DistrictEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
