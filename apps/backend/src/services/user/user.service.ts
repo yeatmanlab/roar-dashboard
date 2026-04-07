@@ -559,9 +559,7 @@ export function UserService({
    * @returns Array of unsigned agreements with their current version metadata
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
-  async function getUnsignedTosAgreements(
-    userId: string,
-  ): Promise<UnsignedTosAgreement[]> {
+  async function getUnsignedTosAgreements(userId: string): Promise<UnsignedTosAgreement[]> {
     try {
       const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
 

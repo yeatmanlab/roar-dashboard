@@ -27,8 +27,6 @@ export const MeContract = c.router(
         'Each agreement includes all current locale variants so the frontend can present the appropriate one. ' +
         'Returns 401 if not authenticated. ' +
         'Returns 404 if the user record is not found.',
-
-
     },
   },
   { pathPrefix: '/me' },
