@@ -360,7 +360,7 @@ describe('AgreementRepository Integration', () => {
       expect(ids).toContain(unsignedTos.id);
     });
 
-    it('returns empty array when all TOS agreements are signed', async () => {
+    it('excludes TOS agreements the user has already signed (fully signed set)', async () => {
       // Use a unique user so no other unsigned agreements leak in from other tests
       const userId = baseFixture.schoolBStudent.id;
       const tos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
