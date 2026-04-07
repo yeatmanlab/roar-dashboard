@@ -36,7 +36,7 @@ import { SdkErrorCode } from '../enums';
  *
  * @example
  * ```typescript
- * const cmd = new UpdateRunEngagementFlagsCommand(api, context);
+ * const cmd = new UpdateRunEngagementFlagsCommand(api);
  * await invoker.run(cmd, {
  *   runId: 'run-123',
  *   type: 'engagement',
