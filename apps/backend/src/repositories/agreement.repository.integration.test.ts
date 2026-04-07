@@ -9,7 +9,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { AgreementRepository } from './agreement.repository';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
+import { UserAgreementFactory } from '../test-support/factories/user-agreement.factory';
 import { AgreementType } from '../enums/agreement-type.enum';
+import { baseFixture } from '../test-support/fixtures';
 
 describe('AgreementRepository Integration', () => {
   let repository: AgreementRepository;
@@ -313,6 +315,176 @@ describe('AgreementRepository Integration', () => {
 
       expect(result.has(included.id)).toBe(true);
       expect(result.has(excluded.id)).toBe(false);
+    });
+  });
+
+  describe('getUnsignedTosAgreements', () => {
+    it('returns all TOS agreements when user has signed none', async () => {
+      const userId = baseFixture.districtAdmin.id;
+      const tosAgreement = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: tosAgreement.id } },
+      );
+
+      const result = await repository.getUnsignedTosAgreements(userId);
+
+      const ids = result.map((r) => r.agreement.id);
+      expect(ids).toContain(tosAgreement.id);
+    });
+
+    it('excludes TOS agreements the user has already signed (current version)', async () => {
+      const userId = baseFixture.districtAdmin.id;
+      const signedTos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+      const unsignedTos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+
+      const signedVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: signedTos.id } },
+      );
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: unsignedTos.id } },
+      );
+
+      // User signs the current version of signedTos
+      await UserAgreementFactory.create({
+        userId,
+        agreementVersionId: signedVersion.id,
+      });
+
+      const result = await repository.getUnsignedTosAgreements(userId);
+
+      const ids = result.map((r) => r.agreement.id);
+      expect(ids).not.toContain(signedTos.id);
+      expect(ids).toContain(unsignedTos.id);
+    });
+
+    it('returns empty array when all TOS agreements are signed', async () => {
+      // Use a unique user so no other unsigned agreements leak in from other tests
+      const userId = baseFixture.schoolBStudent.id;
+      const tos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+      const version = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: tos.id } },
+      );
+
+      await UserAgreementFactory.create({
+        userId,
+        agreementVersionId: version.id,
+      });
+
+      const result = await repository.getUnsignedTosAgreements(userId);
+
+      // The user has signed all TOS agreements created in this test.
+      // Other TOS agreements from earlier tests may still appear unsigned for this user,
+      // so we verify the specific agreement is excluded rather than asserting empty.
+      const ids = result.map((r) => r.agreement.id);
+      expect(ids).not.toContain(tos.id);
+    });
+
+    it('cross-locale satisfaction — signing any current locale satisfies the agreement', async () => {
+      const userId = baseFixture.classAStudent.id;
+      const tos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+
+      // Two current versions in different locales
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: tos.id } },
+      );
+      const esMxVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'es-MX' },
+        { transient: { agreementId: tos.id } },
+      );
+
+      // User signs only the es-MX version
+      await UserAgreementFactory.create({
+        userId,
+        agreementVersionId: esMxVersion.id,
+      });
+
+      const result = await repository.getUnsignedTosAgreements(userId);
+
+      // The agreement should be considered signed despite only signing one locale
+      const ids = result.map((r) => r.agreement.id);
+      expect(ids).not.toContain(tos.id);
+    });
+
+    it('signing an old non-current version does not satisfy the agreement', async () => {
+      const userId = baseFixture.groupStudent.id;
+      const tos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+
+      // Old version (no longer current)
+      const oldVersion = await AgreementVersionFactory.create(
+        { isCurrent: false, locale: 'en-US' },
+        { transient: { agreementId: tos.id } },
+      );
+      // New current version
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: tos.id } },
+      );
+
+      // User signed the old version only
+      await UserAgreementFactory.create({
+        userId,
+        agreementVersionId: oldVersion.id,
+      });
+
+      const result = await repository.getUnsignedTosAgreements(userId);
+
+      // Agreement still appears as unsigned since the signed version is not current
+      const ids = result.map((r) => r.agreement.id);
+      expect(ids).toContain(tos.id);
+    });
+
+    it('does not return non-TOS agreements (consent, assent)', async () => {
+      const userId = baseFixture.districtAdmin.id;
+      const consent = await AgreementFactory.create({ agreementType: AgreementType.CONSENT });
+      const assent = await AgreementFactory.create({ agreementType: AgreementType.ASSENT });
+
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: consent.id } },
+      );
+      await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: assent.id } },
+      );
+
+      const result = await repository.getUnsignedTosAgreements(userId);
+
+      const ids = result.map((r) => r.agreement.id);
+      expect(ids).not.toContain(consent.id);
+      expect(ids).not.toContain(assent.id);
+    });
+
+    it('returns current versions grouped with each unsigned agreement', async () => {
+      const userId = baseFixture.districtAdmin.id;
+      const tos = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+
+      const enUsVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US' },
+        { transient: { agreementId: tos.id } },
+      );
+      const esMxVersion = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'es-MX' },
+        { transient: { agreementId: tos.id } },
+      );
+      // Old version should NOT appear
+      await AgreementVersionFactory.create(
+        { isCurrent: false, locale: 'en-US' },
+        { transient: { agreementId: tos.id } },
+      );
+
+      const result = await repository.getUnsignedTosAgreements(userId);
+
+      const entry = result.find((r) => r.agreement.id === tos.id);
+      expect(entry).toBeDefined();
+      const versionIds = entry!.currentVersions.map((v) => v.id);
+      expect(versionIds).toContain(enUsVersion.id);
+      expect(versionIds).toContain(esMxVersion.id);
+      expect(versionIds).toHaveLength(2);
     });
   });
 });

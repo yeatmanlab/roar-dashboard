@@ -121,23 +121,6 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
   }
 
   /**
-   * Get the version ID for a specific agreement version, verifying it belongs to the agreement.
-   *
-   * @param agreementId - The agreement the version should belong to
-   * @param versionId - The version to look up
-   * @returns The agreement version if found and belongs to the agreement, null otherwise
-   */
-  async getVersionByIdForAgreement(agreementId: string, versionId: string): Promise<AgreementVersion | null> {
-    const result = await this.db
-      .select()
-      .from(agreementVersions)
-      .where(and(eq(agreementVersions.id, versionId), eq(agreementVersions.agreementId, agreementId)))
-      .limit(1);
-
-    return result[0] ?? null;
-  }
-
-  /**
    * Find TOS agreements that the user has not yet signed (any current version).
    *
    * Returns all current locale variants for each unsigned TOS agreement so the
