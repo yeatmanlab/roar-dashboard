@@ -222,10 +222,7 @@ describe('GET /v1/agreements/:agreementId/versions/:versionId/content', () => {
 
       // The handler will return 500 in tests because GitHub is unreachable,
       // but the cache middleware runs before the handler so the header is set regardless.
-      const res = await expectRoute(
-        'GET',
-        `/v1/agreements/${agreement.id}/versions/${version.id}/content`,
-      )
+      const res = await expectRoute('GET', `/v1/agreements/${agreement.id}/versions/${version.id}/content`)
         .as(tiers.admin)
         .toReturn(500);
 
