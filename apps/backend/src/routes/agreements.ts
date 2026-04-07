@@ -1,10 +1,23 @@
-import type { Router } from 'express';
+import type { NextFunction, Request, Response, Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { AgreementsContract } from '@roar-dashboard/api-contract';
 import { AgreementsController } from '../controllers/agreements.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 
 const s = initServer();
+
+/**
+ * Middleware that sets aggressive cache headers for immutable agreement version content.
+ * Agreement version content is tied to a specific Git commit SHA and never changes.
+ *
+ * @param _req - The Express request object (unused)
+ * @param res - The Express response object
+ * @param next - The Express next function
+ */
+function setCacheControlHeaderMiddleware(_req: Request, res: Response, next: NextFunction) {
+  res.set('Cache-Control', 'public, max-age=86400, immutable');
+  next();
+}
 
 /**
  * Registers /agreements routes on the provided Express router.
@@ -23,7 +36,7 @@ export function registerAgreementsRoutes(routerInstance: Router) {
     },
     getVersionContent: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
-      middleware: [AuthGuardMiddleware],
+      middleware: [AuthGuardMiddleware, setCacheControlHeaderMiddleware],
       handler: async ({ req: { user }, params }) => AgreementsController.getVersionContent(user!, params),
     },
   });
