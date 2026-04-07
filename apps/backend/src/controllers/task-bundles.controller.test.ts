@@ -146,14 +146,16 @@ describe('TaskBundlesController', () => {
 
     it('includes embed fields when taskVariantDetails is requested', async () => {
       const bundle = TaskBundleFactory.build();
-      const variant = buildTaskBundleVariantWithDetails({
-        taskBundleId: bundle.id,
-        taskId: 'task-123',
-        taskImage: 'https://example.com/image.png',
-        description: 'Task variant description',
-        status: 'published',
+      const variant = {
+        ...buildTaskBundleVariantWithDetails({
+          taskBundleId: bundle.id,
+          taskId: 'task-123',
+          taskImage: 'https://example.com/image.png',
+          description: 'Task variant description',
+          status: 'published',
+        }),
         parameters: [{ name: 'difficulty', value: 'easy' }],
-      });
+      };
       mockList.mockResolvedValue({
         items: [{ ...bundle, taskVariants: [variant] }],
         totalItems: 1,
@@ -241,7 +243,7 @@ describe('TaskBundlesController', () => {
       mockList.mockRejectedValue(
         new ApiError('Invalid parameters', {
           statusCode: StatusCodes.BAD_REQUEST,
-          code: ApiErrorCode.INVALID_FILTER_EXPRESSION,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         }),
       );
 

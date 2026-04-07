@@ -243,12 +243,71 @@ describe('TaskBundleService', () => {
         await expect(service.list(superAdminContext, defaultOptions)).rejects.toBe(apiError);
       });
 
-      it('wraps unexpected repository errors in a DATABASE_QUERY_FAILED ApiError', async () => {
+      it('wraps unexpected bundle repository errors with specific context', async () => {
         mockTaskBundleRepository.listAll.mockRejectedValue(new Error('DB connection lost'));
 
         await expect(service.list(superAdminContext, defaultOptions)).rejects.toMatchObject({
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: superAdminContext.userId, page: 1, perPage: 25 },
+        });
+      });
+
+      it('re-throws ApiError from the variant repository', async () => {
+        const bundle = TaskBundleFactory.build();
+        const apiError = new ApiError('Authorization failed', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+        mockTaskBundleRepository.listAll.mockResolvedValue({ items: [bundle], totalItems: 1 });
+        mockTaskBundleVariantRepository.getVariantsWithTaskDetailsByBundleIds.mockRejectedValue(apiError);
+
+        await expect(service.list(superAdminContext, defaultOptions)).rejects.toBe(apiError);
+      });
+
+      it('wraps unexpected variant repository errors with specific context', async () => {
+        const bundle = TaskBundleFactory.build();
+        mockTaskBundleRepository.listAll.mockResolvedValue({ items: [bundle], totalItems: 1 });
+        mockTaskBundleVariantRepository.getVariantsWithTaskDetailsByBundleIds.mockRejectedValue(
+          new Error('Query timeout'),
+        );
+
+        await expect(service.list(superAdminContext, defaultOptions)).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: superAdminContext.userId, bundleIds: [bundle.id] },
+        });
+      });
+
+      it('re-throws ApiError from the parameter repository', async () => {
+        const bundle = TaskBundleFactory.build();
+        const variant = buildTaskBundleVariantWithDetails({ taskBundleId: bundle.id });
+        const apiError = new ApiError('Authorization failed', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+        mockTaskBundleRepository.listAll.mockResolvedValue({ items: [bundle], totalItems: 1 });
+        mockTaskBundleVariantRepository.getVariantsWithTaskDetailsByBundleIds.mockResolvedValue([variant]);
+        mockTaskVariantParameterRepository.getByTaskVariantIds.mockRejectedValue(apiError);
+
+        await expect(
+          service.list(superAdminContext, { ...defaultOptions, embed: ['taskVariantDetails'] }),
+        ).rejects.toBe(apiError);
+      });
+
+      it('wraps unexpected parameter repository errors with specific context', async () => {
+        const bundle = TaskBundleFactory.build();
+        const variant = buildTaskBundleVariantWithDetails({ taskBundleId: bundle.id });
+        mockTaskBundleRepository.listAll.mockResolvedValue({ items: [bundle], totalItems: 1 });
+        mockTaskBundleVariantRepository.getVariantsWithTaskDetailsByBundleIds.mockResolvedValue([variant]);
+        mockTaskVariantParameterRepository.getByTaskVariantIds.mockRejectedValue(new Error('Timeout'));
+
+        await expect(
+          service.list(superAdminContext, { ...defaultOptions, embed: ['taskVariantDetails'] }),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId: superAdminContext.userId, variantIds: [variant.taskVariantId] },
         });
       });
     });

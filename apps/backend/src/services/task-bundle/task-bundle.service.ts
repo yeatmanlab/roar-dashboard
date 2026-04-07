@@ -138,14 +138,24 @@ export function TaskBundleService({
     const { page, perPage, sortBy, sortOrder, search, embed = [], filters } = options;
 
     try {
-      const bundleResult = await taskBundleRepository.listAll({
-        page,
-        perPage,
-        sortBy,
-        sortOrder,
-        ...(search !== undefined && { search }),
-        filters,
-      });
+      const bundleResult = await taskBundleRepository
+        .listAll({
+          page,
+          perPage,
+          sortBy,
+          sortOrder,
+          ...(search !== undefined && { search }),
+          filters,
+        })
+        .catch((err) => {
+          if (err instanceof ApiError) throw err;
+          throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, page, perPage },
+            cause: err,
+          });
+        });
 
       if (bundleResult.totalItems === 0) {
         return { items: [], totalItems: 0 };
@@ -154,7 +164,17 @@ export function TaskBundleService({
       const bundleIds = bundleResult.items.map((b) => b.id);
 
       // Bulk-fetch all variants with task details for the returned bundles
-      const allVariants = await taskBundleVariantRepository.getVariantsWithTaskDetailsByBundleIds(bundleIds);
+      const allVariants = await taskBundleVariantRepository
+        .getVariantsWithTaskDetailsByBundleIds(bundleIds)
+        .catch((err) => {
+          if (err instanceof ApiError) throw err;
+          throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, bundleIds },
+            cause: err,
+          });
+        });
 
       // Group variants by bundleId for O(1) attachment
       const variantsByBundleId = new Map<string, TaskBundleVariantWithTaskDetails[]>();
@@ -184,7 +204,15 @@ export function TaskBundleService({
       // embed=taskVariantDetails: bulk-fetch parameters for all variants in a single query
       const variantIds = allVariants.map((v) => v.taskVariantId);
 
-      const allParameters = await taskVariantParameterRepository.getByTaskVariantIds(variantIds);
+      const allParameters = await taskVariantParameterRepository.getByTaskVariantIds(variantIds).catch((err) => {
+        if (err instanceof ApiError) throw err;
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, variantIds },
+          cause: err,
+        });
+      });
 
       // Group parameters by variantId for O(1) attachment
       const paramsByVariantId = new Map<string, { name: string; value: unknown }[]>();
