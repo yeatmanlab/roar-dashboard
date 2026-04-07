@@ -37,7 +37,7 @@ import { RUN_EVENT_STATUS_OK } from '../types/run-event-status';
  * @example
  * ```ts
  * const api = new RoarApi(context);
- * const cmd = new FinishRunCommand(api, context);
+ * const cmd = new FinishRunCommand(api);
  * const invoker = new Invoker(context);
  *
  * await invoker.run(cmd, {

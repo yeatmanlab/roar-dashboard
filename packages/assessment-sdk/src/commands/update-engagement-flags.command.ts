@@ -58,7 +58,6 @@ export class UpdateRunEngagementFlagsCommand
    * Creates a new UpdateRunEngagementFlagsCommand.
    *
    * @param api - The ROAR API client instance
-   * @param ctx - The command context containing participant identity
    */
   constructor(private api: RoarApi) {}
 
@@ -70,7 +69,6 @@ export class UpdateRunEngagementFlagsCommand
    *
    * @param input - The command input containing run ID, event type, engagement flags, and reliability status
    * @returns Promise<UpdateRunEngagementFlagsCommandOutput> - Empty object on successful execution
-   * @throws {SDKError} If participantId is missing, with code UPDATE_RUN_ENGAGEMENT_FLAGS_FAILED
    * @throws {SDKError} If the backend request fails or returns a non-OK status.
    *         - HTTP 400 Bad Request: Extracts error message from response body
    *         - Other status codes: Generic error message with HTTP status code

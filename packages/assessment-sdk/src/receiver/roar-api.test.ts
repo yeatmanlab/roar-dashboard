@@ -15,10 +15,13 @@ describe('RoarApi', () => {
       },
     };
 
-    expect(() => new RoarApi(contextWithoutParticipant)).toThrow(SDKError);
-    expect(() => new RoarApi(contextWithoutParticipant)).toThrow(
-      'participantId is required in CommandContext to create API client',
-    );
+    try {
+      new RoarApi(contextWithoutParticipant);
+      expect.fail('Should have thrown SDKError');
+    } catch (error) {
+      expect(error).toBeInstanceOf(SDKError);
+      expect((error as SDKError).code).toBe('INVALID_CONTEXT');
+    }
   });
 
   it('creates client successfully when participantId is present', () => {

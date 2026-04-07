@@ -131,7 +131,7 @@ function normalizeInteractionEvent(
  * @example
  * ```ts
  * const api = new RoarApi(context);
- * const cmd = new WriteTrialCommand(api, context);
+ * const cmd = new WriteTrialCommand(api);
  * const invoker = new Invoker(context);
  *
  * await invoker.run(cmd, {

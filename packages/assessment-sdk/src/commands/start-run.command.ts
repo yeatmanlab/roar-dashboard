@@ -39,7 +39,6 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
    * @param input.administrationId - Required for authenticated runs (when isAnonymous is false or omitted)
    * @param input.metadata - Optional metadata to attach to the run
    * @returns The run output containing the created runId
-   * @throws {SDKError} If participantId is missing, with code `START_RUN_FAILED`
    * @throws {SDKError} If the run creation fails, with code `START_RUN_FAILED`
    */
   async execute(input: StartRunInput): Promise<StartRunOutput> {
