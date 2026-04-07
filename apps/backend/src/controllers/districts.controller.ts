@@ -1,12 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import type { DistrictWithEmbeds } from '../services/district/district.service';
 import { DistrictService } from '../services/district/district.service';
-import type { DistrictsListQuery, DistrictDetail as ApiDistrict } from '@roar-dashboard/api-contract';
+import type { DistrictsListQuery, DistrictDetail as ApiDistrict, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
 import { DistrictEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
-
+import { handleSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
 const districtService = DistrictService();
 
 /**
@@ -156,6 +156,22 @@ export const DistrictsController = {
         ]);
       }
       throw error;
+    }
+  },
+
+  /**
+   * Lists users in a district with pagination and filtering.
+   * @param authContext The authentication context.
+   * @param districtId The ID of the district.
+   * @param query The query parameters for listing users.
+   * @returns The list of users in the district.
+   */
+  listUsers: async (authContext: AuthContext, districtId: string, query: EnrolledUsersQuery) => {
+    try {
+      const result = await districtService.listUsers(authContext, districtId, query);
+      return handleSubResourceResponse(result, query.page, query.perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
     }
   },
 };

@@ -174,7 +174,7 @@ export function DistrictService({
     const userRoles = await repo.getUserRolesForDistrict(userId, districtId);
 
     if (!hasSupervisoryRole(userRoles)) {
-      logger.warn({ userId, districtId, userRoles }, 'Supervised user attempted to list district sub-resources');
+      logger.warn({ userId, districtId, userRoles }, 'User lacks district supervisory role for listUsers');
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
