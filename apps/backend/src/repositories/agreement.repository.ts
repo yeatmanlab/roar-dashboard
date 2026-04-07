@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, notInArray } from 'drizzle-orm';
 import type { Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AgreementSortFieldType } from '@roar-dashboard/api-contract';
@@ -127,10 +127,7 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
    * @param versionId - The version to look up
    * @returns The agreement version if found and belongs to the agreement, null otherwise
    */
-  async getVersionByIdForAgreement(
-    agreementId: string,
-    versionId: string,
-  ): Promise<AgreementVersion | null> {
+  async getVersionByIdForAgreement(agreementId: string, versionId: string): Promise<AgreementVersion | null> {
     const result = await this.db
       .select()
       .from(agreementVersions)
@@ -166,12 +163,7 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
     const unsignedAgreementRows = await this.db
       .select()
       .from(agreements)
-      .where(
-        and(
-          eq(agreements.agreementType, AgreementTypeEnum.TOS),
-          notInArray(agreements.id, signedAgreementIds),
-        ),
-      );
+      .where(and(eq(agreements.agreementType, AgreementTypeEnum.TOS), notInArray(agreements.id, signedAgreementIds)));
 
     if (unsignedAgreementRows.length === 0) {
       return [];

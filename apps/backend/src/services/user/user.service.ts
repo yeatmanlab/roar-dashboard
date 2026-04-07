@@ -549,7 +549,9 @@ export function UserService({
    */
   async function getUnsignedTosAgreements(
     userId: string,
-  ): Promise<Array<{ agreementId: string; agreementName: string; versions: Array<{ versionId: string; locale: string }> }>> {
+  ): Promise<
+    Array<{ agreementId: string; agreementName: string; versions: Array<{ versionId: string; locale: string }> }>
+  > {
     try {
       const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
 
