@@ -53,6 +53,14 @@ export const ProgressReportsContract = c.router({
     description:
       'Returns aggregated completion statistics for each task in an administration, ' +
       'scoped to a specific org, class, or group via scopeType/scopeId. ' +
-      'Includes per-task breakdowns of assigned, started, completed, and optional counts.',
+      'Includes per-task breakdowns of assigned, started, completed, and optional counts, ' +
+      'plus aggregate totals across all tasks.\n\n' +
+      'Status codes:\n' +
+      '- 200: Aggregated statistics returned successfully\n' +
+      '- 400: Invalid scope (scopeId not assigned to this administration)\n' +
+      '- 401: Missing or invalid authentication token\n' +
+      '- 403: User lacks report permission or supervisory role at the requested scope level\n' +
+      '- 404: Administration not found\n' +
+      '- 500: Internal server error',
   },
 });

@@ -59,6 +59,14 @@ const PROGRESS_FILTER_FIELDS: Record<ProgressStudentsFilterField, PgColumn> = {
 /** Fields that use grade-aware numeric ordering for gte/lte comparisons. */
 const GRADE_AWARE_FIELDS: ReadonlySet<string> = new Set(['user.grade']);
 
+/** Per-task status counters for progress overview aggregation. */
+interface TaskStatusCounter {
+  assigned: number;
+  started: number;
+  completed: number;
+  optional: number;
+}
+
 /**
  * ReportService
  *
@@ -405,17 +413,14 @@ export function ReportService({
       }
 
       // Initialize counters for all tasks (ensures tasks with zero counts appear in response)
-      const taskCounters = new Map<
-        string,
-        { assigned: number; started: number; completed: number; optional: number }
-      >();
+      const taskStatusCounters = new Map<string, TaskStatusCounter>();
       for (const taskId of taskIdOrder) {
-        taskCounters.set(taskId, { assigned: 0, started: 0, completed: 0, optional: 0 });
+        taskStatusCounters.set(taskId, { assigned: 0, started: 0, completed: 0, optional: 0 });
       }
 
       // 6. Populate counters from SQL aggregation results
       for (const { taskId, status, count } of taskStatusCounts) {
-        const counters = taskCounters.get(taskId);
+        const counters = taskStatusCounters.get(taskId);
         if (counters) {
           counters[status] += count;
         }
@@ -428,7 +433,7 @@ export function ReportService({
 
       const byTask: ServiceTaskOverview[] = taskIdOrder.map((taskId) => {
         const meta = taskMetaByTaskId.get(taskId)!;
-        const counts = taskCounters.get(taskId)!;
+        const counts = taskStatusCounters.get(taskId)!;
         totalAssigned += counts.assigned;
         totalStarted += counts.started;
         totalCompleted += counts.completed;
