@@ -16,7 +16,7 @@ import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQue
 import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'fluency-arf' },
+  taskId: { type: String, default: 'roav-mp' },
   language: { type: String, default: 'en' },
   launchId: { type: String, default: null },
 });
