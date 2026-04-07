@@ -158,8 +158,8 @@ export function DistrictService({
    * Throws if user lacks access or is a supervised user.
    *
    * @param authContext - User's auth context (id and super admin flag)
-   * @param districtId - The class ID to verify access for
-   * @throws {ApiError} NOT_FOUND if class doesn't exist
+   * @param districtId - The district ID to verify access for
+   * @throws {ApiError} NOT_FOUND if district doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
    */
   async function authorizeSubResourceAccess(authContext: AuthContext, districtId: string): Promise<void> {
