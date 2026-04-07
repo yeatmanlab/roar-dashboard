@@ -1,7 +1,7 @@
 import { sql, inArray, eq, and, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { AssessmentDbClient } from '../db/clients';
-import type { Run } from '../db/schema/assessment';
+import type { Run } from '../db/schema/';
 import { runs } from '../db/schema/assessment';
 import type * as AssessmentDbSchema from '../db/schema/assessment';
 import { BaseRepository } from './base.repository';

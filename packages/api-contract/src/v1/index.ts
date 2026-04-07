@@ -7,6 +7,7 @@ import { DistrictsContract } from './districts/index';
 import { SchoolsContract } from './schools/index';
 import { GroupsContract } from './groups/index';
 import { TasksContract, TaskVariantsContract } from './tasks/index';
+import { TaskBundlesContract } from './task-bundles/index';
 import { ClassesContract } from './classes/index';
 import { UsersContract } from './users/index';
 import { SystemContract } from './system/index';
@@ -25,6 +26,7 @@ export const ApiContractV1 = c.router({
   groups: GroupsContract,
   tasks: TasksContract,
   taskVariants: TaskVariantsContract,
+  taskBundles: TaskBundlesContract,
   classes: ClassesContract,
   users: UsersContract,
   system: SystemContract,
@@ -38,6 +40,7 @@ export * from './districts/index';
 export * from './schools/index';
 export * from './groups/index';
 export * from './tasks/index';
+export * from './task-bundles/index';
 export * from './classes/index';
 export * from './users/index';
 export * from './system/index';
