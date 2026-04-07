@@ -124,6 +124,6 @@ describe('Participant: Auth', () => {
     );
 
     // Wait for SSO page and redirect to complete.
-    cy.url({ timeout: 60000 }).should('include', redirectTarget);
+    cy.url({ timeout: 30000 }).should('include', redirectTarget);
   });
 });
