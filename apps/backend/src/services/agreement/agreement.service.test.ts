@@ -191,11 +191,11 @@ describe('AgreementService', () => {
       });
     });
 
-    it('re-throws ApiError from fetchContent without wrapping', async () => {
+    it('re-throws ApiError from fetchContent without wrapping (e.g., non-200 GitHub response)', async () => {
       const authContext = AuthContextFactory.build();
       const agreement = AgreementFactory.build();
       const version = AgreementVersionFactory.build({ agreementId: agreement.id });
-      const fetchError = new ApiError('Failed to fetch', {
+      const fetchError = new ApiError('Failed to fetch agreement content', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
       });
@@ -207,7 +207,23 @@ describe('AgreementService', () => {
       await expect(service.getVersionContent(authContext, agreement.id, version.id)).rejects.toThrow(fetchError);
     });
 
-    it('wraps unexpected errors in ApiError with 500/EXTERNAL_SERVICE_FAILED', async () => {
+    it('re-throws ApiError from fetchContent when content is empty', async () => {
+      const authContext = AuthContextFactory.build();
+      const agreement = AgreementFactory.build();
+      const version = AgreementVersionFactory.build({ agreementId: agreement.id });
+      const emptyContentError = new ApiError('Agreement content is empty', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+
+      mockRepository.getById.mockResolvedValue(agreement);
+      mockRepository.getVersionByIdForAgreement.mockResolvedValue(version);
+      mockFetchContent.mockRejectedValue(emptyContentError);
+
+      await expect(service.getVersionContent(authContext, agreement.id, version.id)).rejects.toThrow(emptyContentError);
+    });
+
+    it('wraps unexpected errors in ApiError with 500/EXTERNAL_SERVICE_FAILED (e.g., timeout)', async () => {
       const authContext = AuthContextFactory.build();
       const agreement = AgreementFactory.build();
       const version = AgreementVersionFactory.build({ agreementId: agreement.id });

@@ -38,7 +38,7 @@ export const AgreementsContract = c.router(
     },
     getVersionContent: {
       method: 'GET',
-      path: '/:agreementId/versions/:versionId',
+      path: '/:agreementId/versions/:versionId/content',
       pathParams: AgreementVersionContentParamsSchema,
       responses: {
         200: SuccessEnvelopeSchema(AgreementVersionContentSchema),
