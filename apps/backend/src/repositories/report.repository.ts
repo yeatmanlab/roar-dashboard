@@ -27,7 +27,7 @@ import type { ConditionFieldMap } from '../utils/condition-to-sql';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
-import type { ProgressStatusPriority } from '../constants/progress-status';
+import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 
@@ -124,7 +124,7 @@ export interface ProgressStatusFilterParam {
  */
 export interface TaskStatusCount {
   taskId: string;
-  status: 'assigned' | 'started' | 'completed' | 'optional';
+  status: ProgressStatus;
   count: number;
 }
 

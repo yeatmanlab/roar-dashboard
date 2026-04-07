@@ -8,7 +8,8 @@
  */
 
 import type { ParsedFilter } from '../../types/filter';
-export type { ParsedFilter };
+import type { ProgressStatus } from '../../constants/progress-status';
+export type { ParsedFilter, ProgressStatus };
 
 /** Scope type for report queries. */
 export type ScopeType = 'district' | 'school' | 'class' | 'group';
@@ -45,9 +46,6 @@ export interface ServiceTaskMetadata {
   taskName: string;
   orderIndex: number;
 }
-
-/** Progress status values. */
-export type ProgressStatus = 'assigned' | 'started' | 'completed' | 'optional';
 
 /** Per-task progress entry in service results. */
 export interface ServiceProgressEntry {

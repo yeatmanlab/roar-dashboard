@@ -20,9 +20,9 @@ export type ProgressStatusPriority = (typeof PROGRESS_STATUS_PRIORITY)[ProgressS
  * Inverse mapping: priority number → status string.
  * Used by the repository to convert SQL aggregation results back to named statuses.
  */
-export const PROGRESS_PRIORITY_TO_STATUS: Readonly<Record<ProgressStatusPriority, ProgressStatus>> = {
+export const PROGRESS_PRIORITY_TO_STATUS = {
   0: 'optional',
   1: 'assigned',
   2: 'started',
   3: 'completed',
-} as const;
+} as const satisfies Record<ProgressStatusPriority, ProgressStatus>;
