@@ -5,6 +5,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
+import type { FgaRelation } from './fga-constants';
 import { FgaType } from './fga-constants';
 
 /**
@@ -76,7 +77,7 @@ export function AuthorizationService({
    * @param object - The fully-qualified FGA object (e.g., `administration:abc-123`)
    * @returns true if the user has the relation on the object, false otherwise
    */
-  async function hasPermission(userId: string, relation: string, object: string): Promise<boolean> {
+  async function hasPermission(userId: string, relation: FgaRelation, object: string): Promise<boolean> {
     const result = await client.check({
       user: `${FgaType.USER}:${userId}`,
       relation,
@@ -97,7 +98,7 @@ export function AuthorizationService({
    * @param object - The fully-qualified FGA object (e.g., `administration:abc-123`)
    * @throws {ApiError} FORBIDDEN if the user does not have the relation on the object
    */
-  async function requirePermission(userId: string, relation: string, object: string): Promise<void> {
+  async function requirePermission(userId: string, relation: FgaRelation, object: string): Promise<void> {
     const allowed = await hasPermission(userId, relation, object);
 
     if (!allowed) {
@@ -124,7 +125,7 @@ export function AuthorizationService({
    * @param type - The FGA object type (e.g., `administration`)
    * @returns Array of fully-qualified FGA object strings (e.g., `['administration:abc']`)
    */
-  async function listAccessibleObjects(userId: string, relation: string, type: string): Promise<string[]> {
+  async function listAccessibleObjects(userId: string, relation: FgaRelation, type: FgaType): Promise<string[]> {
     const result = await client.listObjects({
       user: `${FgaType.USER}:${userId}`,
       relation,

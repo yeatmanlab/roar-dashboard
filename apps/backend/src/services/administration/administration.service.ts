@@ -18,6 +18,7 @@ import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
@@ -133,7 +134,7 @@ export function AdministrationService({
     const administration = await administrationRepository.getById({ id: administrationId });
 
     if (!administration) {
-      throw new ApiError('Administration not found', {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
         context: { userId, administrationId },

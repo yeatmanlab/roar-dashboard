@@ -558,6 +558,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_list_users: false
           can_read_scores: false
           can_read_progress: false
 
@@ -570,6 +571,19 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_list_users: false
+
+  - name: Group admin cannot see district-assigned administration (group grants no org-level access)
+    check:
+      - user: user:group-admin
+        object: administration:admin-at-district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_list_users: false
+          can_delete: false
 
   # ─── Multi-entity administration ──────────────────────────────────
 
@@ -957,6 +971,40 @@ tests:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
           can_list: []
+
+  - name: District admin can list_users on all administrations in their tree
+    list_objects:
+      - user: user:district-admin
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list_users:
+            - administration:admin-at-district
+            - administration:admin-at-school
+            - administration:admin-at-class
+            - administration:admin-multi
+            - administration:admin-school-and-group
+
+  - name: Student has can_list_users on no administrations
+    list_objects:
+      - user: user:student-x
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list_users: []
+
+  - name: Group admin has can_list_users only on group administrations
+    list_objects:
+      - user: user:group-admin
+        type: administration
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list_users:
+            - administration:admin-at-group
+            - administration:admin-school-and-group
 
   # ─── list_users ───────────────────────────────────────────────────
 

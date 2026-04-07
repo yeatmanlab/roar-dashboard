@@ -725,7 +725,7 @@ describe('AdministrationService', () => {
       });
 
       await expect(service.getById({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id')).rejects.toThrow(
-        'Administration not found',
+        ApiErrorMessage.NOT_FOUND,
       );
     });
 
@@ -759,7 +759,7 @@ describe('AdministrationService', () => {
       });
 
       await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id')).rejects.toThrow(
-        'Administration not found',
+        ApiErrorMessage.NOT_FOUND,
       );
       // FGA should not be called when admin doesn't exist (404 before 403)
       expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
@@ -921,7 +921,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listDistricts({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAdministrationRepository.getDistrictsByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -957,7 +957,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listDistricts({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getDistrictsByAdministrationId).not.toHaveBeenCalled();
     });
@@ -1074,6 +1074,25 @@ describe('AdministrationService', () => {
         expect(result.items).toEqual([]);
         expect(result.totalItems).toBe(0);
         expect(mockAdministrationRepository.getDistrictsByAdministrationId).not.toHaveBeenCalled();
+      });
+
+      it('should throw INTERNAL_SERVER_ERROR when FGA listAccessibleObjects fails', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA service unavailable'));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.listDistricts({ userId: 'teacher-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
       });
     });
   });
@@ -1217,7 +1236,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listSchools({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAdministrationRepository.getSchoolsByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -1253,7 +1272,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listSchools({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getSchoolsByAdministrationId).not.toHaveBeenCalled();
     });
@@ -1369,6 +1388,25 @@ describe('AdministrationService', () => {
         expect(result.items).toEqual([]);
         expect(result.totalItems).toBe(0);
         expect(mockAdministrationRepository.getSchoolsByAdministrationId).not.toHaveBeenCalled();
+      });
+
+      it('should throw INTERNAL_SERVER_ERROR when FGA listAccessibleObjects fails', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA service unavailable'));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.listSchools({ userId: 'teacher-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
       });
     });
   });
@@ -1512,7 +1550,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listClasses({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAdministrationRepository.getClassesByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -1548,7 +1586,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listClasses({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getClassesByAdministrationId).not.toHaveBeenCalled();
     });
@@ -1665,6 +1703,25 @@ describe('AdministrationService', () => {
         expect(result.items).toEqual([]);
         expect(result.totalItems).toBe(0);
         expect(mockAdministrationRepository.getClassesByAdministrationId).not.toHaveBeenCalled();
+      });
+
+      it('should throw INTERNAL_SERVER_ERROR when FGA listAccessibleObjects fails', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA service unavailable'));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.listClasses({ userId: 'teacher-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
       });
     });
   });
@@ -1804,7 +1861,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listGroups({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAdministrationRepository.getGroupsByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -1840,7 +1897,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listGroups({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getGroupsByAdministrationId).not.toHaveBeenCalled();
     });
@@ -1957,6 +2014,25 @@ describe('AdministrationService', () => {
         expect(result.items).toEqual([]);
         expect(result.totalItems).toBe(0);
         expect(mockAdministrationRepository.getGroupsByAdministrationId).not.toHaveBeenCalled();
+      });
+
+      it('should throw INTERNAL_SERVER_ERROR when FGA listAccessibleObjects fails', async () => {
+        const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+        mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA service unavailable'));
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.listGroups({ userId: 'teacher-user', isSuperAdmin: false }, 'admin-123', defaultOptions),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
       });
     });
   });
@@ -2170,7 +2246,7 @@ describe('AdministrationService', () => {
 
       await expect(
         service.listTaskVariants({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
-      ).rejects.toThrow('Administration not found');
+      ).rejects.toThrow(ApiErrorMessage.NOT_FOUND);
       expect(mockAdministrationRepository.getTaskVariantsByAdministrationId).not.toHaveBeenCalled();
     });
 
@@ -3385,7 +3461,7 @@ describe('AdministrationService', () => {
         service.deleteById({ userId: 'admin-user', isSuperAdmin: true }, 'non-existent-id'),
       ).rejects.toMatchObject({
         statusCode: 404,
-        message: 'Administration not found',
+        message: ApiErrorMessage.NOT_FOUND,
       });
       expect(mockRunRepository.getByAdministrationId).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.delete).not.toHaveBeenCalled();

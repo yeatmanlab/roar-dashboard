@@ -13,5 +13,9 @@
  * ```
  */
 export function extractFgaObjectId(fgaObject: string): string {
-  return fgaObject.split(':')[1] ?? '';
+  const id = fgaObject.split(':')[1];
+  if (!id) {
+    throw new Error(`Malformed FGA object string: "${fgaObject}"`);
+  }
+  return id;
 }

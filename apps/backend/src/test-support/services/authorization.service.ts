@@ -8,11 +8,11 @@ import type { AuthorizationService } from '../../services/authorization/authoriz
  */
 export function createMockAuthorizationService(): MockedObject<ReturnType<typeof AuthorizationService>> {
   return {
-    writeTuples: vi.fn(),
-    deleteTuples: vi.fn(),
-    hasPermission: vi.fn(),
-    requirePermission: vi.fn(),
-    listAccessibleObjects: vi.fn(),
+    writeTuples: vi.fn().mockResolvedValue(undefined),
+    deleteTuples: vi.fn().mockResolvedValue(undefined),
+    hasPermission: vi.fn().mockResolvedValue(false),
+    requirePermission: vi.fn().mockResolvedValue(undefined),
+    listAccessibleObjects: vi.fn().mockResolvedValue([]),
   } as MockedObject<ReturnType<typeof AuthorizationService>>;
 }
 

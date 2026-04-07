@@ -378,7 +378,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const offset = (page - 1) * perPage;
 
     const conditions: SQL[] = [eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, orgType)];
-    if (filterIds) {
+    if (filterIds && filterIds.length > 0) {
       conditions.push(inArray(orgs.id, filterIds));
     }
     const baseCondition = and(...conditions);
@@ -558,7 +558,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const offset = (page - 1) * perPage;
 
     const conditions: SQL[] = [eq(administrationClasses.administrationId, administrationId)];
-    if (filterIds) {
+    if (filterIds && filterIds.length > 0) {
       conditions.push(inArray(classes.id, filterIds));
     }
     const baseCondition = and(...conditions);
@@ -690,7 +690,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const offset = (page - 1) * perPage;
 
     const conditions: SQL[] = [eq(administrationGroups.administrationId, administrationId)];
-    if (filterIds) {
+    if (filterIds && filterIds.length > 0) {
       conditions.push(inArray(groups.id, filterIds));
     }
     const baseCondition = and(...conditions);

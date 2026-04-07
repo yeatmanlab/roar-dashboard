@@ -12,7 +12,15 @@ describe('extractFgaObjectId', () => {
     );
   });
 
-  it('returns empty string for malformed input', () => {
-    expect(extractFgaObjectId('no-colon')).toBe('');
+  it('throws on input without colon', () => {
+    expect(() => extractFgaObjectId('no-colon')).toThrow('Malformed FGA object string: "no-colon"');
+  });
+
+  it('throws on input with colon but empty ID', () => {
+    expect(() => extractFgaObjectId('administration:')).toThrow('Malformed FGA object string: "administration:"');
+  });
+
+  it('throws on empty string', () => {
+    expect(() => extractFgaObjectId('')).toThrow('Malformed FGA object string: ""');
   });
 });
