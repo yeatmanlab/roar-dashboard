@@ -51,7 +51,7 @@ export interface DistrictWithCounts extends District {
 const DISTRICT_SORT_COLUMNS = {
   name: orgs.name,
   abbreviation: orgs.abbreviation,
-} as const satisfies Record<'name' | 'abbreviation', Column>;
+} as const satisfies Record<DistrictSortFieldType, Column>;
 
 /**
  * Options for listing districts with authorization

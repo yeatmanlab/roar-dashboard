@@ -26,6 +26,5 @@ export { createMockAgreementRepository, MockAgreementRepository } from './agreem
 export { createMockSchoolRepository, MockSchoolRepository } from './school.repository';
 export { createMockDistrictRepository, MockDistrictRepository } from './district.repository';
 export { createMockClassRepository, MockClassRepository } from './class.repository';
-export { createMockDistrictRepository, MockDistrictRepository } from './district.repository';
 export { createMockGroupRepository, MockGroupRepository } from './group.repository';
 export { createMockReportRepository, MockReportRepository } from './report.repository';

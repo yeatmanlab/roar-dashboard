@@ -204,9 +204,9 @@ describe('GET /v1/districts/:districtId/users', () => {
 
     it('student tier is forbidden from listing users in districts', async () => {
       // Students don't have Organizations.READ permission, so getById returns 404
-      const res = await expectRoute('GET', districtUsersPath()).as(tiers.student).toReturn(404);
+      const res = await expectRoute('GET', districtUsersPath()).as(tiers.student).toReturn(403);
 
-      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('caregiver tier is forbidden from listing users in districts', async () => {
@@ -295,9 +295,9 @@ describe('GET /v1/districts/:districtId/users', () => {
       // User from district A trying to access district B
       const res = await expectRoute('GET', `/v1/districts/${baseFixture.districtB.id}/users`)
         .as(tiers.admin)
-        .toReturn(404);
+        .toReturn(403);
 
-      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
 });

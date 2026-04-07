@@ -10,7 +10,6 @@ import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import type { EnrolledUsersQuery, EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 /**
  * Options for listing districts
@@ -170,7 +169,7 @@ export function DistrictService({
 
     if (isSuperAdmin) return;
 
-    const userRoles = await repo.getUserRolesForDistrict(userId, districtId);
+    const userRoles = await districtRepository.getUserRolesForDistrict(userId, districtId);
 
     if (!hasSupervisoryRole(userRoles)) {
       logger.warn({ userId, districtId, userRoles }, 'User lacks district supervisory role for listUsers');
@@ -214,11 +213,11 @@ export function DistrictService({
       };
 
       if (isSuperAdmin) {
-        return await repo.getUsersByDistrictId(districtId, queryParams);
+        return await districtRepository.getUsersByDistrictId(districtId, queryParams);
       }
 
       const allowedRoles = rolesForPermission(Permissions.Users.LIST);
-      return await repo.getAuthorizedUsersByDistrictId({ userId, allowedRoles }, districtId, queryParams);
+      return await districtRepository.getAuthorizedUsersByDistrictId({ userId, allowedRoles }, districtId, queryParams);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
