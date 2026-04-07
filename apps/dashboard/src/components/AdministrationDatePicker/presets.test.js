@@ -40,38 +40,39 @@ describe('generateDatePresets', () => {
     // Mock current date to January 1st, 2025
     mockDate('2025-01-01T00:00:00Z');
 
-    const presets = generateDatePresets();
+    const presets = generateDatePresets(new Date('2025-01-01T00:00:00Z'));
 
     // In January, winter is active (Dec 1, 2024 - Apr 1, 2025)
     // Rotation: Winter, Spring, Summer, Fall
+    // Note: Spring/Summer/Fall are in 2026 because we're past their 2025 dates
     expect(presets).toEqual({
       winter: {
         label: 'Winter',
-        start: new Date('2024-12-01T00:00:00Z'),
-        end: new Date('2025-04-01T00:00:00Z'),
-        startDate: '2024-12-01',
-        endDate: '2025-04-01',
+        start: new Date('2025-01-01T00:00:00Z'),
+        end: new Date('2026-04-01T00:00:00Z'),
+        startDate: '2025-01-01',
+        endDate: '2026-04-01',
       },
       spring: {
         label: 'Spring',
-        start: new Date('2025-04-01T00:00:00Z'),
-        end: new Date('2025-06-14T00:00:00Z'),
-        startDate: '2025-04-01',
-        endDate: '2025-06-14',
+        start: new Date('2026-04-01T00:00:00Z'),
+        end: new Date('2026-06-14T00:00:00Z'),
+        startDate: '2026-04-01',
+        endDate: '2026-06-14',
       },
       summer: {
         label: 'Summer',
-        start: new Date('2025-06-15T00:00:00Z'),
-        end: new Date('2025-08-01T00:00:00Z'),
-        startDate: '2025-06-15',
-        endDate: '2025-08-01',
+        start: new Date('2026-06-15T00:00:00Z'),
+        end: new Date('2026-08-01T00:00:00Z'),
+        startDate: '2026-06-15',
+        endDate: '2026-08-01',
       },
       fall: {
         label: 'Fall',
-        start: new Date('2025-08-01T00:00:00Z'),
-        end: new Date('2025-12-01T00:00:00Z'),
-        startDate: '2025-08-01',
-        endDate: '2025-12-01',
+        start: new Date('2026-08-01T00:00:00Z'),
+        end: new Date('2026-12-01T00:00:00Z'),
+        startDate: '2026-08-01',
+        endDate: '2026-12-01',
       },
     });
   });

@@ -114,7 +114,13 @@ export function generateDatePresets(referenceDate = new Date()) {
     const seasonIndex = (currentSeasonIndex + i) % 4;
     const season = seasonDates[seasonIndex];
     let startDate, endDate;
-    let yearOffset = Math.floor((currentSeasonIndex + i) / 4);
+
+    // Calculate year offset based on whether we've wrapped around
+    let yearOffset = 0;
+    if (i > 0 && seasonIndex < currentSeasonIndex) {
+      // We've wrapped around, so this season is in the next year
+      yearOffset = 1;
+    }
 
     if (i === 0) {
       // Current season: starts from today (or March 31 for Spring if before that date)
@@ -124,7 +130,12 @@ export function generateDatePresets(referenceDate = new Date()) {
         // For all other cases, use today's date
         startDate = createUTCDate(baseYear, currentMonth, currentDay);
       }
-      endDate = createUTCDate(baseYear + yearOffset, season.endMonth, season.endDay);
+      // Current season end date is in the same year, unless it's Winter which crosses the year
+      if (season.crossesYear) {
+        endDate = createUTCDate(baseYear + 1, season.endMonth, season.endDay);
+      } else {
+        endDate = createUTCDate(baseYear, season.endMonth, season.endDay);
+      }
     } else {
       // Future seasons: use their standard dates
       if (season.crossesYear) {
