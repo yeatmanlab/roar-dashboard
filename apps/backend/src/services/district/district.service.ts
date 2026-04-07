@@ -11,8 +11,7 @@ import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import type { EnrolledUsersQuery } from '@roar-dashboard/api-contract';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
+import type { EnrolledUsersQuery, EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 /**
  * Options for listing districts
  */

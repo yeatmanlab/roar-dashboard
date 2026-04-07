@@ -3,12 +3,12 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import { DistrictService } from './district.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
+import { createMockDistrictRepository } from '../../test-support/repositories';
 import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
-import { createMockDistrictRepository } from '../../test-support/repositories';
 
 describe('DistrictService', () => {
   const mockDistrictRepository = createMockDistrictRepository();

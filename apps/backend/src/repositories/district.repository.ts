@@ -8,20 +8,20 @@ import type { Org } from '../db/schema';
 import { orgs, users, userOrgs, classes, userClasses } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
+import type { UserRole } from '../enums/user-role.enum';
 import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { OrgType } from '../enums/org-type.enum';
 
-import type { DistrictSortFieldType, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
-import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import {
   getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import type { UserRole } from '../enums/user-role.enum';
 import { isAuthorizedMembership } from './utils/is-authorized-membership.utils';
 /**
  * District-specific type (Org with orgType = 'district')
