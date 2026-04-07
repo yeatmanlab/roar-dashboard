@@ -1,6 +1,10 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
+import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../logger';
+import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { ApiError } from '../../errors/api-error';
 import type { MockFgaClient } from '../../test-support/clients/fga.client';
 import { createMockFgaClient } from '../../test-support/clients/fga.client';
 import { AuthorizationService } from './authorization.service';
@@ -150,6 +154,70 @@ describe('AuthorizationService', () => {
       await expect(service.hasPermission('user-123', 'can_read', 'administration:admin-456')).rejects.toThrow(
         'FGA check failed',
       );
+    });
+  });
+
+  describe('requirePermission', () => {
+    it('does not throw when the user has the permission', async () => {
+      mockClient.check.mockResolvedValueOnce({ allowed: true });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(
+        service.requirePermission('user-123', 'can_read', 'administration:admin-456'),
+      ).resolves.toBeUndefined();
+    });
+
+    it('throws FORBIDDEN ApiError when the user lacks the permission', async () => {
+      mockClient.check.mockResolvedValueOnce({ allowed: false });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.requirePermission('user-123', 'can_delete', 'administration:admin-456')).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+    });
+
+    it('logs a warning when permission is denied', async () => {
+      mockClient.check.mockResolvedValueOnce({ allowed: false });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.requirePermission('user-123', 'can_delete', 'administration:admin-456').catch(() => {});
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        { userId: 'user-123', relation: 'can_delete', object: 'administration:admin-456' },
+        'FGA permission check denied',
+      );
+    });
+
+    it('propagates errors from the FGA client', async () => {
+      const sdkError = new Error('FGA check failed');
+      mockClient.check.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.requirePermission('user-123', 'can_read', 'administration:admin-456')).rejects.toThrow(
+        'FGA check failed',
+      );
+    });
+
+    it('includes context in the thrown ApiError', async () => {
+      mockClient.check.mockResolvedValueOnce({ allowed: false });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      try {
+        await service.requirePermission('user-123', 'can_delete', 'administration:admin-456');
+        expect.fail('Expected requirePermission to throw');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        const apiError = error as ApiError;
+        expect(apiError.context).toEqual({
+          userId: 'user-123',
+          relation: 'can_delete',
+          object: 'administration:admin-456',
+        });
+      }
     });
   });
 
