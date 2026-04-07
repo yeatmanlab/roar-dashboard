@@ -1,4 +1,4 @@
-import { and, eq, countDistinct, asc, desc, lte, gte, lt, gt, sql, count, inArray } from 'drizzle-orm';
+import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
@@ -15,7 +15,6 @@ import {
   orgs,
   classes,
   groups,
-  userGroups,
   type Administration,
   type AdministrationTaskVariant,
   type Org,
@@ -45,22 +44,9 @@ import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 import { AdministrationAccessControls } from './access-controls/administration.access-controls';
-import { OrgAccessControls } from './access-controls/org.access-controls';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { OrgType } from '../enums/org-type.enum';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
-import { isEnrollmentActive } from './utils/enrollment.utils';
-
-/**
- * Explicit mapping from API sort field names to administration table columns.
- * This ensures only valid columns are used for sorting, even if API validation is bypassed.
- */
-const ADMINISTRATION_SORT_COLUMNS: Record<AdministrationSortFieldType, Column> = {
-  createdAt: administrations.createdAt,
-  name: administrations.name,
-  dateStart: administrations.dateStart,
-  dateEnd: administrations.dateEnd,
-};
 
 /**
  * Explicit mapping from API sort field names to org table columns.
@@ -185,21 +171,18 @@ export interface AgreementWithVersion {
  */
 export class AdministrationRepository extends BaseRepository<Administration, typeof administrations> {
   private readonly accessControls: AdministrationAccessControls;
-  private readonly orgAccessControls: OrgAccessControls;
 
   constructor(
     db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient,
     accessControls: AdministrationAccessControls = new AdministrationAccessControls(db),
-    orgAccessControls: OrgAccessControls = new OrgAccessControls(db),
   ) {
     super(db, administrations);
     this.accessControls = accessControls;
-    this.orgAccessControls = orgAccessControls;
   }
 
   /**
    * Build a SQL condition to filter administrations by status.
-   * Internal method used by listAll and listAuthorized.
+   * Internal method used by listAll and getByIds.
    *
    * @param status - The status filter (active, past, upcoming)
    * @returns SQL condition or undefined if no filter
@@ -245,70 +228,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       ...(orderBy && { orderBy }),
       ...(statusFilter && { where: statusFilter }),
     });
-  }
-
-  /**
-   * List administrations the user is authorized to access.
-   *
-   * Authorization respects the org hierarchy:
-   * - Administration assigned to a district → applies to all schools and classes in that district
-   * - Administration assigned to a school → applies to all classes in that school
-   * - User must have an allowed role in the org, class, or group
-   *
-   * @param accessControlFilter - User ID and allowed roles
-   * @param options - Pagination, sorting, and optional status filter
-   */
-  async listAuthorized(
-    accessControlFilter: AccessControlFilter,
-    options: ListAuthorizedOptions,
-  ): Promise<PaginatedResult<Administration>> {
-    const { page, perPage, orderBy, status } = options;
-    const offset = (page - 1) * perPage;
-
-    // Build the UNION query for accessible administration IDs using access controls
-    const accessibleAdmins = this.accessControls
-      .buildUserAdministrationIdsQuery(accessControlFilter)
-      .as('accessible_admins');
-
-    // Build status filter if provided
-    const statusFilter = this.getStatusFilterCondition(status);
-
-    // Build the base join condition
-    const baseCondition = eq(administrations.id, accessibleAdmins.administrationId);
-
-    // Count query
-    const countResult = await this.db
-      .select({ count: countDistinct(administrations.id) })
-      .from(administrations)
-      .innerJoin(accessibleAdmins, baseCondition)
-      .where(statusFilter);
-
-    const totalItems = countResult[0]?.count ?? 0;
-
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Use explicit column mapping for type safety
-    // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationSortFieldType | undefined;
-    const sortColumn = sortField ? ADMINISTRATION_SORT_COLUMNS[sortField] : administrations.createdAt;
-    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
-
-    // Data query: join administrations with the accessible IDs subquery + status filter
-    const dataResult = await this.db
-      .selectDistinct({ administration: administrations })
-      .from(administrations)
-      .innerJoin(accessibleAdmins, baseCondition)
-      .where(statusFilter)
-      .orderBy(sortDirection)
-      .limit(perPage)
-      .offset(offset);
-
-    return {
-      items: dataResult.map((row) => row.administration),
-      totalItems,
-    };
   }
 
   /**
@@ -416,68 +335,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
-   * Get orgs of a specific type assigned to an administration, filtered by user's accessible orgs.
-   *
-   * Unlike getOrgsByAdministrationId (used for super admins), this method filters
-   * the results to only include orgs that the user can access based on their
-   * org/class memberships.
-   *
-   * @param accessControlFilter - User ID and allowed roles for org access
-   * @param administrationId - The administration ID to get orgs for
-   * @param orgType - The org type to filter by
-   * @param options - Pagination and sorting options
-   * @returns Paginated result with orgs the user can access
-   */
-  private async getAuthorizedOrgsByAdministrationId(
-    accessControlFilter: AccessControlFilter,
-    administrationId: string,
-    orgType: OrgType,
-    options: ListOrgsByAdministrationOptions,
-  ): Promise<PaginatedResult<Org>> {
-    const { page, perPage, orderBy } = options;
-    const offset = (page - 1) * perPage;
-
-    const accessibleOrgs = this.orgAccessControls
-      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
-      .as('accessible_orgs');
-
-    const whereCondition = and(eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, orgType));
-
-    const countResult = await this.db
-      .select({ count: count() })
-      .from(administrationOrgs)
-      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
-      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
-      .where(whereCondition);
-
-    const totalItems = countResult[0]?.count ?? 0;
-
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationDistrictSortFieldType | undefined;
-    const sortColumn = sortField ? ORG_SORT_COLUMNS[sortField] : orgs.name;
-    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
-
-    const dataResult = await this.db
-      .select({ org: orgs })
-      .from(administrationOrgs)
-      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
-      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
-      .where(whereCondition)
-      .orderBy(sortDirection)
-      .limit(perPage)
-      .offset(offset);
-
-    return {
-      items: dataResult.map((row) => row.org),
-      totalItems,
-    };
-  }
-
-  /**
    * Get districts assigned to an administration.
    *
    * @param administrationId - The administration ID to get districts for
@@ -494,22 +351,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
-   * Get districts assigned to an administration, filtered by user's accessible orgs.
-   *
-   * @param accessControlFilter - User ID and allowed roles for org access
-   * @param administrationId - The administration ID to get districts for
-   * @param options - Pagination and sorting options
-   * @returns Paginated result with districts the user can access
-   */
-  async getAuthorizedDistrictsByAdministrationId(
-    accessControlFilter: AccessControlFilter,
-    administrationId: string,
-    options: ListOrgsByAdministrationOptions,
-  ): Promise<PaginatedResult<Org>> {
-    return this.getAuthorizedOrgsByAdministrationId(accessControlFilter, administrationId, OrgType.DISTRICT, options);
-  }
-
-  /**
    * Get schools assigned to an administration.
    *
    * @param administrationId - The administration ID to get schools for
@@ -523,22 +364,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     filterIds?: string[],
   ): Promise<PaginatedResult<Org>> {
     return this.getOrgsByAdministrationId(administrationId, OrgType.SCHOOL, options, filterIds);
-  }
-
-  /**
-   * Get schools assigned to an administration, filtered by user's accessible orgs.
-   *
-   * @param accessControlFilter - User ID and allowed roles for org access
-   * @param administrationId - The administration ID to get schools for
-   * @param options - Pagination and sorting options
-   * @returns Paginated result with schools the user can access
-   */
-  async getAuthorizedSchoolsByAdministrationId(
-    accessControlFilter: AccessControlFilter,
-    administrationId: string,
-    options: ListOrgsByAdministrationOptions,
-  ): Promise<PaginatedResult<Org>> {
-    return this.getAuthorizedOrgsByAdministrationId(accessControlFilter, administrationId, OrgType.SCHOOL, options);
   }
 
   /**
@@ -586,68 +411,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .from(administrationClasses)
       .innerJoin(classes, eq(classes.id, administrationClasses.classId))
       .where(baseCondition)
-      // Add a stable secondary sort on classes.id to ensure deterministic pagination
-      .orderBy(primaryOrder, asc(classes.id))
-      .limit(perPage)
-      .offset(offset);
-
-    return {
-      items: dataResult.map((row) => row.class),
-      totalItems,
-    };
-  }
-
-  /**
-   * Get classes assigned to an administration, filtered by user's accessible orgs.
-   *
-   * Unlike getClassesByAdministrationId (used for super admins), this method filters
-   * the results to only include classes that belong to orgs the user can access.
-   *
-   * @param accessControlFilter - User ID and allowed roles for org access
-   * @param administrationId - The administration ID to get classes for
-   * @param options - Pagination and sorting options
-   * @returns Paginated result with classes the user can access
-   */
-  async getAuthorizedClassesByAdministrationId(
-    accessControlFilter: AccessControlFilter,
-    administrationId: string,
-    options: ListClassesByAdministrationOptions,
-  ): Promise<PaginatedResult<Class>> {
-    const { page, perPage, orderBy } = options;
-    const offset = (page - 1) * perPage;
-
-    // Get user's accessible orgs - classes belong to schools
-    const accessibleOrgs = this.orgAccessControls
-      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
-      .as('accessible_orgs');
-
-    const whereCondition = eq(administrationClasses.administrationId, administrationId);
-
-    // Filter classes by their schoolId being in the user's accessible orgs
-    const countResult = await this.db
-      .select({ count: count() })
-      .from(administrationClasses)
-      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
-      .innerJoin(accessibleOrgs, eq(classes.schoolId, accessibleOrgs.orgId))
-      .where(whereCondition);
-
-    const totalItems = countResult[0]?.count ?? 0;
-
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationClassSortFieldType | undefined;
-    const sortColumn = sortField ? CLASS_SORT_COLUMNS[sortField] : classes.name;
-    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
-
-    const dataResult = await this.db
-      .select({ class: classes })
-      .from(administrationClasses)
-      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
-      .innerJoin(accessibleOrgs, eq(classes.schoolId, accessibleOrgs.orgId))
-      .where(whereCondition)
       // Add a stable secondary sort on classes.id to ensure deterministic pagination
       .orderBy(primaryOrder, asc(classes.id))
       .limit(perPage)
@@ -718,83 +481,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .from(administrationGroups)
       .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
       .where(baseCondition)
-      // Add a stable secondary sort on groups.id to ensure deterministic pagination
-      .orderBy(primaryOrder, asc(groups.id))
-      .limit(perPage)
-      .offset(offset);
-
-    return {
-      items: dataResult.map((row) => row.group),
-      totalItems,
-    };
-  }
-
-  /**
-   * Get groups assigned to an administration, filtered by user's group memberships.
-   *
-   * Unlike getGroupsByAdministrationId (used for super admins), this method filters
-   * the results to only include groups that the user is directly a member of.
-   *
-   * Groups are flat entities (no hierarchy), so access is based on direct membership
-   * in the user_groups table with an allowed role and active enrollment.
-   *
-   * @param accessControlFilter - User ID and allowed roles for group access
-   * @param administrationId - The administration ID to get groups for
-   * @param options - Pagination and sorting options
-   * @returns Paginated result with groups the user can access
-   */
-  async getAuthorizedGroupsByAdministrationId(
-    accessControlFilter: AccessControlFilter,
-    administrationId: string,
-    options: ListGroupsByAdministrationOptions,
-  ): Promise<PaginatedResult<Group>> {
-    const { page, perPage, orderBy } = options;
-    const offset = (page - 1) * perPage;
-    const { userId, allowedRoles } = accessControlFilter;
-
-    const whereCondition = eq(administrationGroups.administrationId, administrationId);
-
-    // Filter groups by user's direct membership with allowed role and active enrollment
-    const countResult = await this.db
-      .select({ count: count() })
-      .from(administrationGroups)
-      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
-      .innerJoin(
-        userGroups,
-        and(
-          eq(userGroups.groupId, groups.id),
-          eq(userGroups.userId, userId),
-          inArray(userGroups.role, allowedRoles),
-          isEnrollmentActive(userGroups),
-        ),
-      )
-      .where(whereCondition);
-
-    const totalItems = countResult[0]?.count ?? 0;
-
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationGroupSortFieldType | undefined;
-    const sortColumn = sortField ? GROUP_SORT_COLUMNS[sortField] : groups.name;
-    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
-
-    const dataResult = await this.db
-      .select({ group: groups })
-      .from(administrationGroups)
-      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
-      .innerJoin(
-        userGroups,
-        and(
-          eq(userGroups.groupId, groups.id),
-          eq(userGroups.userId, userId),
-          inArray(userGroups.role, allowedRoles),
-          isEnrollmentActive(userGroups),
-        ),
-      )
-      .where(whereCondition)
       // Add a stable secondary sort on groups.id to ensure deterministic pagination
       .orderBy(primaryOrder, asc(groups.id))
       .limit(perPage)
