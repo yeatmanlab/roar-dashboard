@@ -25,7 +25,10 @@ export const MeContract = c.router(
         'Returns the authenticated user profile including id, userType, name, and unsigned TOS agreements. ' +
         'The unsignedAgreements array contains TOS agreements the user must sign before using the platform. ' +
         'Each agreement includes all current locale variants so the frontend can present the appropriate one. ' +
-        'Returns 401 if not authenticated. Returns 404 if the user record is not found.',
+        'Returns 401 if not authenticated. ' +
+        'Returns 404 if the user record is not found.',
+
+
     },
   },
   { pathPrefix: '/me' },

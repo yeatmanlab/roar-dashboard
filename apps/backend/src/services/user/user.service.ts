@@ -555,12 +555,12 @@ export function UserService({
     try {
       const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
 
-      return unsignedAgreements.map((item) => ({
-        agreementId: item.agreement.id,
-        agreementName: item.agreement.name,
-        versions: item.currentVersions.map((v) => ({
-          versionId: v.id,
-          locale: v.locale,
+      return unsignedAgreements.map(({ agreement, currentVersions }) => ({
+        agreementId: agreement.id,
+        agreementName: agreement.name,
+        versions: currentVersions.map(({ id, locale }) => ({
+          versionId: id,
+          locale,
         })),
       }));
     } catch (error) {
@@ -568,7 +568,7 @@ export function UserService({
 
       logger.error({ err: error, context: { userId } }, 'Failed to get unsigned TOS agreements');
 
-      throw new ApiError('Failed to retrieve unsigned agreements', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
