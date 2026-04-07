@@ -16,13 +16,7 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import type { ParsedFilter } from '../types/filter';
 import type { FilterFieldMap } from '../utils/build-filter-conditions.util';
 import { buildFilterConditions } from '../utils/build-filter-conditions.util';
-
-/**
- * Escapes SQL LIKE/ILIKE pattern special characters so user input is treated as literal text.
- */
-function escapeLikePattern(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
-}
+import { escapeLikePattern } from '../utils/escape-like-pattern.util';
 
 /**
  * Explicit mapping from API sort field names to task variant table columns.

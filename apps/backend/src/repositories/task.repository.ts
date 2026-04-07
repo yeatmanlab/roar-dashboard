@@ -9,6 +9,7 @@ import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { TaskSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import { escapeLikePattern } from '../utils/escape-like-pattern.util';
 
 /**
  * Explicit mapping from API sort field names to task table columns.
@@ -94,10 +95,6 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
 
     // Search filter (name or description)
     if (search) {
-      // Escape LIKE metacharacters in the user-supplied search term so that
-      // any '%' and '_' characters are treated as literals, not wildcards.
-      const escapeLikePattern = (value: string): string =>
-        value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
       const escapedSearch = escapeLikePattern(search);
       const searchPattern = `%${escapedSearch}%`;
       conditions.push(or(ilike(tasks.name, searchPattern), ilike(tasks.description, searchPattern)) as SQL);
