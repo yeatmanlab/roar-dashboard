@@ -65,6 +65,10 @@ export default async function globalSetup() {
   const { runMigrations } = await import('./src/test-support/db');
   await runMigrations();
 
+  // Initialize FGA test store (creates store + deploys authorization model)
+  const { initializeFgaTestStore } = await import('./src/test-support/fga');
+  await initializeFgaTestStore();
+
   // Close this process's connections (tests use their own)
   await closeDatabasePools();
 }

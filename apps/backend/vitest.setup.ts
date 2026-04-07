@@ -32,10 +32,14 @@ if (isIntegrationTest) {
   const { seedBaseFixture } = await import('./src/test-support/fixtures');
   const { truncateAllTables, closeAllConnections, initializeDatabasePools } = await import('./src/test-support/db');
 
+  const { resetFgaStoreForTestFile, syncFgaTuplesFromPostgres } = await import('./src/test-support/fga');
+
   beforeAll(async () => {
     await initializeDatabasePools();
     await truncateAllTables();
     await seedBaseFixture();
+    await resetFgaStoreForTestFile();
+    await syncFgaTuplesFromPostgres();
   });
 
   afterAll(async () => {

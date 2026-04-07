@@ -50,6 +50,7 @@ jobs:
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
       CORE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roar_core_test
       ASSESSMENT_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/roar_assessment_test
+      FGA_API_URL: http://localhost:8080
 
     services:
       postgres:
@@ -64,6 +65,15 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+      openfga:
+        image: openfga/openfga:v1.12.1
+        ports:
+          - 8080:8080
+        options: >-
+          --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
 
     steps:
       - name: Checkout repository
