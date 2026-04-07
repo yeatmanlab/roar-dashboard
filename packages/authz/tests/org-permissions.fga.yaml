@@ -71,6 +71,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:class-teacher
+    relation: teacher
+    object: class:class-in-school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:guardian-in-school
     relation: guardian
     object: school:school-a
@@ -180,17 +188,35 @@ tests:
           can_list_users: false
           can_read_scores: false
 
-  - name: School teacher cannot list/read parent district (org-level isolation preserved)
+  - name: School teacher can list/read parent district (ancestor visibility via subtree)
     check:
       - user: user:school-teacher
         object: district:district-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: false
-          can_read: false
+          can_list: true
+          can_read: true
+          # Visibility only — not a district-level role holder
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
           supervisory_tier_group: false
           subtree_supervisory_tier_group: true
+
+  - name: Class teacher can list/read parent district (ancestor visibility via subtree, two hops)
+    check:
+      - user: user:class-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          # Visibility only — not a district-level role holder
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
 
   - name: Student in school cannot list/read parent district (supervisory only)
     check:
@@ -426,7 +452,46 @@ tests:
 
   # ─── list_objects ──────────────────────────────────────────────────
 
-  - name: District admin sees all orgs in their tree
+  - name: District admin sees their district
+    list_objects:
+      - user: user:district-admin
+        type: district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - district:district-a
+
+  - name: School teacher sees parent district (ancestor visibility)
+    list_objects:
+      - user: user:school-teacher
+        type: district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - district:district-a
+
+  - name: Class teacher sees parent district (ancestor visibility, two hops)
+    list_objects:
+      - user: user:class-teacher
+        type: district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - district:district-a
+
+  - name: Student sees no districts (supervisory only)
+    list_objects:
+      - user: user:student-in-school
+        type: district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: []
+
+  - name: District admin sees all schools in their tree
     list_objects:
       - user: user:district-admin
         type: school
@@ -467,7 +532,7 @@ tests:
 
   # ─── list_users ───────────────────────────────────────────────────
 
-  - name: District lists supervisory users with can_list
+  - name: District lists supervisory users with can_list (includes subtree)
     list_users:
       - object: district:district-a
         user_filter:
@@ -479,6 +544,9 @@ tests:
             users:
               - user:district-admin
               - user:district-teacher
+              - user:school-teacher
+              - user:teacher-in-tree-a
+              - user:class-teacher
 
   - name: School lists supervisory users with can_list
     list_users:

@@ -62,8 +62,13 @@ type district
     define can_update: no_one
     define can_delete: no_one
 
-    define can_list: supervisory_tier_group
-    define can_read: supervisory_tier_group
+    # Ancestor visibility: supervisory users anywhere in the district's
+    # subtree (child schools and their classes) can see this district in
+    # lists and read its details. This does NOT make them district-level
+    # role holders — can_list_users, can_read_scores, etc. still require
+    # direct district membership, preserving school isolation.
+    define can_list: supervisory_tier_group or subtree_supervisory_tier_group from child_school
+    define can_read: supervisory_tier_group or subtree_supervisory_tier_group from child_school
     define can_list_users: supervisory_tier_group
     define can_read_scores: supervisory_tier_group
     define can_read_progress: supervisory_tier_group
