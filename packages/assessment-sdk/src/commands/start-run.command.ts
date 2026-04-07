@@ -14,13 +14,22 @@ import { SdkErrorCode } from '../enums';
  *
  * Normalizes `isAnonymous` to `false` when omitted (authenticated run mode).
  *
- * Responsibilities:
+ * **Behavior:**
  * - Validate the discriminated union input (anonymous vs authenticated)
  * - Normalize isAnonymous flag for request body
  * - Build the request body for the create-run endpoint
  * - Call the typed ts-rest client
  * - Interpret the HTTP response
  * - Throw SDKError on failure
+ *
+ * **Error handling:**
+ * - HTTP 200 OK → Success
+ * - HTTP 400 Bad Request → Extracts error message from response body (type-narrowed by status check)
+ * - Other status codes → Generic error message with HTTP status code
+ *
+ * The API contract's `strictStatusCodes: true` configuration enables TypeScript to
+ * automatically narrow the response body type based on the status code, eliminating
+ * the need for explicit type casts.
  */
 export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
   readonly name = 'StartRun';

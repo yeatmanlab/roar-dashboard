@@ -20,10 +20,14 @@ export interface GetTaskVariantOutput {
  *
  * Fetches variant metadata and parameters from the backend using both task and variant IDs.
  *
- * Responsibilities:
+ * **Behavior:**
  * - Call the ts-rest client to fetch variant details
  * - Transform and return variant parameters and metadata
  * - Throw SDKError on failure
+ *
+ * **Error handling:**
+ * - HTTP 200 OK → Success
+ * - Other status codes → Throws SDKError with code GET_VARIANT_ID_FAILED
  */
 export class GetTaskVariantCommand implements Command<GetTaskVariantInput, GetTaskVariantOutput> {
   readonly name = 'GetTaskVariant';
