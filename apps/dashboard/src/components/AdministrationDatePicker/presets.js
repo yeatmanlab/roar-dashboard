@@ -23,6 +23,11 @@ function toUTCDateOnlyString(date) {
   return `${year}-${month}-${day}`;
 }
 
+// Season index constants for clarity
+const WINTER_SEASON_INDEX = 3;
+// Month indices (0-indexed) for winter boundary checks
+const MARCH_MONTH_INDEX = 2;
+
 /**
  * Creates an object containing the administration date presets (Spring/Summer/Fall/Winter).
  *
@@ -86,7 +91,7 @@ export function generateDatePresets(referenceDate = new Date()) {
 
     if (season.crossesYear) {
       // Winter: December 1 to April 1 (next year)
-      const winterStartYear = currentMonth <= 2 ? currentYear - 1 : currentYear;
+      const winterStartYear = currentMonth <= MARCH_MONTH_INDEX ? currentYear - 1 : currentYear;
       startDate = createUTCDate(winterStartYear, season.startMonth, season.startDay);
       endDate = createUTCDate(winterStartYear + 1, season.endMonth, season.endDay);
     } else {
@@ -103,7 +108,7 @@ export function generateDatePresets(referenceDate = new Date()) {
 
   // If no season found, default to Winter (for dates before Spring starts)
   if (currentSeasonIndex === -1) {
-    currentSeasonIndex = 3; // Winter
+    currentSeasonIndex = WINTER_SEASON_INDEX;
   }
 
   // Build the rotated preset list starting with the current season
@@ -121,7 +126,7 @@ export function generateDatePresets(referenceDate = new Date()) {
       // We've wrapped around, so this season might be in the next year
       // Exception: if we're in winter and it's Jan-Mar, seasons spring/summer/fall
       // are still in the current year (they haven't happened yet this year)
-      const inWinterJanMar = currentSeasonIndex === 3 && currentMonth <= 2;
+      const inWinterJanMar = currentSeasonIndex === WINTER_SEASON_INDEX && currentMonth <= MARCH_MONTH_INDEX;
       if (!inWinterJanMar) {
         yearOffset = 1;
       }
@@ -130,7 +135,7 @@ export function generateDatePresets(referenceDate = new Date()) {
     if (i === 0) {
       // Current season: starts from today (or March 31 for Spring if before that date)
       if (season.key === 'spring' && (currentMonth < 3 || (currentMonth === 3 && currentDay < 1))) {
-        startDate = createUTCDate(baseYear, 2, 31);
+        startDate = createUTCDate(baseYear, MARCH_MONTH_INDEX, 31);
       } else {
         // For all other cases, use today's date
         startDate = createUTCDate(baseYear, currentMonth, currentDay);
@@ -139,7 +144,7 @@ export function generateDatePresets(referenceDate = new Date()) {
       if (season.crossesYear) {
         // If we're in Jan-Mar, we're in the winter that started last year, so end is this year
         // If we're in Dec, we're in the winter that started this year, so end is next year
-        const endYearOffset = currentMonth <= 2 ? 0 : 1;
+        const endYearOffset = currentMonth <= MARCH_MONTH_INDEX ? 0 : 1;
         endDate = createUTCDate(baseYear + endYearOffset, season.endMonth, season.endDay);
       } else {
         endDate = createUTCDate(baseYear, season.endMonth, season.endDay);
