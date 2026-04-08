@@ -111,7 +111,6 @@ export const TaskBundlesController = {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
           StatusCodes.BAD_REQUEST,
-          StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
