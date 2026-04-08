@@ -48,10 +48,11 @@ const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
 describe('AgreementsController', () => {
   const mockList = vi.fn();
+  const mockGetVersionContent = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(AgreementService).mockReturnValue({ list: mockList });
+    vi.mocked(AgreementService).mockReturnValue({ list: mockList, getVersionContent: mockGetVersionContent });
   });
 
   describe('list', () => {
@@ -249,6 +250,89 @@ describe('AgreementsController', () => {
       const { AgreementsController: Controller } = await import('./agreements.controller');
 
       await expect(Controller.list(mockAuthContext, defaultQuery)).rejects.toThrow('Database connection lost');
+    });
+  });
+
+  describe('getVersionContent', () => {
+    const defaultParams = { agreementId: 'agreement-uuid', versionId: 'version-uuid' };
+
+    it('returns 200 with version content', async () => {
+      mockGetVersionContent.mockResolvedValue({
+        id: 'version-uuid',
+        agreementId: 'agreement-uuid',
+        locale: 'en-US',
+        content: '# Terms of Service\n\nContent here...',
+        githubCommitSha: 'abc123',
+        createdAt: new Date('2024-06-01T00:00:00Z'),
+      });
+
+      const { AgreementsController: Controller } = await import('./agreements.controller');
+
+      const result = await Controller.getVersionContent(mockAuthContext, defaultParams);
+
+      const data = expectOkResponse(result);
+      expect(data.id).toBe('version-uuid');
+      expect(data.agreementId).toBe('agreement-uuid');
+      expect(data.locale).toBe('en-US');
+      expect(data.content).toBe('# Terms of Service\n\nContent here...');
+      expect(data.githubCommitSha).toBe('abc123');
+      expect(data.createdAt).toBe('2024-06-01T00:00:00.000Z');
+    });
+
+    it('passes auth context and params to service', async () => {
+      mockGetVersionContent.mockResolvedValue({
+        id: 'v-id',
+        agreementId: 'a-id',
+        locale: 'en',
+        content: 'text',
+        githubCommitSha: 'sha',
+        createdAt: new Date(),
+      });
+
+      const { AgreementsController: Controller } = await import('./agreements.controller');
+
+      await Controller.getVersionContent(mockAuthContext, defaultParams);
+
+      expect(mockGetVersionContent).toHaveBeenCalledWith(mockAuthContext, 'agreement-uuid', 'version-uuid');
+    });
+
+    it('returns 404 when service throws NOT_FOUND ApiError', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockGetVersionContent.mockRejectedValue(error);
+
+      const { AgreementsController: Controller } = await import('./agreements.controller');
+
+      const result = await Controller.getVersionContent(mockAuthContext, defaultParams);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 500 when service throws INTERNAL ApiError', async () => {
+      const error = new ApiError('Failed to fetch', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+      mockGetVersionContent.mockRejectedValue(error);
+
+      const { AgreementsController: Controller } = await import('./agreements.controller');
+
+      const result = await Controller.getVersionContent(mockAuthContext, defaultParams);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.EXTERNAL_SERVICE_FAILED);
+    });
+
+    it('re-throws non-ApiError exceptions', async () => {
+      mockGetVersionContent.mockRejectedValue(new Error('Unexpected'));
+
+      const { AgreementsController: Controller } = await import('./agreements.controller');
+
+      await expect(Controller.getVersionContent(mockAuthContext, defaultParams)).rejects.toThrow('Unexpected');
     });
   });
 });
