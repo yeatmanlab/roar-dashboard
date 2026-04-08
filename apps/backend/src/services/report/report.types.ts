@@ -8,7 +8,8 @@
  */
 
 import type { ParsedFilter } from '../../types/filter';
-export type { ParsedFilter };
+import type { ProgressStatus } from '../../constants/progress-status';
+export type { ParsedFilter, ProgressStatus };
 
 /** Scope type for report queries. */
 export type ScopeType = 'district' | 'school' | 'class' | 'group';
@@ -46,9 +47,6 @@ export interface ServiceTaskMetadata {
   orderIndex: number;
 }
 
-/** Progress status values. */
-export type ProgressStatus = 'assigned' | 'started' | 'completed' | 'optional';
-
 /** Per-task progress entry in service results. */
 export interface ServiceProgressEntry {
   status: ProgressStatus;
@@ -79,4 +77,32 @@ export interface ProgressStudentsResult {
   tasks: ServiceTaskMetadata[];
   items: ServiceProgressStudent[];
   totalItems: number;
+}
+
+/** Query input for getProgressOverview. */
+export interface ProgressOverviewInput {
+  scopeType: ScopeType;
+  scopeId: string;
+}
+
+/** Per-task aggregation in overview results. */
+export interface ServiceTaskOverview {
+  taskId: string;
+  taskSlug: string;
+  taskName: string;
+  orderIndex: number;
+  assigned: number;
+  started: number;
+  completed: number;
+  optional: number;
+}
+
+/** Return type for getProgressOverview. */
+export interface ProgressOverviewResult {
+  totalStudents: number;
+  assigned: number;
+  started: number;
+  completed: number;
+  byTask: ServiceTaskOverview[];
+  computedAt: string;
 }
