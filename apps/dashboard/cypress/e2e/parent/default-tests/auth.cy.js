@@ -49,6 +49,8 @@ describe('Parent: Auth', () => {
 
     // Wait for parent dashboard to load and enrollment modal to close.
     cy.waitForParentHomepage();
+    // Accept consent form for parent
+    cy.get('button').contains('Continue').click();
     // Click "Add Child" to open enrollment modal.
     cy.get('[data-cy="add-student-btn"]').click();
 
