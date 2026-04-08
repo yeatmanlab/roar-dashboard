@@ -27,6 +27,7 @@ export const GAME_ROUTES = {
   FLUENCY_CALF_ES: '/game/fluency-calf-es',
   ROAM_ALPACA: '/game/roam-alpaca',
   ROAM_ALPACA_ES: '/game/roam-alpaca-es',
+  ROAV_MP: '/game/roav-mp',
   CORE_TASKS: '/game/core-tasks/:taskId',
   RAN: '/game/ran',
   CROWDING: '/game/crowding',
