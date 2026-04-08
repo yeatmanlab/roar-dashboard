@@ -84,6 +84,24 @@ export const EnrolledUserSchema = UserSchema.extend({
 });
 export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
 
+/**
+ * Keep the same EnrolledUserSchema
+ *  - Role
+ *    - Keep as a single value, add additionalRoles field
+ *    - Convert to an array, update previous endpoints
+ *  - enrollmentStart
+ *    - Keep as a single value (earliest start date)
+ *
+ * New schema: EnrolledOrgUserSchema
+ * - Role
+ *  - Keep single value (primary role - what is found on that org level?), additionalRoles field]
+ *  - Convert to an array, no need to update previous endpoints
+ * - enrollmentStart
+ *  - Keep as a single value (earliest start date, primary role start date)
+ *    - Enrolled in school before district admin, technically part of that district since the school enrollment date
+ *  - Add it to additionalRoles = [{ role: student, enrollmentStart: '2023-01-01' }]
+ */
+
 export const ENROLLED_USERS_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type EnrolledUsersSortFieldType = (typeof ENROLLED_USERS_SORT_FIELDS)[number];
 
