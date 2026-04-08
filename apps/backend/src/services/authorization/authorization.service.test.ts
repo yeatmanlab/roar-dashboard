@@ -146,13 +146,30 @@ describe('AuthorizationService', () => {
       expect(result).toBe(false);
     });
 
-    it('propagates errors from the FGA client', async () => {
+    it('wraps FGA client errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
       const sdkError = new Error('FGA check failed');
       mockClient.check.mockRejectedValueOnce(sdkError);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await expect(service.hasPermission('user-123', 'can_read', 'administration:admin-456')).rejects.toThrow(
-        'FGA check failed',
+        expect.objectContaining({
+          message: 'Authorization check failed',
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+    });
+
+    it('logs error when FGA client fails', async () => {
+      const sdkError = new Error('FGA check failed');
+      mockClient.check.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.hasPermission('user-123', 'can_read', 'administration:admin-456').catch(() => {});
+
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: sdkError, context: { userId: 'user-123', relation: 'can_read', object: 'administration:admin-456' } },
+        'FGA permission check failed',
       );
     });
   });
@@ -192,13 +209,16 @@ describe('AuthorizationService', () => {
       );
     });
 
-    it('propagates errors from the FGA client', async () => {
+    it('wraps FGA client errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
       const sdkError = new Error('FGA check failed');
       mockClient.check.mockRejectedValueOnce(sdkError);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await expect(service.requirePermission('user-123', 'can_read', 'administration:admin-456')).rejects.toThrow(
-        'FGA check failed',
+        expect.objectContaining({
+          message: 'Authorization check failed',
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
       );
     });
 
@@ -247,13 +267,30 @@ describe('AuthorizationService', () => {
       expect(result).toEqual([]);
     });
 
-    it('propagates errors from the FGA client', async () => {
+    it('wraps FGA client errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
       const sdkError = new Error('FGA listObjects failed');
       mockClient.listObjects.mockRejectedValueOnce(sdkError);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await expect(service.listAccessibleObjects('user-123', 'can_read', 'administration')).rejects.toThrow(
-        'FGA listObjects failed',
+        expect.objectContaining({
+          message: 'Authorization query failed',
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+    });
+
+    it('logs error when FGA client fails', async () => {
+      const sdkError = new Error('FGA listObjects failed');
+      mockClient.listObjects.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.listAccessibleObjects('user-123', 'can_read', 'administration').catch(() => {});
+
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: sdkError, context: { userId: 'user-123', relation: 'can_read', type: 'administration' } },
+        'FGA list accessible objects failed',
       );
     });
   });

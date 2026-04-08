@@ -78,13 +78,23 @@ export function AuthorizationService({
    * @returns true if the user has the relation on the object, false otherwise
    */
   async function hasPermission(userId: string, relation: FgaRelation, object: string): Promise<boolean> {
-    const result = await client.check({
-      user: `${FgaType.USER}:${userId}`,
-      relation,
-      object,
-      context: { current_time: new Date().toISOString() },
-    });
-    return result.allowed === true;
+    try {
+      const result = await client.check({
+        user: `${FgaType.USER}:${userId}`,
+        relation,
+        object,
+        context: { current_time: new Date().toISOString() },
+      });
+      return result.allowed === true;
+    } catch (error) {
+      logger.error({ err: error, context: { userId, relation, object } }, 'FGA permission check failed');
+      throw new ApiError('Authorization check failed', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { userId, relation, object },
+        cause: error,
+      });
+    }
   }
 
   /**
@@ -126,13 +136,23 @@ export function AuthorizationService({
    * @returns Array of fully-qualified FGA object strings (e.g., `['administration:abc']`)
    */
   async function listAccessibleObjects(userId: string, relation: FgaRelation, type: FgaType): Promise<string[]> {
-    const result = await client.listObjects({
-      user: `${FgaType.USER}:${userId}`,
-      relation,
-      type,
-      context: { current_time: new Date().toISOString() },
-    });
-    return result.objects;
+    try {
+      const result = await client.listObjects({
+        user: `${FgaType.USER}:${userId}`,
+        relation,
+        type,
+        context: { current_time: new Date().toISOString() },
+      });
+      return result.objects;
+    } catch (error) {
+      logger.error({ err: error, context: { userId, relation, type } }, 'FGA list accessible objects failed');
+      throw new ApiError('Authorization query failed', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { userId, relation, type },
+        cause: error,
+      });
+    }
   }
 
   return { writeTuples, deleteTuples, hasPermission, requirePermission, listAccessibleObjects };
