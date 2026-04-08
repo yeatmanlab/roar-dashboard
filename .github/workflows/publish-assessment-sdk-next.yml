@@ -42,21 +42,32 @@ jobs:
       - name: Test SDK
         run: npm run test -w packages/assessment-sdk
 
-      - name: Update version to next prerelease
+      - name: Compute and publish next prerelease version
         run: |
           cd packages/assessment-sdk
-          npm version prerelease --preid=next --no-git-tag-version
-
-      - name: Commit version update
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add packages/assessment-sdk/package.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "chore: bump assessment-sdk to next prerelease"
-          git pull --rebase
-          git push
-
-      - name: Publish to GitHub Package Registry
-        run: npm publish -w packages/assessment-sdk --tag next
+          # Compute next prerelease version without modifying package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Increment prerelease: if version is X.Y.Z, compute X.Y.Z-next.1
+          # If already X.Y.Z-next.N, increment N
+          if [[ $CURRENT_VERSION == *"-next."* ]]; then
+            # Extract base and prerelease number
+            BASE_VERSION="${CURRENT_VERSION%-next.*}"
+            PRERELEASE_NUM="${CURRENT_VERSION##*-next.}"
+            NEXT_PRERELEASE_NUM=$((PRERELEASE_NUM + 1))
+            NEXT_VERSION="${BASE_VERSION}-next.${NEXT_PRERELEASE_NUM}"
+          else
+            NEXT_VERSION="${CURRENT_VERSION}-next.1"
+          fi
+          echo "Publishing version: $NEXT_VERSION"
+          
+          # Temporarily update package.json for publishing only
+          node -e "const pkg = require('./package.json'); pkg.version = '$NEXT_VERSION'; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n')"
+          
+          # Publish with next tag
+          npm publish --tag next
+          
+          # Restore original version (don't commit)
+          git checkout packages/assessment-sdk/package.json
         env:
           NODE_AUTH_TOKEN: ${{ secrets.CI_GITHUB_PAT }}

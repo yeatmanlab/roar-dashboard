@@ -10,6 +10,8 @@ Publishes stable releases of the Assessment SDK when a git tag matching `assessm
 
 **Trigger**: Git tag push (e.g., `assessment-sdk-v1.2.3`)
 
+**Tag Format**: `assessment-sdk-v<MAJOR>.<MINOR>.<PATCH>` (e.g., `assessment-sdk-v1.2.3`)
+
 **Process**:
 1. Validates that the tag version matches `package.json` version
 2. Builds the SDK
@@ -17,14 +19,23 @@ Publishes stable releases of the Assessment SDK when a git tag matching `assessm
 4. Publishes to GitHub Package Registry with `latest` dist-tag
 5. Creates a GitHub Release
 
-**Usage**:
+**Release Process**:
 ```bash
+# 1. Update version in package.json
 cd packages/assessment-sdk
 npm version patch  # or minor/major
+
+# 2. Commit and push to main
+git add package.json
+git commit -m "chore: bump assessment-sdk to X.Y.Z"
 git push origin main
+
+# 3. Create and push the tag (this triggers the stable workflow)
 git tag assessment-sdk-v$(node -p "require('./package.json').version")
 git push origin assessment-sdk-v$(node -p "require('./package.json').version")
 ```
+
+**Important**: The tag version MUST match the version in `packages/assessment-sdk/package.json` exactly. The stable workflow validates this before publishing.
 
 ### `publish-assessment-sdk-next.yml`
 
@@ -35,9 +46,12 @@ Publishes pre-release versions of the Assessment SDK when changes are merged to 
 **Process**:
 1. Builds the SDK
 2. Runs tests
-3. Auto-increments prerelease version (e.g., `0.0.1-next.1`)
-4. Commits version update back to main
+3. Computes next prerelease version (e.g., `0.0.1-next.1`, `0.0.1-next.2`, etc.)
+4. Temporarily updates package.json for publishing only
 5. Publishes to GitHub Package Registry with `next` dist-tag
+6. Restores original package.json (no commit to main)
+
+**Important**: This workflow does NOT commit version changes back to main. The prerelease version is computed and used only for publishing, keeping the main branch clean and preventing self-triggered reruns.
 
 **Concurrency**: Only one next release can run at a time to prevent version conflicts.
 
@@ -98,9 +112,14 @@ The tag version must match the version in `packages/assessment-sdk/package.json`
 - Tag: `assessment-sdk-v1.2.3`
 - package.json: `"version": "1.2.3"`
 
-### Git push fails in next workflow
+### Next workflow doesn't commit version changes
 
-If the commit push fails (e.g., due to branch protection), the package may already be published. The workflow includes `git pull --rebase` to handle concurrent merges.
+By design, the next workflow does NOT commit version changes back to main. This prevents:
+- Self-triggered workflow reruns (the workflow would retrigger itself)
+- Version history pollution on main (e.g., `2.2.0-next.3` versions persisting)
+- Conflicts with stable release workflows
+
+The prerelease version is computed and used only for publishing. The main branch always reflects the intended stable version.
 
 ## Permissions
 
