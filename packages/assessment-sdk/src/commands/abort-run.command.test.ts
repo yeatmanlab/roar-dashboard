@@ -6,7 +6,6 @@ import { createMockRoarApi } from '../test-support';
 import type { AbortRunInput } from '../types/abort-run';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums';
-
 describe('AbortRunCommand', () => {
   let command: AbortRunCommand;
   let mockApi: ReturnType<typeof createMockRoarApi>;

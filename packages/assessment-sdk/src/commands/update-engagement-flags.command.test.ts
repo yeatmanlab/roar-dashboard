@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { UpdateRunEngagementFlagsCommand } from './update-engagement-flags.command';
 import { StatusCodes } from 'http-status-codes';
@@ -15,7 +15,7 @@ import { SdkErrorCode } from '../enums';
  * - Submit engagement flags to the backend
  * - Handle optional reliability status
  * - Properly handle success and error responses
- * - Default reliableRun to false when not provided
+ * - Default reliableRun to false
  */
 describe('UpdateRunEngagementFlagsCommand', () => {
   let command: UpdateRunEngagementFlagsCommand;
@@ -23,6 +23,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
   let eventMock: Mock;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
     command = new UpdateRunEngagementFlagsCommand(mockApi);
