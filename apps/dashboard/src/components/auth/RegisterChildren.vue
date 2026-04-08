@@ -729,6 +729,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
     showErrorDialog();
 
     submitted.value = false;
+    throw error;
   }
 };
 
