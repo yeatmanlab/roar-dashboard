@@ -141,15 +141,14 @@ export class OrgAccessControls {
 
   /**
    * Get user roles for a specific district.
-   * Only checks direct org membership (no ancestor/descendant access for districts).
+   * Only checks direct org membership and the roles there.
    *
    * @param userId - User ID to get roles for
    * @param districtId - District ID to check roles in
    * @returns Array of user roles in the district
    */
   async getUserRolesForDistrict(userId: string, districtId: string): Promise<UserRole[]> {
-    // Only check direct org membership (no descendant access for districts)
-    const rolesViaDirectOrg = this.db
+    const rolesViaDirectOrg = await this.db
       .selectDistinct({
         role: userOrgs.role,
       })
@@ -164,10 +163,6 @@ export class OrgAccessControls {
         ),
       );
 
-    const result = await this.db
-      .select({ role: rolesViaDirectOrg.as('roles').role })
-      .from(rolesViaDirectOrg.as('roles'));
-
-    return result.map((r) => r.role);
+    return rolesViaDirectOrg.map((r) => r.role);
   }
 }
