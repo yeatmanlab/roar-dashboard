@@ -22,9 +22,12 @@ import { fdwRuns } from '../db/schema/assessment-fdw/runs';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { ScopeType } from '../services/report/report.types';
 import type { Condition } from '../services/task/task.types';
+import { conditionToSql } from '../utils/condition-to-sql';
 import type { ConditionFieldMap } from '../utils/condition-to-sql';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
+import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
+import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 
@@ -113,6 +116,24 @@ export interface ProgressStatusFilterParam {
   assignmentSql: SQL | undefined;
   /** SQL condition for conditionsRequirements. undefined = required for all. */
   requirementsSql: SQL | undefined;
+}
+
+/**
+ * Per-task status counts from SQL-level aggregation.
+ * Keyed by (taskId, status) → count.
+ */
+export interface TaskStatusCount {
+  taskId: string;
+  status: ProgressStatus;
+  count: number;
+}
+
+/**
+ * Result of the SQL-level progress overview aggregation.
+ */
+export interface ProgressOverviewCountsResult {
+  totalStudents: number;
+  taskStatusCounts: TaskStatusCount[];
 }
 
 /**
@@ -398,7 +419,7 @@ export class ReportRepository {
     const offset = (page - 1) * perPage;
 
     // Build the student-in-scope subquery
-    const studentsInScope = this.buildStudentInScopeSubquery(scope);
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
 
     // Build LEFT JOIN subqueries for progress status sort and filter.
     // Each progress status filter targets a specific task variant and needs its own
@@ -753,15 +774,19 @@ export class ReportRepository {
   }
 
   /**
-   * Builds a subquery that returns student userIds within a scope.
+   * Builds a Drizzle query that returns student userIds within a scope.
    * Filters to student roles and excludes rosteringEnded entities.
    * UNION (not UNION ALL) handles deduplication across branches.
+   *
+   * Returns the query without `.as()` so callers can either:
+   * - Add `.as('students_in_scope')` for use as a Drizzle subquery alias
+   * - Embed directly in a `sql` template literal for use as a CTE
    *
    * No `deletedAt` filter on users is needed because the users table has no
    * soft-delete column. Instead, rostered users are protected from hard deletion
    * by the `prevent_rostered_entity_delete` DB trigger.
    */
-  private buildStudentInScopeSubquery(scope: ReportScope) {
+  private buildStudentInScopeQuery(scope: ReportScope) {
     switch (scope.scopeType) {
       case 'district':
         // Students in user_orgs where org path is at or below the district
@@ -792,8 +817,7 @@ export class ReportRepository {
                   sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
                 ),
               ),
-          )
-          .as('students_in_scope');
+          );
 
       case 'school':
         // Students in user_orgs where orgId = schoolId
@@ -823,8 +847,7 @@ export class ReportRepository {
                   eq(classes.schoolId, scope.scopeId),
                 ),
               ),
-          )
-          .as('students_in_scope');
+          );
 
       case 'class':
         return this.db
@@ -838,8 +861,7 @@ export class ReportRepository {
               isNull(classes.rosteringEnded),
               eq(userClasses.classId, scope.scopeId),
             ),
-          )
-          .as('students_in_scope');
+          );
 
       case 'group':
         return this.db
@@ -853,8 +875,7 @@ export class ReportRepository {
               isNull(groups.rosteringEnded),
               eq(userGroups.groupId, scope.scopeId),
             ),
-          )
-          .as('students_in_scope');
+          );
 
       default:
         // Exhaustive check — this should never be reached since ScopeType is validated by Zod
@@ -928,5 +949,174 @@ export class ReportRepository {
     }
 
     return map;
+  }
+
+  /**
+   * Get aggregated progress overview counts using SQL-level aggregation.
+   *
+   * Uses a three-step SQL approach to minimize data transfer and post-query processing:
+   *
+   * 1. Count total students in scope via `countDistinct` on the students-in-scope subquery.
+   *
+   * 2. For each task variant, build a subquery that LEFT JOINs students against FDW runs
+   *    and computes a status priority via a CASE expression (mirroring buildProgressStatusSortExpression):
+   *    completed=3, started=2, assigned=1, optional=0, excluded=-1.
+   *    UNION ALL all variant subqueries.
+   *
+   * 3. GROUP BY user_id, task_id with MAX(status_priority) for multi-variant dedup,
+   *    then GROUP BY task_id, status with COUNT for final per-task aggregation.
+   *
+   * @param administrationId - The administration ID
+   * @param scope - The scope to query students within
+   * @param taskMetas - Task metadata with condition JSONB for each variant
+   * @returns Total student count and per-task status counts
+   */
+  async getProgressOverviewCounts(
+    administrationId: string,
+    scope: ReportScope,
+    taskMetas: ReportTaskMeta[],
+  ): Promise<ProgressOverviewCountsResult> {
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
+
+    // 1. Count total students in scope
+    const countResult = await this.db
+      .select({ total: countDistinct(users.id) })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
+
+    const totalStudents = countResult[0]?.total ?? 0;
+
+    if (totalStudents === 0 || taskMetas.length === 0) {
+      return { totalStudents, taskStatusCounts: [] };
+    }
+
+    // 2. Build UNION ALL of per-variant status subqueries.
+    // Each subquery LEFT JOINs students with runs for one variant and computes
+    // a status priority via CASE. The students-in-scope query is defined as a CTE
+    // (sis) so it's written once by Drizzle and referenced by name in each branch.
+    const studentsInScopeQuery = this.buildStudentInScopeQuery(scope);
+
+    const variantQueries: SQL[] = taskMetas.map((meta) => {
+      const statusCase = this.buildOverviewStatusCase(meta);
+      // Uses fully qualified table names (not aliases) because conditionToSql generates
+      // Drizzle SQL referencing "app"."users"."column" — PostgreSQL requires the same
+      // naming used in the FROM clause for column resolution.
+      return sql`
+        SELECT
+          ${users.id} AS user_id,
+          ${meta.taskId}::text AS task_id,
+          (${statusCase}) AS status_priority
+        FROM ${users}
+        INNER JOIN sis ON ${users.id} = sis.user_id
+        LEFT JOIN app_assessment_fdw.runs r ON r.user_id = ${users.id}
+          AND r.administration_id = ${administrationId}
+          AND r.task_variant_id = ${meta.taskVariantId}
+          AND r.deleted_at IS NULL
+          AND r.aborted_at IS NULL
+          AND r.use_for_reporting = true
+      `;
+    });
+
+    // UNION ALL the variant subqueries
+    const unionSql = sql.join(variantQueries, sql` UNION ALL `);
+
+    // 3. Two-level aggregation:
+    //   Inner: GROUP BY user_id, task_id → MAX(status_priority) for multi-variant dedup
+    //   Outer: GROUP BY task_id, max_priority → COUNT for final per-task status counts
+    //   Filter out status_priority = -1 (excluded students)
+    const aggregationQuery = sql`
+      WITH sis AS (
+        ${studentsInScopeQuery}
+      ),
+      variant_statuses AS (
+        ${unionSql}
+      ),
+      deduped AS (
+        SELECT
+          user_id,
+          task_id,
+          MAX(status_priority) AS max_priority
+        FROM variant_statuses
+        WHERE status_priority >= 0
+        GROUP BY user_id, task_id
+      )
+      SELECT
+        task_id,
+        max_priority,
+        COUNT(*)::int AS cnt
+      FROM deduped
+      GROUP BY task_id, max_priority
+      ORDER BY task_id, max_priority
+    `;
+
+    const rows = await this.db.execute(aggregationQuery);
+
+    // Map priority numbers back to status strings
+
+    const taskStatusCounts: TaskStatusCount[] = [];
+    for (const row of rows.rows) {
+      const r = row as { task_id: string; max_priority: number; cnt: number };
+      const status = PROGRESS_PRIORITY_TO_STATUS[r.max_priority as ProgressStatusPriority];
+      if (status) {
+        taskStatusCounts.push({
+          taskId: r.task_id,
+          status,
+          count: r.cnt,
+        });
+      }
+    }
+
+    return { totalStudents, taskStatusCounts };
+  }
+
+  /**
+   * Build a SQL CASE expression for overview status determination per variant.
+   * Maps run state + condition evaluation to a numeric priority:
+   *   completed (3) > started (2) > assigned (1) > optional (0) > excluded (-1)
+   *
+   * Mirrors buildProgressStatusSortExpression but uses raw SQL column references
+   * (for the LEFT JOIN alias `r`) instead of Drizzle subquery references.
+   */
+  private buildOverviewStatusCase(meta: ReportTaskMeta): SQL {
+    const assignmentSql = conditionToSql(meta.conditionsAssignment, REPORT_CONDITION_FIELD_MAP);
+    const requirementsSql = conditionToSql(meta.conditionsRequirements, REPORT_CONDITION_FIELD_MAP);
+
+    // No conditions — all students are assigned (no optional, no exclusion)
+    if (!assignmentSql && !requirementsSql) {
+      return sql`CASE
+        WHEN r.completed_at IS NOT NULL THEN 3
+        WHEN r.user_id IS NOT NULL THEN 2
+        ELSE 1
+      END`;
+    }
+
+    // Assignment condition but no requirements — assigned or excluded
+    if (!requirementsSql) {
+      return sql`CASE
+        WHEN r.completed_at IS NOT NULL THEN 3
+        WHEN r.user_id IS NOT NULL THEN 2
+        WHEN (${assignmentSql}) THEN 1
+        ELSE -1
+      END`;
+    }
+
+    // No assignment condition but has requirements — assigned vs optional
+    if (!assignmentSql) {
+      return sql`CASE
+        WHEN r.completed_at IS NOT NULL THEN 3
+        WHEN r.user_id IS NOT NULL THEN 2
+        WHEN (${requirementsSql}) THEN 0
+        ELSE 1
+      END`;
+    }
+
+    // Both conditions present
+    return sql`CASE
+      WHEN r.completed_at IS NOT NULL THEN 3
+      WHEN r.user_id IS NOT NULL THEN 2
+      WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
+      WHEN (${assignmentSql}) THEN 1
+      ELSE -1
+    END`;
   }
 }
