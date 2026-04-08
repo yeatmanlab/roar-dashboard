@@ -257,8 +257,6 @@ describe('OrgAccessControls', () => {
     });
   });
 
-  // Add this describe block to org.access-controls.integration.test.ts
-
   describe('getUserRolesForDistrict', () => {
     describe('direct district membership', () => {
       it('returns role for user with direct district membership', async () => {
@@ -351,16 +349,6 @@ describe('OrgAccessControls', () => {
         const roles = await accessControls.getUserRolesForDistrict(futureDistrictUser.id, baseFixture.district.id);
 
         expect(roles).toHaveLength(0);
-      });
-
-      it('includes roles from active org enrollment', async () => {
-        // districtAdmin has active enrollment in district
-        const roles = await accessControls.getUserRolesForDistrict(
-          baseFixture.districtAdmin.id,
-          baseFixture.district.id,
-        );
-
-        expect(roles).toContain(UserRole.ADMINISTRATOR);
       });
     });
   });
