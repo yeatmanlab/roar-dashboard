@@ -19,8 +19,14 @@ let globalApi: RoarApi | undefined;
  *
  * Should be called once at application startup before using the SDK.
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, and optional logger
+ * The initialization flow is: Dashboard → Game → SDK
+ * - Dashboard passes participant identity to the game
+ * - Game passes ParticipantContext (with participantId) to the SDK via initAssessmentSdk
+ * - SDK uses participantId for all operations that create/write runs
+ *
+ * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, and optional logger
  * @returns Object with initialized invoker and api instances
+ * @throws {SDKError} If participant context or participantId is missing
  *
  * Example:
  * ```
@@ -29,6 +35,9 @@ let globalApi: RoarApi | undefined;
  *   auth: {
  *     getToken: async () => localStorage.getItem('token'),
  *     refreshToken: async () => { ... }
+ *   },
+ *   participant: {
+ *     participantId: 'participant-123'
  *   },
  *   requestId: () => crypto.randomUUID(),
  *   logger: console

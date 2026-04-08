@@ -12,7 +12,7 @@ import { SdkErrorCode } from '../enums';
  * This command is non-idempotent; the Invoker will execute it exactly once.
  * 409 Conflict is treated as success since the run is already in a terminal state.
  *
- * Responsibilities:
+ * **Behavior:**
  * - Call the ts-rest client to post a run abort event
  * - Interpret the HTTP response (200 OK or 409 Conflict = success)
  * - Extract error messages from BAD_REQUEST responses when available
