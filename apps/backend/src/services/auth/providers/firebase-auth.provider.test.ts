@@ -5,6 +5,7 @@ import { FirebaseAuthClient } from '../../../clients/firebase-auth.clients';
 import { FirebaseDecodedTokenFactory } from '../../../test-support/factories/auth.factory';
 import { ApiError } from '../../../errors/api-error';
 import { ApiErrorCode } from '../../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 import { FIREBASE_ERROR_CODES } from '../../../constants/firebase-error-codes';
 
 vi.mock('../../../clients/firebase-auth.clients');
@@ -41,7 +42,7 @@ describe('FirebaseAuthProvider', () => {
     mockVerifyIdToken.mockRejectedValue(expiredError);
 
     await expect(provider.verifyToken('expired-token')).rejects.toMatchObject({
-      message: 'Token expired.',
+      message: ApiErrorMessage.UNAUTHORIZED,
       statusCode: StatusCodes.UNAUTHORIZED,
       code: ApiErrorCode.AUTH_TOKEN_EXPIRED,
       cause: expiredError,
@@ -53,7 +54,7 @@ describe('FirebaseAuthProvider', () => {
     mockVerifyIdToken.mockRejectedValue(invalidError);
 
     await expect(provider.verifyToken('invalid-token')).rejects.toMatchObject({
-      message: 'Invalid token.',
+      message: ApiErrorMessage.UNAUTHORIZED,
       statusCode: StatusCodes.UNAUTHORIZED,
       code: ApiErrorCode.AUTH_TOKEN_INVALID,
       cause: invalidError,

@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { FirebaseAuthClient } from '../../../clients/firebase-auth.clients';
 import { FIREBASE_ERROR_CODES } from '../../../constants/firebase-error-codes';
 import { ApiErrorCode } from '../../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 import { ApiError } from '../../../errors/api-error';
 import { logger } from '../../../logger';
 import { getFirebaseErrorCode } from '../../../utils/get-firebase-error-code.util';
@@ -31,7 +32,7 @@ export class FirebaseAuthProvider implements IAuthProvider {
       const firebaseCode = getFirebaseErrorCode(error);
 
       if (firebaseCode === FIREBASE_ERROR_CODES.AUTH.ID_TOKEN_EXPIRED) {
-        throw new ApiError('Token expired.', {
+        throw new ApiError(ApiErrorMessage.UNAUTHORIZED, {
           statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_TOKEN_EXPIRED,
           cause: error,
@@ -39,7 +40,7 @@ export class FirebaseAuthProvider implements IAuthProvider {
       }
 
       logger.warn({ err: error }, 'Failed to verify Firebase token');
-      throw new ApiError('Invalid token.', {
+      throw new ApiError(ApiErrorMessage.UNAUTHORIZED, {
         statusCode: StatusCodes.UNAUTHORIZED,
         code: ApiErrorCode.AUTH_TOKEN_INVALID,
         cause: error,
