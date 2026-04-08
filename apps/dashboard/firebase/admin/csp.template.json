@@ -55,6 +55,7 @@
     "https://storage.googleapis.com/roav-ran/",
     "https://storage.googleapis.com/roav-readaloud/",
     "https://storage.googleapis.com/trog/",
+    "https://storage.googleapis.com/roav-mp/",
     "https://www.gstatic.com"
   ],
   "media-src": [
@@ -80,6 +81,7 @@
     "https://storage.googleapis.com/roav-crowding/",
     "https://storage.googleapis.com/roav-mep/",
     "https://storage.googleapis.com/roav-ran/",
+    "https://storage.googleapis.com/roav-mp/",
     "https://storage.googleapis.com/roav-readaloud/",
     "https://storage.googleapis.com/trog/"
   ],

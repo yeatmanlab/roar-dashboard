@@ -261,6 +261,14 @@ export const taskDisplayNames = {
     extendedName: 'MEP',
     order: 23,
   },
+  'roav-mp': {
+    name: 'MP',
+    publicName: 'ROAV - Memory Processing',
+    studentFacingName: 'Memory Processing',
+    extendedTitle: 'ROAV - MP',
+    extendedName: 'MP',
+    order: 26,
+  },
   'roar-survey': {
     name: 'Survey',
     publicName: 'ROAR - Survey',
@@ -355,6 +363,7 @@ export const excludeFromScoringTasks = [
   'external-test-task',
   'qualtrics-experience',
   'roar-survey',
+  'roav-mp',
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
