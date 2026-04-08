@@ -16,7 +16,7 @@ import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQue
 import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'fluency-arf' },
+  taskId: { type: String, default: 'roav-mp' },
   language: { type: String, default: 'en' },
   launchId: { type: String, default: null },
 });
@@ -24,7 +24,7 @@ const props = defineProps({
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roam-apps'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roav-apps'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roam-apps')).default;
+    TaskLauncher = (await import('@bdelab/roav-apps')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -142,7 +142,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roam-apps/lib/resources/roam-apps.css';
+@import '@bdelab/roav-apps/lib/resources/roav-apps.css';
 
 .game-target {
   position: absolute;
