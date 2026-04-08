@@ -36,7 +36,7 @@ import type {
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
 import { conditionToSql } from '../../utils/condition-to-sql';
-import type { Condition, ConditionEvaluationUser } from '../task/task.types';
+import type { Condition, ConditionEvaluationUser } from '../../types/condition';
 import type { AuthContext } from '../../types/auth-context';
 
 /** Map sortBy field strings to Drizzle column references for progress students. */

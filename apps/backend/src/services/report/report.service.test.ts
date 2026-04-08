@@ -7,7 +7,7 @@ import { createMockTaskService } from '../../test-support/services';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { ProgressStudentsInput, ProgressOverviewInput } from './report.types';
 import type { ReportTaskMeta, StudentProgressRow, TaskStatusCount } from '../../repositories/report.repository';
-import { Operator } from '../task/task.types';
+import { Operator } from '../../types/condition';
 
 /** Default demographic fields for test StudentProgressRow objects */
 const DEFAULT_DEMOGRAPHICS = {
