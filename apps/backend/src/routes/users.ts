@@ -1,53 +1,37 @@
 import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
-import { StatusCodes } from 'http-status-codes';
 import { UsersContract } from '@roar-dashboard/api-contract';
-
-import { eq } from 'drizzle-orm';
-import { CoreDbClient } from '../db/clients';
-import { users } from '../db/schema';
+import { UsersController } from '../controllers/users.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 
 const s = initServer();
 
-// Mock controller
-// @TODO: Remove this mock controller and replace with actual implementation once ready.
-const UserController = {
-  getById: async ({ params: { id } }: { params: { id: string } }) => {
-    const [user] = await CoreDbClient.select().from(users).where(eq(users.id, id)).limit(1);
-
-    if (!user) {
-      return { status: StatusCodes.NOT_FOUND as const, body: { error: { message: 'User not found' } } };
-    }
-
-    return {
-      status: StatusCodes.OK as const,
-      body: {
-        data: {
-          id: user.id,
-          auth_id: user.authId,
-          ...(user.email != null ? { email: user.email } : {}),
-          ...(user.username != null ? { username: user.username } : {}),
-        },
-      },
-    };
-  },
-};
-
 /**
- * Users routes registration handler.
+ * Registers /users routes on the provided Express router.
  *
- * Registers the users routes on the provided router instance using the provided contract.
- *
- * @param routerInstance - The router instance to register the routes on.
+ * All routes require authentication (AuthGuardMiddleware)
+ * Authorization is handled in the service and repository layers.
  */
-export function registerUsersRoutes(routerInstance: Router) {
-  const UsersRoutes = s.router(UsersContract, {
-    getById: {
+export function registerUserRoutes(routerInstance: Router) {
+  const UserRoutes = s.router(UsersContract, {
+    get: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: UserController.getById,
+      handler: async ({ req: { user }, params: { id } }) => UsersController.get(user!, id),
+    },
+    update: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { id }, body }) => UsersController.update(user!, id, body),
+    },
+    recordUserAgreement: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId }, body }) =>
+        UsersController.recordUserAgreement(user!, userId, body),
     },
   });
 
-  createExpressEndpoints(UsersContract, UsersRoutes, routerInstance);
+  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+  createExpressEndpoints(UsersContract, UserRoutes, routerInstance);
 }

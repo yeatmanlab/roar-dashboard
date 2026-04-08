@@ -1,0 +1,134 @@
+name: Deploy Platform to Dev
+
+on:
+  push:
+    branches:
+      # TODO: Remove once backend refactor is complete
+      - project/backend-refactor
+      - main
+
+concurrency:
+  # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
+  # cancel-in-progress: false — never interrupt a running migration.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Build backend Docker image
+  # ––––––––––––––––––––––––––––––––––––– #
+  build-backend:
+    name: Build backend Docker image
+    runs-on: ubuntu-latest
+    environment: platform:development
+    timeout-minutes: 10
+    outputs:
+      image-version: ${{ steps.docker-build.outputs.image-version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build and push image
+        id: docker-build
+        uses: ./.github/actions/build-docker-image
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          region: ${{ secrets.GCP_BACKEND_REGION }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
+          image-name: roar-backend
+          image-tag-rules: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+          dockerfile: apps/backend/Dockerfile
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Migrate databases
+  # ––––––––––––––––––––––––––––––––––––– #
+  migrate-db:
+    name: Migrate databases
+    needs: [build-backend]
+    runs-on: ubuntu-latest
+    environment: platform:development
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run core database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_CORE_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: core
+
+      - name: Run assessment database migrations
+        uses: ./.github/actions/migrate-database
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_DB_MIGRATOR_ASSESSMENT_SERVICE_ACCOUNT }}
+          cloudsql-instance-connection-name: ${{ secrets.CLOUDSQL_INSTANCE_CONNECTION_NAME }}
+          database: assessment
+
+  # ––––––––––––––––––––––––––––––––––––– #
+  # Deploy Backend
+  # ––––––––––––––––––––––––––––––––––––– #
+  deploy-backend:
+    name: Deploy backend
+    needs: [build-backend, migrate-db]
+    runs-on: ubuntu-latest
+    environment: platform:development
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Deploy to Cloud Run
+        uses: ./.github/actions/deploy-cloud-run
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          region: ${{ secrets.GCP_BACKEND_REGION }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+          artifact-registry-repo: ${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}
+          cloud-run-service: ${{ secrets.GCP_CLOUD_RUN_SERVICE_NAME }}
+          image-name: roar-backend
+          image-tag: ${{ needs.build-backend.outputs.image-version }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy frontend
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # TODO: Re-enable after testing is complete
+  deploy-frontend:
+    if: false
+    name: Deploy frontend
+    needs: [deploy-backend]
+    runs-on: ubuntu-latest
+    environment: platform:development
+    timeout-minutes: 15
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build app
+        uses: ./.github/actions/build
+        with:
+          environment: development
+          github-pat: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Deploy app
+        uses: ./.github/actions/deploy
+        id: deployment
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}

@@ -358,6 +358,83 @@
       "when": 1767968462154,
       "tag": "0050_extend_user_role_enum_oneroster",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1769207509852,
+      "tag": "0051_add_ltree_and_refactor_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1769208804144,
+      "tag": "0052_add_ltree_path_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1771436422734,
+      "tag": "0053_relocate_exclude_from_research_to_administrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1771437274458,
+      "tag": "0054_remove_agreement_majority_age_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1771477732956,
+      "tag": "0055_refactor_excluded_from_research_to_timestamp",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1772830752630,
+      "tag": "0056_add_assessment_fdw_foreign_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1773244800000,
+      "tag": "0057_enable_uuid_ossp",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1774857600000,
+      "tag": "0058_switch_fdw_to_direct_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1774361278051,
+      "tag": "0059_user_research_exclusions_and_user_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1774902957976,
+      "tag": "0060_drop_orgs_nces_id_unique_constraint",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1774906256554,
+      "tag": "0061_drop_classes_school_name_unique_index",
+      "breakpoints": true
     }
   ]
 }

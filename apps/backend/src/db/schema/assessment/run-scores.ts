@@ -24,6 +24,7 @@ const db = p.pgSchema('app');
  * - `categoryScore` - Whether this is a category-level aggregate score
  *
  * @see {@link runs} - Parent run this score belongs to (cascade delete)
+ * @see {@link ../assessment-fdw/run-scores.ts} — FDW mirror of this table in core DB
  */
 
 export const runScores = db.table(
@@ -38,9 +39,6 @@ export const runScores = db.table(
       .uuid()
       .references(() => runs.id, { onDelete: 'cascade' })
       .notNull(),
-
-    taskId: p.uuid().notNull(),
-    taskVariantId: p.uuid().notNull(),
 
     type: scoreTypeEnum().notNull(),
     domain: p.text().notNull(),

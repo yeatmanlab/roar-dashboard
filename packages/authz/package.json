@@ -1,0 +1,9 @@
+{
+  "name": "@roar-dashboard/authz",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "validate": "if [ \"$CI\" = \"true\" ]; then echo 'SKIP: fga model validation runs via GitHub Action in CI'; exit 0; fi && fga model validate --file authorization-model.fga",
+    "test": "if [ \"$CI\" = \"true\" ]; then echo 'SKIP: fga model tests run via GitHub Action in CI'; exit 0; fi && fga model test --tests 'tests/*.fga.yaml'"
+  }
+}

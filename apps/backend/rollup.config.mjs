@@ -22,15 +22,41 @@ export default defineConfig({
         exports: 'auto',
       }
     : {
-        file: `dist/server.js`,
+        // Output to a directory with code splitting enabled.
+        // IMPORTANT: Do NOT use `file` + `inlineDynamicImports: true` here.
+        //
+        // server.ts uses a dynamic import(`./app`) to defer loading the application module
+        // until after initializeDatabasePools() completes. This ensures CoreDbClient and
+        // AssessmentDbClient are defined before any module-level service/repository
+        // instantiation occurs (e.g., `const userService = UserService()` in auth middleware).
+        //
+        // inlineDynamicImports collapses this boundary into a single file, causing all
+        // module-level code to execute at load time — before the DB clients are initialized.
+        // Code splitting preserves the dynamic import as a separate chunk, maintaining the
+        // correct initialization order.
+        dir: 'dist',
+        inlineDynamicImports: false,
         format: 'esm',
         sourcemap: true,
         exports: 'auto',
+        entryFileNames: 'server.js',
+        chunkFileNames: '[name]-[hash].js',
       },
   plugins: [
-    // Externalize Node deps to keep bundle fast and small. In dev we purposely do not externalize the local workspace
-    // package so that Rollup watches its source and triggers rebuilds automatically.
-    externals({ exclude: isDev ? ['@roar-dashboard/api-contract'] : [] }),
+    // In dev, externalize node_modules (except our workspace package) to keep rebuilds fast.
+    // In production, skip externals entirely so rollup bundles everything into a single server.js — no node_modules
+    // needed at runtime.
+    isDev &&
+      externals({
+        exclude: [
+          // Workspace package — must be compiled from TS source via the alias below
+          '@roar-dashboard/api-contract',
+          // CJS package without an `exports` field — Node's ESM resolver can't
+          // resolve the bare specifier at runtime, so we bundle it through the
+          // commonjs() plugin instead
+          '@openfga/sdk',
+        ],
+      }),
 
     alias({
       entries: [
@@ -39,8 +65,7 @@ export default defineConfig({
 
         // In dev, point the local monorepo package to its src/ instead of dist/. This makes Rollup compile it with
         // esbuild, watch for changes, and restart the server when internal package source files change. In production
-        // we externalize the package so that it is not included in the bundle and is instead loaded from node_modules.
-        // This approach is, somewhat unfortunately, more efficient than using turbo's watch mode.
+        // the package resolves to its built dist/ via normal node resolution, but is still bundled (not externalized).
         ...(isDev
           ? [
               {

@@ -1,0 +1,255 @@
+name: Class Permissions
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── Hierarchy (bidirectional) ─────────────────────────────────────
+  - user: district:district-a
+    relation: parent_org
+    object: school:school-a
+  - user: school:school-a
+    relation: child_school
+    object: district:district-a
+  - user: school:school-a
+    relation: parent_org
+    object: class:class-a
+  - user: class:class-a
+    relation: child_class
+    object: school:school-a
+  - user: school:school-a
+    relation: parent_org
+    object: class:class-b
+  - user: class:class-b
+    relation: child_class
+    object: school:school-a
+
+  # ─── Memberships ──────────────────────────────────────────────────
+  - user: user:district-admin
+    relation: administrator
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-teacher
+    relation: teacher
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:class-teacher
+    relation: teacher
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:student-a
+    relation: student
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:guardian-a
+    relation: guardian
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # Separate school for isolation
+  - user: district:district-a
+    relation: parent_org
+    object: school:school-b
+  - user: school:school-b
+    relation: child_school
+    object: district:district-a
+  - user: user:teacher-at-school-b
+    relation: teacher
+    object: school:school-b
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+tests:
+  # ─── Direct class membership ──────────────────────────────────────
+
+  - name: Class teacher can list/read their class
+    check:
+      - user: user:class-teacher
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_list_users: true
+          can_read_scores: true
+          can_read_progress: true
+
+  - name: Student cannot list/read their class (supervisory only)
+    check:
+      - user: user:student-a
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create: false
+          can_update: false
+          can_list_users: false
+          can_read_scores: false
+
+  - name: Guardian cannot list/read class (supervisory only)
+    check:
+      - user: user:guardian-a
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_list_users: false
+          can_read_progress: false
+          can_create: false
+          can_update: false
+          can_read_scores: false
+
+  # ─── Inherited access from school/district ─────────────────────────
+
+  - name: School teacher can list/read classes in their school (descendant access)
+    check:
+      - user: user:school-teacher
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_list_users: true
+          can_read_scores: true
+
+  - name: District admin can list/read classes (descendant access)
+    check:
+      - user: user:district-admin
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_list_users: true
+          can_read_scores: true
+
+  # ─── can_delete (super-admin-only, always denied in FGA) ───────────
+
+  - name: District admin cannot delete class (CUD is super-admin-only)
+    check:
+      - user: user:district-admin
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_delete: false
+
+  - name: School teacher cannot delete class
+    check:
+      - user: user:school-teacher
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_delete: false
+
+  - name: Class teacher cannot delete their class
+    check:
+      - user: user:class-teacher
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_delete: false
+
+  # ─── Sibling isolation ─────────────────────────────────────────────
+
+  - name: Class teacher cannot see sibling class
+    check:
+      - user: user:class-teacher
+        object: class:class-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Student cannot see sibling class
+    check:
+      - user: user:student-a
+        object: class:class-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Teacher at school-b cannot see classes in school-a
+    check:
+      - user: user:teacher-at-school-b
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: User with no memberships sees nothing
+    check:
+      - user: user:nobody
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  # ─── list_objects ──────────────────────────────────────────────────
+
+  - name: School teacher sees all classes in their school
+    list_objects:
+      - user: user:school-teacher
+        type: class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - class:class-a
+            - class:class-b
+
+  - name: Class teacher sees only their class
+    list_objects:
+      - user: user:class-teacher
+        type: class
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - class:class-a

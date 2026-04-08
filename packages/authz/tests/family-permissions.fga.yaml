@@ -1,0 +1,134 @@
+name: Family Permissions
+model_file: ../authorization-model.fga
+
+tuples:
+  # ─── Family memberships (with active_membership condition) ───────
+  - user: user:parent-a
+    relation: parent
+    object: family:family-1
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:child-a
+    relation: child
+    object: family:family-1
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:child-b
+    relation: child
+    object: family:family-1
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+  # Separate family for isolation tests
+  - user: user:parent-b
+    relation: parent
+    object: family:family-2
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:child-c
+    relation: child
+    object: family:family-2
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+
+tests:
+  - name: Parent can list/read their family and list users
+    check:
+      - user: user:parent-a
+        object: family:family-1
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_list_children: true
+          can_create_child: true
+          can_read_child: true
+          can_update_child: true
+          can_delete_child: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          member: true
+
+  - name: Child is a member but cannot list/read, list users, or manage children
+    check:
+      - user: user:child-a
+        object: family:family-1
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          member: true
+          can_list: false
+          can_read: false
+          can_list_users: false
+          can_list_children: false
+          can_create_child: false
+          can_read_child: false
+          can_update_child: false
+          can_delete_child: false
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: Parent cannot see another family
+    check:
+      - user: user:parent-a
+        object: family:family-2
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_list_children: false
+          can_create_child: false
+          can_read_child: false
+          can_update_child: false
+          can_delete_child: false
+          member: false
+
+  - name: Child cannot see another family
+    check:
+      - user: user:child-a
+        object: family:family-2
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          member: false
+          can_list: false
+          can_read: false
+
+  - name: Non-member has no access to any family
+    check:
+      - user: user:nobody
+        object: family:family-1
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          member: false
+          can_list_children: false
+          can_create_child: false
+          can_read_child: false
+          can_update_child: false
+          can_delete_child: false
+          can_create: false
+          can_update: false
+          can_delete: false

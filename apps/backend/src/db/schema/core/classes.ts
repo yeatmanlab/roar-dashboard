@@ -1,6 +1,6 @@
 import * as p from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { timestamps } from '../common';
+import { ltree, timestamps } from '../common';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { orgs } from './orgs';
 import { courses } from './courses';
@@ -38,6 +38,13 @@ export const classes = db.table(
       .notNull(),
     courseId: p.uuid().references((): AnyPgColumn => courses.id, { onDelete: 'restrict' }),
 
+    /**
+     * Materialized path copied from the parent school's org path.
+     * Used for hierarchical authorization queries via ltree operators.
+     * Maintained via database triggers on insert/update.
+     */
+    orgPath: ltree('org_path').notNull(),
+
     classType: classTypeEnum().notNull(),
 
     number: p.text(),
@@ -56,14 +63,11 @@ export const classes = db.table(
     ...timestamps,
   },
   (table) => [
-    // Constraints
-    // - Ensure unique class name per school (case-insensitive)
-    p.uniqueIndex('classes_school_name_lower_uniqIdx').on(table.schoolId, sql`lower(${table.name})`),
-
     // Indexes
     // - Foreign key lookups
     p.index('classes_district_idx').on(table.districtId),
     p.index('classes_course_idx').on(table.courseId),
+    p.index('classes_org_path_gist_idx').using('gist', table.orgPath),
 
     // - Name equality or prefix lookups
     p.index('classes_name_lower_idx').on(sql`lower(${table.name})`),
