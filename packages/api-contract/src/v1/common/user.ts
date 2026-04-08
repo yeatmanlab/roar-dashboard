@@ -91,6 +91,7 @@ export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
  *    - Convert to an array, update previous endpoints
  *  - enrollmentStart
  *    - Keep as a single value (earliest start date)
+ *    - Convert it to an array, corresponding indexes to role array
  *
  * New schema: EnrolledOrgUserSchema
  * - Role
