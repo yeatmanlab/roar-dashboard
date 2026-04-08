@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, notInArray } from 'drizzle-orm';
 import type { Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AgreementSortFieldType } from '@roar-dashboard/api-contract';
@@ -6,7 +6,8 @@ import type { AgreementType } from '../enums/agreement-type.enum';
 import type * as CoreDbSchema from '../db/schema/core';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { CoreDbClient } from '../db/clients';
-import { agreements, agreementVersions, type Agreement, type AgreementVersion } from '../db/schema';
+import { agreements, agreementVersions, userAgreements, type Agreement, type AgreementVersion } from '../db/schema';
+import { AgreementType as AgreementTypeEnum } from '../enums/agreement-type.enum';
 import { BaseRepository, type PaginatedResult } from './base.repository';
 import { BasePaginatedQueryParams } from './interfaces/base.repository.interface';
 
@@ -117,6 +118,63 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
       })),
       totalItems,
     };
+  }
+
+  /**
+   * Find TOS agreements that the user has not yet signed (any current version).
+   *
+   * Returns all current locale variants for each unsigned TOS agreement so the
+   * frontend can present the appropriate locale without an extra round-trip.
+   *
+   * Cross-locale satisfaction: if a user has signed ANY current version of a TOS
+   * agreement (regardless of locale), the entire agreement is considered satisfied.
+   *
+   * @param userId - The user to check unsigned agreements for
+   * @returns Array of unsigned TOS agreements with their current versions
+   */
+  async getUnsignedTosAgreements(
+    userId: string,
+  ): Promise<Array<{ agreement: Agreement; currentVersions: AgreementVersion[] }>> {
+    // Subquery: agreement IDs where the user has signed any current version
+    const signedAgreementIds = this.db
+      .select({ agreementId: agreementVersions.agreementId })
+      .from(userAgreements)
+      .innerJoin(agreementVersions, eq(userAgreements.agreementVersionId, agreementVersions.id))
+      .where(and(eq(userAgreements.userId, userId), eq(agreementVersions.isCurrent, true)));
+
+    // Find TOS agreements NOT in the signed set, then fetch their current versions
+    const unsignedAgreementRows = await this.db
+      .select()
+      .from(agreements)
+      .where(and(eq(agreements.agreementType, AgreementTypeEnum.TOS), notInArray(agreements.id, signedAgreementIds)));
+
+    if (unsignedAgreementRows.length === 0) {
+      return [];
+    }
+
+    // Bulk-fetch all current versions for the unsigned agreements
+    const unsignedIds = unsignedAgreementRows.map((a) => a.id);
+    const currentVersions = await this.db
+      .select()
+      .from(agreementVersions)
+      .where(and(inArray(agreementVersions.agreementId, unsignedIds), eq(agreementVersions.isCurrent, true)))
+      .orderBy(asc(agreementVersions.agreementId), asc(agreementVersions.locale));
+
+    // Group versions by agreement ID using a Map for O(n) distribution
+    const versionsMap = new Map<string, AgreementVersion[]>();
+    for (const version of currentVersions) {
+      const existing = versionsMap.get(version.agreementId);
+      if (existing) {
+        existing.push(version);
+      } else {
+        versionsMap.set(version.agreementId, [version]);
+      }
+    }
+
+    return unsignedAgreementRows.map((agreement) => ({
+      agreement,
+      currentVersions: versionsMap.get(agreement.id) ?? [],
+    }));
   }
 
   /**
