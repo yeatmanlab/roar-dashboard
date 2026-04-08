@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { StartRunCommand } from './start-run.command';
 import { StatusCodes } from 'http-status-codes';
@@ -11,6 +11,7 @@ describe('StartRunCommand', () => {
   let createRun: Mock;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockApi = createMockRoarApi();
     createRun = mockApi.client.runs.create as Mock;
     command = new StartRunCommand(mockApi);
