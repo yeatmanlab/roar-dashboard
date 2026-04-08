@@ -119,7 +119,7 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
       totalItems,
     };
   }
-  
+
   /**
    * Find TOS agreements that the user has not yet signed (any current version).
    *
@@ -193,7 +193,7 @@ export class AgreementRepository extends BaseRepository<Agreement, typeof agreem
 
     return version ?? null;
   }
-  
+
   /**
    * Fetch all versions for the given agreement IDs, grouped by agreementId.
    *
