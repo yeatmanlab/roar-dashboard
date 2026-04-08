@@ -988,4 +988,118 @@ describe('UserService', () => {
       });
     });
   });
+
+  describe('getUnsignedTosAgreements', () => {
+    it('returns empty array when user has signed all TOS agreements', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(mockAgreementRepository.getUnsignedTosAgreements).toHaveBeenCalledWith('user-123');
+      expect(result).toEqual([]);
+    });
+
+    it('returns unsigned TOS agreements with all locale variants', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const agreement = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'ROAR Terms of Service' });
+      const versionEn = AgreementVersionFactory.build({
+        agreementId: agreement.id,
+        locale: 'en-US',
+        isCurrent: true,
+      });
+      const versionEs = AgreementVersionFactory.build({
+        agreementId: agreement.id,
+        locale: 'es-MX',
+        isCurrent: true,
+      });
+
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([
+        { agreement, currentVersions: [versionEn, versionEs] },
+      ]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toEqual([
+        {
+          agreementId: agreement.id,
+          agreementName: 'ROAR Terms of Service',
+          versions: [
+            { versionId: versionEn.id, locale: 'en-US' },
+            { versionId: versionEs.id, locale: 'es-MX' },
+          ],
+        },
+      ]);
+    });
+
+    it('maps multiple unsigned agreements correctly', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const agreement1 = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'TOS 1' });
+      const agreement2 = AgreementFactory.build({ agreementType: AgreementType.TOS, name: 'TOS 2' });
+      const version1 = AgreementVersionFactory.build({ agreementId: agreement1.id, locale: 'en-US', isCurrent: true });
+      const version2 = AgreementVersionFactory.build({ agreementId: agreement2.id, locale: 'en-US', isCurrent: true });
+
+      mockAgreementRepository.getUnsignedTosAgreements.mockResolvedValue([
+        { agreement: agreement1, currentVersions: [version1] },
+        { agreement: agreement2, currentVersions: [version2] },
+      ]);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      const result = await userService.getUnsignedTosAgreements('user-123');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]!.agreementId).toBe(agreement1.id);
+      expect(result[1]!.agreementId).toBe(agreement2.id);
+    });
+
+    it('re-throws ApiError from repository without wrapping', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      const apiError = new ApiError('Not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockAgreementRepository.getUnsignedTosAgreements.mockRejectedValue(apiError);
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      await expect(userService.getUnsignedTosAgreements('user-123')).rejects.toThrow(apiError);
+    });
+
+    it('wraps unexpected errors in ApiError with 500/DATABASE_QUERY_FAILED', async () => {
+      const mockAgreementRepository = createMockAgreementRepository();
+      mockAgreementRepository.getUnsignedTosAgreements.mockRejectedValue(new Error('DB connection lost'));
+
+      const userService = UserService({
+        userRepository: mockUserRepository,
+        agreementRepository: mockAgreementRepository,
+      });
+
+      await expect(userService.getUnsignedTosAgreements('user-123')).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Failed to get unsigned TOS agreements',
+      );
+    });
+  });
 });

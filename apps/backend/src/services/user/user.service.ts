@@ -20,6 +20,18 @@ import { AgreementRepository } from '../../repositories/agreement.repository';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
 
+// Types for the unsigned TOS agreements response
+interface TosAgreementVersion {
+  versionId: string;
+  locale: string;
+}
+
+interface UnsignedTosAgreement {
+  agreementId: string;
+  agreementName: string;
+  versions: TosAgreementVersion[];
+}
+
 // Age category for type-safe age classification in agreement consent logic
 const AgeCategory = {
   ADULT: 'ADULT',
@@ -536,5 +548,42 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById, update, recordUserAgreement };
+  /**
+   * Get unsigned TOS agreements for a user.
+   *
+   * Returns TOS agreements where the user has not signed any current version
+   * (cross-locale satisfaction: signing any locale satisfies the requirement).
+   * Each agreement includes all current locale variants.
+   *
+   * @param userId - The user to check unsigned agreements for
+   * @returns Array of unsigned agreements with their current version metadata
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function getUnsignedTosAgreements(userId: string): Promise<UnsignedTosAgreement[]> {
+    try {
+      const unsignedAgreements = await agreementRepository.getUnsignedTosAgreements(userId);
+
+      return unsignedAgreements.map(({ agreement, currentVersions }) => ({
+        agreementId: agreement.id,
+        agreementName: agreement.name,
+        versions: currentVersions.map(({ id, locale }) => ({
+          versionId: id,
+          locale,
+        })),
+      }));
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to get unsigned TOS agreements');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
+  return { findByAuthId, getById, update, recordUserAgreement, getUnsignedTosAgreements };
 }

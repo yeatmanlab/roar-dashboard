@@ -13,6 +13,7 @@ export function createMockAgreementRepository(): MockedObject<AgreementRepositor
     ...createMockBaseRepositoryMethods(),
     listAll: vi.fn(),
     getVersionsByAgreementIds: vi.fn(),
+    getUnsignedTosAgreements: vi.fn(),
   } as MockedObject<AgreementRepository>;
 }
 
