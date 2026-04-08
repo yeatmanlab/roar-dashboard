@@ -43,6 +43,9 @@ export interface VersionContentResult {
   createdAt: Date;
 }
 
+/** Base URL for fetching raw content from GitHub */
+const GITHUB_USER_CONTENT_BASE_URL = 'https://raw.githubusercontent.com';
+
 /** GitHub raw content URL timeout in milliseconds */
 const GITHUB_FETCH_TIMEOUT_MS = 10_000;
 
@@ -56,26 +59,26 @@ const GITHUB_FETCH_TIMEOUT_MS = 10_000;
  * @throws {ApiError} If the fetch fails or returns non-200
  */
 async function fetchGithubContent(orgRepo: string, commitSha: string, filename: string): Promise<string> {
-  const url = `https://raw.githubusercontent.com/${orgRepo}/${commitSha}/${filename}`;
+  const url = `${GITHUB_USER_CONTENT_BASE_URL}/${orgRepo}/${commitSha}/${filename}`;
 
   const response = await fetch(url, {
     signal: AbortSignal.timeout(GITHUB_FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {
-    throw new ApiError('Failed to fetch agreement content', {
+    throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-      context: { url, status: response.status },
+      context: { url, status: response.status, message: 'Failed to fetch agreement content from GitHub' },
     });
   }
 
   const content = await response.text();
   if (!content) {
-    throw new ApiError('Agreement content is empty', {
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-      context: { url },
+    throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+      statusCode: StatusCodes.NOT_FOUND,
+      code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      context: { url, message: 'Agreement content file is empty or missing' },
     });
   }
 
