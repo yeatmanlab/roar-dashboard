@@ -147,6 +147,7 @@ describe('AuthGuardMiddleware', () => {
         .expect(StatusCodes.FORBIDDEN);
 
       expect(response.body.code).toBe(ApiErrorCode.AUTH_ROSTERING_ENDED);
+      expect(response.body.message).toBe(ApiErrorMessage.FORBIDDEN);
     });
 
     it('should allow access when user rosteringEnded is in the future', async () => {
