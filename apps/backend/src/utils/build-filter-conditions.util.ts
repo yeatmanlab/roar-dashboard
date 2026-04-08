@@ -6,6 +6,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { getGradesInRange } from './get-grade-as-number.util';
+import { escapeLikePattern } from './escape-like-pattern.util';
 
 /**
  * Mapping of allowed filter fields to their Drizzle column references.
@@ -109,10 +110,7 @@ function buildOperatorCondition(
       return operator === 'gte' ? gte(column, value) : lte(column, value);
     }
     case 'contains': {
-      // Escape SQL pattern characters so user input is treated as literal text.
-      // Backslash must be escaped first to avoid double-escaping the \ from % and _ replacements.
-      const escaped = value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
-      return ilike(column, `%${escaped}%`);
+      return ilike(column, `%${escapeLikePattern(value)}%`);
     }
     default:
       throw new Error(`Unsupported filter operator: ${operator satisfies never}`);

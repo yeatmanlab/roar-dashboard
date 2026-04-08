@@ -18,8 +18,8 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
-import type { Condition } from './task.types';
-import { Operator } from './task.types';
+import type { Condition } from '../../types/condition';
+import { Operator } from '../../types/condition';
 import type { User } from '../../db/schema';
 import { SortOrder, TaskSortField } from '@roar-dashboard/api-contract';
 
