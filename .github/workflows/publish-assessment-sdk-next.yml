@@ -1,0 +1,61 @@
+name: Publish Assessment SDK - Next
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/assessment-sdk/**'
+      - '.github/workflows/publish-assessment-sdk-next.yml'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Build SDK
+        run: npm run build -w packages/assessment-sdk
+
+      - name: Update version to next prerelease
+        run: |
+          cd packages/assessment-sdk
+          npm version prerelease --preid=next --no-git-tag-version
+
+      - name: Publish to GitHub Package Registry
+        run: npm publish -w packages/assessment-sdk --tag next
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add packages/assessment-sdk/package.json
+          git commit -m "chore: bump assessment-sdk to next prerelease" || true
+          git push
+
+      - name: Get published version
+        id: version
+        run: |
+          cd packages/assessment-sdk
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Comment on related PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.version.outputs.version }}';
+            console.log(`Published @roar-dashboard/assessment-sdk@${version} with next tag`);

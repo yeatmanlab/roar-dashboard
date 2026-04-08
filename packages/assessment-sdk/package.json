@@ -2,6 +2,14 @@
   "name": "@roar-dashboard/assessment-sdk",
   "version": "0.0.0",
   "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeatmanlab/roar-dashboard.git",
+    "directory": "packages/assessment-sdk"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

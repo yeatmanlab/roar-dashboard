@@ -1,0 +1,48 @@
+name: Publish Assessment SDK - Stable
+
+on:
+  push:
+    tags:
+      - 'assessment-sdk-v*'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Setup Node.js
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Build SDK
+        run: npm run build -w packages/assessment-sdk
+
+      - name: Publish to GitHub Package Registry
+        run: npm publish -w packages/assessment-sdk
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Assessment SDK ${{ github.ref_name }}
+          body: |
+            Published to GitHub Package Registry
+            
+            Install with:
+            ```bash
+            npm install @roar-dashboard/assessment-sdk@latest
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
