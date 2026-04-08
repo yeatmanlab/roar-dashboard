@@ -43,12 +43,14 @@ Publishes pre-release versions of the Assessment SDK when changes are merged to 
 
 ## Required Secrets
 
-Both workflows use the automatically-provided `GITHUB_TOKEN` for checking out the repository with submodules. No additional secrets need to be configured.
-
-The `GITHUB_TOKEN` is automatically available in GitHub Actions and has sufficient permissions for:
-- Repository checkout with submodules
+Both workflows require the `CI_GITHUB_PAT` secret to be configured in repository settings. This token is used for:
+- Repository checkout with submodules (required to access the private env-configs submodule)
 - Publishing to GitHub Package Registry
 - Creating GitHub Releases
+
+The `CI_GITHUB_PAT` token must have the following scopes:
+- `repo` (full control of private repositories)
+- `write:packages` (publish packages to GitHub Package Registry)
 
 ## Registry Configuration
 

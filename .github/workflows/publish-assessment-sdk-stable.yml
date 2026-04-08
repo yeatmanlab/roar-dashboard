@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-node-environment
@@ -48,7 +48,7 @@ jobs:
       - name: Publish to GitHub Package Registry
         run: npm publish -w packages/assessment-sdk
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@d4c579d7b14e6fcc4216b6bb6d5ced38b5476975
@@ -65,4 +65,4 @@ jobs:
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_PAT }}
