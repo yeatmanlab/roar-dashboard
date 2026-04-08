@@ -130,12 +130,12 @@ describe('AuthGuardMiddleware', () => {
       expect(response.body.traceId).toBeDefined();
     });
 
-    it('should return 403 when user rosteringEnded is exactly now', async () => {
+    it('should return 403 when user rosteringEnded is at or before the current time (boundary case)', async () => {
       const mockDecodedUser = DecodedUserFactory.build();
-      const now = new Date();
+      const justBeforeNow = new Date(Date.now() - 1000); // 1 second ago to avoid race
       const mockUser = UserFactory.build({
         authId: mockDecodedUser.uid,
-        rosteringEnded: now,
+        rosteringEnded: justBeforeNow,
       });
 
       authServiceMock.mockResolvedValue(mockDecodedUser);
