@@ -10,6 +10,15 @@ import { extractJwt } from './jwt-extractor';
 
 // Create service instance (repository auto-instantiated with correct DB client)
 const userService = UserService();
+/**
+ * Check if a user's rostering has ended.
+ *
+ * @param rosteringEnded - The rostering end date (nullable).
+ * @returns True if the rostering has ended (non-null and in the past), false otherwise.
+ */
+const isRosteringEnded = (rosteringEnded: Date | null): boolean => {
+  return rosteringEnded !== null && rosteringEnded <= new Date();
+};
 
 /**
  * The AuthGuardMiddleware extracts the JWT token from the Authorization header, validates it and uses the AuthService
@@ -52,7 +61,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     }
 
     // Block users whose rostering has ended — rosteringEnded is non-null and in the past
-    if (user.rosteringEnded && user.rosteringEnded <= new Date()) {
+    if (isRosteringEnded(user.rosteringEnded)) {
       logger.warn(
         { userId: user.id, rosteringEnded: user.rosteringEnded },
         'Rostering-ended user attempted authentication',
