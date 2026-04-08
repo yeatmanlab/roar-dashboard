@@ -103,7 +103,7 @@ describe('AuthGuardMiddleware', () => {
 
     expect(authServiceMock).toHaveBeenCalledWith('mock-valid-jwt-token');
     expect(mockFindByAuthId).toHaveBeenCalledWith(mockDecodedUser.uid);
-    expect(response.body.message).toBe('User not found.');
+    expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
     expect(response.body.code).toBe(ApiErrorCode.AUTH_USER_NOT_FOUND);
     expect(response.body.traceId).toBeDefined();
   });
@@ -220,7 +220,7 @@ describe('AuthGuardMiddleware', () => {
       it('should return 401 when no authorization header is provided', async () => {
         const response = await request(app).get('/').expect(StatusCodes.UNAUTHORIZED);
 
-        expect(response.body.message).toBe('Token missing.');
+        expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
         expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
         expect(response.body.traceId).toBeDefined();
         expect(authServiceMock).not.toHaveBeenCalled();
@@ -232,7 +232,7 @@ describe('AuthGuardMiddleware', () => {
           .set('Authorization', 'InvalidFormat')
           .expect(StatusCodes.UNAUTHORIZED);
 
-        expect(response.body.message).toBe('Token missing.');
+        expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
         expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
         expect(authServiceMock).not.toHaveBeenCalled();
       });
@@ -240,7 +240,7 @@ describe('AuthGuardMiddleware', () => {
       it('should return 401 when Bearer token is empty', async () => {
         const response = await request(app).get('/').set('Authorization', 'Bearer ').expect(StatusCodes.UNAUTHORIZED);
 
-        expect(response.body.message).toBe('Token missing.');
+        expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
         expect(response.body.code).toBe(ApiErrorCode.AUTH_REQUIRED);
         expect(authServiceMock).not.toHaveBeenCalled();
       });
@@ -248,7 +248,7 @@ describe('AuthGuardMiddleware', () => {
 
     describe('invalid JWT', () => {
       it('should pass through ApiError from AuthService for expired token', async () => {
-        const expiredError = new ApiError('Token expired.', {
+        const expiredError = new ApiError(ApiErrorMessage.UNAUTHORIZED, {
           statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_TOKEN_EXPIRED,
         });
@@ -259,14 +259,14 @@ describe('AuthGuardMiddleware', () => {
           .set('Authorization', 'Bearer expired-token')
           .expect(StatusCodes.UNAUTHORIZED);
 
-        expect(response.body.message).toBe('Token expired.');
+        expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
         expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_EXPIRED);
         expect(response.body.traceId).toBeDefined();
         expect(authServiceMock).toHaveBeenCalledWith('expired-token');
       });
 
       it('should pass through ApiError from AuthService for invalid token', async () => {
-        const invalidError = new ApiError('Invalid token.', {
+        const invalidError = new ApiError(ApiErrorMessage.UNAUTHORIZED, {
           statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_TOKEN_INVALID,
         });
@@ -277,7 +277,7 @@ describe('AuthGuardMiddleware', () => {
           .set('Authorization', 'Bearer invalid-token')
           .expect(StatusCodes.UNAUTHORIZED);
 
-        expect(response.body.message).toBe('Invalid token.');
+        expect(response.body.message).toBe(ApiErrorMessage.UNAUTHORIZED);
         expect(response.body.code).toBe(ApiErrorCode.AUTH_TOKEN_INVALID);
         expect(response.body.traceId).toBeDefined();
       });
@@ -292,7 +292,7 @@ describe('AuthGuardMiddleware', () => {
         .set('Authorization', 'Bearer failing-token')
         .expect(StatusCodes.INTERNAL_SERVER_ERROR);
 
-      expect(response.body.message).toBe('Authentication failed.');
+      expect(response.body.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
       expect(response.body.code).toBe(ApiErrorCode.INTERNAL);
       expect(response.body.traceId).toBeDefined();
     });

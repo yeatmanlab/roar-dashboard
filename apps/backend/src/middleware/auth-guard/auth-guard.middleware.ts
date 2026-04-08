@@ -39,7 +39,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     const token = extractJwt(req);
     if (!token) {
       return next(
-        new ApiError('Token missing.', {
+        new ApiError(ApiErrorMessage.UNAUTHORIZED, {
           statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_REQUIRED,
         }),
@@ -53,7 +53,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
     const user = await userService.findByAuthId(decodedUser.uid);
     if (!user) {
       return next(
-        new ApiError('User not found.', {
+        new ApiError(ApiErrorMessage.UNAUTHORIZED, {
           statusCode: StatusCodes.UNAUTHORIZED,
           code: ApiErrorCode.AUTH_USER_NOT_FOUND,
         }),
@@ -90,7 +90,7 @@ export async function AuthGuardMiddleware(req: Request, res: Response, next: Nex
 
     // Unexpected error - should not happen if services handle errors properly
     return next(
-      new ApiError('Authentication failed.', {
+      new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.INTERNAL,
         cause: error,
