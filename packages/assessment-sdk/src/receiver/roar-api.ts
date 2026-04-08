@@ -1,6 +1,8 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
 import { ApiContractV1 } from '@roar-dashboard/api-contract';
 import type { CommandContext } from '../command/command';
+import { SDKError } from '../errors/sdk-error';
+import { SdkErrorCode } from '../enums/sdk-error-code.enum';
 
 /**
  * Creates a ts-rest client configured with ROAR API contract and authentication.
@@ -10,10 +12,18 @@ import type { CommandContext } from '../command/command';
  * - x-request-id header for request tracing (when requestId is defined)
  * - Custom fetch implementation (if provided in context)
  *
- * @param ctx - CommandContext with baseUrl, auth callbacks, optional logger, and optional custom fetch
+ * @param ctx - CommandContext with baseUrl, auth callbacks, participant context, optional logger, and optional custom fetch
  * @returns Initialized ts-rest client for ApiContractV1
  */
 function createClient(ctx: CommandContext) {
+  // Validate participantId is present at client creation time
+  // This is the single enforcement point for the requirement
+  if (!ctx.participant.participantId) {
+    throw new SDKError('participantId is required in CommandContext to create API client', {
+      code: SdkErrorCode.INVALID_CONTEXT,
+    });
+  }
+
   return initClient(ApiContractV1, {
     baseUrl: ctx.baseUrl,
     baseHeaders: {},

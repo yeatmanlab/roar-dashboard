@@ -20,15 +20,18 @@ import { RUN_EVENT_STATUS_OK } from '../types';
 
 /**
  * Helper to create a mock CommandContext for testing.
- * Provides a standard test context with a mocked auth token provider.
+ * Provides a standard test context with a mocked auth token provider and participant ID.
  *
- * @returns A CommandContext configured for testing with localhost baseUrl
+ * @returns A CommandContext configured for testing with localhost baseUrl and participantId
  */
 function createMockContext(fetchImpl?: typeof fetch): CommandContext {
   return {
     baseUrl: 'http://localhost:3000',
     auth: {
       getToken: vi.fn().mockResolvedValue('test-token'),
+    },
+    participant: {
+      participantId: 'participant-123',
     },
     ...(fetchImpl ? { fetchImpl } : {}),
   };
@@ -338,6 +341,9 @@ describe('firekit compat', () => {
         auth: {
           getToken: vi.fn().mockResolvedValue('test-token'),
         },
+        participant: {
+          participantId: 'participant-123',
+        },
       };
 
       const fetchMock = vi.fn();
@@ -391,6 +397,9 @@ describe('firekit compat', () => {
         auth: {
           getToken: vi.fn().mockResolvedValue('test-token'),
         },
+        participant: {
+          participantId: 'participant-123',
+        },
       };
 
       const fetchMock = vi.fn();
@@ -440,6 +449,9 @@ describe('firekit compat', () => {
         baseUrl: 'http://localhost:3000',
         auth: {
           getToken: vi.fn().mockResolvedValue('test-token'),
+        },
+        participant: {
+          participantId: 'participant-123',
         },
       };
 
@@ -669,6 +681,9 @@ describe('firekit compat', () => {
       baseUrl: 'http://localhost:3000',
       auth: {
         getToken: vi.fn().mockResolvedValue('test-token'),
+      },
+      participant: {
+        participantId: 'participant-123',
       },
     };
 
