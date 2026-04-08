@@ -2,13 +2,21 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Column, SQL } from 'drizzle-orm';
 import { eq, and, or, ilike, asc, desc, count, sql } from 'drizzle-orm';
 import type { TaskVariant } from '../db/schema';
-import { taskVariants } from '../db/schema';
+import { taskVariants, tasks } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { TaskVariantSortFieldType, TaskVariantStatus } from '@roar-dashboard/api-contract';
+import type {
+  TaskVariantSortFieldType,
+  TaskVariantStatus,
+  TaskVariantsSortFieldType,
+} from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import type { ParsedFilter } from '../types/filter';
+import type { FilterFieldMap } from '../utils/build-filter-conditions.util';
+import { buildFilterConditions } from '../utils/build-filter-conditions.util';
+import { escapeLikePattern } from '../utils/escape-like-pattern.util';
 
 /**
  * Explicit mapping from API sort field names to task variant table columns.
@@ -42,6 +50,54 @@ export interface ListTaskVariantsFilter {
   taskId: string;
   /** Optional status to filter by. If not provided, returns all variants. */
   status?: TaskVariantStatus;
+}
+
+/**
+ * Explicit mapping from API sort field names to columns for the cross-task variant list.
+ */
+const TASK_VARIANTS_SORT_COLUMNS: Record<TaskVariantsSortFieldType, Column> = {
+  'variant.name': taskVariants.name,
+  'variant.createdAt': taskVariants.createdAt,
+  'variant.updatedAt': taskVariants.updatedAt,
+  'task.name': tasks.name,
+  'task.slug': tasks.slug,
+};
+
+/**
+ * Allowed filter fields for the cross-task variant list, mapped to Drizzle column references.
+ */
+const TASK_VARIANTS_FILTER_COLUMNS: FilterFieldMap = {
+  'task.id': tasks.id,
+  'task.slug': tasks.slug,
+};
+
+/**
+ * A published task variant joined with its parent task fields.
+ * Returned by `listAllPublished`.
+ */
+export interface TaskVariantWithTaskDetails {
+  id: string;
+  taskId: string;
+  name: string | null;
+  description: string | null;
+  status: TaskVariantStatus;
+  createdAt: Date;
+  updatedAt: Date | null;
+  taskName: string;
+  taskSlug: string;
+  taskImage: string | null;
+}
+
+/**
+ * Options for the cross-task published variant list.
+ */
+export interface ListAllPublishedOptions {
+  page: number;
+  perPage: number;
+  sortBy: TaskVariantsSortFieldType;
+  sortOrder: SortOrder;
+  search?: string;
+  filters: ParsedFilter[];
 }
 
 /**
@@ -158,8 +214,6 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
 
     // Search filter (name or description)
     if (search) {
-      const escapeLikePattern = (value: string): string =>
-        value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
       const escapedSearch = escapeLikePattern(search);
       const searchPattern = `%${escapedSearch}%`;
       conditions.push(
@@ -196,5 +250,86 @@ export class TaskVariantRepository extends BaseRepository<TaskVariant, typeof ta
       items: dataResult,
       totalItems,
     };
+  }
+
+  /**
+   * List all published task variants across all tasks.
+   *
+   * Performs an INNER JOIN against the tasks table to include denormalized task fields.
+   * Always filters to `status = 'published'`. Supports free-text search across variant
+   * name, variant description, task name, task slug, and task description. Supports
+   * structured filter expressions and dotted-notation sorting.
+   *
+   * @param options - Pagination, sort, search, and filter options
+   * @returns Paginated result with variant + task details
+   */
+  async listAllPublished(options: ListAllPublishedOptions): Promise<PaginatedResult<TaskVariantWithTaskDetails>> {
+    const { page, perPage, sortBy, sortOrder, search, filters } = options;
+    const offset = (page - 1) * perPage;
+
+    const conditions: SQL[] = [];
+
+    // Always restrict to published variants
+    conditions.push(eq(taskVariants.status, 'published'));
+
+    // Free-text search across variant and task fields
+    if (search) {
+      const searchPattern = `%${escapeLikePattern(search)}%`;
+      conditions.push(
+        or(
+          ilike(taskVariants.name, searchPattern),
+          ilike(taskVariants.description, searchPattern),
+          ilike(tasks.name, searchPattern),
+          ilike(tasks.slug, searchPattern),
+          ilike(tasks.description, searchPattern),
+        ) as SQL,
+      );
+    }
+
+    // Structured filter expressions
+    const filterCondition = buildFilterConditions(filters, TASK_VARIANTS_FILTER_COLUMNS);
+    if (filterCondition) {
+      conditions.push(filterCondition);
+    }
+
+    const whereClause = and(...conditions);
+
+    // Count query
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(taskVariants)
+      .innerJoin(tasks, eq(taskVariants.taskId, tasks.id))
+      .where(whereClause);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const sortColumn = TASK_VARIANTS_SORT_COLUMNS[sortBy] ?? taskVariants.name;
+    const sortDirection = sortOrder === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
+
+    const dataResult = await this.db
+      .select({
+        id: taskVariants.id,
+        taskId: taskVariants.taskId,
+        name: taskVariants.name,
+        description: taskVariants.description,
+        status: taskVariants.status,
+        createdAt: taskVariants.createdAt,
+        updatedAt: taskVariants.updatedAt,
+        taskName: tasks.name,
+        taskSlug: tasks.slug,
+        taskImage: tasks.image,
+      })
+      .from(taskVariants)
+      .innerJoin(tasks, eq(taskVariants.taskId, tasks.id))
+      .where(whereClause)
+      .orderBy(sortDirection, asc(taskVariants.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return { items: dataResult as TaskVariantWithTaskDetails[], totalItems };
   }
 }

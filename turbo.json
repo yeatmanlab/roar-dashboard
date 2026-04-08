@@ -15,7 +15,8 @@
     "CORE_DATABASE_NAME",
     "CORE_DATABASE_USER",
     "ASSESSMENT_DATABASE_NAME",
-    "ASSESSMENT_DATABASE_USER"
+    "ASSESSMENT_DATABASE_USER",
+    "LOG_LEVEL"
   ],
   "globalDependencies": [".env"],
   "tasks": {
@@ -42,7 +43,7 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env.test"],
       "outputs": ["coverage/**"],
-      "passThroughEnv": ["CORE_DATABASE_URL", "ASSESSMENT_DATABASE_URL"]
+      "passThroughEnv": ["CORE_DATABASE_URL", "ASSESSMENT_DATABASE_URL", "VITEST_PROJECT"]
     },
     "test:watch": {
       "outputs": ["coverage/**"]

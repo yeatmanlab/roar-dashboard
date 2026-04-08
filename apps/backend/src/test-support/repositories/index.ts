@@ -1,5 +1,10 @@
 export { createMockTaskRepository, MockTaskRepository } from './task.repository';
 export { createMockTaskVariantRepository, MockTaskVariantRepository } from './task-variant.repository';
+export { createMockTaskBundleRepository, MockTaskBundleRepository } from './task-bundle.repository';
+export {
+  createMockTaskBundleVariantRepository,
+  MockTaskBundleVariantRepository,
+} from './task-bundle-variant.repository';
 export {
   createMockTaskVariantParameterRepository,
   MockTaskVariantParameterRepository,
