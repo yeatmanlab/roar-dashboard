@@ -252,6 +252,58 @@ describe('GET /v1/schools/:schoolId/classes', () => {
     });
   });
 
+  describe('filtering', () => {
+    it('filters classes by grade using the array contains operator', async () => {
+      // Create a class with a known grade
+      await ClassFactory.create({
+        name: 'Grade 3 Math',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+        grades: ['3'],
+      });
+
+      const res = await expectRoute('GET', `${path()}?filter=grade:eq:3`).as(tiers.superAdmin).toReturn(200);
+
+      // Should only return the class with grade 3
+      expect(res.body.data.items.length).toBeGreaterThanOrEqual(1);
+      const names = res.body.data.items.map((item: { name: string }) => item.name);
+      expect(names).toContain('Grade 3 Math');
+
+      // The base fixture class has grades: null, so it should be excluded
+      expect(names).not.toContain(baseFixture.classInSchoolA.name);
+    });
+
+    it('filters classes by classType', async () => {
+      // Create a class with a specific classType
+      await ClassFactory.create({
+        name: 'Scheduled Science',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+        classType: 'scheduled',
+      });
+
+      const res = await expectRoute('GET', `${path()}?filter=classType:eq:scheduled`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      // Should only return scheduled classes
+      expect(res.body.data.items.length).toBeGreaterThanOrEqual(1);
+      const items = res.body.data.items as { name: string; classType: string }[];
+      for (const item of items) {
+        expect(item.classType).toBe('scheduled');
+      }
+      expect(items.map((i) => i.name)).toContain('Scheduled Science');
+    });
+
+    it('returns empty results when filter matches no classes', async () => {
+      // Filter by a grade that no class in this school has
+      const res = await expectRoute('GET', `${path()}?filter=grade:eq:13`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(0);
+      expect(res.body.data.pagination.totalItems).toBe(0);
+    });
+  });
+
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
