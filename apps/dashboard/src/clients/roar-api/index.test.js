@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { tsRestFetchApi } from '@ts-rest/core';
 
 // Set the env var before any module imports reference it
@@ -141,6 +141,29 @@ describe('apiWithAuthRetry', () => {
     expect(result).toBe(unauthorizedResponse);
     expect(mockAuthStore.forceIdTokenRefresh).not.toHaveBeenCalled();
     expect(tsRestFetchApi).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries without Authorization header when forceIdTokenRefresh returns null', async () => {
+    const expiredResponse = {
+      status: 401,
+      clone() {
+        return this;
+      },
+      json: vi.fn().mockResolvedValue({ error: { code: 'auth/token-expired' } }),
+    };
+    const retryResponse = { status: 401 };
+
+    vi.mocked(tsRestFetchApi).mockResolvedValueOnce(expiredResponse).mockResolvedValueOnce(retryResponse);
+
+    mockAuthStore.forceIdTokenRefresh.mockResolvedValue(null);
+
+    const result = await capturedApi({ headers: {} });
+
+    expect(result).toBe(retryResponse);
+    expect(mockAuthStore.forceIdTokenRefresh).toHaveBeenCalledTimes(1);
+    expect(tsRestFetchApi).toHaveBeenCalledTimes(2);
+    const retryArgs = vi.mocked(tsRestFetchApi).mock.calls[1][0];
+    expect(retryArgs.headers).not.toHaveProperty('Authorization');
   });
 
   it('returns original response when 401 body cannot be parsed', async () => {
