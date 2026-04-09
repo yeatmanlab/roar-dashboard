@@ -692,7 +692,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
       const dateExpired = new Date(activationCode.dateExpired);
       const today = new Date();
       if (dateExpired < today) {
-        dialogMessage.value = 'The code has expired. Please enter a valid code."';
+        dialogMessage.value = 'The code has expired. Please enter a valid code.';
         showErrorDialog();
         submitted.value = false;
         throw new Error('Activation code has expired');
@@ -704,7 +704,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
       const twoMonthsAgo = new Date();
       twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
       if (dateCreated < twoMonthsAgo) {
-        dialogMessage.value = 'The code has expired. Please enter a valid code."';
+        dialogMessage.value = 'The code has expired. Please enter a valid code.';
         showErrorDialog();
         submitted.value = false;
         throw new Error('Activation code has expired');
@@ -728,7 +728,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
     if (!state.students[outerIndex].noActivationCode || props.code) {
       dialogMessage.value = `The code ${studentCode} does not belong to any organization. Please enter a valid code.`;
     } else {
-      dialogMessage.value = 'The code does not belong to any organization. Please enter a valid code."';
+      dialogMessage.value = 'The code does not belong to any organization. Please enter a valid code.';
     }
 
     showErrorDialog();
