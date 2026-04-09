@@ -1,7 +1,6 @@
 import { eq, asc, desc, countDistinct, and, isNull, sql, inArray, count } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { alias } from 'drizzle-orm/pg-core';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { Org } from '../db/schema';
@@ -372,15 +371,10 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     const districtPath = (await this.getUnrestrictedById(districtId))?.path;
 
-    if (!districtPath) {
-      throw new Error(`District with ID ${districtId} not found`);
-    }
-
-    const districtOrgs = alias(orgs, 'districtOrgs');
-
     const orgConditions = and(
       isEnrollmentActive(userOrgs),
       isNull(orgs.rosteringEnded),
+      sql`${districtPath} @> ${orgs.path}`,
       ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_ORGS),
     );
 
@@ -392,12 +386,12 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .from(userOrgs)
       .innerJoin(users, eq(users.id, userOrgs.userId))
       .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
-      .innerJoin(districtOrgs, sql`${districtPath}  @> ${orgs.path}`)
       .where(orgConditions);
 
     const classConditions = and(
       isEnrollmentActive(userClasses),
       isNull(classes.rosteringEnded),
+      sql`${districtPath} @> ${classes.orgPath}`,
       ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES),
     );
 
@@ -409,7 +403,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .from(userClasses)
       .innerJoin(users, eq(userClasses.userId, users.id))
       .innerJoin(classes, eq(userClasses.classId, classes.id))
-      .innerJoin(districtOrgs, sql`${districtPath} @> ${classes.orgPath}`)
       .where(classConditions);
 
     const combinedUsersQuery = orgUsersQuery.union(classUsersQuery).as('combined_users');
