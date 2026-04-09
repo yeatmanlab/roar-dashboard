@@ -24,6 +24,12 @@ export function registerDistrictsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => DistrictsController.getById(user!, id),
     },
+    listSchools: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { districtId }, query }) =>
+        DistrictsController.listSchools(user!, districtId, query),
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo

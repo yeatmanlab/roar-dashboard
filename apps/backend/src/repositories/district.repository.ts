@@ -327,4 +327,15 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     return result[0]?.org ?? null;
   }
+
+  /**
+   * Get the roles a user has for a specific district.
+   *
+   * @param userId - The user ID
+   * @param districtId - The district ID
+   * @returns Array of role strings the user has for this district
+   */
+  async getUserRolesForDistrict(userId: string, districtId: string): Promise<string[]> {
+    return this.accessControls.getUserRolesForOrg(userId, districtId);
+  }
 }

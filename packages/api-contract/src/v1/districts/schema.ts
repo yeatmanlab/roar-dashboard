@@ -5,6 +5,8 @@ import {
   createEmbedQuerySchema,
   createPaginatedResponseSchema,
 } from '../common/query';
+import type { SchoolLocation, SchoolIdentifiers, SchoolCounts } from '../schools/schema';
+import { SchoolLocationSchema, SchoolIdentifiersSchema, SchoolCountsSchema } from '../schools/schema';
 
 /**
  * District location schema.
@@ -124,3 +126,66 @@ export type DistrictsListQuery = z.infer<typeof DistrictsListQuerySchema>;
 export const DistrictsListResponseSchema = createPaginatedResponseSchema(DistrictDetailSchema);
 
 export type DistrictsListResponse = z.infer<typeof DistrictsListResponseSchema>;
+
+/**
+ * Allowed sort fields for schools within a district.
+ */
+export const DISTRICT_SCHOOL_SORT_FIELDS = ['name', 'abbreviation'] as const;
+
+/**
+ * Sort field type for schools within a district.
+ */
+export type DistrictSchoolSortFieldType = (typeof DISTRICT_SCHOOL_SORT_FIELDS)[number];
+
+/**
+ * Sort field constants for type-safe access.
+ */
+export const DistrictSchoolSortField = {
+  NAME: 'name',
+  ABBREVIATION: 'abbreviation',
+} as const satisfies Record<string, (typeof DISTRICT_SCHOOL_SORT_FIELDS)[number]>;
+
+/**
+ * Allowed embed options for schools within a district.
+ */
+export const DISTRICT_SCHOOL_EMBED_OPTIONS = ['counts'] as const;
+
+/**
+ * Embed option constants for type-safe access.
+ */
+export const DistrictSchoolEmbedOption = {
+  COUNTS: 'counts',
+} as const satisfies Record<string, (typeof DISTRICT_SCHOOL_EMBED_OPTIONS)[number]>;
+
+/**
+ * Query parameters for listing schools in a district.
+ */
+export const DistrictSchoolsListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(DISTRICT_SCHOOL_SORT_FIELDS, 'name'),
+)
+  .merge(createEmbedQuerySchema(DISTRICT_SCHOOL_EMBED_OPTIONS))
+  .extend({
+    includeEnded: z.coerce.boolean().optional(),
+  });
+
+export type DistrictSchoolsListQuery = z.infer<typeof DistrictSchoolsListQuerySchema>;
+
+/**
+ * Paginated response for district schools list.
+ * Uses SchoolDetailBaseSchema from the schools contract.
+ */
+export const DistrictSchoolsListResponseSchema = createPaginatedResponseSchema(
+  z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    abbreviation: z.string(),
+    orgType: z.literal('school'),
+    parentOrgId: z.string().uuid().nullable(),
+    location: SchoolLocationSchema.optional(),
+    identifiers: SchoolIdentifiersSchema.optional(),
+    rosteringEnded: z.string().datetime().optional(),
+    counts: SchoolCountsSchema.optional(),
+  }),
+);
+
+export type DistrictSchoolsListResponse = z.infer<typeof DistrictSchoolsListResponseSchema>;
