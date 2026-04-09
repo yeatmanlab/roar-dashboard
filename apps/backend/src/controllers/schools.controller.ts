@@ -221,6 +221,7 @@ export const SchoolsController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
           StatusCodes.INTERNAL_SERVER_ERROR,

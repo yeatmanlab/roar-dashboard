@@ -12,7 +12,7 @@ import type { AuthContext } from '../../types/auth-context';
 import type { Class } from '../../db/schema';
 import { ClassRepository } from '../../repositories/class.repository';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-import type { ParsedFilter } from '@roar-dashboard/api-contract';
+import type { ParsedFilter } from '../../types/filter';
 
 /**
  * Options for listing schools
@@ -231,6 +231,19 @@ export function SchoolService({
     const { userId } = authContext;
 
     try {
+      // Validate filter operators — only 'eq' is supported for class filters
+      if (options.filter) {
+        for (const f of options.filter) {
+          if (f.operator !== 'eq') {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, field: f.field, operator: f.operator },
+            });
+          }
+        }
+      }
+
       // Verify school access and user has supervisory role
       await authorizeSchoolSubResourceAccess(authContext, schoolId);
 
@@ -242,7 +255,7 @@ export function SchoolService({
           field: options.sortBy,
           direction: options.sortOrder,
         },
-        filter: options.filter,
+        ...(options.filter ? { filter: options.filter } : {}),
       });
 
       return result;

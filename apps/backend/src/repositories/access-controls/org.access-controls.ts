@@ -145,29 +145,21 @@ export class OrgAccessControls {
    * @returns Array of role strings the user holds for the org
    */
   async getUserRolesForOrg(userId: string, orgId: string): Promise<string[]> {
-    const roles = new Set<string>();
-
-    // Path 1: Direct org membership
-    const directOrgRoles = await this.db
-      .selectDistinct({ role: userOrgs.role })
+    // Single UNION query combining both paths for efficiency
+    const directOrgRoles = this.db
+      .select({ role: userOrgs.role })
       .from(userOrgs)
       .where(and(eq(userOrgs.userId, userId), eq(userOrgs.orgId, orgId)));
 
-    for (const row of directOrgRoles) {
-      roles.add(row.role);
-    }
-
-    // Path 2: Class membership in this org
-    const classRoles = await this.db
-      .selectDistinct({ role: userClasses.role })
+    const classRoles = this.db
+      .select({ role: userClasses.role })
       .from(userClasses)
       .innerJoin(classes, eq(classes.id, userClasses.classId))
       .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId)));
 
-    for (const row of classRoles) {
-      roles.add(row.role);
-    }
+    // UNION deduplicates automatically
+    const result = await directOrgRoles.union(classRoles);
 
-    return Array.from(roles);
+    return result.map((row) => row.role);
   }
 }
