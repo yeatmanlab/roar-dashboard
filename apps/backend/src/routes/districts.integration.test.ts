@@ -255,6 +255,33 @@ describe('GET /v1/districts/:districtId/schools', () => {
     });
   });
 
+  describe('embed: counts', () => {
+    it('includes user and class counts when embed=counts', async () => {
+      const res = await expectRoute('GET', `${districtSchoolsUrl}?embed=counts`)
+        .as(tiers.admin)
+        .toReturn(200);
+
+      const school = res.body.data.items.find(
+        (item: { id: string }) => item.id === baseFixture.schoolA.id,
+      );
+      expect(school).toBeDefined();
+      expect(school.counts).toMatchObject({
+        users: expect.any(Number),
+        classes: expect.any(Number),
+      });
+    });
+
+    it('omits counts when embed is not requested', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.admin).toReturn(200);
+
+      const school = res.body.data.items.find(
+        (item: { id: string }) => item.id === baseFixture.schoolA.id,
+      );
+      expect(school).toBeDefined();
+      expect(school.counts).toBeUndefined();
+    });
+  });
+
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', districtSchoolsUrl).unauthenticated().toReturn(401);
@@ -264,7 +291,9 @@ describe('GET /v1/districts/:districtId/schools', () => {
 
     it('returns 404 when district does not exist', async () => {
       const fakeDistrictId = '00000000-0000-0000-0000-000000000000';
-      const res = await expectRoute('GET', `/v1/districts/${fakeDistrictId}/schools`).as(tiers.superAdmin).toReturn(404);
+      const res = await expectRoute('GET', `/v1/districts/${fakeDistrictId}/schools`)
+        .as(tiers.superAdmin)
+        .toReturn(404);
       expect(res.body.error).toBeDefined();
     });
 
