@@ -37,6 +37,7 @@ function expectErrorResponse(
 describe('DistrictsController', () => {
   const mockList = vi.fn();
   const mockGetById = vi.fn();
+  const mockListDistrictSchools = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -46,6 +47,7 @@ describe('DistrictsController', () => {
     vi.mocked(DistrictService).mockReturnValue({
       list: mockList,
       getById: mockGetById,
+      listDistrictSchools: mockListDistrictSchools,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
   });
@@ -480,6 +482,197 @@ describe('DistrictsController', () => {
       const { DistrictsController: Controller } = await import('./districts.controller');
 
       await expect(Controller.getById(mockAuthContext, 'district-123')).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('listSchools', () => {
+    const districtId = 'district-123';
+    const defaultQuery = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      embed: [] as string[],
+    };
+
+    it('should return paginated schools with 200 status', async () => {
+      const mockSchools = [
+        OrgFactory.build({ orgType: OrgType.SCHOOL }),
+        OrgFactory.build({ orgType: OrgType.SCHOOL }),
+      ];
+      mockListDistrictSchools.mockResolvedValue({
+        items: mockSchools,
+        totalItems: 2,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform school fields to API response format', async () => {
+      const mockSchool = OrgFactory.build({
+        id: 'school-uuid-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: districtId,
+        locationAddressLine1: '456 School Ave',
+        locationCity: 'Schoolville',
+        locationStateProvince: 'CA',
+        locationPostalCode: '90210',
+        locationCountry: 'USA',
+        createdAt: new Date('2023-06-15T10:30:00Z'),
+        updatedAt: new Date('2023-06-16T11:00:00Z'),
+      });
+      mockListDistrictSchools.mockResolvedValue({
+        items: [mockSchool],
+        totalItems: 1,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      const school = data.items[0];
+
+      expect(school).toMatchObject({
+        id: 'school-uuid-123',
+        name: 'Test School',
+        abbreviation: 'TS',
+        orgType: OrgType.SCHOOL,
+        parentOrgId: districtId,
+        location: {
+          addressLine1: '456 School Ave',
+          city: 'Schoolville',
+          stateProvince: 'CA',
+          postalCode: '90210',
+          country: 'USA',
+        },
+      });
+    });
+
+    it('should include counts when embed=counts is requested', async () => {
+      const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL });
+      const mockSchoolWithCounts = {
+        ...mockSchool,
+        counts: { users: 50, schools: 0, classes: 10 },
+      };
+
+      mockListDistrictSchools.mockResolvedValue({
+        items: [mockSchoolWithCounts],
+        totalItems: 1,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, {
+        ...defaultQuery,
+        embed: ['counts'],
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.counts).toEqual({ users: 50, schools: 0, classes: 10 });
+    });
+
+    it('should calculate totalPages correctly', async () => {
+      const mockSchools = OrgFactory.buildList(3, { orgType: OrgType.SCHOOL });
+      mockListDistrictSchools.mockResolvedValue({
+        items: mockSchools,
+        totalItems: 53,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, {
+        ...defaultQuery,
+        page: 2,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.pagination.totalPages).toBe(3); // ceil(53 / 25) = 3
+    });
+
+    it('should pass includeEnded parameter to service', async () => {
+      mockListDistrictSchools.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await Controller.listSchools(mockAuthContext, districtId, {
+        ...defaultQuery,
+        includeEnded: true,
+      });
+
+      expect(mockListDistrictSchools).toHaveBeenCalledWith(
+        mockAuthContext,
+        districtId,
+        expect.objectContaining({ includeEnded: true }),
+      );
+    });
+
+    it('should handle ApiError with 403 Forbidden', async () => {
+      mockListDistrictSchools.mockRejectedValue(
+        new ApiError('Forbidden', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
+
+      expectErrorResponse(result, StatusCodes.FORBIDDEN);
+    });
+
+    it('should handle ApiError with 404 Not Found', async () => {
+      mockListDistrictSchools.mockRejectedValue(
+        new ApiError('Not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
+
+      expectErrorResponse(result, StatusCodes.NOT_FOUND);
+    });
+
+    it('should handle ApiError with 500 Internal Server Error', async () => {
+      mockListDistrictSchools.mockRejectedValue(
+        new ApiError('Database error', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
+
+      expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      mockListDistrictSchools.mockRejectedValue(new Error('Unexpected error'));
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await expect(Controller.listSchools(mockAuthContext, districtId, defaultQuery)).rejects.toThrow(
+        'Unexpected error',
+      );
     });
   });
 });
