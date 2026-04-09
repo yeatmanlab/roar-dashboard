@@ -217,10 +217,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const offset = (page - 1) * perPage;
 
     // Build where conditions
-    const whereConditions: SQL[] = [
-      eq(classes.schoolId, schoolId),
-      isNull(classes.rosteringEnded),
-    ];
+    const whereConditions: SQL[] = [eq(classes.schoolId, schoolId), isNull(classes.rosteringEnded)];
 
     // Apply filters if provided
     if (filter && filter.length > 0) {
@@ -237,10 +234,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     // Count query
-    const countResult = await this.db
-      .select({ count: count() })
-      .from(classes)
-      .where(whereClause);
+    const countResult = await this.db.select({ count: count() }).from(classes).where(whereClause);
 
     const totalItems = countResult[0]?.count ?? 0;
 
@@ -256,9 +250,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
 
     const sortField = orderBy?.field as SchoolClassSortFieldType | undefined;
     const sortColumn =
-      sortField && sortField in SORT_COLUMNS
-        ? SORT_COLUMNS[sortField as keyof typeof SORT_COLUMNS]
-        : classes.name;
+      sortField && sortField in SORT_COLUMNS ? SORT_COLUMNS[sortField as keyof typeof SORT_COLUMNS] : classes.name;
     const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     // Data query
