@@ -6,6 +6,7 @@ import type {
   DistrictsListQuery,
   DistrictDetail as ApiDistrict,
   DistrictSchoolsListQuery,
+  DistrictSchoolsListResponse,
 } from '@roar-dashboard/api-contract';
 import { DistrictEmbedOption, DistrictSchoolEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
@@ -220,19 +221,21 @@ export const DistrictsController = {
   },
 };
 
+/** Single school item type from the paginated response. */
+type ApiDistrictSchool = DistrictSchoolsListResponse['items'][number];
+
 /**
  * Maps a database School entity to the API schema.
  * Converts Date fields to ISO strings and transforms location data to match the contract.
  */
-function transformSchool(school: SchoolWithCounts): unknown {
+function transformSchool(school: SchoolWithCounts): ApiDistrictSchool {
   // Transform PostgreSQL point to GeoJSON format if present
   let coordinates: { type: 'Point'; coordinates: [number, number] } | undefined;
-  const { locationLatLong } = school as any;
-  if (locationLatLong) {
+  if (school.locationLatLong) {
     // PostgreSQL point type: { x: longitude, y: latitude }
     coordinates = {
       type: 'Point',
-      coordinates: [locationLatLong.x, locationLatLong.y],
+      coordinates: [school.locationLatLong.x, school.locationLatLong.y],
     };
   }
 
@@ -255,7 +258,7 @@ function transformSchool(school: SchoolWithCounts): unknown {
     ...(school.schoolNumber && { schoolNumber: school.schoolNumber }),
   };
 
-  const result: any = {
+  const result: ApiDistrictSchool = {
     id: school.id,
     name: school.name,
     abbreviation: school.abbreviation,
@@ -264,12 +267,8 @@ function transformSchool(school: SchoolWithCounts): unknown {
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),
     ...(school.rosteringEnded && { rosteringEnded: school.rosteringEnded.toISOString() }),
+    ...(school.counts && { counts: school.counts }),
   };
-
-  // Include counts if embedded
-  if (school.counts) {
-    result.counts = school.counts;
-  }
 
   return result;
 }

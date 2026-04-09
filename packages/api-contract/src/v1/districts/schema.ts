@@ -5,7 +5,6 @@ import {
   createEmbedQuerySchema,
   createPaginatedResponseSchema,
 } from '../common/query';
-import type { SchoolLocation, SchoolIdentifiers, SchoolCounts } from '../schools/schema';
 import { SchoolLocationSchema, SchoolIdentifiersSchema, SchoolCountsSchema } from '../schools/schema';
 
 /**
