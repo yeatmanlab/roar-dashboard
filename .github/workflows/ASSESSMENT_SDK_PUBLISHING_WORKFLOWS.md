@@ -46,12 +46,12 @@ Publishes pre-release versions of the Assessment SDK when changes are merged to 
 **Process**:
 1. Builds the SDK
 2. Runs tests
-3. Computes next prerelease version (e.g., `0.0.1-next.1`, `0.0.1-next.2`, etc.)
+3. Computes next prerelease version using the GitHub Actions run number (e.g., `0.0.1-next.42`, `0.0.1-next.43`, etc.)
 4. Temporarily updates package.json for publishing only
 5. Publishes to GitHub Package Registry with `next` dist-tag
 6. Restores original package.json (no commit to main)
 
-**Important**: This workflow does NOT commit version changes back to main. The prerelease version is computed and used only for publishing, keeping the main branch clean and preventing self-triggered reruns.
+**Important**: This workflow does NOT commit version changes back to main. The prerelease version is computed using `github.run_number` to ensure every workflow run produces a unique, always-incrementing version. This keeps the main branch clean, prevents self-triggered reruns, and ensures no republish conflicts.
 
 **Concurrency**: Only one next release can run at a time to prevent version conflicts.
 
@@ -123,9 +123,11 @@ The prerelease version is computed and used only for publishing. The main branch
 
 ## Permissions
 
-Both workflows require the following GitHub Actions permissions:
-
-- `contents: write` - For creating commits and GitHub Releases
+### Stable Workflow
+- `contents: write` - For creating GitHub Releases
 - `packages: write` - For publishing to GitHub Package Registry
+
+### Next Workflow
+- `packages: write` - For publishing to GitHub Package Registry (no `contents: write` needed since it doesn't create commits or releases)
 
 These are configured in the workflow YAML files.

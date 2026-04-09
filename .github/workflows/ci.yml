@@ -54,6 +54,9 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
+      - name: Build API Contract
+        run: npm run build -w packages/api-contract
+
       - name: Test Assessment SDK
         run: npm run test -w packages/assessment-sdk
 
