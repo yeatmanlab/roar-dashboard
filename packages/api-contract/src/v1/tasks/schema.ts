@@ -445,6 +445,46 @@ export const CreateTaskResponseSchema = z.object({
 export type CreateTaskRequestBody = z.infer<typeof CreateTaskRequestBodySchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
 
+const TaskConfigObjectSchema = ValidatedJsonValue.refine(
+  (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+  { message: 'taskConfig must be a JSON object' },
+);
+
+export const UpdateTaskRequestBodySchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    nameSimple: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    nameTechnical: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    description: z.string().trim().min(1).max(1024).nullish(),
+    image: z.string().url('Image must be a valid URL').nullish(),
+    tutorialVideo: z.string().url('Tutorial video must be a valid URL').nullish(),
+    taskConfig: TaskConfigObjectSchema.optional(),
+
+    // Immutable fields are permitted at the contract level so the backend can
+    // return a 422 when they are present.
+    id: z.unknown().optional(),
+    slug: z.unknown().optional(),
+    createdAt: z.unknown().optional(),
+    updatedAt: z.unknown().optional(),
+  })
+  .superRefine((payload, ctx) => {
+    const updateRequestFields = Object.keys(payload);
+    if (updateRequestFields.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'At least one of name, nameSimple, nameTechnical, description, image, tutorialVideo, or taskConfig must be provided.',
+      });
+    }
+  });
+
+export const UpdateTaskResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateTaskRequestBody = z.infer<typeof UpdateTaskRequestBodySchema>;
+export type UpdateTaskResponse = z.infer<typeof UpdateTaskResponseSchema>;
+
 // ─── Task Variants List (cross-task, super-admin only) ──────────────────────
 
 /**

@@ -54,6 +54,22 @@ export interface UpdateTaskVariantData {
   parameters?: CreateTaskVariantParameterData[] | undefined;
 }
 
+export interface UpdateTaskData {
+  name?: string | undefined;
+  nameSimple?: string | undefined;
+  nameTechnical?: string | undefined;
+  description?: string | null | undefined;
+  image?: string | null | undefined;
+  tutorialVideo?: string | null | undefined;
+  taskConfig?: unknown | undefined;
+
+  // Immutable fields that must be rejected if present
+  id?: unknown;
+  slug?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+}
+
 /**
  * Result of evaluating a user's eligibility for a task variant.
  */
@@ -989,10 +1005,97 @@ export function TaskService({
     }
   }
 
+  async function update(authContext: AuthContext, taskId: string, body: UpdateTaskData): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    const immutableFields = ['id', 'slug', 'createdAt', 'updatedAt'] as const;
+    const immutableFieldsPresent = immutableFields.filter((field) => body[field] !== undefined);
+    if (immutableFieldsPresent.length > 0) {
+      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, taskId, immutableFieldsPresent },
+      });
+    }
+
+    const mutableFieldKeys = [
+      'name',
+      'nameSimple',
+      'nameTechnical',
+      'description',
+      'image',
+      'tutorialVideo',
+      'taskConfig',
+    ] as const;
+
+    const hasAnyMutableField = mutableFieldKeys.some((field) => body[field] !== undefined);
+    if (!hasAnyMutableField) {
+      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, taskId },
+      });
+    }
+
+    try {
+      let task: Task | null = null;
+
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
+      } else {
+        task = await taskRepository.getBySlug(taskId);
+      }
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+
+      const updateData: Partial<NewTask> = {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.nameSimple !== undefined && { nameSimple: body.nameSimple }),
+        ...(body.nameTechnical !== undefined && { nameTechnical: body.nameTechnical }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.image !== undefined && { image: body.image }),
+        ...(body.tutorialVideo !== undefined && { tutorialVideo: body.tutorialVideo }),
+        ...(body.taskConfig !== undefined && { taskConfig: body.taskConfig }),
+      };
+
+      await taskRepository.update({ id: task.id, data: updateData });
+
+      logger.info({ userId, taskId: task.id }, 'Updated task');
+
+      return { id: task.id };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to update task');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
     create,
+    update,
     listTaskVariants,
     getTaskVariant,
     createTaskVariant,

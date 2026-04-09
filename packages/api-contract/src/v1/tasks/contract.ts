@@ -12,6 +12,8 @@ import {
   GetTaskPathParamSchema,
   CreateTaskRequestBodySchema,
   CreateTaskResponseSchema,
+  UpdateTaskRequestBodySchema,
+  UpdateTaskResponseSchema,
   GetTaskVariantPathParamSchema,
   TaskSchema,
   ListTaskVariantsQuerySchema,
@@ -90,6 +92,32 @@ export const TasksContract = c.router(
         'Returns 400 if the request body is malformed. ' +
         'Returns 403 if the user is not a super admin. ' +
         'Returns 409 if a task with the same slug already exists. ' +
+        'Returns 500 if a server error occurs.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:taskId',
+      pathParams: GetTaskPathParamSchema,
+      contentType: 'application/json',
+      body: UpdateTaskRequestBodySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UpdateTaskResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update an existing task by ID or slug',
+      description:
+        'Updates mutable fields on a task, looked up by UUID or slug (case-sensitive). ' +
+        'Requires super admin privileges. ' +
+        'The fields id, slug, createdAt, and updatedAt are immutable and will be rejected. ' +
+        'Returns 200 with the updated task ID on success. ' +
+        'Returns 404 if no task exists with the given ID or slug. ' +
+        'Returns 422 if immutable fields are present in the request body. ' +
         'Returns 500 if a server error occurs.',
     },
     listTaskVariants: {

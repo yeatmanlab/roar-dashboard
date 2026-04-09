@@ -1872,6 +1872,76 @@ describe('TaskService', () => {
     });
   });
 
+  describe('update', () => {
+    const validTaskId = '123e4567-e89b-12d3-a456-426614174000';
+    const taskSlug = 'existing-task';
+    const mockTask = TaskFactory.build({ id: validTaskId, slug: taskSlug });
+
+    describe('authorization', () => {
+      it('should throw FORBIDDEN when user is not super admin', async () => {
+        const nonAdminContext: AuthContext = { userId: 'user-1', isSuperAdmin: false };
+
+        await expect(taskService.update(nonAdminContext, validTaskId, { name: 'Updated Name' })).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+    });
+
+    describe('validation', () => {
+      it('should throw 422 when immutable fields are present', async () => {
+        await expect(taskService.update(authContext, validTaskId, { slug: 'new-slug' })).rejects.toMatchObject({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      });
+    });
+
+    describe('not found', () => {
+      it('should throw NOT_FOUND when task does not exist by UUID', async () => {
+        taskRepository.getById.mockResolvedValue(null);
+
+        await expect(taskService.update(authContext, validTaskId, { name: 'Updated Name' })).rejects.toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+      });
+    });
+
+    describe('successful update', () => {
+      it('should update task when looked up by UUID', async () => {
+        taskRepository.getById.mockResolvedValue(mockTask);
+        taskRepository.update.mockResolvedValue();
+
+        const result = await taskService.update(authContext, validTaskId, { name: 'Updated Name' });
+
+        expect(result).toEqual({ id: validTaskId });
+        expect(taskRepository.getById).toHaveBeenCalledWith({ id: validTaskId });
+        expect(taskRepository.update).toHaveBeenCalledWith({
+          id: validTaskId,
+          data: { name: 'Updated Name' },
+        });
+      });
+
+      it('should update task when looked up by slug', async () => {
+        taskRepository.getBySlug.mockResolvedValue(mockTask);
+        taskRepository.update.mockResolvedValue();
+
+        const result = await taskService.update(authContext, taskSlug, { description: null });
+
+        expect(result).toEqual({ id: validTaskId });
+        expect(taskRepository.getBySlug).toHaveBeenCalledWith(taskSlug);
+        expect(taskRepository.update).toHaveBeenCalledWith({
+          id: validTaskId,
+          data: { description: null },
+        });
+      });
+    });
+  });
+
   describe('listTaskVariants', () => {
     const validTaskId = '123e4567-e89b-12d3-a456-426614174000';
     const mockTask = TaskFactory.build({

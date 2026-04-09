@@ -12,6 +12,7 @@ import type {
 import type { Task, TaskVariant } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';
+import type { UpdateTaskData } from '../services/task/task.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
@@ -164,6 +165,29 @@ export const TasksController = {
           StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
           StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  update: async (authContext: AuthContext, taskId: string, body: UpdateTaskData) => {
+    try {
+      const result = await taskService.update(authContext, taskId, body);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

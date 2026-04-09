@@ -27,6 +27,11 @@ export function registerTasksRoutes(routerInstance: Router) {
         // user is guaranteed to exist because AuthGuardMiddleware runs before this handler
         TasksController.create(user!, body),
     },
+    update: {
+      middleware: [AuthGuardMiddleware],
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      handler: async ({ req: { user }, params: { taskId }, body }) => TasksController.update(user!, taskId, body),
+    },
     listTaskVariants: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
