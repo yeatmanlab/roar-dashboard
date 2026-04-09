@@ -632,7 +632,8 @@ describe('DistrictsController', () => {
 
       const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
 
-      expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
     });
 
     it('should handle ApiError with 404 Not Found', async () => {
@@ -647,7 +648,8 @@ describe('DistrictsController', () => {
 
       const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
 
-      expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
     });
 
     it('should handle ApiError with 500 Internal Server Error', async () => {
@@ -662,7 +664,8 @@ describe('DistrictsController', () => {
 
       const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
 
-      expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
     });
 
     it('should rethrow non-ApiError errors', async () => {

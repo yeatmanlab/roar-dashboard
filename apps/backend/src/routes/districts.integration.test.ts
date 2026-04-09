@@ -190,11 +190,13 @@ describe('GET /v1/districts/:districtId/schools', () => {
     });
 
     it('student tier is forbidden from listing schools (supervised role)', async () => {
-      await expectRoute('GET', districtSchoolsUrl).as(tiers.student).toReturn(403);
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.student).toReturn(403);
+      expect(res.body.error).toBeDefined();
     });
 
     it('caregiver tier is forbidden from listing schools (supervised role)', async () => {
-      await expectRoute('GET', districtSchoolsUrl).as(tiers.caregiver).toReturn(403);
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.caregiver).toReturn(403);
+      expect(res.body.error).toBeDefined();
     });
   });
 
@@ -262,13 +264,15 @@ describe('GET /v1/districts/:districtId/schools', () => {
 
     it('returns 404 when district does not exist', async () => {
       const fakeDistrictId = '00000000-0000-0000-0000-000000000000';
-      await expectRoute('GET', `/v1/districts/${fakeDistrictId}/schools`).as(tiers.superAdmin).toReturn(404);
+      const res = await expectRoute('GET', `/v1/districts/${fakeDistrictId}/schools`).as(tiers.superAdmin).toReturn(404);
+      expect(res.body.error).toBeDefined();
     });
 
     it('returns 403 when user lacks access to the district', async () => {
       // Use districtB — tier users are only assigned to district (A)
       const crossDistrictUrl = `/v1/districts/${baseFixture.districtB.id}/schools`;
-      await expectRoute('GET', crossDistrictUrl).as(tiers.admin).toReturn(403);
+      const res = await expectRoute('GET', crossDistrictUrl).as(tiers.admin).toReturn(403);
+      expect(res.body.error).toBeDefined();
     });
   });
 });
