@@ -718,6 +718,11 @@ const validateCode = async (studentCode, outerIndex = 0) => {
       orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
     }
   } catch (error) {
+    if (error?.message === 'Activation code has expired') {
+      submitted.value = false;
+      throw error;
+    }
+
     console.error('Failed to validate activation code', error);
 
     if (!state.students[outerIndex].noActivationCode || props.code) {
