@@ -529,7 +529,8 @@ describe('SchoolsController', () => {
 
       const result = await Controller.listClasses(mockAuthContext, 'non-existent', defaultQuery);
 
-      expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
     });
 
     it('should handle ApiError with 403 Forbidden', async () => {
@@ -543,7 +544,8 @@ describe('SchoolsController', () => {
 
       const result = await Controller.listClasses(mockAuthContext, 'school-1', defaultQuery);
 
-      expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
     });
 
     it('should handle ApiError with 400 Bad Request', async () => {
@@ -557,7 +559,8 @@ describe('SchoolsController', () => {
 
       const result = await Controller.listClasses(mockAuthContext, 'school-1', defaultQuery);
 
-      expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      expect(errorBody).toBeDefined();
     });
 
     it('should rethrow non-ApiError errors', async () => {
