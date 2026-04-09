@@ -137,20 +137,39 @@ export class OrgAccessControls {
   }
 
   /**
-   * Get the roles a user holds for a specific org through direct membership
-   * or class membership within that org.
+   * Get the roles a user holds for a specific org through direct membership,
+   * ancestor org membership (via ltree), or class membership within that org.
+   *
+   * A district admin has a role at the district level, but that role also applies
+   * to descendant schools. This method finds roles through three paths:
+   * 1. Direct org membership at the target org
+   * 2. Membership at an ancestor org (e.g., district admin → school)
+   * 3. Class membership within the target org
    *
    * @param userId - The user's ID
    * @param orgId - The org to check roles for
    * @returns Array of role strings the user holds for the org
    */
   async getUserRolesForOrg(userId: string, orgId: string): Promise<string[]> {
-    // Single UNION query combining both paths for efficiency
+    const userOrgTable = alias(orgs, 'user_org');
+    const targetOrgTable = alias(orgs, 'target_org');
+
+    // Path 1: Direct org membership at the target org
     const directOrgRoles = this.db
       .select({ role: userOrgs.role })
       .from(userOrgs)
       .where(and(eq(userOrgs.userId, userId), eq(userOrgs.orgId, orgId)));
 
+    // Path 2: Membership at an ancestor org (e.g., district admin checking a school)
+    // User's org is an ancestor of (or equal to) the target org
+    const ancestorOrgRoles = this.db
+      .select({ role: userOrgs.role })
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      .innerJoin(targetOrgTable, eq(targetOrgTable.id, orgId))
+      .where(and(eq(userOrgs.userId, userId), isAncestorOrEqual(userOrgTable.path, targetOrgTable.path)));
+
+    // Path 3: Class membership within the target org
     const classRoles = this.db
       .select({ role: userClasses.role })
       .from(userClasses)
@@ -158,7 +177,7 @@ export class OrgAccessControls {
       .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId)));
 
     // UNION deduplicates automatically
-    const result = await directOrgRoles.union(classRoles);
+    const result = await directOrgRoles.union(ancestorOrgRoles).union(classRoles);
 
     return result.map((row) => row.role);
   }
