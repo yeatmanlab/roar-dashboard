@@ -571,10 +571,8 @@ describe('DistrictRepository', () => {
       const districtAdmin = result.items.find((u) => u.id === baseFixture.districtAdmin.id);
       const classStudent = result.items.find((u) => u.id === baseFixture.classAStudent.id);
 
-      expect(districtAdmin?.role).toBe(UserRole.ADMINISTRATOR);
-      expect(districtAdmin?.enrollmentStart).toBeInstanceOf(Date);
-      expect(classStudent?.role).toBe(UserRole.STUDENT);
-      expect(classStudent?.enrollmentStart).toBeInstanceOf(Date);
+      expect(districtAdmin?.roles).toContain(UserRole.ADMINISTRATOR);
+      expect(classStudent?.roles).toContain(UserRole.STUDENT);
     });
 
     it('returns empty for district with no enrolled users', async () => {
@@ -717,7 +715,7 @@ describe('DistrictRepository', () => {
 
         // Verify all returned users have the filtered role in EnrolledUserEntity
         for (const user of result.items) {
-          expect(user.role).toBe(UserRole.STUDENT);
+          expect(user.roles).toContain(UserRole.STUDENT);
         }
       });
 

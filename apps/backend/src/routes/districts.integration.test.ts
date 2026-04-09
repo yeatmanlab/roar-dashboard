@@ -25,7 +25,7 @@ import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserRole } from '../enums/user-role.enum';
-import type { EnrolledUserEntity } from '../types/user';
+import type { EnrolledOrgUserEntity } from '../types/user';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -228,8 +228,7 @@ describe('GET /v1/districts/:districtId/users', () => {
       // Verify user object has expected fields
       expect(user).toHaveProperty('id');
       expect(user).toHaveProperty('username');
-      expect(user).toHaveProperty('role');
-      expect(user).toHaveProperty('enrollmentStart');
+      expect(user).toHaveProperty('roles');
     });
 
     it('returns pagination metadata', async () => {
@@ -251,8 +250,8 @@ describe('GET /v1/districts/:districtId/users', () => {
         .toReturn(200);
 
       expect(res.body.data.items).toBeInstanceOf(Array);
-      res.body.data.items.forEach((user: EnrolledUserEntity) => {
-        expect(user.role).toBe(UserRole.ADMINISTRATOR);
+      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
+        expect(user.roles).toContain(UserRole.ADMINISTRATOR);
       });
     });
 
@@ -260,7 +259,7 @@ describe('GET /v1/districts/:districtId/users', () => {
       const res = await expectRoute('GET', `${districtUsersPath()}?grade=5`).as(tiers.superAdmin).toReturn(200);
 
       expect(res.body.data.items).toBeInstanceOf(Array);
-      res.body.data.items.forEach((user: EnrolledUserEntity) => {
+      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
         expect(user.grade).toBe('5');
       });
     });

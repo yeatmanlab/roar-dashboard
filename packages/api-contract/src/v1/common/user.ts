@@ -78,30 +78,18 @@ export const UserBaseSchema = z.object({
 });
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentifierSchema);
+
+// TODO: Change this schema to return roles array instead of single role and remove enrollmentStart, delete EnrolledOrgUser
 export const EnrolledUserSchema = UserSchema.extend({
   role: UserRoleSchema,
   enrollmentStart: z.string().datetime(),
 });
 export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
 
-/**
- * Keep the same EnrolledUserSchema
- *  - Role
- *    - Keep as a single value, add additionalRoles field
- *    - Convert to an array, update previous endpoints
- *  - enrollmentStart
- *    - Keep as a single value (earliest start date)
- *    - Convert it to an array, corresponding indexes to role array
- *
- * New schema: EnrolledOrgUserSchema
- * - Role
- *  - Keep single value (primary role - what is found on that org level?), additionalRoles field]
- *  - Convert to an array, no need to update previous endpoints
- * - enrollmentStart
- *  - Keep as a single value (earliest start date, primary role start date)
- *    - Enrolled in school before district admin, technically part of that district since the school enrollment date
- *  - Add it to additionalRoles = [{ role: student, enrollmentStart: '2023-01-01' }]
- */
+export const EnrolledOrgUserSchema = UserSchema.extend({
+  roles: z.array(UserRoleSchema),
+});
+export type EnrolledOrgUser = z.infer<typeof EnrolledOrgUserSchema>;
 
 export const ENROLLED_USERS_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type EnrolledUsersSortFieldType = (typeof ENROLLED_USERS_SORT_FIELDS)[number];
@@ -134,6 +122,9 @@ export type EnrolledUsersQuery = z.infer<typeof EnrolledUsersQuerySchema>;
 
 export const EnrolledUsersResponseSchema = createPaginatedResponseSchema(EnrolledUserSchema);
 export type EnrolledUsersResponse = z.infer<typeof EnrolledUsersResponseSchema>;
+
+export const EnrolledOrgUsersResponseSchema = createPaginatedResponseSchema(EnrolledOrgUserSchema);
+export type EnrolledOrgUsersResponse = z.infer<typeof EnrolledOrgUsersResponseSchema>;
 
 /**
  * Schema for school levels

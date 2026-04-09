@@ -11,5 +11,6 @@ export interface ListEnrolledUsersOptions {
   grade?: GradeFilter;
   role?: UserRole;
 }
-
+// TODO: Change EnrolledUserEntity to return roles array instead of single role and remove enrollmentStart
 export type EnrolledUserEntity = User & { role: UserRole; enrollmentStart: Date };
+export type EnrolledOrgUserEntity = User & { roles: UserRole[] };

@@ -15,7 +15,7 @@ import { OrgType } from '../enums/org-type.enum';
 
 import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
-import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
+import type { EnrolledOrgUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import {
   getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
@@ -366,10 +366,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   async getUsersByDistrictId(
     districtId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
-    // Check if user has access to the district with Permissions.Users.LIST
-    // Get userOrgs.role, check if role contains Permissions.Users.LIST
-
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
@@ -390,7 +387,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const orgUsersQuery = this.db
       .select({
         userId: users.id,
-        enrollmentStart: userOrgs.enrollmentStart,
         role: userOrgs.role,
       })
       .from(userOrgs)
@@ -408,7 +404,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const classUsersQuery = this.db
       .select({
         userId: users.id,
-        enrollmentStart: userClasses.enrollmentStart,
         role: userClasses.role,
       })
       .from(userClasses)
@@ -419,19 +414,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
 
     const combinedUsersQuery = orgUsersQuery.union(classUsersQuery).as('combined_users');
     const countResult = await this.db.select({ count: count() }).from(combinedUsersQuery);
-
-    /**
-     * Deduplicate users who have multiple roles across district
-     * const distinctUsersQuery = this.db
-      .selectDistinctOn([combinedUsersQuery.userId], {
-        userId: combinedUsersQuery.userId,
-        enrollmentStart: combinedUsersQuery.enrollmentStart,
-        role: combinedUsersQuery.role,
-      })
-      .from(combinedUsersQuery)
-      .orderBy(combinedUsersQuery.userId, desc(combinedUsersQuery.enrollmentStart)) // Choose which row to keep
-      .as('distinct_users');
-     */
 
     const totalItems = countResult[0]?.count ?? 0;
 
@@ -446,11 +428,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const dataResult = await this.db
       .select({
         user: users,
-        enrollmentStart: sql<Date>`combined_users.enrollment_start`,
-        role: sql<string>`combined_users.role`,
+        roles: sql<UserRole[]>`array_agg(DISTINCT ${combinedUsersQuery.role})`,
       })
       .from(users)
       .innerJoin(combinedUsersQuery, eq(users.id, combinedUsersQuery.userId))
+      .groupBy(users.id)
       .orderBy(primaryOrder, asc(users.id))
       .limit(perPage)
       .offset(offset);
@@ -458,8 +440,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     return {
       items: dataResult.map((row) => ({
         ...row.user,
-        enrollmentStart: new Date(row.enrollmentStart as unknown as string),
-        role: row.role as UserRole,
+        roles: row.roles as UserRole[],
       })),
       totalItems,
     };
@@ -481,7 +462,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     accessControlFilter: AccessControlFilter,
     districtId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, allowedRoles } = accessControlFilter;
 
     const accessibleDistrictsCount = await this.db.select({ count: count() }).from(

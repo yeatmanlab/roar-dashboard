@@ -10,7 +10,7 @@ import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-import type { EnrolledUsersQuery, EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
+import type { EnrolledUsersQuery, EnrolledOrgUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 /**
  * Options for listing districts
  */
@@ -196,7 +196,7 @@ export function DistrictService({
     authContext: AuthContext,
     districtId: string,
     options: EnrolledUsersQuery,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
     try {
       await authorizeSubResourceAccess(authContext, districtId);
