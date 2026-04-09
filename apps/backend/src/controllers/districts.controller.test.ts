@@ -492,7 +492,7 @@ describe('DistrictsController', () => {
       perPage: 25,
       sortBy: 'name' as const,
       sortOrder: 'asc' as const,
-      embed: [] as string[],
+      embed: [] as 'counts'[],
     };
 
     it('should return paginated schools with 200 status', async () => {

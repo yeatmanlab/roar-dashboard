@@ -5,7 +5,7 @@ import {
   createEmbedQuerySchema,
   createPaginatedResponseSchema,
 } from '../common/query';
-import { SchoolLocationSchema, SchoolIdentifiersSchema, SchoolCountsSchema } from '../schools/schema';
+import { SchoolDetailSchema } from '../schools/schema';
 
 /**
  * District location schema.
@@ -171,20 +171,8 @@ export type DistrictSchoolsListQuery = z.infer<typeof DistrictSchoolsListQuerySc
 
 /**
  * Paginated response for district schools list.
- * Uses SchoolDetailBaseSchema from the schools contract.
+ * Reuses SchoolDetailSchema from the schools contract to keep schemas in sync.
  */
-export const DistrictSchoolsListResponseSchema = createPaginatedResponseSchema(
-  z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    abbreviation: z.string(),
-    orgType: z.literal('school'),
-    parentOrgId: z.string().uuid().nullable(),
-    location: SchoolLocationSchema.optional(),
-    identifiers: SchoolIdentifiersSchema.optional(),
-    rosteringEnded: z.string().datetime().optional(),
-    counts: SchoolCountsSchema.optional(),
-  }),
-);
+export const DistrictSchoolsListResponseSchema = createPaginatedResponseSchema(SchoolDetailSchema);
 
 export type DistrictSchoolsListResponse = z.infer<typeof DistrictSchoolsListResponseSchema>;
