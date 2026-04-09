@@ -221,6 +221,8 @@ export function DistrictService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
+      logger.error({ err: error, context: { userId, districtId, options } }, 'Failed to list district users');
+
       throw new ApiError('Failed to retrieve district users', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,

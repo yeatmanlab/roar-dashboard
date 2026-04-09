@@ -290,7 +290,7 @@ describe('GET /v1/districts/:districtId/users', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
-    it('returns 404 when user does not have access to district', async () => {
+    it('returns 403 when user does not have access to district', async () => {
       // User from district A trying to access district B
       const res = await expectRoute('GET', `/v1/districts/${baseFixture.districtB.id}/users`)
         .as(tiers.admin)
