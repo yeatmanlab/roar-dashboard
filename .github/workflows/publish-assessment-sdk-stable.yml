@@ -39,6 +39,9 @@ jobs:
             exit 1
           fi
 
+      - name: Build API Contract
+        run: npm run build -w packages/api-contract
+
       - name: Build SDK
         run: npm run build -w packages/assessment-sdk
 

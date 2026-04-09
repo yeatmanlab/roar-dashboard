@@ -35,6 +35,9 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@roar-dashboard'
 
+      - name: Build API Contract
+        run: npm run build -w packages/api-contract
+
       - name: Build SDK
         run: npm run build -w packages/assessment-sdk
 
