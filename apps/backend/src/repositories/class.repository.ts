@@ -1,6 +1,7 @@
-import { eq, asc, desc, count, and, isNull } from 'drizzle-orm';
+import { eq, asc, desc, count, and, isNull, sql } from 'drizzle-orm';
+import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import type { EnrolledUsersSortFieldType, SchoolClassSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
@@ -19,6 +20,7 @@ import type { Class } from '../db/schema';
 import { classes, userClasses, users } from '../db/schema';
 import type { UserRole } from '../enums/user-role.enum';
 import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+import type { ParsedFilter } from '../types/filter';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
@@ -186,6 +188,90 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
 
     return {
       items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      totalItems,
+    };
+  }
+
+  /**
+   * List active classes in a school with pagination, sorting, and filtering.
+   *
+   * Only returns classes where rosteringEnded is null.
+   *
+   * @param schoolId - The school ID to list classes for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with classes
+   */
+  async listBySchoolId(
+    schoolId: string,
+    options: {
+      page: number;
+      perPage: number;
+      orderBy?: {
+        field: SchoolClassSortFieldType;
+        direction: 'asc' | 'desc';
+      };
+      filter?: ParsedFilter[];
+    },
+  ): Promise<PaginatedResult<Class>> {
+    const { page, perPage, orderBy, filter } = options;
+    const offset = (page - 1) * perPage;
+
+    // Build where conditions
+    const whereConditions: SQL[] = [
+      eq(classes.schoolId, schoolId),
+      isNull(classes.rosteringEnded),
+    ];
+
+    // Apply filters if provided
+    if (filter && filter.length > 0) {
+      for (const f of filter) {
+        if (f.field === 'grade' && f.value) {
+          // grades is a PostgreSQL array column — use @> (array contains) operator
+          whereConditions.push(sql`${classes.grades} @> ARRAY[${f.value}]::app.grade[]`);
+        } else if (f.field === 'classType' && f.value) {
+          whereConditions.push(eq(classes.classType, f.value));
+        }
+      }
+    }
+
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+    // Count query
+    const countResult = await this.db
+      .select({ count: count() })
+      .from(classes)
+      .where(whereClause);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Resolve sort column
+    const SORT_COLUMNS = {
+      name: classes.name,
+      createdAt: classes.createdAt,
+    } as const satisfies Record<SchoolClassSortFieldType, Column>;
+
+    const sortField = orderBy?.field as SchoolClassSortFieldType | undefined;
+    const sortColumn =
+      sortField && sortField in SORT_COLUMNS
+        ? SORT_COLUMNS[sortField as keyof typeof SORT_COLUMNS]
+        : classes.name;
+    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    // Data query
+    const dataResult = await this.db
+      .select()
+      .from(classes)
+      .where(whereClause)
+      .orderBy(sortDirection, asc(classes.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult,
       totalItems,
     };
   }

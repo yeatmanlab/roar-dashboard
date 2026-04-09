@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { userOrgs, userClasses, orgs, classes } from '../../db/schema';
@@ -134,5 +134,40 @@ export class OrgAccessControls {
       .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
 
     return ancestorUnion.union(viaUserOrgDescendants);
+  }
+
+  /**
+   * Get the roles a user holds for a specific org through direct membership
+   * or class membership within that org.
+   *
+   * @param userId - The user's ID
+   * @param orgId - The org to check roles for
+   * @returns Array of role strings the user holds for the org
+   */
+  async getUserRolesForOrg(userId: string, orgId: string): Promise<string[]> {
+    const roles = new Set<string>();
+
+    // Path 1: Direct org membership
+    const directOrgRoles = await this.db
+      .selectDistinct({ role: userOrgs.role })
+      .from(userOrgs)
+      .where(and(eq(userOrgs.userId, userId), eq(userOrgs.orgId, orgId)));
+
+    for (const row of directOrgRoles) {
+      roles.add(row.role);
+    }
+
+    // Path 2: Class membership in this org
+    const classRoles = await this.db
+      .selectDistinct({ role: userClasses.role })
+      .from(userClasses)
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
+      .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId)));
+
+    for (const row of classRoles) {
+      roles.add(row.role);
+    }
+
+    return Array.from(roles);
   }
 }

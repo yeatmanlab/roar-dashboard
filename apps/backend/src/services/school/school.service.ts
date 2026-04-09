@@ -9,6 +9,10 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
+import type { Class } from '../../db/schema';
+import { ClassRepository } from '../../repositories/class.repository';
+import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
+import type { ParsedFilter } from '@roar-dashboard/api-contract';
 
 /**
  * Options for listing schools
@@ -28,6 +32,17 @@ export interface ListOptions {
 export type SchoolWithEmbeds = SchoolWithCounts;
 
 /**
+ * Options for listing school classes
+ */
+export interface ListSchoolClassesOptions {
+  page: number;
+  perPage: number;
+  sortBy: 'name' | 'createdAt';
+  sortOrder: 'asc' | 'desc';
+  filter?: ParsedFilter[];
+}
+
+/**
  * School Service
  *
  * Business logic layer for school operations.
@@ -35,8 +50,10 @@ export type SchoolWithEmbeds = SchoolWithCounts;
  */
 export function SchoolService({
   schoolRepository = new SchoolRepository(),
+  classRepository = new ClassRepository(),
 }: {
   schoolRepository?: SchoolRepository;
+  classRepository?: ClassRepository;
 } = {}) {
   /**
    * List schools accessible to a user with pagination and sorting.
@@ -162,9 +179,93 @@ export function SchoolService({
     }
   }
 
+  /**
+   * Authorize sub-resource access (requires supervisory role).
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to verify access for
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
+   */
+  async function authorizeSchoolSubResourceAccess(authContext: AuthContext, schoolId: string): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Verify school access
+    await getById(authContext, schoolId);
+
+    if (isSuperAdmin) return;
+
+    const userRoles = await schoolRepository.getUserRolesForSchool(userId, schoolId);
+
+    if (!hasSupervisoryRole(userRoles)) {
+      logger.warn({ userId, schoolId, userRoles }, 'Supervised user attempted to list school sub-resources');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, schoolId, userRoles },
+      });
+    }
+  }
+
+  /**
+   * List classes in a school with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all active classes in the school
+   * - Supervisory roles: sees all active classes in the school
+   * - Supervised roles: returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to list classes for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with classes
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks supervisory permission
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listSchoolClasses(
+    authContext: AuthContext,
+    schoolId: string,
+    options: ListSchoolClassesOptions,
+  ): Promise<PaginatedResult<Class>> {
+    const { userId } = authContext;
+
+    try {
+      // Verify school access and user has supervisory role
+      await authorizeSchoolSubResourceAccess(authContext, schoolId);
+
+      // All authorized users (super admin and supervisory) can list classes
+      const result = await classRepository.listBySchoolId(schoolId, {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        filter: options.filter,
+      });
+
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school classes');
+
+      throw new ApiError('Failed to retrieve school classes', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
+    listSchoolClasses,
   };
 }
 

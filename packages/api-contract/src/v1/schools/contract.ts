@@ -1,6 +1,12 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { SchoolsListQuerySchema, SchoolsListResponseSchema, SchoolDetailSchema } from './schema';
+import {
+  SchoolsListQuerySchema,
+  SchoolsListResponseSchema,
+  SchoolDetailSchema,
+  SchoolClassesListQuerySchema,
+  SchoolClassesListResponseSchema,
+} from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -49,6 +55,27 @@ export const SchoolsContract = c.router(
         'Returns 401 if the requesting user is not authenticated. ' +
         'Returns 403 if the requesting user lacks permission to access the school. ' +
         'Returns 404 if the requested school does not exist.',
+    },
+    listClasses: {
+      method: 'GET',
+      path: '/:schoolId/classes',
+      pathParams: z.object({
+        schoolId: z.string().uuid(),
+      }),
+      query: SchoolClassesListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(SchoolClassesListResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List classes in a school',
+      description:
+        'Returns a paginated list of active classes within a school. ' +
+        'Only active classes (rosteringEnded IS NULL) are returned. ' +
+        'Requires authentication and supervisory role on the school.',
     },
   },
   { pathPrefix: '/schools' },
