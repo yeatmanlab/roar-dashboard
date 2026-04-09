@@ -800,7 +800,7 @@ export const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const store = useAuthStore();
   const { userCan } = usePermissions();
-  const { globalError } = useGlobalError();
+  const { globalError, clearGlobalError } = useGlobalError();
 
   const allowedUnauthenticatedRoutes = [
     'AccessEnded',
@@ -833,6 +833,8 @@ router.beforeEach(async (to, from, next) => {
       return;
     }
     if (globalError.value.type === 'auth-expired' && to.name !== 'SignIn') {
+      // Clear the error before redirecting so we don't loop after successful sign-in
+      clearGlobalError();
       next({ name: 'SignIn' });
       return;
     }

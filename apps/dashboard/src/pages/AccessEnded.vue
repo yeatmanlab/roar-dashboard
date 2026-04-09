@@ -1,16 +1,14 @@
 <script setup>
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/store/auth';
+import PvButton from 'primevue/button';
+import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { useGlobalError } from '@/composables/useGlobalError';
 
-const router = useRouter();
-const authStore = useAuthStore();
 const { clearGlobalError } = useGlobalError();
+const { mutate: signOut } = useSignOutMutation();
 
-async function handleSignOut() {
+function handleSignOut() {
   clearGlobalError();
-  await authStore.signOut();
-  router.push('/signin');
+  signOut();
 }
 </script>
 
@@ -21,6 +19,6 @@ async function handleSignOut() {
     <p class="text-center text-gray-600 mb-4 max-w-30rem">
       Your access to this platform has ended. If you believe this is an error, please contact your administrator.
     </p>
-    <button class="p-button p-button-outlined" @click="handleSignOut">Sign Out</button>
+    <PvButton label="Sign Out" outlined @click="handleSignOut" />
   </div>
 </template>

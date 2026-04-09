@@ -1,21 +1,21 @@
 <script setup>
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/store/auth';
+import PvButton from 'primevue/button';
+import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { useGlobalError } from '@/composables/useGlobalError';
 
 const router = useRouter();
-const authStore = useAuthStore();
 const { clearGlobalError } = useGlobalError();
+const { mutate: signOut } = useSignOutMutation();
 
 function handleTryAgain() {
   clearGlobalError();
   router.push('/');
 }
 
-async function handleSignOut() {
+function handleSignOut() {
   clearGlobalError();
-  await authStore.signOut();
-  router.push('/signin');
+  signOut();
 }
 </script>
 
@@ -27,8 +27,8 @@ async function handleSignOut() {
       An unexpected error occurred. Please try again, or sign out and sign back in.
     </p>
     <div class="flex gap-3">
-      <button class="p-button" @click="handleTryAgain">Try Again</button>
-      <button class="p-button p-button-outlined" @click="handleSignOut">Sign Out</button>
+      <PvButton label="Try Again" @click="handleTryAgain" />
+      <PvButton label="Sign Out" outlined @click="handleSignOut" />
     </div>
   </div>
 </template>

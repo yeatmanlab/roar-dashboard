@@ -68,7 +68,8 @@ const plugins = [
               if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
                 return false;
               }
-              // Otherwise retry up to 3 times
+              // Disable retries in Cypress E2E tests for deterministic behavior
+              if (window.Cypress) return false;
               return failureCount < 3;
             },
           },
