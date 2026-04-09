@@ -10,6 +10,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { baseFixture } from '../test-support/fixtures';
 import { OrgFactory } from '../test-support/factories/org.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
 import type { DistrictWithCounts } from './district.repository';
@@ -573,6 +574,101 @@ describe('DistrictRepository', () => {
 
       expect(districtAdmin?.roles).toContain(UserRole.ADMINISTRATOR);
       expect(classStudent?.roles).toContain(UserRole.STUDENT);
+    });
+
+    it('aggregates multiple roles when user is enrolled at both org and class level', async () => {
+      // Add baseFixture.schoolATeacher (org-level TEACHER) to a class with a different role
+      const UserClassFactory = (await import('../test-support/factories/user-class.factory')).UserClassFactory;
+      await UserClassFactory.create({
+        userId: baseFixture.schoolATeacher.id,
+        classId: baseFixture.classInSchoolA.id,
+        role: UserRole.ADMINISTRATOR,
+      });
+
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      const user = result.items.find((u) => u.id === baseFixture.schoolATeacher.id);
+      expect(user).toBeDefined();
+      expect(Array.isArray(user?.roles)).toBe(true);
+      expect(user?.roles).toHaveLength(2);
+      expect(user?.roles).toContain(UserRole.TEACHER);
+      expect(user?.roles).toContain(UserRole.ADMINISTRATOR);
+    });
+
+    it('aggregates multiple roles when user is enrolled at both district and school level', async () => {
+      // baseFixture.multiAssignedUser is assigned to both district (ADMINISTRATOR) and schoolA (TEACHER)
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      const user = result.items.find((u) => u.id === baseFixture.multiAssignedUser.id);
+      expect(user).toBeDefined();
+      expect(Array.isArray(user?.roles)).toBe(true);
+      expect(user?.roles).toHaveLength(2);
+      expect(user?.roles).toContain(UserRole.ADMINISTRATOR);
+      expect(user?.roles).toContain(UserRole.TEACHER);
+    });
+
+    it('returns user only once when enrolled in multiple classes', async () => {
+      // Enroll baseFixture.classAStudent in additional classes (already in classInSchoolA)
+      const class2 = await ClassFactory.create({
+        name: 'Second Class',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+      const class3 = await ClassFactory.create({
+        name: 'Third Class',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+
+      const UserClassFactory = (await import('../test-support/factories/user-class.factory')).UserClassFactory;
+      await UserClassFactory.create({
+        userId: baseFixture.classAStudent.id,
+        classId: class2.id,
+        role: UserRole.STUDENT,
+      });
+      await UserClassFactory.create({
+        userId: baseFixture.classAStudent.id,
+        classId: class3.id,
+        role: UserRole.STUDENT,
+      });
+
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      // User should appear only once, not three times (classInSchoolA + class2 + class3)
+      const userMatches = result.items.filter((u) => u.id === baseFixture.classAStudent.id);
+      expect(userMatches).toHaveLength(1);
+      expect(Array.isArray(userMatches[0]?.roles)).toBe(true);
+      expect(userMatches[0]?.roles).toContain(UserRole.STUDENT);
+    });
+
+    it('deduplicates roles when user has same role at multiple levels', async () => {
+      // Enroll baseFixture.classATeacher (already TEACHER in classInSchoolA) as TEACHER at school level too
+      await UserOrgFactory.create({
+        userId: baseFixture.classATeacher.id,
+        orgId: baseFixture.schoolA.id,
+        role: UserRole.TEACHER,
+      });
+
+      const result = await repository.getUsersByDistrictId(baseFixture.district.id, {
+        page: 1,
+        perPage: 100,
+      });
+
+      const user = result.items.find((u) => u.id === baseFixture.classATeacher.id);
+      expect(user).toBeDefined();
+      expect(Array.isArray(user?.roles)).toBe(true);
+      // Should only have TEACHER once, not duplicated
+      expect(user?.roles).toHaveLength(1);
+      expect(user?.roles).toContain(UserRole.TEACHER);
     });
 
     it('returns empty for district with no enrolled users', async () => {

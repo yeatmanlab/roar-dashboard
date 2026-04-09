@@ -428,7 +428,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const dataResult = await this.db
       .select({
         user: users,
-        roles: sql<UserRole[]>`array_agg(DISTINCT ${combinedUsersQuery.role})`,
+        roles: sql<UserRole[] | string>`array_agg(DISTINCT ${combinedUsersQuery.role})`,
       })
       .from(users)
       .innerJoin(combinedUsersQuery, eq(users.id, combinedUsersQuery.userId))
@@ -440,7 +440,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     return {
       items: dataResult.map((row) => ({
         ...row.user,
-        roles: row.roles as UserRole[],
+        roles: Array.isArray(row.roles)
+          ? row.roles
+          : typeof row.roles === 'string'
+            ? (row.roles.replace(/[{}]/g, '').split(',') as UserRole[])
+            : [],
       })),
       totalItems,
     };
