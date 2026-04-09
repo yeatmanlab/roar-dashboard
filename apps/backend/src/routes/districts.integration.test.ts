@@ -148,7 +148,11 @@ describe('GET /v1/districts', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('GET /v1/districts/:districtId/schools', () => {
-  const districtSchoolsUrl = `/v1/districts/${baseFixture.district.id}/schools`;
+  let districtSchoolsUrl: string;
+
+  beforeAll(() => {
+    districtSchoolsUrl = `/v1/districts/${baseFixture.district.id}/schools`;
+  });
 
   describe('authorization', () => {
     it('superAdmin tier can list schools in district', async () => {
