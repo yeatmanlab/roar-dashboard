@@ -38,8 +38,7 @@ async function apiWithAuthRetry(args) {
     try {
       const body = await response.clone().json();
       if (body?.error?.code === 'auth/token-expired') {
-        await authStore.forceIdTokenRefresh();
-        const freshToken = authStore.accessToken;
+        const freshToken = await authStore.forceIdTokenRefresh();
         const retryHeaders = {
           ...args.headers,
           ...(freshToken ? { Authorization: `Bearer ${freshToken}` } : {}),

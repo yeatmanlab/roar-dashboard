@@ -1,6 +1,6 @@
 import { markRaw } from 'vue';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { onIdTokenChanged } from 'firebase/auth';
+import { getIdToken, onIdTokenChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
@@ -101,6 +101,7 @@ export const useAuthStore = () => {
             this.accessToken = user.accessToken;
           } else {
             this.firebaseUser.adminFirebaseUser = null;
+            this.accessToken = null;
           }
         });
         this.appAuthStateListener = onIdTokenChanged(this.roarfirekit?.app.auth, async (user) => {
@@ -214,7 +215,14 @@ export const useAuthStore = () => {
         }
       },
       async forceIdTokenRefresh() {
-        await this.roarfirekit.forceIdTokenRefresh();
+        const adminUser = this.firebaseUser.adminFirebaseUser;
+        if (!adminUser) return null;
+        // Use getIdToken directly so we can capture the fresh token synchronously.
+        // Relying on the onIdTokenChanged callback introduces a race condition
+        // because the callback fires asynchronously after getIdToken resolves.
+        const freshToken = await getIdToken(adminUser, /* forceRefresh */ true);
+        this.accessToken = freshToken;
+        return freshToken;
       },
       async sendMyPasswordResetEmail() {
         if (this.email) {
