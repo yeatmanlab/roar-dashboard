@@ -2,7 +2,11 @@ import { StatusCodes } from 'http-status-codes';
 import type { DistrictWithEmbeds } from '../services/district/district.service';
 import type { SchoolWithCounts } from '../repositories/school.repository';
 import { DistrictService } from '../services/district/district.service';
-import type { DistrictsListQuery, DistrictDetail as ApiDistrict, DistrictSchoolsListQuery } from '@roar-dashboard/api-contract';
+import type {
+  DistrictsListQuery,
+  DistrictDetail as ApiDistrict,
+  DistrictSchoolsListQuery,
+} from '@roar-dashboard/api-contract';
 import { DistrictEmbedOption, DistrictSchoolEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';

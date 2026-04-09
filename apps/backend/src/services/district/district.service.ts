@@ -200,10 +200,7 @@ export function DistrictService({
         const userRoles = await districtRepository.getUserRolesForDistrict(userId, districtId);
 
         if (!hasSupervisoryRole(userRoles)) {
-          logger.warn(
-            { userId, districtId, userRoles },
-            'Supervised user attempted to list district schools',
-          );
+          logger.warn({ userId, districtId, userRoles }, 'Supervised user attempted to list district schools');
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
             code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -230,18 +227,11 @@ export function DistrictService({
 
       // For regular users, apply access control filtering
       const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-      return await schoolRepository.listAuthorizedByDistrictId(
-        { userId, allowedRoles },
-        districtId,
-        queryParams,
-      );
+      return await schoolRepository.listAuthorizedByDistrictId({ userId, allowedRoles }, districtId, queryParams);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error(
-        { err: error, context: { userId, districtId, options } },
-        'Failed to list district schools',
-      );
+      logger.error({ err: error, context: { userId, districtId, options } }, 'Failed to list district schools');
 
       throw new ApiError('Failed to retrieve district schools', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

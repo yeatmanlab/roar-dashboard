@@ -337,10 +337,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
     // Build where clause for school type, district parent, and rostering status
-    const whereConditions: SQL[] = [
-      eq(orgs.orgType, OrgType.SCHOOL),
-      eq(orgs.parentOrgId, districtId),
-    ];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL), eq(orgs.parentOrgId, districtId)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
@@ -402,10 +399,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .as('accessible_orgs');
 
     // Build where conditions
-    const whereConditions: SQL[] = [
-      eq(orgs.orgType, OrgType.SCHOOL),
-      eq(orgs.parentOrgId, districtId),
-    ];
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL), eq(orgs.parentOrgId, districtId)];
 
     if (!includeEnded) {
       whereConditions.push(isNull(orgs.rosteringEnded));
