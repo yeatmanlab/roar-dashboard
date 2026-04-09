@@ -68,6 +68,6 @@ jobs:
           npm publish --tag next
           
           # Restore original version (don't commit)
-          git checkout packages/assessment-sdk/package.json
+          git checkout -- package.json
         env:
           NODE_AUTH_TOKEN: ${{ secrets.CI_GITHUB_PAT }}
