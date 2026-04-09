@@ -1,14 +1,30 @@
-# Assessment SDK Publishing Workflows
+# Assessment SDK Publishing Workflow
 
-This directory contains automated CI/CD workflows for publishing the Assessment SDK to GitHub Package Registry.
+This directory contains an automated CI/CD workflow for publishing the Assessment SDK to GitHub Package Registry. The workflow handles both `next` pre-release and `stable` release publishing based on the trigger type.
 
-## Workflows
+## Workflow: `publish-assessment-sdk.yml`
 
-### `publish-assessment-sdk-stable.yml`
+Publishes Assessment SDK versions to GitHub Package Registry based on the trigger:
+- **Next releases**: Triggered on push to `main` with changes to `packages/assessment-sdk/**`
+- **Stable releases**: Triggered on git tag push matching `assessment-sdk-v*`
 
-Publishes stable releases of the Assessment SDK when a git tag matching `assessment-sdk-v*` is pushed.
+### Next Release (on main push)
 
-**Trigger**: Git tag push (e.g., `assessment-sdk-v1.2.3`)
+**Trigger**: Push to `main` branch with changes to `packages/assessment-sdk/**`
+
+**Process**:
+1. Builds API Contract
+2. Builds the SDK
+3. Computes next prerelease version using the GitHub Actions run number (e.g., `0.0.1-next.42`, `0.0.1-next.43`, etc.)
+4. Temporarily updates package.json for publishing only
+5. Publishes to GitHub Package Registry with `next` dist-tag
+6. Restores original package.json (no commit to main)
+
+**Important**: This workflow does NOT commit version changes back to main. The prerelease version is computed using `github.run_number` to ensure every workflow run produces a unique, always-incrementing version. This keeps the main branch clean, prevents self-triggered reruns, and ensures no republish conflicts.
+
+### Stable Release (on tag push)
+
+**Trigger**: Git tag push matching `assessment-sdk-v*` (e.g., `assessment-sdk-v1.2.3`)
 
 **Tag Format**: `assessment-sdk-v<MAJOR>.<MINOR>.<PATCH>` (e.g., `assessment-sdk-v1.2.3`)
 
@@ -16,9 +32,7 @@ Publishes stable releases of the Assessment SDK when a git tag matching `assessm
 1. Validates that the tag version matches `package.json` version
 2. Builds API Contract
 3. Builds the SDK
-4. Runs tests
-5. Publishes to GitHub Package Registry with `latest` dist-tag
-6. Creates a GitHub Release
+4. Publishes to GitHub Package Registry with `latest` dist-tag
 
 **Release Process**:
 ```bash
@@ -36,41 +50,19 @@ git tag assessment-sdk-v$(node -p "require('./package.json').version")
 git push origin assessment-sdk-v$(node -p "require('./package.json').version")
 ```
 
-**Important**: The tag version MUST match the version in `packages/assessment-sdk/package.json` exactly. The stable workflow validates this before publishing.
+**Important**: The tag version MUST match the version in `packages/assessment-sdk/package.json` exactly. The workflow validates this before publishing.
 
-### `publish-assessment-sdk-next.yml`
+### Concurrency
 
-Publishes pre-release versions of the Assessment SDK when changes are merged to `main`.
-
-**Trigger**: Push to `main` branch with changes to `packages/assessment-sdk/**`
-
-**Process**:
-1. Builds API Contract
-2. Builds the SDK
-3. Runs tests
-4. Computes next prerelease version using the GitHub Actions run number (e.g., `0.0.1-next.42`, `0.0.1-next.43`, etc.)
-5. Temporarily updates package.json for publishing only
-6. Publishes to GitHub Package Registry with `next` dist-tag
-7. Restores original package.json (no commit to main)
-
-**Important**: This workflow does NOT commit version changes back to main. The prerelease version is computed using `github.run_number` to ensure every workflow run produces a unique, always-incrementing version. This keeps the main branch clean, prevents self-triggered reruns, and ensures no republish conflicts.
-
-**Concurrency**: Only one next release can run at a time to prevent version conflicts.
+Both next and stable releases use the same concurrency group (`publish-assessment-sdk`) with `cancel-in-progress: false` to prevent simultaneous publishes.
 
 ## Required Secrets
 
-Both workflows require the `CI_GITHUB_PAT` secret to be configured in repository settings. This token is used for:
-- Repository checkout with submodules (required to access the private env-configs submodule)
-- Publishing to GitHub Package Registry
-- Creating GitHub Releases
-
-The `CI_GITHUB_PAT` token must have the following scopes:
-- `repo` (full control of private repositories)
-- `write:packages` (publish packages to GitHub Package Registry)
+Both workflows use the default `GITHUB_TOKEN` provided by GitHub Actions for publishing to GitHub Package Registry. No additional secrets need to be configured.
 
 ## Registry Configuration
 
-Both workflows publish to GitHub Package Registry (`https://npm.pkg.github.com`) using the `@roar-dashboard` scope.
+Both workflows publish to GitHub Package Registry (`https://npm.pkg.github.com`) using the `@roar-platform` scope.
 
 The Assessment SDK's `package.json` includes:
 ```json
@@ -87,12 +79,12 @@ This ensures `npm publish` automatically targets the correct registry.
 
 ### Stable Release
 ```bash
-npm install @roar-dashboard/assessment-sdk@latest
+npm install @roar-platform/assessment-sdk@latest
 ```
 
 ### Next Pre-release
 ```bash
-npm install @roar-dashboard/assessment-sdk@next
+npm install @roar-platform/assessment-sdk@next
 ```
 
 ## Troubleshooting
@@ -103,10 +95,7 @@ These are IDE linter warnings for external GitHub Actions. They don't affect wor
 
 ### Publish step fails with authentication error
 
-Ensure:
-1. `CI_GITHUB_PAT` secret is configured in repository settings
-2. The token has `write:packages` scope
-3. The `setup-node` step includes `registry-url: 'https://npm.pkg.github.com'`
+Ensure the `setup-node` step includes `registry-url: 'https://npm.pkg.github.com'`. The workflows use the default `GITHUB_TOKEN` which is automatically available in GitHub Actions.
 
 ### Version mismatch error (stable workflow only)
 
@@ -126,10 +115,10 @@ The prerelease version is computed and used only for publishing. The main branch
 ## Permissions
 
 ### Stable Workflow
-- `contents: write` - For creating GitHub Releases
+- `contents: write` - For reading repository contents
 - `packages: write` - For publishing to GitHub Package Registry
 
 ### Next Workflow
-- `packages: write` - For publishing to GitHub Package Registry (no `contents: write` needed since it doesn't create commits or releases)
+- `packages: write` - For publishing to GitHub Package Registry
 
 These are configured in the workflow YAML files.
