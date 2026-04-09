@@ -5,6 +5,7 @@ import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
+import { useGlobalError } from '@/composables/useGlobalError';
 const { Permissions } = usePermissions();
 const { logNavEvent } = useSentryLogging();
 
@@ -754,6 +755,18 @@ const routes = [
     meta: { pageTitle: 'Enable Cookies' },
   },
   {
+    path: '/access-ended',
+    name: 'AccessEnded',
+    component: () => import('../pages/AccessEnded.vue'),
+    meta: { pageTitle: 'Access Ended' },
+  },
+  {
+    path: '/error',
+    name: 'GenericError',
+    component: () => import('../pages/GenericError.vue'),
+    meta: { pageTitle: 'Error' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),
@@ -787,13 +800,16 @@ export const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const store = useAuthStore();
   const { userCan } = usePermissions();
+  const { globalError } = useGlobalError();
 
   const allowedUnauthenticatedRoutes = [
+    'AccessEnded',
     'AuthClassLink',
     'AuthClever',
     'AuthEmailLink',
     'AuthEmailSent',
     'AuthNycps',
+    'GenericError',
     'InitiateAuthNycps',
     'Maintenance',
     'Register',
@@ -808,6 +824,28 @@ router.beforeEach(async (to, from, next) => {
   } else if (!inMaintenanceMode && to.name === 'Maintenance') {
     next({ name: 'Home' });
     return false;
+  }
+
+  // Handle global error state — route to error pages before auth check
+  if (globalError.value) {
+    if (globalError.value.type === 'rostering-ended' && to.name !== 'AccessEnded') {
+      next({ name: 'AccessEnded' });
+      return;
+    }
+    if (globalError.value.type === 'auth-expired' && to.name !== 'SignIn') {
+      next({ name: 'SignIn' });
+      return;
+    }
+    if (globalError.value.type === 'server-error' && to.name !== 'GenericError') {
+      next({ name: 'GenericError' });
+      return;
+    }
+  }
+
+  // If navigating to an error page but no error exists, redirect to home
+  if ((to.name === 'AccessEnded' || to.name === 'GenericError') && !globalError.value) {
+    next({ name: 'Home' });
+    return;
   }
   // Check if user is signed in. If not, go to signin
   if (

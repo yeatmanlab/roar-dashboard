@@ -11,6 +11,7 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import { definePreset } from '@primevue/themes';
 import Aura from '@primevue/themes/aura';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 
 const pinia = createPinia().use(piniaPluginPersistedState);
 const head = createHead();
@@ -62,6 +63,14 @@ const plugins = [
           queries: {
             staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
             gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
+            retry: (failureCount, error) => {
+              // Don't retry on terminal auth errors (unrecoverable)
+              if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+                return false;
+              }
+              // Otherwise retry up to 3 times
+              return failureCount < 3;
+            },
           },
         },
       },

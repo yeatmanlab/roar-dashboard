@@ -44,3 +44,33 @@ export function getApiErrorMessage(response) {
   }
   return null;
 }
+
+/**
+ * Known API error codes that the frontend handles specifically.
+ * Values match the backend's ApiErrorCode enum.
+ */
+export const API_ERROR_CODES = Object.freeze({
+  AUTH_REQUIRED: 'auth/required',
+  AUTH_TOKEN_EXPIRED: 'auth/token-expired',
+  AUTH_ROSTERING_ENDED: 'auth/rostering-ended',
+});
+
+/**
+ * Checks if the error indicates the user's rostering has ended.
+ * @param {Object} error - ts-rest error response or error object
+ * @returns {boolean}
+ */
+export function isRosteringEndedError(error) {
+  return getApiErrorCode(error) === API_ERROR_CODES.AUTH_ROSTERING_ENDED;
+}
+
+/**
+ * Checks if the error is a terminal auth error (not recoverable by retry).
+ * Terminal auth at the app layer means the API client's retry already failed.
+ * @param {Object} error - ts-rest error response or error object
+ * @returns {boolean}
+ */
+export function isTerminalAuthError(error) {
+  const code = getApiErrorCode(error);
+  return code === API_ERROR_CODES.AUTH_REQUIRED || code === API_ERROR_CODES.AUTH_TOKEN_EXPIRED;
+}
