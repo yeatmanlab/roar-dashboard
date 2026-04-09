@@ -28,6 +28,11 @@ describe('getRoarApiClient', () => {
     vi.resetModules();
   });
 
+  afterEach(() => {
+    // Restore the env var so subsequent describes re-import the module with it set
+    vi.stubEnv('VITE_ROAR_API_BASE_URL', 'https://api.test.example.com');
+  });
+
   it('creates a singleton client on first call', async () => {
     const { initClient } = await import('@ts-rest/core');
     const { getRoarApiClient } = await import('./index');
