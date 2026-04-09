@@ -105,6 +105,7 @@
               :student-grade="studentGrade"
               :current-assignment-id="currentAssignmentId"
               :score-label="scoreLabel"
+              :task-scoring-versions="taskScoringVersions"
             />
           </PvAccordionContent>
         </PvAccordionPanel>
@@ -192,6 +193,10 @@ const props = defineProps({
   },
   currentAssignmentId: {
     type: String,
+    required: true,
+  },
+  taskScoringVersions: {
+    type: Object,
     required: true,
   },
 });

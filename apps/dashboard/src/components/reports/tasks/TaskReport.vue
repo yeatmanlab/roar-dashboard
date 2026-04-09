@@ -40,6 +40,7 @@
           :runs="runs"
           :facet-mode="facetMode"
           :min-grade-by-runs="minGradeByRuns"
+          :task-scoring-versions="taskScoringVersions"
         />
       </div>
     </div>

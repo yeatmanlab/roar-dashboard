@@ -721,12 +721,14 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   // Try percentile-based scoring for grades < 6
-  if (percentile !== null && percentile !== undefined && gradeLevel < 6) {
+  // Exception: PA with scoringVersion >= 4 uses percentile for all grades
+  const isUpdatedPa = taskId === 'pa' && scoringVersion >= 4;
+  if (percentile !== null && percentile !== undefined && (gradeLevel < 6 || isUpdatedPa)) {
     const isUpdatedSre = taskId === 'sre' && scoringVersion >= 4;
     const isUpdatedSreEs = taskId === 'sre-es' && scoringVersion >= 1;
     const isUpdatedSwr = taskId === 'swr' && scoringVersion >= 7;
     const isUpdatedSwrEs = taskId === 'swr-es' && scoringVersion >= 1;
-    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs;
+    const useUpdatedNorms = isUpdatedSwr || isUpdatedSwrEs || isUpdatedSre || isUpdatedSreEs || isUpdatedPa;
     const [achievedCutOff, developingCutOff] = useUpdatedNorms ? [40, 20] : [50, 25];
     if (percentile >= achievedCutOff) {
       support_level = 'Achieved Skill';
@@ -744,10 +746,12 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   // Use raw score if:
   // 1. Grade >= 6, OR
   // 2. Grade < 6 but percentile is not available
+  // 3. Grade >= 6 and PA.scoringVersion < 4
   if (
     rawScore !== null &&
     rawScore !== undefined &&
-    (gradeLevel >= 6 || percentile === null || percentile === undefined)
+    (gradeLevel >= 6 || percentile === null || percentile === undefined) &&
+    !isUpdatedPa
   ) {
     const { above, some } = getRawScoreThreshold(taskId, scoringVersion);
 
@@ -843,20 +847,20 @@ const SCORE_FIELD_MAPPINGS = {
   },
   pa: {
     percentile: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentile'),
+      new: 'percentile',
+      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentile'),
     },
     percentileDisplay: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'percentile' : 'sprPercentileString'),
+      new: 'percentile',
+      legacy: (grade) => (grade < 6 ? 'percentile' : 'sprPercentileString'),
     },
     standardScore: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScore'),
+      new: 'standardScore',
+      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScore'),
     },
     standardScoreDisplay: {
-      new: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
-      legacy: (gradeLevel) => (gradeLevel < 6 ? 'standardScore' : 'sprStandardScoreString'),
+      new: 'standardScore',
+      legacy: (grade) => (grade < 6 ? 'standardScore' : 'sprStandardScoreString'),
     },
     rawScore: {
       new: 'roarScore',
@@ -1040,7 +1044,7 @@ export function getScoreValue(scoresObject, taskId, grade, fieldType) {
 
   // Try new field name first
   const newFieldName = resolveFieldName(taskId, gradeValue, fieldType, false);
-  if (newFieldName && scoresObject[newFieldName] !== undefined) {
+  if (newFieldName && scoresObject[newFieldName] != null) {
     let scoreValue = scoresObject[newFieldName];
     if (
       (fieldType === 'percentile' || fieldType === 'standardScore') &&
@@ -1099,6 +1103,7 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
       };
     }
   } else if (taskId === 'pa') {
+    // Only applies to scoringVersion 3
     return {
       above: 55,
       some: 45,
@@ -1107,7 +1112,7 @@ export const getRawScoreThreshold = (taskId, scoringVersion) => {
   return { above: null, some: null };
 };
 
-export const getRawScoreRange = (taskId) => {
+export const getRawScoreRange = (taskId, scoringVersion = null) => {
   if (taskId.includes('swr')) {
     return {
       min: 100,
@@ -1124,6 +1129,12 @@ export const getRawScoreRange = (taskId) => {
       max: 150,
     };
   } else if (taskId.includes('pa')) {
+    if (scoringVersion >= 4) {
+      return {
+        min: 40,
+        max: 733,
+      };
+    }
     return {
       min: 0,
       max: 57,
@@ -1189,7 +1200,12 @@ export const getDistributionChartPath = (grade, taskScoringVersions, language = 
       path = pickPath('elementaryV1');
     }
   } else {
-    path = pickPath('secondaryV1');
+    const isUpdatedPa = applicableTasks.some(([taskId, version]) => taskId === 'pa' && version >= 4);
+    if (!isUpdatedPa) path = pickPath('secondaryV1');
+    // PA with scoringVersion >= 4 defines support categories using percentiles for all grades (grade >= 6 is matched to 120 months)
+    // If the only task assigned, show the elementary cutoffs applied
+    if (isUpdatedPa && applicableTasks.length === 1) path = pickPath('elementaryV2');
+    // Otherwise, we have a mix of tasks so we'll need to default to no cutoffs
   }
 
   return path;
@@ -1233,11 +1249,7 @@ export const taskInfoById = {
     color: '#E97A49',
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: `ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between ${
-      getRawScoreRange('swr').min
-    }-${
-      getRawScoreRange('swr').max
-    } and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
+    desc: `ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between {{RANGE}} and can be viewed by selecting 'Raw Score' on the table above. Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below {{SUPPORT_RANGE}} of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -1259,9 +1271,7 @@ export const taskInfoById = {
       'phonological awareness, as a foundational pre-reading skill, is crucial for ' +
       'achieving reading fluency. Without support for their foundational reading ' +
       'abilities, students may struggle to catch up in overall reading proficiency. ' +
-      "The student's score will range between " +
-      `${getRawScoreRange('pa').min}-${getRawScoreRange('pa').max} and can be ` +
-      "viewed by selecting 'Raw Score' on the table above.",
+      "The student's score will range between {{RANGE}} and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'What Does Elision Mean?',
@@ -1286,7 +1296,7 @@ export const taskInfoById = {
       'improve their overall reading ability. This assessment is helpful for ' +
       'identifying students who may struggle with reading comprehension due to ' +
       'difficulties with decoding words accurately or reading slowly and with effort.' +
-      ` The student's score will range between ${getRawScoreRange('sre').min}-${getRawScoreRange('sre').max} ` +
+      ` The student's score will range between {{RANGE}} ` +
       "and can be viewed by selecting 'Raw Score' on the table above. " +
       'Students in the pink category need support in sentence-reading ' +
       'efficiency to support growth in reading comprehension. Students in grades ' +
@@ -1401,16 +1411,17 @@ export const taskInfoById = {
 export const replaceScoreRange = (desc, taskId, scoringVersion = null) => {
   if (!desc) return '';
 
+  let editedDesc = desc;
   // Only process desc field if it contains placeholders
   if (desc.includes('{{RANGE}}')) {
     const range = getRawScoreRange(taskId, scoringVersion);
-    return desc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
+    editedDesc = editedDesc.replace('{{RANGE}}', `${range?.min}-${range?.max}`);
   }
 
   if (desc.includes('{{SUPPORT_RANGE}}')) {
     const useUpdatedNorms = (taskId === 'sre' && scoringVersion >= 4) || (taskId === 'swr' && scoringVersion >= 7);
-    return desc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
+    editedDesc = editedDesc.replace('{{SUPPORT_RANGE}}', `${useUpdatedNorms ? '80' : '75'}%`);
   }
 
-  return desc;
+  return editedDesc;
 };

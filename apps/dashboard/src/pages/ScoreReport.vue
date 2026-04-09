@@ -259,6 +259,8 @@
             :page-limit="pageLimit"
             :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
+            data-cy="roar-data-table"
+            :task-scoring-versions="getScoringVersions"
             test-id="score-report__data-table"
             @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
