@@ -267,6 +267,17 @@ describe('GET /v1/districts/:districtId/schools', () => {
       });
     });
 
+    it('includes counts for super admin path (listAllByDistrictId)', async () => {
+      const res = await expectRoute('GET', `${districtSchoolsUrl}?embed=counts`).as(tiers.superAdmin).toReturn(200);
+
+      const school = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school.counts).toMatchObject({
+        users: expect.any(Number),
+        classes: expect.any(Number),
+      });
+    });
+
     it('omits counts when embed is not requested', async () => {
       const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.admin).toReturn(200);
 

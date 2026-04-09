@@ -562,6 +562,32 @@ describe('DistrictsController', () => {
       });
     });
 
+    it('should transform school locationLatLong to GeoJSON coordinates', async () => {
+      const mockSchool = OrgFactory.build({
+        orgType: OrgType.SCHOOL,
+        parentOrgId: districtId,
+        locationAddressLine1: '789 Geo Ln',
+        locationLatLong: { x: -118.2437, y: 34.0522 },
+      });
+      mockListDistrictSchools.mockResolvedValue({
+        items: [mockSchool],
+        totalItems: 1,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listSchools(mockAuthContext, districtId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.location).toMatchObject({
+        addressLine1: '789 Geo Ln',
+        coordinates: {
+          type: 'Point',
+          coordinates: [-118.2437, 34.0522],
+        },
+      });
+    });
+
     it('should include counts when embed=counts is requested', async () => {
       const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL });
       const mockSchoolWithCounts = {
