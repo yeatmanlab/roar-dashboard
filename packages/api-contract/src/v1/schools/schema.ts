@@ -6,6 +6,7 @@ import {
   createFilterQuerySchema,
   createPaginatedResponseSchema,
 } from '../common/query';
+import { ClassTypeSchema, SchoolLevelSchema, UserGradeSchema } from '../common/user';
 
 /**
  * School location schema.
@@ -137,13 +138,13 @@ export const SchoolClassSchema = z.object({
   name: z.string(),
   schoolId: z.string().uuid(),
   districtId: z.string().uuid(),
-  classType: z.string(),
-  grades: z.array(z.string()).nullable(),
+  classType: ClassTypeSchema,
+  grades: z.array(UserGradeSchema).nullable(),
   courseId: z.string().uuid().nullable(),
   number: z.string().nullable(),
   period: z.string().nullable(),
   subjects: z.array(z.string()).nullable(),
-  schoolLevels: z.array(z.string()).nullable(),
+  schoolLevels: z.array(SchoolLevelSchema).nullable(),
   createdAt: z.string().datetime(),
 });
 
