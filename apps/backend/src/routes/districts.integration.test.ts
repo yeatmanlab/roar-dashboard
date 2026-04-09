@@ -211,13 +211,13 @@ describe('GET /v1/districts/:districtId/schools', () => {
         totalPages: expect.any(Number),
       });
 
-      // Verify school item shape
+      // Verify school item shape matches SchoolDetailSchema
       const school = res.body.data.items[0];
       expect(school).toHaveProperty('id');
       expect(school).toHaveProperty('name');
-      expect(school).toHaveProperty('orgType');
-      expect(school).toHaveProperty('createdAt');
-      expect(school).toHaveProperty('updatedAt');
+      expect(school).toHaveProperty('abbreviation');
+      expect(school).toHaveProperty('orgType', 'school');
+      expect(school).toHaveProperty('parentOrgId');
     });
   });
 
