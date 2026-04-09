@@ -38,6 +38,13 @@ describe('getRoarApiClient', () => {
     expect(client1).toBe(client2);
     expect(initClient).toHaveBeenCalledTimes(1);
   });
+
+  it('throws when VITE_ROAR_API_BASE_URL is not set', async () => {
+    vi.stubEnv('VITE_ROAR_API_BASE_URL', '');
+    const { getRoarApiClient } = await import('./index');
+
+    expect(() => getRoarApiClient()).toThrow('VITE_ROAR_API_BASE_URL is not set');
+  });
 });
 
 describe('apiWithAuthRetry', () => {
