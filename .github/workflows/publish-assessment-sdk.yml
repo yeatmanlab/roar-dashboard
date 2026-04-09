@@ -11,7 +11,7 @@ on:
       - 'assessment-sdk-v*'
 
 permissions:
-  contents: write
+  contents: read
   packages: write
 
 concurrency:

@@ -114,11 +114,8 @@ The prerelease version is computed and used only for publishing. The main branch
 
 ## Permissions
 
-### Stable Workflow
-- `contents: write` - For reading repository contents
+The unified workflow uses minimal required permissions:
+- `contents: read` - For reading repository contents (checkout, validate versions)
 - `packages: write` - For publishing to GitHub Package Registry
 
-### Next Workflow
-- `packages: write` - For publishing to GitHub Package Registry
-
-These are configured in the workflow YAML files.
+These are configured in the workflow YAML file.
