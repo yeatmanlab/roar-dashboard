@@ -257,13 +257,9 @@ describe('GET /v1/districts/:districtId/schools', () => {
 
   describe('embed: counts', () => {
     it('includes user and class counts when embed=counts', async () => {
-      const res = await expectRoute('GET', `${districtSchoolsUrl}?embed=counts`)
-        .as(tiers.admin)
-        .toReturn(200);
+      const res = await expectRoute('GET', `${districtSchoolsUrl}?embed=counts`).as(tiers.admin).toReturn(200);
 
-      const school = res.body.data.items.find(
-        (item: { id: string }) => item.id === baseFixture.schoolA.id,
-      );
+      const school = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.schoolA.id);
       expect(school).toBeDefined();
       expect(school.counts).toMatchObject({
         users: expect.any(Number),
@@ -274,9 +270,7 @@ describe('GET /v1/districts/:districtId/schools', () => {
     it('omits counts when embed is not requested', async () => {
       const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.admin).toReturn(200);
 
-      const school = res.body.data.items.find(
-        (item: { id: string }) => item.id === baseFixture.schoolA.id,
-      );
+      const school = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.schoolA.id);
       expect(school).toBeDefined();
       expect(school.counts).toBeUndefined();
     });
