@@ -14,10 +14,11 @@ Publishes stable releases of the Assessment SDK when a git tag matching `assessm
 
 **Process**:
 1. Validates that the tag version matches `package.json` version
-2. Builds the SDK
-3. Runs tests
-4. Publishes to GitHub Package Registry with `latest` dist-tag
-5. Creates a GitHub Release
+2. Builds API Contract
+3. Builds the SDK
+4. Runs tests
+5. Publishes to GitHub Package Registry with `latest` dist-tag
+6. Creates a GitHub Release
 
 **Release Process**:
 ```bash
@@ -44,12 +45,13 @@ Publishes pre-release versions of the Assessment SDK when changes are merged to 
 **Trigger**: Push to `main` branch with changes to `packages/assessment-sdk/**`
 
 **Process**:
-1. Builds the SDK
-2. Runs tests
-3. Computes next prerelease version using the GitHub Actions run number (e.g., `0.0.1-next.42`, `0.0.1-next.43`, etc.)
-4. Temporarily updates package.json for publishing only
-5. Publishes to GitHub Package Registry with `next` dist-tag
-6. Restores original package.json (no commit to main)
+1. Builds API Contract
+2. Builds the SDK
+3. Runs tests
+4. Computes next prerelease version using the GitHub Actions run number (e.g., `0.0.1-next.42`, `0.0.1-next.43`, etc.)
+5. Temporarily updates package.json for publishing only
+6. Publishes to GitHub Package Registry with `next` dist-tag
+7. Restores original package.json (no commit to main)
 
 **Important**: This workflow does NOT commit version changes back to main. The prerelease version is computed using `github.run_number` to ensure every workflow run produces a unique, always-incrementing version. This keeps the main branch clean, prevents self-triggered reruns, and ensures no republish conflicts.
 
