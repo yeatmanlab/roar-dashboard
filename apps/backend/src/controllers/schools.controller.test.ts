@@ -47,6 +47,7 @@ describe('SchoolsController', () => {
     vi.mocked(SchoolService).mockReturnValue({
       list: mockList,
       getById: mockGetById,
+      listSchoolClasses: vi.fn(),
     } as ISchoolService);
   });
 

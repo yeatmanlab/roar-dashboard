@@ -18,6 +18,7 @@ import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { Class } from '../db/schema';
 import { classes, userClasses, users } from '../db/schema';
+import type { ClassType } from '../enums/class-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
 import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
 import type { ParsedFilter } from '../types/filter';
@@ -226,7 +227,8 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
           // grades is a PostgreSQL array column — use @> (array contains) operator
           whereConditions.push(sql`${classes.grades} @> ARRAY[${f.value}]::app.grade[]`);
         } else if (f.field === 'classType' && f.value) {
-          whereConditions.push(eq(classes.classType, f.value));
+          // Filter value is validated by the API contract — safe to cast to the enum type
+          whereConditions.push(eq(classes.classType, f.value as ClassType));
         }
       }
     }
