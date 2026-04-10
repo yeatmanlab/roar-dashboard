@@ -389,9 +389,8 @@ export function AuthorizationModule({
     /** Wrap a category builder promise — logs the underlying error, then throws ApiError. */
     function wrapCategoryBuilder<T>(promise: Promise<T>, category: string): Promise<T> {
       return promise.catch((err) => {
-        const message = `Failed to build ${category} tuples`;
-        logger.error({ err, context: { userId, category } }, message);
-        throw new ApiError(message, {
+        logger.error({ err, context: { userId, category } }, `Failed to build ${category} tuples`);
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
           context: { userId, category },
@@ -417,9 +416,8 @@ export function AuthorizationModule({
       try {
         existingTuples = await readAllExistingTuples();
       } catch (err) {
-        const message = 'Failed to read existing tuples from FGA';
-        logger.error({ err, context: { userId } }, message);
-        throw new ApiError(message, {
+        logger.error({ err, context: { userId } }, 'Failed to read existing tuples from FGA');
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
           context: { userId },
@@ -490,7 +488,7 @@ export function AuthorizationModule({
           } catch (err) {
             if (err instanceof ApiError) throw err;
             logger.error({ err, context: { userId, category: label } }, `Failed to sync ${label} tuples to FGA`);
-            throw new ApiError(`Failed to sync ${label} tuples to FGA`, {
+            throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
               context: { userId, category: label },
@@ -514,7 +512,7 @@ export function AuthorizationModule({
       // Defensive: all known error paths (DB via wrapCategoryBuilder, FGA via per-category catch)
       // already throw ApiError, so this branch guards against unexpected failures only.
       logger.error({ err: error, context: { userId } }, 'FGA sync failed');
-      throw new ApiError('FGA sync failed', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.INTERNAL,
         context: { userId },

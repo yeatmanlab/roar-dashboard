@@ -19,6 +19,7 @@ export enum ApiErrorCode {
   AUTH_TOKEN_EXPIRED = 'auth/token-expired',
   AUTH_USER_NOT_FOUND = 'auth/user-not-found',
   AUTH_FORBIDDEN = 'auth/forbidden',
+  AUTH_ROSTERING_ENDED = 'auth/rostering-ended',
 
   // Request errors
   REQUEST_INVALID = 'request/invalid',

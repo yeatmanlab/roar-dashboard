@@ -132,6 +132,11 @@ export type EnrolledOrgUsersResponse = z.infer<typeof EnrolledOrgUsersResponseSc
 export const SchoolLevelSchema = z.enum(['early_childhood', 'elementary', 'middle', 'high', 'postsecondary']);
 
 /**
+ * Schema for class types following the OneRoster specification.
+ */
+export const ClassTypeSchema = z.enum(['homeroom', 'scheduled', 'other']);
+
+/**
  * Schema for free/reduced lunch status
  */
 export const FreeReducedLunchStatusSchema = z.enum(['Free', 'Reduced', 'Paid']);
@@ -141,4 +146,5 @@ export type AuthProvider = z.infer<typeof AuthProviderSchema>;
 export type UserType = z.infer<typeof UserTypeSchema>;
 export type Grade = z.infer<typeof UserGradeSchema>;
 export type SchoolLevel = z.infer<typeof SchoolLevelSchema>;
+export type ClassType = z.infer<typeof ClassTypeSchema>;
 export type FreeReducedLunchStatus = z.infer<typeof FreeReducedLunchStatusSchema>;

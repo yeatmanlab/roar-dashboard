@@ -17,91 +17,66 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
     list: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, query }) =>
-        AdministrationsController.list({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, query),
+      handler: async ({ req: { user }, query }) => AdministrationsController.list(user!, query),
     },
     get: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params }) =>
-        AdministrationsController.get({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
+      handler: async ({ req: { user }, params: { id } }) => AdministrationsController.get(user!, id),
     },
     listDistricts: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params, query }) =>
-        AdministrationsController.listDistricts(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          params.id,
-          query,
-        ),
+      handler: async ({ req: { user }, params: { id }, query }) =>
+        AdministrationsController.listDistricts(user!, id, query),
     },
     listSchools: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params, query }) =>
-        AdministrationsController.listSchools(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          params.id,
-          query,
-        ),
+      handler: async ({ req: { user }, params: { id }, query }) =>
+        AdministrationsController.listSchools(user!, id, query),
     },
     listClasses: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params, query }) =>
-        AdministrationsController.listClasses(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          params.id,
-          query,
-        ),
+      handler: async ({ req: { user }, params: { id }, query }) =>
+        AdministrationsController.listClasses(user!, id, query),
     },
     listGroups: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params, query }) =>
-        AdministrationsController.listGroups(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          params.id,
-          query,
-        ),
+      handler: async ({ req: { user }, params: { id }, query }) =>
+        AdministrationsController.listGroups(user!, id, query),
     },
     listTaskVariants: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params, query }) =>
-        AdministrationsController.listTaskVariants(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          params.id,
-          query,
-        ),
+      handler: async ({ req: { user }, params: { id }, query }) =>
+        AdministrationsController.listTaskVariants(user!, id, query),
     },
     listAgreements: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params, query }) =>
-        AdministrationsController.listAgreements(
-          { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-          params.id,
-          query,
-        ),
+      handler: async ({ req: { user }, params: { id }, query }) =>
+        AdministrationsController.listAgreements(user!, id, query),
     },
     delete: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req, params }) =>
-        AdministrationsController.delete({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, params.id),
+      handler: async ({ req: { user }, params: { id } }) => AdministrationsController.delete(user!, id),
     },
     progressReports: {
       getStudentProgress: {
         // @ts-expect-error - Express v4/v5 types mismatch in monorepo
         middleware: [AuthGuardMiddleware],
-        handler: async ({ req, params, query }) =>
-          AdministrationsController.listProgressStudents(
-            { userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin },
-            params.id,
-            query,
-          ),
+        handler: async ({ req: { user }, params: { id }, query }) =>
+          AdministrationsController.listProgressStudents(user!, id, query),
+      },
+      getProgressOverview: {
+        // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+        middleware: [AuthGuardMiddleware],
+        handler: async ({ req: { user }, params: { id }, query }) =>
+          AdministrationsController.getProgressOverview(user!, id, query),
       },
     },
   });

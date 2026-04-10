@@ -21,6 +21,12 @@ import './src/test-support/mocks/logger.mock';
 // Check if running integration tests (set via env in vitest.config.ts)
 const isIntegrationTest = process.env.VITEST_PROJECT === 'integration';
 
+// FGA client mock — only for unit tests.
+// Integration tests use a real FGA server (see resetFgaStoreForTestFile / syncFgaTuplesFromPostgres).
+if (!isIntegrationTest) {
+  await import('./src/test-support/mocks/fga-client.mock');
+}
+
 // Global test setup for all tests
 beforeEach(() => {
   vi.clearAllMocks();
@@ -31,10 +37,14 @@ if (isIntegrationTest) {
   const { seedBaseFixture } = await import('./src/test-support/fixtures');
   const { truncateAllTables, closeAllConnections, initializeDatabasePools } = await import('./src/test-support/db');
 
+  const { resetFgaStoreForTestFile, syncFgaTuplesFromPostgres } = await import('./src/test-support/fga');
+
   beforeAll(async () => {
     await initializeDatabasePools();
     await truncateAllTables();
     await seedBaseFixture();
+    await resetFgaStoreForTestFile();
+    await syncFgaTuplesFromPostgres();
   });
 
   afterAll(async () => {

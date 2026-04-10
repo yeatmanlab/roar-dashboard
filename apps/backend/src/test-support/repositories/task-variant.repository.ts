@@ -15,6 +15,7 @@ export function createMockTaskVariantRepository(): MockedObject<TaskVariantRepos
     getByTaskIdAndName: vi.fn(),
     getTaskIdByVariantId: vi.fn(),
     listByTaskId: vi.fn(),
+    listAllPublished: vi.fn(),
   } as MockedObject<TaskVariantRepository>;
 }
 

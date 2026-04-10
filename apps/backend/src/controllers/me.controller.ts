@@ -14,15 +14,17 @@ const userService = UserService();
  */
 export const MeController = {
   /**
-   * Get the current authenticated user's profile.
+   * Get the current authenticated user's profile, including unsigned TOS agreements.
    *
    * @param authContext - The authenticated user's context from req.user
-   * @returns ts-rest response object with user profile or error
+   * @returns ts-rest response object with user profile and unsigned agreements, or error
    */
   get: async (authContext: AuthContext) => {
     try {
-      // User is requesting their own profile
-      const user = await userService.getById(authContext, authContext.userId);
+      const [user, unsignedAgreements] = await Promise.all([
+        userService.getById(authContext, authContext.userId),
+        userService.getUnsignedTosAgreements(authContext.userId),
+      ]);
 
       return {
         status: StatusCodes.OK as const,
@@ -32,12 +34,17 @@ export const MeController = {
             userType: user.userType,
             nameFirst: user.nameFirst,
             nameLast: user.nameLast,
+            unsignedAgreements,
           },
         },
       };
     } catch (error) {
       if (error instanceof ApiError) {
-        return toErrorResponse(error, [StatusCodes.UNAUTHORIZED, StatusCodes.INTERNAL_SERVER_ERROR]);
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
       }
       throw error;
     }

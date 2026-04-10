@@ -17,6 +17,8 @@ import {
   ListTaskVariantsQuerySchema,
   ListTaskVariantsResponseSchema,
   GetTaskVariantResponseSchema,
+  TaskVariantsListQuerySchema,
+  TaskVariantsListResponseSchema,
 } from './schema';
 
 const c = initContract();
@@ -178,4 +180,37 @@ export const TasksContract = c.router(
     },
   },
   { pathPrefix: '/tasks' },
+);
+
+/**
+ * Contract for the /task-variants endpoints.
+ * Super-admin-only access to published task variants across all tasks.
+ */
+export const TaskVariantsContract = c.router(
+  {
+    list: {
+      method: 'GET',
+      path: '/',
+      query: TaskVariantsListQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(TaskVariantsListResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List all published task variants',
+      description:
+        'Returns a paginated list of all published task variants across all tasks. Requires super admin privileges. ' +
+        'Supports pagination (page, perPage), free-text search across variant name, variant description, task name, task slug, and task description, ' +
+        'sorting by variant.name (default, asc), variant.createdAt, variant.updatedAt, task.name, or task.slug, ' +
+        'structured filter expressions (?filter=field:operator:value) for task.id (eq, neq, in) and task.slug (eq, neq, in, contains), ' +
+        'and optional embed of variant parameters (?embed=parameters). ' +
+        'Returns 400 if query parameters are invalid. ' +
+        'Returns 403 if the caller is not a super admin. ' +
+        'Returns 500 if a server error occurs.',
+    },
+  },
+  { pathPrefix: '/task-variants' },
 );

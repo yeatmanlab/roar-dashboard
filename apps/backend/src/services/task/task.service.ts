@@ -1,13 +1,14 @@
 import type { NewTaskVariant, NewTaskVariantParameter, Task, TaskVariant, NewTask } from '../../db/schema';
-import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import type { AuthContext } from '../../types/auth-context';
 import type { PaginatedResult } from '../../repositories/base.repository';
+import type { Condition, FieldCondition, CompositeCondition, ConditionEvaluationUser } from '../../types/condition';
+import type { ListTaskVariantsOptions } from '../../repositories/task-variant.repository';
+import type { ListTasksOptions } from '../../repositories/task.repository';
+import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../logger';
-import type { ListTaskVariantsOptions } from '../../repositories/task-variant.repository';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
-import type { ListTasksOptions } from '../../repositories/task.repository';
 import { TaskRepository } from '../../repositories/task.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -15,8 +16,7 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { isValidUuid } from '../../utils/is-valid-uuid.util';
-import type { Condition, ConditionEvaluationUser, FieldCondition, CompositeCondition } from './task.types';
-import { Operator } from './task.types';
+import { Operator } from '../../types/condition';
 
 /**
  * Parameter data for creating task variant parameters.
