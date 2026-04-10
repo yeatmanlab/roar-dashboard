@@ -5,8 +5,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { ApiError } from '../../errors/api-error';
-import { UserFactory } from '../../test-support/factories/user.factory';
-import { EnrolledUserEntity } from '../../types/user';
+import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 
 describe('handle-enrolled-users', () => {
   describe('handleSubResourceError', () => {
@@ -41,16 +40,10 @@ describe('handle-enrolled-users', () => {
     });
   });
 
-  describe('handleUserSubResourceResponse', () => {
-    const createMockEnrolledUser = (overrides: Partial<EnrolledUserEntity> = {}): EnrolledUserEntity => ({
-      ...UserFactory.build(),
-      roles: [UserRole.STUDENT],
-      ...overrides,
-    });
-
+  describe('handleSubResourceResponse', () => {
     it('returns OK status with paginated response', () => {
-      const mockUsers = [createMockEnrolledUser()];
-      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
+      const mockUsers = [EnrolledUserFactory.build()];
+      const result = handleSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body.data.items).toHaveLength(1);
@@ -63,14 +56,14 @@ describe('handle-enrolled-users', () => {
     });
 
     it('includes role in response', () => {
-      const mockUsers = [createMockEnrolledUser({ roles: [UserRole.TEACHER] })];
+      const mockUsers = [EnrolledUserFactory.build({ roles: [UserRole.TEACHER] })];
       const result = handleSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.body.data.items[0]!.roles).toEqual([UserRole.TEACHER]);
     });
 
     it('calculates totalPages correctly', () => {
-      const mockUsers = [createMockEnrolledUser()];
+      const mockUsers = [EnrolledUserFactory.build()];
 
       // 25 items, 10 per page = 3 pages
       const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 25 }, 1, 10);
@@ -94,7 +87,7 @@ describe('handle-enrolled-users', () => {
     });
 
     it('maps all user fields correctly', () => {
-      const mockUser = createMockEnrolledUser({
+      const mockUser = EnrolledUserFactory.build({
         id: 'test-id',
         assessmentPid: 'test-pid',
         nameFirst: 'Jane',
@@ -131,10 +124,7 @@ describe('handle-enrolled-users', () => {
     });
 
     it('omits sensitive and internal fields from response', () => {
-      const mockUser = createMockEnrolledUser({
-        id: 'test-id',
-        roles: [UserRole.STUDENT],
-      });
+      const mockUser = EnrolledUserFactory.build();
 
       const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
       const item = result.body.data.items[0]!;
