@@ -40,6 +40,7 @@ import {
   writeFgaOrgMembership,
   writeFgaGroupMembership,
 } from '../test-support/fga/fga-test-tuples.helper';
+import { FgaType } from '../services/authorization/fga-constants';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -239,8 +240,8 @@ describe('GET /v1/administrations/:id/districts', () => {
         AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.districtB.id }),
       ]);
       await Promise.all([
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, 'district'),
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, 'district'),
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, FgaType.DISTRICT),
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, FgaType.DISTRICT),
       ]);
 
       const res = await expectRoute('GET', `/v1/administrations/${multiDistrictAdmin.id}/districts`)
@@ -301,8 +302,8 @@ describe('GET /v1/administrations/:id/districts', () => {
         AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.districtB.id }),
       ]);
       await Promise.all([
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, 'district'),
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, 'district'),
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, FgaType.DISTRICT),
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, FgaType.DISTRICT),
       ]);
 
       const res = await expectRoute('GET', `/v1/administrations/${multiDistrictAdmin.id}/districts`)
@@ -720,7 +721,7 @@ describe('GET /v1/administrations/:id/agreements', () => {
         dob: tenYearsAgo.toISOString().split('T')[0]!,
       });
       await UserOrgFactory.create({ userId: minorStudent.id, orgId: baseFixture.district.id, role: UserRole.STUDENT });
-      await writeFgaOrgMembership(minorStudent.id, baseFixture.district.id, UserRole.STUDENT, 'district');
+      await writeFgaOrgMembership(minorStudent.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
 
       authenticateAs(minorStudent);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
@@ -742,7 +743,7 @@ describe('GET /v1/administrations/:id/agreements', () => {
         dob: twentyYearsAgo.toISOString().split('T')[0]!,
       });
       await UserOrgFactory.create({ userId: adultStudent.id, orgId: baseFixture.district.id, role: UserRole.STUDENT });
-      await writeFgaOrgMembership(adultStudent.id, baseFixture.district.id, UserRole.STUDENT, 'district');
+      await writeFgaOrgMembership(adultStudent.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
 
       authenticateAs(adultStudent);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
@@ -800,7 +801,7 @@ describe('DELETE /v1/administrations/:id', () => {
       createdBy: baseFixture.districtAdmin.id,
     });
     await AdministrationOrgFactory.create({ administrationId: admin.id, orgId });
-    await writeFgaAdministrationAssignment(admin.id, orgId, 'district');
+    await writeFgaAdministrationAssignment(admin.id, orgId, FgaType.DISTRICT);
     return admin;
   }
 

@@ -16,14 +16,15 @@ import {
   schoolMembershipTuple,
   groupMembershipTuple,
 } from '../../services/authorization/helpers/fga-tuples';
+import { FgaType } from '../../services/authorization/fga-constants';
 
-type EntityType = 'district' | 'school' | 'class' | 'group';
+type EntityType = typeof FgaType.DISTRICT | typeof FgaType.SCHOOL | typeof FgaType.CLASS | typeof FgaType.GROUP;
 
 const administrationTupleBuilders = {
-  district: administrationDistrictTuple,
-  school: administrationSchoolTuple,
-  class: administrationClassTuple,
-  group: administrationGroupTuple,
+  [FgaType.DISTRICT]: administrationDistrictTuple,
+  [FgaType.SCHOOL]: administrationSchoolTuple,
+  [FgaType.CLASS]: administrationClassTuple,
+  [FgaType.GROUP]: administrationGroupTuple,
 } as const;
 
 /**
@@ -54,10 +55,10 @@ export async function writeFgaOrgMembership(
   userId: string,
   orgId: string,
   role: UserRole,
-  orgType: 'district' | 'school',
+  orgType: typeof FgaType.DISTRICT | typeof FgaType.SCHOOL,
 ): Promise<void> {
   const client = FgaClient.getClient();
-  const builder = orgType === 'district' ? districtMembershipTuple : schoolMembershipTuple;
+  const builder = orgType === FgaType.DISTRICT ? districtMembershipTuple : schoolMembershipTuple;
   await client.writeTuples([builder(userId, orgId, role, null, null)]);
 }
 
