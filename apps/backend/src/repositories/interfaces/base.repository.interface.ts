@@ -206,6 +206,9 @@ export interface IBaseRepository<TEntity, TInsert = TEntity> {
   /** Retrieves all entities with pagination, optional where clause, and ordering. */
   getAll(params: BaseGetAllParams): Promise<PaginatedResult<TEntity>>;
 
+  /** Retrieves entities matching the given IDs with pagination and optional filtering. */
+  getByIds(ids: string[], params: BaseGetAllParams): Promise<PaginatedResult<TEntity>>;
+
   /** Creates a new entity in the repository. */
   create(params: BaseCreateParams<TInsert>): Promise<{ id: string }>;
 
