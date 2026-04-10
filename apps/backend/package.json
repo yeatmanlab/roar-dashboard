@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.0.0",
+    "@openfga/syntax-transformer": "^0.2.1",
     "@roar-dashboard/eslint-config": "*",
     "@roar-dashboard/typescript-config": "*",
     "@rollup/plugin-alias": "^5.1.1",

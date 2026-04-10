@@ -3,8 +3,10 @@ import {
   PaginationQuerySchema,
   createSortQuerySchema,
   createEmbedQuerySchema,
+  createFilterQuerySchema,
   createPaginatedResponseSchema,
 } from '../common/query';
+import { ClassTypeSchema, SchoolLevelSchema, UserGradeSchema } from '../common/user';
 
 /**
  * School location schema.
@@ -123,3 +125,56 @@ export type SchoolsListQuery = z.infer<typeof SchoolsListQuerySchema>;
 export const SchoolsListResponseSchema = createPaginatedResponseSchema(SchoolDetailSchema);
 
 export type SchoolsListResponse = z.infer<typeof SchoolsListResponseSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────–––––
+// School Classes (sub-resource: GET /schools/:schoolId/classes)
+// ─────────────────────────────────────────────────────────────────────────–––––
+
+/**
+ * Schema for a class within a school listing.
+ */
+export const SchoolClassSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  schoolId: z.string().uuid(),
+  districtId: z.string().uuid(),
+  classType: ClassTypeSchema,
+  grades: z.array(UserGradeSchema).nullable(),
+  courseId: z.string().uuid().nullable(),
+  number: z.string().nullable(),
+  period: z.string().nullable(),
+  subjects: z.array(z.string()).nullable(),
+  schoolLevels: z.array(SchoolLevelSchema).nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
+});
+
+export type SchoolClass = z.infer<typeof SchoolClassSchema>;
+
+/**
+ * Allowed sort fields for school classes.
+ */
+export const SCHOOL_CLASS_SORT_FIELDS = ['name', 'createdAt'] as const;
+
+export type SchoolClassSortFieldType = (typeof SCHOOL_CLASS_SORT_FIELDS)[number];
+
+/**
+ * Allowed filter fields for school classes.
+ */
+export const SCHOOL_CLASS_FILTER_FIELDS = ['grade', 'classType'] as const;
+
+/**
+ * Query parameters for listing classes within a school.
+ */
+export const SchoolClassesListQuerySchema = PaginationQuerySchema.merge(
+  createSortQuerySchema(SCHOOL_CLASS_SORT_FIELDS, 'name'),
+).merge(createFilterQuerySchema(SCHOOL_CLASS_FILTER_FIELDS));
+
+export type SchoolClassesListQuery = z.infer<typeof SchoolClassesListQuerySchema>;
+
+/**
+ * Paginated response for school classes list.
+ */
+export const SchoolClassesListResponseSchema = createPaginatedResponseSchema(SchoolClassSchema);
+
+export type SchoolClassesListResponse = z.infer<typeof SchoolClassesListResponseSchema>;

@@ -47,6 +47,25 @@ export const FgaAssignmentRelation = {
 export type FgaAssignmentRelation = (typeof FgaAssignmentRelation)[keyof typeof FgaAssignmentRelation];
 
 /**
+ * FGA permission relations — used in `hasPermission` and `listAccessibleObjects` calls.
+ *
+ * These match the `define can_*` permissions in `packages/authz/authorization-model.fga`.
+ * Using constants prevents typos in service-layer authorization checks.
+ */
+export const FgaRelation = {
+  CAN_LIST: 'can_list',
+  CAN_READ: 'can_read',
+  CAN_DELETE: 'can_delete',
+  CAN_LIST_USERS: 'can_list_users',
+  CAN_READ_SCORES: 'can_read_scores',
+  CAN_READ_PROGRESS: 'can_read_progress',
+  CAN_CREATE_RUN: 'can_create_run',
+  CAN_READ_CHILD: 'can_read_child',
+} as const;
+
+export type FgaRelation = (typeof FgaRelation)[keyof typeof FgaRelation];
+
+/**
  * Roles that are valid as direct relations on the FGA `class` type.
  *
  * The `class` type in the authorization model does not include admin-tier roles

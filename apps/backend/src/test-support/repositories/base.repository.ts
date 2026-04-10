@@ -9,6 +9,7 @@ export function createMockBaseRepositoryMethods() {
     getById: vi.fn(),
     get: vi.fn(),
     getAll: vi.fn(),
+    getByIds: vi.fn(),
     create: vi.fn(),
     createMany: vi.fn(),
     update: vi.fn(),
