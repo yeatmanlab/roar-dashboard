@@ -177,8 +177,19 @@ export function AdministrationService({
     options: ListOrgsOptions,
   ): Promise<PaginatedResult<Org>> {
     const { userId, isSuperAdmin } = authContext;
-    const orgTypeName = orgType === OrgType.DISTRICT ? 'districts' : 'schools';
-    const fgaType = orgType === OrgType.DISTRICT ? FgaType.DISTRICT : FgaType.SCHOOL;
+
+    const { orgTypeName, fgaType, repoMethod } =
+      orgType === OrgType.DISTRICT
+        ? {
+            orgTypeName: 'districts' as const,
+            fgaType: FgaType.DISTRICT,
+            repoMethod: administrationRepository.getDistrictsByAdministrationId,
+          }
+        : {
+            orgTypeName: 'schools' as const,
+            fgaType: FgaType.SCHOOL,
+            repoMethod: administrationRepository.getSchoolsByAdministrationId,
+          };
 
     try {
       await verifyAdministrationAccess(authContext, administrationId);
@@ -193,9 +204,7 @@ export function AdministrationService({
       };
 
       if (isSuperAdmin) {
-        return orgType === OrgType.DISTRICT
-          ? await administrationRepository.getDistrictsByAdministrationId(administrationId, queryParams)
-          : await administrationRepository.getSchoolsByAdministrationId(administrationId, queryParams);
+        return await repoMethod.call(administrationRepository, administrationId, queryParams);
       }
 
       // Check if user has supervisory access to list sub-resources
@@ -213,9 +222,7 @@ export function AdministrationService({
         return { items: [], totalItems: 0 };
       }
 
-      return orgType === OrgType.DISTRICT
-        ? await administrationRepository.getDistrictsByAdministrationId(administrationId, queryParams, filterIds)
-        : await administrationRepository.getSchoolsByAdministrationId(administrationId, queryParams, filterIds);
+      return await repoMethod.call(administrationRepository, administrationId, queryParams, filterIds);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -227,7 +234,7 @@ export function AdministrationService({
       throw new ApiError(`Failed to retrieve administration ${orgTypeName}`, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, administrationId },
+        context: { userId, administrationId, orgTypeName },
         cause: error,
       });
     }
