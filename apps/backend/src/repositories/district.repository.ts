@@ -404,7 +404,9 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .where(classConditions);
 
     const combinedUsersQuery = orgUsersQuery.union(classUsersQuery).as('combined_users');
-    const countResult = await this.db.select({ count: count() }).from(combinedUsersQuery);
+    const countResult = await this.db
+      .select({ count: countDistinct(combinedUsersQuery.userId) })
+      .from(combinedUsersQuery);
 
     const totalItems = countResult[0]?.count ?? 0;
 
@@ -419,7 +421,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     const dataResult = await this.db
       .select({
         user: users,
-        roles: sql<UserRole[] | string>`array_agg(DISTINCT ${combinedUsersQuery.role})`,
+        roles: sql<UserRole[]>`json_agg(${combinedUsersQuery.role})`,
       })
       .from(users)
       .innerJoin(combinedUsersQuery, eq(users.id, combinedUsersQuery.userId))
@@ -431,11 +433,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     return {
       items: dataResult.map((row) => ({
         ...row.user,
-        roles: Array.isArray(row.roles)
-          ? row.roles
-          : typeof row.roles === 'string'
-            ? (row.roles.replace(/[{}]/g, '').split(',') as UserRole[])
-            : [],
+        roles: row.roles,
       })),
       totalItems,
     };
