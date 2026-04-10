@@ -16,11 +16,16 @@ import { vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
 // Shared mocks (vi.mock calls are hoisted)
 import './src/test-support/mocks/firebase-admin.mock';
-import './src/test-support/mocks/fga-client.mock';
 import './src/test-support/mocks/logger.mock';
 
 // Check if running integration tests (set via env in vitest.config.ts)
 const isIntegrationTest = process.env.VITEST_PROJECT === 'integration';
+
+// FGA client mock — only for unit tests.
+// Integration tests use a real FGA server (see resetFgaStoreForTestFile / syncFgaTuplesFromPostgres).
+if (!isIntegrationTest) {
+  await import('./src/test-support/mocks/fga-client.mock');
+}
 
 // Global test setup for all tests
 beforeEach(() => {
