@@ -586,7 +586,7 @@ describe('DistrictService', () => {
       );
 
       expect(mockDistrictRepo.getUnrestrictedById).toHaveBeenCalledWith('district-123');
-      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith('district-123', {
+      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith(mockDistrict.path, {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
@@ -727,7 +727,7 @@ describe('DistrictService', () => {
         role: UserRole.STUDENT,
       });
 
-      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith('district-123', {
+      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith(mockDistrict.path, {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
@@ -749,7 +749,7 @@ describe('DistrictService', () => {
         grade: ['5', '6'],
       });
 
-      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith('district-123', {
+      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith(mockDistrict.path, {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },

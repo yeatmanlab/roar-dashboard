@@ -358,18 +358,16 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * Only includes users with active enrollments (enrollment_start <= now and
    * enrollment_end is null or >= now).
    *
-   * @param districtId - District ID to get users for
+   * @param districtPath - District path for ltree filtering
    * @param options - Options for filtering and pagination
    * @returns Paginated result of users enrolled in the district
    */
   async getUsersByDistrictId(
-    districtId: string,
+    districtPath: string,
     options: ListEnrolledUsersOptions,
   ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
-
-    const districtPath = (await this.getUnrestrictedById(districtId))?.path;
 
     const orgConditions = and(
       isEnrollmentActive(userOrgs),
@@ -451,13 +449,15 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * enrollment_end is null or >= now).
    *
    * @param accessControlFilter - Filter for authorized access control
-   * @param districtId - District ID to get users for
+   * @param districtId - District ID to check for access
+   * @param districtPath - District path to use for ltree filtering
    * @param options - Options for filtering and pagination
    * @returns Paginated result of users enrolled in the district
    */
   async getAuthorizedUsersByDistrictId(
     accessControlFilter: AccessControlFilter,
     districtId: string,
+    districtPath: string,
     options: ListEnrolledUsersOptions,
   ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, allowedRoles } = accessControlFilter;
@@ -469,10 +469,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
         .where(and(eq(userOrgs.orgId, districtId), isAuthorizedMembership(userOrgs, userId, allowedRoles)))
         .as('accessible_districts'),
     );
+
     if (accessibleDistrictsCount[0]?.count === 0) {
       return { items: [], totalItems: 0 };
     }
 
-    return this.getUsersByDistrictId(districtId, options);
+    return this.getUsersByDistrictId(districtPath, options);
   }
 }

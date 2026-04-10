@@ -161,13 +161,13 @@ export function DistrictService({
    * @throws {ApiError} NOT_FOUND if district doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
    */
-  async function authorizeSubResourceAccess(authContext: AuthContext, districtId: string): Promise<void> {
+  async function authorizeSubResourceAccess(authContext: AuthContext, districtId: string): Promise<string> {
     const { userId, isSuperAdmin } = authContext;
 
     // Verifies user has access to organizations
-    await getById(authContext, districtId);
+    const district = await getById(authContext, districtId);
 
-    if (isSuperAdmin) return;
+    if (isSuperAdmin) return district.path;
 
     const userRoles = await districtRepository.getUserRolesForDistrict(userId, districtId);
 
@@ -179,6 +179,8 @@ export function DistrictService({
         context: { userId, districtId, userRoles },
       });
     }
+
+    return district.path;
   }
 
   /**
@@ -199,7 +201,7 @@ export function DistrictService({
   ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
     try {
-      await authorizeSubResourceAccess(authContext, districtId);
+      const districtPath = await authorizeSubResourceAccess(authContext, districtId);
 
       const queryParams: ListEnrolledUsersOptions = {
         page: options.page,
@@ -213,11 +215,16 @@ export function DistrictService({
       };
 
       if (isSuperAdmin) {
-        return await districtRepository.getUsersByDistrictId(districtId, queryParams);
+        return await districtRepository.getUsersByDistrictId(districtPath, queryParams);
       }
 
       const allowedRoles = rolesForPermission(Permissions.Users.LIST);
-      return await districtRepository.getAuthorizedUsersByDistrictId({ userId, allowedRoles }, districtId, queryParams);
+      return await districtRepository.getAuthorizedUsersByDistrictId(
+        { userId, allowedRoles },
+        districtId,
+        districtPath,
+        queryParams,
+      );
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
