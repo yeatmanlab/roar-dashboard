@@ -8,11 +8,11 @@ import type {
   TaskVariant as ContractTaskVariant,
   Json,
   CreateTaskRequestBody,
+  UpdateTaskRequestBody,
 } from '@roar-dashboard/api-contract';
 import type { Task, TaskVariant } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';
-import type { UpdateTaskData } from '../services/task/task.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
@@ -183,7 +183,7 @@ export const TasksController = {
    * @param body - Request body with task details to update (name, nameSimple, nameTechnical, taskConfig, etc.)
    * @returns Response with status 200 and the updated task's UUID
    */
-  update: async (authContext: AuthContext, taskId: string, body: UpdateTaskData) => {
+  update: async (authContext: AuthContext, taskId: string, body: UpdateTaskRequestBody) => {
     try {
       const result = await taskService.update(authContext, taskId, body);
       return {
