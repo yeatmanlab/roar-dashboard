@@ -362,7 +362,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param options - Options for filtering and pagination
    * @returns Paginated result of users enrolled in the district
    */
-  async getUsersByDistrictId(
+  async getUsersByDistrictPath(
     districtPath: string,
     options: ListEnrolledUsersOptions,
   ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
@@ -474,6 +474,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       return { items: [], totalItems: 0 };
     }
 
-    return this.getUsersByDistrictId(districtPath, options);
+    return this.getUsersByDistrictPath(districtPath, options);
   }
 }

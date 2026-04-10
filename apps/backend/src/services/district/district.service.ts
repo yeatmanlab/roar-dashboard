@@ -158,6 +158,7 @@ export function DistrictService({
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param districtId - The district ID to verify access for
+   * @returns The district path if authorized
    * @throws {ApiError} NOT_FOUND if district doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
    */
@@ -215,7 +216,7 @@ export function DistrictService({
       };
 
       if (isSuperAdmin) {
-        return await districtRepository.getUsersByDistrictId(districtPath, queryParams);
+        return await districtRepository.getUsersByDistrictPath(districtPath, queryParams);
       }
 
       const allowedRoles = rolesForPermission(Permissions.Users.LIST);

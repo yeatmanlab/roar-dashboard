@@ -509,10 +509,10 @@ describe('DistrictRepository', () => {
     });
   });
 
-  describe('getUsersByDistrictId', () => {
+  describe('getUsersByDistrictPath', () => {
     describe('includes users from descendant orgs and classes', () => {
       it('returns users enrolled at the district level', async () => {
-        const result = await repository.getUsersByDistrictId(baseFixture.districtB.path, {
+        const result = await repository.getUsersByDistrictPath(baseFixture.districtB.path, {
           page: 1,
           perPage: 100,
         });
@@ -522,7 +522,7 @@ describe('DistrictRepository', () => {
       });
 
       it('includes users enrolled at school level under the district', async () => {
-        const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+        const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
           page: 1,
           perPage: 100,
         });
@@ -537,7 +537,7 @@ describe('DistrictRepository', () => {
       });
 
       it('includes users enrolled at class level under the district', async () => {
-        const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+        const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
           page: 1,
           perPage: 100,
         });
@@ -550,7 +550,7 @@ describe('DistrictRepository', () => {
     });
 
     it('does not include users from other districts', async () => {
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -562,7 +562,7 @@ describe('DistrictRepository', () => {
     });
 
     it('returns enrollmentStart and role for each user', async () => {
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -585,7 +585,7 @@ describe('DistrictRepository', () => {
         role: UserRole.ADMINISTRATOR,
       });
 
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -600,7 +600,7 @@ describe('DistrictRepository', () => {
 
     it('aggregates multiple roles when user is enrolled at both district and school level', async () => {
       // baseFixture.multiAssignedUser is assigned to both district (ADMINISTRATOR) and schoolA (TEACHER)
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -638,7 +638,7 @@ describe('DistrictRepository', () => {
         role: UserRole.STUDENT,
       });
 
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -658,7 +658,7 @@ describe('DistrictRepository', () => {
         role: UserRole.TEACHER,
       });
 
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -675,10 +675,10 @@ describe('DistrictRepository', () => {
       // Create an empty district
       const emptyDistrict = await OrgFactory.create({
         orgType: OrgType.DISTRICT,
-        name: 'Empty District for getUsersByDistrictId',
+        name: 'Empty District for getUsersByDistrictPath',
       });
 
-      const result = await repository.getUsersByDistrictId(emptyDistrict.id, {
+      const result = await repository.getUsersByDistrictPath(emptyDistrict.id, {
         page: 1,
         perPage: 100,
       });
@@ -688,7 +688,7 @@ describe('DistrictRepository', () => {
     });
 
     it('respects pagination', async () => {
-      const page1 = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const page1 = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 2,
       });
@@ -696,7 +696,7 @@ describe('DistrictRepository', () => {
       expect(page1.items.length).toBeLessThanOrEqual(2);
       expect(page1.totalItems).toBeGreaterThan(2);
 
-      const page2 = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const page2 = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 2,
         perPage: 2,
       });
@@ -714,7 +714,7 @@ describe('DistrictRepository', () => {
       // Create a district with users having known lastNames for precise sorting verification
       const sortTestDistrict = await OrgFactory.create({
         orgType: OrgType.DISTRICT,
-        name: 'getUsersByDistrictId Sort Test District',
+        name: 'getUsersByDistrictPath Sort Test District',
       });
       const studentZ = await UserFactory.create({ nameLast: 'Zulu' });
       const studentA = await UserFactory.create({ nameLast: 'Alpha' });
@@ -723,7 +723,7 @@ describe('DistrictRepository', () => {
       await UserOrgFactory.create({ userId: studentA.id, orgId: sortTestDistrict.id, role: UserRole.STUDENT });
       await UserOrgFactory.create({ userId: studentM.id, orgId: sortTestDistrict.id, role: UserRole.STUDENT });
 
-      const result = await repository.getUsersByDistrictId(sortTestDistrict.path, {
+      const result = await repository.getUsersByDistrictPath(sortTestDistrict.path, {
         page: 1,
         perPage: 100,
       });
@@ -738,7 +738,7 @@ describe('DistrictRepository', () => {
       // Create a district with users having known usernames for precise sorting verification
       const usernameTestDistrict = await OrgFactory.create({
         orgType: OrgType.DISTRICT,
-        name: 'getUsersByDistrictId Username Sort Test',
+        name: 'getUsersByDistrictPath Username Sort Test',
       });
       const userA = await UserFactory.create({ username: 'aaa_district_user' });
       const userZ = await UserFactory.create({ username: 'zzz_district_user' });
@@ -747,7 +747,7 @@ describe('DistrictRepository', () => {
       await UserOrgFactory.create({ userId: userZ.id, orgId: usernameTestDistrict.id, role: UserRole.STUDENT });
       await UserOrgFactory.create({ userId: userM.id, orgId: usernameTestDistrict.id, role: UserRole.STUDENT });
 
-      const result = await repository.getUsersByDistrictId(usernameTestDistrict.path, {
+      const result = await repository.getUsersByDistrictPath(usernameTestDistrict.path, {
         page: 1,
         perPage: 100,
         orderBy: { field: 'username', direction: SortOrder.DESC },
@@ -760,7 +760,7 @@ describe('DistrictRepository', () => {
     });
 
     it('excludes users with expired enrollment', async () => {
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -773,7 +773,7 @@ describe('DistrictRepository', () => {
     });
 
     it('excludes users with future enrollment', async () => {
-      const result = await repository.getUsersByDistrictId(baseFixture.district.path, {
+      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
         page: 1,
         perPage: 100,
       });
@@ -796,7 +796,7 @@ describe('DistrictRepository', () => {
         await UserOrgFactory.create({ userId: student2.id, orgId: filterTestDistrict.id, role: UserRole.STUDENT });
         await UserOrgFactory.create({ userId: teacher.id, orgId: filterTestDistrict.id, role: UserRole.TEACHER });
 
-        const result = await repository.getUsersByDistrictId(filterTestDistrict.path, {
+        const result = await repository.getUsersByDistrictPath(filterTestDistrict.path, {
           page: 1,
           perPage: 100,
           role: UserRole.STUDENT,
@@ -840,7 +840,7 @@ describe('DistrictRepository', () => {
           role: UserRole.STUDENT,
         });
 
-        const result = await repository.getUsersByDistrictId(filterGradeDistrict.path, {
+        const result = await repository.getUsersByDistrictPath(filterGradeDistrict.path, {
           page: 1,
           perPage: 100,
           grade: ['5'],
@@ -879,7 +879,7 @@ describe('DistrictRepository', () => {
           role: UserRole.TEACHER,
         });
 
-        const result = await repository.getUsersByDistrictId(filterBothDistrict.path, {
+        const result = await repository.getUsersByDistrictPath(filterBothDistrict.path, {
           page: 1,
           perPage: 100,
           role: UserRole.STUDENT,
@@ -900,7 +900,7 @@ describe('DistrictRepository', () => {
         const student = await UserFactory.create({ nameLast: 'OnlyDistrictStudent' });
         await UserOrgFactory.create({ userId: student.id, orgId: noMatchDistrict.id, role: UserRole.STUDENT });
 
-        const result = await repository.getUsersByDistrictId(noMatchDistrict.id, {
+        const result = await repository.getUsersByDistrictPath(noMatchDistrict.id, {
           page: 1,
           perPage: 100,
           role: UserRole.ADMINISTRATOR,

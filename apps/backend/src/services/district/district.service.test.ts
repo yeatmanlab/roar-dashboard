@@ -570,7 +570,7 @@ describe('DistrictService', () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
       const mockUsers = EnrolledOrgUserFactory.buildList(3);
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getUsersByDistrictId.mockResolvedValue({
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({
         items: mockUsers,
         totalItems: 3,
       });
@@ -586,7 +586,7 @@ describe('DistrictService', () => {
       );
 
       expect(mockDistrictRepo.getUnrestrictedById).toHaveBeenCalledWith('district-123');
-      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith(mockDistrict.path, {
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
@@ -625,7 +625,7 @@ describe('DistrictService', () => {
     it('should return empty results when district has no users', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getUsersByDistrictId.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
@@ -698,7 +698,7 @@ describe('DistrictService', () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
       const dbError = new Error('Connection refused');
-      mockDistrictRepo.getUsersByDistrictId.mockRejectedValue(dbError);
+      mockDistrictRepo.getUsersByDistrictPath.mockRejectedValue(dbError);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
@@ -716,7 +716,7 @@ describe('DistrictService', () => {
     it('should pass role filter to repository', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getUsersByDistrictId.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
@@ -727,7 +727,7 @@ describe('DistrictService', () => {
         role: UserRole.STUDENT,
       });
 
-      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith(mockDistrict.path, {
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
@@ -738,7 +738,7 @@ describe('DistrictService', () => {
     it('should pass grade filter to repository', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getUsersByDistrictId.mockResolvedValue({ items: [], totalItems: 0 });
+      mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
@@ -749,7 +749,7 @@ describe('DistrictService', () => {
         grade: ['5', '6'],
       });
 
-      expect(mockDistrictRepo.getUsersByDistrictId).toHaveBeenCalledWith(mockDistrict.path, {
+      expect(mockDistrictRepo.getUsersByDistrictPath).toHaveBeenCalledWith(mockDistrict.path, {
         page: 1,
         perPage: 25,
         orderBy: { field: 'nameLast', direction: SortOrder.ASC },
