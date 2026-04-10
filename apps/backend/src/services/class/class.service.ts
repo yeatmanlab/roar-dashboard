@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
+import type { PaginatedResult } from '@roar-dashboard/api-contract';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import type { Class } from '../../db/schema';
@@ -9,7 +9,7 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { ClassRepository } from '../../repositories/class.repository';
 import type { AuthContext } from '../../types/auth-context';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
+import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 
 export function ClassService({

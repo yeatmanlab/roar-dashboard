@@ -1,7 +1,7 @@
 import { eq, asc, desc, count, and, isNull, sql } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { EnrolledUsersSortFieldType, SchoolClassSortFieldType } from '@roar-dashboard/api-contract';
+import type { SchoolClassSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
@@ -20,7 +20,7 @@ import type { Class } from '../db/schema';
 import { classes, userClasses, users } from '../db/schema';
 import type { ClassType } from '../enums/class-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
-import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
