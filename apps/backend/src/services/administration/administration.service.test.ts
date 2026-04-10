@@ -53,6 +53,7 @@ describe('AdministrationService', () => {
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -206,6 +207,7 @@ describe('AdministrationService', () => {
 
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await service.list(
@@ -261,6 +263,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -309,6 +312,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -328,6 +332,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -361,6 +366,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -393,6 +399,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -426,6 +433,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await service.list(
@@ -449,6 +457,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -474,6 +483,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await expect(
@@ -497,6 +507,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await expect(
@@ -516,6 +527,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -552,6 +564,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -591,6 +604,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -612,6 +626,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await expect(
@@ -628,6 +643,7 @@ describe('AdministrationService', () => {
         const service = AdministrationService({
           administrationRepository: mockAdministrationRepository,
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
@@ -662,6 +678,7 @@ describe('AdministrationService', () => {
           administrationRepository: mockAdministrationRepository,
           administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
           runRepository: mockRunRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await service.list(
