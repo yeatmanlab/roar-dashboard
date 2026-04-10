@@ -9,7 +9,7 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { GroupRepository } from '../../repositories/group.repository';
 import type { AuthContext } from '../../types/auth-context';
-import type { EnrolledOrgUserEntity, ListEnrolledUsersOptions } from '../../types/user';
+import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 
 export function GroupService({
@@ -111,7 +111,7 @@ export function GroupService({
     authContext: AuthContext,
     groupId: string,
     options: EnrolledUsersQuery,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
 
     try {

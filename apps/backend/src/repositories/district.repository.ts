@@ -14,7 +14,7 @@ import { OrgType } from '../enums/org-type.enum';
 
 import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
-import type { EnrolledOrgUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
+import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import {
   getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
@@ -365,7 +365,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   async getUsersByDistrictPath(
     districtPath: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
@@ -457,7 +457,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     districtId: string,
     districtPath: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { userId, allowedRoles } = accessControlFilter;
 
     const accessibleDistrictsCount = await this.db.select({ count: count() }).from(

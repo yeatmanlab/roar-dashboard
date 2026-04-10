@@ -35,7 +35,7 @@ import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { GroupFactory } from '../test-support/factories/group.factory';
 import { UserGroupFactory } from '../test-support/factories/user-group.factory';
-import type { EnrolledOrgUserEntity } from '../types/user';
+import type { EnrolledUserEntity } from '../types/user';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -214,7 +214,7 @@ describe('GET /v1/groups/:groupId/users', () => {
         .as(userGroupTiers.admin)
         .toReturn(200);
       expect(res.body.data.items).toBeInstanceOf(Array);
-      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
+      res.body.data.items.forEach((user: EnrolledUserEntity) => {
         expect(user.roles).toContain(UserRole.ADMINISTRATOR);
       });
     });
@@ -243,7 +243,7 @@ describe('GET /v1/groups/:groupId/users', () => {
 
       expect(res.body.data.items).toBeInstanceOf(Array);
       // Should only return users in grade 5
-      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
+      res.body.data.items.forEach((user: EnrolledUserEntity) => {
         expect(user.grade).toBe('5');
       });
     });
@@ -263,7 +263,7 @@ describe('GET /v1/groups/:groupId/users', () => {
 
       expect(res.body.data.items).toBeInstanceOf(Array);
       // Should only contain grade 2 students
-      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
+      res.body.data.items.forEach((user: EnrolledUserEntity) => {
         expect(user.roles).toContain(UserRole.STUDENT);
         expect(user.grade).toBe('2');
       });
