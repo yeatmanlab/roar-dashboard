@@ -88,6 +88,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const whereCondition = and(
       eq(userGroups.groupId, groupId),
       isEnrollmentActive(userGroups),
+      isNull(groups.rosteringEnded),
       ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_GROUPS),
     );
 
@@ -153,6 +154,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const whereCondition = and(
       eq(userGroups.groupId, groupId),
       isEnrollmentActive(userGroups),
+      isNull(groups.rosteringEnded),
       ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_GROUPS),
     );
 
