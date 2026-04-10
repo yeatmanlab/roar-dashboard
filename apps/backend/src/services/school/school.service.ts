@@ -7,9 +7,15 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
+import type { Class } from '../../db/schema';
+import { ClassRepository } from '../../repositories/class.repository';
+import type { ParsedFilter, FilterOperator } from '../../types/filter';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
+
+/** Type safe constant for 'eq' filter operator */
+const EQ_OPERATOR: FilterOperator = 'eq';
 
 /**
  * Options for listing schools
@@ -29,6 +35,17 @@ export interface ListOptions {
 export type SchoolWithEmbeds = SchoolWithCounts;
 
 /**
+ * Options for listing school classes
+ */
+export interface ListSchoolClassesOptions {
+  page: number;
+  perPage: number;
+  sortBy: 'name' | 'createdAt';
+  sortOrder: 'asc' | 'desc';
+  filter?: ParsedFilter[];
+}
+
+/**
  * School Service
  *
  * Business logic layer for school operations.
@@ -36,9 +53,11 @@ export type SchoolWithEmbeds = SchoolWithCounts;
  */
 export function SchoolService({
   schoolRepository = new SchoolRepository(),
+  classRepository = new ClassRepository(),
   authorizationService = AuthorizationService(),
 }: {
   schoolRepository?: SchoolRepository;
+  classRepository?: ClassRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
@@ -168,9 +187,106 @@ export function SchoolService({
     }
   }
 
+  /**
+   * Authorize sub-resource access (requires supervisory role via FGA).
+   *
+   * Checks that the school exists and the user has can_list_users permission,
+   * which requires supervisory_tier_group in the FGA model.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to verify access for
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks supervisory permission
+   */
+  async function authorizeSchoolSubResourceAccess(authContext: AuthContext, schoolId: string): Promise<void> {
+    const { userId } = authContext;
+
+    // Verify school exists (404 before 403)
+    const school = await schoolRepository.getUnrestrictedById(schoolId);
+    if (!school) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, schoolId },
+      });
+    }
+
+    // FGA handles both access check and supervisory role requirement
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST_CLASSES, `${FgaType.SCHOOL}:${schoolId}`);
+  }
+
+  /**
+   * List classes in a school with access control.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all active classes in the school
+   * - Supervisory roles: sees all active classes in the school
+   * - Supervised roles: returns 403 Forbidden
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to list classes for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with classes
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks supervisory permission
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listSchoolClasses(
+    authContext: AuthContext,
+    schoolId: string,
+    options: ListSchoolClassesOptions,
+  ): Promise<PaginatedResult<Class>> {
+    const { userId } = authContext;
+
+    try {
+      // Validate filter operators — only 'eq' is supported for class filters
+      if (options.filter) {
+        for (const f of options.filter) {
+          if (f.operator !== EQ_OPERATOR) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, field: f.field, operator: f.operator },
+            });
+          }
+        }
+      }
+
+      // Verify school access and user has supervisory role
+      await authorizeSchoolSubResourceAccess(authContext, schoolId);
+
+      // All authorized users (super admin and supervisory) can list classes
+      const result = await classRepository.listBySchoolId(schoolId, {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        ...(options.filter ? { filter: options.filter } : {}),
+      });
+
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school classes');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
+    listSchoolClasses,
   };
 }
 

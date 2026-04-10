@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { userOrgs, userClasses, orgs, classes } from '../../db/schema';
@@ -134,5 +134,46 @@ export class OrgAccessControls {
       .where(isAuthorizedMembership(userOrgs, userId, supervisoryAllowedRoles));
 
     return ancestorUnion.union(viaUserOrgDescendants);
+  }
+
+  /**
+   * Get the roles a user holds for a specific org through org membership
+   * (via ltree ancestor-or-equal) or class membership within that org.
+   *
+   * A district admin has a role at the district level, but that role also applies
+   * to descendant schools. This method finds roles through two paths:
+   * 1. Org membership at the target org or any ancestor (isAncestorOrEqual covers
+   *    both direct membership and inherited roles from parent orgs)
+   * 2. Class membership within the target org
+   *
+   * @param userId - The user's ID
+   * @param orgId - The org to check roles for
+   * @returns Array of role strings the user holds for the org
+   */
+  async getUserRolesForOrg(userId: string, orgId: string): Promise<string[]> {
+    const userOrgTable = alias(orgs, 'user_org');
+    const targetOrgTable = alias(orgs, 'target_org');
+
+    // Path 1: Org membership at the target org or any ancestor
+    // isAncestorOrEqual covers both direct membership (user's org IS the target)
+    // and inherited roles (user's org is an ancestor of the target, e.g., district admin → school)
+    const orgRoles = this.db
+      .select({ role: userOrgs.role })
+      .from(userOrgs)
+      .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
+      .innerJoin(targetOrgTable, eq(targetOrgTable.id, orgId))
+      .where(and(eq(userOrgs.userId, userId), isAncestorOrEqual(userOrgTable.path, targetOrgTable.path)));
+
+    // Path 2: Class membership within the target org
+    const classRoles = this.db
+      .select({ role: userClasses.role })
+      .from(userClasses)
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
+      .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId)));
+
+    // UNION deduplicates automatically
+    const result = await orgRoles.union(classRoles);
+
+    return result.map((row) => row.role);
   }
 }

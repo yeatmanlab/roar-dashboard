@@ -354,4 +354,15 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
 
     return result[0]?.org ?? null;
   }
+
+  /**
+   * Get the roles a user holds for a specific school.
+   *
+   * @param userId - The user ID
+   * @param schoolId - The school ID
+   * @returns Array of roles the user has for the school
+   */
+  async getUserRolesForSchool(userId: string, schoolId: string): Promise<string[]> {
+    return this.accessControls.getUserRolesForOrg(userId, schoolId);
+  }
 }
