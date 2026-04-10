@@ -353,23 +353,10 @@ describe('DistrictService', () => {
             sortOrder: 'asc',
           },
         ),
-      ).rejects.toThrow(ApiError);
-
-      try {
-        await service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          {
-            page: 1,
-            perPage: 25,
-            sortBy: 'name',
-            sortOrder: 'asc',
-          },
-        );
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((err as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      }
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     });
 
     it('should return districts with counts when embedCounts is true', async () => {
@@ -507,16 +494,11 @@ describe('DistrictService', () => {
         authorizationService: mockAuthorizationService,
       });
 
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
-        expect((error as ApiError).code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-        expect((error as ApiError).message).toBe(ApiErrorMessage.NOT_FOUND);
-      }
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+      });
     });
 
     it('should throw 403 when FGA denies permission', async () => {
@@ -546,16 +528,11 @@ describe('DistrictService', () => {
         authorizationService: mockAuthorizationService,
       });
 
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.FORBIDDEN);
-        expect((error as ApiError).code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
-      }
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
     });
 
     it('should wrap database errors in ApiError with DATABASE_QUERY_FAILED code', async () => {
@@ -568,15 +545,10 @@ describe('DistrictService', () => {
         authorizationService: mockAuthorizationService,
       });
 
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      }
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     });
   });
 });
