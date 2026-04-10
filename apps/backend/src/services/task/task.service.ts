@@ -1027,25 +1027,6 @@ export function TaskService({
       });
     }
 
-    const mutableFieldKeys = [
-      'name',
-      'nameSimple',
-      'nameTechnical',
-      'description',
-      'image',
-      'tutorialVideo',
-      'taskConfig',
-    ] as const;
-
-    const hasAnyMutableField = mutableFieldKeys.some((field) => body[field] !== undefined);
-    if (!hasAnyMutableField) {
-      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId, taskId },
-      });
-    }
-
     try {
       let task: Task | null = null;
 
