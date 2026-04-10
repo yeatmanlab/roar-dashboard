@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { ApiErrorCode } from '../../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 import { ApiError } from '../../../errors/api-error';
 
 /**
@@ -20,7 +21,7 @@ import { ApiError } from '../../../errors/api-error';
 export function extractFgaObjectId(fgaObject: string): string {
   const id = fgaObject.split(':')[1];
   if (!id) {
-    throw new ApiError('Malformed FGA object string', {
+    throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
       context: { fgaObject },

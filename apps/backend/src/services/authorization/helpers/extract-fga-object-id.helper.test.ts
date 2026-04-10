@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { extractFgaObjectId } from './extract-fga-object-id.helper';
 import { ApiError } from '../../../errors/api-error';
 import { ApiErrorCode } from '../../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../../enums/api-error-message.enum';
 
 describe('extractFgaObjectId', () => {
   it('extracts ID from fully qualified FGA object string', () => {
@@ -16,7 +17,7 @@ describe('extractFgaObjectId', () => {
 
   it('throws ApiError on input without colon', () => {
     expect(() => extractFgaObjectId('no-colon')).toThrow(ApiError);
-    expect(() => extractFgaObjectId('no-colon')).toThrow('Malformed FGA object string');
+    expect(() => extractFgaObjectId('no-colon')).toThrow(ApiErrorMessage.INTERNAL_SERVER_ERROR);
   });
 
   it('throws ApiError with EXTERNAL_SERVICE_FAILED code on malformed input', () => {
@@ -32,6 +33,6 @@ describe('extractFgaObjectId', () => {
 
   it('throws ApiError on empty string', () => {
     expect(() => extractFgaObjectId('')).toThrow(ApiError);
-    expect(() => extractFgaObjectId('')).toThrow('Malformed FGA object string');
+    expect(() => extractFgaObjectId('')).toThrow(ApiErrorMessage.INTERNAL_SERVER_ERROR);
   });
 });

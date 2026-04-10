@@ -88,7 +88,7 @@ export function AuthorizationService({
       return result.allowed === true;
     } catch (error) {
       logger.error({ err: error, context: { userId, relation, object } }, 'FGA permission check failed');
-      throw new ApiError('Authorization check failed', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, relation, object },
@@ -146,7 +146,7 @@ export function AuthorizationService({
       return result.objects;
     } catch (error) {
       logger.error({ err: error, context: { userId, relation, type } }, 'FGA list accessible objects failed');
-      throw new ApiError('Authorization query failed', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, relation, type },
