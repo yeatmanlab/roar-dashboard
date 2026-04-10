@@ -745,6 +745,77 @@ describe('DistrictRepository', () => {
     });
 
     describe('filters', () => {
+      it('filters by role', async () => {
+        // Create a district with users having different roles
+        const filterRoleDistrict = await OrgFactory.create({
+          orgType: OrgType.DISTRICT,
+          name: 'Filter Role Test District',
+        });
+        const student1 = await UserFactory.create({ nameLast: 'DistrictFilterStudent1' });
+        const student2 = await UserFactory.create({ nameLast: 'DistrictFilterStudent2' });
+        const teacher = await UserFactory.create({ nameLast: 'DistrictFilterTeacher' });
+        await UserOrgFactory.create({ userId: student1.id, orgId: filterRoleDistrict.id, role: UserRole.STUDENT });
+        await UserOrgFactory.create({ userId: student2.id, orgId: filterRoleDistrict.id, role: UserRole.STUDENT });
+        await UserOrgFactory.create({ userId: teacher.id, orgId: filterRoleDistrict.id, role: UserRole.TEACHER });
+
+        const result = await repository.getUsersByDistrictPath(filterRoleDistrict.path, {
+          page: 1,
+          perPage: 100,
+          role: UserRole.STUDENT,
+        });
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(student1.id);
+        expect(userIds).toContain(student2.id);
+        expect(userIds).not.toContain(teacher.id);
+
+        // Verify all returned users have the filtered role
+        for (const user of result.items) {
+          expect(user.roles).toContain(UserRole.STUDENT);
+        }
+      });
+
+      it('filters by grade', async () => {
+        // Create a district with users having different grades
+        const filterGradeDistrict = await OrgFactory.create({
+          orgType: OrgType.DISTRICT,
+          name: 'Filter Grade Test District',
+        });
+        const grade3Student = await UserFactory.create({ nameLast: 'DistrictGrade3', grade: '3' });
+        const grade5Student = await UserFactory.create({ nameLast: 'DistrictGrade5', grade: '5' });
+        const grade5Student2 = await UserFactory.create({ nameLast: 'DistrictGrade5Second', grade: '5' });
+        await UserOrgFactory.create({
+          userId: grade3Student.id,
+          orgId: filterGradeDistrict.id,
+          role: UserRole.STUDENT,
+        });
+        await UserOrgFactory.create({
+          userId: grade5Student.id,
+          orgId: filterGradeDistrict.id,
+          role: UserRole.STUDENT,
+        });
+        await UserOrgFactory.create({
+          userId: grade5Student2.id,
+          orgId: filterGradeDistrict.id,
+          role: UserRole.STUDENT,
+        });
+
+        const result = await repository.getUsersByDistrictPath(filterGradeDistrict.path, {
+          page: 1,
+          perPage: 100,
+          grade: ['5'],
+        });
+
+        expect(result.totalItems).toBe(2);
+        expect(result.items).toHaveLength(2);
+        const userIds = result.items.map((u) => u.id);
+        expect(userIds).toContain(grade5Student.id);
+        expect(userIds).toContain(grade5Student2.id);
+        expect(userIds).not.toContain(grade3Student.id);
+      });
+
       it('filters by both role and grade', async () => {
         // Create a district with users having different roles and grades
         const filterBothDistrict = await OrgFactory.create({
