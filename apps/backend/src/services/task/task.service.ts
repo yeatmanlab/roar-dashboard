@@ -66,7 +66,7 @@ export interface UpdateTaskData {
   description?: string | null | undefined;
   image?: string | null | undefined;
   tutorialVideo?: string | null | undefined;
-  taskConfig?: unknown | undefined;
+  taskConfig?: unknown;
 
   // Immutable fields that must be rejected if present
   id?: unknown;
