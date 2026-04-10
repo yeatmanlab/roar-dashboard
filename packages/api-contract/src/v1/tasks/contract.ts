@@ -195,7 +195,6 @@ export const TasksContract = c.router(
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         409: ErrorEnvelopeSchema,
-        422: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,

@@ -54,6 +54,11 @@ export interface UpdateTaskVariantData {
   parameters?: CreateTaskVariantParameterData[] | undefined;
 }
 
+/**
+ * Data for updating an existing task.
+ * All fields are optional - only provided fields will be updated.
+ * Fields marked immutable cannot be updated and will be rejected if provided.
+ */
 export interface UpdateTaskData {
   name?: string | undefined;
   nameSimple?: string | undefined;
@@ -1005,6 +1010,20 @@ export function TaskService({
     }
   }
 
+  /**
+   * Updates an existing task.
+   *
+   * Only super admins can update tasks.
+   *
+   * @param authContext - User's auth context (requires super admin privileges)
+   * @param taskId - The ID or slug of the task to update
+   * @param body - Task data to update including name, nameSimple, nameTechnical, taskConfig, and optional fields
+   * @returns An object containing the updated task's UUID
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} NOT_FOUND if the task is not found
+   * @throws {ApiError} CONFLICT if a task with the same slug already exists
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
   async function update(authContext: AuthContext, taskId: string, body: UpdateTaskData): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
 

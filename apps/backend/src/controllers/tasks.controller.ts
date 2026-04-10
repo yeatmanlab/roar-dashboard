@@ -172,6 +172,17 @@ export const TasksController = {
     }
   },
 
+  /**
+   * Update an existing task.
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Requires super admin privileges.
+   *
+   * @param authContext - User's authentication context (requires super admin)
+   * @param taskId - The unique ID or slug of the task to update
+   * @param body - Request body with task details to update (name, nameSimple, nameTechnical, taskConfig, etc.)
+   * @returns Response with status 200 and the updated task's UUID
+   */
   update: async (authContext: AuthContext, taskId: string, body: UpdateTaskData) => {
     try {
       const result = await taskService.update(authContext, taskId, body);

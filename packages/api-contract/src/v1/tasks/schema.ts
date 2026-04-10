@@ -450,6 +450,19 @@ const TaskConfigObjectSchema = ValidatedJsonValue.refine(
   { message: 'taskConfig must be a JSON object' },
 );
 
+/**
+ * Task Update Request Schema
+ *
+ * Updates a task with the provided fields
+ *
+ * @property name - Optional task name (alphanumeric with spaces)
+ * @property nameSimple - Optional simple task name (alphanumeric with spaces)
+ * @property nameTechnical - Optional technical task name (alphanumeric with spaces)
+ * @property description - Optional task description (max 1024 characters)
+ * @property image - Optional URL to task image
+ * @property tutorialVideo - Optional URL to tutorial video
+ * @property taskConfig - Optional task configuration object
+ */
 export const UpdateTaskRequestBodySchema = z
   .object({
     name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
