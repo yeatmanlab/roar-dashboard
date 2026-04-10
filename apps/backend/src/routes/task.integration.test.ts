@@ -764,6 +764,16 @@ describe('PATCH /v1/tasks/:taskId', () => {
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
+
+    it('returns 400 when tutorialVideo URL is invalid', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(path(baseFixture.task.id))
+        .set('Authorization', 'Bearer token')
+        .send({ tutorialVideo: 'not-a-url' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
   });
 });
 
