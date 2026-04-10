@@ -1,18 +1,25 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SchoolService } from './school.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { OrgType } from '../../enums/org-type.enum';
 import { SortOrder, SchoolDetailSortField } from '@roar-dashboard/api-contract';
 import { createMockSchoolRepository } from '../../test-support/repositories';
+import type { MockSchoolRepository } from '../../test-support/repositories';
+import { createMockAuthorizationService } from '../../test-support/services';
+import type { MockAuthorizationService } from '../../test-support/services';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
 
 describe('SchoolService', () => {
-  let mockSchoolRepository: ReturnType<typeof createMockSchoolRepository>;
+  let mockSchoolRepository: MockSchoolRepository;
+  let mockAuthorizationService: MockAuthorizationService;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockSchoolRepository = createMockSchoolRepository();
+    mockAuthorizationService = createMockAuthorizationService();
   });
 
   describe('list', () => {
@@ -25,6 +32,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -44,21 +52,23 @@ describe('SchoolService', () => {
         includeEnded: false,
         embedCounts: false,
       });
-      expect(mockSchoolRepository.listAuthorized).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
     });
 
-    it('should use listAuthorized for non-super admin users', async () => {
+    it('should use FGA listAccessibleObjects + listByIds for non-super admin users', async () => {
       const mockSchools = OrgFactory.buildList(2, { orgType: OrgType.SCHOOL });
 
-      mockSchoolRepository.listAuthorized.mockResolvedValue({
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['school:school-id-1', 'school:school-id-2']);
+      mockSchoolRepository.listByIds.mockResolvedValue({
         items: mockSchools,
         totalItems: 2,
       });
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -71,19 +81,14 @@ describe('SchoolService', () => {
         },
       );
 
-      expect(mockSchoolRepository.listAuthorized).toHaveBeenCalledWith(
-        {
-          userId: 'user-123',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        {
-          page: 1,
-          perPage: 25,
-          orderBy: { field: 'name', direction: SortOrder.ASC },
-          includeEnded: false,
-          embedCounts: false,
-        },
-      );
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith('user-123', 'can_list', 'school');
+      expect(mockSchoolRepository.listByIds).toHaveBeenCalledWith(['school-id-1', 'school-id-2'], {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.ASC },
+        includeEnded: false,
+        embedCounts: false,
+      });
       expect(mockSchoolRepository.listAll).not.toHaveBeenCalled();
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
@@ -94,6 +99,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -119,6 +125,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -140,10 +147,12 @@ describe('SchoolService', () => {
     });
 
     it('should default includeEnded to false when not provided', async () => {
-      mockSchoolRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['school:school-1']);
+      mockSchoolRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -156,8 +165,8 @@ describe('SchoolService', () => {
         },
       );
 
-      expect(mockSchoolRepository.listAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
+      expect(mockSchoolRepository.listByIds).toHaveBeenCalledWith(
+        ['school-1'],
         expect.objectContaining({
           includeEnded: false,
         }),
@@ -165,10 +174,12 @@ describe('SchoolService', () => {
     });
 
     it('should default embedCounts to false when not provided', async () => {
-      mockSchoolRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['school:school-1']);
+      mockSchoolRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -181,8 +192,8 @@ describe('SchoolService', () => {
         },
       );
 
-      expect(mockSchoolRepository.listAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
+      expect(mockSchoolRepository.listByIds).toHaveBeenCalledWith(
+        ['school-1'],
         expect.objectContaining({
           embedCounts: false,
         }),
@@ -194,6 +205,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -218,6 +230,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -237,11 +250,11 @@ describe('SchoolService', () => {
       );
     });
 
-    it('should return empty results when user has no accessible schools', async () => {
-      mockSchoolRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
-
+    it('should return empty results when FGA returns no accessible schools', async () => {
+      // Default mock returns empty array for listAccessibleObjects
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -254,15 +267,23 @@ describe('SchoolService', () => {
         },
       );
 
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-no-access',
+        'can_list',
+        'school',
+      );
+      expect(mockSchoolRepository.listByIds).not.toHaveBeenCalled();
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
     });
 
     it('should pass pagination options correctly', async () => {
-      mockSchoolRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(['school:school-1']);
+      mockSchoolRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -275,8 +296,8 @@ describe('SchoolService', () => {
         },
       );
 
-      expect(mockSchoolRepository.listAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
+      expect(mockSchoolRepository.listByIds).toHaveBeenCalledWith(
+        ['school-1'],
         expect.objectContaining({
           page: 3,
           perPage: 50,
@@ -293,6 +314,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -314,6 +336,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -361,6 +384,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -390,6 +414,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -399,34 +424,40 @@ describe('SchoolService', () => {
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
 
-      // Should check unrestricted first, not authorized
+      // Should check unrestricted first, not FGA
       expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith('non-existent-id');
-      expect(mockSchoolRepository.getAuthorizedById).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
-    it('should return school for super admin without checking authorization', async () => {
+    it('should return school for super admin without checking FGA', async () => {
       const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL });
       mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.getById({ userId: 'admin-123', isSuperAdmin: true }, mockSchool.id);
 
       expect(result).toEqual(mockSchool);
       expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith(mockSchool.id);
-      // Super admin should bypass authorization check
-      expect(mockSchoolRepository.getAuthorizedById).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
     it('should return 403 when non-admin user lacks access to existing school', async () => {
       const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL });
       mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(null);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -437,34 +468,30 @@ describe('SchoolService', () => {
       });
 
       expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith(mockSchool.id);
-      expect(mockSchoolRepository.getAuthorizedById).toHaveBeenCalledWith(
-        {
-          userId: 'user-no-access',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        mockSchool.id,
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-no-access',
+        'can_read',
+        `school:${mockSchool.id}`,
       );
     });
 
     it('should return school when non-admin user has access', async () => {
       const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL });
       mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(mockSchool);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.getById({ userId: 'user-with-access', isSuperAdmin: false }, mockSchool.id);
 
       expect(result).toEqual(mockSchool);
       expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith(mockSchool.id);
-      expect(mockSchoolRepository.getAuthorizedById).toHaveBeenCalledWith(
-        {
-          userId: 'user-with-access',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        mockSchool.id,
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-with-access',
+        'can_read',
+        `school:${mockSchool.id}`,
       );
     });
 
@@ -474,6 +501,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'some-id')).rejects.toMatchObject({
@@ -488,10 +516,11 @@ describe('SchoolService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
       mockSchoolRepository.getUnrestrictedById.mockResolvedValue(OrgFactory.build({ orgType: OrgType.SCHOOL }));
-      mockSchoolRepository.getAuthorizedById.mockRejectedValue(error);
+      mockAuthorizationService.requirePermission.mockRejectedValue(error);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(service.getById({ userId: 'user-123', isSuperAdmin: false }, 'some-id')).rejects.toThrow(error);
@@ -502,6 +531,7 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -514,35 +544,16 @@ describe('SchoolService', () => {
       });
     });
 
-    it('should include context in 403 error', async () => {
-      const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL, id: 'restricted-school' });
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(null);
-
-      const service = SchoolService({
-        schoolRepository: mockSchoolRepository,
-      });
-
-      await expect(
-        service.getById({ userId: 'unauthorized-user', isSuperAdmin: false }, 'restricted-school'),
-      ).rejects.toMatchObject({
-        context: {
-          userId: 'unauthorized-user',
-          schoolId: 'restricted-school',
-        },
-      });
-    });
-
     it('should return 404 when regular user accesses ended school (not 403)', async () => {
       const endedSchool = OrgFactory.build({
         orgType: OrgType.SCHOOL,
         rosteringEnded: new Date('2020-01-01'),
       });
       mockSchoolRepository.getUnrestrictedById.mockResolvedValue(endedSchool);
-      mockSchoolRepository.getAuthorizedById.mockResolvedValue(endedSchool);
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -562,13 +573,14 @@ describe('SchoolService', () => {
 
       const service = SchoolService({
         schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.getById({ userId: 'admin-123', isSuperAdmin: true }, endedSchool.id);
 
       expect(result).toEqual(endedSchool);
       // Super admin should bypass both authorization and rosteringEnded checks
-      expect(mockSchoolRepository.getAuthorizedById).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
     });
   });
 });

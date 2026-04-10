@@ -4,19 +4,19 @@
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Authorization is tested by permission tier (matching RolePermissions groupings):
+ * Authorization is tested by permission tier (resolved via OpenFGA):
  *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
- *   - siteAdmin:   site_administrator
- *   - admin:       administrator
- *   - educator:    teacher
- *   - student:     student (no Organizations.LIST permission → empty results)
- *   - caregiver:   guardian
+ *   - siteAdmin:   site_administrator (can_list on school via supervisory_tier_group)
+ *   - admin:       administrator (can_list on school via supervisory_tier_group)
+ *   - educator:    teacher (can_list on school via supervisory_tier_group)
+ *   - student:     student (no can_list on school → empty results)
+ *   - caregiver:   guardian (no can_list on school → empty results)
  *
  * Each endpoint section generally follows the structure:
  *   1. Authorization — one spec per tier with status + content assertions
  *   2. Error cases where applicable — e.g. 401 unauthenticated, 403 forbidden, 404 not found.
  *      For GET /v1/schools specifically, unauthorized roles receive 200 with an
- *      empty result set rather than 403/404 (access control via INNER JOIN).
+ *      empty result set rather than 403/404 (FGA returns no accessible objects).
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
@@ -44,6 +44,10 @@ beforeAll(async () => {
   app = createTestApp(registerSchoolsRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+
+  // Re-sync FGA tuples to pick up tier users created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -95,19 +99,18 @@ describe('GET /v1/schools', () => {
       expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
     });
 
-    it('student tier sees empty list (no Organizations.LIST permission)', async () => {
+    it('student tier sees empty list (no can_list on school)', async () => {
       const res = await expectRoute('GET', '/v1/schools').as(tiers.student).toReturn(200);
 
-      // Students don't have Organizations.LIST permission, so allowedRoles
-      // won't match their student role — the access control query returns nothing
+      // Students are not in supervisory_tier_group → no can_list on school
       expect(res.body.data.items).toHaveLength(0);
       expect(res.body.data.pagination.totalItems).toBe(0);
     });
 
-    it('caregiver tier sees empty list (no Organizations.LIST permission)', async () => {
+    it('caregiver tier sees empty list (no can_list on school)', async () => {
       const res = await expectRoute('GET', '/v1/schools').as(tiers.caregiver).toReturn(200);
 
-      // Caregivers (guardians) don't have Organizations.LIST permission
+      // Caregivers (guardians) are not in supervisory_tier_group → no can_list on school
       expect(res.body.data.items).toHaveLength(0);
       expect(res.body.data.pagination.totalItems).toBe(0);
     });

@@ -1,14 +1,15 @@
 import { StatusCodes } from 'http-status-codes';
 import type { SchoolWithCounts } from '../../repositories/school.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
-import { rolesForPermission } from '../../constants/role-permissions';
-import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 
 /**
  * Options for listing schools
@@ -35,14 +36,17 @@ export type SchoolWithEmbeds = SchoolWithCounts;
  */
 export function SchoolService({
   schoolRepository = new SchoolRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   schoolRepository?: SchoolRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
    * List schools accessible to a user with pagination and sorting.
    *
-   * super_admin users have unrestricted access to all schools.
-   * Other users only see schools they're assigned to via org/class/group membership.
+   * Authorization:
+   * - Super admins have unrestricted access to all schools
+   * - Regular users see only schools for which FGA grants can_list
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param options - Query options including pagination and sorting
@@ -71,8 +75,19 @@ export function SchoolService({
       if (isSuperAdmin) {
         result = await schoolRepository.listAll(queryParams);
       } else {
-        const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await schoolRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+        // Resolve accessible school IDs from FGA, then fetch by those IDs
+        const fgaObjects = await authorizationService.listAccessibleObjects(
+          userId,
+          FgaRelation.CAN_LIST,
+          FgaType.SCHOOL,
+        );
+        const schoolIds = fgaObjects.map(extractFgaObjectId);
+
+        if (schoolIds.length === 0) {
+          return { items: [], totalItems: 0 };
+        }
+
+        result = await schoolRepository.listByIds(schoolIds, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) {
@@ -123,21 +138,12 @@ export function SchoolService({
         return school;
       }
 
-      // 3. Check access via org hierarchy joins
-      const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-      const authorized = await schoolRepository.getAuthorizedById({ userId, allowedRoles }, schoolId);
-      if (!authorized) {
-        logger.warn({ userId, schoolId }, 'User attempted to access school without permission');
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, schoolId },
-        });
-      }
+      // 3. Check access via FGA
+      await authorizationService.requirePermission(userId, FgaRelation.CAN_READ, `${FgaType.SCHOOL}:${schoolId}`);
 
       // 4. Check if school has ended rostering (business rule, not authorization)
       // Return 404 instead of showing ended schools to regular users
-      if (authorized.rosteringEnded) {
+      if (school.rosteringEnded) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
@@ -145,7 +151,7 @@ export function SchoolService({
         });
       }
 
-      return authorized;
+      return school;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

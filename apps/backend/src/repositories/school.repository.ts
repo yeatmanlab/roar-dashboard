@@ -266,6 +266,52 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
   }
 
   /**
+   * List schools by a pre-resolved set of IDs (from FGA).
+   *
+   * Used when authorization has already been resolved externally (e.g., via OpenFGA
+   * `listAccessibleObjects`). Applies school-specific filtering (orgType, rosteringEnded)
+   * and optional embed counts, but no SQL-based access control joins.
+   *
+   * @param ids - Pre-authorized school IDs from FGA
+   * @param options - Pagination, sorting, and optional filters
+   * @returns Paginated result with schools
+   */
+  async listByIds(ids: string[], options: ListAuthorizedOptions): Promise<PaginatedResult<School | SchoolWithCounts>> {
+    const { includeEnded = false, embedCounts = false } = options;
+
+    // Build where clause for school type and rostering status
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL)];
+
+    if (!includeEnded) {
+      whereConditions.push(isNull(orgs.rosteringEnded));
+    }
+
+    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+
+    const result = await this.getByIds(ids, {
+      page: options.page,
+      perPage: options.perPage,
+      ...(options.orderBy && { orderBy: options.orderBy }),
+      ...(where && { where }),
+    });
+
+    // Fetch and attach counts if requested
+    if (embedCounts && result.items.length > 0) {
+      const schoolIds = result.items.map((s) => s.id);
+      const countsMap = await this.fetchSchoolCounts(schoolIds);
+
+      const schoolsWithCounts = result.items.map((school) => ({
+        ...school,
+        counts: countsMap.get(school.id) ?? { users: 0, classes: 0 },
+      })) as SchoolWithCounts[];
+
+      return { items: schoolsWithCounts, totalItems: result.totalItems };
+    }
+
+    return result;
+  }
+
+  /**
    * Get a school by ID without authorization checks.
    * Used for super admins who have unrestricted access.
    *
