@@ -1,4 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Undo the global FGA client mock from vitest.setup.ts — this file tests the real implementation
+vi.unmock('./fga.client');
+
 import { ApiError } from '../errors/api-error';
 import { logger } from '../logger';
 import { FgaClient } from './fga.client';

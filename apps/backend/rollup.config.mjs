@@ -43,7 +43,7 @@ export default defineConfig({
         chunkFileNames: '[name]-[hash].js',
       },
   plugins: [
-    // In dev, externalize node_modules (except our workspace package) to keep rebuilds fast.
+    // In dev, externalize node_modules to keep rebuilds fast.
     // In production, skip externals entirely so rollup bundles everything into a single server.js — no node_modules
     // needed at runtime.
     isDev &&

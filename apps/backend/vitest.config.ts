@@ -71,6 +71,7 @@ export default defineConfig(({ mode }) => {
             include: ['**/*.integration.test.ts'],
             exclude: ['**/node_modules/**'],
             globalSetup: ['./vitest.integration.globalSetup.ts'],
+            globalTeardown: ['./vitest.integration.globalTeardown.ts'],
             setupFiles: ['./vitest.setup.ts'],
             pool: 'forks',
             poolOptions: {
