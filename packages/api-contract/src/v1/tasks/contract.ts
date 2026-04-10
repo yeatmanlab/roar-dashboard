@@ -116,9 +116,9 @@ export const TasksContract = c.router(
         'Requires super admin privileges. ' +
         'The fields id, slug, createdAt, and updatedAt are immutable and will be rejected. ' +
         'Returns 200 with the updated task ID on success. ' +
-        'Returns 400 if the request body is malformed or contains immutable fields. ' +
+        'Returns 400 if the request body is malformed or contains no mutable fields. ' +
         'Returns 404 if no task exists with the given ID or slug. ' +
-        'Returns 422 if immutable fields bypass contract validation (defense-in-depth). ' +
+        'Returns 422 if body lacks mutable fields (defense-in-depth). ' +
         'Returns 500 if a server error occurs.',
     },
     listTaskVariants: {

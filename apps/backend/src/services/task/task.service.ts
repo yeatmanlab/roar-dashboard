@@ -57,7 +57,6 @@ export interface UpdateTaskVariantData {
 /**
  * Data for updating an existing task.
  * All fields are optional - only provided fields will be updated.
- * Fields marked immutable cannot be updated and will be rejected if provided.
  */
 export interface UpdateTaskData {
   name?: string | undefined;
@@ -67,12 +66,6 @@ export interface UpdateTaskData {
   image?: string | null | undefined;
   tutorialVideo?: string | null | undefined;
   taskConfig?: unknown;
-
-  // Immutable fields that must be rejected if present
-  id?: unknown;
-  slug?: unknown;
-  createdAt?: unknown;
-  updatedAt?: unknown;
 }
 
 /**
@@ -1021,6 +1014,7 @@ export function TaskService({
    * @returns An object containing the updated task's UUID
    * @throws {ApiError} FORBIDDEN if user is not a super admin
    * @throws {ApiError} NOT_FOUND if the task is not found
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if there are no mutable fields present in the body
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
   async function update(authContext: AuthContext, taskId: string, body: UpdateTaskData): Promise<{ id: string }> {
@@ -1031,16 +1025,6 @@ export function TaskService({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
         context: { userId, isSuperAdmin },
-      });
-    }
-
-    const immutableFields = ['id', 'slug', 'createdAt', 'updatedAt'] as const;
-    const immutableFieldsPresent = immutableFields.filter((field) => body[field] !== undefined);
-    if (immutableFieldsPresent.length > 0) {
-      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId, taskId, immutableFieldsPresent },
       });
     }
 
