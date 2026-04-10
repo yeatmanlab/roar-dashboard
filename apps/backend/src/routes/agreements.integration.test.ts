@@ -206,3 +206,42 @@ describe('GET /v1/agreements', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/agreements/:agreementId/versions/:versionId/content
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/agreements/:agreementId/versions/:versionId/content', () => {
+  describe('cache headers', () => {
+    it('sets Cache-Control header with public, max-age, and immutable directives', async () => {
+      const agreement = await AgreementFactory.create({ agreementType: AgreementType.TOS });
+      const version = await AgreementVersionFactory.create(
+        { isCurrent: true, locale: 'en-US', githubFilename: 'TOS.md', githubOrgRepo: 'roar-org/legal-docs' },
+        { transient: { agreementId: agreement.id } },
+      );
+
+      // The handler will return 500 in tests because GitHub is unreachable,
+      // but the cache middleware runs before the handler so the header is set regardless.
+      const res = await expectRoute('GET', `/v1/agreements/${agreement.id}/versions/${version.id}/content`)
+        .as(tiers.admin)
+        .toReturn(500);
+
+      // Cache-Control is set by middleware before the handler executes
+      const cacheControl = res.headers['cache-control'];
+      expect(cacheControl).toBe('public, max-age=86400, immutable');
+    });
+  });
+
+  describe('authentication', () => {
+    it('returns 401 without authentication', async () => {
+      const res = await expectRoute(
+        'GET',
+        '/v1/agreements/00000000-0000-0000-0000-000000000000/versions/00000000-0000-0000-0000-000000000001/content',
+      )
+        .unauthenticated()
+        .toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+  });
+});

@@ -5,9 +5,9 @@ import { AdministrationFactory } from '../../test-support/factories/administrati
 import { createMockAdministrationRepository, createMockReportRepository } from '../../test-support/repositories';
 import { createMockTaskService } from '../../test-support/services';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import type { ProgressStudentsInput } from './report.types';
-import type { ReportTaskMeta, StudentProgressRow } from '../../repositories/report.repository';
-import { Operator } from '../task/task.types';
+import type { ProgressStudentsInput, ProgressOverviewInput } from './report.types';
+import type { ReportTaskMeta, StudentProgressRow, TaskStatusCount } from '../../repositories/report.repository';
+import { Operator } from '../../types/condition';
 
 /** Default demographic fields for test StudentProgressRow objects */
 const DEFAULT_DEMOGRAPHICS = {
@@ -816,6 +816,313 @@ describe('ReportService', () => {
       expect(result[TASK_ID_4]).toBeUndefined();
       // Evaluator called once per task without a run (3 tasks)
       expect(notAssignedEvaluator).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('getProgressOverview', () => {
+    const overviewQuery: ProgressOverviewInput = {
+      scopeType: 'district',
+      scopeId: 'district-uuid-1',
+    };
+
+    /** Helper to set up mocks for a teacher with proper authorization. */
+    function setupTeacherAuth() {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
+      mockReportRepository.getUserRolesAtOrAboveScope.mockResolvedValue(['teacher']);
+    }
+
+    it('returns aggregated overview for super admin', async () => {
+      const statusCounts: TaskStatusCount[] = [
+        { taskId: TASK_ID_1, status: 'completed', count: 10 },
+        { taskId: TASK_ID_1, status: 'started', count: 5 },
+        { taskId: TASK_ID_1, status: 'assigned', count: 3 },
+        { taskId: TASK_ID_2, status: 'completed', count: 8 },
+        { taskId: TASK_ID_2, status: 'assigned', count: 10 },
+      ];
+
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 20,
+        taskStatusCounts: statusCounts,
+      });
+
+      const service = createService();
+      const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      expect(result.totalStudents).toBe(20);
+      expect(result.assigned).toBe(13); // 3 + 10
+      expect(result.started).toBe(5);
+      expect(result.completed).toBe(18); // 10 + 8
+      expect(result.byTask).toHaveLength(4); // 4 unique taskIds
+      expect(result.computedAt).toBeDefined();
+
+      // Verify task 1 counts
+      const task1 = result.byTask.find((t) => t.taskId === TASK_ID_1);
+      expect(task1).toEqual(
+        expect.objectContaining({
+          taskSlug: 'swr',
+          assigned: 3,
+          started: 5,
+          completed: 10,
+          optional: 0,
+        }),
+      );
+
+      // Verify task 2 counts
+      const task2 = result.byTask.find((t) => t.taskId === TASK_ID_2);
+      expect(task2).toEqual(
+        expect.objectContaining({
+          taskSlug: 'sre',
+          assigned: 10,
+          started: 0,
+          completed: 8,
+          optional: 0,
+        }),
+      );
+    });
+
+    it('returns overview for non-super-admin with supervisory role', async () => {
+      setupTeacherAuth();
+
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 5,
+        taskStatusCounts: [{ taskId: TASK_ID_1, status: 'assigned', count: 5 }],
+      });
+
+      const service = createService();
+      const result = await service.getProgressOverview(teacherAuth, testAdministrationId, overviewQuery);
+
+      expect(result.totalStudents).toBe(5);
+      expect(result.assigned).toBe(5);
+    });
+
+    it('returns 404 when administration does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getProgressOverview(teacherAuth, testAdministrationId, overviewQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        },
+      );
+    });
+
+    it('returns 403 when user lacks access to administration', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getProgressOverview(teacherAuth, testAdministrationId, overviewQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        },
+      );
+    });
+
+    it('returns 403 when user role lacks Reports.Progress.READ permission', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['student']);
+
+      const service = createService();
+
+      await expect(service.getProgressOverview(studentAuth, testAdministrationId, overviewQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        },
+      );
+    });
+
+    it('returns 403 when user has report permission but only supervised roles', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['caregiver']);
+
+      const service = createService();
+
+      await expect(
+        service.getProgressOverview(caregiverAuth, testAdministrationId, overviewQuery),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('returns 400 when scope is not assigned to administration', async () => {
+      setupTeacherAuth();
+      mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(false);
+
+      const service = createService();
+
+      await expect(service.getProgressOverview(teacherAuth, testAdministrationId, overviewQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        },
+      );
+    });
+
+    it('returns 403 when user lacks supervisory role at scope level', async () => {
+      mockAdministrationRepository.getAuthorizedById.mockResolvedValue(
+        AdministrationFactory.build({ id: testAdministrationId }),
+      );
+      mockAdministrationRepository.getUserRolesForAdministration.mockResolvedValue(['teacher']);
+      mockReportRepository.getUserRolesAtOrAboveScope.mockResolvedValue(['student']);
+
+      const service = createService();
+
+      await expect(service.getProgressOverview(teacherAuth, testAdministrationId, overviewQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        },
+      );
+    });
+
+    it('super admin bypasses all role checks', async () => {
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 0,
+        taskStatusCounts: [],
+      });
+
+      const service = createService();
+      await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      expect(mockAdministrationRepository.getUserRolesForAdministration).not.toHaveBeenCalled();
+      expect(mockReportRepository.getUserRolesAtOrAboveScope).not.toHaveBeenCalled();
+    });
+
+    it('wraps unexpected repository errors in a 500 ApiError', async () => {
+      mockReportRepository.getProgressOverviewCounts.mockRejectedValue(new Error('connection reset'));
+
+      const service = createService();
+
+      await expect(
+        service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('handles zero students (empty scope)', async () => {
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 0,
+        taskStatusCounts: [],
+      });
+
+      const service = createService();
+      const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      expect(result.totalStudents).toBe(0);
+      expect(result.assigned).toBe(0);
+      expect(result.started).toBe(0);
+      expect(result.completed).toBe(0);
+      expect(result.byTask).toHaveLength(4); // Tasks still listed with zero counts
+      for (const task of result.byTask) {
+        expect(task.assigned).toBe(0);
+        expect(task.started).toBe(0);
+        expect(task.completed).toBe(0);
+        expect(task.optional).toBe(0);
+      }
+    });
+
+    it('includes optional counts in per-task breakdown', async () => {
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 15,
+        taskStatusCounts: [
+          { taskId: TASK_ID_1, status: 'assigned', count: 5 },
+          { taskId: TASK_ID_1, status: 'optional', count: 10 },
+        ],
+      });
+
+      const service = createService();
+      const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      const task1 = result.byTask.find((t) => t.taskId === TASK_ID_1);
+      expect(task1!.assigned).toBe(5);
+      expect(task1!.optional).toBe(10);
+      // Optional is not included in top-level totals (assigned/started/completed)
+      expect(result.assigned).toBe(5);
+    });
+
+    it('preserves task ordering from metadata', async () => {
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 10,
+        taskStatusCounts: [
+          { taskId: TASK_ID_3, status: 'assigned', count: 10 },
+          { taskId: TASK_ID_1, status: 'assigned', count: 10 },
+        ],
+      });
+
+      const service = createService();
+      const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      // Tasks should be ordered by orderIndex (0, 1, 2, 3) not by SQL result order
+      expect(result.byTask[0]!.taskSlug).toBe('swr'); // orderIndex 0
+      expect(result.byTask[1]!.taskSlug).toBe('sre'); // orderIndex 1
+      expect(result.byTask[2]!.taskSlug).toBe('pa'); // orderIndex 2
+      expect(result.byTask[3]!.taskSlug).toBe('vocab'); // orderIndex 3
+    });
+
+    it('deduplicates multi-variant tasks into a single byTask entry', async () => {
+      // Two variants for the same task — should produce one entry in byTask
+      const multiVariantMetas: ReportTaskMeta[] = [
+        {
+          ...testTaskMetas[0]!,
+          taskVariantId: 'variant-a',
+        },
+        {
+          ...testTaskMetas[0]!, // Same taskId
+          taskVariantId: 'variant-b',
+          orderIndex: 1,
+        },
+        testTaskMetas[1]!,
+      ];
+      mockReportRepository.getTaskMetadata.mockResolvedValue(multiVariantMetas);
+
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 10,
+        taskStatusCounts: [
+          { taskId: TASK_ID_1, status: 'completed', count: 7 },
+          { taskId: TASK_ID_1, status: 'started', count: 3 },
+          { taskId: TASK_ID_2, status: 'assigned', count: 10 },
+        ],
+      });
+
+      const service = createService();
+      const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      // Should have 2 unique tasks, not 3
+      expect(result.byTask).toHaveLength(2);
+      const task1 = result.byTask.find((t) => t.taskId === TASK_ID_1);
+      expect(task1!.completed).toBe(7);
+      expect(task1!.started).toBe(3);
+    });
+
+    it('passes task metadata with conditions to repository', async () => {
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 5,
+        taskStatusCounts: [],
+      });
+
+      const service = createService();
+      await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      // Repository should receive the full task metadata (including conditions)
+      expect(mockReportRepository.getProgressOverviewCounts).toHaveBeenCalledWith(
+        testAdministrationId,
+        { scopeType: 'district', scopeId: 'district-uuid-1' },
+        testTaskMetas,
+      );
     });
   });
 });

@@ -10,10 +10,14 @@ import type {
   ServiceProgressStudent,
   ServiceProgressEntry,
   ProgressStudentsResult,
+  ProgressOverviewInput,
+  ProgressOverviewResult,
+  ServiceTaskOverview,
   ParsedFilter,
 } from './report.types';
 import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
 import { Permissions } from '../../constants/permissions';
+import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
@@ -32,7 +36,7 @@ import type {
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
 import { conditionToSql } from '../../utils/condition-to-sql';
-import type { Condition, ConditionEvaluationUser } from '../task/task.types';
+import type { Condition, ConditionEvaluationUser } from '../../types/condition';
 import type { AuthContext } from '../../types/auth-context';
 
 /** Map sortBy field strings to Drizzle column references for progress students. */
@@ -54,6 +58,14 @@ const PROGRESS_FILTER_FIELDS: Record<ProgressStudentsFilterField, PgColumn> = {
 
 /** Fields that use grade-aware numeric ordering for gte/lte comparisons. */
 const GRADE_AWARE_FIELDS: ReadonlySet<string> = new Set(['user.grade']);
+
+/** Per-task status counters for progress overview aggregation. */
+interface TaskStatusCounter {
+  assigned: number;
+  started: number;
+  completed: number;
+  optional: number;
+}
 
 /**
  * ReportService
@@ -308,16 +320,162 @@ export function ReportService({
     }
   }
 
-  return { listProgressStudents };
-}
+  /**
+   * Get aggregated completion statistics for each task in an administration.
+   *
+   * Returns per-task breakdowns of assigned, started, completed, and optional counts,
+   * plus aggregate totals. Powers the summary counts at the top of the progress report page.
+   *
+   * Authorization flow is identical to listProgressStudents (three layers):
+   * 1. Administration access
+   * 2. Report permission + supervisory role
+   * 3. Scope-level authorization
+   *
+   * Multi-variant dedup: when multiple variants share a taskId, each student is counted
+   * once at their highest-priority status (completed > started > assigned > optional),
+   * consistent with buildProgressMap.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scopeType, scopeId)
+   * @returns Aggregated completion statistics per task
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or permission
+   * @throws {ApiError} BAD_REQUEST if scope is invalid
+   */
+  async function getProgressOverview(
+    authContext: AuthContext,
+    administrationId: string,
+    query: ProgressOverviewInput,
+  ): Promise<ProgressOverviewResult> {
+    const { userId, isSuperAdmin } = authContext;
+    const { scopeType, scopeId } = query;
 
-/** Status priority for progress entries. Higher value = higher priority. */
-const STATUS_PRIORITY: Record<string, number> = {
-  optional: 0,
-  assigned: 1,
-  started: 2,
-  completed: 3,
-};
+    try {
+      // 1. Verify administration exists and user has access
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      // 2. Verify permission and supervisory role for non-super-admins
+      if (!isSuperAdmin) {
+        const adminRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
+        const allowedReportRoles: string[] = rolesForPermission(Permissions.Reports.Progress.READ);
+        const hasPermission = adminRoles.some((role) => allowedReportRoles.includes(role));
+        if (!hasPermission) {
+          logger.warn(
+            { userId, administrationId, adminRoles },
+            'User lacks Reports.Progress.READ permission on administration',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, administrationId },
+          });
+        }
+
+        if (!hasSupervisoryRole(adminRoles)) {
+          logger.warn(
+            { userId, administrationId, adminRoles },
+            'Supervised user attempted to access progress overview',
+          );
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, administrationId },
+          });
+        }
+      }
+
+      // 3. Validate scope and authorize
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
+
+      // 4. Get task metadata and run SQL-level aggregation
+      const taskMetas = await reportRepository.getTaskMetadata(administrationId);
+
+      const { totalStudents, taskStatusCounts } = await reportRepository.getProgressOverviewCounts(
+        administrationId,
+        { scopeType, scopeId },
+        taskMetas,
+      );
+
+      // 5. Build per-task counters from unique taskIds (preserving order from metadata)
+      const taskIdOrder: string[] = [];
+      const taskMetaByTaskId = new Map<string, ServiceTaskMetadata>();
+      for (const t of taskMetas) {
+        if (!taskMetaByTaskId.has(t.taskId)) {
+          taskIdOrder.push(t.taskId);
+          taskMetaByTaskId.set(t.taskId, {
+            taskId: t.taskId,
+            taskSlug: t.taskSlug,
+            taskName: t.taskName,
+            orderIndex: t.orderIndex,
+          });
+        }
+      }
+
+      // Initialize counters for all tasks (ensures tasks with zero counts appear in response)
+      const taskStatusCounters = new Map<string, TaskStatusCounter>();
+      for (const taskId of taskIdOrder) {
+        taskStatusCounters.set(taskId, { assigned: 0, started: 0, completed: 0, optional: 0 });
+      }
+
+      // 6. Populate counters from SQL aggregation results
+      for (const { taskId, status, count } of taskStatusCounts) {
+        const counters = taskStatusCounters.get(taskId);
+        if (counters) {
+          counters[status] += count;
+        }
+      }
+
+      // 7. Assemble response
+      let totalAssigned = 0;
+      let totalStarted = 0;
+      let totalCompleted = 0;
+
+      const byTask: ServiceTaskOverview[] = taskIdOrder.map((taskId) => {
+        const meta = taskMetaByTaskId.get(taskId)!;
+        const counts = taskStatusCounters.get(taskId)!;
+        totalAssigned += counts.assigned;
+        totalStarted += counts.started;
+        totalCompleted += counts.completed;
+        return {
+          taskId: meta.taskId,
+          taskSlug: meta.taskSlug,
+          taskName: meta.taskName,
+          orderIndex: meta.orderIndex,
+          assigned: counts.assigned,
+          started: counts.started,
+          completed: counts.completed,
+          optional: counts.optional,
+        };
+      });
+
+      return {
+        totalStudents,
+        assigned: totalAssigned,
+        started: totalStarted,
+        completed: totalCompleted,
+        byTask,
+        computedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, scopeType, scopeId } },
+        'Failed to retrieve progress overview report',
+      );
+
+      throw new ApiError('Failed to retrieve progress overview', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  return { listProgressStudents, getProgressOverview };
+}
 
 // --- Progress sort/filter resolution helpers ---
 
@@ -519,7 +677,9 @@ export function buildProgressMap(
 
     // When multiple variants share a taskId, keep the highest-priority status.
     const existing = progress[task.taskId];
-    if (!existing || (STATUS_PRIORITY[entry.status] ?? 0) > (STATUS_PRIORITY[existing.status] ?? 0)) {
+    const entryPriority = PROGRESS_STATUS_PRIORITY[entry.status];
+    const existingPriority = existing ? PROGRESS_STATUS_PRIORITY[existing.status] : -1;
+    if (!existing || entryPriority > existingPriority) {
       progress[task.taskId] = entry;
     }
   }

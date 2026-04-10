@@ -49,6 +49,7 @@ describe('AdministrationsController', () => {
   const mockListAgreements = vi.fn();
   const mockDeleteById = vi.fn();
   const mockListProgressStudents = vi.fn();
+  const mockGetProgressOverview = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -70,6 +71,7 @@ describe('AdministrationsController', () => {
 
     vi.mocked(ReportService).mockReturnValue({
       listProgressStudents: mockListProgressStudents,
+      getProgressOverview: mockGetProgressOverview,
     });
   });
   describe('list', () => {
@@ -1949,6 +1951,129 @@ describe('AdministrationsController', () => {
       await Controller.listProgressStudents(mockAuthContext, testAdminId, testQuery);
 
       expect(mockListProgressStudents).toHaveBeenCalledWith(mockAuthContext, testAdminId, testQuery);
+    });
+  });
+
+  describe('getProgressOverview', () => {
+    const testAdminId = 'admin-uuid-123';
+    const testQuery = { scopeType: 'district' as const, scopeId: 'district-uuid-1' };
+
+    it('returns 200 with overview data', async () => {
+      const mockResult = {
+        totalStudents: 20,
+        assigned: 10,
+        started: 5,
+        completed: 5,
+        byTask: [
+          {
+            taskId: 'task-1',
+            taskSlug: 'swr',
+            taskName: 'ROAR - Word',
+            orderIndex: 0,
+            assigned: 10,
+            started: 5,
+            completed: 5,
+            optional: 0,
+          },
+        ],
+        computedAt: '2025-01-01T00:00:00.000Z',
+      };
+
+      mockGetProgressOverview.mockResolvedValue(mockResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      const data = (result.body as { data: typeof mockResult }).data;
+      expect(data.totalStudents).toBe(20);
+      expect(data.byTask).toHaveLength(1);
+      expect(data.computedAt).toBe('2025-01-01T00:00:00.000Z');
+    });
+
+    it('returns 400 error when scope is invalid', async () => {
+      mockGetProgressOverview.mockRejectedValue(
+        new ApiError('Scope entity is not assigned', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+      expect((result.body as { error: { code: string } }).error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('returns 403 error when user lacks permission', async () => {
+      mockGetProgressOverview.mockRejectedValue(
+        new ApiError('Forbidden', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      expect((result.body as { error: { code: string } }).error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 404 when administration not found', async () => {
+      mockGetProgressOverview.mockRejectedValue(
+        new ApiError('Not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      expect((result.body as { error: { code: string } }).error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 500 for internal server error', async () => {
+      mockGetProgressOverview.mockRejectedValue(
+        new ApiError('Failed to retrieve', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('re-throws non-ApiError exceptions', async () => {
+      mockGetProgressOverview.mockRejectedValue(new Error('unexpected'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery)).rejects.toThrow(
+        'unexpected',
+      );
+    });
+
+    it('passes authContext, administrationId, and query to service', async () => {
+      mockGetProgressOverview.mockResolvedValue({
+        totalStudents: 0,
+        assigned: 0,
+        started: 0,
+        completed: 0,
+        byTask: [],
+        computedAt: '2025-01-01T00:00:00.000Z',
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
+
+      expect(mockGetProgressOverview).toHaveBeenCalledWith(mockAuthContext, testAdminId, testQuery);
     });
   });
 });

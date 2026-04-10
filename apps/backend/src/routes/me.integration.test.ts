@@ -94,6 +94,15 @@ describe('GET /v1/me', () => {
         nameLast: baseFixture.districtAdmin.nameLast,
       });
     });
+
+    it('includes unsignedAgreements array in the response', async () => {
+      const res = await expectRoute('GET', '/v1/me')
+        .as({ id: baseFixture.districtAdmin.id, authId: baseFixture.districtAdmin.authId! })
+        .toReturn(200);
+
+      expect(res.body.data).toHaveProperty('unsignedAgreements');
+      expect(res.body.data.unsignedAgreements).toBeInstanceOf(Array);
+    });
   });
 
   describe('error cases', () => {

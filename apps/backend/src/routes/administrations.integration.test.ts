@@ -541,7 +541,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('superAdmin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -550,7 +550,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('siteAdmin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.siteAdmin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -559,7 +559,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('admin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -568,7 +568,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('educator tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
     });
@@ -580,10 +580,13 @@ describe('GET /v1/administrations/:id/task-variants', () => {
       expect(res.status).toBe(StatusCodes.OK);
 
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      // Grade 5 student should see: variantForAllGrades, variantForGrade5, variantOptionalForEll
+      // Grade 5 student should see: variantForAllGrades, variantForGrade5,
+      // variantOptionalForEll, variantForTask2, variantForTask2Grade5OptionalEll
       expect(ids).toContain(baseFixture.variantForAllGrades.id);
       expect(ids).toContain(baseFixture.variantForGrade5.id);
       expect(ids).toContain(baseFixture.variantOptionalForEll.id);
+      expect(ids).toContain(baseFixture.variantForTask2.id);
+      expect(ids).toContain(baseFixture.variantForTask2Grade5OptionalEll.id);
       // Should NOT see grade 3 variant
       expect(ids).not.toContain(baseFixture.variantForGrade3.id);
 

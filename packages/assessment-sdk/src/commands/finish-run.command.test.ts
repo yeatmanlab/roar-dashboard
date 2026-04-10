@@ -7,7 +7,6 @@ import type { FinishRunInput } from '../types/finish-run';
 import { RUN_EVENT_COMPLETE } from '../types/run-event-status';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums';
-
 describe('FinishRunCommand', () => {
   let command: FinishRunCommand;
   let mockApi: ReturnType<typeof createMockRoarApi>;
