@@ -706,24 +706,20 @@ describe('PATCH /v1/tasks/:taskId', () => {
 
   describe('authorization', () => {
     it('superAdmin tier can update a task', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ name: 'Updated Task Name' });
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Updated Task Name' })
+        .toReturn(StatusCodes.OK);
 
-      expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.id).toBe(baseFixture.task.id);
     });
 
     it('non-super-admin tiers are forbidden', async () => {
-      authenticateAs(tiers.educator);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ name: 'Updated Task Name' });
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.educator)
+        .withBody({ name: 'Updated Task Name' })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
@@ -733,46 +729,53 @@ describe('PATCH /v1/tasks/:taskId', () => {
       const uniqueSlug = `patch-task-${getUniqueSlugSuffix()}`;
       const testTask = await TaskFactory.create({ slug: uniqueSlug });
 
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(uniqueSlug))
-        .set('Authorization', 'Bearer token')
-        .send({ description: 'Updated description' });
+      const res = await expectRoute('PATCH', path(uniqueSlug))
+        .as(tiers.superAdmin)
+        .withBody({ description: 'Updated description' })
+        .toReturn(StatusCodes.OK);
 
-      expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.id).toBe(testTask.id);
     });
   });
 
   describe('validation', () => {
     it('returns 400 when immutable fields are present', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ slug: 'new-slug' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ slug: 'new-slug' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 when image URL is invalid', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ image: 'not-a-url' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ image: 'not-a-url' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 when tutorialVideo URL is invalid', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ tutorialVideo: 'not-a-url' });
+      await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ tutorialVideo: 'not-a-url' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
 
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    it('returns 400 when the request body is empty', async () => {
+      await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({})
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 401 when unauthenticated', async () => {
+      await expectRoute('PATCH', path(baseFixture.task.id)).unauthenticated().toReturn(StatusCodes.UNAUTHORIZED);
+    });
+
+    it('returns 404 when task does not exist', async () => {
+      await expectRoute('PATCH', path('non-existent-task-id'))
+        .as(tiers.superAdmin)
+        .withBody({ description: 'Updated description' })
+        .toReturn(StatusCodes.NOT_FOUND);
     });
   });
 });

@@ -1021,7 +1021,6 @@ export function TaskService({
    * @returns An object containing the updated task's UUID
    * @throws {ApiError} FORBIDDEN if user is not a super admin
    * @throws {ApiError} NOT_FOUND if the task is not found
-   * @throws {ApiError} CONFLICT if a task with the same slug already exists
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
   async function update(authContext: AuthContext, taskId: string, body: UpdateTaskData): Promise<{ id: string }> {
