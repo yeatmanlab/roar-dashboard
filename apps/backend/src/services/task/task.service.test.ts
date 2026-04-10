@@ -1897,6 +1897,14 @@ describe('TaskService', () => {
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         });
       });
+
+      it('should throw 422 when there are no mutable fields', async () => {
+        await expect(taskService.update(authContext, validTaskId, {})).rejects.toMatchObject({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      });
     });
 
     describe('not found', () => {
