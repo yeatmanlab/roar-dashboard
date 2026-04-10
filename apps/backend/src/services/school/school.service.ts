@@ -12,7 +12,10 @@ import type { AuthContext } from '../../types/auth-context';
 import type { Class } from '../../db/schema';
 import { ClassRepository } from '../../repositories/class.repository';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
-import type { ParsedFilter } from '../../types/filter';
+import type { ParsedFilter, FilterOperator } from '../../types/filter';
+
+/** Type safe constant for 'eq' filter operator */
+const EQ_OPERATOR: FilterOperator = 'eq';
 
 /**
  * Options for listing schools
@@ -234,7 +237,7 @@ export function SchoolService({
       // Validate filter operators — only 'eq' is supported for class filters
       if (options.filter) {
         for (const f of options.filter) {
-          if (f.operator !== 'eq') {
+          if (f.operator !== EQ_OPERATOR) {
             throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
               statusCode: StatusCodes.BAD_REQUEST,
               code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
@@ -266,7 +269,7 @@ export function SchoolService({
 
       logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school classes');
 
-      throw new ApiError('Failed to retrieve school classes', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, schoolId },

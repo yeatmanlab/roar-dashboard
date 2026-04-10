@@ -76,7 +76,12 @@ export const SchoolsContract = c.router(
       description:
         'Returns a paginated list of active classes within a school. ' +
         'Only active classes (rosteringEnded IS NULL) are returned. ' +
-        'Requires authentication and supervisory role on the school.',
+        'Requires authentication and supervisory role on the school. ' +
+        'Returns 400 if the query parameters are invalid. ' +
+        'Returns 401 if the requesting user is not authenticated. ' +
+        'Returns 403 if the requesting user lacks permission to access the school. ' +
+        'Returns 404 if the requested school does not exist. ' +
+        'Returns 500 for unexpected server errors.',
     },
   },
   { pathPrefix: '/schools' },

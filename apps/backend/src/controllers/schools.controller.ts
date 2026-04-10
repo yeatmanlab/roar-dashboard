@@ -33,6 +33,7 @@ function transformSchoolClass(classEntity: Class): ApiSchoolClass {
     subjects: classEntity.subjects,
     schoolLevels: classEntity.schoolLevels,
     createdAt: classEntity.createdAt.toISOString(),
+    updatedAt: classEntity.updatedAt?.toISOString() ?? null,
   };
 }
 
@@ -195,14 +196,14 @@ export const SchoolsController = {
    */
   listClasses: async (authContext: AuthContext, schoolId: string, query: SchoolClassesListQuery) => {
     try {
-      const { page, perPage, sortBy, sortOrder } = query;
+      const { page, perPage, sortBy, sortOrder, filter } = query;
 
       const result = await schoolService.listSchoolClasses(authContext, schoolId, {
         page,
         perPage,
         sortBy,
         sortOrder,
-        filter: query.filter,
+        filter,
       });
 
       const items = result.items.map(transformSchoolClass);

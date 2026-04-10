@@ -146,6 +146,7 @@ export const SchoolClassSchema = z.object({
   subjects: z.array(z.string()).nullable(),
   schoolLevels: z.array(SchoolLevelSchema).nullable(),
   createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime().nullable(),
 });
 
 export type SchoolClass = z.infer<typeof SchoolClassSchema>;
