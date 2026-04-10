@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { OrgFactory } from '../test-support/factories/org.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { OrgType } from '../enums/org-type.enum';
@@ -38,6 +39,7 @@ function expectErrorResponse(
 describe('SchoolsController', () => {
   const mockList = vi.fn();
   const mockGetById = vi.fn();
+  const mockListSchoolClasses = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -47,6 +49,7 @@ describe('SchoolsController', () => {
     vi.mocked(SchoolService).mockReturnValue({
       list: mockList,
       getById: mockGetById,
+      listSchoolClasses: mockListSchoolClasses,
     } as ISchoolService);
   });
 
@@ -443,6 +446,149 @@ describe('SchoolsController', () => {
 
       const data = expectOkResponse(result);
       expect(data).not.toHaveProperty('identifiers');
+    });
+  });
+
+  describe('listClasses', () => {
+    const defaultQuery = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+      filter: [] as { field: string; operator: 'eq'; value: string }[],
+    };
+
+    it('should return paginated classes with 200 status', async () => {
+      const mockClasses = ClassFactory.buildList(2, { schoolId: 'school-1' });
+      mockListSchoolClasses.mockResolvedValue({
+        items: mockClasses,
+        totalItems: 2,
+      });
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.listClasses(mockAuthContext, 'school-1', defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(2);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform class Date fields to ISO strings', async () => {
+      const mockClass = ClassFactory.build({
+        schoolId: 'school-1',
+        createdAt: new Date('2024-01-15T10:30:00Z'),
+      });
+      mockListSchoolClasses.mockResolvedValue({
+        items: [mockClass],
+        totalItems: 1,
+      });
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.listClasses(mockAuthContext, 'school-1', defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.createdAt).toBe('2024-01-15T10:30:00.000Z');
+    });
+
+    it('should pass filter to service', async () => {
+      mockListSchoolClasses.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const queryWithFilter = {
+        ...defaultQuery,
+        filter: [{ field: 'grade', operator: 'eq' as const, value: '3' }],
+      };
+
+      await Controller.listClasses(mockAuthContext, 'school-1', queryWithFilter);
+
+      expect(mockListSchoolClasses).toHaveBeenCalledWith(
+        mockAuthContext,
+        'school-1',
+        expect.objectContaining({
+          filter: queryWithFilter.filter,
+        }),
+      );
+    });
+
+    it('should handle ApiError with 404 Not Found', async () => {
+      const error = new ApiError('School not found', {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockListSchoolClasses.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.listClasses(mockAuthContext, 'non-existent', defaultQuery);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 403 Forbidden', async () => {
+      const error = new ApiError('Access denied', {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockListSchoolClasses.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.listClasses(mockAuthContext, 'school-1', defaultQuery);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 400 Bad Request', async () => {
+      const error = new ApiError('Failed to validate request', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      mockListSchoolClasses.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.listClasses(mockAuthContext, 'school-1', defaultQuery);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockListSchoolClasses.mockRejectedValue(error);
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      await expect(Controller.listClasses(mockAuthContext, 'school-1', defaultQuery)).rejects.toThrow(
+        'Unexpected error',
+      );
+    });
+
+    it('should calculate totalPages correctly', async () => {
+      mockListSchoolClasses.mockResolvedValue({
+        items: ClassFactory.buildList(3),
+        totalItems: 53,
+      });
+
+      const { SchoolsController: Controller } = await import('./schools.controller');
+
+      const result = await Controller.listClasses(mockAuthContext, 'school-1', {
+        ...defaultQuery,
+        perPage: 25,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.pagination.totalPages).toBe(3); // ceil(53 / 25) = 3
     });
   });
 });
