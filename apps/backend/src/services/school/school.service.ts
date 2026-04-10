@@ -190,7 +190,7 @@ export function SchoolService({
   /**
    * Authorize sub-resource access (requires supervisory role via FGA).
    *
-   * Checks that the school exists and the user has can_list_users permission,
+   * Checks that the school exists and the user has can_list_classes permission,
    * which requires supervisory_tier_group in the FGA model.
    *
    * @param authContext - User's auth context (id and super admin flag)
