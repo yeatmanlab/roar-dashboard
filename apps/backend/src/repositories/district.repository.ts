@@ -208,6 +208,57 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   }
 
   /**
+   * List districts by a pre-determined set of IDs with pagination, sorting, and optional counts.
+   *
+   * Used after FGA resolves the set of accessible district IDs — this method
+   * fetches the actual records with pagination and optional embed counts.
+   *
+   * @param ids - Array of district IDs to fetch (from FGA listAccessibleObjects)
+   * @param options - Pagination, sorting, and optional filters
+   * @returns Paginated result with districts
+   */
+  async listByIds(
+    ids: string[],
+    options: ListAuthorizedOptions,
+  ): Promise<PaginatedResult<District | DistrictWithCounts>> {
+    const { includeEnded = false, embedCounts = false } = options;
+
+    // Build where clause for district type and rostering status
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
+
+    if (!includeEnded) {
+      whereConditions.push(isNull(orgs.rosteringEnded));
+    }
+
+    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+
+    const result = await this.getByIds(ids, {
+      page: options.page,
+      perPage: options.perPage,
+      ...(options.orderBy && { orderBy: options.orderBy }),
+      ...(where && { where }),
+    });
+
+    // Fetch and attach counts if requested
+    if (embedCounts && result.items.length > 0) {
+      const districtIds = result.items.map((d) => d.id);
+      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
+
+      const districtsWithCounts = result.items.map((district) => ({
+        ...district,
+        counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
+      })) as DistrictWithCounts[];
+
+      return {
+        items: districtsWithCounts,
+        totalItems: result.totalItems,
+      };
+    }
+
+    return result;
+  }
+
+  /**
    * Fetch aggregated counts for multiple districts.
    *
    * Computes:

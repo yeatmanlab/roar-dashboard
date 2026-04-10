@@ -3,14 +3,15 @@
  *
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
+ * Authorization is resolved via FGA (seeded from Postgres fixtures).
  *
- * Authorization is tested by permission tier (matching RolePermissions groupings):
+ * Authorization is tested by permission tier:
  *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
- *   - siteAdmin:   site_administrator
- *   - admin:       administrator
- *   - educator:    teacher
- *   - student:     student (no Organizations.LIST permission → empty results)
- *   - caregiver:   guardian
+ *   - siteAdmin:   site_administrator (supervisory → can_list)
+ *   - admin:       administrator (supervisory → can_list)
+ *   - educator:    teacher (supervisory → can_list)
+ *   - student:     student (not supervisory → no can_list → empty results)
+ *   - caregiver:   guardian (not supervisory → no can_list → empty results)
  *
  * Each endpoint section follows the structure:
  *   1. Authorization — one spec per tier with status + content assertions
@@ -42,6 +43,10 @@ beforeAll(async () => {
   app = createTestApp(registerDistrictsRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+
+  // Re-sync FGA tuples to pick up tier users created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -83,21 +88,20 @@ describe('GET /v1/districts', () => {
       expect(ids).not.toContain(baseFixture.districtB.id);
     });
 
-    it('student tier sees empty list (no Organizations.LIST permission)', async () => {
+    it('student tier sees empty list (not in supervisory_tier_group → no can_list)', async () => {
       const res = await expectRoute('GET', '/v1/districts').as(tiers.student).toReturn(200);
 
-      // Students don't have Organizations.LIST permission, so allowedRoles
-      // won't match their student role — the access control query returns nothing
       expect(res.body.data.items).toHaveLength(0);
       expect(res.body.data.pagination.totalItems).toBe(0);
     });
 
-    it('caregiver tier can list districts scoped to their org tree', async () => {
+    it('caregiver tier sees empty list (not in supervisory_tier_group → no can_list)', async () => {
       const res = await expectRoute('GET', '/v1/districts').as(tiers.caregiver).toReturn(200);
 
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.district.id);
-      expect(ids).not.toContain(baseFixture.districtB.id);
+      // Caregivers (guardians) are not in supervisory_tier_group, so FGA
+      // does not grant can_list on districts
+      expect(res.body.data.items).toHaveLength(0);
+      expect(res.body.data.pagination.totalItems).toBe(0);
     });
   });
 

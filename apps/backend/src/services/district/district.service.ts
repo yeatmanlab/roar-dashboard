@@ -1,8 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
 import type { District, DistrictWithCounts } from '../../repositories/district.repository';
 import { DistrictRepository } from '../../repositories/district.repository';
-import { rolesForPermission } from '../../constants/role-permissions';
-import { Permissions } from '../../constants/permissions';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -36,8 +37,10 @@ export type DistrictWithEmbeds = DistrictWithCounts;
  */
 export function DistrictService({
   districtRepository = new DistrictRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   districtRepository?: DistrictRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
    * List districts accessible to a user with pagination and sorting.
@@ -72,8 +75,18 @@ export function DistrictService({
       if (isSuperAdmin) {
         result = await districtRepository.listAll(queryParams);
       } else {
-        const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await districtRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+        // FGA resolves which districts the user can access based on their
+        // role memberships and the org hierarchy
+        const objects = await authorizationService.listAccessibleObjects(
+          userId,
+          FgaRelation.CAN_LIST,
+          FgaType.DISTRICT,
+        );
+        const ids = objects.map(extractFgaObjectId);
+        if (ids.length === 0) {
+          return { items: [], totalItems: 0 };
+        }
+        result = await districtRepository.listByIds(ids, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) {
@@ -122,19 +135,10 @@ export function DistrictService({
       // 2. Super admins bypass access checks
       if (isSuperAdmin) return district;
 
-      // 3. Check access via org hierarchy joins
-      const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-      const authorized = await districtRepository.getAuthorizedById({ userId, allowedRoles }, districtId);
-      if (!authorized) {
-        logger.warn({ userId, districtId }, 'User attempted to access district without permission');
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, districtId },
-        });
-      }
+      // 3. Check access via FGA permission check
+      await authorizationService.requirePermission(userId, FgaRelation.CAN_READ, `${FgaType.DISTRICT}:${districtId}`);
 
-      return authorized;
+      return district;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;

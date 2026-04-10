@@ -330,6 +330,136 @@ describe('DistrictRepository', () => {
     });
   });
 
+  describe('listByIds', () => {
+    it('returns only districts matching the given IDs', async () => {
+      const result = await repository.listByIds([baseFixture.district.id], { page: 1, perPage: 100 });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('returns multiple districts when given multiple IDs', async () => {
+      const result = await repository.listByIds([baseFixture.district.id, baseFixture.districtB.id], {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(2);
+      const ids = result.items.map((d) => d.id);
+      expect(ids).toContain(baseFixture.district.id);
+      expect(ids).toContain(baseFixture.districtB.id);
+    });
+
+    it('returns empty results for empty ID array', async () => {
+      const result = await repository.listByIds([], { page: 1, perPage: 100 });
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('filters out non-district org IDs', async () => {
+      // Pass a school ID — should be excluded by the orgType=district filter
+      const result = await repository.listByIds([baseFixture.schoolA.id, baseFixture.district.id], {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('excludes ended districts by default', async () => {
+      const endedDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'Ended District for listByIds',
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const result = await repository.listByIds([baseFixture.district.id, endedDistrict.id], {
+        page: 1,
+        perPage: 100,
+        includeEnded: false,
+      });
+
+      const ids = result.items.map((d) => d.id);
+      expect(ids).toContain(baseFixture.district.id);
+      expect(ids).not.toContain(endedDistrict.id);
+    });
+
+    it('includes ended districts when includeEnded=true', async () => {
+      const endedDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'Ended District for listByIds Include',
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const result = await repository.listByIds([baseFixture.district.id, endedDistrict.id], {
+        page: 1,
+        perPage: 100,
+        includeEnded: true,
+      });
+
+      const ids = result.items.map((d) => d.id);
+      expect(ids).toContain(endedDistrict.id);
+    });
+
+    it('respects pagination', async () => {
+      const result = await repository.listByIds([baseFixture.district.id, baseFixture.districtB.id], {
+        page: 1,
+        perPage: 1,
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('applies sorting', async () => {
+      const result = await repository.listByIds([baseFixture.district.id, baseFixture.districtB.id], {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+
+      if (result.items.length > 1) {
+        for (let i = 1; i < result.items.length; i++) {
+          expect(result.items[i - 1]!.name.toLowerCase() <= result.items[i]!.name.toLowerCase()).toBe(true);
+        }
+      }
+    });
+
+    it('includes counts when embedCounts=true', async () => {
+      const result = await repository.listByIds([baseFixture.district.id], {
+        page: 1,
+        perPage: 100,
+        embedCounts: true,
+      });
+
+      expect(result.items).toHaveLength(1);
+      const district = result.items[0] as DistrictWithCounts;
+      expect(district.counts).toBeDefined();
+      expect(district.counts).toHaveProperty('users');
+      expect(district.counts).toHaveProperty('schools');
+      expect(district.counts).toHaveProperty('classes');
+    });
+
+    it('omits counts when embedCounts is not set', async () => {
+      const result = await repository.listByIds([baseFixture.district.id], { page: 1, perPage: 100 });
+
+      expect(result.items).toHaveLength(1);
+      expect((result.items[0] as DistrictWithCounts).counts).toBeUndefined();
+    });
+
+    it('ignores nonexistent IDs gracefully', async () => {
+      const result = await repository.listByIds(['00000000-0000-0000-0000-000000000000', baseFixture.district.id], {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+    });
+  });
+
   describe('getUnrestrictedById', () => {
     it('returns district without access checks', async () => {
       const result = await repository.getUnrestrictedById(baseFixture.district.id);
