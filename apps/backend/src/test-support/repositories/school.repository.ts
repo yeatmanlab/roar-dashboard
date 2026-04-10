@@ -17,6 +17,7 @@ export function createMockSchoolRepository(): MockedObject<SchoolRepository> {
     getUnrestrictedById: vi.fn(),
     getAuthorizedById: vi.fn(),
     fetchSchoolCounts: vi.fn(),
+    getUserRolesForSchool: vi.fn(),
   } as unknown as MockedObject<SchoolRepository>;
 }
 

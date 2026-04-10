@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SchoolService } from './school.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
+import { ClassFactory } from '../../test-support/factories/class.factory';
 import { OrgType } from '../../enums/org-type.enum';
 import { SortOrder, SchoolDetailSortField } from '@roar-dashboard/api-contract';
-import { createMockSchoolRepository } from '../../test-support/repositories';
+import { createMockSchoolRepository, createMockClassRepository } from '../../test-support/repositories';
 import type { MockSchoolRepository } from '../../test-support/repositories';
 import { createMockAuthorizationService } from '../../test-support/services';
 import type { MockAuthorizationService } from '../../test-support/services';
@@ -14,11 +15,13 @@ import { StatusCodes } from 'http-status-codes';
 
 describe('SchoolService', () => {
   let mockSchoolRepository: MockSchoolRepository;
+  let mockClassRepository: ReturnType<typeof createMockClassRepository>;
   let mockAuthorizationService: MockAuthorizationService;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockSchoolRepository = createMockSchoolRepository();
+    mockClassRepository = createMockClassRepository();
     mockAuthorizationService = createMockAuthorizationService();
   });
 
@@ -581,6 +584,197 @@ describe('SchoolService', () => {
       expect(result).toEqual(endedSchool);
       // Super admin should bypass both authorization and rosteringEnded checks
       expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listSchoolClasses', () => {
+    const mockSchool = OrgFactory.build({ orgType: OrgType.SCHOOL });
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'name' as const,
+      sortOrder: 'asc' as const,
+    };
+
+    function createService() {
+      return SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+      });
+    }
+
+    // Helper: set up mocks so that the school exists and user is authorized
+    function setupAuthorizedSchool() {
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      // FGA requirePermission resolves by default (access granted via can_list_classes)
+    }
+
+    it('should return classes for super admin', async () => {
+      const authContext = { userId: 'admin-123', isSuperAdmin: true };
+      setupAuthorizedSchool();
+
+      const mockClasses = ClassFactory.buildList(3, { schoolId: mockSchool.id });
+      mockClassRepository.listBySchoolId.mockResolvedValue({
+        items: mockClasses,
+        totalItems: 3,
+      });
+
+      const service = createService();
+      const result = await service.listSchoolClasses(authContext, mockSchool.id, defaultOptions);
+
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+      expect(mockClassRepository.listBySchoolId).toHaveBeenCalledWith(mockSchool.id, {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
+      // FGA requirePermission is called for all users (including super admin)
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'admin-123',
+        'can_list_classes',
+        `school:${mockSchool.id}`,
+      );
+    });
+
+    it('should return classes for user with supervisory role (via FGA)', async () => {
+      const authContext = { userId: 'teacher-123', isSuperAdmin: false };
+      setupAuthorizedSchool();
+
+      const mockClasses = ClassFactory.buildList(2, { schoolId: mockSchool.id });
+      mockClassRepository.listBySchoolId.mockResolvedValue({
+        items: mockClasses,
+        totalItems: 2,
+      });
+
+      const service = createService();
+      const result = await service.listSchoolClasses(authContext, mockSchool.id, defaultOptions);
+
+      expect(result.items).toHaveLength(2);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'teacher-123',
+        'can_list_classes',
+        `school:${mockSchool.id}`,
+      );
+    });
+
+    it('should throw 403 when user has only supervised roles (FGA denies can_list_classes)', async () => {
+      const authContext = { userId: 'student-123', isSuperAdmin: false };
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      // FGA denies can_list_classes for supervised roles (student, guardian, etc.)
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = createService();
+
+      await expect(service.listSchoolClasses(authContext, mockSchool.id, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('should throw 404 when school does not exist', async () => {
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(
+        service.listSchoolClasses({ userId: 'user-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('should throw 403 when user lacks access to the school', async () => {
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = createService();
+
+      await expect(
+        service.listSchoolClasses({ userId: 'unauthorized-user', isSuperAdmin: false }, mockSchool.id, defaultOptions),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('should pass filter options to repository', async () => {
+      const authContext = { userId: 'admin-123', isSuperAdmin: true };
+      setupAuthorizedSchool();
+
+      mockClassRepository.listBySchoolId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = createService();
+      const filters = [{ field: 'grade', operator: 'eq' as const, value: '3' }];
+
+      await service.listSchoolClasses(authContext, mockSchool.id, {
+        ...defaultOptions,
+        filter: filters,
+      });
+
+      expect(mockClassRepository.listBySchoolId).toHaveBeenCalledWith(
+        mockSchool.id,
+        expect.objectContaining({
+          filter: filters,
+        }),
+      );
+    });
+
+    it('should throw 400 when filter uses unsupported operator', async () => {
+      const authContext = { userId: 'admin-123', isSuperAdmin: true };
+
+      const service = createService();
+
+      await expect(
+        service.listSchoolClasses(authContext, mockSchool.id, {
+          ...defaultOptions,
+          filter: [{ field: 'grade', operator: 'gte' as const, value: '3' }],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should wrap non-ApiError in ApiError with DATABASE_QUERY_FAILED code', async () => {
+      const authContext = { userId: 'admin-123', isSuperAdmin: true };
+      setupAuthorizedSchool();
+
+      mockClassRepository.listBySchoolId.mockRejectedValue(new Error('Unexpected DB error'));
+
+      const service = createService();
+
+      await expect(service.listSchoolClasses(authContext, mockSchool.id, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should rethrow ApiError without wrapping', async () => {
+      const authContext = { userId: 'admin-123', isSuperAdmin: true };
+      setupAuthorizedSchool();
+
+      const error = new ApiError('Custom error', {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockClassRepository.listBySchoolId.mockRejectedValue(error);
+
+      const service = createService();
+
+      await expect(service.listSchoolClasses(authContext, mockSchool.id, defaultOptions)).rejects.toThrow(error);
     });
   });
 });
