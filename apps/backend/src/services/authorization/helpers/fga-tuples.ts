@@ -1,6 +1,7 @@
 import type { RelationshipCondition, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { UserRole } from '../../../enums/user-role.enum';
 import type { UserFamilyRole } from '../../../enums/user-family-role.enum';
+import { isValidDate } from '../../../utils/is-valid-date.util';
 import {
   FgaType,
   FgaHierarchyRelation,
@@ -11,16 +12,6 @@ import {
 } from '../fga-constants';
 
 export { FAR_PAST, FAR_FUTURE };
-
-/**
- * Check whether a value is a valid Date that can be serialized.
- *
- * @param value - The value to check
- * @returns true if value is a Date with a valid time value
- */
-function isValidDate(value: unknown): value is Date {
-  return value instanceof Date && !Number.isNaN(value.getTime());
-}
 
 /**
  * Build the `active_membership` condition for time-bound role tuples.
