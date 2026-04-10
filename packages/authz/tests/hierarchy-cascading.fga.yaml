@@ -153,17 +153,23 @@ tests:
 
   # ─── Supervisory does NOT cascade UP (org permissions unaffected) ──
 
-  - name: School teacher does NOT cascade up to district (org-level)
+  - name: School teacher does NOT become a district role holder but CAN list/read (ancestor visibility)
     check:
       - user: user:school-teacher
         object: district:district-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
+          # Not a district-level role holder
           teacher: false
           supervisory_tier_group: false
-          can_list: false
-          can_read: false
+          # But can see the district via ancestor visibility
+          can_list: true
+          can_read: true
+          # No deeper permissions on the district
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
 
   - name: Class teacher does NOT cascade up to school (org-level)
     check:
