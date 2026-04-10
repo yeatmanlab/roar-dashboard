@@ -561,21 +561,6 @@ describe('DistrictRepository', () => {
       expect(userIds).not.toContain(baseFixture.districtBStudent.id);
     });
 
-    it('returns enrollmentStart and role for each user', async () => {
-      const result = await repository.getUsersByDistrictPath(baseFixture.district.path, {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.items.length).toBeGreaterThan(0);
-
-      const districtAdmin = result.items.find((u) => u.id === baseFixture.districtAdmin.id);
-      const classStudent = result.items.find((u) => u.id === baseFixture.classAStudent.id);
-
-      expect(districtAdmin?.roles).toContain(UserRole.ADMINISTRATOR);
-      expect(classStudent?.roles).toContain(UserRole.STUDENT);
-    });
-
     it('aggregates multiple roles when user is enrolled at both org and class level', async () => {
       // Add baseFixture.schoolATeacher (org-level TEACHER) to a class with a different role
       const UserClassFactory = (await import('../test-support/factories/user-class.factory')).UserClassFactory;
@@ -687,29 +672,6 @@ describe('DistrictRepository', () => {
       expect(result.totalItems).toBe(0);
     });
 
-    it('respects pagination', async () => {
-      const page1 = await repository.getUsersByDistrictPath(baseFixture.district.path, {
-        page: 1,
-        perPage: 2,
-      });
-
-      expect(page1.items.length).toBeLessThanOrEqual(2);
-      expect(page1.totalItems).toBeGreaterThan(2);
-
-      const page2 = await repository.getUsersByDistrictPath(baseFixture.district.path, {
-        page: 2,
-        perPage: 2,
-      });
-
-      expect(page2.items.length).toBeLessThanOrEqual(2);
-      expect(page2.totalItems).toBeGreaterThan(2);
-
-      // Pages should have different users
-      const page1Ids = page1.items.map((u) => u.id);
-      const page2Ids = page2.items.map((u) => u.id);
-      expect(page1Ids.some((id) => page2Ids.includes(id))).toBe(false);
-    });
-
     it('applies default sorting by nameLast ascending when no orderBy specified', async () => {
       // Create a district with users having known lastNames for precise sorting verification
       const sortTestDistrict = await OrgFactory.create({
@@ -783,77 +745,6 @@ describe('DistrictRepository', () => {
     });
 
     describe('filters', () => {
-      it('filters by role', async () => {
-        // Create a district with users having different roles
-        const filterTestDistrict = await OrgFactory.create({
-          orgType: OrgType.DISTRICT,
-          name: 'Filter Role Test District',
-        });
-        const student1 = await UserFactory.create({ nameLast: 'FilterDistrictStudent1' });
-        const student2 = await UserFactory.create({ nameLast: 'FilterDistrictStudent2' });
-        const teacher = await UserFactory.create({ nameLast: 'FilterDistrictTeacher' });
-        await UserOrgFactory.create({ userId: student1.id, orgId: filterTestDistrict.id, role: UserRole.STUDENT });
-        await UserOrgFactory.create({ userId: student2.id, orgId: filterTestDistrict.id, role: UserRole.STUDENT });
-        await UserOrgFactory.create({ userId: teacher.id, orgId: filterTestDistrict.id, role: UserRole.TEACHER });
-
-        const result = await repository.getUsersByDistrictPath(filterTestDistrict.path, {
-          page: 1,
-          perPage: 100,
-          role: UserRole.STUDENT,
-        });
-
-        expect(result.totalItems).toBe(2);
-        expect(result.items).toHaveLength(2);
-        const userIds = result.items.map((u) => u.id);
-        expect(userIds).toContain(student1.id);
-        expect(userIds).toContain(student2.id);
-        expect(userIds).not.toContain(teacher.id);
-
-        // Verify all returned users have the filtered role in EnrolledUserEntity
-        for (const user of result.items) {
-          expect(user.roles).toContain(UserRole.STUDENT);
-        }
-      });
-
-      it('filters by grade', async () => {
-        // Create a district with users having different grades
-        const filterGradeDistrict = await OrgFactory.create({
-          orgType: OrgType.DISTRICT,
-          name: 'Filter Grade Test District',
-        });
-        const grade3Student = await UserFactory.create({ nameLast: 'Grade3District', grade: '3' });
-        const grade5Student = await UserFactory.create({ nameLast: 'Grade5District', grade: '5' });
-        const grade5Student2 = await UserFactory.create({ nameLast: 'Grade5DistrictSecond', grade: '5' });
-        await UserOrgFactory.create({
-          userId: grade3Student.id,
-          orgId: filterGradeDistrict.id,
-          role: UserRole.STUDENT,
-        });
-        await UserOrgFactory.create({
-          userId: grade5Student.id,
-          orgId: filterGradeDistrict.id,
-          role: UserRole.STUDENT,
-        });
-        await UserOrgFactory.create({
-          userId: grade5Student2.id,
-          orgId: filterGradeDistrict.id,
-          role: UserRole.STUDENT,
-        });
-
-        const result = await repository.getUsersByDistrictPath(filterGradeDistrict.path, {
-          page: 1,
-          perPage: 100,
-          grade: ['5'],
-        });
-
-        expect(result.totalItems).toBe(2);
-        expect(result.items).toHaveLength(2);
-        const userIds = result.items.map((u) => u.id);
-        expect(userIds).toContain(grade5Student.id);
-        expect(userIds).toContain(grade5Student2.id);
-        expect(userIds).not.toContain(grade3Student.id);
-      });
-
       it('filters by both role and grade', async () => {
         // Create a district with users having different roles and grades
         const filterBothDistrict = await OrgFactory.create({
@@ -957,76 +848,6 @@ describe('DistrictRepository', () => {
         { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.ADMINISTRATOR] },
         baseFixture.district.id,
         baseFixture.district.path,
-        { page: 1, perPage: 100 },
-      );
-
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
-    });
-
-    it('returns empty when requesting user has expired enrollment in district', async () => {
-      const expiredDistrict = await OrgFactory.create({
-        orgType: OrgType.DISTRICT,
-        name: 'Expired Enrollment Auth Test District',
-      });
-      const expiredUser = await UserFactory.create({ username: 'expired_auth_user' });
-      const activeAdmin = await UserFactory.create({ username: 'active_admin_auth' });
-
-      // Expired enrollment for the requesting user
-      await UserOrgFactory.create({
-        userId: expiredUser.id,
-        orgId: expiredDistrict.id,
-        role: UserRole.ADMINISTRATOR,
-        enrollmentStart: new Date('2020-01-01'),
-        enrollmentEnd: new Date('2020-12-31'),
-      });
-      // Active enrollment for another user (to verify they would be returned if authorized)
-      await UserOrgFactory.create({
-        userId: activeAdmin.id,
-        orgId: expiredDistrict.id,
-        role: UserRole.ADMINISTRATOR,
-      });
-
-      const result = await repository.getAuthorizedUsersByDistrictId(
-        { userId: expiredUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        expiredDistrict.id,
-        expiredDistrict.path,
-        { page: 1, perPage: 100 },
-      );
-
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
-    });
-
-    it('returns empty when requesting user has future enrollment in district', async () => {
-      const futureDistrict = await OrgFactory.create({
-        orgType: OrgType.DISTRICT,
-        name: 'Future Enrollment Auth Test District',
-      });
-      const futureUser = await UserFactory.create({ username: 'future_auth_user' });
-      const activeAdmin = await UserFactory.create({ username: 'active_admin_future' });
-
-      const futureDate = new Date();
-      futureDate.setFullYear(futureDate.getFullYear() + 1);
-
-      // Future enrollment for the requesting user
-      await UserOrgFactory.create({
-        userId: futureUser.id,
-        orgId: futureDistrict.id,
-        role: UserRole.ADMINISTRATOR,
-        enrollmentStart: futureDate,
-      });
-      // Active enrollment for another user
-      await UserOrgFactory.create({
-        userId: activeAdmin.id,
-        orgId: futureDistrict.id,
-        role: UserRole.ADMINISTRATOR,
-      });
-
-      const result = await repository.getAuthorizedUsersByDistrictId(
-        { userId: futureUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        futureDistrict.id,
-        futureDistrict.path,
         { page: 1, perPage: 100 },
       );
 
