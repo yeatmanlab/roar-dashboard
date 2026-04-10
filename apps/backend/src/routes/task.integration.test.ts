@@ -740,42 +740,55 @@ describe('PATCH /v1/tasks/:taskId', () => {
 
   describe('validation', () => {
     it('returns 400 when immutable fields are present', async () => {
-      await expectRoute('PATCH', path(baseFixture.task.id))
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
         .as(tiers.superAdmin)
         .withBody({ slug: 'new-slug' })
         .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
     });
 
     it('returns 400 when image URL is invalid', async () => {
-      await expectRoute('PATCH', path(baseFixture.task.id))
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
         .as(tiers.superAdmin)
         .withBody({ image: 'not-a-url' })
         .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
     });
 
     it('returns 400 when tutorialVideo URL is invalid', async () => {
-      await expectRoute('PATCH', path(baseFixture.task.id))
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
         .as(tiers.superAdmin)
         .withBody({ tutorialVideo: 'not-a-url' })
         .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
     });
 
     it('returns 400 when the request body is empty', async () => {
-      await expectRoute('PATCH', path(baseFixture.task.id))
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
         .as(tiers.superAdmin)
         .withBody({})
         .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
     });
 
     it('returns 401 when unauthenticated', async () => {
-      await expectRoute('PATCH', path(baseFixture.task.id)).unauthenticated().toReturn(StatusCodes.UNAUTHORIZED);
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .unauthenticated()
+        .toReturn(StatusCodes.UNAUTHORIZED);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
     });
 
     it('returns 404 when task does not exist', async () => {
-      await expectRoute('PATCH', path('non-existent-task-id'))
+      const res = await expectRoute('PATCH', path('non-existent-task-id'))
         .as(tiers.superAdmin)
         .withBody({ description: 'Updated description' })
         .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
   });
 });
