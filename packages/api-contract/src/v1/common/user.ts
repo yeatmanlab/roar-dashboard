@@ -80,6 +80,7 @@ export const UserBaseSchema = z.object({
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentifierSchema);
 
 // TODO: Change this schema to return roles array instead of single role and remove enrollmentStart, delete EnrolledOrgUser
+// ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1734
 export const EnrolledUserSchema = UserSchema.extend({
   role: UserRoleSchema,
   enrollmentStart: z.string().datetime(),

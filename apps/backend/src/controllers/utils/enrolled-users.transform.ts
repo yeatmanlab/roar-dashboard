@@ -31,8 +31,10 @@ function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
   };
 }
 
+// TODO: Remove this function once all user endpoints are updated to return user roles and no enrollment start date
+// ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1734
+
 /**
- * TEMPORARY FUNCTION - will be removed once all user endpoints are updated to return user roles and no enrollment start date
  * Maps a database User entity with role to the API contract EnrolledOrgUser schema.
  * Returns select values from User and their associated role and enrollment start date
  * in organization context.

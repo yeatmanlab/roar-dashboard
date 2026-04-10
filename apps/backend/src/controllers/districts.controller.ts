@@ -172,8 +172,10 @@ export const DistrictsController = {
    */
   listUsers: async (authContext: AuthContext, districtId: string, query: EnrolledUsersQuery) => {
     try {
+      const { page, perPage } = query;
+
       const result = await districtService.listUsers(authContext, districtId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
+      return handleSubResourceResponse(result, page, perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }
