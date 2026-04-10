@@ -20,8 +20,7 @@ import type { Class } from '../db/schema';
 import { classes, userClasses, users } from '../db/schema';
 import type { ClassType } from '../enums/class-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
-import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
-import type { ParsedFilter } from '../types/filter';
+import type { ListEnrolledUsersOptions, EnrolledOrgUserEntity } from '../types/user';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
@@ -87,7 +86,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   async getUsersByClassId(
     classId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
@@ -102,6 +101,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       .select({ count: count() })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
       .where(whereCondition);
 
     const totalItems = countResult[0]?.count ?? 0;
@@ -115,16 +115,17 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })
+      .select({ user: users, role: userClasses.role })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
       .where(whereCondition)
       .orderBy(primaryOrder, asc(users.id))
       .limit(perPage)
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
       totalItems,
     };
   }
@@ -145,7 +146,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     accessControlFilter: AccessControlFilter,
     classId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const accessibleClasses = this.orgAccessControls
       .buildUserAccessibleOrgIdsQuery(accessControlFilter)
       .as('accessible_classes');
@@ -178,7 +179,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })
+      .select({ user: users, role: userClasses.role })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
       .innerJoin(classes, eq(classes.id, userClasses.classId))
@@ -189,7 +190,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
       totalItems,
     };
   }
