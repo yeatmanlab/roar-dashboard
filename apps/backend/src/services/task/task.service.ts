@@ -1014,7 +1014,6 @@ export function TaskService({
    * @returns An object containing the updated task's UUID
    * @throws {ApiError} FORBIDDEN if user is not a super admin
    * @throws {ApiError} NOT_FOUND if the task is not found
-   * @throws {ApiError} UNPROCESSABLE_ENTITY if there are no mutable fields present in the body
    * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
    */
   async function update(authContext: AuthContext, taskId: string, body: UpdateTaskData): Promise<{ id: string }> {
@@ -1025,25 +1024,6 @@ export function TaskService({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
         context: { userId, isSuperAdmin },
-      });
-    }
-
-    const mutableFieldKeys = [
-      'name',
-      'nameSimple',
-      'nameTechnical',
-      'description',
-      'image',
-      'tutorialVideo',
-      'taskConfig',
-    ] as const;
-
-    const hasAnyMutableField = mutableFieldKeys.some((field) => body[field] !== undefined);
-    if (!hasAnyMutableField) {
-      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId, taskId },
       });
     }
 

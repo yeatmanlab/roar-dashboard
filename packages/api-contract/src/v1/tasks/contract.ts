@@ -106,7 +106,6 @@ export const TasksContract = c.router(
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
-        422: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -118,7 +117,6 @@ export const TasksContract = c.router(
         'Returns 200 with the updated task ID on success. ' +
         'Returns 400 if the request body is malformed or contains no mutable fields. ' +
         'Returns 404 if no task exists with the given ID or slug. ' +
-        'Returns 422 if body lacks mutable fields (defense-in-depth). ' +
         'Returns 500 if a server error occurs.',
     },
     listTaskVariants: {
