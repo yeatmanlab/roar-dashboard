@@ -73,6 +73,26 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   }
 
   /**
+   * Build the shared where clause for district queries.
+   *
+   * All district listing methods filter by orgType = DISTRICT and optionally
+   * exclude ended organizations. This helper eliminates duplication across
+   * listAll, listByIds, and listAuthorized.
+   *
+   * @param includeEnded - Whether to include organizations with rosteringEnded set
+   * @returns A SQL condition or undefined
+   */
+  private buildDistrictWhereClause(includeEnded: boolean): SQL | undefined {
+    const conditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
+
+    if (!includeEnded) {
+      conditions.push(isNull(orgs.rosteringEnded));
+    }
+
+    return conditions.length > 1 ? and(...conditions) : conditions[0];
+  }
+
+  /**
    * List all districts with optional filtering.
    *
    * This method does not apply authorization filtering and should only be used
@@ -84,14 +104,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<District | DistrictWithCounts>> {
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
-    // Build where clause for district type and rostering status
-    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+    const where = this.buildDistrictWhereClause(includeEnded);
 
     // Delegate to getAll() — tiebreaker asc(id) is handled by getAll() itself
     const result = await this.getAll({
@@ -145,14 +158,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       .buildUserAccessibleOrgIdsQuery(accessControlFilter)
       .as('accessible_orgs');
 
-    // Build where conditions
-    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const whereClause = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+    const whereClause = this.buildDistrictWhereClause(includeEnded);
 
     // Build the base join condition
     const baseCondition = eq(orgs.id, accessibleOrgs.orgId);
@@ -223,14 +229,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   ): Promise<PaginatedResult<District | DistrictWithCounts>> {
     const { includeEnded = false, embedCounts = false } = options;
 
-    // Build where clause for district type and rostering status
-    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+    const where = this.buildDistrictWhereClause(includeEnded);
 
     const result = await this.getByIds(ids, {
       page: options.page,
