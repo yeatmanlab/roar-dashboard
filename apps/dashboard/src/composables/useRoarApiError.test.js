@@ -25,7 +25,7 @@ describe('useRoarApiError', () => {
 
   it('detects terminal auth error (token-expired)', () => {
     const errorRef = ref({ body: { error: { code: 'auth/token-expired', message: 'Token expired' } } });
-    const { isRosteringEnded, isTerminalAuth, errorCode, errorMessage } = useRoarApiError(errorRef);
+    const { isRosteringEnded, isTerminalAuth, errorCode } = useRoarApiError(errorRef);
 
     expect(isRosteringEnded.value).toBe(false);
     expect(isTerminalAuth.value).toBe(true);
