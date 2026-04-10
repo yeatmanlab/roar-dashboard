@@ -9,7 +9,7 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { ClassRepository } from '../../repositories/class.repository';
 import type { AuthContext } from '../../types/auth-context';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
+import type { EnrolledOrgUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 
 export function ClassService({
@@ -111,7 +111,7 @@ export function ClassService({
     authContext: AuthContext,
     classId: string,
     options: EnrolledUsersQuery,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
 
     try {

@@ -16,7 +16,7 @@ import { CoreDbClient } from '../db/clients';
 import type { Group } from '../db/schema';
 import { groups, userGroups, users } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+import type { ListEnrolledUsersOptions, EnrolledOrgUserEntity } from '../types/user';
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, groups);
@@ -81,7 +81,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
   async getUsersByGroupId(
     groupId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
@@ -96,6 +96,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .select({ count: count() })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
+      .innerJoin(groups, eq(groups.id, userGroups.groupId))
       .where(whereCondition);
 
     const totalItems = countResult[0]?.count ?? 0;
@@ -112,13 +113,14 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .select({ user: users, enrollmentStart: userGroups.enrollmentStart, role: userGroups.role })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
+      .innerJoin(groups, eq(groups.id, userGroups.groupId))
       .where(whereCondition)
       .orderBy(primaryOrder, asc(users.id))
       .limit(perPage)
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
       totalItems,
     };
   }
@@ -139,7 +141,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     accessControlFilter: AccessControlFilter,
     groupId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
     const { userId, allowedRoles } = accessControlFilter;
@@ -162,6 +164,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .select({ count: count() })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
+      .innerJoin(groups, eq(groups.id, userGroups.groupId))
       .innerJoin(accessibleGroups, eq(accessibleGroups.groupId, userGroups.groupId))
       .where(whereCondition);
 
@@ -179,6 +182,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .select({ user: users, enrollmentStart: userGroups.enrollmentStart, role: userGroups.role })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
+      .innerJoin(groups, eq(groups.id, userGroups.groupId))
       .innerJoin(accessibleGroups, eq(accessibleGroups.groupId, userGroups.groupId))
       .where(whereCondition)
       .orderBy(primaryOrder, asc(users.id))
@@ -186,7 +190,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
       totalItems,
     };
   }

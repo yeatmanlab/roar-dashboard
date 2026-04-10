@@ -1,7 +1,7 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import { InvitationCodeSchema } from './schema';
-import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
+import { EnrolledUsersQuerySchema, EnrolledOrgUsersResponseSchema } from '../common/user';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 
 const c = initContract();
@@ -38,7 +38,7 @@ export const GroupsContract = c.router(
       pathParams: z.object({ groupId: z.string().uuid() }),
       query: EnrolledUsersQuerySchema,
       responses: {
-        200: SuccessEnvelopeSchema(EnrolledUsersResponseSchema),
+        200: SuccessEnvelopeSchema(EnrolledOrgUsersResponseSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
