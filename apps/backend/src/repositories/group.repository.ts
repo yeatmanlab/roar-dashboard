@@ -1,7 +1,6 @@
 import { eq, and, isNull, asc, count, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { SortOrder } from '@roar-dashboard/api-contract';
-import type { UserRole, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive } from './utils/enrollment.utils';
@@ -16,7 +15,8 @@ import { CoreDbClient } from '../db/clients';
 import type { Group } from '../db/schema';
 import { groups, userGroups, users } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+import type { UserRole } from '../enums/user-role.enum';
+import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, groups);
