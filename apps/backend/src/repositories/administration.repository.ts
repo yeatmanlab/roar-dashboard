@@ -297,7 +297,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const offset = (page - 1) * perPage;
 
     const conditions: SQL[] = [eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, orgType)];
-    if (filterIds && filterIds.length > 0) {
+    if (filterIds?.length) {
       conditions.push(inArray(orgs.id, filterIds));
     }
     const baseCondition = and(...conditions);
