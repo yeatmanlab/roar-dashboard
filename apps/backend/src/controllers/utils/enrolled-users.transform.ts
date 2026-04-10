@@ -67,7 +67,7 @@ function toContractEnrolledOrgUser(user: EnrolledOrgUserEntity): EnrolledOrgUser
  * @param perPage - The number of items per page.
  * @returns The paginated response.
  */
-export function handleSubResourceResponse<T extends EnrolledUserEntity | EnrolledOrgUserEntity>(
+export function handleUserSubResourceResponse<T extends EnrolledUserEntity | EnrolledOrgUserEntity>(
   result: { items: T[]; totalItems: number },
   page: number,
   perPage: number,

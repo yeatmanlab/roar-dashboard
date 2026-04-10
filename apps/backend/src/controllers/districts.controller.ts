@@ -10,7 +10,7 @@ import { DistrictEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
-import { handleSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
 const districtService = DistrictService();
 
 /**
@@ -175,7 +175,7 @@ export const DistrictsController = {
       const { page, perPage } = query;
 
       const result = await districtService.listUsers(authContext, districtId, query);
-      return handleSubResourceResponse(result, page, perPage);
+      return handleUserSubResourceResponse(result, page, perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }
