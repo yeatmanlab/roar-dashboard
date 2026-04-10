@@ -64,78 +64,6 @@ beforeAll(async () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PATCH /v1/tasks/:taskId
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe('PATCH /v1/tasks/:taskId', () => {
-  const path = (taskId: string) => `/v1/tasks/${taskId}`;
-
-  describe('authorization', () => {
-    it('superAdmin tier can update a task', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ name: 'Updated Task Name' });
-
-      expect(res.status).toBe(StatusCodes.OK);
-      expect(res.body.data.id).toBe(baseFixture.task.id);
-    });
-
-    it('non-super-admin tiers are forbidden', async () => {
-      authenticateAs(tiers.educator);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ name: 'Updated Task Name' });
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-  });
-
-  describe('lookup by slug', () => {
-    it('updates a task when looked up by slug', async () => {
-      const uniqueSlug = `patch-task-${getUniqueSlugSuffix()}`;
-      const testTask = await TaskFactory.create({ slug: uniqueSlug });
-
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(uniqueSlug))
-        .set('Authorization', 'Bearer token')
-        .send({ description: 'Updated description' });
-
-      expect(res.status).toBe(StatusCodes.OK);
-      expect(res.body.data.id).toBe(testTask.id);
-    });
-  });
-
-  describe('validation', () => {
-    it('returns 422 when immutable fields are present', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ slug: 'new-slug' });
-
-      expect(res.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
-    });
-
-    it('returns 400 when image URL is invalid', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(path(baseFixture.task.id))
-        .set('Authorization', 'Bearer token')
-        .send({ image: 'not-a-url' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
-      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_INVALID);
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -765,6 +693,76 @@ describe('POST /v1/tasks', () => {
         .send(buildTaskBody({ slug: 'task-123-456' }));
 
       expect(res.status).toBe(StatusCodes.CREATED);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PATCH /v1/tasks/:taskId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('PATCH /v1/tasks/:taskId', () => {
+  const path = (taskId: string) => `/v1/tasks/${taskId}`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can update a task', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(path(baseFixture.task.id))
+        .set('Authorization', 'Bearer token')
+        .send({ name: 'Updated Task Name' });
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(baseFixture.task.id);
+    });
+
+    it('non-super-admin tiers are forbidden', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .patch(path(baseFixture.task.id))
+        .set('Authorization', 'Bearer token')
+        .send({ name: 'Updated Task Name' });
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('lookup by slug', () => {
+    it('updates a task when looked up by slug', async () => {
+      const uniqueSlug = `patch-task-${getUniqueSlugSuffix()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(path(uniqueSlug))
+        .set('Authorization', 'Bearer token')
+        .send({ description: 'Updated description' });
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(testTask.id);
+    });
+  });
+
+  describe('validation', () => {
+    it('returns 400 when immutable fields are present', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(path(baseFixture.task.id))
+        .set('Authorization', 'Bearer token')
+        .send({ slug: 'new-slug' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when image URL is invalid', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .patch(path(baseFixture.task.id))
+        .set('Authorization', 'Bearer token')
+        .send({ image: 'not-a-url' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
   });
 });

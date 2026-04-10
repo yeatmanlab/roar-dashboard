@@ -459,14 +459,8 @@ export const UpdateTaskRequestBodySchema = z
     image: z.string().url('Image must be a valid URL').nullish(),
     tutorialVideo: z.string().url('Tutorial video must be a valid URL').nullish(),
     taskConfig: TaskConfigObjectSchema.optional(),
-
-    // Immutable fields are permitted at the contract level so the backend can
-    // return a 422 when they are present.
-    id: z.unknown().optional(),
-    slug: z.unknown().optional(),
-    createdAt: z.unknown().optional(),
-    updatedAt: z.unknown().optional(),
   })
+  .strict()
   .superRefine((payload, ctx) => {
     const updateRequestFields = Object.keys(payload);
     if (updateRequestFields.length === 0) {
