@@ -142,6 +142,16 @@ describe('getSupportLevel', () => {
     });
   });
 
+  describe('fallthrough when no versioned entry matches', () => {
+    it('returns null when raw score thresholds have no entry for the scoring version', () => {
+      // swr-es rawScoreThresholds only has minVersion: 1 — no fallback for v0.
+      // Grade >= 6 skips percentile, so the raw score path is used but finds no threshold.
+      expect(
+        getSupportLevel({ grade: '8', percentile: 50, rawScore: 500, taskSlug: 'swr-es', scoringVersion: 0 }),
+      ).toBeNull();
+    });
+  });
+
   describe('percentile-based classification (grades < 6, legacy norms)', () => {
     const base = { taskSlug: 'swr', scoringVersion: null as number | null };
 
