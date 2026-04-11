@@ -179,7 +179,17 @@ export function ReportService({
 
     // Verify user has can_read_progress on the scope entity via FGA
     const fgaType = SCOPE_TO_FGA_TYPE[scopeType];
-    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_PROGRESS, `${fgaType}:${scopeId}`);
+    try {
+      await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_PROGRESS, `${fgaType}:${scopeId}`);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        logger.warn(
+          { userId, administrationId, scopeType, scopeId },
+          'User lacks can_read_progress at the requested scope level',
+        );
+      }
+      throw error;
+    }
   }
 
   /**
@@ -227,7 +237,7 @@ export function ReportService({
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
 
-      // 5. Resolve sort column, progress sort, user filters, and progress filters.
+      // 4. Resolve sort column, progress sort, user filters, and progress filters.
       const { sortColumn, progressStatusSort } = resolveProgressSort(sortBy, taskMetas);
       const { userFilters, progressStatusFilters } = resolveProgressFilters(filter, taskMetas);
 
@@ -236,7 +246,7 @@ export function ReportService({
           ? buildFilterConditions(userFilters, PROGRESS_FILTER_FIELDS, { gradeAwareFields: GRADE_AWARE_FIELDS })
           : undefined;
 
-      // 6. Get paginated students with run data.
+      // 5. Get paginated students with run data.
       // Progress status sort/filter is handled via LEFT JOIN + CASE in the repository.
       const result = await reportRepository.getProgressStudents(
         administrationId,
@@ -248,7 +258,7 @@ export function ReportService({
         progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
       );
 
-      // 7. Transform to response shape
+      // 6. Transform to response shape
       const tasks: ServiceTaskMetadata[] = taskMetas.map((t) => ({
         taskId: t.taskId,
         taskSlug: t.taskSlug,
@@ -338,7 +348,7 @@ export function ReportService({
         taskMetas,
       );
 
-      // 5. Build per-task counters from unique taskIds (preserving order from metadata)
+      // 4. Build per-task counters from unique taskIds (preserving order from metadata)
       const taskIdOrder: string[] = [];
       const taskMetaByTaskId = new Map<string, ServiceTaskMetadata>();
       for (const t of taskMetas) {
@@ -359,7 +369,7 @@ export function ReportService({
         taskStatusCounters.set(taskId, { assigned: 0, started: 0, completed: 0, optional: 0 });
       }
 
-      // 6. Populate counters from SQL aggregation results
+      // 5. Populate counters from SQL aggregation results
       for (const { taskId, status, count } of taskStatusCounts) {
         const counters = taskStatusCounters.get(taskId);
         if (counters) {
@@ -367,7 +377,7 @@ export function ReportService({
         }
       }
 
-      // 7. Assemble response
+      // 6. Assemble response
       let totalAssigned = 0;
       let totalStarted = 0;
       let totalCompleted = 0;
