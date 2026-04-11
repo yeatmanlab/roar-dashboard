@@ -18,6 +18,9 @@ describe('Invoker', () => {
       auth: {
         getToken: vi.fn().mockResolvedValue('token'),
       },
+      participant: {
+        participantId: 'participant-123',
+      },
     };
     invoker = new Invoker(context, { retries: 2, retryDelayMs: 10 });
     mockCommand = {

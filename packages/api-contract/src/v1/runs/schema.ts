@@ -1,13 +1,6 @@
 import { z } from 'zod';
 import { JsonValue, parseJsonB } from '../common/parse-jsonb';
 
-export const EngagementFlagsSchema = z.enum([
-  'incomplete',
-  'response_time_too_fast',
-  'accuracy_too_low',
-  'not_enough_responses',
-]);
-
 export const RunEventTypeSchema = z.enum(['complete', 'abort', 'trial', 'engagement']);
 
 export const AssessmentStageSchema = z.enum(['practice', 'test']);
@@ -121,7 +114,14 @@ export const RunTrialEventSchema = z.object({
  */
 export const RunEngagementEventSchema = z.object({
   type: z.literal(RunEventTypeSchema.enum.engagement),
-  engagementFlags: z.record(EngagementFlagsSchema),
+  engagementFlags: z
+    .object({
+      incomplete: z.boolean(),
+      responseTimeTooFast: z.boolean(),
+      accuracyTooLow: z.boolean(),
+      notEnoughResponses: z.boolean(),
+    })
+    .partial(),
   reliableRun: z.boolean(),
 });
 

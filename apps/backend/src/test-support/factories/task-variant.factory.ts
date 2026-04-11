@@ -3,6 +3,8 @@ import { faker } from '@faker-js/faker';
 import type { TaskVariant, NewTaskVariant } from '../../db/schema';
 import { CoreDbClient } from '../../db/clients';
 import { taskVariants } from '../../db/schema/core';
+import type { TaskVariantWithTaskDetails } from '../../repositories/task-variant.repository';
+import { TaskFactory } from './task.factory';
 
 /**
  * Factory for creating TaskVariant test objects.
@@ -42,3 +44,25 @@ export const TaskVariantFactory = Factory.define<TaskVariant>(({ onCreate }) => 
     updatedAt: new Date(),
   };
 });
+
+/**
+ * Builds an in-memory TaskVariantWithTaskDetails by combining TaskVariantFactory
+ * and TaskFactory builds. Use this in unit tests that need the joined shape
+ * returned by `TaskVariantRepository.listAllPublished`.
+ *
+ * @param overrides - Optional field overrides applied after the defaults
+ * @returns A TaskVariantWithTaskDetails object suitable for unit test assertions
+ */
+export function buildTaskVariantWithDetails(
+  overrides: Partial<TaskVariantWithTaskDetails> = {},
+): TaskVariantWithTaskDetails {
+  const task = TaskFactory.build();
+  const variant = TaskVariantFactory.build({ taskId: task.id });
+  return {
+    ...variant,
+    taskName: task.name,
+    taskSlug: task.slug,
+    taskImage: task.image,
+    ...overrides,
+  };
+}

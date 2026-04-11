@@ -1,8 +1,8 @@
 import type { SQL } from 'drizzle-orm';
 import { sql, and, or, eq, ne, gt, gte, lt, lte, inArray } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
-import type { Condition, FieldCondition, CompositeCondition } from '../services/task/task.types';
-import { Operator } from '../services/task/task.types';
+import type { Condition, FieldCondition, CompositeCondition } from '../types/condition';
+import { Operator } from '../types/condition';
 import { getGradesInRange } from './get-grade-as-number.util';
 
 /**

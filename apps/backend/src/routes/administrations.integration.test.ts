@@ -35,6 +35,12 @@ import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { AdministrationAgreementFactory } from '../test-support/factories/administration-agreement.factory';
 import { RunFactory } from '../test-support/factories/run.factory';
+import {
+  writeFgaAdministrationAssignment,
+  writeFgaOrgMembership,
+  writeFgaGroupMembership,
+} from '../test-support/fga/fga-test-tuples.helper';
+import { FgaType } from '../services/authorization/fga-constants';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -53,6 +59,10 @@ beforeAll(async () => {
   app = createTestApp(registerAdministrationsRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+
+  // Re-sync FGA tuples to pick up tier users created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -110,12 +120,12 @@ describe('GET /v1/administrations', () => {
       expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
     });
 
-    it('caregiver tier can list administrations scoped to their district', async () => {
+    it('caregiver tier sees an empty list (caregivers lack can_list on administration)', async () => {
       const res = await expectRoute('GET', '/v1/administrations').as(tiers.caregiver).toReturn(200);
 
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.administrationAssignedToDistrict.id);
-      expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
+      // Caregivers (guardian/parent/relative) are not in supervisory_tier_group or student,
+      // so FGA returns no accessible administrations
+      expect(res.body.data.items).toHaveLength(0);
     });
   });
 
@@ -176,10 +186,10 @@ describe('GET /v1/administrations/:id', () => {
       expect(res.body.data.id).toBe(adminId());
     });
 
-    it('caregiver tier can get an administration', async () => {
-      const res = await expectRoute('GET', `/v1/administrations/${adminId()}`).as(tiers.caregiver).toReturn(200);
+    it('caregiver tier is forbidden from getting an administration', async () => {
+      const res = await expectRoute('GET', `/v1/administrations/${adminId()}`).as(tiers.caregiver).toReturn(403);
 
-      expect(res.body.data.id).toBe(adminId());
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
 
@@ -228,6 +238,10 @@ describe('GET /v1/administrations/:id/districts', () => {
       await Promise.all([
         AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.district.id }),
         AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.districtB.id }),
+      ]);
+      await Promise.all([
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, FgaType.DISTRICT),
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, FgaType.DISTRICT),
       ]);
 
       const res = await expectRoute('GET', `/v1/administrations/${multiDistrictAdmin.id}/districts`)
@@ -286,6 +300,10 @@ describe('GET /v1/administrations/:id/districts', () => {
       await Promise.all([
         AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.district.id }),
         AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.districtB.id }),
+      ]);
+      await Promise.all([
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, FgaType.DISTRICT),
+        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, FgaType.DISTRICT),
       ]);
 
       const res = await expectRoute('GET', `/v1/administrations/${multiDistrictAdmin.id}/districts`)
@@ -469,6 +487,7 @@ describe('GET /v1/administrations/:id/groups', () => {
         groupId: baseFixture.group.id,
         role: UserRole.ADMINISTRATOR,
       });
+      await writeFgaGroupMembership(groupAdmin.id, baseFixture.group.id, UserRole.ADMINISTRATOR);
 
       authenticateAs(groupAdmin);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
@@ -486,6 +505,7 @@ describe('GET /v1/administrations/:id/groups', () => {
         groupId: baseFixture.group.id,
         role: UserRole.TEACHER,
       });
+      await writeFgaGroupMembership(groupTeacher.id, baseFixture.group.id, UserRole.TEACHER);
 
       authenticateAs(groupTeacher);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
@@ -509,6 +529,7 @@ describe('GET /v1/administrations/:id/groups', () => {
         groupId: baseFixture.group.id,
         role: UserRole.GUARDIAN,
       });
+      await writeFgaGroupMembership(groupCaregiver.id, baseFixture.group.id, UserRole.GUARDIAN);
 
       authenticateAs(groupCaregiver);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
@@ -541,7 +562,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('superAdmin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -550,7 +571,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('siteAdmin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.siteAdmin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -559,7 +580,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('admin tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
       expect(variant.conditions).toHaveProperty('optional_if');
@@ -568,7 +589,7 @@ describe('GET /v1/administrations/:id/task-variants', () => {
     it('educator tier sees all variants with raw conditions', async () => {
       const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
 
-      expect(res.body.data.items).toHaveLength(5);
+      expect(res.body.data.items).toHaveLength(6);
       const variant = res.body.data.items[0];
       expect(variant.conditions).toHaveProperty('assigned_if');
     });
@@ -580,10 +601,13 @@ describe('GET /v1/administrations/:id/task-variants', () => {
       expect(res.status).toBe(StatusCodes.OK);
 
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      // Grade 5 student should see: variantForAllGrades, variantForGrade5, variantOptionalForEll
+      // Grade 5 student should see: variantForAllGrades, variantForGrade5,
+      // variantOptionalForEll, variantForTask2, variantForTask2Grade5OptionalEll
       expect(ids).toContain(baseFixture.variantForAllGrades.id);
       expect(ids).toContain(baseFixture.variantForGrade5.id);
       expect(ids).toContain(baseFixture.variantOptionalForEll.id);
+      expect(ids).toContain(baseFixture.variantForTask2.id);
+      expect(ids).toContain(baseFixture.variantForTask2Grade5OptionalEll.id);
       // Should NOT see grade 3 variant
       expect(ids).not.toContain(baseFixture.variantForGrade3.id);
 
@@ -697,6 +721,7 @@ describe('GET /v1/administrations/:id/agreements', () => {
         dob: tenYearsAgo.toISOString().split('T')[0]!,
       });
       await UserOrgFactory.create({ userId: minorStudent.id, orgId: baseFixture.district.id, role: UserRole.STUDENT });
+      await writeFgaOrgMembership(minorStudent.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
 
       authenticateAs(minorStudent);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
@@ -718,6 +743,7 @@ describe('GET /v1/administrations/:id/agreements', () => {
         dob: twentyYearsAgo.toISOString().split('T')[0]!,
       });
       await UserOrgFactory.create({ userId: adultStudent.id, orgId: baseFixture.district.id, role: UserRole.STUDENT });
+      await writeFgaOrgMembership(adultStudent.id, baseFixture.district.id, UserRole.STUDENT, FgaType.DISTRICT);
 
       authenticateAs(adultStudent);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
@@ -775,6 +801,7 @@ describe('DELETE /v1/administrations/:id', () => {
       createdBy: baseFixture.districtAdmin.id,
     });
     await AdministrationOrgFactory.create({ administrationId: admin.id, orgId });
+    await writeFgaAdministrationAssignment(admin.id, orgId, FgaType.DISTRICT);
     return admin;
   }
 
@@ -791,24 +818,20 @@ describe('DELETE /v1/administrations/:id', () => {
       expect(getRes.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
-    it('siteAdmin tier can delete an administration', async () => {
+    it('siteAdmin tier is forbidden from deleting (can_delete is no_one in FGA)', async () => {
       const adminToDelete = await createDeletableAdministration();
 
-      await expectRoute('DELETE', `/v1/administrations/${adminToDelete.id}`).as(tiers.siteAdmin).toReturn(204);
-
-      // Verify it's actually deleted
-      const getRes = await expectRoute('GET', `/v1/administrations/${adminToDelete.id}`).as(tiers.admin).toReturn(404);
-      expect(getRes.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      const res = await expectRoute('DELETE', `/v1/administrations/${adminToDelete.id}`)
+        .as(tiers.siteAdmin)
+        .toReturn(403);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('admin tier can delete an administration', async () => {
+    it('admin tier is forbidden from deleting (can_delete is no_one in FGA)', async () => {
       const adminToDelete = await createDeletableAdministration();
 
-      await expectRoute('DELETE', `/v1/administrations/${adminToDelete.id}`).as(tiers.admin).toReturn(204);
-
-      // Verify it's actually deleted
-      const getRes = await expectRoute('GET', `/v1/administrations/${adminToDelete.id}`).as(tiers.admin).toReturn(404);
-      expect(getRes.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      const res = await expectRoute('DELETE', `/v1/administrations/${adminToDelete.id}`).as(tiers.admin).toReturn(403);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('educator tier is forbidden from deleting (no DELETE permission)', async () => {
@@ -872,7 +895,10 @@ describe('DELETE /v1/administrations/:id', () => {
       const adminWithRuns = await createDeletableAdministration();
       await RunFactory.create({ administrationId: adminWithRuns.id });
 
-      const res = await expectRoute('DELETE', `/v1/administrations/${adminWithRuns.id}`).as(tiers.admin).toReturn(409);
+      // Only superAdmin can delete (can_delete is no_one in FGA)
+      const res = await expectRoute('DELETE', `/v1/administrations/${adminWithRuns.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(409);
 
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });

@@ -6,6 +6,7 @@ import { registerMeRoutes } from './me';
 import { AuthService } from '../services/auth/auth.service';
 import { DecodedUserFactory } from '../test-support/factories/auth.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
 
 // Mock AuthService
 vi.mock('../services/auth/auth.service');
@@ -13,12 +14,14 @@ vi.mock('../services/auth/auth.service');
 // Hoist mock functions
 const mockFindByAuthId = vi.hoisted(() => vi.fn());
 const mockGetById = vi.hoisted(() => vi.fn());
+const mockGetUnsignedTosAgreements = vi.hoisted(() => vi.fn());
 
 // Mock UserService
 vi.mock('../services/user', () => ({
   UserService: () => ({
     findByAuthId: mockFindByAuthId,
     getById: mockGetById,
+    getUnsignedTosAgreements: mockGetUnsignedTosAgreements,
   }),
 }));
 
@@ -68,6 +71,7 @@ describe('GET /me', () => {
     authServiceMock.mockResolvedValue(mockDecodedUser);
     mockFindByAuthId.mockResolvedValue(mockUser);
     mockGetById.mockResolvedValue(mockUser);
+    mockGetUnsignedTosAgreements.mockResolvedValue([]);
 
     const response = await request(app).get('/me').set('Authorization', 'Bearer valid-token').expect(StatusCodes.OK);
 
@@ -77,6 +81,7 @@ describe('GET /me', () => {
         userType: mockUser.userType,
         nameFirst: mockUser.nameFirst,
         nameLast: mockUser.nameLast,
+        unsignedAgreements: [],
       },
     });
   });
@@ -84,7 +89,7 @@ describe('GET /me', () => {
   it('should return 401 when no token is provided', async () => {
     const response = await request(app).get('/me').expect(StatusCodes.UNAUTHORIZED);
 
-    expect(response.body.error.message).toBe('Token missing.');
+    expect(response.body.error.message).toBe(ApiErrorMessage.UNAUTHORIZED);
   });
 
   it('should return 401 when user is not found in database', async () => {
@@ -98,7 +103,7 @@ describe('GET /me', () => {
       .set('Authorization', 'Bearer valid-token')
       .expect(StatusCodes.UNAUTHORIZED);
 
-    expect(response.body.error.message).toBe('User not found.');
+    expect(response.body.error.message).toBe(ApiErrorMessage.UNAUTHORIZED);
   });
 
   it('should handle null name fields', async () => {
@@ -112,6 +117,7 @@ describe('GET /me', () => {
     authServiceMock.mockResolvedValue(mockDecodedUser);
     mockFindByAuthId.mockResolvedValue(mockUser);
     mockGetById.mockResolvedValue(mockUser);
+    mockGetUnsignedTosAgreements.mockResolvedValue([]);
 
     const response = await request(app).get('/me').set('Authorization', 'Bearer valid-token').expect(StatusCodes.OK);
 

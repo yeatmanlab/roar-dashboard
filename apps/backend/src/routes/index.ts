@@ -8,6 +8,8 @@ import { registerDistrictsRoutes } from './districts';
 import { registerSchoolsRoutes } from './schools';
 import { registerGroupsRoutes } from './groups';
 import { registerTasksRoutes } from './task';
+import { registerTaskVariantsRoutes } from './task-variants';
+import { registerTaskBundlesRoutes } from './task-bundles';
 import { registerClassesRoutes } from './classes';
 import { registerUserRoutes } from './users';
 import { registerSystemRoutes } from './system';
@@ -40,6 +42,8 @@ export function registerAllRoutes(app: Express) {
   registerSchoolsRoutes(router);
   registerGroupsRoutes(router);
   registerTasksRoutes(router);
+  registerTaskVariantsRoutes(router);
+  registerTaskBundlesRoutes(router);
   registerClassesRoutes(router);
   registerUserRoutes(router);
   registerSystemRoutes(router);
