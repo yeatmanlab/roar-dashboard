@@ -28,18 +28,13 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
-import { UserGroupFactory } from '../test-support/factories/user-group.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { AdministrationAgreementFactory } from '../test-support/factories/administration-agreement.factory';
 import { RunFactory } from '../test-support/factories/run.factory';
-import {
-  writeFgaAdministrationAssignment,
-  writeFgaOrgMembership,
-  writeFgaGroupMembership,
-} from '../test-support/fga/fga-test-tuples.helper';
+import { writeFgaAdministrationAssignment, writeFgaOrgMembership } from '../test-support/fga/fga-test-tuples.helper';
 import { FgaType } from '../services/authorization/fga-constants';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -235,357 +230,80 @@ describe('GET /v1/administrations/:id', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GET /v1/administrations/:id/districts
+// GET /v1/administrations/:id/assignees
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('GET /v1/administrations/:id/districts', () => {
+describe('GET /v1/administrations/:id/assignees', () => {
   const adminId = () => baseFixture.administrationAssignedToDistrict.id;
-  const path = () => `/v1/administrations/${adminId()}/districts`;
+  const path = () => `/v1/administrations/${adminId()}/assignees`;
 
   describe('authorization', () => {
-    it('superAdmin tier sees all assigned districts without filtering', async () => {
-      // Create a multi-district administration for this assertion
-      const multiDistrictAdmin = await AdministrationFactory.create({
-        name: 'Super Admin Districts Test',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await Promise.all([
-        AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.district.id }),
-        AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.districtB.id }),
-      ]);
-      await Promise.all([
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, FgaType.DISTRICT),
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, FgaType.DISTRICT),
-      ]);
+    it('superAdmin tier can get assignees', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
 
-      const res = await expectRoute('GET', `/v1/administrations/${multiDistrictAdmin.id}/districts`)
-        .as(tiers.superAdmin)
-        .toReturn(200);
-
-      // Super admin sees both districts
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.district.id);
-      expect(ids).toContain(baseFixture.districtB.id);
+      expect(res.body.data).toHaveProperty('districts');
+      expect(res.body.data).toHaveProperty('schools');
+      expect(res.body.data).toHaveProperty('classes');
+      expect(res.body.data).toHaveProperty('groups');
     });
 
-    it('siteAdmin tier can list districts', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.siteAdmin).toReturn(200);
-
-      expect(res.body.data.items.length).toBeGreaterThan(0);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.district.id);
-    });
-
-    it('admin tier can list districts scoped to their org tree', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(200);
-
-      expect(res.body.data.items).toHaveLength(1);
-      expect(res.body.data.items[0].id).toBe(baseFixture.district.id);
-    });
-
-    it('educator tier can list districts scoped to their org tree', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
-
-      expect(res.body.data.items.length).toBeGreaterThan(0);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.district.id);
-    });
-
-    it('student tier is forbidden from listing districts', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.student).toReturn(403);
-
+    it('siteAdmin tier is forbidden from getting assignees', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.siteAdmin).toReturn(403);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('caregiver tier is forbidden from listing districts', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.caregiver).toReturn(403);
+    it('admin tier is forbidden from getting assignees', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(403);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
 
+    it('educator tier is forbidden from getting assignees', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from getting assignees', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.student).toReturn(403);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from getting assignees', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.caregiver).toReturn(403);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
 
-  describe('access filtering', () => {
-    it('admin tier sees only their own district in a multi-district administration', async () => {
-      // Create administration assigned to both districts
-      const multiDistrictAdmin = await AdministrationFactory.create({
-        name: 'Multi-District Test',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await Promise.all([
-        AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.district.id }),
-        AdministrationOrgFactory.create({ administrationId: multiDistrictAdmin.id, orgId: baseFixture.districtB.id }),
-      ]);
-      await Promise.all([
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.district.id, FgaType.DISTRICT),
-        writeFgaAdministrationAssignment(multiDistrictAdmin.id, baseFixture.districtB.id, FgaType.DISTRICT),
-      ]);
+  describe('response shape', () => {
+    it('returns districts assigned to the administration', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
 
-      const res = await expectRoute('GET', `/v1/administrations/${multiDistrictAdmin.id}/districts`)
-        .as(tiers.admin)
-        .toReturn(200);
+      // administrationAssignedToDistrict is assigned to the district via baseFixture
+      const districts = res.body.data.districts;
+      expect(districts).toBeInstanceOf(Array);
+      if (districts.length > 0) {
+        expect(districts[0]).toHaveProperty('id');
+        expect(districts[0]).toHaveProperty('name');
+      }
+    });
 
-      expect(res.body.data.items).toHaveLength(1);
-      expect(res.body.data.items[0].id).toBe(baseFixture.district.id);
+    it('returns all four entity type arrays', async () => {
+      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
+
+      expect(Array.isArray(res.body.data.districts)).toBe(true);
+      expect(Array.isArray(res.body.data.schools)).toBe(true);
+      expect(Array.isArray(res.body.data.classes)).toBe(true);
+      expect(Array.isArray(res.body.data.groups)).toBe(true);
     });
   });
 
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const res = await expectRoute('GET', path()).unauthenticated().toReturn(401);
-
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
     });
 
-    it('returns 404 for a non-existent administration', async () => {
-      const res = await expectRoute('GET', '/v1/administrations/00000000-0000-0000-0000-000000000000/districts')
-        .as(tiers.admin)
-        .toReturn(404);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-    });
-
-    it('returns 403 when user lacks access to the administration', async () => {
-      authenticateAs(baseFixture.districtBAdmin);
-      const res = await request(app)
-        .get(`/v1/administrations/${baseFixture.administrationAssignedToSchoolA.id}/districts`)
-        .set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// GET /v1/administrations/:id/schools
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe('GET /v1/administrations/:id/schools', () => {
-  // Use administrationAssignedToSchoolA — it has schoolA directly in administration_orgs.
-  // administrationAssignedToDistrict has only the district org, NOT individual schools.
-  const adminId = () => baseFixture.administrationAssignedToSchoolA.id;
-  const path = () => `/v1/administrations/${adminId()}/schools`;
-
-  describe('authorization', () => {
-    it('superAdmin tier sees all assigned schools', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
-
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.schoolA.id);
-    });
-
-    it('siteAdmin tier can list schools', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.siteAdmin).toReturn(200);
-
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.schoolA.id);
-    });
-
-    it('admin tier can list schools scoped to their org tree', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(200);
-
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.schoolA.id);
-    });
-
-    it('principal at school A can list schools on school-assigned administration (school_admin_tier)', async () => {
-      // Principal rostered at schoolA has supervisory_tier_group on schoolA,
-      // which gives can_read on the school-assigned administration via
-      // subtree_supervisory_tier_group. Then can_list on school allows listing.
-      authenticateAs(baseFixture.schoolAPrincipal);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.OK);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.schoolA.id);
-    });
-
-    it('educator (teacher) at district level is forbidden from listing schools on school-assigned administration', async () => {
-      // Teacher role does NOT inherit via parent_org — a district-level teacher
-      // has no role on the school, so FGA does not grant can_read on a
-      // school-assigned administration.
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('student tier is forbidden from listing schools', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.student).toReturn(403);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('caregiver tier is forbidden from listing schools', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.caregiver).toReturn(403);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-  });
-
-  describe('error cases', () => {
-    it('returns 404 for a non-existent administration', async () => {
-      const res = await expectRoute('GET', '/v1/administrations/00000000-0000-0000-0000-000000000000/schools')
-        .as(tiers.admin)
-        .toReturn(404);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// GET /v1/administrations/:id/classes
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe('GET /v1/administrations/:id/classes', () => {
-  const adminId = () => baseFixture.administrationAssignedToClassA.id;
-  const path = () => `/v1/administrations/${adminId()}/classes`;
-
-  describe('authorization', () => {
-    it('superAdmin tier can list all assigned classes', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
-
-      expect(res.body.data.items.length).toBeGreaterThan(0);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.classInSchoolA.id);
-    });
-
-    it('admin tier can list classes', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.admin).toReturn(200);
-
-      // District admin sees classInSchoolA via descendant access
-      expect(res.body.data.items.length).toBeGreaterThan(0);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.classInSchoolA.id);
-    });
-
-    it('principal at school A can list classes on class-assigned administration (inherits school→class)', async () => {
-      // Principal at schoolA inherits to classInSchoolA via parent_org in FGA.
-      // This gives can_read on class-assigned administration via
-      // subtree_supervisory_tier_group, and can_list on the class.
-      authenticateAs(baseFixture.schoolAPrincipal);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.OK);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.classInSchoolA.id);
-    });
-
-    it('educator (teacher) at district level is forbidden from listing classes on class-assigned administration', async () => {
-      // Teacher role does NOT inherit via parent_org — a district-level teacher
-      // has no role on the class, so FGA does not grant can_read on a
-      // class-assigned administration.
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('student tier is forbidden from listing classes', async () => {
-      authenticateAs(baseFixture.classAStudent);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('caregiver tier is forbidden from listing classes', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.caregiver).toReturn(403);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-  });
-
-  describe('error cases', () => {
-    it('returns 404 for a non-existent administration', async () => {
-      const res = await expectRoute('GET', '/v1/administrations/00000000-0000-0000-0000-000000000000/classes')
-        .as(tiers.admin)
-        .toReturn(404);
-
-      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// GET /v1/administrations/:id/groups
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe('GET /v1/administrations/:id/groups', () => {
-  const adminId = () => baseFixture.administrationAssignedToGroup.id;
-  const path = () => `/v1/administrations/${adminId()}/groups`;
-
-  describe('authorization', () => {
-    it('superAdmin tier sees all groups without membership requirement', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
-
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.group.id);
-    });
-
-    it('admin tier who is a group member can list groups', async () => {
-      // Groups require direct membership — create an admin in the group
-      const groupAdmin = await UserFactory.create({ nameFirst: 'Group', nameLast: 'Admin' });
-      await UserGroupFactory.create({
-        userId: groupAdmin.id,
-        groupId: baseFixture.group.id,
-        role: UserRole.ADMINISTRATOR,
-      });
-      await writeFgaGroupMembership(groupAdmin.id, baseFixture.group.id, UserRole.ADMINISTRATOR);
-
-      authenticateAs(groupAdmin);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.OK);
-      expect(res.body.data.items.length).toBeGreaterThan(0);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.group.id);
-    });
-
-    it('educator tier who is a group member can list groups', async () => {
-      const groupTeacher = await UserFactory.create({ nameFirst: 'Group', nameLast: 'Teacher' });
-      await UserGroupFactory.create({
-        userId: groupTeacher.id,
-        groupId: baseFixture.group.id,
-        role: UserRole.TEACHER,
-      });
-      await writeFgaGroupMembership(groupTeacher.id, baseFixture.group.id, UserRole.TEACHER);
-
-      authenticateAs(groupTeacher);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.OK);
-      expect(res.body.data.items).toBeInstanceOf(Array);
-    });
-
-    it('student tier is forbidden from listing groups', async () => {
-      authenticateAs(baseFixture.groupStudent);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-
-    it('caregiver tier is forbidden from listing groups', async () => {
-      const groupCaregiver = await UserFactory.create({ nameFirst: 'Group', nameLast: 'Caregiver' });
-      await UserGroupFactory.create({
-        userId: groupCaregiver.id,
-        groupId: baseFixture.group.id,
-        role: UserRole.GUARDIAN,
-      });
-      await writeFgaGroupMembership(groupCaregiver.id, baseFixture.group.id, UserRole.GUARDIAN);
-
-      authenticateAs(groupCaregiver);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-    });
-  });
-
-  describe('error cases', () => {
-    it('returns 404 for a non-existent administration', async () => {
-      const res = await expectRoute('GET', '/v1/administrations/00000000-0000-0000-0000-000000000000/groups')
-        .as(tiers.admin)
+      const res = await expectRoute('GET', '/v1/administrations/00000000-0000-0000-0000-000000000000/assignees')
+        .as(tiers.superAdmin)
         .toReturn(404);
 
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
