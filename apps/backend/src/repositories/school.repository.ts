@@ -103,7 +103,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     // Fetch and attach counts if requested
     if (embedCounts && result.items.length > 0) {
       const schoolIds = result.items.map((s) => s.id);
-      const countsMap = await this.fetchSchoolCounts(schoolIds);
+      const countsMap = await this.fetchSchoolCounts(schoolIds, includeEnded);
 
       const schoolsWithCounts = result.items.map((school) => ({
         ...school,
@@ -191,7 +191,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     // Fetch and attach counts if requested
     if (embedCounts && schools.length > 0) {
       const schoolIds = schools.map((s) => s.id);
-      const countsMap = await this.fetchSchoolCounts(schoolIds);
+      const countsMap = await this.fetchSchoolCounts(schoolIds, includeEnded);
 
       schools = schools.map((school) => ({
         ...school,
@@ -210,15 +210,16 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
    *
    * Computes:
    * - users: COUNT of active users in school (from userOrgs where enrollmentEnd IS NULL)
-   * - classes: COUNT of active classes in school (from classes where rosteringEnded IS NULL)
+   * - classes: COUNT of classes in school (optionally filtered by rosteringEnded)
    *
    * Uses pre-aggregated subqueries with left joins for better performance at scale
    * instead of correlated subqueries (O(n) vs O(n*m)).
    *
    * @param schoolIds - Array of school IDs to fetch counts for
+   * @param includeEnded - Whether to include ended classes in counts
    * @returns Map of school ID to counts
    */
-  private async fetchSchoolCounts(schoolIds: string[]): Promise<Map<string, SchoolCounts>> {
+  private async fetchSchoolCounts(schoolIds: string[], includeEnded: boolean): Promise<Map<string, SchoolCounts>> {
     // Pre-aggregate user counts per school
     const userCounts = this.db
       .select({
@@ -230,14 +231,18 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       .groupBy(userOrgs.orgId)
       .as('user_counts');
 
-    // Pre-aggregate class counts per school (only active classes)
+    // Pre-aggregate class counts per school
+    const classCountsWhere = includeEnded
+      ? inArray(classes.schoolId, schoolIds)
+      : and(inArray(classes.schoolId, schoolIds), isNull(classes.rosteringEnded));
+
     const classCounts = this.db
       .select({
         schoolId: classes.schoolId,
         classes: countDistinct(classes.id).as('classes'),
       })
       .from(classes)
-      .where(and(inArray(classes.schoolId, schoolIds), isNull(classes.rosteringEnded)))
+      .where(classCountsWhere)
       .groupBy(classes.schoolId)
       .as('class_counts');
 
@@ -298,7 +303,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     // Fetch and attach counts if requested
     if (embedCounts && result.items.length > 0) {
       const schoolIds = result.items.map((s) => s.id);
-      const countsMap = await this.fetchSchoolCounts(schoolIds);
+      const countsMap = await this.fetchSchoolCounts(schoolIds, includeEnded);
 
       const schoolsWithCounts = result.items.map((school) => ({
         ...school,

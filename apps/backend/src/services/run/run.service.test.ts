@@ -11,6 +11,7 @@ import type { MockAdministrationService, MockAuthorizationService } from '../../
 import { createMockAdministrationService, createMockAuthorizationService } from '../../test-support/services';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 describe('RunService', () => {
   let authContext: AuthContext;
@@ -63,8 +64,8 @@ describe('RunService', () => {
       );
       expect(authorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
-        'can_create_run',
-        'administration:660e8400-e29b-41d4-a716-446655440001',
+        FgaRelation.CAN_CREATE_RUN,
+        `${FgaType.ADMINISTRATION}:${validRequestBody.administrationId}`,
       );
       expect(taskVariantRepository.getTaskIdByVariantId).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000');
       expect(runRepository.create).toHaveBeenCalledWith({
