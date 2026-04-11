@@ -8,10 +8,6 @@ const GradeConditionEntrySchema = z.union([
     value: z.string(),
   }),
   z.object({
-    gradeGte: z.number().int(),
-    value: z.string(),
-  }),
-  z.object({
     default: z.literal(true),
     value: z.string(),
   }),
@@ -34,6 +30,24 @@ const FieldNameValueSchema = z.union([z.string(), z.null(), GradeConditionalFiel
 // --- Versioned arrays (shared pattern) ---
 
 /**
+ * Validate that a versioned array is in strictly descending minVersion order.
+ * resolveVersionedEntry relies on this ordering — ascending entries would cause
+ * the lowest-version entry to always match, silently ignoring newer entries.
+ */
+function descendingMinVersion<T extends { minVersion: number }>(entries: T[], ctx: z.RefinementCtx) {
+  for (let i = 1; i < entries.length; i++) {
+    const current = entries[i];
+    const previous = entries[i - 1];
+    if (current && previous && current.minVersion >= previous.minVersion) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Entries must be in strictly descending minVersion order (found ${previous.minVersion} then ${current.minVersion})`,
+      });
+    }
+  }
+}
+
+/**
  * A versioned entry for score field names.
  * Entries are ordered by descending minVersion; first match where scoringVersion >= minVersion wins.
  */
@@ -41,6 +55,8 @@ const VersionedFieldNameSchema = z.object({
   minVersion: z.number().int().min(0),
   fieldName: FieldNameValueSchema,
 });
+
+const VersionedFieldNameArraySchema = z.array(VersionedFieldNameSchema).min(1).superRefine(descendingMinVersion);
 
 /**
  * A versioned entry for percentile cutoffs.
@@ -79,14 +95,17 @@ const ScoreFieldTypeSchema = z.enum(SCORE_FIELD_TYPES);
 /**
  * Score fields: each of the 5 field types maps to a versioned array of field names.
  */
-const ScoreFieldsSchema = z.record(ScoreFieldTypeSchema, z.array(VersionedFieldNameSchema).min(1));
+const ScoreFieldsSchema = z.record(ScoreFieldTypeSchema, VersionedFieldNameArraySchema);
 
 // --- Classification strategies (discriminated union) ---
 
 const PercentileThenRawscoreClassificationSchema = z.object({
   type: z.literal('percentile-then-rawscore'),
-  percentileCutoffs: z.array(VersionedPercentileCutoffSchema).min(1),
-  rawScoreThresholds: z.array(VersionedRawScoreThresholdSchema).min(1),
+  /** Grade below which percentile cutoffs are used instead of raw score thresholds.
+   *  Defaults to 6 (grades K-5 use percentile). Set to null to use percentile for all grades. */
+  percentileMaxGrade: z.number().int().nullable().default(6),
+  percentileCutoffs: z.array(VersionedPercentileCutoffSchema).min(1).superRefine(descendingMinVersion),
+  rawScoreThresholds: z.array(VersionedRawScoreThresholdSchema).min(1).superRefine(descendingMinVersion),
 });
 
 const RawscoreOnlyClassificationSchema = z.object({

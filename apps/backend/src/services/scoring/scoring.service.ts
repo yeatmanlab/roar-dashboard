@@ -3,6 +3,33 @@ import type { ScoringConfig, FieldNameValue, SCORE_FIELD_TYPES } from './scoring
 import { getScoringConfig } from './scoring.config-registry';
 import type { SupportLevel, ScoringInput, RawScoreThreshold, ScoreFieldResolution } from './scoring.types';
 
+const ANGLE_BRACKET_PATTERN = /[<>]/g;
+const VALID_SUPPORT_LEVELS: ReadonlySet<string> = new Set(['achievedSkill', 'developingSkill', 'needsExtraSupport']);
+
+// --- Score value parsing ---
+
+/**
+ * Parse a raw score value from run_scores, handling angle bracket strings like ">99" or "<1".
+ *
+ * Percentile and standardScore fields in newer norming tables (swr v7+, sre v4+, and
+ * their Spanish variants) may be stored as strings with angle brackets. This utility
+ * strips those characters and returns a numeric value suitable for classification.
+ *
+ * @param value - Raw score value (may be a string with angle brackets, a number, null, or undefined)
+ * @returns Parsed numeric value, or null if the input is absent or unparseable
+ */
+export function parseScoreValue(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === 'number') {
+    return isNaN(value) ? null : value;
+  }
+  const stripped = value.replace(ANGLE_BRACKET_PATTERN, '');
+  const parsed = parseFloat(stripped);
+  return isNaN(parsed) ? null : parsed;
+}
+
 // --- Versioned array resolution ---
 
 /**
@@ -35,9 +62,6 @@ function resolveFieldValue(value: FieldNameValue, gradeLevel: number | null): st
     if ('gradeLt' in condition && gradeLevel !== null && gradeLevel < condition.gradeLt) {
       return condition.value;
     }
-    if ('gradeGte' in condition && gradeLevel !== null && gradeLevel >= condition.gradeGte) {
-      return condition.value;
-    }
   }
 
   // If gradeLevel is null and no default matched (shouldn't happen with valid config)
@@ -51,9 +75,11 @@ function resolveFieldValue(value: FieldNameValue, gradeLevel: number | null): st
  *
  * Algorithm:
  * 1. Look up the task's scoring config
- * 2. If classification type is not 'percentile-then-rawscore', return null
- * 3. For grades < 6 with a percentile: use percentile cutoffs
- * 4. For grades >= 6, or no percentile: use raw score thresholds
+ * 2. For assessment-computed tasks: validate and return the pre-computed support level
+ * 3. For percentile-then-rawscore tasks:
+ *    a. For grades below percentileMaxGrade (default 6) with a percentile: use percentile cutoffs
+ *    b. Otherwise: use raw score thresholds
+ * 4. For rawscore-only and none types: return null (no classification)
  *
  * @param input - Scoring input with grade, percentile, rawScore, taskSlug, scoringVersion
  * @returns Support level classification, or null if classification is not possible
@@ -61,18 +87,27 @@ function resolveFieldValue(value: FieldNameValue, gradeLevel: number | null): st
 export function getSupportLevel(input: ScoringInput): SupportLevel | null {
   const { grade, percentile, rawScore, taskSlug, scoringVersion } = input;
 
-  // No score data at all — cannot classify
-  if (rawScore === null && percentile === null) {
-    return null;
-  }
-
   const config = getScoringConfig(taskSlug);
   if (!config) {
     return null;
   }
 
-  // Only percentile-then-rawscore classification produces support levels
+  // Assessment-computed: validate the pre-computed support level from the assessment
+  if (config.classification.type === 'assessment-computed') {
+    const level = input.assessmentSupportLevel;
+    if (typeof level === 'string' && VALID_SUPPORT_LEVELS.has(level)) {
+      return level as SupportLevel;
+    }
+    return null;
+  }
+
+  // Only percentile-then-rawscore classification produces computed support levels
   if (config.classification.type !== 'percentile-then-rawscore') {
+    return null;
+  }
+
+  // No score data at all — cannot classify
+  if (rawScore === null && percentile === null) {
     return null;
   }
 
@@ -80,15 +115,19 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
   const version = scoringVersion ?? 0;
   const gradeLevel = getGradeAsNumber(grade);
 
-  // Try percentile-based classification for grades < 6
-  if (percentile !== null && gradeLevel !== null && gradeLevel < 6) {
+  // Try percentile-based classification (config-driven grade threshold).
+  // percentileMaxGrade defaults to 6; null means use percentile for all grades.
+  const maxGrade = classification.percentileMaxGrade;
+  const usePercentile = percentile !== null && (maxGrade === null || (gradeLevel !== null && gradeLevel < maxGrade));
+
+  if (usePercentile) {
     const cutoffEntry = resolveVersionedEntry(classification.percentileCutoffs, version);
     if (cutoffEntry) {
-      return classifyByThresholds(percentile, cutoffEntry.cutoffs.achieved, cutoffEntry.cutoffs.developing);
+      return classifyByThresholds(percentile!, cutoffEntry.cutoffs.achieved, cutoffEntry.cutoffs.developing);
     }
   }
 
-  // Fall back to raw score thresholds (grades >= 6 or no percentile)
+  // Fall back to raw score thresholds (grades >= maxGrade or no percentile)
   if (rawScore !== null) {
     const thresholdEntry = resolveVersionedEntry(classification.rawScoreThresholds, version);
     if (!thresholdEntry) {
@@ -157,27 +196,79 @@ export function resolveScoreFieldName(
 }
 
 /**
- * Resolve all possible score field names for a task across all versions.
- * Returns deduplicated arrays of field names for percentile and raw score fields.
- * Used for backward-compatible lookup when the scoring version is unknown.
+ * Resolve score field names for a task, optionally filtered by scoring version.
+ *
+ * When scoringVersion is provided (including null for legacy v0), returns only
+ * the field names applicable to that specific version — prevents callers from
+ * looking up field names that don't exist in the norming tables for that version.
+ *
+ * When omitted, returns all possible field names across all versions (backward compat).
  *
  * @param taskSlug - The task slug
  * @param gradeLevel - Numeric grade level, or null
+ * @param scoringVersion - When provided, resolve for this version only. Omit for all versions.
  * @returns Resolved field names for percentile and raw score
  */
-export function resolveScoreFieldNames(taskSlug: string, gradeLevel: number | null): ScoreFieldResolution {
+export function resolveScoreFieldNames(
+  taskSlug: string,
+  gradeLevel: number | null,
+  scoringVersion?: number | null,
+): ScoreFieldResolution {
   const config = getScoringConfig(taskSlug);
   if (!config) {
     return { percentileFieldNames: [], rawScoreFieldNames: [] };
   }
 
-  const percentileFieldNames = collectAllFieldNames(config, 'percentile', gradeLevel);
-  const rawScoreFieldNames = collectAllFieldNames(config, 'rawScore', gradeLevel);
+  // When a scoring version is provided, resolve for that specific version only.
+  if (scoringVersion !== undefined) {
+    const version = scoringVersion ?? 0;
+    return {
+      percentileFieldNames: collectVersionSpecificFieldNames(config, 'percentile', gradeLevel, version),
+      rawScoreFieldNames: collectVersionSpecificFieldNames(config, 'rawScore', gradeLevel, version),
+    };
+  }
 
-  return { percentileFieldNames, rawScoreFieldNames };
+  return {
+    percentileFieldNames: collectAllFieldNames(config, 'percentile', gradeLevel),
+    rawScoreFieldNames: collectAllFieldNames(config, 'rawScore', gradeLevel),
+  };
+}
+
+/**
+ * Get the field name that contains a pre-computed support level for assessment-computed tasks.
+ * Returns null for tasks that don't use assessment-computed classification.
+ *
+ * @param taskSlug - The task slug (e.g., 'roam-alpaca')
+ * @returns The run_scores field name containing the support level, or null
+ */
+export function getSupportLevelFieldName(taskSlug: string): string | null {
+  const config = getScoringConfig(taskSlug);
+  if (!config || config.classification.type !== 'assessment-computed') {
+    return null;
+  }
+  return config.classification.supportLevelField ?? null;
 }
 
 // --- Internal helpers ---
+
+/**
+ * Resolve the single field name for a specific version, returning it as a singleton array.
+ */
+function collectVersionSpecificFieldNames(
+  config: ScoringConfig,
+  fieldType: (typeof SCORE_FIELD_TYPES)[number],
+  gradeLevel: number | null,
+  scoringVersion: number,
+): string[] {
+  const fieldEntries = config.scoreFields[fieldType];
+  if (!fieldEntries) return [];
+
+  const entry = resolveVersionedEntry(fieldEntries, scoringVersion);
+  if (!entry) return [];
+
+  const resolved = resolveFieldValue(entry.fieldName, gradeLevel);
+  return resolved !== null ? [resolved] : [];
+}
 
 /**
  * Collect all unique, non-null field names across all version entries for a field type.

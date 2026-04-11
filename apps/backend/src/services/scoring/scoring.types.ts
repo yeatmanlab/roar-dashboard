@@ -6,8 +6,9 @@
  * - `needsExtraSupport` — score is at or below the developing threshold
  *
  * `null` is returned when classification is not possible (no score data,
- * unknown task, or thresholds unavailable). Tasks in RAW_SCORE_ONLY_TASKS
- * also return null since they display raw scores without support levels.
+ * unknown task, or thresholds unavailable). Tasks with `rawscore-only` or
+ * `none` classification types also return null since they display raw scores
+ * without support levels.
  */
 export type SupportLevel = 'achievedSkill' | 'developingSkill' | 'needsExtraSupport';
 
@@ -25,6 +26,8 @@ export interface ScoringInput {
   taskSlug: string;
   /** Scoring version from task_variant_parameters. null = legacy version. */
   scoringVersion: number | null;
+  /** Pre-computed support level from the assessment (for assessment-computed tasks like roam-alpaca) */
+  assessmentSupportLevel?: string | null;
 }
 
 /**

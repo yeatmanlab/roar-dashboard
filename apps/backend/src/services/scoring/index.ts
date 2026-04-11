@@ -1,8 +1,10 @@
 export {
+  parseScoreValue,
   getSupportLevel,
   getRawScoreThreshold,
   resolveScoreFieldNames,
   resolveScoreFieldName,
+  getSupportLevelFieldName,
 } from './scoring.service';
 export { getScoringConfig, getRegisteredSlugs } from './scoring.config-registry';
 export { ScoringConfigSchema, SCORE_FIELD_TYPES } from './scoring.config-schema';

@@ -1,10 +1,50 @@
 import { describe, it, expect } from 'vitest';
 import {
+  parseScoreValue,
   getSupportLevel,
   getRawScoreThreshold,
   resolveScoreFieldNames,
   resolveScoreFieldName,
+  getSupportLevelFieldName,
 } from './scoring.service';
+
+describe('parseScoreValue', () => {
+  it('returns null for null', () => {
+    expect(parseScoreValue(null)).toBeNull();
+  });
+
+  it('returns null for undefined', () => {
+    expect(parseScoreValue(undefined)).toBeNull();
+  });
+
+  it('returns the number for numeric input', () => {
+    expect(parseScoreValue(42)).toBe(42);
+    expect(parseScoreValue(0)).toBe(0);
+    expect(parseScoreValue(99.5)).toBe(99.5);
+  });
+
+  it('returns null for NaN numeric input', () => {
+    expect(parseScoreValue(NaN)).toBeNull();
+  });
+
+  it('strips ">" and parses the number', () => {
+    expect(parseScoreValue('>99')).toBe(99);
+  });
+
+  it('strips "<" and parses the number', () => {
+    expect(parseScoreValue('<1')).toBe(1);
+  });
+
+  it('parses plain numeric strings', () => {
+    expect(parseScoreValue('42')).toBe(42);
+    expect(parseScoreValue('99.5')).toBe(99.5);
+  });
+
+  it('returns null for non-numeric strings', () => {
+    expect(parseScoreValue('abc')).toBeNull();
+    expect(parseScoreValue('')).toBeNull();
+  });
+});
 
 describe('getSupportLevel', () => {
   describe('raw-score-only tasks', () => {
@@ -13,10 +53,83 @@ describe('getSupportLevel', () => {
         getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'phonics', scoringVersion: null }),
       ).toBeNull();
     });
+  });
 
-    it('returns null for roam-alpaca', () => {
+  describe('assessment-computed tasks', () => {
+    it('returns validated support level for roam-alpaca', () => {
       expect(
-        getSupportLevel({ grade: '3', percentile: 80, rawScore: 100, taskSlug: 'roam-alpaca', scoringVersion: null }),
+        getSupportLevel({
+          grade: '3',
+          percentile: null,
+          rawScore: null,
+          taskSlug: 'roam-alpaca',
+          scoringVersion: null,
+          assessmentSupportLevel: 'achievedSkill',
+        }),
+      ).toBe('achievedSkill');
+    });
+
+    it('returns developingSkill for roam-alpaca', () => {
+      expect(
+        getSupportLevel({
+          grade: '3',
+          percentile: null,
+          rawScore: null,
+          taskSlug: 'roam-alpaca',
+          scoringVersion: null,
+          assessmentSupportLevel: 'developingSkill',
+        }),
+      ).toBe('developingSkill');
+    });
+
+    it('returns needsExtraSupport for roam-alpaca', () => {
+      expect(
+        getSupportLevel({
+          grade: '3',
+          percentile: null,
+          rawScore: null,
+          taskSlug: 'roam-alpaca',
+          scoringVersion: null,
+          assessmentSupportLevel: 'needsExtraSupport',
+        }),
+      ).toBe('needsExtraSupport');
+    });
+
+    it('returns null for roam-alpaca with no assessmentSupportLevel', () => {
+      expect(
+        getSupportLevel({
+          grade: '3',
+          percentile: 80,
+          rawScore: 100,
+          taskSlug: 'roam-alpaca',
+          scoringVersion: null,
+        }),
+      ).toBeNull();
+    });
+
+    it('returns null for roam-alpaca with invalid assessmentSupportLevel', () => {
+      expect(
+        getSupportLevel({
+          grade: '3',
+          percentile: null,
+          rawScore: null,
+          taskSlug: 'roam-alpaca',
+          scoringVersion: null,
+          assessmentSupportLevel: 'invalidLevel',
+        }),
+      ).toBeNull();
+    });
+
+    it('returns null for roam-alpaca with null assessmentSupportLevel', () => {
+      expect(
+        getSupportLevel({
+          grade: '3',
+          percentile: null,
+          rawScore: null,
+          taskSlug: 'roam-alpaca',
+          scoringVersion: null,
+          assessmentSupportLevel: null,
+        }),
       ).toBeNull();
     });
   });
@@ -278,25 +391,61 @@ describe('getRawScoreThreshold', () => {
 });
 
 describe('resolveScoreFieldNames', () => {
-  it('resolves swr fields', () => {
-    const result = resolveScoreFieldNames('swr', 3);
-    expect(result.percentileFieldNames).toContain('percentile');
-    expect(result.percentileFieldNames).toContain('wjPercentile');
-    expect(result.rawScoreFieldNames).toContain('roarScore');
+  describe('without scoringVersion (all possible names)', () => {
+    it('resolves swr fields (all versions)', () => {
+      const result = resolveScoreFieldNames('swr', 3);
+      expect(result.percentileFieldNames).toContain('percentile');
+      expect(result.percentileFieldNames).toContain('wjPercentile');
+      expect(result.rawScoreFieldNames).toContain('roarScore');
+    });
+
+    it('resolves sre fields for grade < 6 (all versions)', () => {
+      const result = resolveScoreFieldNames('sre', 3);
+      expect(result.percentileFieldNames).toContain('percentile');
+      expect(result.percentileFieldNames).toContain('tosrecPercentile');
+      expect(result.rawScoreFieldNames).toContain('sreScore');
+    });
+
+    it('resolves sre fields for grade >= 6 (all versions)', () => {
+      const result = resolveScoreFieldNames('sre', 8);
+      expect(result.percentileFieldNames).toContain('percentile');
+      expect(result.percentileFieldNames).toContain('sprPercentile');
+      expect(result.rawScoreFieldNames).toContain('sreScore');
+    });
   });
 
-  it('resolves sre fields for grade < 6', () => {
-    const result = resolveScoreFieldNames('sre', 3);
-    expect(result.percentileFieldNames).toContain('percentile');
-    expect(result.percentileFieldNames).toContain('tosrecPercentile');
-    expect(result.rawScoreFieldNames).toContain('sreScore');
-  });
+  describe('with scoringVersion (version-specific names only)', () => {
+    it('swr v3 returns only legacy "wjPercentile" (not "percentile")', () => {
+      const result = resolveScoreFieldNames('swr', 3, 3);
+      expect(result.percentileFieldNames).toEqual(['wjPercentile']);
+      expect(result.rawScoreFieldNames).toEqual(['roarScore']);
+    });
 
-  it('resolves sre fields for grade >= 6', () => {
-    const result = resolveScoreFieldNames('sre', 8);
-    expect(result.percentileFieldNames).toContain('percentile');
-    expect(result.percentileFieldNames).toContain('sprPercentile');
-    expect(result.rawScoreFieldNames).toContain('sreScore');
+    it('swr v7 returns only updated "percentile"', () => {
+      const result = resolveScoreFieldNames('swr', 3, 7);
+      expect(result.percentileFieldNames).toEqual(['percentile']);
+      expect(result.rawScoreFieldNames).toEqual(['roarScore']);
+    });
+
+    it('swr null version resolves as v0 (legacy)', () => {
+      const result = resolveScoreFieldNames('swr', 3, null);
+      expect(result.percentileFieldNames).toEqual(['wjPercentile']);
+    });
+
+    it('sre v3 grade < 6 returns "tosrecPercentile"', () => {
+      const result = resolveScoreFieldNames('sre', 3, 3);
+      expect(result.percentileFieldNames).toEqual(['tosrecPercentile']);
+    });
+
+    it('sre v4 returns "percentile" regardless of grade', () => {
+      expect(resolveScoreFieldNames('sre', 3, 4).percentileFieldNames).toEqual(['percentile']);
+      expect(resolveScoreFieldNames('sre', 8, 4).percentileFieldNames).toEqual(['percentile']);
+    });
+
+    it('sre v3 grade >= 6 returns "sprPercentile"', () => {
+      const result = resolveScoreFieldNames('sre', 8, 3);
+      expect(result.percentileFieldNames).toEqual(['sprPercentile']);
+    });
   });
 
   it('resolves pa fields for grade < 6', () => {
@@ -427,5 +576,29 @@ describe('resolveScoreFieldName', () => {
       expect(resolveScoreFieldName('unknown-task', 3, 'percentile', null)).toBeNull();
       expect(resolveScoreFieldName('unknown-task', 3, 'rawScore', null)).toBeNull();
     });
+  });
+});
+
+describe('getSupportLevelFieldName', () => {
+  it('returns "supportLevel" for roam-alpaca', () => {
+    expect(getSupportLevelFieldName('roam-alpaca')).toBe('supportLevel');
+  });
+
+  it('returns null for percentile-then-rawscore tasks', () => {
+    expect(getSupportLevelFieldName('swr')).toBeNull();
+    expect(getSupportLevelFieldName('sre')).toBeNull();
+    expect(getSupportLevelFieldName('pa')).toBeNull();
+  });
+
+  it('returns null for rawscore-only tasks', () => {
+    expect(getSupportLevelFieldName('phonics')).toBeNull();
+  });
+
+  it('returns null for none classification tasks', () => {
+    expect(getSupportLevelFieldName('letter')).toBeNull();
+  });
+
+  it('returns null for unknown tasks', () => {
+    expect(getSupportLevelFieldName('unknown-task')).toBeNull();
   });
 });

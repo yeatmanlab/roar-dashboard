@@ -516,15 +516,6 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     TaskVariantFactory.create({ taskId: task2.id, name: 'Variant For Task 2 Grade 5 Optional ELL' }),
   ]);
 
-  const [variantForAllGrades, variantForGrade5, variantForGrade3, variantOptionalForEll, variantForTask2] =
-    await Promise.all([
-      TaskVariantFactory.create({ taskId: task.id, name: 'Variant For All Grades' }),
-      TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 5' }),
-      TaskVariantFactory.create({ taskId: task.id, name: 'Variant For Grade 3' }),
-      TaskVariantFactory.create({ taskId: task.id, name: 'Variant Optional For ELL' }),
-      TaskVariantFactory.create({ taskId: task2.id, name: 'Variant For Task 2' }),
-    ]);
-
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 7: Assign Task Variants to District Administration
   // ═══════════════════════════════════════════════════════════════════════════

@@ -61,6 +61,39 @@ describe('scoring config validation', () => {
     expect(getScoringConfig('morphology')).toBeUndefined();
   });
 
+  it('rejects configs with ascending minVersion order', () => {
+    const badConfig = {
+      taskSlugs: ['test-task'],
+      scoreFields: {
+        percentile: [
+          { minVersion: 0, fieldName: 'field_old' },
+          { minVersion: 7, fieldName: 'field_new' },
+        ],
+      },
+      classification: { type: 'none' },
+    };
+    expect(() => ScoringConfigSchema.parse(badConfig)).toThrow();
+  });
+
+  it('accepts single-entry versioned arrays (no ordering issue)', () => {
+    const config = {
+      taskSlugs: ['test-task'],
+      scoreFields: {
+        percentile: [{ minVersion: 0, fieldName: 'field' }],
+      },
+      classification: { type: 'none' },
+    };
+    expect(() => ScoringConfigSchema.parse(config)).not.toThrow();
+  });
+
+  it('percentileMaxGrade defaults to 6 when omitted', () => {
+    const config = getScoringConfig('swr');
+    expect(config?.classification.type).toBe('percentile-then-rawscore');
+    if (config?.classification.type === 'percentile-then-rawscore') {
+      expect(config.classification.percentileMaxGrade).toBe(6);
+    }
+  });
+
   describe('classification types', () => {
     it('swr uses percentile-then-rawscore', () => {
       const config = getScoringConfig('swr');
