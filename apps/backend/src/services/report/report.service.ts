@@ -16,13 +16,9 @@ import type {
   ParsedFilter,
 } from './report.types';
 import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
-import { Permissions } from '../../constants/permissions';
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
-import { rolesForPermission } from '../../constants/role-permissions';
-import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
-import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
@@ -35,6 +31,8 @@ import type {
   ProgressStatusFilterParam,
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
 import type { AuthContext } from '../../types/auth-context';
@@ -80,21 +78,32 @@ export function ReportService({
   administrationRepository = new AdministrationRepository(),
   reportRepository = new ReportRepository(),
   taskService = TaskService(),
+  authorizationService = AuthorizationService(),
 }: {
   administrationRepository?: AdministrationRepository;
   reportRepository?: ReportRepository;
   taskService?: ReturnType<typeof TaskService>;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
-   * Verify that an administration exists and the user has access to it.
-   * Follows the 404-before-403 pattern from AdministrationService.
+   * Verify that an administration exists and the user has progress-read access.
+   *
+   * Combines the old 3-step check (administration access → Reports.Progress.READ
+   * permission → supervisory role) into a single FGA call. The FGA model defines
+   * `can_read_progress: supervisory_tier_group` on the administration type, which
+   * grants access only to users with admin-tier or educator-tier roles on the
+   * administration's assigned entities — exactly the same set that previously
+   * passed both the permission and supervisory role checks.
+   *
+   * Follows the 404-before-403 pattern: checks existence first so a missing
+   * administration returns 404, not a misleading 403.
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration ID to verify
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access
+   * @throws {ApiError} FORBIDDEN if user lacks can_read_progress on the administration
    */
-  async function verifyAdministrationAccess(authContext: AuthContext, administrationId: string) {
+  async function verifyAdministrationProgressAccess(authContext: AuthContext, administrationId: string) {
     const { userId, isSuperAdmin } = authContext;
 
     const administration = await administrationRepository.getById({ id: administrationId });
@@ -108,31 +117,41 @@ export function ReportService({
 
     if (isSuperAdmin) return;
 
-    const allowedRoles = rolesForPermission(Permissions.Administrations.READ);
-    const authorized = await administrationRepository.getAuthorizedById({ userId, allowedRoles }, administrationId);
-    if (!authorized) {
-      logger.warn({ userId, administrationId }, 'User attempted to access administration without permission');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, administrationId },
-      });
-    }
+    await authorizationService.requirePermission(
+      userId,
+      FgaRelation.CAN_READ_PROGRESS,
+      `${FgaType.ADMINISTRATION}:${administrationId}`,
+    );
   }
+
+  /** Map report scope types to FGA object type prefixes. */
+  const SCOPE_TO_FGA_TYPE: Record<ScopeType, FgaType> = {
+    district: FgaType.DISTRICT,
+    school: FgaType.SCHOOL,
+    class: FgaType.CLASS,
+    group: FgaType.GROUP,
+  };
 
   /**
    * Validate scope and authorize the user to access data at the requested scope level.
    *
    * Checks:
-   * 1. The scope entity is assigned to the administration
-   * 2. The user holds a supervisory role at or above the scope level
+   * 1. The scope entity is assigned to the administration (business rule)
+   * 2. FGA grants can_read_progress on the scope entity
+   *
+   * The FGA model defines `can_read_progress: supervisory_tier_group` on all scope
+   * types (district, school, class, group). This replaces the old ltree-based
+   * `getUserRolesAtOrAboveScope` + `hasSupervisoryRole` check. FGA's hierarchy
+   * relations handle ancestor visibility: a district admin's membership propagates
+   * to child schools and classes, so a `can_read_progress` check on a school
+   * passes if the user has a supervisory role at the school's parent district.
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration ID
    * @param scopeType - The scope type (district, school, class, group)
    * @param scopeId - The scope entity ID
    * @throws {ApiError} BAD_REQUEST if scope is not assigned to the administration
-   * @throws {ApiError} FORBIDDEN if user lacks a supervisory role at the scope level
+   * @throws {ApiError} FORBIDDEN if user lacks can_read_progress on the scope entity
    */
   async function authorizeScopeAccess(
     authContext: AuthContext,
@@ -142,7 +161,7 @@ export function ReportService({
   ) {
     const { userId, isSuperAdmin } = authContext;
 
-    // Validate scope is assigned to the administration
+    // Validate scope is assigned to the administration (business rule, not authorization)
     const isAssigned = await reportRepository.isScopeAssignedToAdministration(administrationId, {
       scopeType,
       scopeId,
@@ -158,48 +177,28 @@ export function ReportService({
     // Super admins bypass scope authorization
     if (isSuperAdmin) return;
 
-    // Verify user has a supervisory role at or above the scope level
-    const userRoles = await reportRepository.getUserRolesAtOrAboveScope(userId, { scopeType, scopeId });
-
-    if (!hasSupervisoryRole(userRoles)) {
-      logger.warn(
-        { userId, administrationId, scopeType, scopeId, userRoles },
-        'User lacks supervisory role at the requested scope level',
-      );
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, administrationId, scopeType, scopeId },
-      });
-    }
+    // Verify user has can_read_progress on the scope entity via FGA
+    const fgaType = SCOPE_TO_FGA_TYPE[scopeType];
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_PROGRESS, `${fgaType}:${scopeId}`);
   }
 
   /**
    * List paginated student progress for an administration.
    *
-   * Authorization flow (three layers, checked in order):
+   * Authorization flow (two FGA checks, in order):
    *
-   * 1. **Administration access** (verifyAdministrationAccess):
-   *    Checks the user can see the administration via the standard access control
-   *    UNION query (same 6-path pattern used by AdministrationService).
+   * 1. **Administration progress access** (verifyAdministrationProgressAccess):
+   *    Checks existence (404 before 403) then verifies `can_read_progress` on the
+   *    administration via FGA. This replaces the old 3-step pattern (administration
+   *    access → Reports.Progress.READ → hasSupervisoryRole) with a single call.
+   *    `can_read_progress: supervisory_tier_group` in the FGA model grants access
+   *    only to admin-tier and educator-tier roles, denying students and caregivers.
    *
-   * 2. **Report permission + supervisory role** (admin-level):
-   *    `getUserRolesForAdministration` returns the user's roles on the administration
-   *    (via org/class/group membership). We check both `Reports.Progress.READ` permission
-   *    and `hasSupervisoryRole`. This catches students (no permission) and caregivers
-   *    (have permission but not supervisory).
-   *
-   * 3. **Scope-level authorization** (authorizeScopeAccess):
-   *    `getUserRolesAtOrAboveScope` checks the user holds a supervisory role at or
-   *    above the requested scope entity using ltree ancestor queries. A district admin
-   *    accessing a school scope within their district passes because `school_path <@ district_path`
-   *    is true — the ltree `<@` operator includes descendants.
-   *
-   * These are intentionally separate role lookups querying different paths. A user could
-   * pass the admin-level check (they have a role on the administration) but fail the
-   * scope check (they don't have a role at that specific scope level). This prevents
-   * e.g., a teacher at School A from viewing School B's report within a shared district
-   * administration.
+   * 2. **Scope-level authorization** (authorizeScopeAccess):
+   *    Validates the scope is assigned to the administration (business rule), then
+   *    checks `can_read_progress` on the scope entity (district/school/class/group)
+   *    via FGA. This prevents e.g., a teacher at School A from viewing School B's
+   *    report within a shared district administration.
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration to report on
@@ -214,44 +213,17 @@ export function ReportService({
     administrationId: string,
     query: ProgressStudentsInput,
   ): Promise<ProgressStudentsResult> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
     const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
 
     try {
-      // 1. Verify administration exists and user has access
-      await verifyAdministrationAccess(authContext, administrationId);
+      // 1. Verify administration exists and user has can_read_progress
+      await verifyAdministrationProgressAccess(authContext, administrationId);
 
-      // 2. Verify permission and supervisory role for non-super-admins
-      if (!isSuperAdmin) {
-        const adminRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
-        const allowedReportRoles: string[] = rolesForPermission(Permissions.Reports.Progress.READ);
-        const hasPermission = adminRoles.some((role) => allowedReportRoles.includes(role));
-        if (!hasPermission) {
-          logger.warn(
-            { userId, administrationId, adminRoles },
-            'User lacks Reports.Progress.READ permission on administration',
-          );
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-
-        if (!hasSupervisoryRole(adminRoles)) {
-          logger.warn({ userId, administrationId, adminRoles }, 'Supervised user attempted to access progress report');
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-      }
-
-      // 3. Validate scope and authorize
+      // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
 
-      // 4. Get task metadata
+      // 3. Get task metadata
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
 
@@ -326,10 +298,9 @@ export function ReportService({
    * Returns per-task breakdowns of assigned, started, completed, and optional counts,
    * plus aggregate totals. Powers the summary counts at the top of the progress report page.
    *
-   * Authorization flow is identical to listProgressStudents (three layers):
-   * 1. Administration access
-   * 2. Report permission + supervisory role
-   * 3. Scope-level authorization
+   * Authorization flow is identical to listProgressStudents (two FGA checks):
+   * 1. Administration progress access (can_read_progress on administration)
+   * 2. Scope-level authorization (can_read_progress on scope entity)
    *
    * Multi-variant dedup: when multiple variants share a taskId, each student is counted
    * once at their highest-priority status (completed > started > assigned > optional),
@@ -348,47 +319,17 @@ export function ReportService({
     administrationId: string,
     query: ProgressOverviewInput,
   ): Promise<ProgressOverviewResult> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
     const { scopeType, scopeId } = query;
 
     try {
-      // 1. Verify administration exists and user has access
-      await verifyAdministrationAccess(authContext, administrationId);
+      // 1. Verify administration exists and user has can_read_progress
+      await verifyAdministrationProgressAccess(authContext, administrationId);
 
-      // 2. Verify permission and supervisory role for non-super-admins
-      if (!isSuperAdmin) {
-        const adminRoles = await administrationRepository.getUserRolesForAdministration(userId, administrationId);
-        const allowedReportRoles: string[] = rolesForPermission(Permissions.Reports.Progress.READ);
-        const hasPermission = adminRoles.some((role) => allowedReportRoles.includes(role));
-        if (!hasPermission) {
-          logger.warn(
-            { userId, administrationId, adminRoles },
-            'User lacks Reports.Progress.READ permission on administration',
-          );
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-
-        if (!hasSupervisoryRole(adminRoles)) {
-          logger.warn(
-            { userId, administrationId, adminRoles },
-            'Supervised user attempted to access progress overview',
-          );
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId },
-          });
-        }
-      }
-
-      // 3. Validate scope and authorize
+      // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
 
-      // 4. Get task metadata and run SQL-level aggregation
+      // 3. Get task metadata and run SQL-level aggregation
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
       const { totalStudents, taskStatusCounts } = await reportRepository.getProgressOverviewCounts(
