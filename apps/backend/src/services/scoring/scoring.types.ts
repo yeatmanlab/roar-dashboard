@@ -18,9 +18,17 @@ export type SupportLevel = 'achievedSkill' | 'developingSkill' | 'needsExtraSupp
 export interface ScoringInput {
   /** Student grade as a string (e.g., '3', 'Kindergarten') */
   grade: string | null;
-  /** Percentile score from run_scores (may be null for grades >= 6 or missing data) */
+  /**
+   * Percentile score (may be null for grades >= 6 or missing data).
+   * Newer norming tables (swr v7+, sre v4+, and Spanish variants) may store
+   * percentile as angle-bracket strings like ">99" or "<1" in run_scores.
+   * Callers must pre-process with parseScoreValue() before passing to getSupportLevel.
+   */
   percentile: number | null;
-  /** Raw score from run_scores */
+  /**
+   * Raw score from run_scores.
+   * Callers must pre-process with parseScoreValue() if the DB value may be a string.
+   */
   rawScore: number | null;
   /** Task slug (e.g., 'swr', 'sre', 'pa') */
   taskSlug: string;

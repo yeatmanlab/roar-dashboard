@@ -51,7 +51,6 @@
     ],
     "rawScore": [{ "minVersion": 0, "fieldName": "roarScore" }]
   },
-  "stripAngleBrackets": ["percentile", "standardScore"],
   "classification": {
     "type": "percentile-then-rawscore",
     "percentileCutoffs": [

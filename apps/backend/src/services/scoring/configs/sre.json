@@ -55,7 +55,6 @@
     ],
     "rawScore": [{ "minVersion": 0, "fieldName": "sreScore" }]
   },
-  "stripAngleBrackets": ["percentile", "standardScore"],
   "classification": {
     "type": "percentile-then-rawscore",
     "percentileCutoffs": [

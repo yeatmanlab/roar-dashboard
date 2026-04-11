@@ -133,7 +133,6 @@ const ClassificationSchema = z.discriminatedUnion('type', [
 export const ScoringConfigSchema = z.object({
   taskSlugs: z.array(z.string()).min(1),
   scoreFields: ScoreFieldsSchema,
-  stripAngleBrackets: z.array(ScoreFieldTypeSchema).optional(),
   classification: ClassificationSchema,
 });
 
