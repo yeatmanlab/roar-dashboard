@@ -10,6 +10,7 @@ import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 import { createMockClassRepository } from '../../test-support/repositories';
 import type { MockClassRepository } from '../../test-support/repositories';
 import { createMockAuthorizationService } from '../../test-support/services';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import type { MockAuthorizationService } from '../../test-support/services';
 
 describe('ClassService', () => {
@@ -102,8 +103,8 @@ describe('ClassService', () => {
       expect(mockClassRepository.getById).toHaveBeenCalledWith({ id: 'class-123' });
       expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
-        'can_list_users',
-        'class:class-123',
+        FgaRelation.CAN_LIST_USERS,
+        `${FgaType.CLASS}:class-123`,
       );
       expect(mockClassRepository.getUsersByClassId).toHaveBeenCalledWith('class-123', {
         page: 1,
@@ -139,7 +140,7 @@ describe('ClassService', () => {
       });
 
       await expect(
-        service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
+        service.listUsers({ userId: 'admin-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
       ).rejects.toMatchObject({
         message: ApiErrorMessage.NOT_FOUND,
         statusCode: StatusCodes.NOT_FOUND,
