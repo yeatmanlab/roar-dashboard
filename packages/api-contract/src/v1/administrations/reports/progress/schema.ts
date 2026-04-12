@@ -8,26 +8,41 @@ import {
 } from '../common';
 
 /**
- * Completion status for a student on a specific task.
+ * 7-level progress status that orthogonalizes progress (assigned → started → completed)
+ * from requirement (required vs optional).
  *
- * - `assigned` — task is assigned and required, but not yet started
- * - `started` — a run exists but is not completed
- * - `completed` — a run with a completedAt timestamp exists
- * - `optional` — task conditions mark it optional for this student (e.g., based on
- *   grade/ELL status). Produced when conditionsRequirements evaluates to true.
+ * - `assigned-required` — task is assigned, required, not yet started
+ * - `assigned-optional` — task is assigned, optional, not yet started
+ * - `started-required` — a run exists but not completed; task is required
+ * - `started-optional` — a run exists but not completed; task is optional
+ * - `completed-required` — a run with completedAt exists; task is required
+ * - `completed-optional` — a run with completedAt exists; task is optional
+ *
+ * The required/optional distinction comes from `conditionsRequirements` (which is an
+ * "optional_if" condition — when it evaluates to true, the task is optional for that
+ * student). Conditions are evaluated for ALL students, including those with runs.
  *
  * Tasks where conditionsAssignment evaluates to false for a student are excluded
  * from that student's progress map entirely — they are not visible.
  */
-export const ProgressStatusSchema = z.enum(['assigned', 'started', 'completed', 'optional']);
+export const ProgressStatusSchema = z.enum([
+  'assigned-required',
+  'assigned-optional',
+  'started-required',
+  'started-optional',
+  'completed-required',
+  'completed-optional',
+]);
 
 export type ProgressStatus = z.infer<typeof ProgressStatusSchema>;
 
 export const ProgressStatus = {
-  ASSIGNED: 'assigned',
-  STARTED: 'started',
-  COMPLETED: 'completed',
-  OPTIONAL: 'optional',
+  ASSIGNED_REQUIRED: 'assigned-required',
+  ASSIGNED_OPTIONAL: 'assigned-optional',
+  STARTED_REQUIRED: 'started-required',
+  STARTED_OPTIONAL: 'started-optional',
+  COMPLETED_REQUIRED: 'completed-required',
+  COMPLETED_OPTIONAL: 'completed-optional',
 } as const satisfies Record<string, ProgressStatus>;
 
 /**
@@ -153,16 +168,30 @@ export type ProgressOverviewQuery = z.infer<typeof ProgressOverviewQuerySchema>;
 /**
  * Per-task aggregation in the progress overview response.
  * Counts are mutually exclusive: each student is counted once per task at their
- * highest-priority status (completed > started > assigned > optional).
+ * highest-priority status across both the progress and requirement axes.
+ *
+ * The 7-level counts are also rolled up into convenience totals by progress axis
+ * (assigned, started, completed) and requirement axis (required, optional) for
+ * simpler consumption.
  */
 export const ProgressTaskOverviewSchema = z.object({
   taskId: z.string().uuid(),
   taskSlug: z.string(),
   taskName: z.string(),
   orderIndex: z.number().int(),
+  /** 7-level per-status counts */
+  assignedRequired: z.number().int(),
+  assignedOptional: z.number().int(),
+  startedRequired: z.number().int(),
+  startedOptional: z.number().int(),
+  completedRequired: z.number().int(),
+  completedOptional: z.number().int(),
+  /** Convenience totals by progress axis */
   assigned: z.number().int(),
   started: z.number().int(),
   completed: z.number().int(),
+  /** Convenience totals by requirement axis */
+  required: z.number().int(),
   optional: z.number().int(),
 });
 
@@ -171,20 +200,29 @@ export type ProgressTaskOverview = z.infer<typeof ProgressTaskOverviewSchema>;
 /**
  * Response schema for the progress overview endpoint.
  *
+ * Top-level fields are per-student, assignment-level counts based on required tasks only:
+ *
  * - `totalStudents`: distinct student count in scope (regardless of task assignment).
- *   Students excluded from all tasks by `conditionsAssignment` are counted here
- *   but not in any per-task count.
- * - `assigned`, `started`, `completed`: aggregate sums across all tasks in `byTask`.
- *   `optional` is excluded from top-level totals — it represents non-required tasks
- *   and doesn't contribute to completion goals.
+ *   Students excluded from all tasks by `conditionsAssignment` are still counted here.
+ * - `studentsWithRequiredTasks`: students who have at least one required task.
+ *   This is the denominator for the three assignment-level buckets below.
+ *   Students whose tasks are ALL optional are excluded.
+ * - `studentsAssigned`: students where ALL required tasks are still at assigned-required.
+ * - `studentsStarted`: students with at least one required task started or completed,
+ *   but not ALL required tasks completed.
+ * - `studentsCompleted`: students where ALL required tasks are at completed-required.
+ *
+ * Invariant: `studentsAssigned + studentsStarted + studentsCompleted = studentsWithRequiredTasks`.
+ *
  * - `byTask`: ordered array (by orderIndex) with per-task counts
  * - `computedAt`: server timestamp for freshness display
  */
 export const ProgressOverviewResponseSchema = z.object({
   totalStudents: z.number().int(),
-  assigned: z.number().int(),
-  started: z.number().int(),
-  completed: z.number().int(),
+  studentsWithRequiredTasks: z.number().int(),
+  studentsAssigned: z.number().int(),
+  studentsStarted: z.number().int(),
+  studentsCompleted: z.number().int(),
   byTask: z.array(ProgressTaskOverviewSchema),
   computedAt: z.string().datetime(),
 });

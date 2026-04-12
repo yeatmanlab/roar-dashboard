@@ -59,12 +59,14 @@ const PROGRESS_FILTER_FIELDS: Record<ProgressStudentsFilterField, PgColumn> = {
 /** Fields that use grade-aware numeric ordering for gte/lte comparisons. */
 const GRADE_AWARE_FIELDS: ReadonlySet<string> = new Set(['user.grade']);
 
-/** Per-task status counters for progress overview aggregation. */
+/** Per-task status counters for progress overview aggregation (7-level). */
 interface TaskStatusCounter {
-  assigned: number;
-  started: number;
-  completed: number;
-  optional: number;
+  'assigned-required': number;
+  'assigned-optional': number;
+  'started-required': number;
+  'started-optional': number;
+  'completed-required': number;
+  'completed-optional': number;
 }
 
 /**
@@ -391,7 +393,7 @@ export function ReportService({
       // 4. Get task metadata and run SQL-level aggregation
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
-      const { totalStudents, taskStatusCounts } = await reportRepository.getProgressOverviewCounts(
+      const { totalStudents, taskStatusCounts, studentCounts } = await reportRepository.getProgressOverviewCounts(
         administrationId,
         { scopeType, scopeId },
         taskMetas,
@@ -412,10 +414,17 @@ export function ReportService({
         }
       }
 
-      // Initialize counters for all tasks (ensures tasks with zero counts appear in response)
+      // Initialize 7-level counters for all tasks (ensures tasks with zero counts appear)
       const taskStatusCounters = new Map<string, TaskStatusCounter>();
       for (const taskId of taskIdOrder) {
-        taskStatusCounters.set(taskId, { assigned: 0, started: 0, completed: 0, optional: 0 });
+        taskStatusCounters.set(taskId, {
+          'assigned-required': 0,
+          'assigned-optional': 0,
+          'started-required': 0,
+          'started-optional': 0,
+          'completed-required': 0,
+          'completed-optional': 0,
+        });
       }
 
       // 6. Populate counters from SQL aggregation results
@@ -426,34 +435,44 @@ export function ReportService({
         }
       }
 
-      // 7. Assemble response
-      let totalAssigned = 0;
-      let totalStarted = 0;
-      let totalCompleted = 0;
-
+      // 7. Assemble response with 7-level per-task counts and student-level assignment counts.
       const byTask: ServiceTaskOverview[] = taskIdOrder.map((taskId) => {
         const meta = taskMetaByTaskId.get(taskId)!;
-        const counts = taskStatusCounters.get(taskId)!;
-        totalAssigned += counts.assigned;
-        totalStarted += counts.started;
-        totalCompleted += counts.completed;
+        const c = taskStatusCounters.get(taskId)!;
+
+        // Convenience totals by progress axis
+        const assigned = c['assigned-required'] + c['assigned-optional'];
+        const started = c['started-required'] + c['started-optional'];
+        const completed = c['completed-required'] + c['completed-optional'];
+        // Convenience totals by requirement axis
+        const required = c['assigned-required'] + c['started-required'] + c['completed-required'];
+        const optional = c['assigned-optional'] + c['started-optional'] + c['completed-optional'];
+
         return {
           taskId: meta.taskId,
           taskSlug: meta.taskSlug,
           taskName: meta.taskName,
           orderIndex: meta.orderIndex,
-          assigned: counts.assigned,
-          started: counts.started,
-          completed: counts.completed,
-          optional: counts.optional,
+          assignedRequired: c['assigned-required'],
+          assignedOptional: c['assigned-optional'],
+          startedRequired: c['started-required'],
+          startedOptional: c['started-optional'],
+          completedRequired: c['completed-required'],
+          completedOptional: c['completed-optional'],
+          assigned,
+          started,
+          completed,
+          required,
+          optional,
         };
       });
 
       return {
         totalStudents,
-        assigned: totalAssigned,
-        started: totalStarted,
-        completed: totalCompleted,
+        studentsWithRequiredTasks: studentCounts.studentsWithRequiredTasks,
+        studentsAssigned: studentCounts.studentsAssigned,
+        studentsStarted: studentCounts.studentsStarted,
+        studentsCompleted: studentCounts.studentsCompleted,
         byTask,
         computedAt: new Date().toISOString(),
       };
@@ -640,23 +659,28 @@ export function buildProgressMap(
 
     let entry: ServiceProgressEntry;
 
-    if (run?.completedAt) {
-      entry = {
-        status: 'completed',
-        startedAt: run.startedAt.toISOString(),
-        completedAt: run.completedAt.toISOString(),
-      };
-    } else if (run) {
-      // Run exists but not completed — a run's existence signals "started"
-      entry = {
-        status: 'started',
-        startedAt: run.startedAt.toISOString(),
-        completedAt: null,
-      };
+    if (run) {
+      // Student has a run — evaluate conditions to determine required vs optional,
+      // but don't skip the task even if isAssigned is false. A student who actually
+      // did the work should see their progress regardless of condition changes.
+      // Default to "required" if conditions would exclude them entirely.
+      const { isOptional } = evaluateEligibility(student, task.conditionsAssignment, task.conditionsRequirements);
+
+      if (run.completedAt) {
+        entry = {
+          status: isOptional ? 'completed-optional' : 'completed-required',
+          startedAt: run.startedAt.toISOString(),
+          completedAt: run.completedAt.toISOString(),
+        };
+      } else {
+        entry = {
+          status: isOptional ? 'started-optional' : 'started-required',
+          startedAt: run.startedAt.toISOString(),
+          completedAt: null,
+        };
+      }
     } else {
-      // No run — evaluate conditions to determine assigned vs optional.
-      // StudentProgressRow satisfies ConditionEvaluationUser (the narrow interface),
-      // so no cast is needed.
+      // No run — evaluate conditions to determine assigned vs optional vs excluded.
       const { isAssigned, isOptional } = evaluateEligibility(
         student,
         task.conditionsAssignment,
@@ -669,7 +693,7 @@ export function buildProgressMap(
       }
 
       entry = {
-        status: isOptional ? 'optional' : 'assigned',
+        status: isOptional ? 'assigned-optional' : 'assigned-required',
         startedAt: null,
         completedAt: null,
       };
