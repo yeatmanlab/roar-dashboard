@@ -1196,5 +1196,21 @@ describe('GET /v1/administrations/:id/tree', () => {
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
+
+    it('returns 400 when parentEntityId is provided without parentEntityType', async () => {
+      const res = await expectRoute('GET', `${treePath()}?parentEntityId=${baseFixture.district.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(400);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('returns 400 when parentEntityType is provided without parentEntityId', async () => {
+      const res = await expectRoute('GET', `${treePath()}?parentEntityType=district`)
+        .as(tiers.superAdmin)
+        .toReturn(400);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
   });
 });

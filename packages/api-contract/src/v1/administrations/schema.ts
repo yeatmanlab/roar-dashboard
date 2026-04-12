@@ -543,16 +543,11 @@ export const TreeNodeEntityType = {
 } as const satisfies Record<string, TreeNodeEntityType>;
 
 /**
- * Parent entity types accepted as query parameters.
- * Only district and school have children; class and group are leaf nodes
- * that return empty arrays.
- */
-export const TREE_PARENT_ENTITY_TYPES = ['district', 'school', 'class', 'group'] as const;
-
-/**
  * Schema for parent entity type query parameter.
+ * All entity types are accepted. District and school return child entities;
+ * class and group are leaf nodes that return empty arrays.
  */
-export const TreeParentEntityTypeSchema = z.enum(TREE_PARENT_ENTITY_TYPES);
+export const TreeParentEntityTypeSchema = z.enum(TREE_NODE_ENTITY_TYPES);
 
 export type TreeParentEntityType = z.infer<typeof TreeParentEntityTypeSchema>;
 

@@ -1024,7 +1024,7 @@ export function AdministrationService({
    * @returns Paginated tree nodes with optional stats
    * @throws {ApiError} NOT_FOUND if administration doesn't exist
    * @throws {ApiError} FORBIDDEN if user lacks access
-   * @throws {ApiError} BAD_REQUEST if parentEntityId provided without parentEntityType
+   * @throws {ApiError} BAD_REQUEST if parentEntityId/parentEntityType provided without the other
    * @throws {ApiError} NOT_FOUND if parent entity doesn't exist
    */
   async function getTree(
@@ -1047,12 +1047,19 @@ export function AdministrationService({
   > {
     const { userId, isSuperAdmin } = authContext;
 
-    // Validate: parentEntityId requires parentEntityType
+    // Validate: parentEntityId and parentEntityType must be provided together
     if (options.parentEntityId && !options.parentEntityType) {
       throw new ApiError('parentEntityId requires parentEntityType', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         context: { userId, administrationId, parentEntityId: options.parentEntityId },
+      });
+    }
+    if (options.parentEntityType && !options.parentEntityId) {
+      throw new ApiError('parentEntityType requires parentEntityId', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, administrationId, parentEntityType: options.parentEntityType },
       });
     }
 

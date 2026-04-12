@@ -38,10 +38,9 @@ import type {
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
   AdministrationStatus,
-  TreeNodeEntityType,
   TreeParentEntityType,
 } from '@roar-dashboard/api-contract';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder, TreeNodeEntityType } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
@@ -719,7 +718,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         SELECT
           ${orgs.id} AS id,
           ${orgs.name} AS name,
-          'district' AS entity_type,
+          ${TreeNodeEntityType.DISTRICT} AS entity_type,
           EXISTS (
             SELECT 1 FROM ${orgs} o
               WHERE o.parent_org_id = ${orgs.id}
@@ -737,7 +736,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         SELECT
           ${orgs.id} AS id,
           ${orgs.name} AS name,
-          'school' AS entity_type,
+          ${TreeNodeEntityType.SCHOOL} AS entity_type,
           EXISTS (
             SELECT 1 FROM ${classes} c
               WHERE c.school_id = ${orgs.id}
@@ -754,7 +753,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         SELECT
           ${classes.id} AS id,
           ${classes.name} AS name,
-          'class' AS entity_type,
+          ${TreeNodeEntityType.CLASS} AS entity_type,
           FALSE AS has_children
         FROM ${administrationClasses}
         INNER JOIN ${classes} ON ${classes.id} = ${administrationClasses.classId}
@@ -767,7 +766,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         SELECT
           ${groups.id} AS id,
           ${groups.name} AS name,
-          'group' AS entity_type,
+          ${TreeNodeEntityType.GROUP} AS entity_type,
           FALSE AS has_children
         FROM ${administrationGroups}
         INNER JOIN ${groups} ON ${groups.id} = ${administrationGroups.groupId}
@@ -840,7 +839,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         SELECT
           ${orgs.id} AS id,
           ${orgs.name} AS name,
-          'school' AS entity_type,
+          ${TreeNodeEntityType.SCHOOL} AS entity_type,
           EXISTS (
             SELECT 1 FROM ${classes} c
               WHERE c.school_id = ${orgs.id}
@@ -916,7 +915,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         SELECT
           ${classes.id} AS id,
           ${classes.name} AS name,
-          'class' AS entity_type,
+          ${TreeNodeEntityType.CLASS} AS entity_type,
           FALSE AS has_children
         FROM ${classes}
         WHERE ${classes.schoolId} = ${schoolId}
@@ -994,17 +993,17 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     }
 
     // Leaf nodes: class and group have no children
-    if (parentEntityType === 'class' || parentEntityType === 'group') {
+    if (parentEntityType === TreeNodeEntityType.CLASS || parentEntityType === TreeNodeEntityType.GROUP) {
       return { items: [], totalItems: 0 };
     }
 
     // District → schools
-    if (parentEntityType === 'district' && parentEntityId) {
+    if (parentEntityType === TreeNodeEntityType.DISTRICT && parentEntityId) {
       return this.getDistrictChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.schoolIds);
     }
 
     // School → classes
-    if (parentEntityType === 'school' && parentEntityId) {
+    if (parentEntityType === TreeNodeEntityType.SCHOOL && parentEntityId) {
       return this.getSchoolChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.classIds);
     }
 

@@ -3592,7 +3592,21 @@ describe('AdministrationService', () => {
         }),
       ).rejects.toMatchObject({
         statusCode: StatusCodes.BAD_REQUEST,
-        code: 'request/validation-failed',
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw 400 when parentEntityType is provided without parentEntityId', async () => {
+      const service = createService();
+
+      await expect(
+        service.getTree(superAdminAuth, testAdminId, {
+          ...defaultOptions,
+          parentEntityType: 'district',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
     });
 
