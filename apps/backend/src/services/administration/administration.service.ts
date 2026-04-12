@@ -1,12 +1,12 @@
-import {
-  AdministrationEmbedOption,
-  type PaginatedResult,
-  type AdministrationStats,
-  type AdministrationEmbedOptionType,
-  type AdministrationStatus,
-  type AdministrationTaskVariantSortFieldType,
-  type AdministrationAgreementSortFieldType,
+import type {
+  PaginatedResult,
+  AdministrationStats,
+  AdministrationEmbedOptionType,
+  AdministrationStatus,
+  AdministrationTaskVariantSortFieldType,
+  AdministrationAgreementSortFieldType,
 } from '@roar-dashboard/api-contract';
+import { AdministrationEmbedOption } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -17,16 +17,15 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
-import {
-  AdministrationRepository,
-  type AdministrationQueryOptions,
-  type TaskVariantWithAssignment,
-  type AgreementWithVersion,
+import type {
+  AdministrationAssignees,
+  AdministrationQueryOptions,
+  TaskVariantWithAssignment,
+  AgreementWithVersion,
 } from '../../repositories/administration.repository';
-import {
-  AdministrationTaskVariantRepository,
-  type AdministrationTask,
-} from '../../repositories/administration-task-variant.repository';
+import { AdministrationRepository } from '../../repositories/administration.repository';
+import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
+import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
@@ -362,11 +361,12 @@ export function AdministrationService({
    * @throws {ApiError} FORBIDDEN if user is not super admin
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
-  async function getAssignees(authContext: AuthContext, administrationId: string) {
+  async function getAssignees(authContext: AuthContext, administrationId: string): Promise<AdministrationAssignees> {
     const { userId, isSuperAdmin } = authContext;
 
     // Super admin gate — only super admins can view assignees
     if (!isSuperAdmin) {
+      logger.warn({ userId, administrationId }, 'Non-super admin attempted to access administration assignees');
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
