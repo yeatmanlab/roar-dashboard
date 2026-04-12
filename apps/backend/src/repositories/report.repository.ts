@@ -129,9 +129,6 @@ export interface TaskStatusCount {
 }
 
 /**
- * Result of the SQL-level progress overview aggregation.
- */
-/**
  * Per-student, assignment-level progress counts.
  *
  * Each student is classified into exactly one bucket based on their required tasks:
@@ -139,8 +136,8 @@ export interface TaskStatusCount {
  * - `studentsStarted`: at least one required task started or completed, but not all completed
  * - `studentsAssigned`: all required tasks still at assigned-required (priority 1)
  *
- * Students with only optional tasks (no required tasks) are excluded from all three
- * buckets but still counted in `studentsWithRequiredTasks` = 0 for those students.
+ * Students with only optional tasks (no required tasks) are excluded from all
+ * three buckets and do not count toward `studentsWithRequiredTasks`.
  * Invariant: studentsAssigned + studentsStarted + studentsCompleted = studentsWithRequiredTasks.
  */
 export interface StudentAssignmentLevelCounts {
@@ -150,6 +147,9 @@ export interface StudentAssignmentLevelCounts {
   studentsCompleted: number;
 }
 
+/**
+ * Result of the SQL-level progress overview aggregation.
+ */
 export interface ProgressOverviewCountsResult {
   totalStudents: number;
   taskStatusCounts: TaskStatusCount[];
@@ -1122,7 +1122,6 @@ export class ReportRepository {
         COUNT(*) FILTER (WHERE max_required_priority >= 3 AND min_required_priority < 5)::bigint AS students_started,
         COUNT(*) FILTER (WHERE max_required_priority = 1)::bigint AS students_assigned
       FROM required_tasks_per_student
-      WHERE required_task_count > 0
     `;
 
     const rows = await this.db.execute(aggregationQuery);

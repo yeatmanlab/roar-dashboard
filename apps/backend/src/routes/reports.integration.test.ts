@@ -1030,6 +1030,17 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
         useForReporting: true,
         completedAt: null,
       });
+
+      // Seed a completed run on the optional variant for the ELL student so the
+      // optional counts test below is self-contained (no cross-describe dependency).
+      await RunFactory.create({
+        userId: baseFixture.grade5EllStudent.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantOptionalForEll.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-07-10T10:00:00Z'),
+      });
     });
 
     it('counts completed run in overview', async () => {
@@ -1265,8 +1276,7 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
     it('includes optional counts in per-task overview', async () => {
       // variantOptionalForEll has conditionsRequirements (statusEll=active).
       // grade5EllStudent (statusEll=active) should be counted as optional for task 1.
-      // The students endpoint FDW tests above seeded a completed run for grade5EllStudent
-      // on variantOptionalForEll → completed-optional in the overview.
+      // A completed run on variantOptionalForEll was seeded in this describe's beforeAll.
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
         .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
@@ -1279,9 +1289,8 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       const taskOverview = data.byTask.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
       expect(taskOverview).toBeDefined();
 
-      // At least grade5EllStudent has a completed-optional status for task 1
-      // (from the completed run on variantOptionalForEll seeded in the students FDW tests)
-      expect(taskOverview.completedOptional).toBeGreaterThanOrEqual(0);
+      // grade5EllStudent has a completed-optional status for task 1
+      expect(taskOverview.completedOptional).toBeGreaterThan(0);
 
       // The 7-level counts should all be non-negative integers
       expect(taskOverview.assignedRequired).toBeGreaterThanOrEqual(0);

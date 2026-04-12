@@ -23,7 +23,9 @@ import {
  * student). Conditions are evaluated for ALL students, including those with runs.
  *
  * Tasks where conditionsAssignment evaluates to false for a student are excluded
- * from that student's progress map entirely — they are not visible.
+ * from that student's progress map entirely — they are not visible. This "excluded"
+ * state (priority -1) is the 7th level in the SQL CASE expression but is filtered
+ * before reaching API consumers, so this schema only defines the 6 visible statuses.
  */
 export const ProgressStatusSchema = z.enum([
   'assigned-required',
