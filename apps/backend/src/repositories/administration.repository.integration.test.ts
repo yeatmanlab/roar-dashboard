@@ -957,7 +957,7 @@ describe('AdministrationRepository', () => {
         }
       });
 
-      it('filters classes by FGA accessible IDs', async () => {
+      it('filters classes by FGA accessible IDs when empty', async () => {
         const result = await repository.getTreeNodes(
           baseFixture.administrationAssignedToDistrict.id,
           'school',
@@ -967,6 +967,19 @@ describe('AdministrationRepository', () => {
         );
 
         expect(result.items).toHaveLength(0);
+      });
+
+      it('filters classes to only FGA-accessible IDs when non-empty', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'school',
+          baseFixture.schoolA.id,
+          defaultOptions,
+          { classIds: [baseFixture.classInSchoolA.id] },
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
       });
     });
 

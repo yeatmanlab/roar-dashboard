@@ -216,7 +216,7 @@ export const AdministrationsContract = c.router(
         'deeper into the tree. When omitted, returns all direct assignees (districts, schools, classes, and groups). ' +
         'Use ?embed=stats to include assignment statistics per node. ' +
         'Results are scoped to entities the authenticated user has access to. ' +
-        'Returns 400 if parentEntityId is provided without parentEntityType. ' +
+        'Returns 400 if parentEntityId or parentEntityType is provided without the other. ' +
         'Returns 403 if the user lacks permission to access the administration. ' +
         'Returns 404 if the administration or parent entity does not exist.',
     },
