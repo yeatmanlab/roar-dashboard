@@ -1032,7 +1032,18 @@ export function AdministrationService({
     administrationId: string,
     options: GetTreeOptions,
   ): Promise<
-    PaginatedResult<TreeNode & { stats?: { assignment: { assigned: number; started: number; completed: number } } }>
+    PaginatedResult<
+      TreeNode & {
+        stats?: {
+          assignment: {
+            studentsWithRequiredTasks: number;
+            studentsAssigned: number;
+            studentsStarted: number;
+            studentsCompleted: number;
+          };
+        };
+      }
+    >
   > {
     const { userId, isSuperAdmin } = authContext;
 
@@ -1123,14 +1134,18 @@ export function AdministrationService({
       // 1. Fetch task metadata for the administration
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
+      const zeroedStats = {
+        assignment: {
+          studentsWithRequiredTasks: 0,
+          studentsAssigned: 0,
+          studentsStarted: 0,
+          studentsCompleted: 0,
+        },
+      };
+
       if (taskMetas.length === 0) {
         // No tasks configured — return zeroed stats
-        const itemsWithStats = result.items.map((node) => ({
-          ...node,
-          stats: {
-            assignment: { assigned: 0, started: 0, completed: 0 },
-          },
-        }));
+        const itemsWithStats = result.items.map((node) => ({ ...node, stats: zeroedStats }));
         return { items: itemsWithStats, totalItems: result.totalItems };
       }
 
@@ -1143,40 +1158,22 @@ export function AdministrationService({
       // 3. Fetch bulk stats for all nodes in one query
       const statsMap = await reportRepository.getProgressOverviewCountsBulk(administrationId, scopes, taskMetas);
 
-      // 4. Sum per-task counts into aggregate totals per node
+      // 4. Extract per-student assignment-level counts per node
       const itemsWithStats = result.items.map((node) => {
         const scopeResult = statsMap.get(node.id);
-        if (!scopeResult || scopeResult.taskStatusCounts.length === 0) {
-          return {
-            ...node,
-            stats: {
-              assignment: { assigned: 0, started: 0, completed: 0 },
-            },
-          };
-        }
-
-        let assigned = 0;
-        let started = 0;
-        let completed = 0;
-
-        for (const { status, count } of scopeResult.taskStatusCounts) {
-          switch (status) {
-            case 'assigned':
-              assigned += count;
-              break;
-            case 'started':
-              started += count;
-              break;
-            case 'completed':
-              completed += count;
-              break;
-          }
+        if (!scopeResult) {
+          return { ...node, stats: zeroedStats };
         }
 
         return {
           ...node,
           stats: {
-            assignment: { assigned, started, completed },
+            assignment: {
+              studentsWithRequiredTasks: scopeResult.studentCounts.studentsWithRequiredTasks,
+              studentsAssigned: scopeResult.studentCounts.studentsAssigned,
+              studentsStarted: scopeResult.studentCounts.studentsStarted,
+              studentsCompleted: scopeResult.studentCounts.studentsCompleted,
+            },
           },
         };
       });

@@ -257,7 +257,16 @@ function handleSubResourceError(error: unknown) {
  * @returns The API-formatted tree node
  */
 function toTreeNode(
-  node: TreeNode & { stats?: { assignment: { assigned: number; started: number; completed: number } } },
+  node: TreeNode & {
+    stats?: {
+      assignment: {
+        studentsWithRequiredTasks: number;
+        studentsAssigned: number;
+        studentsStarted: number;
+        studentsCompleted: number;
+      };
+    };
+  },
 ): OrganizationTreeNode {
   const result: OrganizationTreeNode = {
     id: node.id,

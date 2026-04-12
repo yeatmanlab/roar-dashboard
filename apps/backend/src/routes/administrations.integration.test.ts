@@ -1138,12 +1138,19 @@ describe('GET /v1/administrations/:id/tree', () => {
       for (const item of res.body.data.items) {
         expect(item).toHaveProperty('stats');
         expect(item.stats).toHaveProperty('assignment');
-        expect(item.stats.assignment).toHaveProperty('assigned');
-        expect(item.stats.assignment).toHaveProperty('started');
-        expect(item.stats.assignment).toHaveProperty('completed');
-        expect(typeof item.stats.assignment.assigned).toBe('number');
-        expect(typeof item.stats.assignment.started).toBe('number');
-        expect(typeof item.stats.assignment.completed).toBe('number');
+        expect(item.stats.assignment).toHaveProperty('studentsWithRequiredTasks');
+        expect(item.stats.assignment).toHaveProperty('studentsAssigned');
+        expect(item.stats.assignment).toHaveProperty('studentsStarted');
+        expect(item.stats.assignment).toHaveProperty('studentsCompleted');
+        expect(typeof item.stats.assignment.studentsWithRequiredTasks).toBe('number');
+        expect(typeof item.stats.assignment.studentsAssigned).toBe('number');
+        expect(typeof item.stats.assignment.studentsStarted).toBe('number');
+        expect(typeof item.stats.assignment.studentsCompleted).toBe('number');
+
+        // Verify the invariant holds per node
+        const { studentsAssigned, studentsStarted, studentsCompleted, studentsWithRequiredTasks } =
+          item.stats.assignment;
+        expect(studentsAssigned + studentsStarted + studentsCompleted).toBe(studentsWithRequiredTasks);
       }
     });
 

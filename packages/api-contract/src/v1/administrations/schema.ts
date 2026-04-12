@@ -557,22 +557,28 @@ export const TreeParentEntityTypeSchema = z.enum(TREE_PARENT_ENTITY_TYPES);
 export type TreeParentEntityType = z.infer<typeof TreeParentEntityTypeSchema>;
 
 /**
- * Assignment stats for a single tree node.
+ * Per-student assignment-level stats for a single tree node.
  *
- * - assigned: number of users assigned to this entity (and descendants)
- * - started: number of users who have started at least one run
- * - completed: number of users who have completed all assigned tasks
+ * Uses the same student-level bucketing as the progress overview endpoint:
+ * - studentsWithRequiredTasks: students with at least one required task in this scope
+ * - studentsAssigned: all required tasks still at assigned-required (none started)
+ * - studentsStarted: at least one required task started, not all completed
+ * - studentsCompleted: all required tasks completed
+ *
+ * Invariant: studentsAssigned + studentsStarted + studentsCompleted = studentsWithRequiredTasks.
+ * Counts include descendants (e.g., a district includes its schools' and classes' students).
  */
 export const TreeNodeAssignmentStatsSchema = z.object({
-  assigned: z.number().int(),
-  started: z.number().int(),
-  completed: z.number().int(),
+  studentsWithRequiredTasks: z.number().int(),
+  studentsAssigned: z.number().int(),
+  studentsStarted: z.number().int(),
+  studentsCompleted: z.number().int(),
 });
 
 export type TreeNodeAssignmentStats = z.infer<typeof TreeNodeAssignmentStatsSchema>;
 
 /**
- * Stats wrapper for a tree node (matches ticket contract shape).
+ * Stats wrapper for a tree node.
  */
 export const TreeNodeStatsSchema = z.object({
   assignment: TreeNodeAssignmentStatsSchema,

@@ -1747,7 +1747,14 @@ describe('AdministrationsController', () => {
             name: 'District A',
             entityType: 'district',
             hasChildren: true,
-            stats: { assignment: { assigned: 10, started: 5, completed: 2 } },
+            stats: {
+              assignment: {
+                studentsWithRequiredTasks: 17,
+                studentsAssigned: 10,
+                studentsStarted: 5,
+                studentsCompleted: 2,
+              },
+            },
           },
         ],
         totalItems: 1,
@@ -1763,7 +1770,12 @@ describe('AdministrationsController', () => {
       const data = expectOkResponse(result);
       expect(data.items[0]).toHaveProperty('stats');
       expect(data.items[0]!.stats).toEqual({
-        assignment: { assigned: 10, started: 5, completed: 2 },
+        assignment: {
+          studentsWithRequiredTasks: 17,
+          studentsAssigned: 10,
+          studentsStarted: 5,
+          studentsCompleted: 2,
+        },
       });
     });
 
@@ -1789,7 +1801,14 @@ describe('AdministrationsController', () => {
             name: 'District A',
             entityType: 'district',
             hasChildren: true,
-            stats: { assignment: { assigned: 10, started: 5, completed: 2 } },
+            stats: {
+              assignment: {
+                studentsWithRequiredTasks: 17,
+                studentsAssigned: 10,
+                studentsStarted: 5,
+                studentsCompleted: 2,
+              },
+            },
           },
           { id: 'group-1', name: 'Group A', entityType: 'group', hasChildren: false },
         ],
@@ -1806,7 +1825,12 @@ describe('AdministrationsController', () => {
       const data = expectOkResponse(result);
       expect(data.items[0]).toHaveProperty('stats');
       expect(data.items[0]!.stats).toEqual({
-        assignment: { assigned: 10, started: 5, completed: 2 },
+        assignment: {
+          studentsWithRequiredTasks: 17,
+          studentsAssigned: 10,
+          studentsStarted: 5,
+          studentsCompleted: 2,
+        },
       });
       expect(data.items[1]).not.toHaveProperty('stats');
     });

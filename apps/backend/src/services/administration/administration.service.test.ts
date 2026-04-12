@@ -3714,25 +3714,45 @@ describe('AdministrationService', () => {
         },
       ]);
 
-      // Mock bulk stats — return counts for district-1 and school-1, zero for others
+      // Mock bulk stats — return student-level counts for district-1 and school-1, zero for others
       const statsMap = new Map();
       statsMap.set('district-1', {
         totalStudents: 50,
         taskStatusCounts: [
-          { taskId: 'task-1', status: 'assigned', count: 20 },
-          { taskId: 'task-1', status: 'started', count: 15 },
-          { taskId: 'task-1', status: 'completed', count: 10 },
+          { taskId: 'task-1', status: 'assigned-required', count: 20 },
+          { taskId: 'task-1', status: 'started-required', count: 15 },
+          { taskId: 'task-1', status: 'completed-required', count: 10 },
         ],
+        studentCounts: {
+          studentsWithRequiredTasks: 45,
+          studentsAssigned: 20,
+          studentsStarted: 15,
+          studentsCompleted: 10,
+        },
       });
       statsMap.set('school-1', {
         totalStudents: 30,
         taskStatusCounts: [
-          { taskId: 'task-1', status: 'assigned', count: 12 },
-          { taskId: 'task-1', status: 'completed', count: 8 },
+          { taskId: 'task-1', status: 'assigned-required', count: 12 },
+          { taskId: 'task-1', status: 'completed-required', count: 8 },
         ],
+        studentCounts: {
+          studentsWithRequiredTasks: 20,
+          studentsAssigned: 12,
+          studentsStarted: 0,
+          studentsCompleted: 8,
+        },
       });
-      statsMap.set('class-1', { totalStudents: 0, taskStatusCounts: [] });
-      statsMap.set('group-1', { totalStudents: 0, taskStatusCounts: [] });
+      statsMap.set('class-1', {
+        totalStudents: 0,
+        taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      statsMap.set('group-1', {
+        totalStudents: 0,
+        taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
       mockReportRepository.getProgressOverviewCountsBulk.mockResolvedValue(statsMap);
 
       const service = createService();
@@ -3741,17 +3761,17 @@ describe('AdministrationService', () => {
         embed: ['stats'],
       });
 
-      // district-1: 20 assigned, 15 started, 10 completed
+      // district-1: student-level counts from bulk result
       expect(result.items[0]!.stats).toEqual({
-        assignment: { assigned: 20, started: 15, completed: 10 },
+        assignment: { studentsWithRequiredTasks: 45, studentsAssigned: 20, studentsStarted: 15, studentsCompleted: 10 },
       });
-      // school-1: 12 assigned, 0 started, 8 completed
+      // school-1: student-level counts from bulk result
       expect(result.items[1]!.stats).toEqual({
-        assignment: { assigned: 12, started: 0, completed: 8 },
+        assignment: { studentsWithRequiredTasks: 20, studentsAssigned: 12, studentsStarted: 0, studentsCompleted: 8 },
       });
       // class-1: zeroed
       expect(result.items[2]!.stats).toEqual({
-        assignment: { assigned: 0, started: 0, completed: 0 },
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
       });
 
       // Verify bulk method was called with correct scopes
@@ -3784,9 +3804,64 @@ describe('AdministrationService', () => {
       });
 
       expect(result.items[0]!.stats).toEqual({
-        assignment: { assigned: 0, started: 0, completed: 0 },
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
       });
       expect(mockReportRepository.getProgressOverviewCountsBulk).not.toHaveBeenCalled();
+    });
+
+    it('should return zeroed stats for nodes missing from the bulk stats map', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        {
+          taskId: 'task-1',
+          taskVariantId: 'tv-1',
+          taskSlug: 'swr',
+          taskName: 'SWR',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ]);
+
+      // Bulk stats only returns results for district-1 — other scopes are missing
+      const statsMap = new Map();
+      statsMap.set('district-1', {
+        totalStudents: 50,
+        taskStatusCounts: [],
+        studentCounts: {
+          studentsWithRequiredTasks: 40,
+          studentsAssigned: 20,
+          studentsStarted: 12,
+          studentsCompleted: 8,
+        },
+      });
+      mockReportRepository.getProgressOverviewCountsBulk.mockResolvedValue(statsMap);
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      // district-1 has real stats
+      expect(result.items[0]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 40, studentsAssigned: 20, studentsStarted: 12, studentsCompleted: 8 },
+      });
+      // school-1, class-1, group-1 are missing from statsMap → zeroed
+      expect(result.items[1]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      expect(result.items[2]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      expect(result.items[3]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
     });
 
     it('should not attach stats when result is empty even if embed=stats', async () => {
