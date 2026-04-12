@@ -515,3 +515,129 @@ export type AdministrationAgreementsListQuery = z.infer<typeof AdministrationAgr
 export const AdministrationAgreementsListResponseSchema = createPaginatedResponseSchema(AdministrationAgreementSchema);
 
 export type AdministrationAgreementsListResponse = z.infer<typeof AdministrationAgreementsListResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Tree endpoint schemas
+// ---------------------------------------------------------------------------
+
+/**
+ * Entity types that can appear in the organization tree.
+ */
+export const TREE_NODE_ENTITY_TYPES = ['district', 'school', 'class', 'group'] as const;
+
+/**
+ * Schema for tree node entity type.
+ */
+export const TreeNodeEntityTypeSchema = z.enum(TREE_NODE_ENTITY_TYPES);
+
+export type TreeNodeEntityType = z.infer<typeof TreeNodeEntityTypeSchema>;
+
+/**
+ * Tree node entity type constants for type-safe access.
+ */
+export const TreeNodeEntityType = {
+  DISTRICT: 'district',
+  SCHOOL: 'school',
+  CLASS: 'class',
+  GROUP: 'group',
+} as const satisfies Record<string, TreeNodeEntityType>;
+
+/**
+ * Parent entity types accepted as query parameters.
+ * Only district and school have children; class and group are leaf nodes
+ * that return empty arrays.
+ */
+export const TREE_PARENT_ENTITY_TYPES = ['district', 'school', 'class', 'group'] as const;
+
+/**
+ * Schema for parent entity type query parameter.
+ */
+export const TreeParentEntityTypeSchema = z.enum(TREE_PARENT_ENTITY_TYPES);
+
+export type TreeParentEntityType = z.infer<typeof TreeParentEntityTypeSchema>;
+
+/**
+ * Assignment stats for a single tree node.
+ *
+ * - assigned: number of users assigned to this entity (and descendants)
+ * - started: number of users who have started at least one run
+ * - completed: number of users who have completed all assigned tasks
+ */
+export const TreeNodeAssignmentStatsSchema = z.object({
+  assigned: z.number().int(),
+  started: z.number().int(),
+  completed: z.number().int(),
+});
+
+export type TreeNodeAssignmentStats = z.infer<typeof TreeNodeAssignmentStatsSchema>;
+
+/**
+ * Stats wrapper for a tree node (matches ticket contract shape).
+ */
+export const TreeNodeStatsSchema = z.object({
+  assignment: TreeNodeAssignmentStatsSchema,
+});
+
+export type TreeNodeStats = z.infer<typeof TreeNodeStatsSchema>;
+
+/**
+ * A single node in the organization tree.
+ *
+ * Represents one entity (district, school, class, or group) assigned to
+ * an administration, or one that contains descendants assigned to it.
+ *
+ * - hasChildren is true only if the entity has descendant entities assigned
+ *   to the administration (or with descendants assigned to it).
+ * - stats is present only when `embed=stats` is requested.
+ */
+export const OrganizationTreeNodeSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  entityType: TreeNodeEntityTypeSchema,
+  hasChildren: z.boolean(),
+  stats: TreeNodeStatsSchema.optional(),
+});
+
+export type OrganizationTreeNode = z.infer<typeof OrganizationTreeNodeSchema>;
+
+/**
+ * Allowed embed options for the tree endpoint.
+ */
+export const TREE_EMBED_OPTIONS = ['stats'] as const;
+
+/**
+ * Embed option type for the tree endpoint.
+ */
+export type TreeEmbedOptionType = (typeof TREE_EMBED_OPTIONS)[number];
+
+/**
+ * Embed option constants for type-safe access.
+ */
+export const TreeEmbedOption = {
+  STATS: 'stats',
+} as const satisfies Record<string, TreeEmbedOptionType>;
+
+/**
+ * Query parameters for the tree endpoint.
+ *
+ * - parentEntityType / parentEntityId: specify the parent node to get children for.
+ *   When omitted, returns root-level entities (districts, groups).
+ * - parentEntityId is required when parentEntityType is specified.
+ * - embed: comma-separated list; supports 'stats'.
+ * - page / perPage: standard pagination.
+ */
+export const AdministrationTreeQuerySchema = PaginationQuerySchema.merge(
+  createEmbedQuerySchema(TREE_EMBED_OPTIONS),
+).extend({
+  parentEntityType: TreeParentEntityTypeSchema.optional(),
+  parentEntityId: z.string().uuid().optional(),
+});
+
+export type AdministrationTreeQuery = z.infer<typeof AdministrationTreeQuerySchema>;
+
+/**
+ * Paginated response for the tree endpoint.
+ */
+export const AdministrationTreeResponseSchema = createPaginatedResponseSchema(OrganizationTreeNodeSchema);
+
+export type AdministrationTreeResponse = z.infer<typeof AdministrationTreeResponseSchema>;

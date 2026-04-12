@@ -21,6 +21,10 @@ export function createMockAdministrationRepository(): MockedObject<Administratio
     getGroupsByAdministrationId: vi.fn(),
     getTaskVariantsByAdministrationId: vi.fn(),
     getAgreementsByAdministrationId: vi.fn(),
+    getTreeNodes: vi.fn(),
+    getRootTreeNodes: vi.fn(),
+    getDistrictChildTreeNodes: vi.fn(),
+    getSchoolChildTreeNodes: vi.fn(),
   } as unknown as MockedObject<AdministrationRepository>;
 }
 

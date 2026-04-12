@@ -38,6 +38,8 @@ import type {
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
   AdministrationStatus,
+  TreeNodeEntityType,
+  TreeParentEntityType,
 } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
@@ -118,6 +120,25 @@ export type ListGroupsByAdministrationOptions = BasePaginatedQueryParams;
  * Options for listing task variants of an administration.
  */
 export type ListTaskVariantsByAdministrationOptions = BasePaginatedQueryParams;
+
+/**
+ * A raw tree node returned by repository tree queries.
+ * The service layer may enrich these with stats and apply FGA filtering.
+ */
+export interface TreeNode {
+  id: string;
+  name: string;
+  entityType: TreeNodeEntityType;
+  hasChildren: boolean;
+}
+
+/**
+ * Options for listing tree nodes at a given level.
+ */
+export interface ListTreeNodesOptions {
+  page: number;
+  perPage: number;
+}
 
 /**
  * Options for listing agreements of an administration.
@@ -634,5 +655,360 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       })),
       totalItems,
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tree endpoint methods
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Get root-level tree nodes for an administration.
+   *
+   * Returns all entities directly assigned to the administration: districts,
+   * schools, classes, and groups. Any entity type can be a direct assignee.
+   *
+   * hasChildren logic:
+   * - Districts: true if any assigned schools or classes exist under them
+   * - Schools: true if any assigned classes exist under them
+   * - Classes: always false (leaf nodes)
+   * - Groups: always false (leaf nodes)
+   *
+   * @param administrationId - The administration ID
+   * @param options - Pagination options
+   * @param accessibleIds - Optional set of entity IDs the user can access (FGA scoping).
+   *   When provided, only entities in this set are returned.
+   * @returns Paginated tree nodes
+   */
+  async getRootTreeNodes(
+    administrationId: string,
+    options: ListTreeNodesOptions,
+    accessibleIds?: {
+      districtIds?: string[];
+      schoolIds?: string[];
+      classIds?: string[];
+      groupIds?: string[];
+    },
+  ): Promise<PaginatedResult<TreeNode>> {
+    const { page, perPage } = options;
+    const offset = (page - 1) * perPage;
+
+    // Build FGA filters for each entity type
+    const buildFgaFilter = (
+      ids: string[] | undefined,
+      column: typeof orgs.id | typeof classes.id | typeof groups.id,
+    ) => {
+      if (ids && ids.length > 0) {
+        return sql`AND ${column} IN (${sql.join(
+          ids.map((id) => sql`${id}`),
+          sql`, `,
+        )})`;
+      }
+      if (ids) return sql`AND FALSE`; // empty accessible list means no access
+      return sql``; // undefined = no filter (super admin)
+    };
+
+    const districtFgaFilter = buildFgaFilter(accessibleIds?.districtIds, orgs.id);
+    const schoolFgaFilter = buildFgaFilter(accessibleIds?.schoolIds, orgs.id);
+    const classFgaFilter = buildFgaFilter(accessibleIds?.classIds, classes.id);
+    const groupFgaFilter = buildFgaFilter(accessibleIds?.groupIds, groups.id);
+
+    // UNION ALL of all 4 entity types directly assigned to the administration
+    const query = sql`
+      WITH root_nodes AS (
+        -- Districts directly assigned
+        SELECT
+          ${orgs.id} AS id,
+          ${orgs.name} AS name,
+          'district' AS entity_type,
+          EXISTS (
+            SELECT 1 FROM ${orgs} o
+              WHERE o.parent_org_id = ${orgs.id}
+                AND o.org_type = ${OrgType.SCHOOL}
+          ) AS has_children
+        FROM ${administrationOrgs}
+        INNER JOIN ${orgs} ON ${orgs.id} = ${administrationOrgs.orgId}
+        WHERE ${administrationOrgs.administrationId} = ${administrationId}
+          AND ${orgs.orgType} = ${OrgType.DISTRICT}
+          ${districtFgaFilter}
+
+        UNION ALL
+
+        -- Schools directly assigned
+        SELECT
+          ${orgs.id} AS id,
+          ${orgs.name} AS name,
+          'school' AS entity_type,
+          EXISTS (
+            SELECT 1 FROM ${classes} c
+              WHERE c.school_id = ${orgs.id}
+          ) AS has_children
+        FROM ${administrationOrgs}
+        INNER JOIN ${orgs} ON ${orgs.id} = ${administrationOrgs.orgId}
+        WHERE ${administrationOrgs.administrationId} = ${administrationId}
+          AND ${orgs.orgType} = ${OrgType.SCHOOL}
+          ${schoolFgaFilter}
+
+        UNION ALL
+
+        -- Classes directly assigned
+        SELECT
+          ${classes.id} AS id,
+          ${classes.name} AS name,
+          'class' AS entity_type,
+          FALSE AS has_children
+        FROM ${administrationClasses}
+        INNER JOIN ${classes} ON ${classes.id} = ${administrationClasses.classId}
+        WHERE ${administrationClasses.administrationId} = ${administrationId}
+          ${classFgaFilter}
+
+        UNION ALL
+
+        -- Groups directly assigned
+        SELECT
+          ${groups.id} AS id,
+          ${groups.name} AS name,
+          'group' AS entity_type,
+          FALSE AS has_children
+        FROM ${administrationGroups}
+        INNER JOIN ${groups} ON ${groups.id} = ${administrationGroups.groupId}
+        WHERE ${administrationGroups.administrationId} = ${administrationId}
+          ${groupFgaFilter}
+      )
+      SELECT id, name, entity_type, has_children,
+             COUNT(*) OVER() AS total_count
+      FROM root_nodes
+      ORDER BY name ASC, id ASC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+
+    const result = await this.db.execute(query);
+
+    const rows = result.rows as Array<{
+      id: string;
+      name: string;
+      entity_type: string;
+      has_children: boolean;
+      total_count: string;
+    }>;
+
+    const totalItems = rows.length > 0 ? parseInt(rows[0]!.total_count, 10) : 0;
+
+    const items: TreeNode[] = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      entityType: row.entity_type as TreeNodeEntityType,
+      hasChildren: row.has_children,
+    }));
+
+    return { items, totalItems };
+  }
+
+  /**
+   * Get child schools of a district that is assigned to an administration.
+   *
+   * Returns all schools that are children of the given district. Because the
+   * parent district is assigned to the administration, its child schools are
+   * implicitly part of the administration — no junction table check needed.
+   *
+   * @param _administrationId - The administration ID (unused, kept for signature consistency)
+   * @param districtId - The parent district ID
+   * @param options - Pagination options
+   * @param accessibleSchoolIds - Optional set of school IDs the user can access (FGA scoping)
+   * @returns Paginated tree nodes
+   */
+  async getDistrictChildTreeNodes(
+    _administrationId: string,
+    districtId: string,
+    options: ListTreeNodesOptions,
+    accessibleSchoolIds?: string[],
+  ): Promise<PaginatedResult<TreeNode>> {
+    const { page, perPage } = options;
+    const offset = (page - 1) * perPage;
+
+    const schoolFgaFilter =
+      accessibleSchoolIds && accessibleSchoolIds.length > 0
+        ? sql`AND ${orgs.id} IN (${sql.join(
+            accessibleSchoolIds.map((id) => sql`${id}`),
+            sql`, `,
+          )})`
+        : accessibleSchoolIds
+          ? sql`AND FALSE`
+          : sql``;
+
+    const query = sql`
+      WITH school_nodes AS (
+        SELECT
+          ${orgs.id} AS id,
+          ${orgs.name} AS name,
+          'school' AS entity_type,
+          EXISTS (
+            SELECT 1 FROM ${classes} c
+              WHERE c.school_id = ${orgs.id}
+          ) AS has_children
+        FROM ${orgs}
+        WHERE ${orgs.parentOrgId} = ${districtId}
+          AND ${orgs.orgType} = ${OrgType.SCHOOL}
+          ${schoolFgaFilter}
+      )
+      SELECT id, name, entity_type, has_children,
+             COUNT(*) OVER() AS total_count
+      FROM school_nodes
+      ORDER BY name ASC, id ASC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+
+    const result = await this.db.execute(query);
+
+    const rows = result.rows as Array<{
+      id: string;
+      name: string;
+      entity_type: string;
+      has_children: boolean;
+      total_count: string;
+    }>;
+
+    const totalItems = rows.length > 0 ? parseInt(rows[0]!.total_count, 10) : 0;
+
+    const items: TreeNode[] = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      entityType: row.entity_type as TreeNodeEntityType,
+      hasChildren: row.has_children,
+    }));
+
+    return { items, totalItems };
+  }
+
+  /**
+   * Get child classes of a school that is assigned to an administration.
+   *
+   * Returns all classes that belong to the given school. Because the parent
+   * school (or its ancestor district) is assigned to the administration, child
+   * classes are implicitly part of the administration — no junction table check needed.
+   *
+   * @param _administrationId - The administration ID (unused, kept for signature consistency)
+   * @param schoolId - The parent school ID
+   * @param options - Pagination options
+   * @param accessibleClassIds - Optional set of class IDs the user can access (FGA scoping)
+   * @returns Paginated tree nodes (classes are always leaf nodes)
+   */
+  async getSchoolChildTreeNodes(
+    _administrationId: string,
+    schoolId: string,
+    options: ListTreeNodesOptions,
+    accessibleClassIds?: string[],
+  ): Promise<PaginatedResult<TreeNode>> {
+    const { page, perPage } = options;
+    const offset = (page - 1) * perPage;
+
+    const classFgaFilter =
+      accessibleClassIds && accessibleClassIds.length > 0
+        ? sql`AND ${classes.id} IN (${sql.join(
+            accessibleClassIds.map((id) => sql`${id}`),
+            sql`, `,
+          )})`
+        : accessibleClassIds
+          ? sql`AND FALSE`
+          : sql``;
+
+    const query = sql`
+      WITH class_nodes AS (
+        SELECT
+          ${classes.id} AS id,
+          ${classes.name} AS name,
+          'class' AS entity_type,
+          FALSE AS has_children
+        FROM ${classes}
+        WHERE ${classes.schoolId} = ${schoolId}
+          ${classFgaFilter}
+      )
+      SELECT id, name, entity_type, has_children,
+             COUNT(*) OVER() AS total_count
+      FROM class_nodes
+      ORDER BY name ASC, id ASC
+      LIMIT ${perPage} OFFSET ${offset}
+    `;
+
+    const result = await this.db.execute(query);
+
+    const rows = result.rows as Array<{
+      id: string;
+      name: string;
+      entity_type: string;
+      has_children: boolean;
+      total_count: string;
+    }>;
+
+    const totalItems = rows.length > 0 ? parseInt(rows[0]!.total_count, 10) : 0;
+
+    const items: TreeNode[] = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      entityType: row.entity_type as TreeNodeEntityType,
+      hasChildren: row.has_children,
+    }));
+
+    return { items, totalItems };
+  }
+
+  /**
+   * Dispatch a tree query based on the parent entity type.
+   *
+   * - No parent: root-level nodes (all directly assigned entities)
+   * - district: all child schools of the district
+   * - school: all child classes of the school
+   * - class/group: empty result (leaf nodes)
+   *
+   * @param administrationId - The administration ID
+   * @param parentEntityType - The parent entity type (undefined for root level)
+   * @param parentEntityId - The parent entity ID (required when parentEntityType is set)
+   * @param options - Pagination options
+   * @param accessibleIds - Optional FGA-scoped entity IDs by type
+   * @returns Paginated tree nodes
+   */
+  async getTreeNodes(
+    administrationId: string,
+    parentEntityType: TreeParentEntityType | undefined,
+    parentEntityId: string | undefined,
+    options: ListTreeNodesOptions,
+    accessibleIds?: {
+      districtIds?: string[];
+      schoolIds?: string[];
+      classIds?: string[];
+      groupIds?: string[];
+    },
+  ): Promise<PaginatedResult<TreeNode>> {
+    // Root level: all directly assigned entities
+    if (!parentEntityType) {
+      const rootFilter: {
+        districtIds?: string[];
+        schoolIds?: string[];
+        classIds?: string[];
+        groupIds?: string[];
+      } = {};
+      if (accessibleIds?.districtIds) rootFilter.districtIds = accessibleIds.districtIds;
+      if (accessibleIds?.schoolIds) rootFilter.schoolIds = accessibleIds.schoolIds;
+      if (accessibleIds?.classIds) rootFilter.classIds = accessibleIds.classIds;
+      if (accessibleIds?.groupIds) rootFilter.groupIds = accessibleIds.groupIds;
+      return this.getRootTreeNodes(administrationId, options, rootFilter);
+    }
+
+    // Leaf nodes: class and group have no children
+    if (parentEntityType === 'class' || parentEntityType === 'group') {
+      return { items: [], totalItems: 0 };
+    }
+
+    // District → schools
+    if (parentEntityType === 'district' && parentEntityId) {
+      return this.getDistrictChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.schoolIds);
+    }
+
+    // School → classes
+    if (parentEntityType === 'school' && parentEntityId) {
+      return this.getSchoolChildTreeNodes(administrationId, parentEntityId, options, accessibleIds?.classIds);
+    }
+
+    // Shouldn't reach here if query validation is correct
+    return { items: [], totalItems: 0 };
   }
 }

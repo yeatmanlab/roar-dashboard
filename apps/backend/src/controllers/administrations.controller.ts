@@ -12,6 +12,7 @@ import type {
   AdministrationGroupsListQuery,
   AdministrationTaskVariantsListQuery,
   AdministrationAgreementsListQuery,
+  AdministrationTreeQuery,
   Administration as ContractAdministration,
   AdministrationBase as ContractAdministrationBase,
   AdministrationDistrict,
@@ -19,6 +20,7 @@ import type {
   AdministrationClass,
   AdministrationGroup,
   AdministrationTaskVariantItem,
+  OrganizationTreeNode,
   Condition,
   AdministrationAgreement,
   ProgressStudentsQuery,
@@ -31,6 +33,7 @@ import type {
   TaskVariantWithAssignment,
   AssignmentWithOptional,
   AgreementWithVersion,
+  TreeNode,
 } from '../repositories/administration.repository';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
@@ -245,6 +248,29 @@ function handleSubResourceError(error: unknown) {
     return toErrorResponse(error, [StatusCodes.NOT_FOUND, StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
   }
   throw error;
+}
+
+/**
+ * Maps a service-layer TreeNode (with optional stats) to the API contract's OrganizationTreeNode.
+ *
+ * @param node - The tree node from the service layer
+ * @returns The API-formatted tree node
+ */
+function toTreeNode(
+  node: TreeNode & { stats?: { assignment: { assigned: number; started: number; completed: number } } },
+): OrganizationTreeNode {
+  const result: OrganizationTreeNode = {
+    id: node.id,
+    name: node.name,
+    entityType: node.entityType,
+    hasChildren: node.hasChildren,
+  };
+
+  if (node.stats) {
+    result.stats = node.stats;
+  }
+
+  return result;
 }
 
 /**
@@ -548,6 +574,58 @@ export const AdministrationsController = {
           StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get one level of the organization tree for an administration.
+   *
+   * Delegates to AdministrationService for authorization, FGA scoping,
+   * and tree node retrieval. Transforms the result to the paginated
+   * tree node response format.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration
+   * @param query - Query parameters (pagination, embed, parentEntityType, parentEntityId)
+   */
+  getTree: async (authContext: AuthContext, administrationId: string, query: AdministrationTreeQuery) => {
+    try {
+      const { page, perPage } = query;
+
+      const options: Parameters<typeof administrationService.getTree>[2] = {
+        page,
+        perPage,
+        embed: query.embed,
+      };
+      if (query.parentEntityType) options.parentEntityType = query.parentEntityType;
+      if (query.parentEntityId) options.parentEntityId = query.parentEntityId;
+
+      const result = await administrationService.getTree(authContext, administrationId, options);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items: result.items.map(toTreeNode),
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

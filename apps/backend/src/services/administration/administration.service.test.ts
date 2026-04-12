@@ -15,10 +15,15 @@ import { RunFactory } from '../../test-support/factories/run.factory';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import type { AssignmentWithOptional, TaskVariantWithAssignment } from '../../repositories/administration.repository';
+import type {
+  AssignmentWithOptional,
+  TaskVariantWithAssignment,
+  TreeNode,
+} from '../../repositories/administration.repository';
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
+  createMockReportRepository,
   createMockRunRepository,
   createMockUserRepository,
 } from '../../test-support/repositories';
@@ -28,6 +33,7 @@ import type { MockAuthorizationService } from '../../test-support/services';
 describe('AdministrationService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockAdministrationTaskVariantRepository: ReturnType<typeof createMockAdministrationTaskVariantRepository>;
+  let mockReportRepository: ReturnType<typeof createMockReportRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockRunRepository: ReturnType<typeof createMockRunRepository>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
@@ -37,6 +43,7 @@ describe('AdministrationService', () => {
     vi.resetAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
     mockAdministrationTaskVariantRepository = createMockAdministrationTaskVariantRepository();
+    mockReportRepository = createMockReportRepository();
     mockUserRepository = createMockUserRepository();
     mockRunRepository = createMockRunRepository();
     mockTaskService = createMockTaskService();
@@ -3550,6 +3557,339 @@ describe('AdministrationService', () => {
           message: 'Failed to delete administration',
         },
       );
+    });
+  });
+
+  describe('getTree', () => {
+    const superAdminAuth = { userId: 'super-admin', isSuperAdmin: true };
+    const regularUserAuth = { userId: 'regular-user', isSuperAdmin: false };
+    const testAdminId = 'admin-tree-123';
+    const defaultOptions = { page: 1, perPage: 25, embed: [] as 'stats'[] };
+    const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+
+    const mockTreeNodes: TreeNode[] = [
+      { id: 'district-1', name: 'District A', entityType: 'district', hasChildren: true },
+      { id: 'school-1', name: 'School B', entityType: 'school', hasChildren: true },
+      { id: 'class-1', name: 'Class C', entityType: 'class', hasChildren: false },
+      { id: 'group-1', name: 'Group A', entityType: 'group', hasChildren: false },
+    ];
+
+    function createService() {
+      return AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        reportRepository: mockReportRepository,
+        authorizationService: mockAuthorizationService,
+      });
+    }
+
+    it('should throw 400 when parentEntityId is provided without parentEntityType', async () => {
+      const service = createService();
+
+      await expect(
+        service.getTree(superAdminAuth, testAdminId, {
+          ...defaultOptions,
+          parentEntityId: 'some-id',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: 'request/validation-failed',
+      });
+    });
+
+    it('should call verifyAdministrationAccess to check existence and authorization', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getTree(superAdminAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    });
+
+    it('should skip FGA calls for super admins and pass undefined accessibleIds', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, defaultOptions);
+
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        undefined,
+        undefined,
+        { page: 1, perPage: 25 },
+        undefined,
+      );
+      expect(result.items).toHaveLength(4);
+      expect(result.totalItems).toBe(4);
+    });
+
+    it('should call FGA for non-super-admin users and pass accessible IDs', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      // Mock FGA responses for all 4 entity types
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['district:district-1', 'district:district-2']) // districts
+        .mockResolvedValueOnce(['school:school-1']) // schools
+        .mockResolvedValueOnce(['class:class-1', 'class:class-2']) // classes
+        .mockResolvedValueOnce(['group:group-1']); // groups
+
+      const service = createService();
+      await service.getTree(regularUserAuth, testAdminId, defaultOptions);
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(4);
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        undefined,
+        undefined,
+        { page: 1, perPage: 25 },
+        {
+          districtIds: ['district-1', 'district-2'],
+          schoolIds: ['school-1'],
+          classIds: ['class-1', 'class-2'],
+          groupIds: ['group-1'],
+        },
+      );
+    });
+
+    it('should pass parentEntityType and parentEntityId to repository', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = createService();
+      await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        parentEntityType: 'district',
+        parentEntityId: 'district-1',
+      });
+
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        'district',
+        'district-1',
+        { page: 1, perPage: 25 },
+        undefined,
+      );
+    });
+
+    it('should return nodes without stats when embed=stats is not requested', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, defaultOptions);
+
+      expect(result.items[0]).not.toHaveProperty('stats');
+      expect(mockReportRepository.getTaskMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should attach real stats when embed=stats is requested', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      // Mock task metadata
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        {
+          taskId: 'task-1',
+          taskVariantId: 'tv-1',
+          taskSlug: 'swr',
+          taskName: 'SWR',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ]);
+
+      // Mock bulk stats — return counts for district-1 and school-1, zero for others
+      const statsMap = new Map();
+      statsMap.set('district-1', {
+        totalStudents: 50,
+        taskStatusCounts: [
+          { taskId: 'task-1', status: 'assigned', count: 20 },
+          { taskId: 'task-1', status: 'started', count: 15 },
+          { taskId: 'task-1', status: 'completed', count: 10 },
+        ],
+      });
+      statsMap.set('school-1', {
+        totalStudents: 30,
+        taskStatusCounts: [
+          { taskId: 'task-1', status: 'assigned', count: 12 },
+          { taskId: 'task-1', status: 'completed', count: 8 },
+        ],
+      });
+      statsMap.set('class-1', { totalStudents: 0, taskStatusCounts: [] });
+      statsMap.set('group-1', { totalStudents: 0, taskStatusCounts: [] });
+      mockReportRepository.getProgressOverviewCountsBulk.mockResolvedValue(statsMap);
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      // district-1: 20 assigned, 15 started, 10 completed
+      expect(result.items[0]!.stats).toEqual({
+        assignment: { assigned: 20, started: 15, completed: 10 },
+      });
+      // school-1: 12 assigned, 0 started, 8 completed
+      expect(result.items[1]!.stats).toEqual({
+        assignment: { assigned: 12, started: 0, completed: 8 },
+      });
+      // class-1: zeroed
+      expect(result.items[2]!.stats).toEqual({
+        assignment: { assigned: 0, started: 0, completed: 0 },
+      });
+
+      // Verify bulk method was called with correct scopes
+      expect(mockReportRepository.getProgressOverviewCountsBulk).toHaveBeenCalledWith(
+        testAdminId,
+        [
+          { scopeType: 'district', scopeId: 'district-1' },
+          { scopeType: 'school', scopeId: 'school-1' },
+          { scopeType: 'class', scopeId: 'class-1' },
+          { scopeType: 'group', scopeId: 'group-1' },
+        ],
+        expect.any(Array),
+      );
+    });
+
+    it('should return zeroed stats when no task metadata exists', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      // No tasks configured for the administration
+      mockReportRepository.getTaskMetadata.mockResolvedValue([]);
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      expect(result.items[0]!.stats).toEqual({
+        assignment: { assigned: 0, started: 0, completed: 0 },
+      });
+      expect(mockReportRepository.getProgressOverviewCountsBulk).not.toHaveBeenCalled();
+    });
+
+    it('should not attach stats when result is empty even if embed=stats', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      expect(result.items).toHaveLength(0);
+      expect(mockReportRepository.getTaskMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should pass accessible IDs together with parentEntityType for non-super-admin drill-down', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
+
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['district:d1']) // districts
+        .mockResolvedValueOnce(['school:s1']) // schools
+        .mockResolvedValueOnce(['class:c1']) // classes
+        .mockResolvedValueOnce(['group:g1']); // groups
+
+      const service = createService();
+      await service.getTree(regularUserAuth, testAdminId, {
+        ...defaultOptions,
+        parentEntityType: 'district',
+        parentEntityId: 'd1',
+      });
+
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        'district',
+        'd1',
+        { page: 1, perPage: 25 },
+        {
+          districtIds: ['d1'],
+          schoolIds: ['s1'],
+          classIds: ['c1'],
+          groupIds: ['g1'],
+        },
+      );
+    });
+
+    it('should return result without stats when embed option is undefined', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        page: 1,
+        perPage: 25,
+      });
+
+      expect(result.items).toHaveLength(4);
+      expect(result.items[0]).not.toHaveProperty('stats');
+    });
+
+    it('should wrap FGA failures as 500 ApiError', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA down'));
+
+      const service = createService();
+
+      await expect(service.getTree(regularUserAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: 'database/query-failed',
+      });
+    });
+
+    it('should wrap unexpected repository errors as 500 ApiError', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockRejectedValue(new Error('DB error'));
+
+      const service = createService();
+
+      await expect(service.getTree(superAdminAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: 'Failed to retrieve administration tree',
+      });
+    });
+
+    it('should re-throw ApiError from verifyAdministrationAccess when FGA denies access', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      // FGA: can_read permission denied via requirePermission
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = createService();
+
+      await expect(service.getTree(regularUserAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+      });
     });
   });
 });
