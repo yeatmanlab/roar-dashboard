@@ -3967,4 +3967,216 @@ describe('AdministrationService', () => {
       });
     });
   });
+
+  describe('getUserAdministration', () => {
+    const targetUserId = 'target-user-123';
+    const administrationId = 'admin-uuid-123';
+    const mockUser = UserFactory.build({ id: targetUserId });
+    const mockAdmin = AdministrationFactory.build({ id: administrationId });
+
+    function createService() {
+      return AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+    }
+
+    describe('target user validation', () => {
+      it('should throw NOT_FOUND when target user does not exist', async () => {
+        mockUserRepository.getById.mockResolvedValue(null);
+
+        const service = createService();
+
+        await expect(
+          service.getUserAdministration(
+            { userId: 'requester-123', isSuperAdmin: false },
+            targetUserId,
+            administrationId,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+
+        expect(mockAdministrationRepository.getById).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('administration validation', () => {
+      it('should throw NOT_FOUND when administration does not exist', async () => {
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAdministrationRepository.getById.mockResolvedValue(null);
+
+        const service = createService();
+
+        await expect(
+          service.getUserAdministration(
+            { userId: 'requester-123', isSuperAdmin: false },
+            targetUserId,
+            administrationId,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+
+        expect(mockAuthorizationService.hasPermission).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('target user access check', () => {
+      it('should throw NOT_FOUND when target user does not have access to the administration', async () => {
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.hasPermission.mockResolvedValue(false);
+
+        const service = createService();
+
+        await expect(
+          service.getUserAdministration(
+            { userId: 'requester-123', isSuperAdmin: false },
+            targetUserId,
+            administrationId,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+
+        expect(mockAuthorizationService.hasPermission).toHaveBeenCalledWith(
+          targetUserId,
+          'can_list',
+          `administration:${administrationId}`,
+        );
+        expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('self-access', () => {
+      it('should return administration when requester is the target user', async () => {
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+
+        const service = createService();
+
+        const result = await service.getUserAdministration(
+          { userId: targetUserId, isSuperAdmin: false },
+          targetUserId,
+          administrationId,
+        );
+
+        expect(result).toEqual(mockAdmin);
+        // Self-access skips requester permission check
+        expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('super admin access', () => {
+      it('should return administration for super admin without requester permission check', async () => {
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+
+        const service = createService();
+
+        const result = await service.getUserAdministration(
+          { userId: 'super-admin-123', isSuperAdmin: true },
+          targetUserId,
+          administrationId,
+        );
+
+        expect(result).toEqual(mockAdmin);
+        expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('requester authorization', () => {
+      it('should return administration when requester has FGA access', async () => {
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+        const service = createService();
+
+        const result = await service.getUserAdministration(
+          { userId: 'requester-123', isSuperAdmin: false },
+          targetUserId,
+          administrationId,
+        );
+
+        expect(result).toEqual(mockAdmin);
+        expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+          'requester-123',
+          'can_read',
+          `administration:${administrationId}`,
+        );
+      });
+
+      it('should throw FORBIDDEN when requester lacks FGA access', async () => {
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+        mockAuthorizationService.hasPermission.mockResolvedValue(true);
+        mockAuthorizationService.requirePermission.mockRejectedValue(
+          new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+          }),
+        );
+
+        const service = createService();
+
+        await expect(
+          service.getUserAdministration(
+            { userId: 'requester-123', isSuperAdmin: false },
+            targetUserId,
+            administrationId,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      });
+    });
+
+    describe('error handling', () => {
+      it('should re-throw ApiError instances', async () => {
+        const notFoundError = new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+        mockUserRepository.getById.mockRejectedValue(notFoundError);
+
+        const service = createService();
+
+        await expect(
+          service.getUserAdministration(
+            { userId: 'requester-123', isSuperAdmin: false },
+            targetUserId,
+            administrationId,
+          ),
+        ).rejects.toThrow(notFoundError);
+      });
+
+      it('should wrap unexpected errors in ApiError', async () => {
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockAdministrationRepository.getById.mockRejectedValue(new Error('DB connection failed'));
+
+        const service = createService();
+
+        await expect(
+          service.getUserAdministration(
+            { userId: 'requester-123', isSuperAdmin: false },
+            targetUserId,
+            administrationId,
+          ),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
+      });
+    });
+  });
 });

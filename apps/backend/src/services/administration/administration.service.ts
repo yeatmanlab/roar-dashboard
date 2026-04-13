@@ -1132,6 +1132,95 @@ export function AdministrationService({
     }
   }
 
+  /**
+   * Get a single administration for a specific user.
+   *
+   * Authorization flow:
+   * 1. Verify target user exists (404 if not)
+   * 2. Verify administration exists (404 if not)
+   * 3. Verify target user has access to the administration via FGA (404 if not)
+   * 4. If requester is super admin or same user → return administration
+   * 5. Verify requester has FGA access to the administration (403 if not)
+   *
+   * @param authContext - Requesting user's auth context
+   * @param targetUserId - UUID of the user whose administration to retrieve
+   * @param administrationId - UUID of the administration to retrieve
+   * @returns The administration if found and accessible
+   * @throws {ApiError} NOT_FOUND if user, administration, or assignment doesn't exist
+   * @throws {ApiError} FORBIDDEN if requester lacks permission
+   */
+  async function getUserAdministration(
+    authContext: AuthContext,
+    targetUserId: string,
+    administrationId: string,
+  ): Promise<Administration> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Verify target user exists
+      const targetUser = await userRepository.getById({ id: targetUserId });
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, targetUserId },
+        });
+      }
+
+      // 2. Verify administration exists
+      const administration = await administrationRepository.getById({ id: administrationId });
+      if (!administration) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, targetUserId, administrationId },
+        });
+      }
+
+      // 3. Verify target user has access to this administration
+      const targetHasAccess = await authorizationService.hasPermission(
+        targetUserId,
+        FgaRelation.CAN_LIST,
+        `${FgaType.ADMINISTRATION}:${administrationId}`,
+      );
+      if (!targetHasAccess) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, targetUserId, administrationId },
+        });
+      }
+
+      // 4. Super admin or self-access → return immediately
+      if (isSuperAdmin || userId === targetUserId) {
+        return administration;
+      }
+
+      // 5. Verify requester has access to the administration
+      await authorizationService.requirePermission(
+        userId,
+        FgaRelation.CAN_READ,
+        `${FgaType.ADMINISTRATION}:${administrationId}`,
+      );
+
+      return administration;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, targetUserId, administrationId } },
+        'Failed to get user administration',
+      );
+
+      throw new ApiError('Failed to retrieve user administration', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, targetUserId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     verifyAdministrationAccess,
     list,
@@ -1144,5 +1233,6 @@ export function AdministrationService({
     listAgreements,
     deleteById,
     listUserAdministrations,
+    getUserAdministration,
   };
 }

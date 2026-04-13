@@ -7,7 +7,11 @@ import {
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
-import { AdministrationsListQuerySchema, AdministrationsListResponseSchema } from '../administrations/schema';
+import {
+  AdministrationBaseSchema,
+  AdministrationsListQuerySchema,
+  AdministrationsListResponseSchema,
+} from '../administrations/schema';
 
 const c = initContract();
 
@@ -118,6 +122,29 @@ export const UsersContract = c.router(
         "Supervisory users see the intersection of the target user's and their own accessible administrations. " +
         'Supervised roles receive 403. ' +
         'Returns 404 if the target user does not exist.',
+    },
+    getUserAdministration: {
+      method: 'GET',
+      path: '/:userId/administrations/:administrationId',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+        administrationId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationBaseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a single administration for a user',
+      description:
+        "Returns a single administration's details for the specified user. " +
+        'Verifies that the target user has access to the administration and ' +
+        'that the requester is authorized to view it. ' +
+        'Returns 404 if the user, administration, or user-administration assignment does not exist. ' +
+        'Returns 403 if the requester lacks permission.',
     },
   },
   { pathPrefix: '/users' },

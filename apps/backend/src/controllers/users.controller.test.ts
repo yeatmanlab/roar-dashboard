@@ -48,6 +48,7 @@ describe('UsersController', () => {
   const mockUpdate = vi.fn();
   const mockRecordUserAgreement = vi.fn();
   const mockListUserAdministrations = vi.fn();
+  const mockGetUserAdministration = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
@@ -73,6 +74,7 @@ describe('UsersController', () => {
       listAgreements: vi.fn(),
       deleteById: vi.fn(),
       listUserAdministrations: mockListUserAdministrations,
+      getUserAdministration: mockGetUserAdministration,
     });
   });
 
@@ -862,6 +864,131 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
 
       await expect(Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery)).rejects.toThrow(
+        'Unexpected error',
+      );
+    });
+  });
+
+  describe('getUserAdministration', () => {
+    const targetUserId = 'target-user-456';
+    const administrationId = 'admin-uuid-789';
+
+    it('should return 200 with transformed administration base', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: administrationId });
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const data = expectOkResponse(result);
+      expect(data).toHaveProperty('id', administrationId);
+      expect(data).toHaveProperty('publicName', mockAdmin.namePublic);
+      expect(data).toHaveProperty('dates');
+      expect(data).toHaveProperty('isOrdered', mockAdmin.isOrdered);
+    });
+
+    it('should transform date fields to ISO strings and rename fields', async () => {
+      const mockAdmin = AdministrationFactory.build({
+        id: administrationId,
+        namePublic: 'Public Test',
+        dateStart: new Date('2025-09-01T00:00:00.000Z'),
+        dateEnd: new Date('2025-12-31T23:59:59.000Z'),
+        createdAt: new Date('2025-08-15T10:30:00.000Z'),
+      });
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const data = expectOkResponse(result);
+      expect(data.publicName).toBe('Public Test');
+      expect(data.dates.start).toBe('2025-09-01T00:00:00.000Z');
+      expect(data.dates.end).toBe('2025-12-31T23:59:59.000Z');
+      expect(data.dates.created).toBe('2025-08-15T10:30:00.000Z');
+    });
+
+    it('should pass authContext, userId, and administrationId to the service', async () => {
+      mockGetUserAdministration.mockResolvedValue(AdministrationFactory.build());
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      expect(mockGetUserAdministration).toHaveBeenCalledWith(mockAuthContext, targetUserId, administrationId);
+    });
+
+    it('should return 401 for unauthenticated requests', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.UNAUTHORIZED, {
+          statusCode: StatusCodes.UNAUTHORIZED,
+          code: ApiErrorCode.AUTH_UNAUTHENTICATED,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const error = expectErrorResponse(result, StatusCodes.UNAUTHORIZED);
+      expect(error.message).toBe(ApiErrorMessage.UNAUTHORIZED);
+    });
+
+    it('should return 403 when requester lacks permission', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const error = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(error.message).toBe(ApiErrorMessage.FORBIDDEN);
+    });
+
+    it('should return 404 when user or administration not found', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const error = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(error.message).toBe(ApiErrorMessage.NOT_FOUND);
+    });
+
+    it('should return 500 for internal server errors', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const error = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(error.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+    });
+
+    it('should rethrow non-ApiError exceptions', async () => {
+      mockGetUserAdministration.mockRejectedValue(new Error('Unexpected error'));
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId)).rejects.toThrow(
         'Unexpected error',
       );
     });

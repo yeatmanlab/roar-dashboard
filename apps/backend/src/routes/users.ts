@@ -36,6 +36,12 @@ export function registerUserRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, params: { userId }, query }) =>
         UsersController.listUserAdministrations(user!, userId, query),
     },
+    getUserAdministration: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { userId, administrationId } }) =>
+        UsersController.getUserAdministration(user!, userId, administrationId),
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo

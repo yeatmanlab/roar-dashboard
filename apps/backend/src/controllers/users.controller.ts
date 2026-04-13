@@ -11,7 +11,7 @@ import { UserService } from '../services/user';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
-import { transformAdministration } from './utils/administration.transform';
+import { transformAdministration, transformAdministrationBase } from './utils/administration.transform';
 
 const userService = UserService();
 const administrationService = AdministrationService();
@@ -206,6 +206,38 @@ export const UsersController = {
               totalPages: Math.ceil(result.totalItems / query.perPage),
             },
           },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single administration for a specific user.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Returns the base administration schema (no embeds).
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param userId - UUID of the target user.
+   * @param administrationId - UUID of the administration to retrieve.
+   */
+  getUserAdministration: async (authContext: AuthContext, userId: string, administrationId: string) => {
+    try {
+      const administration = await administrationService.getUserAdministration(authContext, userId, administrationId);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformAdministrationBase(administration),
         },
       };
     } catch (error) {
