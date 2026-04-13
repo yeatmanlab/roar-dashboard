@@ -10,10 +10,10 @@ import { parseAccessControlFilter } from '../utils/parse-access-control-filter.u
 import { isDescendantOrEqual } from '../utils/is-descendant-or-equal.utils';
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
+import { isEnrollmentActive } from '../utils/enrollment.utils';
 import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
 import type { UserRole } from '../../enums/user-role.enum';
 import { OrgType } from '../../enums/org-type.enum';
-import { isEnrollmentActive } from '../utils/enrollment.utils';
 
 /**
  * Org Access Controls
@@ -176,6 +176,8 @@ export class OrgAccessControls {
    *    both direct membership and inherited roles from parent orgs)
    * 2. Class membership within the target org
    *
+   * Only includes roles from active enrollments (enrollment dates checked via isEnrollmentActive).
+   *
    * @param userId - The user's ID
    * @param orgId - The org to check roles for
    * @returns Array of role strings the user holds for the org
@@ -192,14 +194,20 @@ export class OrgAccessControls {
       .from(userOrgs)
       .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
       .innerJoin(targetOrgTable, eq(targetOrgTable.id, orgId))
-      .where(and(eq(userOrgs.userId, userId), isAncestorOrEqual(userOrgTable.path, targetOrgTable.path)));
+      .where(
+        and(
+          eq(userOrgs.userId, userId),
+          isAncestorOrEqual(userOrgTable.path, targetOrgTable.path),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
 
     // Path 2: Class membership within the target org
     const classRoles = this.db
       .select({ role: userClasses.role })
       .from(userClasses)
       .innerJoin(classes, eq(classes.id, userClasses.classId))
-      .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId)));
+      .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId), isEnrollmentActive(userClasses)));
 
     // UNION deduplicates automatically
     const result = await orgRoles.union(classRoles);
