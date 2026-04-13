@@ -211,7 +211,7 @@ export async function createGroupTierUsers(groupId: string): Promise<TierUsers> 
 // Route Helper
 // ═══════════════════════════════════════════════════════════════════════════
 
-type HttpMethod = 'get' | 'post' | 'put' | 'delete';
+type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 /**
  * Creates a fluent helper for making HTTP requests and asserting responses.
@@ -240,7 +240,17 @@ export function createRouteHelper(app: express.Application) {
 
     return {
       as(user: TierUser) {
-        return {
+        const authenticatedChain = {
+          withBody(body: object) {
+            return {
+              async toReturn(expectedStatus: number): Promise<request.Response> {
+                authenticateAs(user);
+                const res = await request(app)[httpMethod](path).set('Authorization', 'Bearer token').send(body);
+                expect(res.status).toBe(expectedStatus);
+                return res;
+              },
+            };
+          },
           async toReturn(expectedStatus: number): Promise<request.Response> {
             authenticateAs(user);
             const res = await request(app)[httpMethod](path).set('Authorization', 'Bearer token');
@@ -248,15 +258,26 @@ export function createRouteHelper(app: express.Application) {
             return res;
           },
         };
+        return authenticatedChain;
       },
       unauthenticated() {
-        return {
+        const unauthenticatedChain = {
+          withBody(body: object) {
+            return {
+              async toReturn(expectedStatus: number): Promise<request.Response> {
+                const res = await request(app)[httpMethod](path).send(body);
+                expect(res.status).toBe(expectedStatus);
+                return res;
+              },
+            };
+          },
           async toReturn(expectedStatus: number): Promise<request.Response> {
             const res = await request(app)[httpMethod](path);
             expect(res.status).toBe(expectedStatus);
             return res;
           },
         };
+        return unauthenticatedChain;
       },
     };
   };
