@@ -211,12 +211,14 @@ export const ListTaskVariantsResponseSchema = createPaginatedResponseSchema(Task
  * @property description - Human-readable description of the variant
  * @property status - Publication status of the variant
  */
-export const CreateTaskVariantRequestBodySchema = z.object({
-  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
-  parameters: TaskVariantParametersArraySchema.default([]),
-  description: z.string().trim().min(1).max(1024).optional(),
-  status: TaskVariantStatusSchema,
-});
+export const CreateTaskVariantRequestBodySchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    parameters: TaskVariantParametersArraySchema.default([]),
+    description: z.string().trim().min(1).max(1024).optional(),
+    status: TaskVariantStatusSchema,
+  })
+  .strict();
 
 /**
  * Response schema for create operations on task-variants
@@ -247,6 +249,7 @@ export const UpdateTaskVariantRequestBodySchema = z
     status: TaskVariantStatusSchema.optional(),
     parameters: TaskVariantParametersArraySchema.optional(),
   })
+  .strict()
   .superRefine((payload, ctx) => {
     const updateRequestFields = Object.keys(payload);
     if (updateRequestFields.length === 0) {
@@ -444,6 +447,53 @@ export const CreateTaskResponseSchema = z.object({
 
 export type CreateTaskRequestBody = z.infer<typeof CreateTaskRequestBodySchema>;
 export type CreateTaskResponse = z.infer<typeof CreateTaskResponseSchema>;
+
+const TaskConfigObjectSchema = ValidatedJsonValue.refine(
+  (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+  { message: 'taskConfig must be a JSON object' },
+);
+
+/**
+ * Task Update Request Schema
+ *
+ * Updates a task with the provided fields
+ *
+ * @property name - Optional task name (alphanumeric with spaces)
+ * @property nameSimple - Optional simple task name (alphanumeric with spaces)
+ * @property nameTechnical - Optional technical task name (alphanumeric with spaces)
+ * @property description - Optional task description (max 1024 characters)
+ * @property image - Optional URL to task image
+ * @property tutorialVideo - Optional URL to tutorial video
+ * @property taskConfig - Optional task configuration object
+ */
+export const UpdateTaskRequestBodySchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    nameSimple: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    nameTechnical: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    description: z.string().trim().min(1).max(1024).nullish(),
+    image: z.string().url('Image must be a valid URL').nullish(),
+    tutorialVideo: z.string().url('Tutorial video must be a valid URL').nullish(),
+    taskConfig: TaskConfigObjectSchema.optional(),
+  })
+  .strict()
+  .superRefine((payload, ctx) => {
+    const updateRequestFields = Object.keys(payload);
+    if (updateRequestFields.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'At least one of name, nameSimple, nameTechnical, description, image, tutorialVideo, or taskConfig must be provided.',
+      });
+    }
+  });
+
+export const UpdateTaskResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateTaskRequestBody = z.infer<typeof UpdateTaskRequestBodySchema>;
+export type UpdateTaskResponse = z.infer<typeof UpdateTaskResponseSchema>;
 
 // ─── Task Variants List (cross-task, super-admin only) ──────────────────────
 
