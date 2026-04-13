@@ -60,12 +60,16 @@ beforeAll(async () => {
   tiers = await createTierUsers(baseFixture.district.id);
   userRepository = new UserRepository();
 
-  // Assign tier educator to a class so they can access students via direct class membership (PATH 3)
+  // Assign tier educator to a class so they can access students via direct class membership
   await UserClassFactory.create({
     userId: tiers.educator.id,
     classId: baseFixture.classInSchoolA.id,
     role: UserRole.TEACHER,
   });
+
+  // Re-sync FGA tuples to pick up tier users and class memberships created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -125,10 +129,22 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    // TODO: Add family-based access test once family fixtures are available
-    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1707
-    it.skip('caregiver tier can access users in their family', async () => {
-      // Would require family fixtures linking caregiver to target user
+    it('caregiver (parent) can access users in their family', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: tiers.caregiver.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', `/v1/users/${child.id}`).as(tiers.caregiver).toReturn(200);
+
+      expect(res.body.data.id).toBe(child.id);
     });
   });
 
@@ -200,21 +216,30 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('educator cannot access students via org membership alone', async () => {
-      // Educator with district-level membership cannot see org-level students
-      // Teachers only see students in classes they directly teach (PATH 3)
+    it('educator (teacher) at district level cannot access students in child schools', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no teacher role on child schools or classes. This prevents accidental
+      // privilege escalation from mis-rostering a teacher at the district level.
       const resSchoolA = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
         .as(tiers.educator)
         .toReturn(403);
 
       expect(resSchoolA.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
 
-      // Also cannot see students in other schools
       const resSchoolB = await expectRoute('GET', `/v1/users/${baseFixture.schoolBStudent.id}`)
         .as(tiers.educator)
         .toReturn(403);
 
       expect(resSchoolB.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator cannot access students in a different district', async () => {
+      // Educator in District A cannot see students in District B
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.districtBStudent.id}`)
+        .as(tiers.educator)
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('unassigned user can only access themselves', async () => {
@@ -899,12 +924,16 @@ describe('POST /v1/users/:userId/agreements', () => {
     it('should allow parent to consent to ASSENT agreement for minor child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1985-01-01' });
       const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
       const family = await FamilyFactory.create();
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
       authenticateAs({ authId: parent.authId! });
       const res = await request(app)
@@ -919,12 +948,16 @@ describe('POST /v1/users/:userId/agreements', () => {
     it('should reject parent attempting to consent to TOS for child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1985-01-01' });
       const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
       const family = await FamilyFactory.create();
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
       authenticateAs({ authId: parent.authId! });
       const res = await request(app)
@@ -979,12 +1012,16 @@ describe('POST /v1/users/:userId/agreements', () => {
     it('should reject parent attempting to consent for adult child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1960-01-01' });
       const adultChild = await UserFactory.create({ dob: '1995-01-01', grade: null });
       const family = await FamilyFactory.create();
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: adultChild.id, familyId: family.id, role: 'child' });
+
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
       authenticateAs({ authId: parent.authId! });
       const res = await request(app)
@@ -1076,12 +1113,16 @@ describe('POST /v1/users/:userId/agreements', () => {
     it('returns 409 when parent attempts to re-consent to the same agreement version for child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1985-01-01' });
       const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
       const family = await FamilyFactory.create();
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
       authenticateAs({ authId: parent.authId! });
 

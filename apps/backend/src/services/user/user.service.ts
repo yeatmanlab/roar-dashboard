@@ -3,11 +3,8 @@ import type { User, NewUserAgreement } from '../../db/schema';
 import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
-import type { Permission } from '../../constants/permissions';
-import { CARETAKER_ROLES } from '../../constants/role-classifications';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
-import { Permissions } from '../../constants/permissions';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
@@ -17,8 +14,9 @@ import { UserRepository } from '../../repositories/user.repository';
 import { UserAgreementRepository } from '../../repositories/user-agreement.repository';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import { AgreementRepository } from '../../repositories/agreement.repository';
-import { rolesForPermission } from '../../constants/role-permissions';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 // Types for the unsigned TOS agreements response
 interface TosAgreementVersion {
@@ -95,35 +93,48 @@ export function UserService({
   userAgreementRepository = new UserAgreementRepository(),
   agreementVersionRepository = new AgreementVersionRepository(),
   agreementRepository = new AgreementRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   userRepository?: UserRepository;
   userAgreementRepository?: UserAgreementRepository;
   agreementVersionRepository?: AgreementVersionRepository;
   agreementRepository?: AgreementRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
+  /** Map repository entity types to FGA object type prefixes. */
+  const ENTITY_TYPE_TO_FGA_TYPE: Record<string, FgaType> = {
+    district: FgaType.DISTRICT,
+    school: FgaType.SCHOOL,
+    class: FgaType.CLASS,
+    group: FgaType.GROUP,
+    family: FgaType.FAMILY,
+  };
+
   /**
-   * Verify that a user exists and that the requestor has the required permission.
+   * Verify that a user exists and that the requestor can access them.
    *
-   * Performs a two-step check:
-   * 1. Looks up the user by ID to verify they exist
-   * 2. Checks if the requestor is a super admin or has the required permission
+   * Authorization flow:
+   * 1. Look up target user (404 before 403)
+   * 2. Super admin bypass
+   * 3. Self-access fast path (no FGA call needed)
+   * 4. Look up the target user's active entity memberships (orgs, classes, groups, families)
+   * 5. Batch-check `can_list_users` on each entity via FGA — access granted if any passes
+   *
+   * The FGA model defines `can_list_users: supervisory_tier_group` on district, school,
+   * class, and group types, and `can_list_users: parent` on the family type. This
+   * replaces the old SQL UNION query across 5 access paths (org hierarchy, org→class,
+   * direct class, direct group, family) with a single batch FGA check.
    *
    * @param authContext - User's auth context (id and super admin flag)
-   * @param id - The user's ID to verify
-   * @param permission - The permission to check (default: Permissions.Users.READ)
-   * @returns {Promise<User>} The user record if access is granted.
+   * @param id - The target user's ID to verify
+   * @returns The user record if access is granted
    * @throws {ApiError} NOT_FOUND if user doesn't exist
-   * @throws {ApiError} FORBIDDEN if user doesn't have the required permission
-   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   * @throws {ApiError} FORBIDDEN if requestor cannot access the target user
    */
-  async function verifyUserAccess(
-    authContext: AuthContext,
-    id: string,
-    permission: Permission = Permissions.Users.READ,
-  ): Promise<User> {
+  async function verifyUserAccess(authContext: AuthContext, id: string): Promise<User> {
     const { userId, isSuperAdmin } = authContext;
 
-    // Look up the user first to distinguish between not found and permission issues
+    // 1. Look up the user first to distinguish between not found and permission issues
     const user = await userRepository.getById({ id });
 
     if (!user) {
@@ -134,30 +145,43 @@ export function UserService({
       });
     }
 
-    // Super admins bypass permission checks
+    // 2. Super admins bypass permission checks
     if (isSuperAdmin) {
       return user;
     }
 
-    // Users can always access their own profile
-    // Fast path - no database query needed
+    // 3. Users can always access their own profile — no FGA call needed
     if (userId === id) {
       return user;
     }
 
-    // Check access for non-super admin users
-    const allowedRoles = rolesForPermission(permission);
-    const authorized = await userRepository.getAuthorizedById({ userId, allowedRoles }, id);
+    // 4. Look up the target user's active entity memberships
+    const memberships = await userRepository.getUserEntityMemberships(id);
 
-    if (!authorized) {
-      logger.warn({ userId, id }, 'User attempted to access another user without permission');
+    if (memberships.length === 0) {
+      // Target user has no active memberships — no entity to check against
+      logger.warn({ userId, targetUserId: id }, 'Target user has no active entity memberships');
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, id },
+        context: { userId, targetUserId: id },
       });
     }
-    return authorized;
+
+    // 5. Batch-check can_list_users on each entity via FGA
+    const fgaObjects = memberships.map((m) => `${ENTITY_TYPE_TO_FGA_TYPE[m.entityType]}:${m.entityId}`);
+    const hasAccess = await authorizationService.hasAnyPermission(userId, FgaRelation.CAN_LIST_USERS, fgaObjects);
+
+    if (!hasAccess) {
+      logger.warn({ userId, targetUserId: id }, 'User attempted to access another user without permission');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, targetUserId: id },
+      });
+    }
+
+    return user;
   }
 
   /**
@@ -474,14 +498,23 @@ export function UserService({
       }
       // Parent consent: user is consenting for their child (via family relationship)
       else {
-        // Use UserRepository's access controls to verify family relationship
-        // Allowed roles are defined as any caretaker role (e.g. parent, guardian) that would have access to consent on behalf of the child
-        const authorized = await userRepository.getAuthorizedById(
-          { userId: requestingUserId, allowedRoles: CARETAKER_ROLES },
-          userId,
-        );
+        // Check if the requesting user has can_consent_for_child on any of the
+        // target user's families. The FGA model defines can_consent_for_child: parent
+        // on the family type, so only users with the parent role in a shared family pass.
+        const targetFamilies = await userRepository.getUserEntityMemberships(userId);
+        const familyObjects = targetFamilies
+          .filter((m) => m.entityType === 'family')
+          .map((m) => `${FgaType.FAMILY}:${m.entityId}`);
 
-        if (!authorized) {
+        const canConsent =
+          familyObjects.length > 0 &&
+          (await authorizationService.hasAnyPermission(
+            requestingUserId,
+            FgaRelation.CAN_CONSENT_FOR_CHILD,
+            familyObjects,
+          ));
+
+        if (!canConsent) {
           logger.warn({ requestingUserId, targetUserId: userId }, 'User attempted to consent for non-family member');
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,

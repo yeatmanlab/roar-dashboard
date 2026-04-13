@@ -69,14 +69,21 @@ type district
     # direct district membership, preserving school isolation.
     define can_list: supervisory_tier_group or subtree_supervisory_tier_group from child_school
     define can_read: supervisory_tier_group or subtree_supervisory_tier_group from child_school
-    define can_list_users: supervisory_tier_group
-    define can_read_scores: supervisory_tier_group
-    define can_read_progress: supervisory_tier_group
+    # User/score/progress visibility at the district level is restricted to
+    # admin roles. A mis-rostered teacher at the district level should not
+    # gain access to student data across the entire district.
+    define can_list_users: admin_tier
+    define can_read_scores: admin_tier
+    define can_read_progress: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # school — mid-level org, child of district, parent of classes
 #
-# Inherits supervisory roles from parent district (via parent_org).
+# Inherits most supervisory roles from parent district (via parent_org).
+# Exception: teacher does NOT inherit — teachers must be directly rostered
+# at the school to hold the teacher role here (prevents accidental
+# privilege escalation from district-level mis-rostering).
+#
 # Supervised roles bubble UP from child classes (via child_class)
 # and further up to the parent district (via district.child_school).
 #
@@ -99,10 +106,10 @@ type school
 
     define principal: [user with active_membership] or principal from parent_org
     define counselor: [user with active_membership] or counselor from parent_org
-    define teacher: [user with active_membership] or teacher from parent_org
+    define teacher: [user with active_membership]
     define aide: [user with active_membership] or aide from parent_org
     define proctor: [user with active_membership] or proctor from parent_org
-    
+
     define guardian: [user with active_membership] or guardian from child_class
     define parent: [user with active_membership] or parent from child_class
     define relative: [user with active_membership] or relative from child_class
@@ -132,15 +139,20 @@ type school
     define can_read: supervisory_tier_group
 
     define can_list_classes: supervisory_tier_group
-    define can_list_users: supervisory_tier_group
-    define can_read_scores: supervisory_tier_group
-    define can_read_progress: supervisory_tier_group
+    # User/score/progress visibility at the school level is restricted to
+    # admin roles. Teachers must be rostered on specific classes to see
+    # student data — school-level membership alone is not sufficient.
+    define can_list_users: admin_tier
+    define can_read_scores: admin_tier
+    define can_read_progress: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # class — leaf-level entity, child of school
 #
-# Inherits all roles from parent school (and transitively from district).
-# A teacher at a school is a teacher in all classes within that school.
+# Inherits most supervisory roles from parent school (and transitively
+# from district). Exception: teacher does NOT inherit — teachers must be
+# directly rostered on a class to hold the teacher role here. This
+# ensures teachers only see student data in classes they're assigned to.
 # ────────────────────────────────────────────────────────────────────────────────
 type class
   relations
@@ -155,7 +167,7 @@ type class
 
     define principal: [user with active_membership] or principal from parent_org
     define counselor: [user with active_membership] or counselor from parent_org
-    define teacher: [user with active_membership] or teacher from parent_org
+    define teacher: [user with active_membership]
     define aide: [user with active_membership] or aide from parent_org
     define proctor: [user with active_membership] or proctor from parent_org
 
@@ -211,6 +223,7 @@ type family
     define can_update_child: parent
     define can_delete_child: parent
     define can_read_child: parent
+    define can_consent_for_child: parent
 
 
 # ────────────────────────────────────────────────────────────────────────────────
