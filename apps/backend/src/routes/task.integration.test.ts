@@ -698,6 +698,102 @@ describe('POST /v1/tasks', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PATCH /v1/tasks/:taskId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('PATCH /v1/tasks/:taskId', () => {
+  const path = (taskId: string) => `/v1/tasks/${taskId}`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can update a task', async () => {
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ name: 'Updated Task Name' })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.task.id);
+    });
+
+    it('non-super-admin tiers are forbidden', async () => {
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.educator)
+        .withBody({ name: 'Updated Task Name' })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('lookup by slug', () => {
+    it('updates a task when looked up by slug', async () => {
+      const uniqueSlug = `patch-task-${getUniqueSlugSuffix()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+
+      const res = await expectRoute('PATCH', path(uniqueSlug))
+        .as(tiers.superAdmin)
+        .withBody({ description: 'Updated description' })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(testTask.id);
+    });
+  });
+
+  describe('validation', () => {
+    it('returns 400 when immutable fields are present', async () => {
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ slug: 'new-slug' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
+    });
+
+    it('returns 400 when image URL is invalid', async () => {
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ image: 'not-a-url' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
+    });
+
+    it('returns 400 when tutorialVideo URL is invalid', async () => {
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({ tutorialVideo: 'not-a-url' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
+    });
+
+    it('returns 400 when the request body is empty', async () => {
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .as(tiers.superAdmin)
+        .withBody({})
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      expect(res.body.issues).toBeDefined();
+    });
+
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('PATCH', path(baseFixture.task.id))
+        .unauthenticated()
+        .toReturn(StatusCodes.UNAUTHORIZED);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when task does not exist', async () => {
+      const res = await expectRoute('PATCH', path('non-existent-task-id'))
+        .as(tiers.superAdmin)
+        .withBody({ description: 'Updated description' })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // POST /v1/tasks/:taskId/variants
 // ═══════════════════════════════════════════════════════════════════════════
 
