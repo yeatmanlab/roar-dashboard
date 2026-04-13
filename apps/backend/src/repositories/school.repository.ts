@@ -284,14 +284,11 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
   async listByIds(ids: string[], options: ListAuthorizedOptions): Promise<PaginatedResult<School | SchoolWithCounts>> {
     const { includeEnded = false, embedCounts = false } = options;
 
-    // Build where clause for school type and rostering status
-    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL)];
-
-    if (!includeEnded) {
-      whereConditions.push(isNull(orgs.rosteringEnded));
-    }
-
-    const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0];
+ private buildSchoolWhereClause(includeEnded: boolean): SQL {
+   return includeEnded
+     ? eq(orgs.orgType, OrgType.SCHOOL)
+     : and(eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded));
+ }
 
     const result = await this.getByIds(ids, {
       page: options.page,
