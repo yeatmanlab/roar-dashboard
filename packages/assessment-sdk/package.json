@@ -1,5 +1,5 @@
 {
-  "name": "@roar-platform/assessment-sdk",
+  "name": "@yeatmanlab/assessment-sdk",
   "version": "0.0.0",
   "type": "module",
   "publishConfig": {

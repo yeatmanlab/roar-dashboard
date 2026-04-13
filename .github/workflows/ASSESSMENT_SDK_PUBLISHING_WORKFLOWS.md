@@ -62,7 +62,7 @@ Both workflows use the default `GITHUB_TOKEN` provided by GitHub Actions for pub
 
 ## Registry Configuration
 
-Both workflows publish to GitHub Package Registry (`https://npm.pkg.github.com`) using the `@roar-platform` scope.
+Both workflows publish to GitHub Package Registry (`https://npm.pkg.github.com`) using the `@yeatmanlab` scope.
 
 The Assessment SDK's `package.json` includes:
 ```json
@@ -79,12 +79,12 @@ This ensures `npm publish` automatically targets the correct registry.
 
 ### Stable Release
 ```bash
-npm install @roar-platform/assessment-sdk@latest
+npm install @yeatmanlab/assessment-sdk@latest
 ```
 
 ### Next Pre-release
 ```bash
-npm install @roar-platform/assessment-sdk@next
+npm install @yeatmanlab/assessment-sdk@next
 ```
 
 ## Troubleshooting
