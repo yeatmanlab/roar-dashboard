@@ -33,7 +33,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@roar-platform'
+          scope: '@yeatmanlab'
 
       - name: Validate version matches tag (stable only)
         if: startsWith(github.ref, 'refs/tags/assessment-sdk-v')
