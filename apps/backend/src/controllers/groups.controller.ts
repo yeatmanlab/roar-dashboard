@@ -5,7 +5,7 @@ import type { InvitationCode } from '../db/schema';
 import { GroupService } from '../services/group/group.service';
 import type { AuthContext } from '../types/auth-context';
 import { ApiError } from '../errors/api-error';
-import { handleSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
+import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
 const invitationCodeService = InvitationCodeService();
@@ -75,7 +75,7 @@ export const GroupsController = {
   listUsers: async (authContext: AuthContext, groupId: string, query: EnrolledUsersQuery) => {
     try {
       const result = await groupService.listUsers(authContext, groupId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
+      return handleUserSubResourceResponse(result, query.page, query.perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }
