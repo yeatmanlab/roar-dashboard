@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { OrgFactory } from '../test-support/factories/org.factory';
+import { EnrolledOrgUserFactory } from '../test-support/factories/user.factory';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
 import { OrgType } from '../enums/org-type.enum';
+import { UserRole } from '../enums/user-role.enum';
 
 // Mock the DistrictService module
 vi.mock('../services/district/district.service', () => ({
@@ -37,6 +41,7 @@ function expectErrorResponse(
 describe('DistrictsController', () => {
   const mockList = vi.fn();
   const mockGetById = vi.fn();
+  const mockListUsers = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -46,8 +51,8 @@ describe('DistrictsController', () => {
     vi.mocked(DistrictService).mockReturnValue({
       list: mockList,
       getById: mockGetById,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+      listUsers: mockListUsers,
+    });
   });
 
   describe('list', () => {
@@ -480,6 +485,158 @@ describe('DistrictsController', () => {
       const { DistrictsController: Controller } = await import('./districts.controller');
 
       await expect(Controller.getById(mockAuthContext, 'district-123')).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('listUsers', () => {
+    it('should return paginated users with 200 status', async () => {
+      const mockUsers = EnrolledOrgUserFactory.buildList(3);
+      mockListUsers.mockResolvedValue({
+        items: mockUsers,
+        totalItems: 3,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'district-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(3);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 3,
+        totalPages: 1,
+      });
+    });
+
+    it('should handle empty results', async () => {
+      mockListUsers.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'district-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
+    });
+
+    it('should pass query parameters to service', async () => {
+      mockListUsers.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await Controller.listUsers(mockAuthContext, 'district-456', {
+        page: 2,
+        perPage: 50,
+        sortBy: 'username',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
+        role: UserRole.STUDENT,
+      });
+
+      expect(mockListUsers).toHaveBeenCalledWith(mockAuthContext, 'district-456', {
+        page: 2,
+        perPage: 50,
+        sortBy: 'username',
+        sortOrder: SortOrder.DESC,
+        grade: ['5'],
+        role: UserRole.STUDENT,
+      });
+    });
+
+    it('should handle ApiError with 404 Not Found', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'nonexistent-district', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 403 Forbidden', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'district-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should handle ApiError with 500 Internal Server Error', async () => {
+      const error = new ApiError('Database error', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockListUsers.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      const result = await Controller.listUsers(mockAuthContext, 'district-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'nameLast',
+        sortOrder: SortOrder.ASC,
+      });
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should rethrow non-ApiError errors', async () => {
+      const error = new Error('Unexpected error');
+      mockListUsers.mockRejectedValue(error);
+
+      const { DistrictsController: Controller } = await import('./districts.controller');
+
+      await expect(
+        Controller.listUsers(mockAuthContext, 'district-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'nameLast',
+          sortOrder: SortOrder.ASC,
+        }),
+      ).rejects.toThrow('Unexpected error');
     });
   });
 });

@@ -8,6 +8,7 @@ import type {
   TaskVariant as ContractTaskVariant,
   Json,
   CreateTaskRequestBody,
+  UpdateTaskRequestBody,
 } from '@roar-dashboard/api-contract';
 import type { Task, TaskVariant } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
@@ -164,6 +165,39 @@ export const TasksController = {
           StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
           StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing task.
+   *
+   * Delegates to TaskService for authorization and business logic.
+   * Requires super admin privileges.
+   *
+   * @param authContext - User's authentication context (requires super admin)
+   * @param taskId - The unique ID or slug of the task to update
+   * @param body - Request body with task details to update (name, nameSimple, nameTechnical, taskConfig, etc.)
+   * @returns Response with status 200 and the updated task's UUID
+   */
+  update: async (authContext: AuthContext, taskId: string, body: UpdateTaskRequestBody) => {
+    try {
+      const result = await taskService.update(authContext, taskId, body);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
