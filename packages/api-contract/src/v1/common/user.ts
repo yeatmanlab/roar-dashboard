@@ -78,11 +78,19 @@ export const UserBaseSchema = z.object({
 });
 
 export const UserSchema = UserBaseSchema.merge(UserDemographicSchema).merge(UserIdentifierSchema);
+
+// TODO: Change this schema to return roles array instead of single role and remove enrollmentStart, delete EnrolledOrgUser
+// ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1734
 export const EnrolledUserSchema = UserSchema.extend({
   role: UserRoleSchema,
   enrollmentStart: z.string().datetime(),
 });
 export type EnrolledUser = z.infer<typeof EnrolledUserSchema>;
+
+export const EnrolledOrgUserSchema = UserSchema.extend({
+  roles: z.array(UserRoleSchema),
+});
+export type EnrolledOrgUser = z.infer<typeof EnrolledOrgUserSchema>;
 
 export const ENROLLED_USERS_SORT_FIELDS = ['nameLast', 'username', 'grade'] as const;
 export type EnrolledUsersSortFieldType = (typeof ENROLLED_USERS_SORT_FIELDS)[number];
@@ -115,6 +123,9 @@ export type EnrolledUsersQuery = z.infer<typeof EnrolledUsersQuerySchema>;
 
 export const EnrolledUsersResponseSchema = createPaginatedResponseSchema(EnrolledUserSchema);
 export type EnrolledUsersResponse = z.infer<typeof EnrolledUsersResponseSchema>;
+
+export const EnrolledOrgUsersResponseSchema = createPaginatedResponseSchema(EnrolledOrgUserSchema);
+export type EnrolledOrgUsersResponse = z.infer<typeof EnrolledOrgUsersResponseSchema>;
 
 /**
  * Schema for school levels
