@@ -8,6 +8,7 @@ import {
   DistrictSchoolsListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
+import { EnrolledUsersQuerySchema, EnrolledOrgUsersResponseSchema } from '../common/user';
 
 const c = initContract();
 
@@ -75,6 +76,26 @@ export const DistrictsContract = c.router(
         'Super admins see all schools in the district. ' +
         'Supervisory users (administrator, teacher) see only schools in their accessible org tree. ' +
         'Supervised users (student, guardian, parent, relative) receive 403 Forbidden. ' +
+        'Returns 403 if the user lacks permission to access the district. ' +
+        'Returns 404 if the district does not exist.',
+    },
+    listUsers: {
+      method: 'GET',
+      path: '/:districtId/users',
+      pathParams: z.object({ districtId: z.string().uuid() }),
+      query: EnrolledUsersQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(EnrolledOrgUsersResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get district users by districtId',
+      description:
+        'Returns a paginated list of active users in a district. ' +
+        'Filters users by role and grade if provided. ' +
         'Returns 403 if the user lacks permission to access the district. ' +
         'Returns 404 if the district does not exist.',
     },

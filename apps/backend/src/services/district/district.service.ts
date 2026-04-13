@@ -12,7 +12,7 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
-
+import type { EnrolledUsersQuery, EnrolledOrgUserEntity, ListEnrolledUsersOptions } from '../../types/user';
 /**
  * Options for listing districts
  */
@@ -169,6 +169,81 @@ export function DistrictService({
   }
 
   /**
+   * Verify that a district exists and the user has access to it.
+   *
+   * @param authContext - User's auth context
+   * @param districtId - The district ID to verify access for
+   * @returns The district if found and accessible
+   * @throws {ApiError} NOT_FOUND if district doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
+  async function verifyDistrictAccess(authContext: AuthContext, districtId: string): Promise<District> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Look up the district first to distinguish 404 from 403
+    const district = await districtRepository.getUnrestrictedById(districtId);
+
+    if (!district) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, districtId },
+      });
+    }
+
+    // Super admins have unrestricted access
+    if (isSuperAdmin) {
+      return district;
+    }
+
+    // Check access for non-super admin users
+    const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
+    const authorized = await districtRepository.getAuthorizedById({ userId, allowedRoles }, districtId);
+    if (!authorized) {
+      logger.warn({ userId, districtId }, 'User attempted to access district without permission');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, districtId },
+      });
+    }
+
+    return authorized;
+  }
+
+  /**
+   * Performs authorization checks for sub-resource listing (supervisory roles only).
+   * Throws if user lacks access or is a supervised user.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param districtId - The district ID to verify access for
+   * @returns The district path if authorized
+   * @throws {ApiError} NOT_FOUND if district doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
+   */
+  async function authorizeSubResourceAccess(authContext: AuthContext, districtId: string): Promise<string> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Verifies user has access to organizations
+    const district = await getById(authContext, districtId);
+
+    if (isSuperAdmin) return district.path;
+
+    const userRoles = await districtRepository.getUserRolesForDistrict(userId, districtId);
+
+    if (!hasSupervisoryRole(userRoles)) {
+      logger.warn({ userId, districtId, userRoles }, 'User lacks district supervisory role for sub-resource listing');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, districtId, userRoles },
+      });
+    }
+
+    return district.path;
+  }
+
+  /**
    * List schools within a district with access control.
    *
    * Authorization behavior:
@@ -243,50 +318,64 @@ export function DistrictService({
   }
 
   /**
-   * Verify that a district exists and the user has access to it.
+   * Get users enrolled in a district.
    *
-   * @param authContext - User's auth context
-   * @param districtId - The district ID to verify access for
-   * @returns The district if found and accessible
-   * @throws {ApiError} NOT_FOUND if district doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access
+   * Returns all users who have an active enrollment in the specified district.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param districtId - The district ID to get users for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with users
    */
-  async function verifyDistrictAccess(authContext: AuthContext, districtId: string): Promise<District> {
+  async function listUsers(
+    authContext: AuthContext,
+    districtId: string,
+    options: EnrolledUsersQuery,
+  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
+    try {
+      const districtPath = await authorizeSubResourceAccess(authContext, districtId);
 
-    // Look up the district first to distinguish 404 from 403
-    const district = await districtRepository.getUnrestrictedById(districtId);
+      const queryParams: ListEnrolledUsersOptions = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        ...(options.role && { role: options.role }),
+        ...(options.grade && { grade: options.grade }),
+      };
 
-    if (!district) {
-      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      if (isSuperAdmin) {
+        return await districtRepository.getUsersByDistrictPath(districtPath, queryParams);
+      }
+
+      const allowedRoles = rolesForPermission(Permissions.Users.LIST);
+      return await districtRepository.getAuthorizedUsersByDistrictId(
+        { userId, allowedRoles },
+        districtId,
+        districtPath,
+        queryParams,
+      );
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, districtId, options } }, 'Failed to list district users');
+
+      throw new ApiError('Failed to retrieve district users', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, districtId },
+        cause: error,
       });
     }
-
-    // Super admins have unrestricted access
-    if (isSuperAdmin) {
-      return district;
-    }
-
-    // Check access for non-super admin users
-    const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-    const authorized = await districtRepository.getAuthorizedById({ userId, allowedRoles }, districtId);
-    if (!authorized) {
-      logger.warn({ userId, districtId }, 'User attempted to access district without permission');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, districtId },
-      });
-    }
-
-    return authorized;
   }
 
   return {
     list,
+    listUsers,
     getById,
     listDistrictSchools,
   };
