@@ -11,6 +11,9 @@ import { isDescendantOrEqual } from '../utils/is-descendant-or-equal.utils';
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
 import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
+import type { UserRole } from '../../enums/user-role.enum';
+import { OrgType } from '../../enums/org-type.enum';
+import { isEnrollmentActive } from '../utils/enrollment.utils';
 
 /**
  * Org Access Controls
@@ -137,6 +140,33 @@ export class OrgAccessControls {
   }
 
   /**
+   * Get user roles for a specific district.
+   * Only checks direct org membership and the roles there.
+   *
+   * @param userId - User ID to get roles for
+   * @param districtId - District ID to check roles in
+   * @returns Array of user roles in the district
+   */
+  async getUserRolesForDistrict(userId: string, districtId: string): Promise<UserRole[]> {
+    const rolesViaDirectOrg = await this.db
+      .selectDistinct({
+        role: userOrgs.role,
+      })
+      .from(userOrgs)
+      .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
+      .where(
+        and(
+          eq(orgs.orgType, OrgType.DISTRICT),
+          eq(userOrgs.userId, userId),
+          eq(orgs.id, districtId),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
+
+    return rolesViaDirectOrg.map((r) => r.role);
+  }
+
+  /*
    * Get the roles a user holds for a specific org through org membership
    * (via ltree ancestor-or-equal) or class membership within that org.
    *
