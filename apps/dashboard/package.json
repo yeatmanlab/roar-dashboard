@@ -36,6 +36,8 @@
     "@bdelab/roav-mep": "1.2.9",
     "@bdelab/roav-ran": "1.0.33",
     "@dotenvx/dotenvx": "^1.24.4",
+    "@roar-dashboard/api-contract": "*",
+    "@ts-rest/core": "^3.52.1",
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
     "@sentry/browser": "^8.0.0",
