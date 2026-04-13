@@ -211,12 +211,14 @@ export const ListTaskVariantsResponseSchema = createPaginatedResponseSchema(Task
  * @property description - Human-readable description of the variant
  * @property status - Publication status of the variant
  */
-export const CreateTaskVariantRequestBodySchema = z.object({
-  name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
-  parameters: TaskVariantParametersArraySchema.default([]),
-  description: z.string().trim().min(1).max(1024).optional(),
-  status: TaskVariantStatusSchema,
-});
+export const CreateTaskVariantRequestBodySchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).regex(IDENTIFIER_WITH_SPACES).optional(),
+    parameters: TaskVariantParametersArraySchema.default([]),
+    description: z.string().trim().min(1).max(1024).optional(),
+    status: TaskVariantStatusSchema,
+  })
+  .strict();
 
 /**
  * Response schema for create operations on task-variants
@@ -247,6 +249,7 @@ export const UpdateTaskVariantRequestBodySchema = z
     status: TaskVariantStatusSchema.optional(),
     parameters: TaskVariantParametersArraySchema.optional(),
   })
+  .strict()
   .superRefine((payload, ctx) => {
     const updateRequestFields = Object.keys(payload);
     if (updateRequestFields.length === 0) {
