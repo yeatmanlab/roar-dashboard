@@ -40,10 +40,10 @@ describe('handle-enrolled-users', () => {
     });
   });
 
-  describe('handleSubResourceResponse', () => {
+  describe('handleUserSubResourceResponse', () => {
     it('returns OK status with paginated response', () => {
       const mockUsers = [EnrolledUserFactory.build()];
-      const result = handleSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body.data.items).toHaveLength(1);
@@ -57,7 +57,7 @@ describe('handle-enrolled-users', () => {
 
     it('includes role in response', () => {
       const mockUsers = [EnrolledUserFactory.build({ roles: [UserRole.TEACHER] })];
-      const result = handleSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.body.data.items[0]!.roles).toEqual([UserRole.TEACHER]);
     });
