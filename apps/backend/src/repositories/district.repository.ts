@@ -92,13 +92,11 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @returns A SQL condition or undefined
    */
   private buildDistrictWhereClause(includeEnded: boolean): SQL | undefined {
-    const conditions: SQL[] = [eq(orgs.orgType, OrgType.DISTRICT)];
-
-    if (!includeEnded) {
-      conditions.push(isNull(orgs.rosteringEnded));
+    if (includeEnded) {
+      return eq(orgs.orgType, OrgType.DISTRICT);
     }
 
-    return conditions.length > 1 ? and(...conditions) : conditions[0];
+    return and(eq(orgs.orgType, OrgType.DISTRICT), isNull(orgs.rosteringEnded));
   }
 
   /**
