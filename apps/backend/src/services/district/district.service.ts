@@ -308,7 +308,7 @@ export function DistrictService({
 
       logger.error({ err: error, context: { userId, districtId, options } }, 'Failed to list district schools');
 
-      throw new ApiError('Failed to retrieve district schools', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, districtId },
