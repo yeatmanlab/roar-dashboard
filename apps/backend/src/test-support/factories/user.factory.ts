@@ -60,7 +60,7 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
     nameFirst: faker.person.firstName(),
     nameMiddle: null,
     nameLast: faker.person.lastName(),
-    username: faker.internet.username(),
+    username: `${faker.internet.username()}_${faker.string.alphanumeric(8)}`,
     email: faker.internet.email(),
     userType: faker.helpers.arrayElement(Object.values(UserType)),
     dob: null,
