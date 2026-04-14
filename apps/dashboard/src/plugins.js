@@ -5,12 +5,14 @@ import router from '@/router/index.js';
 import TextClamp from 'vue3-text-clamp';
 import VueGoogleMaps from 'vue-google-maps-community-fork';
 import { createHead } from '@unhead/vue';
-import { VueQueryPlugin } from '@tanstack/vue-query';
+import { QueryCache, VueQueryPlugin } from '@tanstack/vue-query';
 import { i18n } from '@/translations/i18n.js';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import { definePreset } from '@primevue/themes';
 import Aura from '@primevue/themes/aura';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { useGlobalError } from '@/composables/useGlobalError';
 
 const pinia = createPinia().use(piniaPluginPersistedState);
 const head = createHead();
@@ -58,10 +60,32 @@ const plugins = [
     VueQueryPlugin,
     {
       queryClientConfig: {
+        queryCache: new QueryCache({
+          // Bridge terminal API errors into the global error state so
+          // the router guard can redirect to the appropriate error page.
+          // This fires after retry() has given up (or returned false).
+          onError: (error) => {
+            const { setGlobalError } = useGlobalError();
+            if (isRosteringEndedError(error)) {
+              setGlobalError({ type: 'rostering-ended' });
+            } else if (isTerminalAuthError(error)) {
+              setGlobalError({ type: 'auth-expired' });
+            }
+          },
+        }),
         defaultOptions: {
           queries: {
             staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
             gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
+            retry: (failureCount, error) => {
+              // Don't retry on terminal auth errors (unrecoverable)
+              if (isRosteringEndedError(error) || isTerminalAuthError(error)) {
+                return false;
+              }
+              // Disable retries in Cypress E2E tests for deterministic behavior
+              if (window.Cypress) return false;
+              return failureCount < 3;
+            },
           },
         },
       },
