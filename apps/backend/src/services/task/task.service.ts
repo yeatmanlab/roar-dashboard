@@ -55,6 +55,20 @@ export interface UpdateTaskVariantData {
 }
 
 /**
+ * Data for updating an existing task.
+ * All fields are optional - only provided fields will be updated.
+ */
+export interface UpdateTaskData {
+  name?: string | undefined;
+  nameSimple?: string | undefined;
+  nameTechnical?: string | undefined;
+  description?: string | null | undefined;
+  image?: string | null | undefined;
+  tutorialVideo?: string | null | undefined;
+  taskConfig?: unknown;
+}
+
+/**
  * Result of evaluating a user's eligibility for a task variant.
  */
 export interface TaskVariantEligibilityResult {
@@ -989,10 +1003,81 @@ export function TaskService({
     }
   }
 
+  /**
+   * Updates an existing task.
+   *
+   * Only super admins can update tasks.
+   *
+   * @param authContext - User's auth context (requires super admin privileges)
+   * @param taskId - The ID or slug of the task to update
+   * @param body - Task data to update including name, nameSimple, nameTechnical, taskConfig, and optional fields
+   * @returns An object containing the updated task's UUID
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} NOT_FOUND if the task is not found
+   * @throws {ApiError} DATABASE_QUERY_FAILED if an unexpected database error occurs
+   */
+  async function update(authContext: AuthContext, taskId: string, body: UpdateTaskData): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    try {
+      let task: Task | null = null;
+
+      if (isValidUuid(taskId)) {
+        task = await taskRepository.getById({ id: taskId });
+      } else {
+        task = await taskRepository.getBySlug(taskId);
+      }
+
+      if (!task) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, taskId },
+        });
+      }
+
+      const updateData: Partial<NewTask> = {
+        ...(body.name !== undefined && { name: body.name }),
+        ...(body.nameSimple !== undefined && { nameSimple: body.nameSimple }),
+        ...(body.nameTechnical !== undefined && { nameTechnical: body.nameTechnical }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.image !== undefined && { image: body.image }),
+        ...(body.tutorialVideo !== undefined && { tutorialVideo: body.tutorialVideo }),
+        ...(body.taskConfig !== undefined && { taskConfig: body.taskConfig }),
+      };
+
+      await taskRepository.update({ id: task.id, data: updateData });
+
+      logger.info({ userId, taskId: task.id }, 'Updated task');
+
+      return { id: task.id };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, taskId } }, 'Failed to update task');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, taskId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
     create,
+    update,
     listTaskVariants,
     getTaskVariant,
     createTaskVariant,

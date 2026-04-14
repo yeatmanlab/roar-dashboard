@@ -91,7 +91,7 @@ define teacher: [user with active_membership]
 
 # Permission (computed — derived from roles)
 define can_list: member
-define can_delete: admin_tier
+define can_delete: no_one
 ```
 
 ### All 13 OneRoster roles
