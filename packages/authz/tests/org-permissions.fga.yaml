@@ -125,6 +125,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:principal-in-tree-a
+    relation: principal
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:teacher-in-tree-a
     relation: teacher
     object: school:school-a
@@ -638,6 +646,7 @@ tests:
               - user:district-admin
               - user:district-teacher
               - user:school-principal
+              - user:principal-in-tree-a
               - user:school-counselor
               - user:school-teacher
               - user:teacher-in-tree-a
@@ -658,6 +667,7 @@ tests:
             users:
               - user:district-admin
               - user:school-principal
+              - user:principal-in-tree-a
               - user:school-counselor
               - user:school-teacher
               - user:teacher-in-tree-a
