@@ -3,6 +3,7 @@ import type { User, NewUserAgreement } from '../../db/schema';
 import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
+import type { EntityType } from '../../types/entity-type';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -102,7 +103,7 @@ export function UserService({
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /** Map repository entity types to FGA object type prefixes. */
-  const ENTITY_TYPE_TO_FGA_TYPE: Record<string, FgaType> = {
+  const ENTITY_TYPE_TO_FGA_TYPE: Record<EntityType, FgaType> = {
     district: FgaType.DISTRICT,
     school: FgaType.SCHOOL,
     class: FgaType.CLASS,
@@ -120,9 +121,14 @@ export function UserService({
    * 4. Look up the target user's active entity memberships (orgs, classes, groups, families)
    * 5. Batch-check `can_list_users` on each entity via FGA — access granted if any passes
    *
-   * The FGA model defines `can_list_users: supervisory_tier_group` on district, school,
-   * class, and group types, and `can_list_users: parent` on the family type. This
-   * replaces the old SQL UNION query across 5 access paths (org hierarchy, org→class,
+   * The FGA model defines`can_list_users` permission on each entity type (district, school, class, group, family) that a user can belong to. This method checks if the requestor has `can_list_users` on any of the target user's entities, which grants them access to view the target user's profile.
+   *  - district: `can_list_users`: admin_tier
+   *  - school: `can_list_users`: admin_tier or school_admin_tier
+   *  - class: `can_list_users`: admin_tier or school_admin_tier or educator_tier (supervisory_tier_group)
+   *  - group: `can_list_users`: admin_tier or school_admin_tier or educator_tier (supervisory_tier_group)
+   *  - family: `can_list_users`: parent
+   *
+   * This replaces the old SQL UNION query across 5 access paths (org hierarchy, org→class,
    * direct class, direct group, family) with a single batch FGA check.
    *
    * @param authContext - User's auth context (id and super admin flag)
@@ -506,13 +512,11 @@ export function UserService({
           .filter((m) => m.entityType === 'family')
           .map((m) => `${FgaType.FAMILY}:${m.entityId}`);
 
-        const canConsent =
-          familyObjects.length > 0 &&
-          (await authorizationService.hasAnyPermission(
-            requestingUserId,
-            FgaRelation.CAN_CONSENT_FOR_CHILD,
-            familyObjects,
-          ));
+        const canConsent = await authorizationService.hasAnyPermission(
+          requestingUserId,
+          FgaRelation.CAN_CONSENT_FOR_CHILD,
+          familyObjects,
+        );
 
         if (!canConsent) {
           logger.warn({ requestingUserId, targetUserId: userId }, 'User attempted to consent for non-family member');

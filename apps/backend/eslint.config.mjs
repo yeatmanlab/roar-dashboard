@@ -9,4 +9,11 @@ export default [
       'no-console': 'error',
     },
   },
+  {
+    files: ['**/*.test.ts', '**/*.integration.test.ts'],
+    rules: {
+      // toReturn() in route-test.helper.ts wraps expect() internally
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expect', '**.toReturn'] }],
+    },
+  },
 ];

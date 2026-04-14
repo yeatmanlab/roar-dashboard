@@ -118,6 +118,8 @@ export class UserRepository extends BaseRepository<User, typeof users> {
    * @param id - The user ID to look up.
    * @returns The user record if found, null otherwise.
    */
+  // TODO: Remove all SQL-based access controls after FGA migration
+  // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1764
   async getAuthorizedById(accessControlFilter: AccessControlFilter, id: string): Promise<User | null> {
     const accessibleUsers = this.accessControls.buildAccessibleUserIdsQuery(accessControlFilter).as('accessible_users');
     const result = await this.db
