@@ -1009,16 +1009,6 @@ export function AdministrationService({
         }
       }
 
-      // Check for duplicate administration name
-      const nameExists = await administrationRepository.existsByName(request.name);
-      if (nameExists) {
-        throw new ApiError(ApiErrorMessage.CONFLICT, {
-          statusCode: StatusCodes.CONFLICT,
-          code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { userId, name: request.name },
-        });
-      }
-
       // Validate that all referenced entities exist
       // Use parallel fetches for efficiency
       const orgIds = request.orgs ?? [];

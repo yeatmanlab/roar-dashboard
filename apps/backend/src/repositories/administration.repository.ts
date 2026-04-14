@@ -980,19 +980,4 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       },
     });
   }
-
-  /**
-   * Check if an administration with the given name already exists (case-insensitive).
-   *
-   * @param name - The administration name to check
-   * @returns true if an administration with this name exists, false otherwise
-   */
-  async existsByName(name: string): Promise<boolean> {
-    const result = await this.db
-      .select({ count: count() })
-      .from(administrations)
-      .where(sql`lower(${administrations.name}) = lower(${name})`);
-
-    return (result[0]?.count ?? 0) > 0;
-  }
 }
