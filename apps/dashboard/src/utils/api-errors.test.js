@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { getApiErrorCode, getApiErrorMessage } from './api-errors';
+import {
+  getApiErrorCode,
+  getApiErrorMessage,
+  API_ERROR_CODES,
+  isRosteringEndedError,
+  isTerminalAuthError,
+} from './api-errors';
 
 describe('getApiErrorCode', () => {
   it('extracts code from full ts-rest result shape', () => {
@@ -13,8 +19,7 @@ describe('getApiErrorCode', () => {
   });
 
   it('extracts code from plain object with code property', () => {
-    const obj = { code: 'some-error' };
-    expect(getApiErrorCode(obj)).toBe('some-error');
+    expect(getApiErrorCode({ code: 'some-error' })).toBe('some-error');
   });
 
   it('returns null when no code is present', () => {
@@ -71,5 +76,38 @@ describe('getApiErrorMessage', () => {
       message: 'from-plain',
     };
     expect(getApiErrorMessage(ambiguous)).toBe('from-body');
+  });
+});
+
+describe('isRosteringEndedError', () => {
+  it('returns true for rostering-ended error code', () => {
+    expect(isRosteringEndedError({ error: { code: API_ERROR_CODES.AUTH_ROSTERING_ENDED } })).toBe(true);
+    expect(isRosteringEndedError({ body: { error: { code: 'auth/rostering-ended' } } })).toBe(true);
+  });
+
+  it('returns false for other error codes', () => {
+    expect(isRosteringEndedError({ error: { code: 'auth/token-expired' } })).toBe(false);
+    expect(isRosteringEndedError({})).toBe(false);
+    expect(isRosteringEndedError(null)).toBe(false);
+  });
+});
+
+describe('isTerminalAuthError', () => {
+  it('returns true for auth/required', () => {
+    expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_REQUIRED } })).toBe(true);
+  });
+
+  it('returns true for auth/token-expired', () => {
+    expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_TOKEN_EXPIRED } })).toBe(true);
+  });
+
+  it('returns false for rostering-ended (not a terminal auth error)', () => {
+    expect(isTerminalAuthError({ error: { code: API_ERROR_CODES.AUTH_ROSTERING_ENDED } })).toBe(false);
+  });
+
+  it('returns false for unrelated error codes', () => {
+    expect(isTerminalAuthError({ error: { code: 'some/other-error' } })).toBe(false);
+    expect(isTerminalAuthError({})).toBe(false);
+    expect(isTerminalAuthError(null)).toBe(false);
   });
 });
