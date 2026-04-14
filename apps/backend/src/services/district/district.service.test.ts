@@ -820,8 +820,9 @@ describe('DistrictService', () => {
     it('should check authorization for non-super admin users with supervisory role', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
       const mockUsers = EnrolledOrgUserFactory.buildList(2);
+      const mockAuthService = createMockAuthorizationService();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getAuthorizedById.mockResolvedValue(mockDistrict);
+      mockAuthService.requirePermission.mockResolvedValue(undefined);
       mockDistrictRepo.getUserRolesForDistrict.mockResolvedValue([UserRole.ADMINISTRATOR]);
       mockDistrictRepo.getAuthorizedUsersByDistrictId.mockResolvedValue({
         items: mockUsers,
@@ -830,6 +831,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
       });
 
       const result = await service.listUsers(
@@ -838,7 +840,11 @@ describe('DistrictService', () => {
         defaultOptions,
       );
 
-      expect(mockDistrictRepo.getAuthorizedById).toHaveBeenCalled();
+      expect(mockAuthService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.DISTRICT}:district-123`,
+      );
       expect(mockDistrictRepo.getUserRolesForDistrict).toHaveBeenCalledWith('user-123', 'district-123');
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
@@ -878,13 +884,20 @@ describe('DistrictService', () => {
       });
     });
 
-    it('should throw forbidden error when supervisory role is not on district level', async () => {
+    it('should throw forbidden error when user lacks access to the district', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockAuthService = createMockAuthorizationService();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getAuthorizedById.mockResolvedValue(null);
+      mockAuthService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
       });
 
       await expect(
@@ -898,12 +911,14 @@ describe('DistrictService', () => {
 
     it('should throw forbidden error when user has no supervisory role', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockAuthService = createMockAuthorizationService();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getAuthorizedById.mockResolvedValue(mockDistrict);
+      mockAuthService.requirePermission.mockResolvedValue(undefined);
       mockDistrictRepo.getUserRolesForDistrict.mockResolvedValue([UserRole.GUARDIAN]);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
       });
 
       await expect(
