@@ -26,7 +26,11 @@ import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ClassFactory } from '../test-support/factories/class.factory';
-import type { EnrolledUserEntity } from '../types/user';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { UserRole } from '../enums/user-role.enum';
+import { UserType } from '../enums/user-type.enum';
+import type { EnrolledUser } from '@roar-dashboard/api-contract';
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
 // ═══════════════════════════════════════════════════════════════════════════
@@ -170,42 +174,95 @@ describe('GET /v1/classes/:classId/users', () => {
     });
 
     describe('query parameters', () => {
-      it('filters users by role parameter', async () => {
-        const res = await expectRoute('GET', `${path()}?role=student`).as(tiers.admin).toReturn(200);
+      // Test class with multiple students of different grades and roles
+      let filterTestClass: Awaited<ReturnType<typeof ClassFactory.create>>;
 
-        expect(res.body.data.items).toBeInstanceOf(Array);
-        const userIds = res.body.data.items.map((user: { id: string }) => user.id);
-        expect(userIds).toContain(baseFixture.classAStudent.id);
-        expect(userIds).not.toContain(baseFixture.classATeacher.id);
+      beforeAll(async () => {
+        // Create a dedicated class for filter tests
+        filterTestClass = await ClassFactory.create({
+          name: 'Filter Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+
+        // Create users with specific grades and enroll them
+        const usersToCreate = [
+          { grade: '5' as const, role: UserRole.STUDENT },
+          { grade: '5' as const, role: UserRole.STUDENT },
+          { grade: '3' as const, role: UserRole.STUDENT },
+          { grade: '7' as const, role: UserRole.STUDENT },
+          { grade: null, role: UserRole.TEACHER },
+        ];
+
+        const createdUsers = await Promise.all(
+          usersToCreate.map(({ grade }) =>
+            UserFactory.create({ userType: grade ? UserType.STUDENT : UserType.EDUCATOR, grade }),
+          ),
+        );
+
+        await Promise.all(
+          createdUsers.map((user, i) =>
+            UserClassFactory.create({ userId: user.id, classId: filterTestClass.id, role: usersToCreate[i]!.role }),
+          ),
+        );
       });
 
-      it('filters users by grade parameter', async () => {
-        const res = await expectRoute('GET', `${path()}?grade=5`).as(tiers.admin).toReturn(200);
+      const filterPath = () => `/v1/classes/${filterTestClass.id}/users`;
+
+      it('filters users by role parameter', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?role=student`).as(tiers.admin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
-        // Should only return users in grade 5
-        res.body.data.items.forEach((user: EnrolledUserEntity) => {
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
+          expect(user.roles).toContain('student');
+        });
+      });
+
+      it('filters users by single grade parameter', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?grade=5`).as(tiers.admin).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
           expect(user.grade).toBe('5');
+        });
+      });
+
+      it('filters users by multiple grades with comma-separated values', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?grade=3,7`).as(tiers.admin).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
+          expect(['3', '7']).toContain(user.grade);
         });
       });
 
       it('combines role and grade filters', async () => {
-        const res = await expectRoute('GET', `${path()}?role=student&grade=5`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?role=student&grade=5`).as(tiers.admin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
-        // Should only contain grade 5 students
-        res.body.data.items.forEach((user: EnrolledUserEntity) => {
-          expect(user.role).toBe('student');
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
+          expect(user.roles).toContain('student');
           expect(user.grade).toBe('5');
         });
       });
 
-      it('supports pagination with page and perPage parameters', async () => {
-        const res = await expectRoute('GET', `${path()}?page=1&perPage=1`).as(tiers.admin).toReturn(200);
+      it('returns empty array when no users match filter', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?grade=12`).as(tiers.admin).toReturn(200);
 
-        expect(res.body.data.items).toHaveLength(1);
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items).toHaveLength(0);
+      });
+
+      it('supports pagination with page and perPage parameters', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?page=1&perPage=2`).as(tiers.admin).toReturn(200);
+
+        expect(res.body.data.items).toHaveLength(2);
         expect(res.body.data.pagination.page).toBe(1);
-        expect(res.body.data.pagination.perPage).toBe(1);
+        expect(res.body.data.pagination.perPage).toBe(2);
         expect(res.body.data.pagination.totalItems).toBeGreaterThan(0);
         expect(res.body.data.pagination.totalPages).toBeGreaterThan(0);
       });
