@@ -284,11 +284,9 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
   async listByIds(ids: string[], options: ListAuthorizedOptions): Promise<PaginatedResult<School | SchoolWithCounts>> {
     const { includeEnded = false, embedCounts = false } = options;
 
- private buildSchoolWhereClause(includeEnded: boolean): SQL {
-   return includeEnded
-     ? eq(orgs.orgType, OrgType.SCHOOL)
-     : and(eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded));
- }
+    const where = includeEnded
+      ? eq(orgs.orgType, OrgType.SCHOOL)
+      : and(eq(orgs.orgType, OrgType.SCHOOL), isNull(orgs.rosteringEnded));
 
     const result = await this.getByIds(ids, {
       page: options.page,
@@ -405,7 +403,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     // Fetch and attach counts if requested
     if (embedCounts && result.items.length > 0) {
       const schoolIds = result.items.map((s) => s.id);
-      const countsMap = await this.fetchSchoolCounts(schoolIds);
+      const countsMap = await this.fetchSchoolCounts(schoolIds, includeEnded);
 
       const schoolsWithCounts = result.items.map((school) => ({
         ...school,
@@ -494,7 +492,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     // Fetch and attach counts if requested
     if (embedCounts && schools.length > 0) {
       const schoolIds = schools.map((s) => s.id);
-      const countsMap = await this.fetchSchoolCounts(schoolIds);
+      const countsMap = await this.fetchSchoolCounts(schoolIds, includeEnded);
 
       schools = schools.map((school) => ({
         ...school,
