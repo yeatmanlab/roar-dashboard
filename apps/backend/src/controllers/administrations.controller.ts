@@ -18,6 +18,7 @@ import type {
   ProgressStudentsQuery,
   ReportTaskMetadata,
   TreeNodeStats,
+  CreateAdministrationRequest,
 } from '@roar-dashboard/api-contract';
 import type { Administration } from '../db/schema';
 import type {
@@ -552,6 +553,39 @@ export const AdministrationsController = {
     } catch (error) {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new administration.
+   *
+   * Delegates to AdministrationService for validation and creation.
+   * Returns 201 Created with the created administration on success.
+   *
+   * @param authContext - User's authentication context
+   * @param body - The create administration request body
+   */
+  create: async (authContext: AuthContext, body: CreateAdministrationRequest) => {
+    try {
+      const administration = await administrationService.create(authContext, body);
+
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: transformAdministrationBase(administration),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
           StatusCodes.CONFLICT,

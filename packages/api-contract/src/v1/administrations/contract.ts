@@ -11,6 +11,8 @@ import {
   AdministrationAgreementsListResponseSchema,
   AdministrationTreeQuerySchema,
   AdministrationTreeResponseSchema,
+  CreateAdministrationRequestSchema,
+  CreateAdministrationResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { ProgressReportsContract } from './reports/progress/index';
@@ -38,6 +40,29 @@ export const AdministrationsContract = c.router(
         'Returns a paginated list of administrations the authenticated user has access to. ' +
         'Use ?status=active|past|upcoming to filter by date status. ' +
         'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants.',
+    },
+    create: {
+      method: 'POST',
+      path: '/',
+      body: CreateAdministrationRequestSchema,
+      responses: {
+        201: SuccessEnvelopeSchema(CreateAdministrationResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Create an administration',
+      description:
+        'Creates a new administration with the specified task variants and entity assignments. ' +
+        'Validates that dateEnd is after dateStart, at least one task variant is provided, ' +
+        'and all referenced entities (orgs, classes, groups, task variants, agreements) exist. ' +
+        'When isOrdered is true, task variants must have unique orderIndex values. ' +
+        'Returns 400 for validation errors, 404 if referenced entities do not exist, ' +
+        '409 if an administration with the same name already exists.',
     },
     get: {
       method: 'GET',

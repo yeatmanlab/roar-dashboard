@@ -7,6 +7,7 @@ import type {
   AdministrationAgreementSortFieldType,
   TreeEmbedOptionType,
   TreeParentEntityType,
+  CreateAdministrationRequest,
 } from '@roar-dashboard/api-contract';
 import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
@@ -26,6 +27,7 @@ import type {
   AgreementWithVersion,
   TaskVariantWithAssignment,
   TreeNode,
+  CreateAdministrationInput,
 } from '../../repositories/administration.repository';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
@@ -36,6 +38,12 @@ import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
 import { TaskService } from '../task/task.service';
+import { DistrictRepository } from '../../repositories/district.repository';
+import { SchoolRepository } from '../../repositories/school.repository';
+import { ClassRepository } from '../../repositories/class.repository';
+import { GroupRepository } from '../../repositories/group.repository';
+import { TaskVariantRepository } from '../../repositories/task-variant.repository';
+import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { Condition } from '../../types/condition';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
 
@@ -118,10 +126,16 @@ export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
   reportRepository = new ReportRepository(),
-  runRepository = new RunRepository(),
   userRepository = new UserRepository(),
-  taskService = TaskService(),
   authorizationService = AuthorizationService(),
+  runRepository = new RunRepository(),
+  taskService = TaskService(),
+  districtRepository = new DistrictRepository(),
+  schoolRepository = new SchoolRepository(),
+  classRepository = new ClassRepository(),
+  groupRepository = new GroupRepository(),
+  taskVariantRepository = new TaskVariantRepository(),
+  agreementRepository = new AgreementRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
@@ -130,6 +144,12 @@ export function AdministrationService({
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
+  districtRepository?: DistrictRepository;
+  schoolRepository?: SchoolRepository;
+  classRepository?: ClassRepository;
+  groupRepository?: GroupRepository;
+  taskVariantRepository?: TaskVariantRepository;
+  agreementRepository?: AgreementRepository;
 } = {}) {
   /**
    * Verify that an administration exists and the user has access to it.
@@ -937,6 +957,195 @@ export function AdministrationService({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, administrationId },
+      });
+    }
+  }
+
+  /**
+   * Create a new administration with task variants and entity assignments.
+   *
+   * Validates:
+   * - dateEnd must be after dateStart
+   * - At least one task variant must be provided (enforced by schema)
+   * - If isOrdered is true, task variant orderIndex values must be unique
+   * - All referenced entities (orgs, classes, groups, task variants, agreements) must exist
+   * - Administration name must be unique (case-insensitive)
+   *
+   * @param authContext - User's authentication context
+   * @param request - The create administration request body
+   * @returns The created administration
+   * @throws {ApiError} BAD_REQUEST if validation fails (date range, duplicate orderIndex)
+   * @throws {ApiError} NOT_FOUND if any referenced entity doesn't exist
+   * @throws {ApiError} CONFLICT if an administration with the same name exists
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
+   */
+  async function create(authContext: AuthContext, request: CreateAdministrationRequest): Promise<Administration> {
+    const { userId } = authContext;
+
+    try {
+      // Parse dates
+      const dateStart = new Date(request.dateStart);
+      const dateEnd = new Date(request.dateEnd);
+
+      // Validate date range: dateEnd must be after dateStart
+      if (dateEnd <= dateStart) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, reason: 'dateEnd must be after dateStart' },
+        });
+      }
+
+      // Validate unique orderIndex values when isOrdered is true
+      if (request.isOrdered) {
+        const orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
+        const uniqueIndices = new Set(orderIndices);
+        if (uniqueIndices.size !== orderIndices.length) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.BAD_REQUEST,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, reason: 'Task variant orderIndex values must be unique when isOrdered is true' },
+          });
+        }
+      }
+
+      // Check for duplicate administration name
+      const nameExists = await administrationRepository.existsByName(request.name);
+      if (nameExists) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, name: request.name },
+        });
+      }
+
+      // Validate that all referenced entities exist
+      // Use parallel fetches for efficiency
+      const orgIds = request.orgs ?? [];
+      const classIds = request.classes ?? [];
+      const groupIds = request.groups ?? [];
+      const taskVariantIds = request.taskVariants.map((tv) => tv.taskVariantId);
+      const agreementIds = request.agreements ?? [];
+
+      // Verify orgs exist (districts and schools)
+      if (orgIds.length > 0) {
+        const existingOrgs = await Promise.all(
+          orgIds.map(async (orgId) => {
+            // Try district first, then school
+            const district = await districtRepository.getUnrestrictedById(orgId);
+            if (district) return district;
+            const school = await schoolRepository.getUnrestrictedById(orgId);
+            return school;
+          }),
+        );
+        const missingOrgs = orgIds.filter((_, index) => !existingOrgs[index]);
+        if (missingOrgs.length > 0) {
+          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+            context: { userId, missingOrgs },
+          });
+        }
+      }
+
+      // Verify classes exist
+      if (classIds.length > 0) {
+        const existingClasses = await Promise.all(classIds.map((id) => classRepository.getById({ id })));
+        const missingClasses = classIds.filter((_, index) => !existingClasses[index]);
+        if (missingClasses.length > 0) {
+          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+            context: { userId, missingClasses },
+          });
+        }
+      }
+
+      // Verify groups exist
+      if (groupIds.length > 0) {
+        const existingGroups = await Promise.all(groupIds.map((id) => groupRepository.getById({ id })));
+        const missingGroups = groupIds.filter((_, index) => !existingGroups[index]);
+        if (missingGroups.length > 0) {
+          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+            context: { userId, missingGroups },
+          });
+        }
+      }
+
+      // Verify task variants exist
+      const existingTaskVariants = await Promise.all(taskVariantIds.map((id) => taskVariantRepository.getById({ id })));
+      const missingTaskVariants = taskVariantIds.filter((_, index) => !existingTaskVariants[index]);
+      if (missingTaskVariants.length > 0) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, missingTaskVariants },
+        });
+      }
+
+      // Verify agreements exist
+      if (agreementIds.length > 0) {
+        const existingAgreements = await Promise.all(agreementIds.map((id) => agreementRepository.getById({ id })));
+        const missingAgreements = agreementIds.filter((_, index) => !existingAgreements[index]);
+        if (missingAgreements.length > 0) {
+          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+            statusCode: StatusCodes.NOT_FOUND,
+            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+            context: { userId, missingAgreements },
+          });
+        }
+      }
+
+      // Verify createdBy user exists
+      const createdByUser = await userRepository.getById({ id: request.createdBy });
+      if (!createdByUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, missingUser: request.createdBy },
+        });
+      }
+
+      // Build the input for the repository
+      const createInput: CreateAdministrationInput = {
+        administration: {
+          name: request.name,
+          namePublic: request.namePublic,
+          description: request.description ?? '',
+          dateStart,
+          dateEnd,
+          isOrdered: request.isOrdered ?? false,
+          createdBy: request.createdBy,
+        },
+        orgIds,
+        classIds,
+        groupIds,
+        taskVariants: request.taskVariants.map((tv) => ({
+          taskVariantId: tv.taskVariantId,
+          orderIndex: tv.orderIndex,
+          conditionsAssignment: tv.conditionsEligibility ?? null,
+          conditionsRequirements: tv.conditionsRequirement ?? null,
+        })),
+        agreementIds,
+      };
+
+      // Create the administration with all related entities in a single transaction
+      const created = await administrationRepository.createWithAssignments(createInput);
+
+      logger.info({ userId, administrationId: created.id }, 'Administration created successfully');
+
+      return created;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to create administration');
+
+      throw new ApiError('Failed to create administration', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
         cause: error,
       });
     }
@@ -951,5 +1160,6 @@ export function AdministrationService({
     listAgreements,
     deleteById,
     getTree,
+    create,
   };
 }
