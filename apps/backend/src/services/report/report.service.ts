@@ -179,8 +179,7 @@ export function ReportService({
 
     // Verify user has can_read_progress on the scope entity via FGA
     const fgaType = SCOPE_TO_FGA_TYPE[scopeType];
-await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_PROGRESS, `${fgaType} ${scopeId}`);
-    }
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_PROGRESS, `${fgaType}:${scopeId}`);
   }
 
   /**
