@@ -10,7 +10,10 @@ import { parseAccessControlFilter } from '../utils/parse-access-control-filter.u
 import { isDescendantOrEqual } from '../utils/is-descendant-or-equal.utils';
 import { isAncestorOrEqual } from '../utils/is-ancestor-or-equal.utils';
 import { isAuthorizedMembership } from '../utils/is-authorized-membership.utils';
+import { isEnrollmentActive } from '../utils/enrollment.utils';
 import { filterSupervisoryRoles } from '../utils/supervisory-roles.utils';
+import type { UserRole } from '../../enums/user-role.enum';
+import { OrgType } from '../../enums/org-type.enum';
 
 /**
  * Org Access Controls
@@ -137,6 +140,33 @@ export class OrgAccessControls {
   }
 
   /**
+   * Get user roles for a specific district.
+   * Only checks direct org membership and the roles there.
+   *
+   * @param userId - User ID to get roles for
+   * @param districtId - District ID to check roles in
+   * @returns Array of user roles in the district
+   */
+  async getUserRolesForDistrict(userId: string, districtId: string): Promise<UserRole[]> {
+    const rolesViaDirectOrg = await this.db
+      .selectDistinct({
+        role: userOrgs.role,
+      })
+      .from(userOrgs)
+      .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
+      .where(
+        and(
+          eq(orgs.orgType, OrgType.DISTRICT),
+          eq(userOrgs.userId, userId),
+          eq(orgs.id, districtId),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
+
+    return rolesViaDirectOrg.map((r) => r.role);
+  }
+
+  /*
    * Get the roles a user holds for a specific org through org membership
    * (via ltree ancestor-or-equal) or class membership within that org.
    *
@@ -145,6 +175,8 @@ export class OrgAccessControls {
    * 1. Org membership at the target org or any ancestor (isAncestorOrEqual covers
    *    both direct membership and inherited roles from parent orgs)
    * 2. Class membership within the target org
+   *
+   * Only includes roles from active enrollments (enrollment dates checked via isEnrollmentActive).
    *
    * @param userId - The user's ID
    * @param orgId - The org to check roles for
@@ -162,14 +194,20 @@ export class OrgAccessControls {
       .from(userOrgs)
       .innerJoin(userOrgTable, eq(userOrgTable.id, userOrgs.orgId))
       .innerJoin(targetOrgTable, eq(targetOrgTable.id, orgId))
-      .where(and(eq(userOrgs.userId, userId), isAncestorOrEqual(userOrgTable.path, targetOrgTable.path)));
+      .where(
+        and(
+          eq(userOrgs.userId, userId),
+          isAncestorOrEqual(userOrgTable.path, targetOrgTable.path),
+          isEnrollmentActive(userOrgs),
+        ),
+      );
 
     // Path 2: Class membership within the target org
     const classRoles = this.db
       .select({ role: userClasses.role })
       .from(userClasses)
       .innerJoin(classes, eq(classes.id, userClasses.classId))
-      .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId)));
+      .where(and(eq(userClasses.userId, userId), eq(classes.schoolId, orgId), isEnrollmentActive(userClasses)));
 
     // UNION deduplicates automatically
     const result = await orgRoles.union(classRoles);

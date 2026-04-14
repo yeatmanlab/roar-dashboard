@@ -1,6 +1,6 @@
 import { markRaw } from 'vue';
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getIdToken, onIdTokenChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
@@ -91,7 +91,8 @@ export const useAuthStore = () => {
         }
       },
       setAuthStateListeners() {
-        this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
+        // Use onIdTokenChanged for admin auth to ensure accessToken stays current during token refreshes (~hourly)
+        this.adminAuthStateListener = onIdTokenChanged(this.roarfirekit?.admin.auth, async (user) => {
           if (user) {
             this.localFirekitInit = true;
             // Firebase User objects must use markRaw() for the same reason as roarfirekit above.
@@ -100,9 +101,10 @@ export const useAuthStore = () => {
             this.accessToken = user.accessToken;
           } else {
             this.firebaseUser.adminFirebaseUser = null;
+            this.accessToken = null;
           }
         });
-        this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
+        this.appAuthStateListener = onIdTokenChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = markRaw(user);
           } else {
@@ -213,7 +215,14 @@ export const useAuthStore = () => {
         }
       },
       async forceIdTokenRefresh() {
-        await this.roarfirekit.forceIdTokenRefresh();
+        const adminUser = this.firebaseUser.adminFirebaseUser;
+        if (!adminUser) return null;
+        // Use getIdToken directly so we can capture the fresh token synchronously.
+        // Relying on the onIdTokenChanged callback introduces a race condition
+        // because the callback fires asynchronously after getIdToken resolves.
+        const freshToken = await getIdToken(adminUser, /* forceRefresh */ true);
+        this.accessToken = freshToken;
+        return freshToken;
       },
       async sendMyPasswordResetEmail() {
         if (this.email) {

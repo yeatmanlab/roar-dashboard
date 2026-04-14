@@ -25,6 +25,10 @@ import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } fro
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { OrgType } from '../enums/org-type.enum';
+import { UserRole } from '../enums/user-role.enum';
+import type { EnrolledOrgUserEntity } from '../types/user';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -141,6 +145,332 @@ describe('GET /v1/districts', () => {
       expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.items).toHaveLength(0);
       expect(res.body.data.pagination.totalItems).toBe(0);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/districts/:districtId/schools
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/districts/:districtId/schools', () => {
+  let districtSchoolsUrl: string;
+
+  beforeAll(() => {
+    districtSchoolsUrl = `/v1/districts/${baseFixture.district.id}/schools`;
+  });
+
+  describe('authorization', () => {
+    it('superAdmin tier can list schools in district', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.superAdmin).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+      // Should not include schools from other districts
+      expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
+    });
+
+    it('siteAdmin tier can list schools in their district', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.siteAdmin).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+    });
+
+    it('admin tier can list schools in their district', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.admin).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+    });
+
+    it('educator tier can list schools in their district', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.educator).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+    });
+
+    it('student tier is forbidden from listing schools (supervised role)', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.student).toReturn(403);
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('caregiver tier is forbidden from listing schools (supervised role)', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.caregiver).toReturn(403);
+      expect(res.body.error).toBeDefined();
+    });
+  });
+
+  describe('response shape', () => {
+    it('returns schools with correct pagination structure', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+      expect(res.body.data.pagination).toMatchObject({
+        page: 1,
+        perPage: expect.any(Number),
+        totalItems: expect.any(Number),
+        totalPages: expect.any(Number),
+      });
+
+      // Verify school item shape matches SchoolDetailSchema
+      const school = res.body.data.items[0];
+      expect(school).toHaveProperty('id');
+      expect(school).toHaveProperty('name');
+      expect(school).toHaveProperty('abbreviation');
+      expect(school).toHaveProperty('orgType', 'school');
+      expect(school).toHaveProperty('parentOrgId');
+    });
+  });
+
+  describe('data isolation', () => {
+    it('does not return schools from other districts', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.superAdmin).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
+    });
+
+    it('does not return ended schools by default', async () => {
+      // Create a school with rosteringEnded set in the past
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.superAdmin).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).not.toContain(endedSchool.id);
+    });
+
+    it('returns ended schools when includeEnded=true', async () => {
+      const res = await expectRoute('GET', `${districtSchoolsUrl}?includeEnded=true`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      // Should have more items than without includeEnded (ended school from previous test)
+      expect(res.body.data.items.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('embed: counts', () => {
+    it('includes user and class counts when embed=counts', async () => {
+      const res = await expectRoute('GET', `${districtSchoolsUrl}?embed=counts`).as(tiers.admin).toReturn(200);
+
+      const school = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school.counts).toMatchObject({
+        users: expect.any(Number),
+        classes: expect.any(Number),
+      });
+    });
+
+    it('includes counts for super admin path (listAllByDistrictId)', async () => {
+      const res = await expectRoute('GET', `${districtSchoolsUrl}?embed=counts`).as(tiers.superAdmin).toReturn(200);
+
+      const school = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school.counts).toMatchObject({
+        users: expect.any(Number),
+        classes: expect.any(Number),
+      });
+    });
+
+    it('omits counts when embed is not requested', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.admin).toReturn(200);
+
+      const school = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school.counts).toBeUndefined();
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', districtSchoolsUrl).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when district does not exist', async () => {
+      const fakeDistrictId = '00000000-0000-0000-0000-000000000000';
+      const res = await expectRoute('GET', `/v1/districts/${fakeDistrictId}/schools`)
+        .as(tiers.superAdmin)
+        .toReturn(404);
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('returns 403 when user lacks access to the district', async () => {
+      // Use districtB — tier users are only assigned to district (A)
+      const crossDistrictUrl = `/v1/districts/${baseFixture.districtB.id}/schools`;
+      const res = await expectRoute('GET', crossDistrictUrl).as(tiers.admin).toReturn(403);
+      expect(res.body.error).toBeDefined();
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/districts/:districtId/users
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/districts/:districtId/users', () => {
+  const districtUsersPath = () => `/v1/districts/${baseFixture.district.id}/users`;
+
+  describe('authorization', () => {
+    it('superAdmin tier can list users in a district', async () => {
+      const res = await expectRoute('GET', districtUsersPath()).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.pagination).toBeDefined();
+
+      const userIds = res.body.data.items.map((user: { id: string }) => user.id);
+      // Super admin sees users in the district
+      expect(userIds).toContain(baseFixture.districtAdmin.id);
+    });
+
+    it('user with supervisory role directly assigned to district can list users', async () => {
+      // districtAdmin is assigned directly to the district with administrator role
+      const res = await expectRoute('GET', districtUsersPath())
+        .as({ id: baseFixture.districtAdmin.id, authId: baseFixture.districtAdmin.authId! })
+        .toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+    });
+
+    it('user with supervisory role at school level can read district but cannot list users', async () => {
+      // schoolAAdmin can read the district (getById succeeds)
+      const readRes = await expectRoute('GET', `/v1/districts/${baseFixture.district.id}`)
+        .as({ id: baseFixture.schoolAAdmin.id, authId: baseFixture.schoolAAdmin.authId! })
+        .toReturn(200);
+      expect(readRes.status).toBe(200);
+
+      // But cannot list users (no district-level supervisory role)
+      const listRes = await expectRoute('GET', districtUsersPath())
+        .as({ id: baseFixture.schoolAAdmin.id, authId: baseFixture.schoolAAdmin.authId! })
+        .toReturn(403);
+
+      expect(listRes.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator at school level can read district but cannot list users', async () => {
+      // schoolATeacher can read the district (getById succeeds)
+      const readRes = await expectRoute('GET', `/v1/districts/${baseFixture.district.id}`)
+        .as({ id: baseFixture.schoolATeacher.id, authId: baseFixture.schoolATeacher.authId! })
+        .toReturn(200);
+      expect(readRes.status).toBe(200);
+
+      // But cannot list users (no district-level supervisory role)
+      const listRes = await expectRoute('GET', districtUsersPath())
+        .as({ id: baseFixture.schoolATeacher.id, authId: baseFixture.schoolATeacher.authId! })
+        .toReturn(403);
+
+      expect(listRes.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from listing users in districts', async () => {
+      // Students don't have Organizations.READ permission, so getById returns 404
+      const res = await expectRoute('GET', districtUsersPath()).as(tiers.student).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from listing users in districts', async () => {
+      // Caregivers have Organizations.READ but not supervisory role
+      // getById succeeds but authorizeSubResourceAccess throws 403
+      const res = await expectRoute('GET', districtUsersPath()).as(tiers.caregiver).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('response shape', () => {
+    it('returns users with expected fields', async () => {
+      const res = await expectRoute('GET', districtUsersPath()).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      const user = res.body.data.items[0];
+
+      // Verify user object has expected fields
+      expect(user).toHaveProperty('id');
+      expect(user).toHaveProperty('username');
+      expect(user).toHaveProperty('roles');
+    });
+
+    it('returns pagination metadata', async () => {
+      const res = await expectRoute('GET', districtUsersPath()).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.pagination).toMatchObject({
+        page: expect.any(Number),
+        perPage: expect.any(Number),
+        totalItems: expect.any(Number),
+        totalPages: expect.any(Number),
+      });
+    });
+  });
+
+  describe('query parameters', () => {
+    it('filters users by role parameter', async () => {
+      const res = await expectRoute('GET', `${districtUsersPath()}?role=administrator`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
+        expect(user.roles).toContain(UserRole.ADMINISTRATOR);
+      });
+    });
+
+    it('filters users by grade parameter', async () => {
+      const res = await expectRoute('GET', `${districtUsersPath()}?grade=5`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
+        expect(user.grade).toBe('5');
+      });
+    });
+
+    it('supports pagination with page and perPage parameters', async () => {
+      const res = await expectRoute('GET', `${districtUsersPath()}?page=1&perPage=5`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      expect(res.body.data.pagination.page).toBe(1);
+      expect(res.body.data.pagination.perPage).toBe(5);
+      expect(res.body.data.items.length).toBeLessThanOrEqual(5);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', districtUsersPath()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 when district does not exist', async () => {
+      const res = await expectRoute('GET', '/v1/districts/00000000-0000-0000-0000-000000000000/users')
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 403 when user does not have access to district', async () => {
+      // User from district A trying to access district B
+      const res = await expectRoute('GET', `/v1/districts/${baseFixture.districtB.id}/users`)
+        .as(tiers.admin)
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
 });

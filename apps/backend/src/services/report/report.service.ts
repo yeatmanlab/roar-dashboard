@@ -179,16 +179,7 @@ export function ReportService({
 
     // Verify user has can_read_progress on the scope entity via FGA
     const fgaType = SCOPE_TO_FGA_TYPE[scopeType];
-    try {
-      await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_PROGRESS, `${fgaType}:${scopeId}`);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        logger.warn(
-          { userId, administrationId, scopeType, scopeId },
-          'User lacks can_read_progress at the requested scope level',
-        );
-      }
-      throw error;
+await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_PROGRESS, `${fgaType} ${scopeId}`);
     }
   }
 

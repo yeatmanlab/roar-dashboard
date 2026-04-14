@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { handleSubResourceError, handleSubResourceResponse } from './enrolled-users.transform';
+import { handleSubResourceError, handleUserSubResourceResponse } from './enrolled-users.transform';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
@@ -41,7 +41,7 @@ describe('handle-enrolled-users', () => {
     });
   });
 
-  describe('handleSubResourceResponse', () => {
+  describe('handleUserSubResourceResponse', () => {
     const createMockEnrolledUser = (overrides: Partial<EnrolledUserEntity> = {}): EnrolledUserEntity => ({
       ...UserFactory.build(),
       role: UserRole.STUDENT,
@@ -51,7 +51,7 @@ describe('handle-enrolled-users', () => {
 
     it('returns OK status with paginated response', () => {
       const mockUsers = [createMockEnrolledUser()];
-      const result = handleSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body.data.items).toHaveLength(1);
@@ -65,14 +65,14 @@ describe('handle-enrolled-users', () => {
 
     it('converts enrollmentStart Date to ISO string', () => {
       const mockUsers = [createMockEnrolledUser({ enrollmentStart: new Date('2024-06-15T10:30:00Z') })];
-      const result = handleSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.body.data.items[0]!.enrollmentStart).toBe('2024-06-15T10:30:00.000Z');
     });
 
     it('includes role in response', () => {
       const mockUsers = [createMockEnrolledUser({ role: UserRole.TEACHER })];
-      const result = handleSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.body.data.items[0]!.role).toBe(UserRole.TEACHER);
     });
@@ -81,20 +81,20 @@ describe('handle-enrolled-users', () => {
       const mockUsers = [createMockEnrolledUser()];
 
       // 25 items, 10 per page = 3 pages
-      const result = handleSubResourceResponse({ items: mockUsers, totalItems: 25 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 25 }, 1, 10);
       expect(result.body.data.pagination.totalPages).toBe(3);
 
       // 30 items, 10 per page = 3 pages
-      const result2 = handleSubResourceResponse({ items: mockUsers, totalItems: 30 }, 1, 10);
+      const result2 = handleUserSubResourceResponse({ items: mockUsers, totalItems: 30 }, 1, 10);
       expect(result2.body.data.pagination.totalPages).toBe(3);
 
       // 31 items, 10 per page = 4 pages
-      const result3 = handleSubResourceResponse({ items: mockUsers, totalItems: 31 }, 1, 10);
+      const result3 = handleUserSubResourceResponse({ items: mockUsers, totalItems: 31 }, 1, 10);
       expect(result3.body.data.pagination.totalPages).toBe(4);
     });
 
     it('handles empty results', () => {
-      const result = handleSubResourceResponse({ items: [], totalItems: 0 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: [], totalItems: 0 }, 1, 10);
 
       expect(result.body.data.items).toEqual([]);
       expect(result.body.data.pagination.totalItems).toBe(0);
@@ -120,7 +120,7 @@ describe('handle-enrolled-users', () => {
         enrollmentStart: new Date('2024-01-15T00:00:00Z'),
       });
 
-      const result = handleSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
       const item = result.body.data.items[0]!;
 
       expect(item.id).toBe('test-id');
@@ -146,7 +146,7 @@ describe('handle-enrolled-users', () => {
         role: UserRole.STUDENT,
       });
 
-      const result = handleSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
+      const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
       const item = result.body.data.items[0]!;
 
       // Ensure sensitive/internal fields are not exposed
