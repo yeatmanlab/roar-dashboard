@@ -242,6 +242,53 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
+    it('principal at school A can access students at that school (school_admin_tier has can_list_users at school)', async () => {
+      // Principal is in school_admin_tier, and school-level can_list_users = admin_tier or school_admin_tier.
+      // So a principal rostered at schoolA can see students enrolled at schoolA.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(baseFixture.schoolAStudent.id);
+    });
+
+    it('principal at school A can access students in classes within their school (inherits school→class)', async () => {
+      // Principal inherits from parent_org at class level, so principal at schoolA
+      // has principal role on classInSchoolA → supervisory_tier_group → can_list_users.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(`/v1/users/${baseFixture.classAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.id).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('principal at school A cannot access students in school B (cross-school isolation)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(`/v1/users/${baseFixture.schoolBStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('school-level teacher cannot access students at school level (educator_tier excluded from school can_list_users)', async () => {
+      // schoolATeacher has teacher role at schoolA. At school level, can_list_users
+      // = admin_tier or school_admin_tier — educator_tier is excluded. So teacher
+      // at school level cannot see school-enrolled students.
+      authenticateAs(baseFixture.schoolATeacher);
+      const res = await request(app)
+        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
     it('unassigned user can only access themselves', async () => {
       // Unassigned user should not be able to access other users
       const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
