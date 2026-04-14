@@ -579,7 +579,7 @@ export const AdministrationsController = {
       return {
         status: StatusCodes.CREATED as const,
         body: {
-          data: transformAdministrationBase(administration),
+          data: administration.id,
         },
       };
     } catch (error) {

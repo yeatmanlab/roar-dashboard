@@ -584,6 +584,6 @@ export type CreateAdministrationRequest = z.infer<typeof CreateAdministrationReq
 
 /**
  * Response schema for create administration endpoint.
- * Returns the created administration's base data.
+ * Returns the created administration's ID.
  */
-export const CreateAdministrationResponseSchema = AdministrationBaseSchema;
+export const CreateAdministrationResponseSchema = z.string().uuid();
