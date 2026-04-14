@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { SortOrder, DistrictDetailSortField } from '@roar-dashboard/api-contract';
+import { SortOrder, DistrictDetailSortField, DistrictSchoolSortField } from '@roar-dashboard/api-contract';
 import { DistrictService } from './district.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
