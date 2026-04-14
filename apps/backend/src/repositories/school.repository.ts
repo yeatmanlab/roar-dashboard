@@ -367,4 +367,144 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
   async getUserRolesForSchool(userId: string, schoolId: string): Promise<string[]> {
     return this.accessControls.getUserRolesForOrg(userId, schoolId);
   }
+
+  /**
+   * List all schools within a district.
+   *
+   * This method does not apply authorization filtering and should only be used
+   * for super admin access where all schools are visible.
+   *
+   * @param districtId - UUID of the district
+   * @param options - Pagination, sorting, and optional filters
+   * @returns Paginated result with schools
+   */
+  async listAllByDistrictId(
+    districtId: string,
+    options: ListAuthorizedOptions,
+  ): Promise<PaginatedResult<School | SchoolWithCounts>> {
+    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
+
+    // Build where clause for school type, district parent, and rostering status
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL), eq(orgs.parentOrgId, districtId)];
+
+    if (!includeEnded) {
+      whereConditions.push(isNull(orgs.rosteringEnded));
+    }
+
+    // Always multiple conditions (orgType + parentOrgId at minimum), so and() is guaranteed defined
+    const whereClause = and(...whereConditions)!;
+
+    // Delegate to getAll() — tiebreaker asc(id) is handled by getAll() itself
+    const result = await this.getAll({
+      page,
+      perPage,
+      ...(orderBy && { orderBy }),
+      where: whereClause,
+    });
+
+    // Fetch and attach counts if requested
+    if (embedCounts && result.items.length > 0) {
+      const schoolIds = result.items.map((s) => s.id);
+      const countsMap = await this.fetchSchoolCounts(schoolIds);
+
+      const schoolsWithCounts = result.items.map((school) => ({
+        ...school,
+        counts: countsMap.get(school.id) ?? { users: 0, classes: 0 },
+      })) as SchoolWithCounts[];
+
+      return {
+        items: schoolsWithCounts,
+        totalItems: result.totalItems,
+      };
+    }
+
+    return result;
+  }
+
+  /**
+   * List schools within a district that the user is authorized to access.
+   *
+   * Authorization respects the org hierarchy:
+   * - User in School → sees that school if it's in the target district
+   * - User in District → sees child schools in that district (if supervisory)
+   *
+   * @param accessControlFilter - User ID and allowed roles
+   * @param districtId - UUID of the district
+   * @param options - Pagination, sorting, and optional filters
+   * @returns Paginated result with authorized schools
+   */
+  async listAuthorizedByDistrictId(
+    accessControlFilter: AccessControlFilter,
+    districtId: string,
+    options: ListAuthorizedOptions,
+  ): Promise<PaginatedResult<School | SchoolWithCounts>> {
+    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
+    const offset = (page - 1) * perPage;
+
+    // Build the UNION query for accessible org IDs using access controls
+    const accessibleOrgs = this.accessControls
+      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
+      .as('accessible_orgs');
+
+    // Build where conditions
+    const whereConditions: SQL[] = [eq(orgs.orgType, OrgType.SCHOOL), eq(orgs.parentOrgId, districtId)];
+
+    if (!includeEnded) {
+      whereConditions.push(isNull(orgs.rosteringEnded));
+    }
+
+    const whereClause = and(...whereConditions);
+
+    // Build the base join condition
+    const baseCondition = eq(orgs.id, accessibleOrgs.orgId);
+
+    // Count query
+    const countResult = await this.db
+      .select({ count: countDistinct(orgs.id) })
+      .from(orgs)
+      .innerJoin(accessibleOrgs, baseCondition)
+      .where(whereClause);
+
+    const totalItems = Number(countResult[0]?.count ?? 0);
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // Resolve sort column
+    const sortField = orderBy?.field as SchoolSortFieldType | undefined;
+    const sortColumn =
+      sortField && sortField in SCHOOL_SORT_COLUMNS
+        ? SCHOOL_SORT_COLUMNS[sortField as keyof typeof SCHOOL_SORT_COLUMNS]
+        : orgs.name;
+    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
+
+    // Data query: join schools with the accessible IDs subquery
+    const dataResult = await this.db
+      .select({ org: orgs })
+      .from(orgs)
+      .innerJoin(accessibleOrgs, baseCondition)
+      .where(whereClause)
+      .orderBy(sortDirection, asc(orgs.id))
+      .limit(perPage)
+      .offset(offset);
+
+    let schools: (School | SchoolWithCounts)[] = dataResult.map((row) => row.org as School);
+
+    // Fetch and attach counts if requested
+    if (embedCounts && schools.length > 0) {
+      const schoolIds = schools.map((s) => s.id);
+      const countsMap = await this.fetchSchoolCounts(schoolIds);
+
+      schools = schools.map((school) => ({
+        ...school,
+        counts: countsMap.get(school.id) ?? { users: 0, classes: 0 },
+      }));
+    }
+
+    return {
+      items: schools,
+      totalItems,
+    };
+  }
 }
