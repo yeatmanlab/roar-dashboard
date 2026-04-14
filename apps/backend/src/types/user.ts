@@ -2,7 +2,7 @@ import type { EnrolledUsersSortFieldType, UserRole, GradeFilter, SortOrder } fro
 import type { User } from '../db/schema';
 
 // Export types for repo and service usage
-export type { EnrolledUsersQuery, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+export type { EnrolledUser, EnrolledUsersQuery, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 
 export interface ListEnrolledUsersOptions {
   page: number;

@@ -1,7 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import type { EnrolledUser } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
-import type { EnrolledUserEntity } from '../../types/user';
+import type { EnrolledUser, EnrolledUserEntity } from '../../types/user';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 
 /**
@@ -37,8 +36,8 @@ function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
  * @param perPage - The number of items per page.
  * @returns The paginated response.
  */
-export function handleUserSubResourceResponse<T extends EnrolledUserEntity>(
-  result: { items: T[]; totalItems: number },
+export function handleUserSubResourceResponse(
+  result: { items: EnrolledUserEntity[]; totalItems: number },
   page: number,
   perPage: number,
 ): {
