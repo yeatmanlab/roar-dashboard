@@ -237,13 +237,39 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     }
     if (roamFluencyTasks.includes(props.taskId)) {
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
-      });
+      console.log(props.recruitmentType);
+      if (props.recruitmentType === 'responseModality') {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
+        });
 
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
-      });
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
+        });
+      } else {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
+        });
+
+        Object.entries(roamFluencySubtasks).forEach(([subtaskId, subtask]) => {
+          _set(tableRow, `${subtask} - Percent Correct`, _get(scores, `${props.taskId}.${subtaskId}.percentCorrect`));
+          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+            _set(tableRow, `${subtask} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subtaskId}.${property}`));
+          });
+          _set(tableRow, `${subtask} - Skills Assessed`, _get(scores, `${props.taskId}.${subtaskId}.skillsAssessed`));
+        });
+
+        let incorrectSkills = '';
+
+        Object.entries(roamFluencySubtasks).forEach(([property, propertyHeader]) => {
+          const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
+          if (incorrectSkillsForProperty) {
+            incorrectSkills += `${propertyHeader}: ${incorrectSkillsForProperty}\n`;
+          }
+        });
+
+        _set(tableRow, 'Skills To Work On', incorrectSkills);
+      }
     }
     if (props.taskId === 'phonics') {
       const subcategories = [
@@ -306,13 +332,38 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     } else if (roamFluencyTasks.includes(props.taskId)) {
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
-      });
+      if (props.recruitmentType === 'responseModality') {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
+        });
 
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
-      });
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
+        });
+      } else {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
+        });
+
+        Object.entries(roamFluencySubtasks).forEach(([subtaskId, subtask]) => {
+          _set(tableRow, `${subtask} - Percent Correct`, _get(scores, `${props.taskId}.${subtaskId}.percentCorrect`));
+          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+            _set(tableRow, `${subtask} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subtaskId}.${property}`));
+          });
+          _set(tableRow, `${subtask} - Skills Assessed`, _get(scores, `${props.taskId}.${subtaskId}.skillsAssessed`));
+        });
+
+        let incorrectSkills = '';
+
+        Object.entries(roamFluencySubtasks).forEach(([property, propertyHeader]) => {
+          const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
+          if (incorrectSkillsForProperty) {
+            incorrectSkills += `${propertyHeader}: ${incorrectSkillsForProperty}\n`;
+          }
+        });
+
+        _set(tableRow, 'Skills To Work On', incorrectSkills);
+      }
     } else if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
