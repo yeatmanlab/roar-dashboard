@@ -8,6 +8,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
+import { ClassFactory } from '../test-support/factories/class.factory';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserFactory } from '../test-support/factories/user.factory';
@@ -375,6 +376,50 @@ describe('SchoolRepository', () => {
         users: 0,
         classes: 0,
       });
+    });
+
+    it('includes ended classes in counts when includeEnded=true', async () => {
+      // Create a school with one active class and one ended class
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'School with Ended Class',
+        parentOrgId: baseFixture.district.id,
+      });
+
+      await ClassFactory.create({
+        name: 'Active Class',
+        schoolId: school.id,
+        districtId: baseFixture.district.id,
+      });
+
+      await ClassFactory.create({
+        name: 'Ended Class',
+        schoolId: school.id,
+        districtId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      // With includeEnded=true, both classes should be counted
+      const resultWithEnded = (await repository.listAll({
+        page: 1,
+        perPage: 1000,
+        embedCounts: true,
+        includeEnded: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const schoolWithEnded = resultWithEnded.items.find((s) => s.id === school.id);
+      expect(schoolWithEnded?.counts?.classes).toBe(2);
+
+      // With includeEnded=false, only the active class should be counted
+      const resultWithoutEnded = (await repository.listAll({
+        page: 1,
+        perPage: 1000,
+        embedCounts: true,
+        includeEnded: false,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const schoolWithoutEnded = resultWithoutEnded.items.find((s) => s.id === school.id);
+      expect(schoolWithoutEnded?.counts?.classes).toBe(1);
     });
   });
 

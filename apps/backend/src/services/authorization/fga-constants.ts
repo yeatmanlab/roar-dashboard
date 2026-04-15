@@ -56,6 +56,7 @@ export const FgaRelation = {
   CAN_LIST: 'can_list',
   CAN_READ: 'can_read',
   CAN_DELETE: 'can_delete',
+  CAN_LIST_CLASSES: 'can_list_classes',
   CAN_LIST_USERS: 'can_list_users',
   CAN_READ_SCORES: 'can_read_scores',
   CAN_READ_PROGRESS: 'can_read_progress',
