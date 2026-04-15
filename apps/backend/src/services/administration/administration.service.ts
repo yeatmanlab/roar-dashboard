@@ -990,7 +990,7 @@ export function AdministrationService({
       // Validate date range: dateEnd must be after dateStart
       if (dateEnd <= dateStart) {
         throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-          statusCode: StatusCodes.BAD_REQUEST,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
           context: { userId, reason: 'dateEnd must be after dateStart' },
         });
@@ -1002,11 +1002,20 @@ export function AdministrationService({
         const uniqueIndices = new Set(orderIndices);
         if (uniqueIndices.size !== orderIndices.length) {
           throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-            statusCode: StatusCodes.BAD_REQUEST,
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
             code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
             context: { userId, reason: 'Task variant orderIndex values must be unique when isOrdered is true' },
           });
         }
+      }
+
+      // Validate there is at least one org, class, or group assigned
+      if (request.orgs?.length === 0 && request.classes?.length === 0 && request.groups?.length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, reason: 'At least one org, class, or group must be assigned' },
+        });
       }
 
       // Validate that all referenced entities exist
