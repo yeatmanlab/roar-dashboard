@@ -525,6 +525,13 @@ export const roamAlpacaSubskillHeaders = {
   supportLevel: 'Support Level',
 };
 
+export const roamFluencySubtasks = {
+  addition: 'Addition',
+  subtraction: 'Subtraction',
+  multiplcation: 'Multiplication',
+  division: 'Division',
+};
+
 export const roamFluencySubskillHeaders = {
   rawScore: 'Raw Score',
   numCorrect: 'Num Correct',

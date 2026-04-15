@@ -455,6 +455,7 @@ import {
   roamAlpacaSubskills,
   getTagColor,
   roamFluencyTasks,
+  roamFluencySubtasks,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
@@ -1160,6 +1161,32 @@ const computeAssignmentAndRunData = computed(() => {
             const { fc, fr } = currRowScores[taskId];
             const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
+          } else {
+            // Non-response modality scores starting from taskVersion: 1.3.7+
+            const scores = _get(assessment, 'scores.computed');
+            const hasSubtasks = scores ? Object.keys(scores).some((key) => roamFluencySubtasks[key]) : false;
+            if (hasSubtasks) {
+              const allIncorrectSkills = [];
+              Object.keys(roamFluencySubtasks).forEach((subtask) => {
+                const subtaskInfo = _get(assessment, `scores.computed.${subtask}`);
+                if (subtaskInfo) {
+                  currRowScores[taskId][subtask] = {
+                    percentCorrect: `${subtaskInfo.subPercentCorrect * 100}%`,
+                    ...subtaskInfo,
+                  };
+                  const subtaskIncorrectSkills = _get(
+                    assessment,
+                    `scores.computed.composite.incorrectSkills.${subtask}`,
+                  );
+                  if (subtaskIncorrectSkills) allIncorrectSkills.push(...subtaskIncorrectSkills.split(','));
+                }
+              });
+              // Multiplication & division subskills are considered the same when counting the total
+              currRowScores[taskId].composite = {
+                totalIncorrectSkills: new Set(allIncorrectSkills).size,
+                ...scores.composite,
+              };
+            }
           }
 
           scoreFilterTags += ' Assessed ';
@@ -1238,6 +1265,7 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
+          console.log('roam-alpaca', scores);
           if (scores) {
             Object.keys(roamAlpacaSubskills).forEach((subskillId) => {
               const subskillInfo = _get(scores, subskillId);
