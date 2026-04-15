@@ -130,7 +130,8 @@ type school
 
     define can_list: supervisory_tier_group
     define can_read: supervisory_tier_group
-    
+
+    define can_list_classes: supervisory_tier_group
     define can_list_users: supervisory_tier_group
     define can_read_scores: supervisory_tier_group
     define can_read_progress: supervisory_tier_group

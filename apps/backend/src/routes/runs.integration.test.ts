@@ -4,12 +4,12 @@
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Authorization is tested by permission tier (matching RolePermissions groupings):
+ * Authorization is tested by permission tier (resolved via OpenFGA):
  *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
  *   - siteAdmin:   site_administrator → 403
  *   - admin:       administrator → 403
  *   - educator:    teacher → 403
- *   - student:     student → 201 (only tier with Permissions.Runs.CREATE)
+ *   - student:     student → 201 (only tier with can_create_run on administration)
  *   - caregiver:   guardian → 403
  *
  * Run events enforce strict ownership — only the run owner can post events.

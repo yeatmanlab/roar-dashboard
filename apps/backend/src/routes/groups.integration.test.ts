@@ -4,7 +4,7 @@
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Authorization is tested by permission tier (matching RolePermissions groupings):
+ * Authorization is tested by permission tier (resolved via OpenFGA):
  *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
  *   - siteAdmin:   site_administrator → 403
  *   - admin:       administrator → 403
@@ -72,6 +72,10 @@ beforeAll(async () => {
     validFrom: yesterday,
     validTo: null,
   });
+
+  // Re-sync FGA tuples to pick up tier users and group memberships created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -284,6 +288,10 @@ describe('GET /v1/groups/:groupId/users', () => {
           role: UserRole.ADMINISTRATOR,
         }),
       ]);
+
+      // Re-sync FGA so the admin's membership on the new group is recognized
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+      await syncFgaTuplesFromPostgres();
 
       const res = await expectRoute('GET', `/v1/groups/${paginationGroup.id}/users?page=1&perPage=1`)
         .as(userGroupTiers.admin)
