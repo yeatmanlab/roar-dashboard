@@ -1351,7 +1351,7 @@ export const taskInfoById = {
     subheader: 'ReadAloud',
     desc: 'The read-aloud assessment records students’ responses as they read words aloud. The student is shown a nonword and asked to read it aloud, allowing us to evaluate decoding accuracy without relying on memorized words. Scores are not immediately available as student recordings need to be human-scored. The read-aloud assessment is currently under active development alongside the phonics assessment, and support for scoring is still limited at this time.',
   },
-  'fluency-arf': {
+  'fluency-arf-response-modality': {
     header: 'ROAM Math Facts',
     color: '#52627E',
     subheader: 'Math Facts - Response Modality Experiment',
@@ -1369,7 +1369,7 @@ export const taskInfoById = {
       'two 3-minute blocks, each scored separately. Each block begins with addition and ' +
       'subtraction, then progresses to multiplication and division.',
   },
-  'fluency-calf': {
+  'fluency-calf-response-modality': {
     header: 'ROAM Calculation Fluency',
     color: '#52627E',
     subheader: 'Calculation Fluency - Response Modality Experiment',
@@ -1386,6 +1386,34 @@ export const taskInfoById = {
       'the impact of digital familiarity on the assessment. Students experience these response ' +
       'modes as two 4.5-minute blocks, each scored separately. Each block begins with addition ' +
       'and subtraction, then progresses to multiplication and division.',
+  },
+  'fluency-arf': {
+    header: 'ROAM Math Facts',
+    color: '#52627E',
+    subheader: 'Math Facts',
+    desc:
+      "ROAM-Math Facts assesses students' fluency in answering single-digit addition, subtraction, " +
+      'multiplication, and division problems without using a paper and pencil. Students may use a ' +
+      'combination of strategies on these questions, including manual calculation and memory-based ' +
+      'retrieval. Students will use retrieval strategies more often as they develop their math fact ' +
+      'fluency. Efficiency with basic arithmetic facts has been shown to support more advanced math ' +
+      'learning and predict overall math achievement. This assessment will help educators understand ' +
+      'student performance in this foundational domain and see where students may benefit from ' +
+      'additional practice and support. Check here for further information on the terms used for ' +
+      'Skills Assessed.',
+  },
+  'fluency-calf': {
+    header: 'ROAM Calculation Fluency',
+    color: '#52627E',
+    subheader: 'Calculation Fluency',
+    desc:
+      "ROAM-Calculation Fluency assesses students' ability to use addition, subtraction, " +
+      'multiplication, and division procedures to solve multi-digit arithmetic problems. Students ' +
+      'may use a pencil and paper to help them perform the calculations in this assessment. Mastery ' +
+      'of the algorithms for these four fundamental arithmetic operations forms the building blocks ' +
+      "for more advanced math skills. This assessment allows educators to evaluate students' command " +
+      'over these key arithmetic procedures and tailor instruction to support any specific areas of ' +
+      'difficulty. Check here for further information on the terms used for Skills Assessed.',
   },
   'roam-alpaca': {
     header: 'ROAM Core Math',

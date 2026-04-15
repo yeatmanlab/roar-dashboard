@@ -454,7 +454,6 @@ import {
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
-  roamFluencyTasks,
   roamFluencySubtasks,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
@@ -1363,19 +1362,6 @@ const computeAssignmentAndRunData = computed(() => {
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
-
-    // We only want to display the ROAM Tasks if the recruitment param is responseModality
-    // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
-    // Response modality admins who switch mid-way will no longer see the subscore tables
-    const assessments = administrationData.value.assessments;
-    for (const assessment of assessments) {
-      if (roamFluencyTasks.includes(assessment.taskId)) {
-        const recruitment = assessment.params.recruitment;
-        if (recruitment !== 'responseModality') {
-          delete filteredRunsByTaskId[assessment.taskId];
-        }
-      }
-    }
 
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
