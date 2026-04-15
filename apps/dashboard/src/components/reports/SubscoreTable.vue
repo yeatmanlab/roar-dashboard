@@ -237,7 +237,6 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     }
     if (roamFluencyTasks.includes(props.taskId)) {
-      console.log(props.recruitmentType);
       if (props.recruitmentType === 'responseModality') {
         Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
           _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
