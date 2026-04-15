@@ -130,20 +130,20 @@ tests:
 
   # ─── Inherited access from school/district ─────────────────────────
 
-  - name: School teacher can list/read classes in their school (descendant access)
+  - name: School teacher CANNOT list/read classes (no descendant access for educators)
     check:
       - user: user:school-teacher
         object: class:class-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_delete: false
-          can_list_users: true
-          can_read_scores: true
+          can_list_users: false
+          can_read_scores: false
 
   - name: District admin can list/read classes (descendant access)
     check:
@@ -233,16 +233,14 @@ tests:
 
   # ─── list_objects ──────────────────────────────────────────────────
 
-  - name: School teacher sees all classes in their school
+  - name: School teacher sees no classes (no descendant access for educators)
     list_objects:
       - user: user:school-teacher
         type: class
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list:
-            - class:class-a
-            - class:class-b
+          can_list: []
 
   - name: Class teacher sees only their class
     list_objects:
