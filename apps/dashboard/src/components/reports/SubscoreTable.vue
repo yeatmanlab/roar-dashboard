@@ -24,6 +24,7 @@ import {
   roamAlpacaSubskillHeaders,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
+  roamFluencySubtasks,
 } from '@/helpers/reports';
 
 const props = defineProps({
@@ -35,6 +36,7 @@ const props = defineProps({
   orgId: { type: String, default: '' },
   administrationName: { type: String, default: '' },
   orgName: { type: String, default: '' },
+  recruitmentType: { type: String, optional: true },
 });
 
 const authStore = useAuthStore();
@@ -103,10 +105,35 @@ const columns = computed(() => {
     );
   }
   if (roamFluencyTasks.includes(props.taskId)) {
-    tableColumns.push(
-      { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
-    );
+    if (props.recruitmentType === 'responseModality') {
+      tableColumns.push(
+        { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
+        { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
+      );
+    } else {
+      tableColumns.push({
+        field: `scores.${props.taskId}.composite.rawScore`,
+        header: 'Overall Score',
+        dataType: 'text',
+        sort: false,
+      });
+
+      Object.entries(roamFluencySubtasks).forEach(([subtaskId, subtask]) => {
+        tableColumns.push({
+          field: `scores.${props.taskId}.${subtaskId}.percentCorrect`,
+          header: subtask,
+          dataType: 'text',
+          sort: false,
+        });
+      });
+
+      tableColumns.push({
+        field: `scores.${props.taskId}.composite.totalIncorrectSkills`,
+        header: 'No. of Skills to Work On',
+        dataType: 'text',
+        sort: false,
+      });
+    }
   }
   if (props.taskId === 'phonics') {
     const subcategories = [

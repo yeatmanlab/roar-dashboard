@@ -99,6 +99,7 @@
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
+      :recruitment-type="getRecruitment()"
     />
     <SubscoreTable
       v-if="taskId === 'fluency-arf' && !isLoadingTasksDictionary"
@@ -110,6 +111,7 @@
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
       :computed-table-data="computedTableData"
+      :recruitment-type="getRecruitment()"
     />
     <SubscoreTable
       v-if="taskId === 'roam-alpaca' && !isLoadingTasksDictionary"
@@ -204,14 +206,17 @@ const minGradeByRuns = computed(() => {
   );
 });
 
+const getRecruitment = () => {
+  return props.administrationInfo.assessments.find((task) => task.taskId === props.taskId).params.recruitment;
+};
+
 const taskInfo = computed(() => {
   const details = { subheader: '', desc: '' };
   let taskId = props.taskId;
 
   // fluency-arf and fluency-calf
   if (roamFluencyTasks.includes(props.taskId)) {
-    const taskInfo = props.administrationInfo.assessments.find((task) => task.taskId === props.taskId);
-    taskId = taskInfo.params.recruitment === 'responseModality' ? `${props.taskId}-response-modality` : props.taskId;
+    taskId = getRecruitment() === 'responseModality' ? `${props.taskId}-response-modality` : props.taskId;
   }
 
   details.subheader = taskInfoById[taskId]?.subheader;
