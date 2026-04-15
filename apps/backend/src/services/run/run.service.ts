@@ -10,10 +10,8 @@ import { AdministrationService } from '../administration/administration.service'
 import type { NewRun } from '../../db/schema';
 
 import type { AuthContext } from '../../types/auth-context';
-import { Permissions } from '../../constants/permissions';
-import { rolesForPermission } from '../../constants/role-permissions';
-import { AdministrationAccessControls } from '../../repositories/access-controls/administration.access-controls';
-import type { UserRole as UserRoleType } from '../../enums/user-role.enum';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 
 /**
@@ -26,19 +24,19 @@ import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
  * @param options.runRepository - Repository for run data access (default: new RunRepository())
  * @param options.administrationService - Service for administration operations (default: AdministrationService())
  * @param options.taskVariantRepository - Repository for task variant data access (default: new TaskVariantRepository())
- * @param options.administrationAccessControls - Access control service for authorization (default: new AdministrationAccessControls())
+ * @param options.authorizationService - FGA authorization service (default: AuthorizationService())
  * @returns Object with create method for creating new runs
  */
 export function RunService({
   runRepository = new RunRepository(),
   administrationService = AdministrationService(),
   taskVariantRepository = new TaskVariantRepository(),
-  administrationAccessControls = new AdministrationAccessControls(),
+  authorizationService = AuthorizationService(),
 }: {
   runRepository?: RunRepository;
   administrationService?: ReturnType<typeof AdministrationService>;
   taskVariantRepository?: TaskVariantRepository;
-  administrationAccessControls?: AdministrationAccessControls;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
    * Creates a new run (assessment session instance).
@@ -46,7 +44,7 @@ export function RunService({
    * Performs the following validations and operations:
    * 1. Rejects anonymous runs that include an administrationId
    * 2. For non-anonymous runs, validates that the administration exists and user has access
-   * 3. For non-anonymous, non-super-admin users, checks if they have Runs.CREATE permission
+   * 3. For non-anonymous, non-super-admin users, checks can_create_run via FGA
    * 4. Resolves the taskId from the provided taskVariantId
    * 5. Creates the run record (anonymous runs use the sentinel administration ID)
    *
@@ -97,22 +95,12 @@ export function RunService({
       }
 
       if (!isSuperAdmin) {
-        const userRoles = (await administrationAccessControls.getUserRolesForAdministration(
+        // FGA checks if the user has can_create_run on this administration
+        await authorizationService.requirePermission(
           userId,
-          body.administrationId!,
-        )) as UserRoleType[];
-
-        const allowedRoles = rolesForPermission(Permissions.Runs.CREATE);
-
-        const hasPermission = userRoles.some((role) => allowedRoles.includes(role));
-
-        if (!hasPermission) {
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-            context: { userId, administrationId: body.administrationId, userRoles, allowedRoles },
-          });
-        }
+          FgaRelation.CAN_CREATE_RUN,
+          `${FgaType.ADMINISTRATION}:${body.administrationId!}`,
+        );
       }
     }
 
