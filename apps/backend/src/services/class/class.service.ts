@@ -1,8 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
 import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
-import { Permissions } from '../../constants/permissions';
-import { rolesForPermission } from '../../constants/role-permissions';
-import type { Class } from '../../db/schema';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
@@ -10,31 +7,33 @@ import { logger } from '../../logger';
 import { ClassRepository } from '../../repositories/class.repository';
 import type { AuthContext } from '../../types/auth-context';
 import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
-import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 export function ClassService({
   classRepository = new ClassRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   classRepository?: ClassRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
-   * Verify that a class exists and the user has access to it.
+   * Performs authorization checks for sub-resource listing.
+   * Verifies class exists and user has can_list_users permission via FGA.
    *
-   * Performs a two-step check:
-   * 1. Verify the class exists (returns 404 if not)
-   * 2. Verify the user has access (returns 403 if not, skipped for super admins)
+   * FGA's can_list_users on class requires supervisory_tier_group, which encodes
+   * both the access check and the supervisory role requirement in a single call.
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param classId - The class ID to verify access for
-   * @returns The class if found and accessible
    * @throws {ApiError} NOT_FOUND if class doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access
+   * @throws {ApiError} FORBIDDEN if user lacks can_list_users permission
    */
-  async function verifyClassAccess(authContext: AuthContext, classId: string): Promise<Class> {
+  async function authorizeSubResourceAccess(authContext: AuthContext, classId: string): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
 
+    // Verify class exists (404 before 403)
     const classEntity = await classRepository.getById({ id: classId });
-
     if (!classEntity) {
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
@@ -43,51 +42,10 @@ export function ClassService({
       });
     }
 
-    if (isSuperAdmin) {
-      return classEntity;
-    }
-
-    const allowedRoles = rolesForPermission(Permissions.Classes.READ);
-    const authorized = await classRepository.getAuthorizedById({ userId, allowedRoles }, classId);
-
-    if (!authorized) {
-      logger.warn({ userId, classId }, 'User attempted to access class resource without permission');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, classId },
-      });
-    }
-
-    return authorized;
-  }
-
-  /**
-   * Performs authorization checks for sub-resource listing (supervisory roles only).
-   * Throws if user lacks access or is a supervised user.
-   *
-   * @param authContext - User's auth context (id and super admin flag)
-   * @param classId - The class ID to verify access for
-   * @throws {ApiError} NOT_FOUND if class doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
-   */
-  async function authorizeSubResourceAccess(authContext: AuthContext, classId: string): Promise<void> {
-    const { userId, isSuperAdmin } = authContext;
-
-    await verifyClassAccess(authContext, classId);
-
     if (isSuperAdmin) return;
 
-    const userRoles = await classRepository.getUserRolesForClass(userId, classId);
-
-    if (!hasSupervisoryRole(userRoles)) {
-      logger.warn({ userId, classId, userRoles }, 'Supervised user attempted to list class sub-resources');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, classId, userRoles },
-      });
-    }
+    // FGA checks both access and supervisory role in one call
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST_USERS, `${FgaType.CLASS}:${classId}`);
   }
 
   /**
@@ -95,9 +53,8 @@ export function ClassService({
    *
    * Authorization behavior:
    * - Super admin: sees all users assigned to the class
-   * - Supervisory roles: sees only users if assigned to that class or if the class is in their accessible org tree
-   *   - Excludes caregiver role
-   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   * - Users with can_list_users on class (supervisory_tier_group): sees all users in the class
+   * - All other roles: returns 403 Forbidden
    *
    * @param authContext - User's auth context (id and type)
    * @param classId - The class ID to get users for
@@ -112,7 +69,7 @@ export function ClassService({
     classId: string,
     options: EnrolledUsersQuery,
   ): Promise<PaginatedResult<EnrolledUserEntity>> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
 
     try {
       await authorizeSubResourceAccess(authContext, classId);
@@ -128,12 +85,8 @@ export function ClassService({
         ...(options.grade && { grade: options.grade }),
       };
 
-      if (isSuperAdmin) {
-        return await classRepository.getUsersByClassId(classId, queryParams);
-      }
-
-      const allowedRoles = rolesForPermission(Permissions.Users.LIST);
-      return await classRepository.getAuthorizedUsersByClassId({ userId, allowedRoles }, classId, queryParams);
+      // FGA already verified permission — use unrestricted query for all authorized users
+      return await classRepository.getUsersByClassId(classId, queryParams);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
