@@ -525,7 +525,7 @@ export const roamAlpacaSubskillHeaders = {
   supportLevel: 'Support Level',
 };
 
-// Non-response modality (1.3.7+)
+// Non-response modality (1.3.6+)
 export const roamFluencySubskills = {
   addition: 'Addition',
   subtraction: 'Subtraction',

@@ -1162,7 +1162,7 @@ const computeAssignmentAndRunData = computed(() => {
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
           } else {
             const scores = _get(assessment, 'scores.computed');
-            // Verify non-response modality scores (1.3.7+) by confirming that at least one subskill is present
+            // Verify non-response modality scores (1.3.6+) by confirming that at least one subskill is present
             const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
             if (hasSubskills) {
               const allIncorrectSkills = [];

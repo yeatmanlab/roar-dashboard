@@ -172,7 +172,7 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
   } else if (roamFluencyTasks.includes(_taskId)) {
-    // Non-response modality (1.3.7+)
+    // Non-response modality (1.3.6+)
     if (_subskillProperty !== 'totalIncorrectSkills') {
       Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
         if (subskillInfo?.[property] != undefined) {
