@@ -57,10 +57,28 @@ vi.mock('../db/schema/core', () => ({
   },
 }));
 
+// Mock transaction type for testing
+interface MockTransaction {
+  insert: ReturnType<typeof vi.fn>;
+  values: ReturnType<typeof vi.fn>;
+  returning: ReturnType<typeof vi.fn>;
+}
+
+// Mock database type for testing
+interface MockDb {
+  transaction: ReturnType<typeof vi.fn>;
+  insert: ReturnType<typeof vi.fn>;
+  values: ReturnType<typeof vi.fn>;
+  returning: ReturnType<typeof vi.fn>;
+  select: ReturnType<typeof vi.fn>;
+  from: ReturnType<typeof vi.fn>;
+  where: ReturnType<typeof vi.fn>;
+}
+
 describe('AdministrationRepository', () => {
   let repository: AdministrationRepository;
-  let mockDb: any;
-  let mockTx: any;
+  let mockDb: MockDb;
+  let mockTx: MockTransaction;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,7 +99,8 @@ describe('AdministrationRepository', () => {
       where: vi.fn().mockReturnThis(),
     };
 
-    repository = new AdministrationRepository(mockDb as any);
+    // @ts-expect-error - Using mock db for testing
+    repository = new AdministrationRepository(mockDb);
   });
 
   describe('createWithAssignments', () => {

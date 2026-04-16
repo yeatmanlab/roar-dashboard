@@ -21,7 +21,6 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
 import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
-import { randomUUID } from 'crypto';
 import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
@@ -171,12 +170,12 @@ describe('POST /v1/administrations', () => {
   });
 
   it('superAdmin tier can create an administration and returns the new ID', async () => {
-    const agreement = await AgreementFactory.create({ name: `Agreement-${randomUUID()}` });
+    const agreement = await AgreementFactory.create({ name: 'Agreement Name' });
     await AgreementVersionFactory.create({ locale: 'en-US' }, { transient: { agreementId: agreement.id } });
 
     const body = {
-      name: `Admin-${randomUUID()}`,
-      namePublic: `Admin Public-${randomUUID()}`,
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
       description: 'Integration create test',
       dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
       dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
@@ -207,8 +206,8 @@ describe('POST /v1/administrations', () => {
 
   it('returns 422 when dateEnd is before dateStart', async () => {
     const body = {
-      name: `Admin-${randomUUID()}`,
-      namePublic: `Admin Public-${randomUUID()}`,
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
       dateStart: new Date('2026-12-31T00:00:00.000Z').toISOString(),
       dateEnd: new Date('2026-01-01T00:00:00.000Z').toISOString(),
       createdBy: tiers.superAdmin.id,
@@ -233,12 +232,12 @@ describe('POST /v1/administrations', () => {
 
   it('returns 404 when a referenced entity does not exist', async () => {
     const body = {
-      name: `Admin-${randomUUID()}`,
-      namePublic: `Admin Public-${randomUUID()}`,
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
       dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
       dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
       createdBy: tiers.superAdmin.id,
-      orgs: [randomUUID()],
+      orgs: ['00000000-0000-0000-0000-000000000000'],
       classes: [],
       groups: [],
       taskVariants: [

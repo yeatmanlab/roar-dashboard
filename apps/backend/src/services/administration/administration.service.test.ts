@@ -23,6 +23,12 @@ import {
   createMockReportRepository,
   createMockRunRepository,
   createMockUserRepository,
+  createMockDistrictRepository,
+  createMockSchoolRepository,
+  createMockClassRepository,
+  createMockGroupRepository,
+  createMockTaskVariantRepository,
+  createMockAgreementRepository,
 } from '../../test-support/repositories';
 import { createMockAuthorizationService, createMockTaskService } from '../../test-support/services';
 import type { MockAuthorizationService } from '../../test-support/services';
@@ -2848,31 +2854,31 @@ describe('AdministrationService', () => {
       mockAdministrationRepository.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
 
       // Mock district and school repositories
-      const mockDistrictRepository = { getUnrestrictedById: vi.fn() };
-      const mockSchoolRepository = { getUnrestrictedById: vi.fn() };
-      const mockClassRepository = { getById: vi.fn() };
-      const mockGroupRepository = { getById: vi.fn() };
-      const mockTaskVariantRepository = { getById: vi.fn() };
-      const mockAgreementRepository = { getById: vi.fn() };
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
 
-      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
-      mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockGroupRepository.getById.mockResolvedValue(mockGroup);
-      mockTaskVariantRepository.getById.mockResolvedValue(mockTaskVariant);
-      mockAgreementRepository.getById.mockResolvedValue(mockAgreement);
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockClassRepo.getById.mockResolvedValue(mockClass);
+      mockGroupRepo.getById.mockResolvedValue(mockGroup);
+      mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
+      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
       mockUserRepository.getById.mockResolvedValue(mockUser);
 
       // Create service with all repositories
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
-        districtRepository: mockDistrictRepository as any,
-        schoolRepository: mockSchoolRepository as any,
-        classRepository: mockClassRepository as any,
-        groupRepository: mockGroupRepository as any,
-        taskVariantRepository: mockTaskVariantRepository as any,
-        agreementRepository: mockAgreementRepository as any,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
       });
 
       // Act
@@ -2976,11 +2982,16 @@ describe('AdministrationService', () => {
 
     it('should throw error when referenced org does not exist', async () => {
       // Arrange
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(null);
+      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(null);
+
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
-        districtRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(null) } as any,
-        schoolRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(null) } as any,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
       });
 
       // Act & Assert
@@ -2998,12 +3009,19 @@ describe('AdministrationService', () => {
       const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
       const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
 
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockClassRepo.getById.mockResolvedValue(null);
+
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
-        districtRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockDistrict) } as any,
-        schoolRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockSchool) } as any,
-        classRepository: { getById: vi.fn().mockResolvedValue(null) } as any,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
       });
 
       // Act & Assert
@@ -3024,15 +3042,28 @@ describe('AdministrationService', () => {
       const mockGroup = GroupFactory.build({ id: 'group-1' });
       const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
 
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockClassRepo.getById.mockResolvedValue(mockClass);
+      mockGroupRepo.getById.mockResolvedValue(mockGroup);
+      mockTaskVariantRepo.getById.mockResolvedValue(null);
+      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
+
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
-        districtRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockDistrict) } as any,
-        schoolRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockSchool) } as any,
-        classRepository: { getById: vi.fn().mockResolvedValue(mockClass) } as any,
-        groupRepository: { getById: vi.fn().mockResolvedValue(mockGroup) } as any,
-        taskVariantRepository: { getById: vi.fn().mockResolvedValue(null) } as any,
-        agreementRepository: { getById: vi.fn().mockResolvedValue(mockAgreement) } as any,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
       });
 
       // Act & Assert
@@ -3054,15 +3085,30 @@ describe('AdministrationService', () => {
       const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
       const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
 
+      const mockUserRepo = createMockUserRepository();
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockUserRepo.getById.mockResolvedValue(null);
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockClassRepo.getById.mockResolvedValue(mockClass);
+      mockGroupRepo.getById.mockResolvedValue(mockGroup);
+      mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
+      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
+
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
-        userRepository: { getById: vi.fn().mockResolvedValue(null) } as any,
-        districtRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockDistrict) } as any,
-        schoolRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockSchool) } as any,
-        classRepository: { getById: vi.fn().mockResolvedValue(mockClass) } as any,
-        groupRepository: { getById: vi.fn().mockResolvedValue(mockGroup) } as any,
-        taskVariantRepository: { getById: vi.fn().mockResolvedValue(mockTaskVariant) } as any,
-        agreementRepository: { getById: vi.fn().mockResolvedValue(mockAgreement) } as any,
+        userRepository: mockUserRepo,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
       });
 
       // Act & Assert
@@ -3085,17 +3131,32 @@ describe('AdministrationService', () => {
       const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
       const mockUser = UserFactory.build({ id: 'user-456' });
 
+      const mockAdminRepo = createMockAdministrationRepository();
+      const mockUserRepo = createMockUserRepository();
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockAdminRepo.createWithAssignments.mockRejectedValue(new Error('Database error'));
+      mockUserRepo.getById.mockResolvedValue(mockUser);
+      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
+      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockClassRepo.getById.mockResolvedValue(mockClass);
+      mockGroupRepo.getById.mockResolvedValue(mockGroup);
+      mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
+      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
+
       const service = AdministrationService({
-        administrationRepository: {
-          createWithAssignments: vi.fn().mockRejectedValue(new Error('Database error')),
-        } as any,
-        userRepository: { getById: vi.fn().mockResolvedValue(mockUser) } as any,
-        districtRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockDistrict) } as any,
-        schoolRepository: { getUnrestrictedById: vi.fn().mockResolvedValue(mockSchool) } as any,
-        classRepository: { getById: vi.fn().mockResolvedValue(mockClass) } as any,
-        groupRepository: { getById: vi.fn().mockResolvedValue(mockGroup) } as any,
-        taskVariantRepository: { getById: vi.fn().mockResolvedValue(mockTaskVariant) } as any,
-        agreementRepository: { getById: vi.fn().mockResolvedValue(mockAgreement) } as any,
+        administrationRepository: mockAdminRepo,
+        userRepository: mockUserRepo,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
       });
 
       // Act & Assert
