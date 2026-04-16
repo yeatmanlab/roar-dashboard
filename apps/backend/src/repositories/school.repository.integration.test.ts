@@ -253,6 +253,120 @@ describe('SchoolRepository', () => {
     });
   });
 
+  describe('listAccessibleByDistrictId', () => {
+    it('returns only schools that are both in the district and in the provided ID set', async () => {
+      const result = await repository.listAccessibleByDistrictId(
+        baseFixture.district.id,
+        [baseFixture.schoolA.id, baseFixture.schoolB.id],
+        { page: 1, perPage: 100 },
+      );
+
+      const ids = result.items.map((s) => s.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+    });
+
+    it('excludes school IDs that belong to a different district', async () => {
+      // schoolInDistrictB is a real school but belongs to districtB, not district
+      const result = await repository.listAccessibleByDistrictId(
+        baseFixture.district.id,
+        [baseFixture.schoolA.id, baseFixture.schoolInDistrictB.id],
+        { page: 1, perPage: 100 },
+      );
+
+      const ids = result.items.map((s) => s.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
+    });
+
+    it('excludes school IDs not present in the provided set', async () => {
+      const result = await repository.listAccessibleByDistrictId(baseFixture.district.id, [baseFixture.schoolA.id], {
+        page: 1,
+        perPage: 100,
+      });
+
+      const ids = result.items.map((s) => s.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).not.toContain(baseFixture.schoolB.id);
+    });
+
+    it('returns empty when the ID set is empty', async () => {
+      const result = await repository.listAccessibleByDistrictId(baseFixture.district.id, [], {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.items).toHaveLength(0);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('excludes ended schools by default', async () => {
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Ended School for Accessible Test',
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const result = await repository.listAccessibleByDistrictId(
+        baseFixture.district.id,
+        [baseFixture.schoolA.id, endedSchool.id],
+        { page: 1, perPage: 100, includeEnded: false },
+      );
+
+      const ids = result.items.map((s) => s.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).not.toContain(endedSchool.id);
+    });
+
+    it('includes ended schools when includeEnded=true', async () => {
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'Ended School for Accessible Include Test',
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const result = await repository.listAccessibleByDistrictId(
+        baseFixture.district.id,
+        [baseFixture.schoolA.id, endedSchool.id],
+        { page: 1, perPage: 100, includeEnded: true },
+      );
+
+      const ids = result.items.map((s) => s.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(endedSchool.id);
+    });
+
+    it('attaches counts when embedCounts=true', async () => {
+      const result = (await repository.listAccessibleByDistrictId(baseFixture.district.id, [baseFixture.schoolA.id], {
+        page: 1,
+        perPage: 100,
+        embedCounts: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const school = result.items.find((s) => s.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect(school?.counts).toMatchObject({
+        users: expect.any(Number),
+        classes: expect.any(Number),
+      });
+      expect(school?.counts).not.toHaveProperty('schools');
+    });
+
+    it('omits counts when embedCounts=false', async () => {
+      const result = await repository.listAccessibleByDistrictId(baseFixture.district.id, [baseFixture.schoolA.id], {
+        page: 1,
+        perPage: 100,
+        embedCounts: false,
+      });
+
+      const school = result.items.find((s) => s.id === baseFixture.schoolA.id);
+      expect(school).toBeDefined();
+      expect((school as SchoolWithCounts).counts).toBeUndefined();
+    });
+  });
+
   describe('getUnrestrictedById', () => {
     it('returns school by ID without authorization checks', async () => {
       const result = await repository.getUnrestrictedById(baseFixture.schoolA.id);

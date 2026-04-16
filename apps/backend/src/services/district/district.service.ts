@@ -207,6 +207,14 @@ export function DistrictService({
         embedCounts: options.embedCounts ?? false,
       };
 
+      // getUnrestrictedById is used deliberately here rather than getById(authContext).
+      // Reasons:
+      //   1. Separates 404 (district doesn't exist) from 403 (district exists but user
+      //      lacks access), matching the backend-authorization-pattern rule.
+      //   2. Filters by orgType=district, so a school ID passed as districtId correctly
+      //      returns null → 404 rather than a false-positive existence hit.
+      //   3. Avoids a redundant FGA call: getById checks can_read, but this endpoint gates
+      //      on can_list. Using getById would fire two FGA checks for non-super-admins.
       const district = await districtRepository.getUnrestrictedById(districtId);
 
       if (!district) {
@@ -220,6 +228,9 @@ export function DistrictService({
       if (!isSuperAdmin) {
         await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST, `${FgaType.DISTRICT}:${districtId}`);
 
+        // TODO: listObjects returns all globally accessible schools, then SQL filters to this
+        // district. Acceptable for now because user school lists are small, but if FGA adds
+        // scoped listing (objects within a subtree), prefer that to bound the IN clause.
         const objects = await authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_LIST, FgaType.SCHOOL);
         const accessibleSchools = objects.map(extractFgaObjectId);
 
@@ -271,6 +282,9 @@ export function DistrictService({
   ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
     try {
+      // getUnrestrictedById: separates 404 from 403, guards orgType so a school ID
+      // won't masquerade as a district, and avoids firing a can_read FGA check when
+      // this endpoint gates on can_list_users. See listDistrictSchools for full rationale.
       const district = await districtRepository.getUnrestrictedById(districtId);
 
       if (!district) {

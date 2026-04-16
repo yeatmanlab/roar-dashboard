@@ -779,6 +779,23 @@ describe('DistrictService', () => {
 
       await expect(service.listDistrictSchools(mockAuthContext, districtId, defaultOptions)).rejects.toThrow(apiError);
     });
+
+    it('wraps listAccessibleObjects non-ApiError as DATABASE_QUERY_FAILED', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA unavailable'));
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(service.listDistrictSchools(mockAuthContext, districtId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
   });
 
   describe('listUsers', () => {

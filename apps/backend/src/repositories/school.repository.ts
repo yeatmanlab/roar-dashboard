@@ -227,6 +227,8 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     schoolIds: string[],
     options: ListAuthorizedOptions,
   ): Promise<PaginatedResult<School | SchoolWithCounts>> {
+    if (schoolIds.length === 0) return { items: [], totalItems: 0 };
+
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
     // Combine district membership, school-type, FGA id set, and rostering-status in one query

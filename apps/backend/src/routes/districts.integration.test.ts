@@ -392,15 +392,14 @@ describe('GET /v1/districts/:districtId/users', () => {
     });
 
     it('student tier is forbidden from listing users in districts', async () => {
-      // Students don't have Organizations.READ permission, so getById returns 404
+      // Students lack can_list_users on the district — FGA requirePermission throws 403
       const res = await expectRoute('GET', districtUsersPath()).as(tiers.student).toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('caregiver tier is forbidden from listing users in districts', async () => {
-      // Caregivers have Organizations.READ but not supervisory role
-      // getById succeeds but authorizeSubResourceAccess throws 403
+      // Caregivers lack can_list_users on the district — FGA requirePermission throws 403
       const res = await expectRoute('GET', districtUsersPath()).as(tiers.caregiver).toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
