@@ -62,7 +62,8 @@ export const AdministrationsContract = c.router(
         'Validates that dateEnd is after dateStart, at least one task variant is provided, ' +
         'and all referenced entities (orgs, classes, groups, task variants, agreements) exist. ' +
         'When isOrdered is true, task variants must have unique orderIndex values. ' +
-        'Returns 422 for semantic validation errors (invalid date range, duplicate orderIndex, missing assessments), ' +
+        'At least one org, class, or group must be assigned. ' +
+        'Returns 422 for semantic validation errors (invalid date range, duplicate orderIndex, missing orgs/classes/groups, missing assignments), ' +
         '404 if referenced entities do not exist, 409 if an administration with the same name already exists.',
     },
     get: {

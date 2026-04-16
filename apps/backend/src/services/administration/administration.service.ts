@@ -968,8 +968,8 @@ export function AdministrationService({
    * - dateEnd must be after dateStart
    * - At least one task variant must be provided (enforced by schema)
    * - If isOrdered is true, task variant orderIndex values must be unique
+   * - At least one org, class, or group must be assigned
    * - All referenced entities (orgs, classes, groups, task variants, agreements) must exist
-   * - Administration name must be unique (case-insensitive)
    *
    * @param authContext - User's authentication context
    * @param request - The create administration request body
