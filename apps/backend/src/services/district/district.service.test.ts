@@ -9,11 +9,14 @@ import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { createMockAuthorizationService } from '../../test-support/services';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { UserRole } from '../../enums/user-role.enum';
 import type { District } from '../../repositories/district.repository';
 
 describe('DistrictService', () => {
   const mockDistrictRepository = createMockDistrictRepository();
+  const mockAuthorizationService = createMockAuthorizationService();
   const mockSchoolRepository = createMockSchoolRepository();
 
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
@@ -33,6 +36,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -52,21 +56,26 @@ describe('DistrictService', () => {
         includeEnded: false,
         embedCounts: false,
       });
-      expect(mockDistrictRepository.listAuthorized).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
       expect(result.items).toHaveLength(3);
       expect(result.totalItems).toBe(3);
     });
 
-    it('should use listAuthorized for non-super admin users', async () => {
+    it('should use FGA listAccessibleObjects + listByIds for non-super admin users', async () => {
       const mockDistricts = OrgFactory.buildList(2, { orgType: OrgType.DISTRICT });
 
-      mockDistrictRepository.listAuthorized.mockResolvedValue({
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([
+        `${FgaType.DISTRICT}:${mockDistricts[0]!.id}`,
+        `${FgaType.DISTRICT}:${mockDistricts[1]!.id}`,
+      ]);
+      mockDistrictRepository.listByIds.mockResolvedValue({
         items: mockDistricts,
         totalItems: 2,
       });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -79,19 +88,18 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
-        {
-          userId: 'user-123',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        {
-          page: 1,
-          perPage: 25,
-          orderBy: { field: 'name', direction: SortOrder.ASC },
-          includeEnded: false,
-          embedCounts: false,
-        },
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST,
+        FgaType.DISTRICT,
       );
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith([mockDistricts[0]!.id, mockDistricts[1]!.id], {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'name', direction: SortOrder.ASC },
+        includeEnded: false,
+        embedCounts: false,
+      });
       expect(mockDistrictRepository.listAll).not.toHaveBeenCalled();
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
@@ -102,6 +110,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -127,6 +136,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -148,10 +158,12 @@ describe('DistrictService', () => {
     });
 
     it('should default includeEnded to false when not provided', async () => {
-      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.DISTRICT}:dist-1`]);
+      mockDistrictRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -164,8 +176,8 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith(
+        expect.any(Array),
         expect.objectContaining({
           includeEnded: false,
         }),
@@ -173,10 +185,12 @@ describe('DistrictService', () => {
     });
 
     it('should default embedCounts to false when not provided', async () => {
-      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.DISTRICT}:dist-1`]);
+      mockDistrictRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -189,8 +203,8 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith(
+        expect.any(Array),
         expect.objectContaining({
           embedCounts: false,
         }),
@@ -202,6 +216,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -226,6 +241,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -245,11 +261,12 @@ describe('DistrictService', () => {
       );
     });
 
-    it('should return empty results when user has no accessible districts', async () => {
-      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+    it('should return empty results when FGA returns no accessible districts', async () => {
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -264,13 +281,16 @@ describe('DistrictService', () => {
 
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
+      expect(mockDistrictRepository.listByIds).not.toHaveBeenCalled();
     });
 
     it('should pass pagination options correctly', async () => {
-      mockDistrictRepository.listAuthorized.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.DISTRICT}:dist-1`]);
+      mockDistrictRepository.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.list(
@@ -283,8 +303,8 @@ describe('DistrictService', () => {
         },
       );
 
-      expect(mockDistrictRepository.listAuthorized).toHaveBeenCalledWith(
-        expect.any(Object),
+      expect(mockDistrictRepository.listByIds).toHaveBeenCalledWith(
+        expect.any(Array),
         expect.objectContaining({
           page: 3,
           perPage: 50,
@@ -301,6 +321,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -322,6 +343,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -334,23 +356,10 @@ describe('DistrictService', () => {
             sortOrder: 'asc',
           },
         ),
-      ).rejects.toThrow(ApiError);
-
-      try {
-        await service.list(
-          { userId: 'admin-123', isSuperAdmin: true },
-          {
-            page: 1,
-            perPage: 25,
-            sortBy: 'name',
-            sortOrder: 'asc',
-          },
-        );
-      } catch (err) {
-        expect(err).toBeInstanceOf(ApiError);
-        expect((err as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((err as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      }
+      ).rejects.toMatchObject({
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     });
 
     it('should return districts with counts when embedCounts is true', async () => {
@@ -370,6 +379,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.list(
@@ -393,7 +403,7 @@ describe('DistrictService', () => {
   });
 
   describe('getById', () => {
-    it('should fetch district by ID for regular users', async () => {
+    it('should fetch district by ID for regular users via FGA', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
         id: validUuid,
@@ -408,11 +418,12 @@ describe('DistrictService', () => {
 
       // Step 1: unrestricted lookup succeeds
       mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
-      // Step 3: authorized lookup succeeds
-      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict as District);
+      // Step 3: FGA permission check passes
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.getById(mockAuthContext, validUuid);
@@ -420,7 +431,7 @@ describe('DistrictService', () => {
       expect(result).toEqual(mockDistrict);
     });
 
-    it('should build access control filter for regular users', async () => {
+    it('should call requirePermission with correct FGA arguments for regular users', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
         id: validUuid,
@@ -433,27 +444,24 @@ describe('DistrictService', () => {
         updatedAt: new Date(),
       };
 
-      // Step 1: unrestricted lookup succeeds
       mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
-      // Step 3: authorized lookup succeeds
-      mockDistrictRepository.getAuthorizedById.mockResolvedValue(mockDistrict as District);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.getById(mockAuthContext, validUuid);
 
-      expect(mockDistrictRepository.getAuthorizedById).toHaveBeenCalledWith(
-        {
-          userId: 'user-123',
-          allowedRoles: expect.arrayContaining(['site_administrator', 'administrator', 'teacher']),
-        },
-        validUuid,
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.DISTRICT}:${validUuid}`,
       );
     });
 
-    it('should use getUnrestrictedById for super admins', async () => {
+    it('should use getUnrestrictedById for super admins and skip FGA check', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
         id: validUuid,
@@ -470,13 +478,14 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await service.getById(mockSuperAdminContext, validUuid);
 
-      // Super admins should use unrestricted method, not the authorized one
+      // Super admins should use unrestricted method, not the FGA check
       expect(mockDistrictRepository.getUnrestrictedById).toHaveBeenCalledWith(validUuid);
-      expect(mockDistrictRepository.getAuthorizedById).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
     it('should throw 404 when district not found', async () => {
@@ -485,21 +494,17 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.NOT_FOUND);
-        expect((error as ApiError).code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
-        expect((error as ApiError).message).toBe(ApiErrorMessage.NOT_FOUND);
-      }
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+      });
     });
 
-    it('should throw 403 when user lacks access', async () => {
+    it('should throw 403 when FGA denies permission', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const mockDistrict = {
         id: validUuid,
@@ -513,43 +518,40 @@ describe('DistrictService', () => {
       };
       // District exists (unrestricted lookup succeeds)
       mockDistrictRepository.getUnrestrictedById.mockResolvedValue(mockDistrict as District);
-      // But user lacks access (authorized lookup fails)
-      mockDistrictRepository.getAuthorizedById.mockResolvedValue(null);
+      // But FGA denies permission
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.FORBIDDEN);
-        expect((error as ApiError).code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
-        expect((error as ApiError).message).toBe(ApiErrorMessage.FORBIDDEN);
-      }
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
     });
 
     it('should wrap database errors in ApiError with DATABASE_QUERY_FAILED code', async () => {
       const validUuid = '123e4567-e89b-12d3-a456-426614174000';
       const dbError = new Error('Database connection lost');
-      mockDistrictRepository.getAuthorizedById.mockRejectedValue(dbError);
+      mockDistrictRepository.getUnrestrictedById.mockRejectedValue(dbError);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
       });
 
-      await expect(service.getById(mockAuthContext, validUuid)).rejects.toThrow(ApiError);
-
-      try {
-        await service.getById(mockAuthContext, validUuid);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
-        expect((error as ApiError).statusCode).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
-      }
+      await expect(service.getById(mockAuthContext, validUuid)).rejects.toMatchObject({
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     });
   });
 
@@ -818,8 +820,9 @@ describe('DistrictService', () => {
     it('should check authorization for non-super admin users with supervisory role', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
       const mockUsers = EnrolledUserFactory.buildList(2);
+      const mockAuthService = createMockAuthorizationService();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getAuthorizedById.mockResolvedValue(mockDistrict);
+      mockAuthService.requirePermission.mockResolvedValue(undefined);
       mockDistrictRepo.getUserRolesForDistrict.mockResolvedValue([UserRole.ADMINISTRATOR]);
       mockDistrictRepo.getAuthorizedUsersByDistrictId.mockResolvedValue({
         items: mockUsers,
@@ -828,6 +831,7 @@ describe('DistrictService', () => {
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
       });
 
       const result = await service.listUsers(
@@ -836,7 +840,11 @@ describe('DistrictService', () => {
         defaultOptions,
       );
 
-      expect(mockDistrictRepo.getAuthorizedById).toHaveBeenCalled();
+      expect(mockAuthService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_READ,
+        `${FgaType.DISTRICT}:district-123`,
+      );
       expect(mockDistrictRepo.getUserRolesForDistrict).toHaveBeenCalledWith('user-123', 'district-123');
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
@@ -876,13 +884,20 @@ describe('DistrictService', () => {
       });
     });
 
-    it('should throw forbidden error when supervisory role is not on district level', async () => {
+    it('should throw forbidden error when user lacks access to the district', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockAuthService = createMockAuthorizationService();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getAuthorizedById.mockResolvedValue(null);
+      mockAuthService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
       });
 
       await expect(
@@ -896,12 +911,14 @@ describe('DistrictService', () => {
 
     it('should throw forbidden error when user has no supervisory role', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
+      const mockAuthService = createMockAuthorizationService();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockDistrictRepo.getAuthorizedById.mockResolvedValue(mockDistrict);
+      mockAuthService.requirePermission.mockResolvedValue(undefined);
       mockDistrictRepo.getUserRolesForDistrict.mockResolvedValue([UserRole.GUARDIAN]);
 
       const service = DistrictService({
         districtRepository: mockDistrictRepo,
+        authorizationService: mockAuthService,
       });
 
       await expect(

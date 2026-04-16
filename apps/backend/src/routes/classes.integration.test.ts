@@ -4,7 +4,7 @@
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Authorization is tested by permission tier (matching RolePermissions groupings):
+ * Authorization is tested by permission tier (resolved via OpenFGA):
  *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
  *   - siteAdmin:   site_administrator
  *   - admin:       administrator
@@ -48,6 +48,10 @@ beforeAll(async () => {
   app = createTestApp(registerClassesRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+
+  // Re-sync FGA tuples to pick up tier users created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
