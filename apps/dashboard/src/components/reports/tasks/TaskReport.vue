@@ -207,7 +207,7 @@ const minGradeByRuns = computed(() => {
 });
 
 const getRecruitment = () => {
-  return props.administrationInfo.assessments.find((task) => task.taskId === props.taskId).params.recruitment;
+  return props.administrationInfo.assessments.find((task) => task.taskId === props.taskId)?.params?.recruitment;
 };
 
 const taskInfo = computed(() => {
@@ -219,7 +219,9 @@ const taskInfo = computed(() => {
   }
 
   details.subheader = taskInfoById[taskId]?.subheader ?? '';
-  details.desc = replaceScoreRange(taskInfoById[taskId]?.desc, taskId, props.taskScoringVersions[taskId]) ?? '';
+  // scoringVersion is associated with original task id (props.taskId)
+  // Modified task id is to handle multiple descriptions and subheaders for one assessment (e.g. fluency-arf)
+  details.desc = replaceScoreRange(taskInfoById[taskId]?.desc, taskId, props.taskScoringVersions[props.taskId]) ?? '';
 
   return details;
 });

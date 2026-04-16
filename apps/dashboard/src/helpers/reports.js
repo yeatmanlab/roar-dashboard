@@ -529,7 +529,7 @@ export const roamAlpacaSubskillHeaders = {
 export const roamFluencySubskills = {
   addition: 'Addition',
   subtraction: 'Subtraction',
-  multiplcation: 'Multiplication',
+  multiplication: 'Multiplication',
   division: 'Division',
 };
 
