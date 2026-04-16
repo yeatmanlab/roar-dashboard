@@ -52,6 +52,7 @@ export const AdministrationsContract = c.router(
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
         409: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -61,8 +62,8 @@ export const AdministrationsContract = c.router(
         'Validates that dateEnd is after dateStart, at least one task variant is provided, ' +
         'and all referenced entities (orgs, classes, groups, task variants, agreements) exist. ' +
         'When isOrdered is true, task variants must have unique orderIndex values. ' +
-        'Returns 400 for validation errors, 404 if referenced entities do not exist, ' +
-        '409 if an administration with the same name already exists.',
+        'Returns 422 for semantic validation errors (invalid date range, duplicate orderIndex, missing assessments), ' +
+        '404 if referenced entities do not exist, 409 if an administration with the same name already exists.',
     },
     get: {
       method: 'GET',

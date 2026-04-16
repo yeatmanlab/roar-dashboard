@@ -589,6 +589,7 @@ export const AdministrationsController = {
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
           StatusCodes.CONFLICT,
+          StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
