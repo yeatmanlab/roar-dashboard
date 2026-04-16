@@ -15,6 +15,7 @@ const props = defineProps({
   longitudinalData: { type: Array, required: true },
   taskId: { type: String, required: true },
   studentGrade: { type: String, required: true },
+  taskScoringVersion: { type: Number, required: false, default: null },
 });
 
 const { series, seriesLabel } = useLongitudinalSeries(props);
