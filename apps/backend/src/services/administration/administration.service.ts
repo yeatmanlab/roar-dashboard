@@ -969,14 +969,16 @@ export function AdministrationService({
    * - At least one task variant must be provided (enforced by schema)
    * - If isOrdered is true, task variant orderIndex values must be unique
    * - At least one org, class, or group must be assigned
+   * - Name must be unique (case-insensitive)
    * - All referenced entities (orgs, classes, groups, task variants, agreements) must exist
    *
    * @param authContext - User's authentication context
    * @param request - The create administration request body
    * @returns The created administration
-   * @throws {ApiError} BAD_REQUEST if validation fails (date range, duplicate orderIndex)
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if validation fails (date range, duplicate orderIndex, missing assignments)
+   * @throws {ApiError} CONFLICT if an administration with the same name already exists
    * @throws {ApiError} NOT_FOUND if any referenced entity doesn't exist
-   * @throws {ApiError} CONFLICT if an administration with the same name exists
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
    */
   async function create(authContext: AuthContext, request: CreateAdministrationRequest): Promise<Administration> {
@@ -1023,6 +1025,16 @@ export function AdministrationService({
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
           context: { userId, reason: 'At least one org, class, or group must be assigned' },
+        });
+      }
+
+      // Validate name is unique
+      const nameExists = await administrationRepository.existsByName(request.name);
+      if (nameExists) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, name: request.name, reason: 'An administration with this name already exists' },
         });
       }
 

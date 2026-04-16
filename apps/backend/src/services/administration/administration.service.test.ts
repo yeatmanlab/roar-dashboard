@@ -2866,6 +2866,7 @@ describe('AdministrationService', () => {
       const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
 
       // Mock all repository calls
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
       mockAdministrationRepository.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
 
       // Mock district and school repositories
@@ -2994,8 +2995,28 @@ describe('AdministrationService', () => {
       );
     });
 
+    it('should throw conflict error when administration name already exists', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(true);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        }),
+      );
+    });
+
     it('should throw error when referenced org does not exist', async () => {
       // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
       const mockDistrictRepo = createMockDistrictRepository();
       const mockSchoolRepo = createMockSchoolRepository();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(null);
@@ -3020,6 +3041,7 @@ describe('AdministrationService', () => {
 
     it('should throw error when referenced class does not exist', async () => {
       // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
       const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
       const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
 
@@ -3050,6 +3072,7 @@ describe('AdministrationService', () => {
 
     it('should throw error when referenced task variant does not exist', async () => {
       // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
       const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
       const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
       const mockClass = ClassFactory.build({ id: 'class-1' });
@@ -3108,6 +3131,7 @@ describe('AdministrationService', () => {
       const mockGroupRepo = createMockGroupRepository();
       const mockTaskVariantRepo = createMockTaskVariantRepository();
       const mockAgreementRepo = createMockAgreementRepository();
+      mockAdminRepo.existsByName.mockResolvedValue(false);
       mockAdminRepo.createWithAssignments.mockRejectedValue(new Error('Database error'));
       mockUserRepo.getById.mockResolvedValue(mockUser);
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);

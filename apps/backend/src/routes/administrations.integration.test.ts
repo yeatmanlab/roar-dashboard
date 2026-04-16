@@ -230,8 +230,8 @@ describe('POST /v1/administrations', () => {
 
   it('returns 404 when a referenced entity does not exist', async () => {
     const body = {
-      name: 'Admin Name',
-      namePublic: 'Admin Public Name',
+      name: 'New Admin Name',
+      namePublic: 'New Admin Public Name',
       dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
       dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
       orgs: ['00000000-0000-0000-0000-000000000000'],

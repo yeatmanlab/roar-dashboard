@@ -1872,6 +1872,31 @@ describe('AdministrationsController', () => {
       }
     });
 
+    it('should return 409 when service throws conflict error for duplicate name', async () => {
+      // Arrange
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { userId: 'user-123', name: 'Test Administration' },
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      // Act
+      const result = await Controller.create(mockAuthContext, validRequestBody);
+
+      // Assert
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+        expect(result.body.error).toHaveProperty('traceId');
+      }
+    });
+
     it('should throw when service throws unexpected error', async () => {
       // Arrange
       const error = new Error('Unexpected database error');

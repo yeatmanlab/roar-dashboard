@@ -980,4 +980,21 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       },
     });
   }
+
+  /**
+   * Check if an administration with the given name already exists.
+   * Uses case-insensitive comparison to match the database unique constraint.
+   *
+   * @param name - The name to check
+   * @returns true if an administration with this name exists, false otherwise
+   */
+  async existsByName(name: string): Promise<boolean> {
+    const result = await this.db
+      .select({ id: administrations.id })
+      .from(administrations)
+      .where(sql`lower(${administrations.name}) = lower(${name})`)
+      .limit(1);
+
+    return result.length > 0;
+  }
 }
