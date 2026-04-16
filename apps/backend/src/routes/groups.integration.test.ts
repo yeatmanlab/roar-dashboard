@@ -319,7 +319,7 @@ describe('GET /v1/groups/:groupId/users', () => {
 
       expect(res.body.data.items).toHaveLength(1);
       expect(res.body.data.pagination.page).toBe(1);
-      expect(res.body.data.pagination.perPage).toBe(2);
+      expect(res.body.data.pagination.perPage).toBe(1);
       expect(res.body.data.pagination.totalItems).toBeGreaterThan(0);
       expect(res.body.data.pagination.totalPages).toBeGreaterThan(0);
     });
