@@ -389,6 +389,23 @@ tests:
           can_update: false
           can_delete: false
 
+  - name: School teacher with direct class access cannot list school classes
+    check:
+      - user: user:school-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_classes: false
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
+          can_create: false
+          can_update: false
+          can_delete: false
+
   - name: School teacher cannot see sibling school
     check:
       - user: user:school-teacher
