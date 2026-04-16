@@ -547,14 +547,13 @@ export const CreateAdministrationTaskVariantSchema = z.object({
 export type CreateAdministrationTaskVariant = z.infer<typeof CreateAdministrationTaskVariantSchema>;
 
 /**
- * Request body for creating an administration.
+ * Request body schema for creating a new administration.
  *
  * Required fields:
  * - name: Internal name for the administration
  * - namePublic: Public-facing name shown to users
  * - dateStart: Start date/time of the administration
  * - dateEnd: End date/time of the administration
- * - createdBy: UUID of the user creating the administration
  * - taskVariants: Array of task variants to include (at least one required)
  *
  * Optional fields:
@@ -564,6 +563,8 @@ export type CreateAdministrationTaskVariant = z.infer<typeof CreateAdministratio
  * - classes: Array of class UUIDs to assign
  * - groups: Array of group UUIDs to assign
  * - agreements: Array of agreement UUIDs to require
+ *
+ * Note: createdBy is automatically set to the authenticated user's ID.
  */
 export const CreateAdministrationRequestSchema = z.object({
   name: z.string().min(1),
@@ -572,7 +573,6 @@ export const CreateAdministrationRequestSchema = z.object({
   dateStart: z.string().datetime(),
   dateEnd: z.string().datetime(),
   isOrdered: z.boolean().optional().default(false),
-  createdBy: z.string().uuid(),
   orgs: z.array(z.string().uuid()).optional().default([]),
   classes: z.array(z.string().uuid()).optional().default([]),
   groups: z.array(z.string().uuid()).optional().default([]),

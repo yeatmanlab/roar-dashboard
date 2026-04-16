@@ -2817,6 +2817,7 @@ describe('AdministrationService', () => {
 
   describe('create', () => {
     const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+    const superAdminAuthContext = { userId: 'super-admin-123', isSuperAdmin: true };
     const validRequest = {
       name: 'Test Administration',
       namePublic: 'Public Test Name',
@@ -2824,7 +2825,6 @@ describe('AdministrationService', () => {
       dateStart: '2024-01-01T00:00:00Z',
       dateEnd: '2024-12-31T23:59:59Z',
       isOrdered: false,
-      createdBy: 'user-456',
       orgs: ['org-1', 'org-2'],
       classes: ['class-1'],
       groups: ['group-1'],
@@ -2839,6 +2839,22 @@ describe('AdministrationService', () => {
       agreements: ['agreement-1'],
     };
 
+    it('should throw forbidden error when non-super admin attempts to create', async () => {
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+      });
+
+      await expect(service.create(mockAuthContext, validRequest)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      // Should not make any repository calls
+      expect(mockAdministrationRepository.createWithAssignments).not.toHaveBeenCalled();
+    });
+
     it('should create administration successfully with valid data', async () => {
       // Arrange
       const mockCreatedAdmin = AdministrationFactory.build();
@@ -2848,7 +2864,6 @@ describe('AdministrationService', () => {
       const mockGroup = GroupFactory.build({ id: 'group-1' });
       const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
       const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
-      const mockUser = UserFactory.build({ id: 'user-456' });
 
       // Mock all repository calls
       mockAdministrationRepository.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
@@ -2867,7 +2882,6 @@ describe('AdministrationService', () => {
       mockGroupRepo.getById.mockResolvedValue(mockGroup);
       mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
       mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
-      mockUserRepository.getById.mockResolvedValue(mockUser);
 
       // Create service with all repositories
       const service = AdministrationService({
@@ -2882,7 +2896,7 @@ describe('AdministrationService', () => {
       });
 
       // Act
-      const result = await service.create(mockAuthContext, validRequest);
+      const result = await service.create(superAdminAuthContext, validRequest);
 
       // Assert
       expect(result).toBe(mockCreatedAdmin);
@@ -2894,7 +2908,7 @@ describe('AdministrationService', () => {
             dateStart: new Date(validRequest.dateStart),
             dateEnd: new Date(validRequest.dateEnd),
             isOrdered: validRequest.isOrdered,
-            createdBy: validRequest.createdBy,
+            createdBy: superAdminAuthContext.userId,
           }),
           orgIds: validRequest.orgs,
           classIds: validRequest.classes,
@@ -2923,7 +2937,7 @@ describe('AdministrationService', () => {
       };
 
       // Act & Assert
-      await expect(service.create(mockAuthContext, invalidRequest)).rejects.toThrow(
+      await expect(service.create(superAdminAuthContext, invalidRequest)).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -2948,7 +2962,7 @@ describe('AdministrationService', () => {
       };
 
       // Act & Assert
-      await expect(service.create(mockAuthContext, invalidRequest)).rejects.toThrow(
+      await expect(service.create(superAdminAuthContext, invalidRequest)).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -2971,7 +2985,7 @@ describe('AdministrationService', () => {
       };
 
       // Act & Assert
-      await expect(service.create(mockAuthContext, invalidRequest)).rejects.toThrow(
+      await expect(service.create(superAdminAuthContext, invalidRequest)).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -2995,7 +3009,7 @@ describe('AdministrationService', () => {
       });
 
       // Act & Assert
-      await expect(service.create(mockAuthContext, validRequest)).rejects.toThrow(
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.NOT_FOUND,
           statusCode: StatusCodes.NOT_FOUND,
@@ -3025,7 +3039,7 @@ describe('AdministrationService', () => {
       });
 
       // Act & Assert
-      await expect(service.create(mockAuthContext, validRequest)).rejects.toThrow(
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.NOT_FOUND,
           statusCode: StatusCodes.NOT_FOUND,
@@ -3067,52 +3081,7 @@ describe('AdministrationService', () => {
       });
 
       // Act & Assert
-      await expect(service.create(mockAuthContext, validRequest)).rejects.toThrow(
-        expect.objectContaining({
-          message: ApiErrorMessage.NOT_FOUND,
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        }),
-      );
-    });
-
-    it('should throw error when referenced user does not exist', async () => {
-      // Arrange
-      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
-      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
-      const mockClass = ClassFactory.build({ id: 'class-1' });
-      const mockGroup = GroupFactory.build({ id: 'group-1' });
-      const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
-      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
-
-      const mockUserRepo = createMockUserRepository();
-      const mockDistrictRepo = createMockDistrictRepository();
-      const mockSchoolRepo = createMockSchoolRepository();
-      const mockClassRepo = createMockClassRepository();
-      const mockGroupRepo = createMockGroupRepository();
-      const mockTaskVariantRepo = createMockTaskVariantRepository();
-      const mockAgreementRepo = createMockAgreementRepository();
-      mockUserRepo.getById.mockResolvedValue(null);
-      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
-      mockClassRepo.getById.mockResolvedValue(mockClass);
-      mockGroupRepo.getById.mockResolvedValue(mockGroup);
-      mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
-      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
-
-      const service = AdministrationService({
-        administrationRepository: mockAdministrationRepository,
-        userRepository: mockUserRepo,
-        districtRepository: mockDistrictRepo,
-        schoolRepository: mockSchoolRepo,
-        classRepository: mockClassRepo,
-        groupRepository: mockGroupRepo,
-        taskVariantRepository: mockTaskVariantRepo,
-        agreementRepository: mockAgreementRepo,
-      });
-
-      // Act & Assert
-      await expect(service.create(mockAuthContext, validRequest)).rejects.toThrow(
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
           message: ApiErrorMessage.NOT_FOUND,
           statusCode: StatusCodes.NOT_FOUND,
@@ -3160,7 +3129,7 @@ describe('AdministrationService', () => {
       });
 
       // Act & Assert
-      await expect(service.create(mockAuthContext, validRequest)).rejects.toThrow(
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
           message: 'Failed to create administration',
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

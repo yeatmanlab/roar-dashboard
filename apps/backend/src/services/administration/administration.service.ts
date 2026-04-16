@@ -980,7 +980,15 @@ export function AdministrationService({
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
    */
   async function create(authContext: AuthContext, request: CreateAdministrationRequest): Promise<Administration> {
-    const { userId } = authContext;
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
 
     try {
       // Parse dates
@@ -1097,17 +1105,8 @@ export function AdministrationService({
         }
       }
 
-      // Verify createdBy user exists
-      const createdByUser = await userRepository.getById({ id: request.createdBy });
-      if (!createdByUser) {
-        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, missingUser: request.createdBy },
-        });
-      }
-
       // Build the input for the repository
+      // createdBy is set to the authenticated user's ID
       const createInput: CreateAdministrationInput = {
         administration: {
           name: request.name,
@@ -1116,7 +1115,7 @@ export function AdministrationService({
           dateStart,
           dateEnd,
           isOrdered: request.isOrdered ?? false,
-          createdBy: request.createdBy,
+          createdBy: userId,
         },
         orgIds,
         classIds,

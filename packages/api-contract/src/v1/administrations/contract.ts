@@ -51,7 +51,6 @@ export const AdministrationsContract = c.router(
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
-        409: ErrorEnvelopeSchema,
         422: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
@@ -64,7 +63,7 @@ export const AdministrationsContract = c.router(
         'When isOrdered is true, task variants must have unique orderIndex values. ' +
         'At least one org, class, or group must be assigned. ' +
         'Returns 422 for semantic validation errors (invalid date range, duplicate orderIndex, missing orgs/classes/groups, missing assignments), ' +
-        '404 if referenced entities do not exist, 409 if an administration with the same name already exists.',
+        '404 if referenced entities do not exist.',
     },
     get: {
       method: 'GET',
