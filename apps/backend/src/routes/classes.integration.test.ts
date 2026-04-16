@@ -214,7 +214,7 @@ describe('GET /v1/classes/:classId/users', () => {
       const filterPath = () => `/v1/classes/${filterTestClass.id}/users`;
 
       it('filters users by role parameter', async () => {
-        const res = await expectRoute('GET', `${filterPath()}?role=student`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?role=student`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
         expect(res.body.data.items.length).toBeGreaterThan(0);
@@ -224,7 +224,7 @@ describe('GET /v1/classes/:classId/users', () => {
       });
 
       it('filters users by single grade parameter', async () => {
-        const res = await expectRoute('GET', `${filterPath()}?grade=5`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?grade=5`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
         expect(res.body.data.items.length).toBeGreaterThan(0);
@@ -234,7 +234,7 @@ describe('GET /v1/classes/:classId/users', () => {
       });
 
       it('filters users by multiple grades with comma-separated values', async () => {
-        const res = await expectRoute('GET', `${filterPath()}?grade=3,7`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?grade=3,7`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
         expect(res.body.data.items.length).toBeGreaterThan(0);
@@ -244,7 +244,7 @@ describe('GET /v1/classes/:classId/users', () => {
       });
 
       it('combines role and grade filters', async () => {
-        const res = await expectRoute('GET', `${filterPath()}?role=student&grade=5`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?role=student&grade=5`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
         expect(res.body.data.items.length).toBeGreaterThan(0);
@@ -255,14 +255,14 @@ describe('GET /v1/classes/:classId/users', () => {
       });
 
       it('returns empty array when no users match filter', async () => {
-        const res = await expectRoute('GET', `${filterPath()}?grade=12`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?grade=12`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
         expect(res.body.data.items).toHaveLength(0);
       });
 
       it('supports pagination with page and perPage parameters', async () => {
-        const res = await expectRoute('GET', `${filterPath()}?page=1&perPage=2`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?page=1&perPage=2`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toHaveLength(2);
         expect(res.body.data.pagination.page).toBe(1);
