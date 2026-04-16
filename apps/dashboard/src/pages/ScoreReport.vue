@@ -454,7 +454,7 @@ import {
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
-  roamFluencySubtasks,
+  roamFluencySubskills,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
@@ -1161,23 +1161,23 @@ const computeAssignmentAndRunData = computed(() => {
             const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
           } else {
-            // Non-response modality scores starting from taskVersion: 1.3.7+
             const scores = _get(assessment, 'scores.computed');
-            const hasSubtasks = scores ? Object.keys(scores).some((key) => roamFluencySubtasks[key]) : false;
-            if (hasSubtasks) {
+            // Verify non-response modality scores (1.3.7+) by confirming that at least one subskill is present
+            const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
+            if (hasSubskills) {
               const allIncorrectSkills = [];
-              Object.keys(roamFluencySubtasks).forEach((subtask) => {
-                const subtaskInfo = _get(assessment, `scores.computed.${subtask}`);
-                if (subtaskInfo) {
-                  currRowScores[taskId][subtask] = {
-                    percentCorrect: `${subtaskInfo.subPercentCorrect * 100}%`,
-                    ...subtaskInfo,
+              Object.keys(roamFluencySubskills).forEach((subskill) => {
+                const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
+                if (subskillInfo) {
+                  currRowScores[taskId][subskill] = {
+                    percentCorrect: `${subskillInfo.subPercentCorrect * 100}%`,
+                    ...subskillInfo,
                   };
-                  const subtaskIncorrectSkills = _get(
+                  const subskillIncorrectSkills = _get(
                     assessment,
-                    `scores.computed.composite.incorrectSkills.${subtask}`,
+                    `scores.computed.composite.incorrectSkills.${subskill}`,
                   );
-                  if (subtaskIncorrectSkills) allIncorrectSkills.push(...subtaskIncorrectSkills.split(','));
+                  if (subskillIncorrectSkills) allIncorrectSkills.push(...subskillIncorrectSkills.split(','));
                 }
               });
               // Multiplication & division subskills are considered the same when counting the total
@@ -1264,7 +1264,6 @@ const computeAssignmentAndRunData = computed(() => {
         }
         if (taskId === 'roam-alpaca') {
           const scores = _get(assessment, 'scores.computed');
-          console.log('roam-alpaca', scores);
           if (scores) {
             Object.keys(roamAlpacaSubskills).forEach((subskillId) => {
               const subskillInfo = _get(scores, subskillId);

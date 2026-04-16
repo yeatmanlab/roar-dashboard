@@ -525,7 +525,7 @@ export const roamAlpacaSubskillHeaders = {
   supportLevel: 'Support Level',
 };
 
-export const roamFluencySubtasks = {
+export const roamFluencySubskills = {
   addition: 'Addition',
   subtraction: 'Subtraction',
   multiplcation: 'Multiplication',

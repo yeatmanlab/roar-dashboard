@@ -44,7 +44,7 @@ import {
   subskillTasks,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
-  roamFluencySubtasks,
+  roamFluencySubskills,
 } from '@/helpers/reports.js';
 
 defineProps({
@@ -172,8 +172,7 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
       _toolTip += 'Grade Estimate: ' + subskillInfo?.gradeEstimate + '\n';
     }
   } else if (roamFluencyTasks.includes(_taskId)) {
-    // Non-response modality (1.3.7+) - ignore displaying raw score, etc for last column (No. of Skills to Work On)
-    // Display incorrect skills instead in else statement
+    // Non-response modality (1.3.7+)
     if (_subskillProperty !== 'totalIncorrectSkills') {
       Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
         if (subskillInfo?.[property] != undefined) {
@@ -181,16 +180,15 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
         }
       });
 
-      if (
-        _colData.scores?.[_taskId]?.recruitment !== 'responseModality' &&
-        _subskillProperty !== 'totalIncorrectSkills' &&
-        _subskillProperty !== 'rawScore'
-      ) {
+      // Ignore skillsAssessed field for overall score (scores.computed.composite.rawScore)
+      if (_colData.scores?.[_taskId]?.recruitment !== 'responseModality' && _subskillProperty !== 'rawScore') {
         _toolTip += `Skills Assessed: ${subskillInfo?.skillsAssessed}\n`;
       }
     } else {
-      Object.keys(roamFluencySubtasks).forEach((subtaskId) => {
-        _toolTip += `${roamFluencySubtasks[subtaskId]}: ${subskillInfo?.incorrectSkills?.[subtaskId] || 0}\n`;
+      // Handles the "No. of Skills to Work On" column
+      // Format incorrect skills from scores.computed.composite.incorrectSkills
+      Object.keys(roamFluencySubskills).forEach((subskillId) => {
+        _toolTip += `${roamFluencySubskills[subskillId]}: ${subskillInfo?.incorrectSkills?.[subskillId] || 0}\n`;
       });
     }
   }

@@ -24,7 +24,7 @@ import {
   roamAlpacaSubskillHeaders,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
-  roamFluencySubtasks,
+  roamFluencySubskills,
 } from '@/helpers/reports';
 
 const props = defineProps({
@@ -118,10 +118,10 @@ const columns = computed(() => {
         sort: false,
       });
 
-      Object.entries(roamFluencySubtasks).forEach(([subtaskId, subtask]) => {
+      Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
         tableColumns.push({
-          field: `scores.${props.taskId}.${subtaskId}.percentCorrect`,
-          header: subtask,
+          field: `scores.${props.taskId}.${subskillId}.percentCorrect`,
+          header: subskill,
           dataType: 'text',
           sort: false,
         });
@@ -250,17 +250,21 @@ const exportSelected = (selectedRows) => {
           _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
         });
 
-        Object.entries(roamFluencySubtasks).forEach(([subtaskId, subtask]) => {
-          _set(tableRow, `${subtask} - Percent Correct`, _get(scores, `${props.taskId}.${subtaskId}.percentCorrect`));
+        Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
+          _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
           Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-            _set(tableRow, `${subtask} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subtaskId}.${property}`));
+            _set(
+              tableRow,
+              `${subskill} - ${propertyHeader}`,
+              _get(scores, `${props.taskId}.${subskillId}.${property}`),
+            );
           });
-          _set(tableRow, `${subtask} - Skills Assessed`, _get(scores, `${props.taskId}.${subtaskId}.skillsAssessed`));
+          _set(tableRow, `${subskill} - Skills Assessed`, _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`));
         });
 
         let incorrectSkills = '';
 
-        Object.entries(roamFluencySubtasks).forEach(([property, propertyHeader]) => {
+        Object.entries(roamFluencySubskills).forEach(([property, propertyHeader]) => {
           const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
           if (incorrectSkillsForProperty) {
             incorrectSkills += `${propertyHeader}: ${incorrectSkillsForProperty}\n`;
@@ -344,17 +348,21 @@ const exportAll = async () => {
           _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
         });
 
-        Object.entries(roamFluencySubtasks).forEach(([subtaskId, subtask]) => {
-          _set(tableRow, `${subtask} - Percent Correct`, _get(scores, `${props.taskId}.${subtaskId}.percentCorrect`));
+        Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
+          _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
           Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-            _set(tableRow, `${subtask} - ${propertyHeader}`, _get(scores, `${props.taskId}.${subtaskId}.${property}`));
+            _set(
+              tableRow,
+              `${subskill} - ${propertyHeader}`,
+              _get(scores, `${props.taskId}.${subskillId}.${property}`),
+            );
           });
-          _set(tableRow, `${subtask} - Skills Assessed`, _get(scores, `${props.taskId}.${subtaskId}.skillsAssessed`));
+          _set(tableRow, `${subskill} - Skills Assessed`, _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`));
         });
 
         let incorrectSkills = '';
 
-        Object.entries(roamFluencySubtasks).forEach(([property, propertyHeader]) => {
+        Object.entries(roamFluencySubskills).forEach(([property, propertyHeader]) => {
           const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
           if (incorrectSkillsForProperty) {
             incorrectSkills += `${propertyHeader}: ${incorrectSkillsForProperty}\n`;
