@@ -86,10 +86,12 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     // FGA model today. Other org types (national, state, local, department) are not yet
     // used in ROAR — log a warning and skip them so the user gets a safe denial rather
     // than a false grant.
-    const FGA_SUPPORTED_ORG_TYPES = new Set<string>([EntityType.DISTRICT, EntityType.SCHOOL]);
+    const FGA_SUPPORTED_ORG_TYPES: ReadonlySet<string> = new Set([EntityType.DISTRICT, EntityType.SCHOOL]);
     const orgMemberships: { entityType: EntityType; entityId: string }[] = [];
     for (const row of orgRows) {
       if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
+        // The type assertion here is safe because we are filtering by supported types
+        // (strictly 'school' or 'district'), but TypeScript can't infer that statically.
         orgMemberships.push({ entityType: row.orgType as EntityType, entityId: row.entityId });
       } else {
         logger.warn(

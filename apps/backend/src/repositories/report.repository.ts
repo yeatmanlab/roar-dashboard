@@ -644,7 +644,7 @@ export class ReportRepository {
 
     // Resolve school names if district scope
     let schoolNamesByUser: Map<string, string> | undefined;
-    if (scope.scopeType === 'district') {
+    if (scope.scopeType === EntityType.DISTRICT) {
       schoolNamesByUser = await this.getSchoolNamesForUsers(studentIds);
     }
 
