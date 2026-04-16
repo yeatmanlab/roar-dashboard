@@ -218,8 +218,8 @@ const taskInfo = computed(() => {
     taskId = getRecruitment() === 'responseModality' ? `${props.taskId}-response-modality` : props.taskId;
   }
 
-  details.subheader = taskInfoById[taskId]?.subheader;
-  details.desc = replaceScoreRange(taskInfoById[taskId]?.desc, taskId, props.taskScoringVersions[taskId]);
+  details.subheader = taskInfoById[taskId]?.subheader ?? '';
+  details.desc = replaceScoreRange(taskInfoById[taskId]?.desc, taskId, props.taskScoringVersions[taskId]) ?? '';
 
   return details;
 });

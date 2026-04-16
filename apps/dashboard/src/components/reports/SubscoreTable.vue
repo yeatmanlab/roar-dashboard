@@ -36,7 +36,7 @@ const props = defineProps({
   orgId: { type: String, default: '' },
   administrationName: { type: String, default: '' },
   orgName: { type: String, default: '' },
-  recruitmentType: { type: String, optional: true },
+  recruitmentType: { type: String, default: '' },
 });
 
 const authStore = useAuthStore();
