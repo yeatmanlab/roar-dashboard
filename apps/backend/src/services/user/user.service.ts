@@ -512,6 +512,16 @@ export function UserService({
           .filter((m) => m.entityType === 'family')
           .map((m) => `${FgaType.FAMILY}:${m.entityId}`);
 
+        // Avoid unnecessary FGA call if the target user has no family memberships
+        if (familyObjects.length === 0) {
+          logger.warn({ requestingUserId, targetUserId: userId }, 'User attempted to consent for non-family member');
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requestingUserId, targetUserId: userId },
+          });
+        }
+
         const canConsent = await authorizationService.hasAnyPermission(
           requestingUserId,
           FgaRelation.CAN_CONSENT_FOR_CHILD,

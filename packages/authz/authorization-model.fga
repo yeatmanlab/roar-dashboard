@@ -144,11 +144,11 @@ type school
     define can_list: supervisory_tier_group
     define can_read: supervisory_tier_group
 
-    define can_list_classes: supervisory_tier_group
-    # User/score/progress visibility at the school level includes admin and
-    # school_admin tiers. Educators (teacher, aide, proctor) must be rostered
-    # on specific classes to see student data — school-level membership alone
-    # is not sufficient.
+    # Educators (teacher, aide, proctor) must be rostered on specific classes
+    # to see student data. School-level educators should not see a list of
+    # classes they cannot interact with (UI bloat). Only admin and school_admin
+    # tiers can list classes at the school level.
+    define can_list_classes: admin_tier or school_admin_tier
     define can_list_users: admin_tier or school_admin_tier
     define can_read_scores: admin_tier or school_admin_tier
     define can_read_progress: admin_tier or school_admin_tier

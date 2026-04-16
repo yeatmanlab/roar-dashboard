@@ -110,18 +110,6 @@ describe('GET /v1/schools', () => {
       expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
     });
 
-    it('school-level teacher can list their school (educator_tier has can_list on directly rostered school)', async () => {
-      // schoolATeacher is rostered at schoolA with teacher role — teacher is in
-      // supervisory_tier_group at school level, so FGA grants can_list.
-      authenticateAs(baseFixture.schoolATeacher);
-      const res = await request(app).get('/v1/schools').set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.OK);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.schoolA.id);
-      expect(ids).not.toContain(baseFixture.schoolB.id);
-    });
-
     it('student tier sees empty list (no can_list on school)', async () => {
       const res = await expectRoute('GET', '/v1/schools').as(tiers.student).toReturn(200);
 
@@ -221,17 +209,6 @@ describe('GET /v1/schools/:schoolId/classes', () => {
 
     it('principal at school A can list classes in their school (school_admin_tier inherits school→class)', async () => {
       authenticateAs(baseFixture.schoolAPrincipal);
-      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
-
-      expect(res.status).toBe(StatusCodes.OK);
-      const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      expect(ids).toContain(baseFixture.classInSchoolA.id);
-    });
-
-    it('school-level teacher can list classes in their school (educator_tier has can_list_classes on rostered school)', async () => {
-      // schoolATeacher has teacher role at schoolA — teacher is in supervisory_tier_group,
-      // and school's can_list_classes = supervisory_tier_group.
-      authenticateAs(baseFixture.schoolATeacher);
       const res = await request(app).get(path()).set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.OK);

@@ -365,7 +365,7 @@ tests:
           can_list: false
           can_read: false
 
-  - name: School teacher can list/read school and classes but not access student data (educator tier)
+  - name: School teacher can list/read school but NOT list classes or access student data (educator tier)
     check:
       - user: user:school-teacher
         object: school:school-a
@@ -374,7 +374,10 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_list_classes: true
+          # School-level educators cannot list classes (prevents UI bloat for
+          # classes they cannot interact with). They must be rostered on specific
+          # classes to see them.
+          can_list_classes: false
           # School-level student data is restricted to admin_tier and
           # school_admin_tier. Educators (teacher, aide, proctor) must be
           # rostered on specific classes to see student data — school-level
