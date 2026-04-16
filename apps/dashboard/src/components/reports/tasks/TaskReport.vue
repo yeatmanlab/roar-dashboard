@@ -214,7 +214,6 @@ const taskInfo = computed(() => {
   const details = { subheader: '', desc: '' };
   let taskId = props.taskId;
 
-  // fluency-arf and fluency-calf
   if (roamFluencyTasks.includes(props.taskId)) {
     taskId = getRecruitment() === 'responseModality' ? `${props.taskId}-response-modality` : props.taskId;
   }

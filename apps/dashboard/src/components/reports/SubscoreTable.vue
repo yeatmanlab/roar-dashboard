@@ -250,6 +250,7 @@ const exportSelected = (selectedRows) => {
           _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
         });
 
+        // Create a column for each property of a subskill
         Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
           _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
           Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
@@ -263,7 +264,7 @@ const exportSelected = (selectedRows) => {
         });
 
         let incorrectSkills = '';
-
+        // Format each subskill and its incorrect skills on a new line for Skills to Work On column
         Object.entries(roamFluencySubskills).forEach(([property, propertyHeader]) => {
           const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
           if (incorrectSkillsForProperty) {
@@ -348,6 +349,7 @@ const exportAll = async () => {
           _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
         });
 
+        // Create a column for each property of a subskill
         Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
           _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
           Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
@@ -362,6 +364,7 @@ const exportAll = async () => {
 
         let incorrectSkills = '';
 
+        // Format each subskill and its incorrect skills on a new line for Skills to Work On column
         Object.entries(roamFluencySubskills).forEach(([property, propertyHeader]) => {
           const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
           if (incorrectSkillsForProperty) {
