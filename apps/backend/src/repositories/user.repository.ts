@@ -2,7 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import type { User } from '../db/schema';
-import type { EntityType } from '../types/entity-type';
+import { EntityType } from '../types/entity-type';
 import { users, userOrgs, userClasses, userGroups, userFamilies, orgs } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -86,7 +86,7 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     // FGA model today. Other org types (national, state, local, department) are not yet
     // used in ROAR — log a warning and skip them so the user gets a safe denial rather
     // than a false grant.
-    const FGA_SUPPORTED_ORG_TYPES = new Set(['district', 'school']);
+    const FGA_SUPPORTED_ORG_TYPES = new Set<string>([EntityType.DISTRICT, EntityType.SCHOOL]);
     const orgMemberships: { entityType: EntityType; entityId: string }[] = [];
     for (const row of orgRows) {
       if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
@@ -101,9 +101,9 @@ export class UserRepository extends BaseRepository<User, typeof users> {
 
     return [
       ...orgMemberships,
-      ...classRows.map((r) => ({ entityType: 'class' as const, entityId: r.entityId })),
-      ...groupRows.map((r) => ({ entityType: 'group' as const, entityId: r.entityId })),
-      ...familyRows.map((r) => ({ entityType: 'family' as const, entityId: r.entityId })),
+      ...classRows.map((r) => ({ entityType: EntityType.CLASS, entityId: r.entityId })),
+      ...groupRows.map((r) => ({ entityType: EntityType.GROUP, entityId: r.entityId })),
+      ...familyRows.map((r) => ({ entityType: EntityType.FAMILY, entityId: r.entityId })),
     ];
   }
 

@@ -1,8 +1,15 @@
-type District = 'district';
-type School = 'school';
-type Class = 'class';
-type Group = 'group';
-type Family = 'family';
+/**
+ * Entity type constants used across the system for permissions and memberships.
+ *
+ * These match the FGA type names in `packages/authz/authorization-model.fga`.
+ * Using constants prevents typos and enables compile-time checking.
+ */
+export const EntityType = {
+  DISTRICT: 'district',
+  SCHOOL: 'school',
+  CLASS: 'class',
+  GROUP: 'group',
+  FAMILY: 'family',
+} as const;
 
-/** EntityType represents the different types of entities in the system that can have permissions associated with them. */
-export type EntityType = District | School | Class | Group | Family;
+export type EntityType = (typeof EntityType)[keyof typeof EntityType];

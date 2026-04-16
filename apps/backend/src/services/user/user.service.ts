@@ -3,7 +3,7 @@ import type { User, NewUserAgreement } from '../../db/schema';
 import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
-import type { EntityType } from '../../types/entity-type';
+import { EntityType } from '../../types/entity-type';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -509,7 +509,7 @@ export function UserService({
         // on the family type, so only users with the parent role in a shared family pass.
         const targetFamilies = await userRepository.getUserEntityMemberships(userId);
         const familyObjects = targetFamilies
-          .filter((m) => m.entityType === 'family')
+          .filter((m) => m.entityType === EntityType.FAMILY)
           .map((m) => `${FgaType.FAMILY}:${m.entityId}`);
 
         // Avoid unnecessary FGA call if the target user has no family memberships
