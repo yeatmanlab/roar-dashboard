@@ -31,6 +31,10 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
+    "test:unit": "vitest run --project unit",
+    "test:unit:watch": "vitest --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:integration:watch": "vitest --project integration",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"
   },
