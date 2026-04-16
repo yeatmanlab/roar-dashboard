@@ -2,6 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import type { User } from '../db/schema';
+import type { EntityType } from '../types/entity-type';
 import { users, userOrgs, userClasses, userGroups, userFamilies, orgs } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -60,9 +61,7 @@ export class UserRepository extends BaseRepository<User, typeof users> {
    * @param userId - The user ID to look up memberships for
    * @returns Array of { entityType, entityId } for all active memberships
    */
-  async getUserEntityMemberships(
-    userId: string,
-  ): Promise<{ entityType: 'district' | 'school' | 'class' | 'group' | 'family'; entityId: string }[]> {
+  async getUserEntityMemberships(userId: string): Promise<{ entityType: EntityType; entityId: string }[]> {
     const [orgRows, classRows, groupRows, familyRows] = await Promise.all([
       this.db
         .select({ entityId: userOrgs.orgId, orgType: orgs.orgType })
@@ -88,10 +87,10 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     // used in ROAR — log a warning and skip them so the user gets a safe denial rather
     // than a false grant.
     const FGA_SUPPORTED_ORG_TYPES = new Set(['district', 'school']);
-    const orgMemberships: { entityType: 'district' | 'school'; entityId: string }[] = [];
+    const orgMemberships: { entityType: EntityType; entityId: string }[] = [];
     for (const row of orgRows) {
       if (FGA_SUPPORTED_ORG_TYPES.has(row.orgType)) {
-        orgMemberships.push({ entityType: row.orgType as 'district' | 'school', entityId: row.entityId });
+        orgMemberships.push({ entityType: row.orgType as EntityType, entityId: row.entityId });
       } else {
         logger.warn(
           { userId, orgId: row.entityId, orgType: row.orgType },
