@@ -12,8 +12,7 @@ import type { CommandContext } from '../command/command';
  * Falls back to environment variable or default.
  */
 export function getBackendPort(): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const port = (globalThis as any).__BACKEND_PORT__ || process.env.BACKEND_PORT || '4001';
+  const port = (globalThis as { __BACKEND_PORT__?: string }).__BACKEND_PORT__ || process.env.BACKEND_PORT || '4001';
   return port;
 }
 

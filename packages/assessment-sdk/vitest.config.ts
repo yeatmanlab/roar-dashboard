@@ -2,10 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    globals: true,
-    environment: 'node',
-    watch: false,
-    setupFiles: ['./vitest.setup.ts'],
+    // @ts-expect-error - Vitest supports projects in test config but TypeScript's InlineConfig type doesn't reflect it
     projects: [
       {
         test: {
@@ -41,4 +38,4 @@ export default defineConfig({
       enabled: false,
     },
   },
-} as any);
+});

@@ -124,3 +124,13 @@ export default async function globalSetup() {
   // @ts-expect-error globalThis doesn't have __BACKEND_PORT__ in type definitions
   globalThis.__BACKEND_PORT__ = BACKEND_PORT;
 }
+
+export async function teardown() {
+  // @ts-expect-error globalThis doesn't have __BACKEND_PROCESS__ in type definitions
+  const proc = globalThis.__BACKEND_PROCESS__ as ReturnType<typeof spawn> | undefined;
+  if (proc) {
+    proc.kill();
+    await new Promise<void>((resolve) => proc.on('close', resolve));
+    console.log('[SDK Integration Tests] Backend process terminated');
+  }
+}
