@@ -2876,10 +2876,10 @@ describe('AdministrationService', () => {
       const mockAgreementRepo = createMockAgreementRepository();
 
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
-      mockClassRepo.getById.mockResolvedValue(mockClass);
-      mockGroupRepo.getById.mockResolvedValue(mockGroup);
-      mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
-      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
 
       // Create service with all repositories
       const service = AdministrationService({
@@ -3041,7 +3041,7 @@ describe('AdministrationService', () => {
       const mockDistrictRepo = createMockDistrictRepository();
       const mockClassRepo = createMockClassRepository();
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
-      mockClassRepo.getById.mockResolvedValue(null);
+      mockClassRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -3075,10 +3075,10 @@ describe('AdministrationService', () => {
       const mockTaskVariantRepo = createMockTaskVariantRepository();
       const mockAgreementRepo = createMockAgreementRepository();
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
-      mockClassRepo.getById.mockResolvedValue(mockClass);
-      mockGroupRepo.getById.mockResolvedValue(mockGroup);
-      mockTaskVariantRepo.getById.mockResolvedValue(null);
-      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -3119,10 +3119,10 @@ describe('AdministrationService', () => {
       mockAdminRepo.existsByName.mockResolvedValue(false);
       mockAdminRepo.createWithAssignments.mockRejectedValue(new Error('Database error'));
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
-      mockClassRepo.getById.mockResolvedValue(mockClass);
-      mockGroupRepo.getById.mockResolvedValue(mockGroup);
-      mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
-      mockAgreementRepo.getById.mockResolvedValue(mockAgreement);
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
 
       const service = AdministrationService({
         administrationRepository: mockAdminRepo,

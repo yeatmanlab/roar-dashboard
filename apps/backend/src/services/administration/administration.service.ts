@@ -1058,8 +1058,12 @@ export function AdministrationService({
 
       // Verify classes exist
       if (classIds.length > 0) {
-        const existingClasses = await Promise.all(classIds.map((id) => classRepository.getById({ id })));
-        const missingClasses = classIds.filter((_, index) => !existingClasses[index]);
+        const { items: existingClasses } = await classRepository.getByIds(classIds, {
+          page: 1,
+          perPage: classIds.length,
+        });
+        const existingClassIdSet = new Set(existingClasses.map((c) => c.id));
+        const missingClasses = classIds.filter((id) => !existingClassIdSet.has(id));
         if (missingClasses.length > 0) {
           throw new ApiError(ApiErrorMessage.NOT_FOUND, {
             statusCode: StatusCodes.NOT_FOUND,
@@ -1071,8 +1075,12 @@ export function AdministrationService({
 
       // Verify groups exist
       if (groupIds.length > 0) {
-        const existingGroups = await Promise.all(groupIds.map((id) => groupRepository.getById({ id })));
-        const missingGroups = groupIds.filter((_, index) => !existingGroups[index]);
+        const { items: existingGroups } = await groupRepository.getByIds(groupIds, {
+          page: 1,
+          perPage: groupIds.length,
+        });
+        const existingGroupIdSet = new Set(existingGroups.map((g) => g.id));
+        const missingGroups = groupIds.filter((id) => !existingGroupIdSet.has(id));
         if (missingGroups.length > 0) {
           throw new ApiError(ApiErrorMessage.NOT_FOUND, {
             statusCode: StatusCodes.NOT_FOUND,
@@ -1083,8 +1091,12 @@ export function AdministrationService({
       }
 
       // Verify task variants exist
-      const existingTaskVariants = await Promise.all(taskVariantIds.map((id) => taskVariantRepository.getById({ id })));
-      const missingTaskVariants = taskVariantIds.filter((_, index) => !existingTaskVariants[index]);
+      const { items: existingTaskVariants } = await taskVariantRepository.getByIds(taskVariantIds, {
+        page: 1,
+        perPage: taskVariantIds.length,
+      });
+      const existingTaskVariantIdSet = new Set(existingTaskVariants.map((tv) => tv.id));
+      const missingTaskVariants = taskVariantIds.filter((id) => !existingTaskVariantIdSet.has(id));
       if (missingTaskVariants.length > 0) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
@@ -1095,8 +1107,12 @@ export function AdministrationService({
 
       // Verify agreements exist
       if (agreementIds.length > 0) {
-        const existingAgreements = await Promise.all(agreementIds.map((id) => agreementRepository.getById({ id })));
-        const missingAgreements = agreementIds.filter((_, index) => !existingAgreements[index]);
+        const { items: existingAgreements } = await agreementRepository.getByIds(agreementIds, {
+          page: 1,
+          perPage: agreementIds.length,
+        });
+        const existingAgreementIdSet = new Set(existingAgreements.map((a) => a.id));
+        const missingAgreements = agreementIds.filter((id) => !existingAgreementIdSet.has(id));
         if (missingAgreements.length > 0) {
           throw new ApiError(ApiErrorMessage.NOT_FOUND, {
             statusCode: StatusCodes.NOT_FOUND,
