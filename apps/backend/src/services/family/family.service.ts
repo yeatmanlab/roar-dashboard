@@ -70,6 +70,7 @@ export function FamilyService({
         ...(options.grade && { grade: options.grade }),
       };
 
+      // TODO: Check if we use can_list_users or can_list_children
       if (!isSuperAdmin) {
         await authorizationService.requirePermission(
           userId,

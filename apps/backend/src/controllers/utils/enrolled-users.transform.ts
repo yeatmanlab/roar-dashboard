@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../../errors/api-error';
-import type { EnrolledUser, EnrolledUserEntity } from '../../types/user';
+import type { EnrolledUser, EnrolledUserEntity, EnrolledFamilyUser, EnrolledFamilyUserEntity} from '../../types/user';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 
 /**
@@ -30,26 +30,61 @@ function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
 }
 
 /**
+ * Maps a database User entity with family role to the API contract EnrolledFamilyUser schema.
+ * Returns select values from User and their associated family roles.
+ * @param user - The user entity to map.
+ * @returns The mapped EnrolledFamilyUser.
+ */
+function toContractEnrolledFamilyUser(user: EnrolledFamilyUserEntity): EnrolledFamilyUser {
+  return {
+    id: user.id,
+    assessmentPid: user.assessmentPid,
+    nameFirst: user.nameFirst,
+    nameLast: user.nameLast,
+    username: user.username,
+    email: user.email,
+    roles: user.roles,
+    gender: user.gender,
+    grade: user.grade,
+    dob: user.dob,
+    studentId: user.studentId,
+    sisId: user.sisId,
+    stateId: user.stateId,
+    localId: user.localId,
+  };
+}
+
+/**
  * Builds a paginated response for user listing endpoints.
  * @param result - The result from the database query.
  * @param page - The current page number.
  * @param perPage - The number of items per page.
  * @returns The paginated response.
  */
-export function handleUserSubResourceResponse(
-  result: { items: EnrolledUserEntity[]; totalItems: number },
+export function handleUserSubResourceResponse<
+  T extends EnrolledUserEntity | EnrolledFamilyUserEntity,
+>(
+  result: { items: T[]; totalItems: number },
   page: number,
   perPage: number,
 ): {
   status: typeof StatusCodes.OK;
   body: {
     data: {
-      items: EnrolledUser[];
+      items: T extends EnrolledUserEntity ? EnrolledUser[] : EnrolledFamilyUser[];
       pagination: { page: number; perPage: number; totalItems: number; totalPages: number };
     };
   };
 } {
-  const items = result.items.map((item) => toContractEnrolledUser(item)) as EnrolledUser[];
+  const items = result.items.map((item) => {
+    if ('enrollmentStart' in item) {
+      return toContractEnrolledUser(item as EnrolledUserEntity);
+    }
+    if ('roles' in item) {
+      return toContractEnrolledFamilyUser(item as EnrolledFamilyUserEntity);
+    }
+    return toContractEnrolledUser(item as EnrolledUserEntity);
+  }) as T extends EnrolledUserEntity ? EnrolledUser[] : EnrolledFamilyUser[];
   const totalPages = Math.ceil(result.totalItems / perPage);
 
   return {
