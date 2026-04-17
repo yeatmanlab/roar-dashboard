@@ -27,6 +27,12 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
     super(db, families);
   }
 
+  /**
+   * Get users enrolled in a family with pagination and filtering
+   * @param familyId - The family ID to filter users by
+   * @param options - Pagination and filtering options
+   * @returns Paginated result with enrolled users and total count
+   */
   async getUsersByFamilyId(
     familyId: string,
     options: ListEnrolledFamilyUsersOptions,
