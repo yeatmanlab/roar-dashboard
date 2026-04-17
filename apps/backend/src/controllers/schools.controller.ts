@@ -12,6 +12,7 @@ import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
 import type { Class } from '../db/schema';
+import { OrgType } from '../enums/org-type.enum';
 
 const schoolService = SchoolService();
 
@@ -76,7 +77,7 @@ function transformSchoolBase(school: SchoolWithEmbeds): ApiSchool {
     id: school.id,
     name: school.name,
     abbreviation: school.abbreviation,
-    orgType: 'school' as const,
+    orgType: OrgType.SCHOOL,
     parentOrgId: school.parentOrgId,
     ...(Object.keys(location).length > 0 && { location }),
     ...(Object.keys(identifiers).length > 0 && { identifiers }),

@@ -89,14 +89,24 @@ describe('GET /v1/schools', () => {
       expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
     });
 
-    it('educator tier can list schools scoped to their org tree', async () => {
+    it('educator (teacher) at district level sees empty list (teacher does not inherit to schools)', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no teacher role on child schools, so FGA does not grant can_list.
       const res = await expectRoute('GET', '/v1/schools').as(tiers.educator).toReturn(200);
 
+      expect(res.body.data.items).toHaveLength(0);
+      expect(res.body.data.pagination.totalItems).toBe(0);
+    });
+
+    it('principal at school A can list their school (school_admin_tier has can_list)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app).get('/v1/schools').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
-      // educator at district level sees both schoolA and schoolB (same district)
+      // Principal at schoolA sees schoolA (they have supervisory_tier_group → can_list)
       expect(ids).toContain(baseFixture.schoolA.id);
-      expect(ids).toContain(baseFixture.schoolB.id);
-      // But NOT schools from other districts
+      // But NOT schools in other districts or sibling schools they're not rostered at
       expect(ids).not.toContain(baseFixture.schoolInDistrictB.id);
     });
 
@@ -189,11 +199,31 @@ describe('GET /v1/schools/:schoolId/classes', () => {
       expect(ids).toContain(baseFixture.classInSchoolA.id);
     });
 
-    it('educator tier can list classes in the school', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
+    it('educator (teacher) at district level is forbidden from listing classes (teacher does not inherit to schools)', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no teacher role on child schools, so FGA does not grant can_list_classes.
+      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
 
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('principal at school A can list classes in their school (school_admin_tier inherits school→class)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
       expect(ids).toContain(baseFixture.classInSchoolA.id);
+    });
+
+    it('principal at school A cannot list classes in school B (cross-school isolation)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(`/v1/schools/${baseFixture.schoolB.id}/classes`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('student tier is forbidden from listing classes (supervised role)', async () => {

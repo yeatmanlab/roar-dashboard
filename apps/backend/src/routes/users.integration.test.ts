@@ -26,9 +26,8 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
-import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
-import { createTestApp, createRouteHelper, createTierUsers, authenticateAs } from '../test-support/route-test.helper';
+import { createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -60,12 +59,16 @@ beforeAll(async () => {
   tiers = await createTierUsers(baseFixture.district.id);
   userRepository = new UserRepository();
 
-  // Assign tier educator to a class so they can access students via direct class membership (PATH 3)
+  // Assign tier educator to a class so they can access students via direct class membership
   await UserClassFactory.create({
     userId: tiers.educator.id,
     classId: baseFixture.classInSchoolA.id,
     role: UserRole.TEACHER,
   });
+
+  // Re-sync FGA tuples to pick up tier users and class memberships created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -125,10 +128,22 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    // TODO: Add family-based access test once family fixtures are available
-    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1707
-    it.skip('caregiver tier can access users in their family', async () => {
-      // Would require family fixtures linking caregiver to target user
+    it('caregiver (parent) can access users in their family', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: tiers.caregiver.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
+
+      const res = await expectRoute('GET', `/v1/users/${child.id}`).as(tiers.caregiver).toReturn(200);
+
+      expect(res.body.data.id).toBe(child.id);
     });
   });
 
@@ -200,21 +215,69 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('educator cannot access students via org membership alone', async () => {
-      // Educator with district-level membership cannot see org-level students
-      // Teachers only see students in classes they directly teach (PATH 3)
+    it('educator (teacher) at district level cannot access students in child schools', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no teacher role on child schools or classes. This prevents accidental
+      // privilege escalation from mis-rostering a teacher at the district level.
       const resSchoolA = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
         .as(tiers.educator)
         .toReturn(403);
 
       expect(resSchoolA.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
 
-      // Also cannot see students in other schools
       const resSchoolB = await expectRoute('GET', `/v1/users/${baseFixture.schoolBStudent.id}`)
         .as(tiers.educator)
         .toReturn(403);
 
       expect(resSchoolB.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator cannot access students in a different district', async () => {
+      // Educator in District A cannot see students in District B
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.districtBStudent.id}`)
+        .as(tiers.educator)
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('principal at school A can access students at that school (school_admin_tier has can_list_users at school)', async () => {
+      // Principal is in school_admin_tier, and school-level can_list_users = admin_tier or school_admin_tier.
+      // So a principal rostered at schoolA can see students enrolled at schoolA.
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as({ id: baseFixture.schoolAPrincipal.id, authId: baseFixture.schoolAPrincipal.authId! })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.schoolAStudent.id);
+    });
+
+    it('principal at school A can access students in classes within their school (inherits school→class)', async () => {
+      // Principal inherits from parent_org at class level, so principal at schoolA
+      // has principal role on classInSchoolA → supervisory_tier_group → can_list_users.
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.classAStudent.id}`)
+        .as({ id: baseFixture.schoolAPrincipal.id, authId: baseFixture.schoolAPrincipal.authId! })
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('principal at school A cannot access students in school B (cross-school isolation)', async () => {
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolBStudent.id}`)
+        .as({ id: baseFixture.schoolAPrincipal.id, authId: baseFixture.schoolAPrincipal.authId! })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('school-level teacher cannot access students at school level (educator_tier excluded from school can_list_users)', async () => {
+      // schoolATeacher has teacher role at schoolA. At school level, can_list_users
+      // = admin_tier or school_admin_tier — educator_tier is excluded. So teacher
+      // at school level cannot see school-enrolled students.
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as({ id: baseFixture.schoolATeacher.id, authId: baseFixture.schoolATeacher.authId! })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('unassigned user can only access themselves', async () => {
@@ -415,67 +478,54 @@ describe('PATCH /v1/users/:id', () => {
     });
 
     it('superAdmin tier can update any user', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Updated by superAdmin' });
-
-      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+      await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: 'Updated by superAdmin' })
+        .toReturn(StatusCodes.NO_CONTENT);
     });
 
     it('siteAdmin tier cannot update users', async () => {
-      authenticateAs(tiers.siteAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Should Fail' });
+      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.siteAdmin)
+        .withBody({ nameFirst: 'Should Fail' })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('admin tier cannot update users', async () => {
-      authenticateAs(tiers.admin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Should Fail' });
+      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.admin)
+        .withBody({ nameFirst: 'Should Fail' })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('educator tier cannot update users', async () => {
-      authenticateAs(tiers.educator);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Should Fail' });
+      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.educator)
+        .withBody({ nameFirst: 'Should Fail' })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('student tier cannot update users', async () => {
-      authenticateAs(tiers.student);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Should Fail' });
+      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.student)
+        .withBody({ nameFirst: 'Should Fail' })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('caregiver tier cannot update users', async () => {
-      authenticateAs(tiers.caregiver);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Should Fail' });
+      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.caregiver)
+        .withBody({ nameFirst: 'Should Fail' })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
@@ -484,13 +534,10 @@ describe('PATCH /v1/users/:id', () => {
     // then the service's update() will delegate to verifySupervisoryAccess which
     // allows self-access. Un-skip and adjust the expected status at that point.
     it.skip('non-super admin users cannot update their own profile yet', async () => {
-      authenticateAs(tiers.student);
-      const res = await request(app)
-        .patch(`/v1/users/${tiers.student.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Self Update' });
-
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      await expectRoute('PATCH', `/v1/users/${tiers.student.id}`)
+        .as(tiers.student)
+        .withBody({ nameFirst: 'Self Update' })
+        .toReturn(StatusCodes.FORBIDDEN);
     });
   });
 
@@ -506,13 +553,10 @@ describe('PATCH /v1/users/:id', () => {
         grade: '3',
       });
 
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Updated' });
-
-      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+      await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: 'Updated' })
+        .toReturn(StatusCodes.NO_CONTENT);
 
       // Verify database state using repository
       const updated = await userRepository.getById({ id: targetUser.id });
@@ -530,13 +574,10 @@ describe('PATCH /v1/users/:id', () => {
         grade: '4',
       });
 
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'After', nameLast: 'After', grade: '5' });
-
-      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+      await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: 'After', nameLast: 'After', grade: '5' })
+        .toReturn(StatusCodes.NO_CONTENT);
 
       // Verify database state using repository
       const updated = await userRepository.getById({ id: targetUser.id });
@@ -549,13 +590,10 @@ describe('PATCH /v1/users/:id', () => {
     it('sets a nullable field to null to clear it', async () => {
       const targetUser = await UserFactory.create({ nameFirst: 'HasAName', grade: '6' });
 
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: null });
-
-      expect(res.status).toBe(StatusCodes.NO_CONTENT);
+      await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: null })
+        .toReturn(StatusCodes.NO_CONTENT);
 
       // Verify database state using repository
       const updated = await userRepository.getById({ id: targetUser.id });
@@ -572,13 +610,10 @@ describe('PATCH /v1/users/:id', () => {
 
   describe('validation', () => {
     it('returns 400 for an empty request body', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({});
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('PATCH', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.superAdmin)
+        .withBody({})
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 for an invalid UUID in the path', async () => {
@@ -591,13 +626,10 @@ describe('PATCH /v1/users/:id', () => {
     });
 
     it('returns 400 for an invalid enum value', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ grade: 'not-a-real-grade' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('PATCH', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ grade: 'not-a-real-grade' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
   });
 
@@ -610,13 +642,11 @@ describe('PATCH /v1/users/:id', () => {
       const existingUser = await UserFactory.create({ email: 'taken-email@example.com' });
       const targetUser = await UserFactory.create({ email: 'other-email@example.com' });
 
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ email: existingUser.email });
+      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ email: existingUser.email })
+        .toReturn(StatusCodes.CONFLICT);
 
-      expect(res.status).toBe(StatusCodes.CONFLICT);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
 
@@ -624,13 +654,11 @@ describe('PATCH /v1/users/:id', () => {
       const existingUser = await UserFactory.create({ username: 'taken-username' });
       const targetUser = await UserFactory.create({ username: 'other-username' });
 
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch(`/v1/users/${targetUser.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ username: existingUser.username });
+      const res = await expectRoute('PATCH', `/v1/users/${targetUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ username: existingUser.username })
+        .toReturn(StatusCodes.CONFLICT);
 
-      expect(res.status).toBe(StatusCodes.CONFLICT);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
   });
@@ -641,59 +669,47 @@ describe('PATCH /v1/users/:id', () => {
 
   describe('schema strictness', () => {
     it('rejects unknown fields like isSuperAdmin from superAdmin', async () => {
-      authenticateAs(tiers.superAdmin);
       // Get the original data before attempting the patch
-      const originalRes = await request(app)
-        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token');
+      const originalRes = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
 
-      expect(originalRes.status).toBe(StatusCodes.OK);
       const originalNameFirst = originalRes.body.nameFirst;
 
       // Super admin users cannot set isSuperAdmin on any user, even though they can update other fields for that user
-      const res = await request(app)
-        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Valid', isSuperAdmin: true });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('PATCH', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: 'Valid', isSuperAdmin: true })
+        .toReturn(StatusCodes.BAD_REQUEST);
 
       // Verify the PATCH operation did not modify any data
-      const verifyRes = await request(app)
-        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token');
+      const verifyRes = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
 
-      expect(verifyRes.status).toBe(StatusCodes.OK);
       expect(verifyRes.body.nameFirst).toBe(originalNameFirst);
       expect(verifyRes.body.nameFirst).not.toBe('Valid');
     });
 
     it('rejects isSuperAdmin from non-superAdmin with 400 validation error (not 403 authorization error)', async () => {
       // Get the original data before attempting the patch
-      authenticateAs(tiers.superAdmin);
-      const originalRes = await request(app)
-        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token');
+      const originalRes = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
 
-      expect(originalRes.status).toBe(StatusCodes.OK);
       const originalNameFirst = originalRes.body.nameFirst;
 
       // Non-superAdmin users get caught by schema validation (400) before authorization layer (403)
-      authenticateAs(tiers.educator);
-      const res = await request(app)
-        .patch(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Valid', isSuperAdmin: true });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('PATCH', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.educator)
+        .withBody({ nameFirst: 'Valid', isSuperAdmin: true })
+        .toReturn(StatusCodes.BAD_REQUEST);
 
       // Verify the PATCH operation did not modify any data
-      authenticateAs(tiers.superAdmin);
-      const verifyRes = await request(app)
-        .get(`/v1/users/${baseFixture.schoolAStudent.id}`)
-        .set('Authorization', 'Bearer token');
+      const verifyRes = await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
 
-      expect(verifyRes.status).toBe(StatusCodes.OK);
       expect(verifyRes.body.nameFirst).toBe(originalNameFirst);
       expect(verifyRes.body.nameFirst).not.toBe('Valid');
     });
@@ -713,13 +729,11 @@ describe('PATCH /v1/users/:id', () => {
     });
 
     it('returns 404 for a non-existent user', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .patch('/v1/users/00000000-0000-0000-0000-000000000000')
-        .set('Authorization', 'Bearer token')
-        .send({ nameFirst: 'Ghost' });
+      const res = await expectRoute('PATCH', '/v1/users/00000000-0000-0000-0000-000000000000')
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: 'Ghost' })
+        .toReturn(StatusCodes.NOT_FOUND);
 
-      expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
   });
@@ -789,70 +803,58 @@ describe('POST /v1/users/:userId/agreements', () => {
 
   describe('self-consent - adult', () => {
     it('should allow adult to consent to TOS agreement', async () => {
-      authenticateAs({ authId: adultUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: tosAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${adultUser.id}/agreements`)
+        .as({ id: adultUser.id, authId: adultUser.authId! })
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
-      expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toBeDefined();
     });
 
     it('should allow adult to consent to CONSENT agreement', async () => {
-      authenticateAs({ authId: adultUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: consentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${adultUser.id}/agreements`)
+        .as({ id: adultUser.id, authId: adultUser.authId! })
+        .withBody({ agreementVersionId: consentAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
-      expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toBeDefined();
     });
 
     it('should reject adult attempting to consent to ASSENT agreement', async () => {
-      authenticateAs({ authId: adultUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${adultUser.id}/agreements`)
+        .as({ id: adultUser.id, authId: adultUser.authId! })
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
 
   describe('self-consent - minor', () => {
     it('should allow minor to consent to ASSENT agreement', async () => {
-      authenticateAs({ authId: minorUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${minorUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${minorUser.id}/agreements`)
+        .as({ id: minorUser.id, authId: minorUser.authId! })
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
-      expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toBeDefined();
     });
 
     it('should reject minor attempting to consent to TOS agreement', async () => {
-      authenticateAs({ authId: minorUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${minorUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: tosAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${minorUser.id}/agreements`)
+        .as({ id: minorUser.id, authId: minorUser.authId! })
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('should reject minor attempting to consent to CONSENT agreement', async () => {
-      authenticateAs({ authId: minorUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${minorUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: consentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${minorUser.id}/agreements`)
+        .as({ id: minorUser.id, authId: minorUser.authId! })
+        .withBody({ agreementVersionId: consentAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
@@ -860,37 +862,31 @@ describe('POST /v1/users/:userId/agreements', () => {
   describe('self-consent - unknown age', () => {
     it('should allow user with unknown age (null dob + null grade) to consent to TOS agreement', async () => {
       const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
-      authenticateAs({ authId: unknownAgeUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: tosAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${unknownAgeUser.id}/agreements`)
+        .as({ id: unknownAgeUser.id, authId: unknownAgeUser.authId! })
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
-      expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toBeDefined();
     });
 
     it('should allow user with unknown age to consent to ASSENT agreement', async () => {
       const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
-      authenticateAs({ authId: unknownAgeUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${unknownAgeUser.id}/agreements`)
+        .as({ id: unknownAgeUser.id, authId: unknownAgeUser.authId! })
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
-      expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toBeDefined();
     });
 
     it('should allow user with unknown age to consent to CONSENT agreement', async () => {
       const unknownAgeUser = await UserFactory.create({ dob: null, grade: null });
-      authenticateAs({ authId: unknownAgeUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${unknownAgeUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: consentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${unknownAgeUser.id}/agreements`)
+        .as({ id: unknownAgeUser.id, authId: unknownAgeUser.authId! })
+        .withBody({ agreementVersionId: consentAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
-      expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toBeDefined();
     });
   });
@@ -899,6 +895,7 @@ describe('POST /v1/users/:userId/agreements', () => {
     it('should allow parent to consent to ASSENT agreement for minor child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1985-01-01' });
       const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
@@ -906,19 +903,21 @@ describe('POST /v1/users/:userId/agreements', () => {
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
 
-      authenticateAs({ authId: parent.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${child.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
-      expect(res.status).toBe(StatusCodes.CREATED);
+      const res = await expectRoute('POST', `/v1/users/${child.id}/agreements`)
+        .as({ id: parent.id, authId: parent.authId! })
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
+
       expect(res.body.data.id).toBeDefined();
     });
 
     it('should reject parent attempting to consent to TOS for child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1985-01-01' });
       const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
@@ -926,13 +925,14 @@ describe('POST /v1/users/:userId/agreements', () => {
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
 
-      authenticateAs({ authId: parent.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${child.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: tosAgreementVersion.id });
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      const res = await expectRoute('POST', `/v1/users/${child.id}/agreements`)
+        .as({ id: parent.id, authId: parent.authId! })
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
+
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
@@ -940,13 +940,11 @@ describe('POST /v1/users/:userId/agreements', () => {
       const unrelatedUser = await UserFactory.create({ dob: '1985-01-01' });
       const targetChild = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
 
-      authenticateAs({ authId: unrelatedUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${targetChild.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${targetChild.id}/agreements`)
+        .as({ id: unrelatedUser.id, authId: unrelatedUser.authId! })
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
@@ -966,19 +964,18 @@ describe('POST /v1/users/:userId/agreements', () => {
         role: UserRole.STUDENT,
       });
 
-      authenticateAs({ authId: teacher.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${targetChild.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${targetChild.id}/agreements`)
+        .as({ id: teacher.id, authId: teacher.authId! })
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('should reject parent attempting to consent for adult child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1960-01-01' });
       const adultChild = await UserFactory.create({ dob: '1995-01-01', grade: null });
@@ -986,96 +983,85 @@ describe('POST /v1/users/:userId/agreements', () => {
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: adultChild.id, familyId: family.id, role: 'child' });
 
-      authenticateAs({ authId: parent.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${adultChild.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      const res = await expectRoute('POST', `/v1/users/${adultChild.id}/agreements`)
+        .as({ id: parent.id, authId: parent.authId! })
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.FORBIDDEN);
+
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
   });
 
   describe('validation', () => {
     it('should return 404 when target user does not exist', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .post('/v1/users/00000000-0000-0000-0000-000000000000/agreements')
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: tosAgreementVersion.id });
+      const res = await expectRoute('POST', '/v1/users/00000000-0000-0000-0000-000000000000/agreements')
+        .as(tiers.superAdmin)
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.NOT_FOUND);
 
-      expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('should return 404 when agreement version does not exist', async () => {
-      authenticateAs({ authId: adultUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: '00000000-0000-0000-0000-000000000000' });
+      const res = await expectRoute('POST', `/v1/users/${adultUser.id}/agreements`)
+        .as({ id: adultUser.id, authId: adultUser.authId! })
+        .withBody({ agreementVersionId: '00000000-0000-0000-0000-000000000000' })
+        .toReturn(StatusCodes.NOT_FOUND);
 
-      expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('should return 401 when unauthenticated', async () => {
-      const res = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
-        .send({ agreementVersionId: tosAgreementVersion.id });
+      const res = await expectRoute('POST', `/v1/users/${adultUser.id}/agreements`)
+        .unauthenticated()
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.UNAUTHORIZED);
 
-      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
     });
 
     it('should return 400 when agreementVersionId is missing', async () => {
-      authenticateAs({ authId: adultUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({});
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', `/v1/users/${adultUser.id}/agreements`)
+        .as({ id: adultUser.id, authId: adultUser.authId! })
+        .withBody({})
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('should return 400 when agreementVersionId is invalid UUID', async () => {
-      authenticateAs({ authId: adultUser.authId! });
-      const res = await request(app)
-        .post(`/v1/users/${adultUser.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: 'not-a-uuid' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', `/v1/users/${adultUser.id}/agreements`)
+        .as({ id: adultUser.id, authId: adultUser.authId! })
+        .withBody({ agreementVersionId: 'not-a-uuid' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
   });
 
   describe('duplicate consent', () => {
     it('returns 409 when user attempts to consent to an agreement version they already have', async () => {
       const freshAdult = await UserFactory.create({ dob: '1990-01-01', grade: null });
-      authenticateAs({ authId: freshAdult.authId! });
+      const asUser = { id: freshAdult.id, authId: freshAdult.authId! };
 
       // First consent succeeds
-      const res1 = await request(app)
-        .post(`/v1/users/${freshAdult.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: tosAgreementVersion.id });
-
-      expect(res1.status).toBe(StatusCodes.CREATED);
+      await expectRoute('POST', `/v1/users/${freshAdult.id}/agreements`)
+        .as(asUser)
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
       // Second consent to the same version returns 409
-      const res2 = await request(app)
-        .post(`/v1/users/${freshAdult.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: tosAgreementVersion.id });
+      const res2 = await expectRoute('POST', `/v1/users/${freshAdult.id}/agreements`)
+        .as(asUser)
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.CONFLICT);
 
-      expect(res2.status).toBe(StatusCodes.CONFLICT);
       expect(res2.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
 
     it('returns 409 when parent attempts to re-consent to the same agreement version for child', async () => {
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
       const parent = await UserFactory.create({ dob: '1985-01-01' });
       const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
@@ -1083,23 +1069,23 @@ describe('POST /v1/users/:userId/agreements', () => {
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
 
-      authenticateAs({ authId: parent.authId! });
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
+
+      const asParent = { id: parent.id, authId: parent.authId! };
 
       // First consent succeeds
-      const res1 = await request(app)
-        .post(`/v1/users/${child.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
-
-      expect(res1.status).toBe(StatusCodes.CREATED);
+      await expectRoute('POST', `/v1/users/${child.id}/agreements`)
+        .as(asParent)
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.CREATED);
 
       // Second consent to the same version returns 409
-      const res2 = await request(app)
-        .post(`/v1/users/${child.id}/agreements`)
-        .set('Authorization', 'Bearer token')
-        .send({ agreementVersionId: assentAgreementVersion.id });
+      const res2 = await expectRoute('POST', `/v1/users/${child.id}/agreements`)
+        .as(asParent)
+        .withBody({ agreementVersionId: assentAgreementVersion.id })
+        .toReturn(StatusCodes.CONFLICT);
 
-      expect(res2.status).toBe(StatusCodes.CONFLICT);
       expect(res2.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
   });
