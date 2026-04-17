@@ -27,7 +27,7 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
     super(db, families);
   }
 
-  async listUsers(
+  async getUsersByFamilyId(
     familyId: string,
     options: ListEnrolledFamilyUsersOptions,
   ): Promise<PaginatedResult<EnrolledFamilyUserEntity>> {
