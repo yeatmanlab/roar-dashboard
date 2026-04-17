@@ -39,7 +39,6 @@ import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
 import { TaskService } from '../task/task.service';
 import { DistrictRepository } from '../../repositories/district.repository';
-import { SchoolRepository } from '../../repositories/school.repository';
 import { ClassRepository } from '../../repositories/class.repository';
 import { GroupRepository } from '../../repositories/group.repository';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
@@ -131,7 +130,6 @@ export function AdministrationService({
   runRepository = new RunRepository(),
   taskService = TaskService(),
   districtRepository = new DistrictRepository(),
-  schoolRepository = new SchoolRepository(),
   classRepository = new ClassRepository(),
   groupRepository = new GroupRepository(),
   taskVariantRepository = new TaskVariantRepository(),
@@ -145,7 +143,6 @@ export function AdministrationService({
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
   districtRepository?: DistrictRepository;
-  schoolRepository?: SchoolRepository;
   classRepository?: ClassRepository;
   groupRepository?: GroupRepository;
   taskVariantRepository?: TaskVariantRepository;

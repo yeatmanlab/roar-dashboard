@@ -24,7 +24,6 @@ import {
   createMockRunRepository,
   createMockUserRepository,
   createMockDistrictRepository,
-  createMockSchoolRepository,
   createMockClassRepository,
   createMockGroupRepository,
   createMockTaskVariantRepository,
@@ -2871,7 +2870,6 @@ describe('AdministrationService', () => {
 
       // Mock district and school repositories
       const mockDistrictRepo = createMockDistrictRepository();
-      const mockSchoolRepo = createMockSchoolRepository();
       const mockClassRepo = createMockClassRepository();
       const mockGroupRepo = createMockGroupRepository();
       const mockTaskVariantRepo = createMockTaskVariantRepository();
@@ -2888,7 +2886,6 @@ describe('AdministrationService', () => {
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
         districtRepository: mockDistrictRepo,
-        schoolRepository: mockSchoolRepo,
         classRepository: mockClassRepo,
         groupRepository: mockGroupRepo,
         taskVariantRepository: mockTaskVariantRepo,
@@ -3017,14 +3014,12 @@ describe('AdministrationService', () => {
       // Arrange
       mockAdministrationRepository.existsByName.mockResolvedValue(false);
       const mockDistrictRepo = createMockDistrictRepository();
-      const mockSchoolRepo = createMockSchoolRepository();
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
         districtRepository: mockDistrictRepo,
-        schoolRepository: mockSchoolRepo,
       });
 
       // Act & Assert
@@ -3044,7 +3039,6 @@ describe('AdministrationService', () => {
       const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
 
       const mockDistrictRepo = createMockDistrictRepository();
-      const mockSchoolRepo = createMockSchoolRepository();
       const mockClassRepo = createMockClassRepository();
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
       mockClassRepo.getById.mockResolvedValue(null);
@@ -3053,7 +3047,6 @@ describe('AdministrationService', () => {
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
         districtRepository: mockDistrictRepo,
-        schoolRepository: mockSchoolRepo,
         classRepository: mockClassRepo,
       });
 
@@ -3077,7 +3070,6 @@ describe('AdministrationService', () => {
       const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
 
       const mockDistrictRepo = createMockDistrictRepository();
-      const mockSchoolRepo = createMockSchoolRepository();
       const mockClassRepo = createMockClassRepository();
       const mockGroupRepo = createMockGroupRepository();
       const mockTaskVariantRepo = createMockTaskVariantRepository();
@@ -3092,7 +3084,6 @@ describe('AdministrationService', () => {
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
         districtRepository: mockDistrictRepo,
-        schoolRepository: mockSchoolRepo,
         classRepository: mockClassRepo,
         groupRepository: mockGroupRepo,
         taskVariantRepository: mockTaskVariantRepo,
@@ -3121,7 +3112,6 @@ describe('AdministrationService', () => {
       const mockAdminRepo = createMockAdministrationRepository();
       const mockUserRepo = createMockUserRepository();
       const mockDistrictRepo = createMockDistrictRepository();
-      const mockSchoolRepo = createMockSchoolRepository();
       const mockClassRepo = createMockClassRepository();
       const mockGroupRepo = createMockGroupRepository();
       const mockTaskVariantRepo = createMockTaskVariantRepository();
@@ -3138,7 +3128,6 @@ describe('AdministrationService', () => {
         administrationRepository: mockAdminRepo,
         userRepository: mockUserRepo,
         districtRepository: mockDistrictRepo,
-        schoolRepository: mockSchoolRepo,
         classRepository: mockClassRepo,
         groupRepository: mockGroupRepo,
         taskVariantRepository: mockTaskVariantRepo,
