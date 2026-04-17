@@ -45,6 +45,7 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
       .select({ count: count() })
       .from(userFamilies)
       .innerJoin(users, eq(users.id, userFamilies.userId))
+      .innerJoin(families, eq(families.id, userFamilies.familyId))
       .where(familyConditions);
 
     const totalItems = countResult[0]?.count ?? 0;
@@ -61,6 +62,7 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
       .select({ user: users, role: userFamilies.role })
       .from(userFamilies)
       .innerJoin(users, eq(users.id, userFamilies.userId))
+      .innerJoin(families, eq(families.id, userFamilies.familyId))
       .where(familyConditions)
       .orderBy(primaryOrder, asc(users.id))
       .limit(perPage)
