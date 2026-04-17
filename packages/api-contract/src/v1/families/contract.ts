@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { initContract } from '@ts-rest/core';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
-import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
+import { EnrolledFamilyUsersQuerySchema, EnrolledFamilyUsersResponseSchema } from './schema';
 
 const c = initContract();
 
@@ -15,9 +15,9 @@ export const FamiliesContract = c.router(
       method: 'GET',
       path: '/:familyId/users',
       pathParams: z.object({ familyId: z.string().uuid() }),
-      query: EnrolledUsersQuerySchema,
+      query: EnrolledFamilyUsersQuerySchema,
       responses: {
-        200: SuccessEnvelopeSchema(EnrolledUsersResponseSchema),
+        200: SuccessEnvelopeSchema(EnrolledFamilyUsersResponseSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,
