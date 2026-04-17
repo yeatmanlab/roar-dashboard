@@ -13,6 +13,7 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     ...createMockBaseRepositoryMethods(),
     findByAuthId: vi.fn(),
     getAuthorizedById: vi.fn(),
+    getUserEntityMemberships: vi.fn(),
   } as MockedObject<UserRepository>;
 }
 

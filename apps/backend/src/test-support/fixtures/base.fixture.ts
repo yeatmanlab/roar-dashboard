@@ -82,6 +82,7 @@ import { AdministrationTaskVariantFactory } from '../factories/administration-ta
  * User assignments:
  * - districtAdmin: administrator at district level
  * - schoolAAdmin: administrator at School A
+ * - schoolAPrincipal: principal at School A (school_admin_tier — inherits school→class)
  * - schoolATeacher: teacher at School A (org level)
  * - schoolAStudent: student at School A (org level)
  * - schoolBStudent: student at School B (for cross-branch tests)
@@ -167,6 +168,9 @@ export interface BaseFixture {
 
   /** Administrator at School A */
   schoolAAdmin: User;
+
+  /** Principal at School A (school_admin_tier — inherits school→class but not district→school) */
+  schoolAPrincipal: User;
 
   /** Teacher at School A (org assignment) */
   schoolATeacher: User;
@@ -330,6 +334,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   const [
     districtAdmin,
     schoolAAdmin,
+    schoolAPrincipal,
     schoolATeacher,
     schoolAStudent,
     schoolBStudent,
@@ -352,6 +357,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
   ] = await Promise.all([
     UserFactory.create({ nameFirst: 'District', nameLast: 'Admin', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Admin', userType: UserType.ADMIN }),
+    UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Principal', userType: UserType.ADMIN }),
     UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Teacher', userType: UserType.EDUCATOR }),
     UserFactory.create({ nameFirst: 'SchoolA', nameLast: 'Student', userType: UserType.STUDENT }),
     UserFactory.create({ nameFirst: 'SchoolB', nameLast: 'Student', userType: UserType.STUDENT }),
@@ -394,6 +400,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     // Org assignments (active enrollments - default enrollmentStart=now, enrollmentEnd=null)
     UserOrgFactory.create({ userId: districtAdmin.id, orgId: district.id, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: schoolAAdmin.id, orgId: schoolA.id, role: UserRole.ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: schoolAPrincipal.id, orgId: schoolA.id, role: UserRole.PRINCIPAL }),
     UserOrgFactory.create({ userId: schoolATeacher.id, orgId: schoolA.id, role: UserRole.TEACHER }),
     UserOrgFactory.create({ userId: schoolAStudent.id, orgId: schoolA.id, role: UserRole.STUDENT }),
     UserOrgFactory.create({ userId: schoolBStudent.id, orgId: schoolB.id, role: UserRole.STUDENT }),
@@ -585,6 +592,7 @@ export async function seedBaseFixture(): Promise<BaseFixture> {
     // Users
     districtAdmin,
     schoolAAdmin,
+    schoolAPrincipal,
     schoolATeacher,
     schoolAStudent,
     schoolBStudent,
