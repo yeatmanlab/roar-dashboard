@@ -28,7 +28,7 @@ describe('Participant: Auth', () => {
 
     // Validate that the participant homepage loaded with assignments.
     cy.get('[data-cy="dropdown-select-administration"]').click();
-    cy.get('[data-cy="dropdown-select-administration"]').find('span').should('contain', 'ROAR Demo Rostering Admin');
+    cy.findAllByTestId('select__option-label').should('contain', 'ROAR Demo Rostering Admin');
   });
 
   it('Shows error state when SSO user has no userType', () => {
@@ -111,7 +111,9 @@ describe('Participant: Auth', () => {
         },
       },
       ({ schoolName, username, password }) => {
-        cy.get('input[title="School name"]').type(schoolName);
+        cy.get('a.AuthMethodCard--card[aria-label="Password"]').click();
+
+        cy.get('input[aria-label="School name"]').type(schoolName);
         cy.get('ul > li').contains(schoolName).should('be.visible').click();
 
         cy.get('input#username').type(username);
@@ -121,7 +123,7 @@ describe('Participant: Auth', () => {
       },
     );
 
-    // Verify we landed on the original redirect target, not home.
-    cy.url().should('include', redirectTarget);
+    // Wait for SSO page and redirect to complete.
+    cy.url({ timeout: 30000 }).should('include', redirectTarget);
   });
 });

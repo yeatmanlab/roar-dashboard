@@ -1,5 +1,5 @@
 <template>
-  <div translate="no" />
+  <div id="jspsych-target" class="game-target" translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
@@ -16,7 +16,7 @@ import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQue
 import packageLockJson from '../../../../../package-lock.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'ran' },
+  taskId: { type: String, default: 'roav-mp' },
   language: { type: String, default: 'en' },
   launchId: { type: String, default: null },
 });
@@ -24,7 +24,7 @@ const props = defineProps({
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roav-ran'];
+const { version } = packageLockJson.packages['node_modules/@bdelab/roav-apps'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +62,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roav-ran')).default;
+    TaskLauncher = (await import('@bdelab/roav-apps')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -96,7 +96,7 @@ async function startTask(selectedAdmin) {
     if (checkGameStarted) clearInterval(checkGameStarted);
     checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.querySelector('.card-title');
+      let gameLoading = document.querySelector('.jspsych-content-wrapper');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
@@ -117,20 +117,19 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
-    await roarApp.run().then(async (taskStatus) => {
+    await roarApp.run().then(async () => {
       // Handle any post-game actions.
-      // Only complete assessment if task succeeded (not aborted due to audio issues, etc.)
-      if (taskStatus && taskStatus === 'success') {
-        await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
-      }
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId, props.launchId);
 
-      // Navigate to home, but first set the refresh flag to true.
       gameStore.requireHomeRefresh();
+      // if session is externally launched, return instead fo participant home
       if (props.launchId) {
         router.push({ name: 'LaunchParticipant', params: { launchId: props.launchId } });
-      } else {
+      }
+      // Navigate to home, but first set the refresh flag to true.
+      else {
         router.push({ name: 'Home' });
       }
     });
@@ -143,7 +142,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roav-ran/lib/resources/roav-ran.css';
+@import '@bdelab/roav-apps/lib/resources/roav-apps.css';
 
 .game-target {
   position: absolute;

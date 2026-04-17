@@ -105,6 +105,7 @@
               :student-grade="studentGrade"
               :current-assignment-id="currentAssignmentId"
               :score-label="scoreLabel"
+              :task-scoring-version="taskScoringVersion"
             />
           </PvAccordionContent>
         </PvAccordionPanel>
@@ -115,6 +116,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import _startCase from 'lodash/startCase';
 import PvKnob from 'primevue/knob';
 import PvTag from 'primevue/tag';
@@ -124,6 +126,8 @@ import PvAccordionHeader from 'primevue/accordionheader';
 import PvAccordionContent from 'primevue/accordioncontent';
 import { LongitudinalChartScreen as LongitudinalChart } from './LongitudinalChart';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
+
+const { t } = useI18n();
 
 const props = defineProps({
   publicName: {
@@ -191,6 +195,11 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  taskScoringVersion: {
+    type: Number,
+    required: false,
+    default: null,
+  },
 });
 
 const ACCORDION_PANELS = Object.freeze({
@@ -203,14 +212,15 @@ const visiblePanels = ref([]);
 
 const formatPhonicsKey = (key) => {
   const keyMap = {
-    cvc: 'CVC Words',
-    digraph: 'Digraphs',
-    initial_blend: 'Initial Blends',
-    final_blend: 'Final Blends',
-    r_controlled: 'R-Controlled',
-    r_cluster: 'R-Clusters',
-    silent_e: 'Silent E',
-    vowel_team: 'Vowel Teams',
+    cvc: `${t('scoreReports.phonics.cvc')}`,
+    digraph: `${t('scoreReports.phonics.digraph')}`,
+    initial_blend: `${t('scoreReports.phonics.initial_blend')}`,
+    final_blend: `${t('scoreReports.phonics.final_blend')}`,
+    tri_blend: `${t('scoreReports.phonics.tri_blend')}`,
+    r_controlled: `${t('scoreReports.phonics.r_controlled')}`,
+    r_cluster: `${t('scoreReports.phonics.r_cluster')}`,
+    silent_e: `${t('scoreReports.phonics.silent_e')}`,
+    vowel_team: `${t('scoreReports.phonics.vowel_team')}`,
   };
   return keyMap[key] || _startCase(key);
 };

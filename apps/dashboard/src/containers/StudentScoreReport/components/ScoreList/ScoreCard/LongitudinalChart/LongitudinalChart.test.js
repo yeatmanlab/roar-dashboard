@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { createI18n } from 'vue-i18n';
 import LongitudinalChart from './LongitudinalChart.vue';
 
 // Mock feature flags
@@ -95,6 +96,8 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 }));
 
 describe('LongitudinalChart.vue', () => {
+  let i18n;
+
   const defaultProps = {
     longitudinalData: [
       {
@@ -116,12 +119,27 @@ describe('LongitudinalChart.vue', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    i18n = createI18n({
+      legacy: false,
+      locale: 'en',
+      messages: {
+        en: {
+          scoreReports: {
+            progressOverTime: 'Progress Over Time',
+          },
+        },
+      },
+    });
   });
 
   describe('snapshots', () => {
     it('renders with longitudinal data', () => {
       const wrapper = mount(LongitudinalChart, {
         props: defaultProps,
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.html()).toMatchSnapshot();
@@ -132,6 +150,9 @@ describe('LongitudinalChart.vue', () => {
         props: {
           ...defaultProps,
           longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 45 } }],
+        },
+        global: {
+          plugins: [i18n],
         },
       });
 
@@ -144,6 +165,9 @@ describe('LongitudinalChart.vue', () => {
           ...defaultProps,
           taskId: 'sre',
         },
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.html()).toMatchSnapshot();
@@ -154,6 +178,9 @@ describe('LongitudinalChart.vue', () => {
     it('renders canvas element', () => {
       const wrapper = mount(LongitudinalChart, {
         props: defaultProps,
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const canvas = wrapper.find('canvas');
@@ -163,6 +190,9 @@ describe('LongitudinalChart.vue', () => {
     it('has correct container styling', () => {
       const wrapper = mount(LongitudinalChart, {
         props: defaultProps,
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const container = wrapper.find('.rounded');
@@ -174,6 +204,9 @@ describe('LongitudinalChart.vue', () => {
     it('mounts with required props', () => {
       const wrapper = mount(LongitudinalChart, {
         props: defaultProps,
+        global: {
+          plugins: [i18n],
+        },
       });
 
       expect(wrapper.props('longitudinalData')).toEqual(defaultProps.longitudinalData);
@@ -184,6 +217,9 @@ describe('LongitudinalChart.vue', () => {
     it('canvas has proper classes', () => {
       const wrapper = mount(LongitudinalChart, {
         props: defaultProps,
+        global: {
+          plugins: [i18n],
+        },
       });
 
       const canvas = wrapper.find('canvas');
@@ -196,6 +232,9 @@ describe('LongitudinalChart.vue', () => {
     it('creates chart on mount', () => {
       const wrapper = mount(LongitudinalChart, {
         props: defaultProps,
+        global: {
+          plugins: [i18n],
+        },
       });
 
       // Chart should be created (mocked)
@@ -205,6 +244,9 @@ describe('LongitudinalChart.vue', () => {
     it('destroys chart on unmount', () => {
       const wrapper = mount(LongitudinalChart, {
         props: defaultProps,
+        global: {
+          plugins: [i18n],
+        },
       });
 
       wrapper.unmount();
