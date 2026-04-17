@@ -10,6 +10,8 @@ export const EnrolledFamilyUserSchema = UserBaseSchema.extend({
   roles: z.array(UserFamilyRoleSchema),
 });
 
+export type EnrolledFamilyUser = z.infer<typeof EnrolledFamilyUserSchema>;
+
 export const EnrolledFamilyUsersQuerySchema = EnrolledUsersBaseQuerySchema.extend({
   role: UserFamilyRoleSchema.optional(),
 });
