@@ -39,6 +39,7 @@ import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
 import { TaskService } from '../task/task.service';
 import { DistrictRepository } from '../../repositories/district.repository';
+import { SchoolRepository } from '../../repositories/school.repository';
 import { ClassRepository } from '../../repositories/class.repository';
 import { GroupRepository } from '../../repositories/group.repository';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
@@ -130,6 +131,7 @@ export function AdministrationService({
   runRepository = new RunRepository(),
   taskService = TaskService(),
   districtRepository = new DistrictRepository(),
+  schoolRepository = new SchoolRepository(),
   classRepository = new ClassRepository(),
   groupRepository = new GroupRepository(),
   taskVariantRepository = new TaskVariantRepository(),
@@ -143,6 +145,7 @@ export function AdministrationService({
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
   districtRepository?: DistrictRepository;
+  schoolRepository?: SchoolRepository;
   classRepository?: ClassRepository;
   groupRepository?: GroupRepository;
   taskVariantRepository?: TaskVariantRepository;
@@ -1037,16 +1040,25 @@ export function AdministrationService({
 
       // Validate that all referenced entities exist
       // Use parallel fetches for efficiency
-      const orgIds = request.orgs ?? [];
-      const classIds = request.classes ?? [];
-      const groupIds = request.groups ?? [];
+      const orgIds = request.orgs;
+      const classIds = request.classes;
+      const groupIds = request.groups;
       const taskVariantIds = request.taskVariants.map((tv) => tv.taskVariantId);
-      const agreementIds = request.agreements ?? [];
+      const agreementIds = request.agreements;
 
       // Verify orgs exist (districts and schools)
       if (orgIds.length > 0) {
-        const { items: existingOrgs } = await districtRepository.listByIds(orgIds, { page: 1, perPage: orgIds.length });
-        const missingOrgs = orgIds.filter((orgId) => !existingOrgs.some((org) => org.id === orgId));
+        const { items: existingDistricts } = await districtRepository.listByIds(orgIds, {
+          page: 1,
+          perPage: orgIds.length,
+        });
+        const { items: existingSchools } = await schoolRepository.getByIds(orgIds, {
+          page: 1,
+          perPage: orgIds.length,
+        });
+        const existingOrgs = [...existingDistricts, ...existingSchools];
+        const existingOrgsIdSet = new Set(existingOrgs.map((o) => o.id));
+        const missingOrgs = orgIds.filter((orgId) => !existingOrgsIdSet.has(orgId));
         if (missingOrgs.length > 0) {
           throw new ApiError(ApiErrorMessage.NOT_FOUND, {
             statusCode: StatusCodes.NOT_FOUND,

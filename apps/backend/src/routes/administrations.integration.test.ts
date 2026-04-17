@@ -192,8 +192,10 @@ describe('POST /v1/administrations', () => {
     };
 
     await expectRoute('POST', '/v1/administrations').as(tiers.admin).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.siteAdmin).withBody(body).toReturn(403);
     await expectRoute('POST', '/v1/administrations').as(tiers.educator).withBody(body).toReturn(403);
     await expectRoute('POST', '/v1/administrations').as(tiers.student).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.caregiver).withBody(body).toReturn(403);
   });
 
   it('superAdmin tier can create an administration and returns the new ID', async () => {
