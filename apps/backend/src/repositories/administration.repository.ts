@@ -921,7 +921,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         // Insert the main administration record
         const [created] = await tx.insert(administrations).values(input.administration).returning();
 
-        const administrationId = created.id;
+        const administrationId = created!.id;
 
         // Insert org assignments
         if (input.orgIds.length > 0) {
