@@ -45,7 +45,7 @@ beforeAll(async () => {
   expectRoute = createRouteHelper(app);
 
   // Create test family and users
-  const testFamily = await FamilyFactory.create({ name: 'Test Family' });
+  const testFamily = await FamilyFactory.create();
   testFamilyId = testFamily.id;
 
   // Create users with different roles
@@ -209,7 +209,7 @@ describe('GET /v1/families/:familyId/users', () => {
     });
 
     it('supports pagination with page and perPage parameters', async () => {
-      const paginationFamily = await FamilyFactory.create({ name: 'Pagination Family' });
+      const paginationFamily = await FamilyFactory.create();
       const paginationParent = await UserFactory.create({
         nameFirst: 'Pagination',
         nameLast: 'Parent',
@@ -284,14 +284,14 @@ describe('GET /v1/families/:familyId/users', () => {
     });
 
     it('returns 403 when user does not have access to family', async () => {
-      const otherFamily = await FamilyFactory.create({ name: 'Other Family' });
+      const otherFamily = await FamilyFactory.create();
       const res = await expectRoute('GET', `/v1/families/${otherFamily.id}/users`).as(parent).toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('returns 403 when user is parent of a different family', async () => {
-      const familyB = await FamilyFactory.create({ name: 'Isolated Family B' });
+      const familyB = await FamilyFactory.create();
       const isolatedParent = await UserFactory.create({
         nameFirst: 'Isolated',
         nameLast: 'Parent',

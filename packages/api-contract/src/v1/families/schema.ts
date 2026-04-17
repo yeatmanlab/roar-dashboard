@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { createPaginatedResponseSchema } from '../common/query';
-import { UserBaseSchema, EnrolledUsersBaseQuerySchema } from '../common/user';
+import { UserSchema, EnrolledUsersBaseQuerySchema } from '../common/user';
 
 export const UserFamilyRoleSchema = z.enum(['parent', 'child']);
 
 export type UserFamilyRole = z.infer<typeof UserFamilyRoleSchema>;
 
-export const EnrolledFamilyUserSchema = UserBaseSchema.extend({
+export const EnrolledFamilyUserSchema = UserSchema.extend({
   roles: z.array(UserFamilyRoleSchema),
 });
 
