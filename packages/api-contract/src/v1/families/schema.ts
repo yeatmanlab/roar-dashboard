@@ -6,7 +6,7 @@ export const UserFamilyRoleSchema = z.enum(['parent', 'child']);
 
 export type UserFamilyRole = z.infer<typeof UserFamilyRoleSchema>;
 
-export const FamilyUserSchema = UserBaseSchema.extend({
+export const EnrolledFamilyUserSchema = UserBaseSchema.extend({
   roles: z.array(UserFamilyRoleSchema),
 });
 
@@ -16,5 +16,5 @@ export const EnrolledFamilyUsersQuerySchema = EnrolledUsersBaseQuerySchema.exten
 
 export type EnrolledFamilyUsersQuery = z.infer<typeof EnrolledFamilyUsersQuerySchema>;
 
-export const EnrolledFamilyUsersResponseSchema = createPaginatedResponseSchema(FamilyUserSchema);
+export const EnrolledFamilyUsersResponseSchema = createPaginatedResponseSchema(EnrolledFamilyUserSchema);
 export type EnrolledFamilyUsersResponse = z.infer<typeof EnrolledFamilyUsersResponseSchema>;
