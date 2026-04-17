@@ -181,7 +181,11 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
       });
 
       // Ignore skillsAssessed field for overall score (scores.computed.composite.rawScore)
-      if (_colData.scores?.[_taskId]?.recruitment !== 'responseModality' && _subskillProperty !== 'rawScore') {
+      if (
+        _colData.scores?.[_taskId]?.recruitment !== 'responseModality' &&
+        _subskillProperty !== 'rawScore' &&
+        subskillInfo?.skillsAssessed != undefined
+      ) {
         _toolTip += `Skills Assessed: ${subskillInfo?.skillsAssessed}\n`;
       }
     } else {
