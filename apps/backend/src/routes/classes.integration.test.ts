@@ -97,14 +97,39 @@ describe('GET /v1/classes/:classId/users', () => {
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
-    it('educator tier can list users in a class within their district', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
+    it('educator (teacher) at district level is forbidden from listing class users (teacher does not inherit to classes)', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no teacher role on child schools or classes, so FGA does not grant
+      // can_list_users on the class.
+      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
 
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('principal at school A can list users in class (school_admin_tier inherits school→class)', async () => {
+      // Principal is rostered at schoolA. In the FGA model, principal inherits from
+      // parent_org at the class level, so schoolAPrincipal has principal role on
+      // classInSchoolA → supervisory_tier_group → can_list_users.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.items).toBeInstanceOf(Array);
       const userIds = res.body.data.items.map((user: { id: string }) => user.id);
       expect(userIds).toContain(baseFixture.classAStudent.id);
       expect(userIds).toContain(baseFixture.classATeacher.id);
-      expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
+    });
+
+    it('school-level teacher cannot list users in class (teacher does not inherit school→class)', async () => {
+      // schoolATeacher is rostered at schoolA with teacher role. In the FGA model,
+      // teacher does NOT have `from parent_org` at the class level, so the teacher
+      // role does not cascade from school to class. The school-level teacher has no
+      // role on classInSchoolA → no can_list_users.
+      authenticateAs(baseFixture.schoolATeacher);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('student tier is forbidden from listing users in classes', async () => {

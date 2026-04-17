@@ -22,6 +22,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
+import { EntityType } from '../../types/entity-type';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import { ReportRepository, REPORT_CONDITION_FIELD_MAP } from '../../repositories/report.repository';
 import type {
@@ -126,10 +127,10 @@ export function ReportService({
 
   /** Map report scope types to FGA object type prefixes. */
   const SCOPE_TO_FGA_TYPE: Record<ScopeType, FgaType> = {
-    district: FgaType.DISTRICT,
-    school: FgaType.SCHOOL,
-    class: FgaType.CLASS,
-    group: FgaType.GROUP,
+    [EntityType.DISTRICT]: FgaType.DISTRICT,
+    [EntityType.SCHOOL]: FgaType.SCHOOL,
+    [EntityType.CLASS]: FgaType.CLASS,
+    [EntityType.GROUP]: FgaType.GROUP,
   };
 
   /**
@@ -265,7 +266,7 @@ export function ReportService({
           firstName: student.nameFirst,
           lastName: student.nameLast,
           grade: student.grade,
-          schoolName: scopeType === 'district' ? (student.schoolName ?? null) : null,
+          schoolName: scopeType === EntityType.DISTRICT ? (student.schoolName ?? null) : null,
         },
         progress: buildProgressMap(student, taskMetas, taskService.evaluateTaskVariantEligibility),
       }));

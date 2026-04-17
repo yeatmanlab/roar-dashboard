@@ -155,5 +155,47 @@ export function AuthorizationService({
     }
   }
 
-  return { writeTuples, deleteTuples, hasPermission, requirePermission, listAccessibleObjects };
+  /**
+   * Check whether a user has a specific relation on ANY of the given objects.
+   *
+   * Uses the FGA batch check API to evaluate all objects in a single request,
+   * returning true if at least one check passes. Useful when a user can access
+   * a resource through multiple entities (e.g., a user is visible via org, class,
+   * group, or family membership).
+   *
+   * @param userId - The user ID (without the `user:` prefix)
+   * @param relation - The FGA relation to check (e.g., `can_list_users`)
+   * @param objects - Array of fully-qualified FGA objects (e.g., `['district:abc', 'class:def']`)
+   * @returns true if the user has the relation on at least one object, false otherwise
+   */
+  async function hasAnyPermission(userId: string, relation: FgaRelation, objects: string[]): Promise<boolean> {
+    if (objects.length === 0) return false;
+
+    try {
+      const currentTime = new Date().toISOString();
+      const result = await client.batchCheck({
+        checks: objects.map((object) => ({
+          user: `${FgaType.USER}:${userId}`,
+          relation,
+          object,
+          context: { current_time: currentTime },
+        })),
+      });
+
+      return result.result.some((r) => r.allowed === true);
+    } catch (error) {
+      logger.error(
+        { err: error, context: { userId, relation, objectCount: objects.length } },
+        'FGA batch check failed',
+      );
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { userId, relation, objectCount: objects.length },
+        cause: error,
+      });
+    }
+  }
+
+  return { writeTuples, deleteTuples, hasPermission, requirePermission, listAccessibleObjects, hasAnyPermission };
 }

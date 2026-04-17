@@ -39,6 +39,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-teacher
+    relation: teacher
+    object: class:class-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:class-teacher
     relation: teacher
     object: class:class-a
@@ -99,6 +107,22 @@ tests:
           can_read_scores: true
           can_read_progress: true
 
+  - name: School teacher with direct class assignment retains class access (mixed rostering scenario)
+    check:
+      - user: user:school-teacher
+        object: class:class-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_create: false
+          can_update: false
+          can_delete: false
+          can_list_users: true
+          can_read_scores: true
+          can_read_progress: true
+
   - name: Student cannot list/read their class (supervisory only)
     check:
       - user: user:student-a
@@ -130,20 +154,20 @@ tests:
 
   # ─── Inherited access from school/district ─────────────────────────
 
-  - name: School teacher can list/read classes in their school (descendant access)
+  - name: School teacher CANNOT list/read classes (no descendant access for educators)
     check:
       - user: user:school-teacher
-        object: class:class-a
+        object: class:class-b
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_delete: false
-          can_list_users: true
-          can_read_scores: true
+          can_list_users: false
+          can_read_scores: false
 
   - name: District admin can list/read classes (descendant access)
     check:
@@ -233,7 +257,7 @@ tests:
 
   # ─── list_objects ──────────────────────────────────────────────────
 
-  - name: School teacher sees all classes in their school
+  - name: School teacher sees only directly assigned classes
     list_objects:
       - user: user:school-teacher
         type: class
@@ -242,7 +266,6 @@ tests:
         assertions:
           can_list:
             - class:class-a
-            - class:class-b
 
   - name: Class teacher sees only their class
     list_objects:

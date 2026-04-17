@@ -120,6 +120,20 @@ describe('GET /v1/administrations', () => {
       expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
     });
 
+    it('principal at school A can list school-assigned administrations (school_admin_tier)', async () => {
+      // Principal rostered at schoolA has supervisory_tier_group on schoolA,
+      // so they see administrations assigned to schoolA via subtree_supervisory_tier_group.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app).get('/v1/administrations').set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.administrationAssignedToSchoolA.id);
+      // Principal at schoolA should NOT see administrations in other schools or other districts
+      expect(ids).not.toContain(baseFixture.administrationAssignedToSchoolB.id);
+      expect(ids).not.toContain(baseFixture.administrationAssignedToDistrictB.id);
+    });
+
     it('caregiver tier sees an empty list (caregivers lack can_list on administration)', async () => {
       const res = await expectRoute('GET', '/v1/administrations').as(tiers.caregiver).toReturn(200);
 
@@ -374,11 +388,25 @@ describe('GET /v1/administrations/:id/schools', () => {
       expect(ids).toContain(baseFixture.schoolA.id);
     });
 
-    it('educator tier can list schools scoped to their org tree', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
+    it('principal at school A can list schools on school-assigned administration (school_admin_tier)', async () => {
+      // Principal rostered at schoolA has supervisory_tier_group on schoolA,
+      // which gives can_read on the school-assigned administration via
+      // subtree_supervisory_tier_group. Then can_list on school allows listing.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
 
+      expect(res.status).toBe(StatusCodes.OK);
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
       expect(ids).toContain(baseFixture.schoolA.id);
+    });
+
+    it('educator (teacher) at district level is forbidden from listing schools on school-assigned administration', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no role on the school, so FGA does not grant can_read on a
+      // school-assigned administration.
+      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('student tier is forbidden from listing schools', async () => {
@@ -431,10 +459,25 @@ describe('GET /v1/administrations/:id/classes', () => {
       expect(ids).toContain(baseFixture.classInSchoolA.id);
     });
 
-    it('educator tier can list classes scoped to their org tree', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
+    it('principal at school A can list classes on class-assigned administration (inherits school→class)', async () => {
+      // Principal at schoolA inherits to classInSchoolA via parent_org in FGA.
+      // This gives can_read on class-assigned administration via
+      // subtree_supervisory_tier_group, and can_list on the class.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
 
-      expect(res.body.data.items.length).toBeGreaterThan(0);
+      expect(res.status).toBe(StatusCodes.OK);
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.classInSchoolA.id);
+    });
+
+    it('educator (teacher) at district level is forbidden from listing classes on class-assigned administration', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no role on the class, so FGA does not grant can_read on a
+      // class-assigned administration.
+      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('student tier is forbidden from listing classes', async () => {

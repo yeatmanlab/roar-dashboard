@@ -67,6 +67,8 @@ import {
  * Results from all access paths are combined using UNION, which automatically deduplicates
  * user IDs. This ensures each accessible user appears exactly once in the result set.
  */
+// TODO: Remove all instances of access controls that are now deprecated by FGA migration
+// ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1764
 export class UserAccessControls {
   constructor(protected readonly db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {}
 

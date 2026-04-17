@@ -24,6 +24,7 @@ import type { ScopeType } from '../services/report/report.types';
 import { conditionToSql } from '../utils/condition-to-sql';
 import type { Condition } from '../types/condition';
 import type { ConditionFieldMap } from '../utils/condition-to-sql';
+import { EntityType } from '../types/entity-type';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
@@ -207,7 +208,7 @@ export class ReportRepository {
     let result: { exists: boolean }[];
 
     switch (scope.scopeType) {
-      case 'district': {
+      case EntityType.DISTRICT: {
         // Check administration_orgs for any org whose path is at or below the district
         result = await this.db
           .select({ exists: sql<boolean>`true` })
@@ -238,7 +239,7 @@ export class ReportRepository {
         return result.length > 0;
       }
 
-      case 'school': {
+      case EntityType.SCHOOL: {
         // Check administration_orgs for the school org itself
         result = await this.db
           .select({ exists: sql<boolean>`true` })
@@ -263,7 +264,7 @@ export class ReportRepository {
         return result.length > 0;
       }
 
-      case 'class':
+      case EntityType.CLASS:
         result = await this.db
           .select({ exists: sql<boolean>`true` })
           .from(administrationClasses)
@@ -291,7 +292,7 @@ export class ReportRepository {
           .limit(1);
         return result.length > 0;
 
-      case 'group':
+      case EntityType.GROUP:
         result = await this.db
           .select({ exists: sql<boolean>`true` })
           .from(administrationGroups)
@@ -316,8 +317,8 @@ export class ReportRepository {
    */
   async getUserRolesAtOrAboveScope(userId: string, scope: ReportScope): Promise<string[]> {
     switch (scope.scopeType) {
-      case 'district':
-      case 'school': {
+      case EntityType.DISTRICT:
+      case EntityType.SCHOOL: {
         // Check user_orgs for roles at the scope org or any ancestor
         const orgRoles = await this.db
           .select({ role: userOrgs.role })
@@ -334,7 +335,7 @@ export class ReportRepository {
         return orgRoles.map((r) => r.role);
       }
 
-      case 'class': {
+      case EntityType.CLASS: {
         // Check user_classes for role on this class
         const classRoles = await this.db
           .select({ role: userClasses.role })
@@ -365,7 +366,7 @@ export class ReportRepository {
         return [...classRoles.map((r) => r.role), ...orgRoles.map((r) => r.role)];
       }
 
-      case 'group': {
+      case EntityType.GROUP: {
         // Check user_groups for role on this group
         const groupRoles = await this.db
           .select({ role: userGroups.role })
@@ -643,7 +644,7 @@ export class ReportRepository {
 
     // Resolve school names if district scope
     let schoolNamesByUser: Map<string, string> | undefined;
-    if (scope.scopeType === 'district') {
+    if (scope.scopeType === EntityType.DISTRICT) {
       schoolNamesByUser = await this.getSchoolNamesForUsers(studentIds);
     }
 
@@ -788,7 +789,7 @@ export class ReportRepository {
    */
   private buildStudentInScopeQuery(scope: ReportScope) {
     switch (scope.scopeType) {
-      case 'district':
+      case EntityType.DISTRICT:
         // Students in user_orgs where org path is at or below the district
         // UNION students in user_classes where class orgPath is at or below.
         // UNION (not UNION ALL) deduplicates across branches; no selectDistinct needed.
@@ -819,7 +820,7 @@ export class ReportRepository {
               ),
           );
 
-      case 'school':
+      case EntityType.SCHOOL:
         // Students in user_orgs where orgId = schoolId
         // UNION students in user_classes where class.schoolId = schoolId
         return this.db
@@ -849,7 +850,7 @@ export class ReportRepository {
               ),
           );
 
-      case 'class':
+      case EntityType.CLASS:
         return this.db
           .select({ userId: userClasses.userId })
           .from(userClasses)
@@ -863,7 +864,7 @@ export class ReportRepository {
             ),
           );
 
-      case 'group':
+      case EntityType.GROUP:
         return this.db
           .select({ userId: userGroups.userId })
           .from(userGroups)
