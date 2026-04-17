@@ -976,7 +976,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
           );
         }
 
-        return created;
+        return created!;
       },
     });
   }

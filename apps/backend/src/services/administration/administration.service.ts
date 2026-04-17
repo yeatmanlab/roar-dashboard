@@ -1017,7 +1017,7 @@ export function AdministrationService({
       }
 
       // Validate there is at least one org, class, or group assigned
-      if (request.orgs?.length === 0 && request.classes?.length === 0 && request.groups?.length === 0) {
+      if (request.orgs.length === 0 && request.classes.length === 0 && request.groups.length === 0) {
         throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
