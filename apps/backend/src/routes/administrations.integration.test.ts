@@ -169,6 +169,33 @@ describe('POST /v1/administrations', () => {
     expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
   });
 
+  it('non-super admin tiers are forbidden from creating an administration', async () => {
+    const body = {
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
+      description: 'Integration create test',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.district.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+          conditionsEligibility: null,
+          conditionsRequirement: null,
+        },
+      ],
+      agreements: [],
+    };
+
+    await expectRoute('POST', '/v1/administrations').as(tiers.admin).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.educator).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.student).withBody(body).toReturn(403);
+  });
+
   it('superAdmin tier can create an administration and returns the new ID', async () => {
     const agreement = await AgreementFactory.create({ name: 'Agreement Name' });
     await AgreementVersionFactory.create({ locale: 'en-US' }, { transient: { agreementId: agreement.id } });
