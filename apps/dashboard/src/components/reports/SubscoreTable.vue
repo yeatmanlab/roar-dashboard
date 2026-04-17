@@ -260,7 +260,17 @@ const exportSelected = (selectedRows) => {
               _get(scores, `${props.taskId}.${subskillId}.${property}`),
             );
           });
-          _set(tableRow, `${subskill} - Skills Assessed`, _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`));
+          // fluency-calf returns scores for multiplication and division but does not report skills assessed for those operations
+          if (
+            props.taskId === 'fluency-arf' ||
+            (props.taskId === 'fluency-calf' && (subskillId === 'subtraction' || subskillId === 'addition'))
+          ) {
+            _set(
+              tableRow,
+              `${subskill} - Skills Assessed`,
+              _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`),
+            );
+          }
         });
 
         let incorrectSkills = '';
@@ -359,7 +369,17 @@ const exportAll = async () => {
               _get(scores, `${props.taskId}.${subskillId}.${property}`),
             );
           });
-          _set(tableRow, `${subskill} - Skills Assessed`, _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`));
+          // fluency-calf returns scores for multiplication and division but does not report skills assessed for those operations
+          if (
+            props.taskId === 'fluency-arf' ||
+            (props.taskId === 'fluency-calf' && (subskillId === 'subtraction' || subskillId === 'addition'))
+          ) {
+            _set(
+              tableRow,
+              `${subskill} - Skills Assessed`,
+              _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`),
+            );
+          }
         });
 
         let incorrectSkills = '';
