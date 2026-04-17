@@ -2877,8 +2877,7 @@ describe('AdministrationService', () => {
       const mockTaskVariantRepo = createMockTaskVariantRepository();
       const mockAgreementRepo = createMockAgreementRepository();
 
-      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
       mockClassRepo.getById.mockResolvedValue(mockClass);
       mockGroupRepo.getById.mockResolvedValue(mockGroup);
       mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);
@@ -3019,8 +3018,7 @@ describe('AdministrationService', () => {
       mockAdministrationRepository.existsByName.mockResolvedValue(false);
       const mockDistrictRepo = createMockDistrictRepository();
       const mockSchoolRepo = createMockSchoolRepository();
-      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(null);
-      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(null);
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -3048,8 +3046,7 @@ describe('AdministrationService', () => {
       const mockDistrictRepo = createMockDistrictRepository();
       const mockSchoolRepo = createMockSchoolRepository();
       const mockClassRepo = createMockClassRepository();
-      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
       mockClassRepo.getById.mockResolvedValue(null);
 
       const service = AdministrationService({
@@ -3085,8 +3082,7 @@ describe('AdministrationService', () => {
       const mockGroupRepo = createMockGroupRepository();
       const mockTaskVariantRepo = createMockTaskVariantRepository();
       const mockAgreementRepo = createMockAgreementRepository();
-      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
       mockClassRepo.getById.mockResolvedValue(mockClass);
       mockGroupRepo.getById.mockResolvedValue(mockGroup);
       mockTaskVariantRepo.getById.mockResolvedValue(null);
@@ -3121,7 +3117,6 @@ describe('AdministrationService', () => {
       const mockGroup = GroupFactory.build({ id: 'group-1' });
       const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
       const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
-      const mockUser = UserFactory.build({ id: 'user-456' });
 
       const mockAdminRepo = createMockAdministrationRepository();
       const mockUserRepo = createMockUserRepository();
@@ -3133,9 +3128,7 @@ describe('AdministrationService', () => {
       const mockAgreementRepo = createMockAgreementRepository();
       mockAdminRepo.existsByName.mockResolvedValue(false);
       mockAdminRepo.createWithAssignments.mockRejectedValue(new Error('Database error'));
-      mockUserRepo.getById.mockResolvedValue(mockUser);
-      mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
-      mockSchoolRepo.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict, mockSchool], totalItems: 2 });
       mockClassRepo.getById.mockResolvedValue(mockClass);
       mockGroupRepo.getById.mockResolvedValue(mockGroup);
       mockTaskVariantRepo.getById.mockResolvedValue(mockTaskVariant);

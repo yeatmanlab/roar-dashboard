@@ -1048,16 +1048,8 @@ export function AdministrationService({
 
       // Verify orgs exist (districts and schools)
       if (orgIds.length > 0) {
-        const existingOrgs = await Promise.all(
-          orgIds.map(async (orgId) => {
-            // Try district first, then school
-            const district = await districtRepository.getUnrestrictedById(orgId);
-            if (district) return district;
-            const school = await schoolRepository.getUnrestrictedById(orgId);
-            return school;
-          }),
-        );
-        const missingOrgs = orgIds.filter((_, index) => !existingOrgs[index]);
+        const { items: existingOrgs } = await districtRepository.listByIds(orgIds, { page: 1, perPage: orgIds.length });
+        const missingOrgs = orgIds.filter((orgId) => !existingOrgs.some((org) => org.id === orgId));
         if (missingOrgs.length > 0) {
           throw new ApiError(ApiErrorMessage.NOT_FOUND, {
             statusCode: StatusCodes.NOT_FOUND,
