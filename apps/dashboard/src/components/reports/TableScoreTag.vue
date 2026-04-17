@@ -188,7 +188,9 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
       // Handles the "No. of Skills to Work On" column
       // Format incorrect skills from scores.computed.composite.incorrectSkills
       Object.keys(roamFluencySubskills).forEach((subskillId) => {
-        _toolTip += `${roamFluencySubskills[subskillId]}: ${subskillInfo?.incorrectSkills?.[subskillId] || 0}\n`;
+        if (subskillInfo?.incorrectSkills?.[subskillId] != undefined) {
+          _toolTip += `${roamFluencySubskills[subskillId]}: ${subskillInfo?.incorrectSkills?.[subskillId] || 0}\n`;
+        }
       });
     }
   }
