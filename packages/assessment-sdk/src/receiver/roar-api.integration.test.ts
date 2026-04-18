@@ -281,7 +281,7 @@ describe('Assessment SDK (integration)', () => {
       // Create and complete a run
       const createResponse = await api.client.runs.create({
         body: {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVariantId,
           taskVersion: '1.0.0',
           isAnonymous: true,
         },
@@ -320,7 +320,7 @@ describe('Assessment SDK (integration)', () => {
       // 1. Create run
       const createResponse = await api.client.runs.create({
         body: {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVariantId,
           taskVersion: '1.0.0',
           isAnonymous: true,
         },

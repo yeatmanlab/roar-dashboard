@@ -70,6 +70,8 @@ When the backend starts with `NODE_ENV=test`:
 
    Note: The global setup will automatically build the backend if `apps/backend/dist` doesn't exist. This requires the backend to be built before `npm run start` can run the compiled server.
 
+   **Caveat:** If the backend source changes but `dist/` already exists, the old build is used. If tests fail unexpectedly, try `npm run build -w apps/backend` to rebuild.
+
 ### Run Tests Locally
 
 ```bash
@@ -173,7 +175,7 @@ When the backend starts in test mode (`NODE_ENV=test`):
 
 ### Test Fixture Endpoint
 
-**GET `/v1/test/fixture`** (test mode only)
+**GET `/v1/test/fixture`** (test mode only, mounted at `/v1` by default)
 
 Returns the seeded baseFixture data:
 

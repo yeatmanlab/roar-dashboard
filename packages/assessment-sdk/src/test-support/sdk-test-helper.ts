@@ -27,8 +27,13 @@ export function getBackendUrl(): string {
 /**
  * Creates a test auth context with a mock token.
  *
- * Uses a shared token across all tests for performance.
- * This is acceptable since tests don't require token isolation.
+ * In test mode (NODE_ENV=test), the backend's auth middleware accepts any token string
+ * without validation. This allows SDK tests to use a simple test token without requiring
+ * a real Firebase authentication setup.
+ *
+ * The token is cached and reused across all tests for performance.
+ *
+ * @returns Auth context with getToken and refreshToken methods
  */
 let cachedTestToken: string | null = null;
 
@@ -84,7 +89,7 @@ export async function getBaseFixtureData(): Promise<{
   variantForTask2Grade5OptionalEll: { id: string };
 }> {
   const baseUrl = getBackendUrl();
-  const response = await fetch(`${baseUrl}/test/fixture`, {
+  const response = await fetch(`${baseUrl}/v1/test/fixture`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

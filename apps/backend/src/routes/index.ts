@@ -13,10 +13,10 @@ import { registerTaskBundlesRoutes } from './task-bundles';
 import { registerClassesRoutes } from './classes';
 import { registerUserRoutes } from './users';
 import { registerSystemRoutes } from './system';
-import { registerTestRoutes } from './test';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -48,7 +48,18 @@ export function registerAllRoutes(app: Express) {
   registerClassesRoutes(router);
   registerUserRoutes(router);
   registerSystemRoutes(router);
-  registerTestRoutes(router);
+
+  // Dynamically import and register test routes only in test mode to avoid bundling test dependencies
+  if (process.env.NODE_ENV === 'test') {
+    // Use dynamic import to keep test code out of production bundle
+    import('./test')
+      .then(({ registerTestRoutes }) => {
+        registerTestRoutes(router);
+      })
+      .catch((err) => {
+        logger.error({ err }, 'Failed to register test routes');
+      });
+  }
 
   app.use(`/${API_VERSION.V1}`, router);
 }

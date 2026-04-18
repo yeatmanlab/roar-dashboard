@@ -55,6 +55,19 @@ async function startServer(): Promise<void> {
   // before any module-level service instantiation occurs.
   await initializeDatabasePools();
 
+  // Seed test data if running in test mode
+  if (NODE_ENV === 'test' || process.env.SEED_TEST_DATA === 'true') {
+    try {
+      const { seedBaseFixture } = await import('./test-support/fixtures');
+      await seedBaseFixture();
+      logger.info('Test data seeded via baseFixture');
+    } catch (err) {
+      logger.error({ err }, 'Failed to seed test data');
+      // Don't exit - allow server to start even if seeding fails
+      // Tests may handle their own seeding
+    }
+  }
+
   // Dynamic import AFTER database is ready.
   // This fixes the initialization order issue where repositories would
   // receive undefined db clients due to module-level instantiation
