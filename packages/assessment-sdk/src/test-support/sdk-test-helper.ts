@@ -25,11 +25,11 @@ export function getBackendUrl(): string {
 }
 
 /**
- * Creates a test auth context with a mock token.
+ * Creates a test auth context with a cached token.
  *
- * In test mode (NODE_ENV=test), the backend's auth middleware accepts any token string
- * without validation. This allows SDK tests to use a simple test token without requiring
- * a real Firebase authentication setup.
+ * In test mode (NODE_ENV=test), TestAuthProvider treats the token directly as the Firebase UID.
+ * The token must be a real user's authId from the seeded database — getBaseFixtureData() fetches
+ * schoolAStudent.authId and caches it here before any authenticated requests are made.
  *
  * The token is cached and reused across all tests for performance.
  *

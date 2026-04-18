@@ -51,7 +51,11 @@ export function registerAllRoutes(app: Express) {
 
   // Dynamically import and register test routes only in test mode to avoid bundling test dependencies
   if (process.env.NODE_ENV === 'test') {
-    // Use dynamic import to keep test code out of production bundle
+    // Use dynamic import to keep test code out of production bundle.
+    // Note: There is a small window (sub-millisecond) between router mounting and test route registration
+    // where GET /v1/test/fixture returns 404. In practice, this is not an issue because the global setup
+    // completes before getBaseFixtureData() is called. If flakiness appears, registerAllRoutes should be
+    // made async and awaited in app.ts.
     import('./test')
       .then(({ registerTestRoutes }) => {
         registerTestRoutes(router);

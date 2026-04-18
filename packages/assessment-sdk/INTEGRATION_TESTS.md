@@ -170,10 +170,8 @@ When the backend starts in test mode (`NODE_ENV=test`):
    - Users with various roles and enrollments
    - Task variants (variantForAllGrades, variantForGrade5, variantForGrade3, etc.)
    - Administrations assigned to various org levels
-4. Initializes FGA test store with authorization model
-5. Syncs FGA tuples from PostgreSQL
 
-**Note:** The backend's own integration tests have per-file isolation via `vitest.setup.ts`, which truncates and re-seeds before each test file. The SDK tests run against a single backend instance with data seeded once at startup.
+**Note:** FGA authorization is NOT initialized during standalone server startup. SDK tests must use anonymous runs to avoid FGA permission checks. The backend's own integration tests initialize FGA via `vitest.setup.ts:46-47` (`resetFgaStoreForTestFile()` and `syncFgaTuplesFromPostgres()`), but these are not called when the server runs standalone.
 
 ### Test Authentication
 
