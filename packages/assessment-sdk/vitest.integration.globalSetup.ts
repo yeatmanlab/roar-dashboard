@@ -4,6 +4,12 @@
  * Spawns a backend server process before running integration tests.
  * The backend connects to test databases and seeds test data.
  *
+ * TEST DATA SEEDING:
+ * - The backend's SEED_TEST_DATA flag (default: true) automatically seeds test data
+ * - This includes creating a task variant with ID: 550e8400-e29b-41d4-a716-446655440000
+ * - Tests use this hardcoded UUID to avoid dynamic creation overhead
+ * - If seeding fails, tests will fail with 422 (invalid task variant)
+ *
  * Environment variables:
  * - BACKEND_PORT: Port for the backend server (default: 4001)
  * - CORE_DATABASE_URL: Core database connection string (required)
@@ -12,6 +18,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,8 +27,64 @@ const __dirname = path.dirname(__filename);
 
 const BACKEND_PORT = process.env.BACKEND_PORT || '4001';
 const BACKEND_START_TIMEOUT = 30000; // 30 seconds
+const BACKEND_BUILD_TIMEOUT = 60000; // 60 seconds for build
 
 let backendProcess: ReturnType<typeof spawn> | null = null;
+
+/**
+ * Builds the backend if not already built.
+ * Required because `npm run start` runs the compiled dist/server.js.
+ */
+async function buildBackendIfNeeded(backendDir: string): Promise<void> {
+  const distDir = path.join(backendDir, 'dist');
+
+  if (existsSync(distDir)) {
+    console.log('[SDK Integration Tests] Backend already built, skipping build');
+    return;
+  }
+
+  console.log('[SDK Integration Tests] Building backend...');
+
+  return new Promise<void>((resolve, reject) => {
+    const buildProcess = spawn('npm', ['run', 'build'], {
+      cwd: backendDir,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let buildOutput = '';
+    let buildError = '';
+
+    buildProcess.stdout?.on('data', (data) => {
+      buildOutput += data.toString();
+    });
+
+    buildProcess.stderr?.on('data', (data) => {
+      buildError += data.toString();
+    });
+
+    buildProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('[SDK Integration Tests] Backend build completed successfully');
+        resolve();
+      } else {
+        reject(
+          new Error(
+            `[SDK Integration Tests] Backend build failed with code ${code}.\nStdout: ${buildOutput}\nStderr: ${buildError}`,
+          ),
+        );
+      }
+    });
+
+    buildProcess.on('error', (error) => {
+      reject(new Error(`[SDK Integration Tests] Failed to spawn build process: ${error.message}`));
+    });
+
+    setTimeout(() => {
+      buildProcess.kill();
+      reject(new Error(`[SDK Integration Tests] Backend build timeout after ${BACKEND_BUILD_TIMEOUT}ms`));
+    }, BACKEND_BUILD_TIMEOUT);
+  });
+}
 
 /**
  * Waits for the backend to be ready by polling the health endpoint.
@@ -62,10 +125,20 @@ export default async function globalSetup() {
     }
   }
 
+  const backendDir = path.resolve(__dirname, '../../apps/backend');
+
+  // Build backend if needed
+  try {
+    await buildBackendIfNeeded(backendDir);
+  } catch (error) {
+    throw new Error(
+      `[SDK Integration Tests] Failed to build backend: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
   console.log(`[SDK Integration Tests] Starting backend on port ${BACKEND_PORT}...`);
 
   // Spawn the backend process
-  const backendDir = path.resolve(__dirname, '../../apps/backend');
   backendProcess = spawn('npm', ['run', 'start'], {
     cwd: backendDir,
     env: {

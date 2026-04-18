@@ -26,11 +26,20 @@ export function getBackendUrl(): string {
 
 /**
  * Creates a test auth context with a mock token.
+ *
+ * Uses a shared token across all tests for performance.
+ * This is acceptable since tests don't require token isolation.
  */
+let cachedTestToken: string | null = null;
+
 export function createTestAuthContext() {
+  if (!cachedTestToken) {
+    cachedTestToken = 'test-token-' + Math.random().toString(36).slice(2);
+  }
+
   return {
-    getToken: async () => 'test-token-' + Math.random().toString(36).slice(2),
-    refreshToken: async () => 'test-token-' + Math.random().toString(36).slice(2),
+    getToken: async () => cachedTestToken!,
+    refreshToken: async () => cachedTestToken!,
   };
 }
 
@@ -56,4 +65,42 @@ export function initTestSdk(overrides: Partial<CommandContext> = {}) {
   };
 
   return initAssessmentSdk(context);
+}
+
+/**
+ * Fetches the backend's baseFixture data for use in integration tests.
+ *
+ * The backend provides a test endpoint that returns the seeded baseFixture
+ * which includes task variants, administrations, and users created during setup.
+ *
+ * @returns The baseFixture data with task variants and other test entities
+ */
+export async function getBaseFixtureData(): Promise<{
+  variantForAllGrades: { id: string };
+  variantForGrade5: { id: string };
+  variantForGrade3: { id: string };
+  variantOptionalForEll: { id: string };
+  variantForTask2: { id: string };
+  variantForTask2Grade5OptionalEll: { id: string };
+}> {
+  const baseUrl = getBackendUrl();
+  const response = await fetch(`${baseUrl}/test/fixture`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch baseFixture data: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json() as Promise<{
+    variantForAllGrades: { id: string };
+    variantForGrade5: { id: string };
+    variantForGrade3: { id: string };
+    variantOptionalForEll: { id: string };
+    variantForTask2: { id: string };
+    variantForTask2Grade5OptionalEll: { id: string };
+  }>;
 }

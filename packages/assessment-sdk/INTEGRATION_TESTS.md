@@ -57,9 +57,18 @@ When the backend starts with `NODE_ENV=test`:
    ```
 
 3. **Backend dependencies installed**:
+
    ```bash
    npm install -w apps/backend
    ```
+
+4. **Backend built** (or let globalSetup build it automatically):
+
+   ```bash
+   npm run build -w apps/backend
+   ```
+
+   Note: The global setup will automatically build the backend if `apps/backend/dist` doesn't exist. This requires the backend to be built before `npm run start` can run the compiled server.
 
 ### Run Tests Locally
 
@@ -129,34 +138,63 @@ Example GitHub Actions workflow:
 
 ### Seeding Strategy
 
-Test data is seeded via Fishery factories in the backend:
+**Decision: Use backend's baseFixture seeding (Option B)**
 
-- **Participants** - Created via `UserFactory.create()`
-- **Tasks** - Created via `TaskFactory.create()`
-- **Task Variants** - Created via `TaskVariantFactory.create()`
-- **Administrations** - Created via `AdministrationFactory.create()`
+Tests dynamically fetch task variant IDs from the backend's baseFixture via a test endpoint:
 
-The base fixture (`baseFixture`) provides a comprehensive test dataset with:
+1. Backend seeds comprehensive test data via `baseFixture` (org hierarchy, users, task variants, administrations)
+2. SDK tests call `GET /v1/test/fixture` to retrieve task variant IDs
+3. Tests use the dynamic IDs instead of hardcoded UUIDs
 
-- Organization hierarchy (districts, schools, classes)
-- User roles (admin, educator, student)
-- Task variants with eligibility conditions
-- Administrations assigned to various organizational units
+This approach:
 
-### Using Test Data in Tests
+- ✅ Uses backend's existing comprehensive test data (baseFixture)
+- ✅ Avoids hardcoded UUIDs that may not exist
+- ✅ Provides realistic test scenarios with proper org hierarchy
+- ✅ Aligns with backend's integration test patterns
+- ✅ Simplifies maintenance (no hardcoded IDs to update)
 
-Tests use hardcoded UUIDs for task variants (e.g., `550e8400-e29b-41d4-a716-446655440000`). These must be seeded in the test database before tests run.
+### Backend Seeding Process
 
-To seed custom test data:
+When the backend starts in test mode (`NODE_ENV=test`):
 
-```typescript
-import { TaskVariantFactory } from '../../apps/backend/src/test-support/factories/task-variant.factory';
+1. Initializes database pools
+2. Truncates all tables (per-file isolation)
+3. Seeds comprehensive baseFixture via Fishery factories:
+   - Organization hierarchy (districts, schools, classes)
+   - Users with various roles and enrollments
+   - Task variants (variantForAllGrades, variantForGrade5, variantForGrade3, etc.)
+   - Administrations assigned to various org levels
+4. Initializes FGA test store with authorization model
+5. Syncs FGA tuples from PostgreSQL
 
-const variant = await TaskVariantFactory.create({
-  taskId: 'task-123',
-  name: 'My Test Variant',
-});
+### Test Fixture Endpoint
+
+**GET `/v1/test/fixture`** (test mode only)
+
+Returns the seeded baseFixture data:
+
+```json
+{
+  "variantForAllGrades": { "id": "uuid-1" },
+  "variantForGrade5": { "id": "uuid-2" },
+  "variantForGrade3": { "id": "uuid-3" },
+  "variantOptionalForEll": { "id": "uuid-4" },
+  "variantForTask2": { "id": "uuid-5" },
+  "variantForTask2Grade5OptionalEll": { "id": "uuid-6" }
+}
 ```
+
+### Authentication Token Strategy
+
+**Decision: Use shared test token across all tests (Option C)**
+
+- A single test token is generated once and cached in `createTestAuthContext()`
+- The token is reused across all tests for performance
+- This is acceptable since tests don't require token isolation
+- Token format: `test-token-<random>`
+
+See `src/test-support/sdk-test-helper.ts` for implementation.
 
 ## Debugging
 
@@ -257,6 +295,23 @@ echo $ASSESSMENT_DATABASE_URL
 - **Simplicity**: No need to manage a separate test server
 - **Reliability**: Automatic cleanup on test completion
 - **CI-friendly**: Works in containerized environments
+- **Auto-build**: Automatically builds backend if `dist/` doesn't exist, matching CI pipeline behavior where `npm run test` is called after `npm run build`
+
+### Why use backend's baseFixture seeding?
+
+- **Realism**: Uses the same comprehensive test data as backend integration tests
+- **Maintainability**: No hardcoded UUIDs to update when test data changes
+- **Robustness**: Fails fast if seeding doesn't complete (fixture endpoint returns 503)
+- **Alignment**: Matches backend's integration test patterns (baseFixture, Fishery factories)
+- **Flexibility**: Easy to extend with additional test scenarios using the same fixture
+- **CI-friendly**: Works seamlessly in CI pipeline where backend handles seeding
+
+### Why use shared test token across all tests?
+
+- **Performance**: Avoids token generation overhead (single token cached and reused)
+- **Simplicity**: No per-test or per-describe-block token management
+- **Acceptable isolation**: Tests don't require token-level isolation
+- **Aligns with CI**: Matches the CI pipeline's single-token approach
 
 ### Why use HTTP requests instead of SDK client?
 

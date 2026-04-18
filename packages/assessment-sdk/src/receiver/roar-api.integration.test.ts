@@ -3,24 +3,46 @@
  *
  * Tests the Assessment SDK against a real backend running on test databases.
  * Validates end-to-end behavior of the SDK's API client.
+ *
+ * SETUP REQUIREMENTS:
+ * - Backend must be running (started by vitest.integration.globalSetup.ts)
+ * - Test databases must exist (CORE_DATABASE_URL, ASSESSMENT_DATABASE_URL)
+ * - Backend's baseFixture must be seeded (handled by backend's SEED_TEST_DATA flag)
+ *   This provides task variants and administrations for testing
+ *
+ * AUTHENTICATION:
+ * - Uses a shared test token across all tests for performance
+ * - Token is cached in createTestAuthContext() and reused
+ * - This is acceptable since tests don't require token isolation
+ *
+ * TEST DATA:
+ * - Uses backend's baseFixture seeding which provides:
+ *   - Task variants (variantForAllGrades, variantForGrade5, etc.)
+ *   - Administrations assigned to various org levels
+ *   - Users with different roles and enrollments
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { initTestSdk } from '../test-support/sdk-test-helper';
+import { initTestSdk, getBaseFixtureData } from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
 
 describe('Assessment SDK (integration)', () => {
   let api: RoarApi;
+  let taskVariantId: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const sdk = initTestSdk();
     api = sdk.api;
-    console.log('[SDK Integration Tests] SDK initialized');
+
+    // Get task variant from backend's baseFixture seeding
+    const fixtureData = await getBaseFixtureData();
+    taskVariantId = fixtureData.variantForAllGrades.id;
+
+    console.log('[SDK Integration Tests] SDK initialized with task variant:', taskVariantId);
   });
 
   describe('POST /v1/runs (create run)', () => {
     it('should create an anonymous run successfully', async () => {
-      const taskVariantId = '550e8400-e29b-41d4-a716-446655440000';
       const taskVersion = '1.0.0';
 
       const response = await api.client.runs.create({
@@ -40,7 +62,6 @@ describe('Assessment SDK (integration)', () => {
     });
 
     it('should create a run with metadata', async () => {
-      const taskVariantId = '550e8400-e29b-41d4-a716-446655440000';
       const taskVersion = '1.0.0';
       const metadata = { source: 'test-dashboard', sessionId: 'sess-123' };
 
@@ -76,7 +97,6 @@ describe('Assessment SDK (integration)', () => {
     });
 
     it('should reject anonymous run with administrationId', async () => {
-      const taskVariantId = '550e8400-e29b-41d4-a716-446655440000';
       const taskVersion = '1.0.0';
       const administrationId = '660e8400-e29b-41d4-a716-446655440001';
 
@@ -99,7 +119,7 @@ describe('Assessment SDK (integration)', () => {
       // Create a run first
       const createResponse = await api.client.runs.create({
         body: {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVariantId,
           taskVersion: '1.0.0',
           isAnonymous: true,
         },
@@ -132,7 +152,7 @@ describe('Assessment SDK (integration)', () => {
       // Create a run first
       const createResponse = await api.client.runs.create({
         body: {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVariantId,
           taskVersion: '1.0.0',
           isAnonymous: true,
         },
@@ -178,7 +198,7 @@ describe('Assessment SDK (integration)', () => {
       // Create a run first
       const createResponse = await api.client.runs.create({
         body: {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVariantId,
           taskVersion: '1.0.0',
           isAnonymous: true,
         },
@@ -192,7 +212,7 @@ describe('Assessment SDK (integration)', () => {
       expect(runId).toBeDefined();
 
       // Abort the run
-      const abortResponse = await api.client.runEvents.create({
+      const abortResponse = await api.client.runs.event({
         params: { runId: runId! },
         body: {
           type: 'abort',
@@ -209,7 +229,7 @@ describe('Assessment SDK (integration)', () => {
       // Create a run first
       const createResponse = await api.client.runs.create({
         body: {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+          taskVariantId,
           taskVersion: '1.0.0',
           isAnonymous: true,
         },
@@ -223,7 +243,7 @@ describe('Assessment SDK (integration)', () => {
       expect(runId).toBeDefined();
 
       // Update engagement
-      const engagementResponse = await api.client.runEvents.create({
+      const engagementResponse = await api.client.runs.event({
         params: { runId: runId! },
         body: {
           type: 'engagement',
@@ -246,7 +266,7 @@ describe('Assessment SDK (integration)', () => {
     it('should return 404 for non-existent run', async () => {
       const nonExistentRunId = '00000000-0000-0000-0000-000000000000';
 
-      const response = await api.client.runEvents.create({
+      const response = await api.client.runs.event({
         params: { runId: nonExistentRunId },
         body: {
           type: 'complete',
@@ -274,7 +294,7 @@ describe('Assessment SDK (integration)', () => {
       const runId = createResponse.body.data?.id;
       expect(runId).toBeDefined();
 
-      const firstComplete = await api.client.runEvents.create({
+      const firstComplete = await api.client.runs.event({
         params: { runId: runId! },
         body: {
           type: 'complete',
@@ -283,7 +303,7 @@ describe('Assessment SDK (integration)', () => {
       expect(firstComplete.status).toBe(200);
 
       // Try to complete again
-      const secondComplete = await api.client.runEvents.create({
+      const secondComplete = await api.client.runs.event({
         params: { runId: runId! },
         body: {
           type: 'complete',
@@ -315,7 +335,7 @@ describe('Assessment SDK (integration)', () => {
 
       // 2. Write multiple trials
       for (let i = 0; i < 3; i++) {
-        const trialResponse = await api.client.runEvents.create({
+        const trialResponse = await api.client.runs.event({
           params: { runId: runId! },
           body: {
             type: 'trial',
@@ -331,7 +351,7 @@ describe('Assessment SDK (integration)', () => {
       }
 
       // 3. Update engagement
-      const engagementResponse = await api.client.runEvents.create({
+      const engagementResponse = await api.client.runs.event({
         params: { runId: runId! },
         body: {
           type: 'engagement',
@@ -348,7 +368,7 @@ describe('Assessment SDK (integration)', () => {
       expect(engagementResponse.status).toBe(200);
 
       // 4. Complete run
-      const completeResponse = await api.client.runEvents.create({
+      const completeResponse = await api.client.runs.event({
         params: { runId: runId! },
         body: {
           type: 'complete',

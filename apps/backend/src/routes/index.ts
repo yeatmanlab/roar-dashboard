@@ -13,6 +13,7 @@ import { registerTaskBundlesRoutes } from './task-bundles';
 import { registerClassesRoutes } from './classes';
 import { registerUserRoutes } from './users';
 import { registerSystemRoutes } from './system';
+import { registerTestRoutes } from './test';
 import { API_VERSION } from '../constants/api';
 import { API_ROUTES } from '../constants/api-routes';
 import { version } from '../../package.json';
@@ -47,6 +48,7 @@ export function registerAllRoutes(app: Express) {
   registerClassesRoutes(router);
   registerUserRoutes(router);
   registerSystemRoutes(router);
+  registerTestRoutes(router);
 
   app.use(`/${API_VERSION.V1}`, router);
 }
