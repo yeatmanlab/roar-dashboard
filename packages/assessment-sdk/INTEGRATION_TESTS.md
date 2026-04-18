@@ -36,7 +36,7 @@ When the backend starts with `NODE_ENV=test`:
 - Connects to test databases (`core_test`, `assessment_test`)
 - Runs migrations automatically (via `vitest.integration.globalSetup.ts`)
 - Seeds test data via factories (optional, controlled by `SEED_TEST_DATA=true`)
-- Initializes FGA test store with authorization model
+- **Note:** FGA authorization is NOT initialized during standalone server startup (see Backend Seeding Process section)
 
 ## Running Integration Tests
 
@@ -201,14 +201,17 @@ Returns the seeded baseFixture data:
 
 ### Authentication Token Strategy
 
-**Decision: Use shared test token across all tests (Option C)**
+**Decision: Use real user's authId from seeded fixture**
 
-- A single test token is generated once and cached in `createTestAuthContext()`
+- `getBaseFixtureData()` fetches the test fixture endpoint and extracts `testUser.authId`
+- This real user's authId is cached in `createTestAuthContext()` before any authenticated requests
 - The token is reused across all tests for performance
-- This is acceptable since tests don't require token isolation
-- Token format: `test-token-<random>`
+- This ensures the token matches a real user in the database, allowing authorization checks to pass
+- Token format: `<schoolAStudent.authId>` (real UUID from seeded database)
 
 See `src/test-support/sdk-test-helper.ts` for implementation.
+
+**Important:** `getBaseFixtureData()` must be called in `beforeAll()` before any authenticated requests. If `createTestAuthContext()` is called without first fetching the fixture, it will use a fallback random token and requests will fail with 401. The current test suite has correct ordering, but this is a subtle footgun for new test files.
 
 ## Debugging
 
@@ -327,12 +330,13 @@ echo $ASSESSMENT_DATABASE_URL
 - **Acceptable isolation**: Tests don't require token-level isolation
 - **Aligns with CI**: Matches the CI pipeline's single-token approach
 
-### Why use HTTP requests instead of SDK client?
+### Why use SDK client instead of raw HTTP requests?
 
-- **Realism**: Tests the actual HTTP layer, not just SDK abstractions
-- **Contract validation**: Ensures request/response shapes match the API contract
-- **Error handling**: Validates HTTP status codes and error responses
-- **Flexibility**: Can test edge cases and invalid requests easily
+- **Type safety**: SDK client provides full TypeScript types for requests and responses
+- **Contract validation**: ts-rest client validates request/response shapes match the API contract
+- **Abstraction layer**: Tests exercise the SDK's actual API client, not just HTTP
+- **Consistency**: Matches how real users interact with the SDK
+- **Error handling**: SDK client handles serialization and error mapping
 
 ### Why test databases instead of in-memory?
 
