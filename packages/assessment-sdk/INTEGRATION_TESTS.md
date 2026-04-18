@@ -35,7 +35,7 @@ When the backend starts with `NODE_ENV=test`:
 
 - Connects to test databases (`core_test`, `assessment_test`)
 - Runs migrations automatically (via `vitest.integration.globalSetup.ts`)
-- Seeds test data via factories (optional, controlled by `SEED_TEST_DATA=true`)
+- Seeds test data via factories (when `NODE_ENV=test` or `SEED_TEST_DATA=true`)
 - **Note:** FGA authorization is NOT initialized during standalone server startup (see Backend Seeding Process section)
 
 ## Running Integration Tests
@@ -300,9 +300,9 @@ echo $ASSESSMENT_DATABASE_URL
 
 **Solution**:
 
-- The backend mocks Firebase token verification in test mode
+- The backend uses `TestAuthProvider` instead of Firebase in test mode
 - Ensure `NODE_ENV=test` is set when backend starts
-- Check `AuthService.verifyToken` is being mocked
+- Check that `AuthService` is using `TestAuthProvider` (not `FirebaseAuthProvider`)
 
 ## Architecture Decisions
 
