@@ -58,7 +58,9 @@ async function startServer(): Promise<void> {
   // Seed test data if running in test mode
   if (NODE_ENV === 'test' || process.env.SEED_TEST_DATA === 'true') {
     try {
+      const { truncateAllTables } = await import('./test-support/db');
       const { seedBaseFixture } = await import('./test-support/fixtures');
+      await truncateAllTables();
       await seedBaseFixture();
       logger.info('Test data seeded via baseFixture');
     } catch (err) {

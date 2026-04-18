@@ -164,7 +164,7 @@ This approach:
 When the backend starts in test mode (`NODE_ENV=test`):
 
 1. Initializes database pools
-2. Truncates all tables (per-file isolation)
+2. Truncates all tables (ensures clean state on server startup)
 3. Seeds comprehensive baseFixture via Fishery factories:
    - Organization hierarchy (districts, schools, classes)
    - Users with various roles and enrollments
@@ -172,6 +172,14 @@ When the backend starts in test mode (`NODE_ENV=test`):
    - Administrations assigned to various org levels
 4. Initializes FGA test store with authorization model
 5. Syncs FGA tuples from PostgreSQL
+
+**Note:** The backend's own integration tests have per-file isolation via `vitest.setup.ts`, which truncates and re-seeds before each test file. The SDK tests run against a single backend instance with data seeded once at startup.
+
+### Test Authentication
+
+In test mode (`NODE_ENV=test`), the backend uses `TestAuthProvider` which treats the token string directly as the Firebase UID, bypassing Firebase Admin SDK verification. This allows SDK integration tests to authenticate without real Firebase credentials.
+
+The SDK test helper fetches the test user's `authId` from the `/v1/test/fixture` endpoint and uses it as the Bearer token. This ensures the token matches a real user in the seeded database, allowing all authorization checks to pass.
 
 ### Test Fixture Endpoint
 
@@ -181,6 +189,9 @@ Returns the seeded baseFixture data:
 
 ```json
 {
+  "testUser": {
+    "authId": "schoolAStudent-auth-id"
+  },
   "variantForAllGrades": { "id": "uuid-1" },
   "variantForGrade5": { "id": "uuid-2" },
   "variantForGrade3": { "id": "uuid-3" },

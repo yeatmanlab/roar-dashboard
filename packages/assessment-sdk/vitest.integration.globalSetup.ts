@@ -5,10 +5,10 @@
  * The backend connects to test databases and seeds test data.
  *
  * TEST DATA SEEDING:
- * - The backend's SEED_TEST_DATA flag (default: true) automatically seeds test data
- * - This includes creating a task variant with ID: 550e8400-e29b-41d4-a716-446655440000
- * - Tests use this hardcoded UUID to avoid dynamic creation overhead
- * - If seeding fails, tests will fail with 422 (invalid task variant)
+ * - The backend automatically seeds baseFixture data via truncateAllTables() + seedBaseFixture()
+ * - This creates realistic test data: org hierarchy, users, task variants, administrations
+ * - Tests dynamically fetch task variant IDs and user authIds from /v1/test/fixture endpoint
+ * - No hardcoded UUIDs needed — all test data is fetched at runtime
  *
  * Environment variables:
  * - BACKEND_PORT: Port for the backend server (default: 4001)

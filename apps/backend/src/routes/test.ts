@@ -20,7 +20,7 @@ export function registerTestRoutes(router: Router): void {
    * GET /test/fixture
    *
    * Returns the seeded baseFixture data for use in SDK integration tests.
-   * This allows tests to dynamically fetch task variant IDs and other test data
+   * This allows tests to dynamically fetch task variant IDs, user auth IDs, and other test data
    * instead of using hardcoded UUIDs.
    */
   router.get('/test/fixture', (_req: Request, res: Response) => {
@@ -33,6 +33,9 @@ export function registerTestRoutes(router: Router): void {
     }
 
     return res.status(StatusCodes.OK).json({
+      testUser: {
+        authId: baseFixture.schoolAStudent.authId,
+      },
       variantForAllGrades: { id: baseFixture.variantForAllGrades.id },
       variantForGrade5: { id: baseFixture.variantForGrade5.id },
       variantForGrade3: { id: baseFixture.variantForGrade3.id },

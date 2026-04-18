@@ -81,6 +81,7 @@ export function initTestSdk(overrides: Partial<CommandContext> = {}) {
  * @returns The baseFixture data with task variants and other test entities
  */
 export async function getBaseFixtureData(): Promise<{
+  testUser: { authId: string };
   variantForAllGrades: { id: string };
   variantForGrade5: { id: string };
   variantForGrade3: { id: string };
@@ -100,12 +101,12 @@ export async function getBaseFixtureData(): Promise<{
     throw new Error(`Failed to fetch baseFixture data: ${response.status} ${response.statusText}`);
   }
 
-  return response.json() as Promise<{
-    variantForAllGrades: { id: string };
-    variantForGrade5: { id: string };
-    variantForGrade3: { id: string };
-    variantOptionalForEll: { id: string };
-    variantForTask2: { id: string };
-    variantForTask2Grade5OptionalEll: { id: string };
-  }>;
+  const data = (await response.json()) as Awaited<ReturnType<typeof getBaseFixtureData>>;
+
+  // Cache the test user's authId as the token for subsequent requests
+  if (data.testUser?.authId) {
+    cachedTestToken = data.testUser.authId;
+  }
+
+  return data;
 }
