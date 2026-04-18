@@ -73,13 +73,16 @@ When the backend starts with `NODE_ENV=test`:
 ### Run Tests Locally
 
 ```bash
-# Run all integration tests
+# Run unit tests (default, no backend required)
+npm run test -w packages/assessment-sdk
+
+# Run integration tests (requires backend, databases, and environment setup)
 npm run test:integration -w packages/assessment-sdk
 
-# Run specific test file
+# Run specific integration test file
 npm run test:integration -w packages/assessment-sdk -- roar-api.integration.test.ts
 
-# Run with watch mode
+# Run integration tests with watch mode
 npm run test:integration:watch -w packages/assessment-sdk
 ```
 
