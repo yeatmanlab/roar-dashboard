@@ -21,6 +21,8 @@ const props = defineProps({
 
 const { series, seriesLabel } = useLongitudinalSeries(props);
 
+console.log('props for chart print', props);
+
 // Filter series to only show points up to current assignment (matching dashboard view)
 const filteredSeries = computed(() => {
   if (!series.value.length) return [];

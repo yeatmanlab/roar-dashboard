@@ -73,6 +73,8 @@ const props = defineProps({
 
 const { series, seriesLabel, seriesStroke } = useLongitudinalSeries(props);
 
+console.log('props for chart', props);
+
 // Filter series to only show points up to current assignment
 const filteredSeries = computed(() => {
   const currentAssignment = series.value.find((p) => p.assignmentId === props.currentAssignmentId);
