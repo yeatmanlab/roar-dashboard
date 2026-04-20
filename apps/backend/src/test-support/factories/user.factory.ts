@@ -8,6 +8,7 @@ import { AuthProvider } from '../../enums/auth-provider.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import type { EnrolledUserEntity, EnrolledFamilyUserEntity } from '../../types/user';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 
 /**
  * Factory for creating User test objects.
