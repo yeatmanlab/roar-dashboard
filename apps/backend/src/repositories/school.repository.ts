@@ -368,6 +368,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       isEnrollmentActive(userOrgs),
       isNull(orgs.rosteringEnded),
       eq(orgs.id, schoolId),
+      eq(orgs.orgType, OrgType.SCHOOL),
       ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_ORGS),
     );
 

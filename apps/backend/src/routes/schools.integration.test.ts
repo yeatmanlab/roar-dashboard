@@ -417,7 +417,7 @@ describe('GET /v1/schools/:schoolId/users', () => {
       expect(res.body.data.items.length).toBeGreaterThan(0);
     });
 
-    it('educator at school level can read school but cannot list users', async () => {
+    it('teacher role (educator_tier) does not have can_list_users on school', async () => {
       // schoolATeacher can read the school (getById succeeds)
       const readRes = await expectRoute('GET', `/v1/schools/${baseFixture.schoolA.id}`)
         .as({ id: baseFixture.schoolATeacher.id, authId: baseFixture.schoolATeacher.authId! })
