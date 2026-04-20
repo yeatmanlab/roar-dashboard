@@ -186,14 +186,17 @@ function handleSubskillToolTip(_taskId, _subskillId, _toolTip, _colData, _subski
         _subskillProperty !== 'rawScore' &&
         subskillInfo?.skillsAssessed != undefined
       ) {
-        _toolTip += `Skills Assessed: ${subskillInfo?.skillsAssessed}\n`;
+        _toolTip += `\nSkills Assessed: ${subskillInfo?.skillsAssessed}\n`;
       }
     } else {
       // Handles the "No. of Skills to Work On" column
       // Format incorrect skills from scores.computed.composite.incorrectSkills
-      Object.keys(roamFluencySubskills).forEach((subskillId) => {
+      Object.keys(roamFluencySubskills).forEach((subskillId, index) => {
         if (subskillInfo?.incorrectSkills?.[subskillId] != undefined) {
           _toolTip += `${roamFluencySubskills[subskillId]}: ${subskillInfo?.incorrectSkills?.[subskillId] || 0}\n`;
+          if (index < Object.keys(roamFluencySubskills).length - 1) {
+            _toolTip += '\n';
+          }
         }
       });
     }
