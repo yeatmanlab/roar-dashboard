@@ -102,6 +102,6 @@ export const EnrolledUserFactory = Factory.define<EnrolledUserEntity>(({ params 
 export const EnrolledFamilyUserFactory = Factory.define<EnrolledFamilyUserEntity>(({ params }) => {
   return {
     ...UserFactory.build(),
-    roles: params.roles ?? ['child'],
+    roles: params.roles ?? [UserFamilyRole.CHILD],
   };
 });
