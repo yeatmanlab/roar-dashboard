@@ -1739,7 +1739,6 @@ describe('AdministrationsController', () => {
       dateStart: '2024-01-01T00:00:00Z',
       dateEnd: '2024-12-31T23:59:59Z',
       isOrdered: false,
-      createdBy: 'user-456',
       orgs: ['org-1', 'org-2'],
       classes: ['class-1'],
       groups: ['group-1'],

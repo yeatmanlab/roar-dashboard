@@ -232,6 +232,40 @@ describe('POST /v1/administrations', () => {
     expect(getRes.body.data.id).toBe(res.body.data);
   });
 
+  it('superAdmin tier can create an administration when orgs contains only a school ID', async () => {
+    const agreement = await AgreementFactory.create({ name: 'Agreement Name (School Only)' });
+    await AgreementVersionFactory.create({ locale: 'en-US' }, { transient: { agreementId: agreement.id } });
+
+    const body = {
+      name: 'Admin Name (School Only)',
+      namePublic: 'Admin Public Name (School Only)',
+      description: 'Integration create test (school-only org)',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.schoolA.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+          conditionsEligibility: null,
+          conditionsRequirement: null,
+        },
+      ],
+      agreements: [agreement.id],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+    expect(res.body.data).toMatch(/[0-9a-fA-F-]{36}/);
+
+    const getRes = await expectRoute('GET', `/v1/administrations/${res.body.data}`).as(tiers.superAdmin).toReturn(200);
+
+    expect(getRes.body.data.id).toBe(res.body.data);
+  });
+
   it('returns 422 when dateEnd is before dateStart', async () => {
     const body = {
       name: 'Admin Name',
