@@ -187,9 +187,9 @@ const chartOptions = computed(() => ({
       ticks: {
         maxRotation: 0,
         autoSkip: false,
+        source: 'data',
         maxTicksLimit:
           filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
-        ...(filteredSeries.value.length === 1 ? { source: 'data' } : {}),
       },
       grid: { display: false },
       ...(filteredSeries.value.length === 1 && filteredSeries.value[0]
