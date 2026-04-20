@@ -45,7 +45,7 @@ In a new terminal:
 psql postgresql://postgres:postgres@localhost:5433/roar_core -c "CREATE EXTENSION IF NOT EXISTS postgres_fdw"
 
 # Create the assessment_server foreign data wrapper
-psql postgresql://postgres:postgres@localhost:5433/roar_core -c "CREATE SERVER IF NOT EXISTS assessment_server FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'localhost', dbname 'roar_assessment', port '5433')"
+psql postgresql://postgres:postgres@localhost:5433/roar_core -c "CREATE SERVER IF NOT EXISTS assessment_server FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'db', dbname 'roar_assessment', port '5432')"
 
 # Run migrations
 CORE_DATABASE_URL="postgresql://postgres:postgres@localhost:5433/roar_core" \
@@ -101,7 +101,7 @@ curl http://localhost:8080/v1/tasks
 **URL**: `http://localhost:8081`
 
 - **Host**: `db` (or `localhost` if connecting from outside Docker)
-- **Port**: `5432`
+- **Port**: `5433`
 - **Username**: `postgres` (default)
 - **Password**: `postgres` (default)
 - **Database**: `roar_core` (or `roar_assessment`)
@@ -118,10 +118,10 @@ If you prefer command-line access:
 
 ```bash
 # Connect to core database
-psql postgresql://postgres:postgres@localhost:5432/roar_core
+psql postgresql://postgres:postgres@localhost:5433/roar_core
 
 # Connect to assessment database
-psql postgresql://postgres:postgres@localhost:5432/roar_assessment
+psql postgresql://postgres:postgres@localhost:5433/roar_assessment
 ```
 
 ## Configuration
@@ -148,7 +148,7 @@ docker compose -f docker-compose.local.yml up -d
 
 | Service | Port | URL |
 |---------|------|-----|
-| PostgreSQL | 5432 | `postgresql://localhost:5432` |
+| PostgreSQL | 5433 | `postgresql://localhost:5433` |
 | Backend API | 8080 | `http://localhost:8080` |
 | pgweb | 8081 | `http://localhost:8081` |
 
@@ -236,8 +236,8 @@ npm run seed:researcher
 1. The initialization script should create them automatically
 2. If not, manually create them:
    ```bash
-   psql postgresql://postgres:postgres@localhost:5432 -c "CREATE DATABASE roar_core;"
-   psql postgresql://postgres:postgres@localhost:5432 -c "CREATE DATABASE roar_assessment;"
+   psql postgresql://postgres:postgres@localhost:5433 -c "CREATE DATABASE roar_core;"
+   psql postgresql://postgres:postgres@localhost:5433 -c "CREATE DATABASE roar_assessment;"
    ```
 3. Re-run migrations: `npm run db:migrate -w apps/backend`
 
@@ -247,7 +247,7 @@ npm run seed:researcher
 
 **Solution**:
 1. Ensure PostgreSQL is running: `docker compose -f docker-compose.local.yml ps`
-2. Check the database exists: `psql postgresql://postgres:postgres@localhost:5432 -l`
+2. Check the database exists: `psql postgresql://postgres:postgres@localhost:5433 -l`
 3. Verify the connection string in pgweb matches your setup
 4. Restart pgweb: `docker compose -f docker-compose.local.yml restart pgweb`
 

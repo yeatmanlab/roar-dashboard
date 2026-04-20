@@ -1,4 +1,8 @@
-name: roar-researcher
+name: roar-research
+version: '3.8'
+
+# ⚠️  The credentials below are intentional defaults for LOCAL development only.
+# Never use these in a production or shared environment.
 
 services:
   # ──────────────────────────────────────────────────────────────────────────
@@ -59,7 +63,7 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   pgweb:
     container_name: roar-researcher-pgweb
-    image: sosedoff/pgweb:latest
+    image: sosedoff/pgweb:0.15.0
     depends_on:
       db:
         condition: service_healthy

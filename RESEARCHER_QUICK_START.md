@@ -8,7 +8,7 @@ docker compose -f docker-compose.local.yml up -d
 
 # 2. Wait ~15 seconds, then set up foreign data wrapper
 psql postgresql://postgres:postgres@localhost:5433/roar_core -c "CREATE EXTENSION IF NOT EXISTS postgres_fdw"
-psql postgresql://postgres:postgres@localhost:5433/roar_core -c "CREATE SERVER IF NOT EXISTS assessment_server FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'localhost', dbname 'roar_assessment', port '5433')"
+psql postgresql://postgres:postgres@localhost:5433/roar_core -c "CREATE SERVER IF NOT EXISTS assessment_server FOREIGN DATA WRAPPER postgres_fdw OPTIONS (host 'db', dbname 'roar_assessment', port '5432')"
 
 # 3. Run migrations
 CORE_DATABASE_URL="postgresql://postgres:postgres@localhost:5433/roar_core" \

@@ -6,11 +6,14 @@
 
 BEGIN;
 
--- Create district (root org)
+-- Create district
+-- Note: The 'path' column is maintained by database triggers on insert/update.
+-- We provide initial values here, but they may be overwritten by the trigger.
 INSERT INTO app.orgs (abbreviation, name, org_type, parent_org_id, path, is_rostering_root_org)
 VALUES ('RD', 'Researcher District', 'district', NULL, 'district_researcher', TRUE);
 
 -- Create school
+-- The path is maintained by triggers; providing a value here for clarity.
 INSERT INTO app.orgs (abbreviation, name, org_type, parent_org_id, path, is_rostering_root_org)
 SELECT 'RS', 'Researcher School', 'school', id, 'district_researcher.school_researcher', FALSE
 FROM app.orgs WHERE name = 'Researcher District';
@@ -24,13 +27,15 @@ SELECT 'Researcher Class',
        'homeroom'
 ON CONFLICT DO NOTHING;
 
--- Create teacher
+-- Create teacher (if not exists)
 INSERT INTO app.users (name_first, name_last, user_type, grade)
-VALUES ('Researcher', 'Teacher', 'educator', NULL);
+VALUES ('Researcher', 'Teacher', 'educator', NULL)
+ON CONFLICT DO NOTHING;
 
--- Create student
+-- Create student (if not exists)
 INSERT INTO app.users (name_first, name_last, user_type, grade)
-VALUES ('Researcher', 'Student', 'student', '5');
+VALUES ('Researcher', 'Student', 'student', '5')
+ON CONFLICT DO NOTHING;
 
 -- Assign teacher to school
 INSERT INTO app.user_orgs (user_id, org_id, role, enrollment_start)
