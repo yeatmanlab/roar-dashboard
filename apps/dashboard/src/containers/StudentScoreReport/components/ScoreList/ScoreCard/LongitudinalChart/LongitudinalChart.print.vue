@@ -7,6 +7,7 @@
 
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
@@ -19,7 +20,17 @@ const props = defineProps({
   taskScoringVersion: { type: Number, required: false, default: null },
 });
 
+const { t } = useI18n();
+
 const { series, seriesLabel } = useLongitudinalSeries(props);
+
+// Determine the metric key based on series label (matching dashboard logic)
+const metricKey = computed(() => {
+  if (seriesLabel.value.includes('percent')) return 'percentCorrect';
+  if (seriesLabel.value.includes('total')) return 'rawScore';
+  if (seriesLabel.value.includes('grade')) return 'gradeEstimate';
+  return 'rawScore';
+});
 
 // Filter series to only show points up to current assignment (matching dashboard view)
 const filteredSeries = computed(() => {
@@ -67,7 +78,7 @@ const chartOptions = computed(() => ({
       grid: { color: 'rgba(0,0,0,0.15)' },
       title: {
         display: true,
-        text: 'Raw Score',
+        text: t(`scoreReports.${metricKey.value}`),
         font: {
           size: 12,
         },
@@ -88,11 +99,11 @@ const chartOptions = computed(() => ({
           filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
       },
       grid: { display: false },
-      ...(filteredSeries.value.length === 1 && filteredSeries.value[0]
-        ? {
-            min: new Date(filteredSeries.value[0].x).getTime() - WINDOW_DAYS,
-            max: new Date(filteredSeries.value[0].x).getTime() + WINDOW_DAYS,
-          }
+      ...(filteredSeries.value.length === 1
+        ? (() => {
+            const t = new Date(filteredSeries.value[0].x).getTime();
+            return { min: t - WINDOW_DAYS, max: t + WINDOW_DAYS };
+          })()
         : {}),
     },
   },

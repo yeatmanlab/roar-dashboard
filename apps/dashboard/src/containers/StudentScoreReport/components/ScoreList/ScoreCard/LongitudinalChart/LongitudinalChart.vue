@@ -190,11 +190,11 @@ const chartOptions = computed(() => ({
           filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
       },
       grid: { display: false },
-      ...(filteredSeries.value.length === 1 && filteredSeries.value[0]
-        ? {
-            min: new Date(filteredSeries.value[0].x).getTime() - WINDOW_DAYS,
-            max: new Date(filteredSeries.value[0].x).getTime() + WINDOW_DAYS,
-          }
+      ...(filteredSeries.value.length === 1
+        ? (() => {
+            const t = new Date(filteredSeries.value[0].x).getTime();
+            return { min: t - WINDOW_DAYS, max: t + WINDOW_DAYS };
+          })()
         : {}),
     },
   },
