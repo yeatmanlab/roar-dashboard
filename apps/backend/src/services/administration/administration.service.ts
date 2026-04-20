@@ -1047,6 +1047,7 @@ export function AdministrationService({
       const agreementIds = request.agreements;
 
       // Verify orgs exist (districts and schools)
+      // N.B. Orgs where rostering has ended are not returned and as such will cause a validation error.
       if (orgIds.length > 0) {
         const { items: existingDistricts } = await districtRepository.listByIds(orgIds, {
           page: 1,
@@ -1069,6 +1070,7 @@ export function AdministrationService({
       }
 
       // Verify classes exist
+      // N.B. Classes where rostering has ended are not returned and as such will cause a validation error.
       if (classIds.length > 0) {
         const { items: existingClasses } = await classRepository.getByIds(classIds, {
           page: 1,
@@ -1086,6 +1088,7 @@ export function AdministrationService({
       }
 
       // Verify groups exist
+      // N.B. Groups where rostering has ended are not returned and as such will cause a validation error.
       if (groupIds.length > 0) {
         const { items: existingGroups } = await groupRepository.getByIds(groupIds, {
           page: 1,
