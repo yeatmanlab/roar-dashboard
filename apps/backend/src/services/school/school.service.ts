@@ -8,6 +8,7 @@ import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 import type { Class } from '../../db/schema';
+import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
 import { ClassRepository } from '../../repositories/class.repository';
 import type { ParsedFilter, FilterOperator } from '../../types/filter';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -283,10 +284,79 @@ export function SchoolService({
     }
   }
 
+  /**
+   * Get users enrolled in a school.
+   *
+   * super_admin users can see all enrolled users.
+   * Other users can only see enrolled users if they have the `can_list_users` permission on the school.
+   *
+   * Returns all users who have an active enrollment in the specified school.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to get enrolled users for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with users
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the school
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listUsers(
+    authContext: AuthContext,
+    schoolId: string,
+    options: EnrolledUsersQuery,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { userId, isSuperAdmin } = authContext;
+    try {
+      // getUnrestrictedById: separates 404 from 403, guards orgType so a district ID
+      // won't masquerade as a school, and avoids firing a can_read FGA check when
+      // this endpoint gates on can_list_users. See listSchoolClasses for full rationale.
+      const school = await schoolRepository.getUnrestrictedById(schoolId);
+
+      if (!school) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      const queryParams: ListEnrolledUsersOptions = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: { field: options.sortBy, direction: options.sortOrder },
+        ...(options.role && { role: options.role }),
+        ...(options.grade && { grade: options.grade }),
+      };
+
+      if (!isSuperAdmin) {
+        await authorizationService.requirePermission(
+          userId,
+          FgaRelation.CAN_LIST_USERS,
+          `${FgaType.SCHOOL}:${schoolId}`,
+        );
+      }
+      return await schoolRepository.getUsersBySchoolId(schoolId, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school users');
+
+      throw new ApiError('Failed to retrieve school users', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
     listSchoolClasses,
+    listUsers,
   };
 }
 
