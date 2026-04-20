@@ -1052,7 +1052,7 @@ export function AdministrationService({
           page: 1,
           perPage: orgIds.length,
         });
-        const { items: existingSchools } = await schoolRepository.getByIds(orgIds, {
+        const { items: existingSchools } = await schoolRepository.listByIds(orgIds, {
           page: 1,
           perPage: orgIds.length,
         });

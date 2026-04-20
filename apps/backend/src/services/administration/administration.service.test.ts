@@ -2878,7 +2878,7 @@ describe('AdministrationService', () => {
       const mockAgreementRepo = createMockAgreementRepository();
 
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
-      mockSchoolRepo.getByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
       mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
       mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
       mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
@@ -2921,6 +2921,63 @@ describe('AdministrationService', () => {
             conditionsRequirements: tv.conditionsRequirement,
           })),
           agreementIds: validRequest.agreements,
+        }),
+      );
+    });
+
+    it('should create administration successfully when orgs array contains only school IDs', async () => {
+      // Arrange
+      const mockCreatedAdmin = AdministrationFactory.build();
+      const mockSchool = OrgFactory.build({ id: 'school-1', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      // Request with only school IDs in orgs array
+      const schoolOnlyRequest = {
+        ...validRequest,
+        orgs: ['school-1'],
+      };
+
+      // Mock all repository calls
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      mockAdministrationRepository.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      // District returns empty (no districts found), school returns the school
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act
+      const result = await service.create(superAdminAuthContext, schoolOnlyRequest);
+
+      // Assert
+      expect(result).toBe(mockCreatedAdmin);
+      expect(mockAdministrationRepository.createWithAssignments).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgIds: ['school-1'],
         }),
       );
     });
@@ -3020,7 +3077,7 @@ describe('AdministrationService', () => {
       const mockDistrictRepo = createMockDistrictRepository();
       const mockSchoolRepo = createMockSchoolRepository();
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
-      mockSchoolRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
@@ -3049,7 +3106,7 @@ describe('AdministrationService', () => {
       const mockSchoolRepo = createMockSchoolRepository();
       const mockClassRepo = createMockClassRepository();
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
-      mockSchoolRepo.getByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
       mockClassRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
 
       const service = AdministrationService({
@@ -3086,7 +3143,7 @@ describe('AdministrationService', () => {
       const mockTaskVariantRepo = createMockTaskVariantRepository();
       const mockAgreementRepo = createMockAgreementRepository();
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
-      mockSchoolRepo.getByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
       mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
       mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
       mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
@@ -3133,7 +3190,7 @@ describe('AdministrationService', () => {
       mockAdminRepo.existsByName.mockResolvedValue(false);
       mockAdminRepo.createWithAssignments.mockRejectedValue(new Error('Database error'));
       mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
-      mockSchoolRepo.getByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
       mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
       mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
       mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
