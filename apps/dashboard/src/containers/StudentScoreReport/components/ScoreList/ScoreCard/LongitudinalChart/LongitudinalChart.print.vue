@@ -24,6 +24,7 @@ const canvasRef = ref(null);
 let chartInstance = null;
 const showCanvas = ref(true);
 const imgSrc = ref('');
+const WINDOW_DAYS = 7 * 24 * 60 * 60 * 1000;
 
 const chartData = computed(() => ({
   datasets: [
@@ -67,14 +68,14 @@ const chartOptions = computed(() => ({
         maxRotation: 0,
         autoSkip: true,
         autoSkipPadding: 2,
-        maxTicksLimit: series.value.length <= 5 ? series.value.length : 8,
+        maxTicksLimit: series.value.length === 0 ? 1 : series.value.length <= 5 ? series.value.length : 8,
         ...(series.value.length === 1 ? { source: 'data' } : {}),
       },
       grid: { display: false },
       ...(series.value.length === 1 && series.value[0]
         ? {
-            min: new Date(series.value[0].x).getTime() - 7 * 24 * 60 * 60 * 1000, // 7 days before
-            max: new Date(series.value[0].x).getTime() + 7 * 24 * 60 * 60 * 1000, // 7 days after
+            min: new Date(series.value[0].x).getTime() - WINDOW_DAYS,
+            max: new Date(series.value[0].x).getTime() + WINDOW_DAYS,
           }
         : {}),
     },

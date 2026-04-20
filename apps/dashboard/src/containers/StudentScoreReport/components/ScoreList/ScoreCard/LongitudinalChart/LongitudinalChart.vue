@@ -97,6 +97,8 @@ const showSupportLevels = computed(() => {
   return !isDisplayTask && hasSupportLevels;
 });
 
+const WINDOW_DAYS = 7 * 24 * 60 * 60 * 1000;
+
 const metricKey = computed(() => {
   // Decide what the Y-values represent for this task
   if (seriesLabel.value.includes('percent')) return 'percentCorrect';
@@ -184,14 +186,15 @@ const chartOptions = computed(() => ({
         maxRotation: 0,
         autoSkip: true,
         autoSkipPadding: 2,
-        maxTicksLimit: filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
+        maxTicksLimit:
+          filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
         ...(filteredSeries.value.length === 1 ? { source: 'data' } : {}),
       },
       grid: { display: false },
       ...(filteredSeries.value.length === 1 && filteredSeries.value[0]
         ? {
-            min: new Date(filteredSeries.value[0].x).getTime() - 7 * 24 * 60 * 60 * 1000, // 7 days before
-            max: new Date(filteredSeries.value[0].x).getTime() + 7 * 24 * 60 * 60 * 1000, // 7 days after
+            min: new Date(filteredSeries.value[0].x).getTime() - WINDOW_DAYS,
+            max: new Date(filteredSeries.value[0].x).getTime() + WINDOW_DAYS,
           }
         : {}),
     },
