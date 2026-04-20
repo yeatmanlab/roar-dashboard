@@ -17,6 +17,7 @@
           :longitudinal-data="task.historicalScores"
           :task-id="task.taskId"
           :student-grade="studentGrade"
+          :task-scoring-version="taskScoringVersions?.[task.taskId]"
         />
       </li>
     </ul>
