@@ -25,10 +25,9 @@ console.log('props for chart print', props);
 
 // Filter series to only show points up to current assignment (matching dashboard view)
 const filteredSeries = computed(() => {
-  if (!series.value.length) return [];
-  // Use the last data point as the current assignment (most recent)
-  const lastPoint = series.value[series.value.length - 1];
-  const currentDate = lastPoint.x;
+  const currentAssignment = series.value.find((p) => p.assignmentId === props.currentAssignmentId);
+  if (!currentAssignment) return [];
+  const currentDate = currentAssignment.x;
   return series.value.filter((p) => p.x <= currentDate);
 });
 
