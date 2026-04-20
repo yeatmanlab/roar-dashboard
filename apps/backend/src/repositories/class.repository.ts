@@ -20,7 +20,7 @@ import type { Class } from '../db/schema';
 import { classes, userClasses, users } from '../db/schema';
 import type { ClassType } from '../enums/class-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
-import type { ListEnrolledUsersOptions, EnrolledOrgUserEntity } from '../types/user';
+import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   private readonly classAccessControls: ClassAccessControls;
@@ -86,7 +86,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
   async getUsersByClassId(
     classId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
@@ -146,7 +146,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     accessControlFilter: AccessControlFilter,
     classId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const accessibleClasses = this.orgAccessControls
       .buildUserAccessibleOrgIdsQuery(accessControlFilter)
       .as('accessible_classes');

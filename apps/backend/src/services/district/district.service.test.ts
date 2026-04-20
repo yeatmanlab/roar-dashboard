@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { SortOrder, DistrictDetailSortField, DistrictSchoolSortField } from '@roar-dashboard/api-contract';
 import { DistrictService } from './district.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
-import { EnrolledOrgUserFactory } from '../../test-support/factories/user.factory';
+import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 import { createMockDistrictRepository, createMockSchoolRepository } from '../../test-support/repositories';
 import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
@@ -814,7 +814,7 @@ describe('DistrictService', () => {
 
     it('should return users for super admin (unrestricted)', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
-      const mockUsers = EnrolledOrgUserFactory.buildList(3);
+      const mockUsers = EnrolledUserFactory.buildList(3);
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
       mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({
         items: mockUsers,
@@ -843,8 +843,8 @@ describe('DistrictService', () => {
 
     it('should check authorization for non-super admin users via FGA', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
-      const mockUsers = EnrolledOrgUserFactory.buildList(2);
       const mockAuthService = createMockAuthorizationService();
+      const mockUsers = EnrolledUserFactory.buildList(2);
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
       mockAuthService.requirePermission.mockResolvedValue(undefined);
       mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({

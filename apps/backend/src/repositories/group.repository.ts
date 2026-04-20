@@ -16,7 +16,7 @@ import { CoreDbClient } from '../db/clients';
 import type { Group } from '../db/schema';
 import { groups, userGroups, users } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { ListEnrolledUsersOptions, EnrolledOrgUserEntity } from '../types/user';
+import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, groups);
@@ -81,7 +81,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
   async getUsersByGroupId(
     groupId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
 
@@ -141,7 +141,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     accessControlFilter: AccessControlFilter,
     groupId: string,
     options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { page, perPage, orderBy } = options;
     const offset = (page - 1) * perPage;
     const { userId, allowedRoles } = accessControlFilter;
