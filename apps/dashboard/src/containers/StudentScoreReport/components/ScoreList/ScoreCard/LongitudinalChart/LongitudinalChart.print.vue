@@ -101,8 +101,8 @@ const chartOptions = computed(() => ({
       grid: { display: false },
       ...(filteredSeries.value.length === 1
         ? (() => {
-            const t = new Date(filteredSeries.value[0].x).getTime();
-            return { min: t - WINDOW_DAYS, max: t + WINDOW_DAYS };
+            const timestamp = new Date(filteredSeries.value[0].x).getTime();
+            return { min: timestamp - WINDOW_DAYS, max: timestamp + WINDOW_DAYS };
           })()
         : {}),
     },

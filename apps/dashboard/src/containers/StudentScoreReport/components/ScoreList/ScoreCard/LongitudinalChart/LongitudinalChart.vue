@@ -67,7 +67,6 @@ const props = defineProps({
   taskId: { type: String, required: true },
   studentGrade: { type: String, required: true },
   currentAssignmentId: { type: String, required: true },
-  scoreLabel: { type: String, required: true },
   taskScoringVersion: { type: Number, required: false, default: null },
 });
 
@@ -192,8 +191,8 @@ const chartOptions = computed(() => ({
       grid: { display: false },
       ...(filteredSeries.value.length === 1
         ? (() => {
-            const t = new Date(filteredSeries.value[0].x).getTime();
-            return { min: t - WINDOW_DAYS, max: t + WINDOW_DAYS };
+            const timestamp = new Date(filteredSeries.value[0].x).getTime();
+            return { min: timestamp - WINDOW_DAYS, max: timestamp + WINDOW_DAYS };
           })()
         : {}),
     },
