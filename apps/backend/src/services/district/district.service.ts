@@ -12,8 +12,7 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
-import type { EnrolledOrgUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
-
+import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
 /**
  * Options for listing districts
  */
@@ -280,7 +279,7 @@ export function DistrictService({
     authContext: AuthContext,
     districtId: string,
     options: EnrolledUsersQuery,
-  ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
     try {
       // getUnrestrictedById: separates 404 from 403, guards orgType so a school ID
