@@ -15,10 +15,19 @@ const props = defineProps({
   longitudinalData: { type: Array, required: true },
   taskId: { type: String, required: true },
   studentGrade: { type: String, required: true },
+  currentAssignmentId: { type: String, required: true },
   taskScoringVersion: { type: Number, required: false, default: null },
 });
 
 const { series, seriesLabel } = useLongitudinalSeries(props);
+
+// Filter series to only show points up to current assignment (matching dashboard view)
+const filteredSeries = computed(() => {
+  const currentAssignment = series.value.find((p) => p.assignmentId === props.currentAssignmentId);
+  if (!currentAssignment) return [];
+  const currentDate = currentAssignment.x;
+  return series.value.filter((p) => p.x <= currentDate);
+});
 
 const canvasRef = ref(null);
 let chartInstance = null;
@@ -30,11 +39,11 @@ const chartData = computed(() => ({
   datasets: [
     {
       label: seriesLabel.value,
-      data: series.value.map((p) => ({ x: p.x, y: p.y })),
+      data: filteredSeries.value.map((p) => ({ x: p.x, y: p.y })),
       borderColor: 'rgba(0,0,0,0.85)',
       backgroundColor: 'rgba(0,0,0,0.85)',
-      pointBackgroundColor: series.value.map((p) => p.color),
-      pointBorderColor: series.value.map((p) => p.color),
+      pointBackgroundColor: filteredSeries.value.map((p) => p.color),
+      pointBorderColor: filteredSeries.value.map((p) => p.color),
       borderWidth: 2,
       pointRadius: 5,
       pointHoverRadius: 5,
@@ -56,11 +65,18 @@ const chartOptions = computed(() => ({
       beginAtZero: true,
       ticks: { color: '#000' },
       grid: { color: 'rgba(0,0,0,0.15)' },
+      title: {
+        display: true,
+        text: 'Raw Score',
+        font: {
+          size: 12,
+        },
+      },
     },
     x: {
       type: 'time',
       time: {
-        unit: series.value.length === 1 ? 'day' : 'month',
+        unit: filteredSeries.value.length === 1 ? 'day' : 'month',
         displayFormats: { month: 'MMM yyyy', day: 'MMM d, yyyy' },
       },
       ticks: {
@@ -68,14 +84,15 @@ const chartOptions = computed(() => ({
         maxRotation: 0,
         autoSkip: true,
         autoSkipPadding: 2,
-        maxTicksLimit: series.value.length === 0 ? 1 : series.value.length <= 5 ? series.value.length : 8,
-        ...(series.value.length === 1 ? { source: 'data' } : {}),
+        maxTicksLimit:
+          filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
+        ...(filteredSeries.value.length === 1 ? { source: 'data' } : {}),
       },
       grid: { display: false },
-      ...(series.value.length === 1 && series.value[0]
+      ...(filteredSeries.value.length === 1 && filteredSeries.value[0]
         ? {
-            min: new Date(series.value[0].x).getTime() - WINDOW_DAYS,
-            max: new Date(series.value[0].x).getTime() + WINDOW_DAYS,
+            min: new Date(filteredSeries.value[0].x).getTime() - WINDOW_DAYS,
+            max: new Date(filteredSeries.value[0].x).getTime() + WINDOW_DAYS,
           }
         : {}),
     },
