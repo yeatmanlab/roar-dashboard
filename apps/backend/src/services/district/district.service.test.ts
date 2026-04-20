@@ -933,7 +933,7 @@ describe('DistrictService', () => {
 
     it('should bypass FGA check for super admin and use getUsersByDistrictPath', async () => {
       const mockDistrict = OrgFactory.build({ id: 'district-123', orgType: OrgType.DISTRICT });
-      const mockUsers = EnrolledOrgUserFactory.buildList(2);
+      const mockUsers = EnrolledUserFactory.buildList(2);
       const mockAuthService = createMockAuthorizationService();
       mockDistrictRepo.getUnrestrictedById.mockResolvedValue(mockDistrict);
       mockDistrictRepo.getUsersByDistrictPath.mockResolvedValue({ items: mockUsers, totalItems: 2 });
