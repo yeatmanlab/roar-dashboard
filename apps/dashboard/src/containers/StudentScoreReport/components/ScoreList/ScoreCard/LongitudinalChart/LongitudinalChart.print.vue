@@ -23,12 +23,10 @@ const { series, seriesLabel } = useLongitudinalSeries(props);
 
 // Filter series to only show points up to current assignment (matching dashboard view)
 const filteredSeries = computed(() => {
-  const currentAssignment = series.value.find((p) => p.assignmentId === props.currentAssignmentId);
-  if (!currentAssignment) {
-    // Fallback: if current assignment not found, show all available data
-    return series.value;
-  }
-  const currentDate = currentAssignment.x;
+  if (!series.value.length) return [];
+  // Use the last data point as the current assignment (most recent)
+  const lastPoint = series.value[series.value.length - 1];
+  const currentDate = lastPoint.x;
   return series.value.filter((p) => p.x <= currentDate);
 });
 
