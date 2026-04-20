@@ -24,7 +24,10 @@ const { series, seriesLabel } = useLongitudinalSeries(props);
 // Filter series to only show points up to current assignment (matching dashboard view)
 const filteredSeries = computed(() => {
   const currentAssignment = series.value.find((p) => p.assignmentId === props.currentAssignmentId);
-  if (!currentAssignment) return [];
+  if (!currentAssignment) {
+    // Fallback: if current assignment not found, show all available data
+    return series.value;
+  }
   const currentDate = currentAssignment.x;
   return series.value.filter((p) => p.x <= currentDate);
 });
@@ -82,8 +85,7 @@ const chartOptions = computed(() => ({
       ticks: {
         color: '#000',
         maxRotation: 0,
-        autoSkip: true,
-        autoSkipPadding: 2,
+        autoSkip: false,
         maxTicksLimit:
           filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
         ...(filteredSeries.value.length === 1 ? { source: 'data' } : {}),
