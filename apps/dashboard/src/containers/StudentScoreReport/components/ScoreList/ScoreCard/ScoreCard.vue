@@ -104,7 +104,6 @@
               :task-id="taskId"
               :student-grade="studentGrade"
               :current-assignment-id="currentAssignmentId"
-              :score-label="scoreLabel"
               :task-scoring-version="taskScoringVersion"
             />
           </PvAccordionContent>

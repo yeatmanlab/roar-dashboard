@@ -49,6 +49,7 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
+import { es } from 'date-fns/locale';
 import { useLongitudinalSeries } from './useLongitudinalSeries';
 import { SCORE_SUPPORT_LEVEL_COLORS } from '@/constants/scores';
 import {
@@ -60,14 +61,13 @@ import {
 const canvasRef = ref(null);
 let chartInstance = null;
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const props = defineProps({
   longitudinalData: { type: Array, required: true },
   taskId: { type: String, required: true },
   studentGrade: { type: String, required: true },
   currentAssignmentId: { type: String, required: true },
-  scoreLabel: { type: String, required: true },
   taskScoringVersion: { type: Number, required: false, default: null },
 });
 
@@ -96,6 +96,8 @@ const showSupportLevels = computed(() => {
 
   return !isDisplayTask && hasSupportLevels;
 });
+
+const WINDOW_DAYS = 7 * 24 * 60 * 60 * 1000;
 
 const metricKey = computed(() => {
   // Decide what the Y-values represent for this task
@@ -133,56 +135,87 @@ const chartData = computed(() => ({
   ],
 }));
 
-const chartOptions = computed(() => ({
-  responsive: true,
-  normalized: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: false,
-    tooltip: {
-      mode: 'index',
-      intersect: false,
-      callbacks: {
-        title: (items) => {
-          const ts = items[0].parsed.x;
-          return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(ts);
-        },
-        label: (ctx) => {
-          const p = series.value[ctx.dataIndex];
-          const lines = [];
-          if (p.assignmentId === props.currentAssignmentId) lines.push('✦ Current Score Report ✦');
+const chartOptions = computed(() => {
+  const currentLocale = locale.value || navigator.language || 'en-US';
+  const dateLocale = currentLocale.includes('es') ? es : undefined;
 
-          // Always show all available scores in a consistent order
-          if (p.rawScore != null) lines.push(`Raw Score: ${p.rawScore}`);
-          if (p.percentile != null) lines.push(`Percentile: ${p.percentile}`);
-          if (p.standardScore != null) lines.push(`Standard Score: ${p.standardScore}`);
+  return {
+    responsive: true,
+    normalized: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: false,
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          title: (items) => {
+            const ts = items[0].parsed.x;
+            return new Intl.DateTimeFormat(currentLocale, { year: 'numeric', month: 'short', day: 'numeric' }).format(
+              ts,
+            );
+          },
+          label: (ctx) => {
+            const p = series.value[ctx.dataIndex];
+            const lines = [];
+            if (p.assignmentId === props.currentAssignmentId) lines.push(`✦ ${t('scoreReports.currentScoreReport')} ✦`);
 
-          return lines;
+            // Always show all available scores in a consistent order
+            if (p.rawScore != null) lines.push(`Raw Score: ${p.rawScore}`);
+            if (p.percentile != null) lines.push(`Percentile: ${p.percentile}`);
+            if (p.standardScore != null) lines.push(`Standard Score: ${p.standardScore}`);
+
+            return lines;
+          },
         },
       },
     },
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      grid: { color: 'rgba(0,0,0,0.1)' },
-      title: {
-        display: true,
-        text: t(`scoreReports.${metricKey.value}`),
-        font: {
-          size: 12,
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(0,0,0,0.1)' },
+        title: {
+          display: true,
+          text: t(`scoreReports.${metricKey.value}`),
+          font: {
+            size: 12,
+          },
         },
       },
+      x: {
+        type: 'time',
+        time: {
+          unit: filteredSeries.value.length === 1 ? 'day' : 'month',
+          displayFormats: { month: 'MMM yyyy', day: 'MMM d, yyyy' },
+          locale: dateLocale,
+        },
+        ticks: {
+          maxRotation: 0,
+          autoSkip: false,
+          source: 'data',
+          maxTicksLimit:
+            filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
+          callback: (value) => {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const date = new Date(value);
+            const monthIndex = date.getMonth();
+            const year = date.getFullYear();
+            const monthAbbr = t(`scoreReports.months.${monthNames[monthIndex]}`);
+            return `${monthAbbr} ${year}`;
+          },
+        },
+        grid: { display: false },
+        ...(filteredSeries.value.length === 1
+          ? (() => {
+              const timestamp = new Date(filteredSeries.value[0].x).getTime();
+              return { min: timestamp - WINDOW_DAYS, max: timestamp + WINDOW_DAYS };
+            })()
+          : {}),
+      },
     },
-    x: {
-      type: 'time',
-      time: { unit: 'month', displayFormats: { month: 'MMM yyyy' } },
-      ticks: { maxRotation: 0, autoSkip: true, autoSkipPadding: 8 },
-      grid: { display: false },
-    },
-  },
-  interaction: { mode: 'nearest', axis: 'x', intersect: false },
-}));
+    interaction: { mode: 'nearest', axis: 'x', intersect: false },
+  };
+});
 
 function createChart() {
   const ctx = canvasRef.value?.getContext('2d');
