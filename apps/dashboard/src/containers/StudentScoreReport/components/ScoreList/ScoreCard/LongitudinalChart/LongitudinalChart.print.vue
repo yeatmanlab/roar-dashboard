@@ -88,7 +88,16 @@ const chartOptions = computed(() => ({
         autoSkip: false,
         maxTicksLimit:
           filteredSeries.value.length === 0 ? 1 : filteredSeries.value.length <= 5 ? filteredSeries.value.length : 8,
-        ...(filteredSeries.value.length === 1 ? { source: 'data' } : {}),
+        ...(filteredSeries.value.length === 1
+          ? {
+              source: 'data',
+              callback: function (value) {
+                return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(
+                  value,
+                );
+              },
+            }
+          : {}),
       },
       grid: { display: false },
       ...(filteredSeries.value.length === 1 && filteredSeries.value[0]
