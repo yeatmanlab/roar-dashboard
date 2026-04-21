@@ -9,7 +9,8 @@ import type { User } from '../db/schema';
 
 // Export types for repo and service usage
 export type {
-  EnrolledUser
+  EnrolledUser,
+  EnrolledFamilyUser,
   EnrolledFamilyUsersQuery,
   EnrolledUsersQuery,
   EnrolledUsersSortFieldType,
@@ -30,7 +31,5 @@ export interface ListEnrolledFamilyUsersOptions extends BaseListEnrolledUsersOpt
   role?: UserFamilyRole;
 }
 
-// TODO: Change EnrolledUserEntity to return roles array instead of single role and remove enrollmentStart
-// ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1734
-export type EnrolledUserEntity = User & { role: UserRole; enrollmentStart: Date };
+export type EnrolledUserEntity = User & { roles: UserRole[] };
 export type EnrolledFamilyUserEntity = User & { roles: UserFamilyRole[] };

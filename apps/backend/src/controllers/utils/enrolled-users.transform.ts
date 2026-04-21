@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../../errors/api-error';
-import type { EnrolledUser, EnrolledUserEntity, EnrolledFamilyUser, EnrolledFamilyUserEntity} from '../../types/user';
+import type { EnrolledUser, EnrolledUserEntity, EnrolledFamilyUser, EnrolledFamilyUserEntity } from '../../types/user';
 import { toErrorResponse } from '../../utils/to-error-response.util';
 
 /**
@@ -61,9 +61,7 @@ function toContractEnrolledFamilyUser(user: EnrolledFamilyUserEntity): EnrolledF
  * @param perPage - The number of items per page.
  * @returns The paginated response.
  */
-export function handleUserSubResourceResponse<
-  T extends EnrolledUserEntity | EnrolledFamilyUserEntity,
->(
+export function handleUserSubResourceResponse<T extends EnrolledUserEntity | EnrolledFamilyUserEntity>(
   result: { items: T[]; totalItems: number },
   page: number,
   perPage: number,
@@ -77,10 +75,9 @@ export function handleUserSubResourceResponse<
   };
 } {
   const items = result.items.map((item) => {
-    if ('enrollmentStart' in item) {
-      return toContractEnrolledUser(item as EnrolledUserEntity);
-    }
-    if ('roles' in item) {
+    // Discriminate based on role values: UserFamilyRole only has ['parent', 'child']
+    const hasFamilyRole = item.roles.some((role) => role == 'parent' || role == 'child');
+    if (hasFamilyRole) {
       return toContractEnrolledFamilyUser(item as EnrolledFamilyUserEntity);
     }
     return toContractEnrolledUser(item as EnrolledUserEntity);
