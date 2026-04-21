@@ -6,9 +6,6 @@ import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 import type { SchoolWithCounts } from '../../repositories/school.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
-import { rolesForPermission } from '../../constants/role-permissions';
-import { Permissions } from '../../constants/permissions';
-import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -175,81 +172,6 @@ export function DistrictService({
   }
 
   /**
-   * Verify that a district exists and the user has access to it.
-   *
-   * @param authContext - User's auth context
-   * @param districtId - The district ID to verify access for
-   * @returns The district if found and accessible
-   * @throws {ApiError} NOT_FOUND if district doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access
-   */
-  async function verifyDistrictAccess(authContext: AuthContext, districtId: string): Promise<District> {
-    const { userId, isSuperAdmin } = authContext;
-
-    // Look up the district first to distinguish 404 from 403
-    const district = await districtRepository.getUnrestrictedById(districtId);
-
-    if (!district) {
-      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { userId, districtId },
-      });
-    }
-
-    // Super admins have unrestricted access
-    if (isSuperAdmin) {
-      return district;
-    }
-
-    // Check access for non-super admin users
-    const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-    const authorized = await districtRepository.getAuthorizedById({ userId, allowedRoles }, districtId);
-    if (!authorized) {
-      logger.warn({ userId, districtId }, 'User attempted to access district without permission');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, districtId },
-      });
-    }
-
-    return authorized;
-  }
-
-  /**
-   * Performs authorization checks for sub-resource listing (supervisory roles only).
-   * Throws if user lacks access or is a supervised user.
-   *
-   * @param authContext - User's auth context (id and super admin flag)
-   * @param districtId - The district ID to verify access for
-   * @returns The district path if authorized
-   * @throws {ApiError} NOT_FOUND if district doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
-   */
-  async function authorizeSubResourceAccess(authContext: AuthContext, districtId: string): Promise<string> {
-    const { userId, isSuperAdmin } = authContext;
-
-    // Verifies user has access to organizations
-    const district = await getById(authContext, districtId);
-
-    if (isSuperAdmin) return district.path;
-
-    const userRoles = await districtRepository.getUserRolesForDistrict(userId, districtId);
-
-    if (!hasSupervisoryRole(userRoles)) {
-      logger.warn({ userId, districtId, userRoles }, 'User lacks district supervisory role for sub-resource listing');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, districtId, userRoles },
-      });
-    }
-
-    return district.path;
-  }
-
-  /**
    * List schools within a district with access control.
    *
    * Authorization behavior:
@@ -262,7 +184,7 @@ export function DistrictService({
    * @param options - Pagination and sorting options
    * @returns Paginated result with schools
    * @throws {ApiError} NOT_FOUND if district doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access to the district or has supervised role
+   * @throws {ApiError} FORBIDDEN if user lacks access to the district
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
   async function listDistrictSchools(
@@ -273,24 +195,8 @@ export function DistrictService({
     const { userId, isSuperAdmin } = authContext;
 
     try {
-      // 1. Verify district exists and user has access
-      await verifyDistrictAccess(authContext, districtId);
-
-      // 2. Check for supervisory role (non-super admins cannot list sub-resources if supervised)
-      if (!isSuperAdmin) {
-        const userRoles = await districtRepository.getUserRolesForDistrict(userId, districtId);
-
-        if (!hasSupervisoryRole(userRoles)) {
-          logger.warn({ userId, districtId, userRoles }, 'Supervised user attempted to list district schools');
-          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-            statusCode: StatusCodes.FORBIDDEN,
-            code: ApiErrorCode.AUTH_FORBIDDEN,
-          });
-        }
-      }
-
-      // 3. Query schools for this district with access control
-      const queryParams = {
+      // Transform API contract format to repository format
+      const listOptions = {
         page: options.page,
         perPage: options.perPage,
         orderBy: {
@@ -301,14 +207,42 @@ export function DistrictService({
         embedCounts: options.embedCounts ?? false,
       };
 
-      // For super admins, get all schools in district
-      if (isSuperAdmin) {
-        return await schoolRepository.listAllByDistrictId(districtId, queryParams);
+      // getUnrestrictedById is used deliberately here rather than getById(authContext).
+      // Reasons:
+      //   1. Separates 404 (district doesn't exist) from 403 (district exists but user
+      //      lacks access), matching the backend-authorization-pattern rule.
+      //   2. Filters by orgType=district, so a school ID passed as districtId correctly
+      //      returns null → 404 rather than a false-positive existence hit.
+      //   3. Avoids a redundant FGA call: getById checks can_read, but this endpoint gates
+      //      on can_list. Using getById would fire two FGA checks for non-super-admins.
+      const district = await districtRepository.getUnrestrictedById(districtId);
+
+      if (!district) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, districtId },
+        });
       }
 
-      // For regular users, apply access control filtering
-      const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-      return await schoolRepository.listAuthorizedByDistrictId({ userId, allowedRoles }, districtId, queryParams);
+      if (!isSuperAdmin) {
+        await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST, `${FgaType.DISTRICT}:${districtId}`);
+
+        // TODO: listObjects returns all globally accessible schools, then SQL filters to this
+        // district. Acceptable for now because user school lists are small, but if FGA adds
+        // scoped listing (objects within a subtree), prefer that to bound the IN clause.
+        const objects = await authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_LIST, FgaType.SCHOOL);
+        const accessibleSchools = objects.map(extractFgaObjectId);
+
+        if (!accessibleSchools.length) {
+          return { items: [], totalItems: 0 };
+        }
+
+        return await schoolRepository.listAccessibleByDistrictId(districtId, accessibleSchools, listOptions);
+      }
+
+      // Super admins get unrestricted access to all schools in the district
+      return await schoolRepository.listAllByDistrictId(districtId, listOptions);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -326,13 +260,20 @@ export function DistrictService({
   /**
    * Get users enrolled in a district.
    *
+   * super_admin users can see all enrolled users.
+   * Other users can only see enrolled users if they have the `can_list_users` permission on the district.
+   *
    * Returns all users who have an active enrollment in the specified district.
    * Only includes users with active enrollments (enrollment_start <= now and
    * enrollment_end is null or >= now).
    *
-   * @param districtId - The district ID to get users for
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param districtId - The district ID to get enrolled users for
    * @param options - Pagination, sorting, and filtering options
    * @returns Paginated result with users
+   * @throws {ApiError} NOT_FOUND if district doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the district
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
    */
   async function listUsers(
     authContext: AuthContext,
@@ -341,30 +282,35 @@ export function DistrictService({
   ): Promise<PaginatedResult<EnrolledOrgUserEntity>> {
     const { userId, isSuperAdmin } = authContext;
     try {
-      const districtPath = await authorizeSubResourceAccess(authContext, districtId);
+      // getUnrestrictedById: separates 404 from 403, guards orgType so a school ID
+      // won't masquerade as a district, and avoids firing a can_read FGA check when
+      // this endpoint gates on can_list_users. See listDistrictSchools for full rationale.
+      const district = await districtRepository.getUnrestrictedById(districtId);
+
+      if (!district) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, districtId },
+        });
+      }
 
       const queryParams: ListEnrolledUsersOptions = {
         page: options.page,
         perPage: options.perPage,
-        orderBy: {
-          field: options.sortBy,
-          direction: options.sortOrder,
-        },
+        orderBy: { field: options.sortBy, direction: options.sortOrder },
         ...(options.role && { role: options.role }),
         ...(options.grade && { grade: options.grade }),
       };
 
-      if (isSuperAdmin) {
-        return await districtRepository.getUsersByDistrictPath(districtPath, queryParams);
+      if (!isSuperAdmin) {
+        await authorizationService.requirePermission(
+          userId,
+          FgaRelation.CAN_LIST_USERS,
+          `${FgaType.DISTRICT}:${districtId}`,
+        );
       }
-
-      const allowedRoles = rolesForPermission(Permissions.Users.LIST);
-      return await districtRepository.getAuthorizedUsersByDistrictId(
-        { userId, allowedRoles },
-        districtId,
-        districtPath,
-        queryParams,
-      );
+      return await districtRepository.getUsersByDistrictPath(district.path, queryParams);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
