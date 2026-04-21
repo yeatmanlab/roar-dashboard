@@ -276,14 +276,10 @@ describe('GET /v1/administrations/:id/assignees', () => {
   describe('response shape', () => {
     it('returns districts assigned to the administration', async () => {
       const res = await expectRoute('GET', path()).as(tiers.superAdmin).toReturn(200);
-
-      // administrationAssignedToDistrict is assigned to the district via baseFixture
-      const districts = res.body.data.districts;
-      expect(districts).toBeInstanceOf(Array);
-      if (districts.length > 0) {
-        expect(districts[0]).toHaveProperty('id');
-        expect(districts[0]).toHaveProperty('name');
-      }
+      const { districts } = res.body.data;
+      expect(districts).toHaveLength(1);
+      expect(districts[0].id).toBe(baseFixture.district.id);
+      expect(districts[0].name).toBe(baseFixture.district.name);
     });
 
     it('returns all four entity type arrays', async () => {
