@@ -302,6 +302,7 @@ describe('GET /v1/administrations/:id/assignees', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
     });
 
+    it('returns 404 for a non-existent administration', async () => {
       const res = await expectRoute('GET', '/v1/administrations/00000000-0000-0000-0000-000000000000/assignees')
         .as(tiers.superAdmin)
         .toReturn(404);
