@@ -187,12 +187,27 @@ describe('GET /v1/districts/:districtId/schools', () => {
       expect(ids).toContain(baseFixture.schoolB.id);
     });
 
-    it('educator tier can list schools in their district', async () => {
+    it('educator tier enrolled at district level sees no schools (not directly rostered at a school)', async () => {
+      // Teachers are not rostered at the district level in practice, but when they are,
+      // they should not gain visibility into all child schools — only those they are
+      // directly rostered onto. The tier educator is enrolled at the district only,
+      // so accessible schools is empty.
       const res = await expectRoute('GET', districtSchoolsUrl).as(tiers.educator).toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(0);
+      expect(res.body.data.pagination.totalItems).toBe(0);
+    });
+
+    it('educator tier directly rostered at a school can list that school', async () => {
+      // schoolATeacher is enrolled directly at School A — they should see schoolA
+      // in the district school listing, but not schoolB (no direct roster there).
+      const res = await expectRoute('GET', districtSchoolsUrl)
+        .as({ id: baseFixture.schoolATeacher.id, authId: baseFixture.schoolATeacher.authId! })
+        .toReturn(200);
 
       const ids = res.body.data.items.map((item: { id: string }) => item.id);
       expect(ids).toContain(baseFixture.schoolA.id);
-      expect(ids).toContain(baseFixture.schoolB.id);
+      expect(ids).not.toContain(baseFixture.schoolB.id);
     });
 
     it('student tier is forbidden from listing schools (supervised role)', async () => {
@@ -377,15 +392,14 @@ describe('GET /v1/districts/:districtId/users', () => {
     });
 
     it('student tier is forbidden from listing users in districts', async () => {
-      // Students don't have Organizations.READ permission, so getById returns 404
+      // Students lack can_list_users on the district — FGA requirePermission throws 403
       const res = await expectRoute('GET', districtUsersPath()).as(tiers.student).toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('caregiver tier is forbidden from listing users in districts', async () => {
-      // Caregivers have Organizations.READ but not supervisory role
-      // getById succeeds but authorizeSubResourceAccess throws 403
+      // Caregivers lack can_list_users on the district — FGA requirePermission throws 403
       const res = await expectRoute('GET', districtUsersPath()).as(tiers.caregiver).toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
