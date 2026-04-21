@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../../errors/api-error';
 import type { EnrolledUser, EnrolledUserEntity, EnrolledFamilyUser, EnrolledFamilyUserEntity } from '../../types/user';
 import { toErrorResponse } from '../../utils/to-error-response.util';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 
 /**
  * Maps a database User entity with role to the API contract EnrolledUser schema.
@@ -76,7 +77,7 @@ export function handleUserSubResourceResponse<T extends EnrolledUserEntity | Enr
 } {
   const items = result.items.map((item) => {
     // Discriminate based on role values: UserFamilyRole only has ['parent', 'child']
-    const hasFamilyRole = item.roles.some((role) => role == 'parent' || role == 'child');
+    const hasFamilyRole = item.roles.some((role) => role === UserFamilyRole.PARENT || role === UserFamilyRole.CHILD);
     if (hasFamilyRole) {
       return toContractEnrolledFamilyUser(item as EnrolledFamilyUserEntity);
     }
