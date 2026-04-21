@@ -1,6 +1,7 @@
-import { eq, and, isNull, asc, count, desc } from 'drizzle-orm';
+import { eq, and, asc, count, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive } from './utils/enrollment.utils';
@@ -9,8 +10,6 @@ import {
   ENROLLED_USERS_SORT_COLUMNS,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
-import { isAuthorizedMembership } from './utils/is-authorized-membership.utils';
-import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
 import { CoreDbClient } from '../db/clients';
 import type { Group } from '../db/schema';
 import { groups, userGroups, users } from '../db/schema';
@@ -20,51 +19,6 @@ import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersO
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, groups);
-  }
-
-  /**
-   * Get a single group by ID, only if the user is authorized to access it and rosteringEnded is null.
-   *
-   * @param accessControlFilter - User ID and allowed roles
-   * @param groupId - The group ID to retrieve
-   * @returns The group if found and accessible, null otherwise
-   */
-  async getAuthorizedById(accessControlFilter: AccessControlFilter, groupId: string): Promise<Group | null> {
-    const { userId, allowedRoles } = accessControlFilter;
-
-    const result = await this.db
-      .select({ groups })
-      .from(groups)
-      .innerJoin(userGroups, eq(groups.id, userGroups.groupId))
-      .where(
-        and(
-          eq(groups.id, groupId),
-          isNull(groups.rosteringEnded),
-          isAuthorizedMembership(userGroups, userId, allowedRoles),
-        ),
-      )
-      .limit(1);
-
-    return result[0]?.groups ?? null;
-  }
-
-  /**
-   * Get the role a user holds for a specific group.
-   *
-   * User can only hold one role per group.
-   *
-   * @param userId - The user ID to query roles for
-   * @param groupId - The group ID to check access for
-   * @returns Array of distinct roles the user has for group.
-   */
-  async getUserRolesForGroup(userId: string, groupId: string): Promise<UserRole[]> {
-    const result = await this.db
-      .select({ role: userGroups.role })
-      .from(userGroups)
-      .where(and(eq(userGroups.groupId, groupId), eq(userGroups.userId, userId)))
-      .limit(1);
-
-    return result[0]?.role ? [result[0]?.role] : [];
   }
 
   /**
