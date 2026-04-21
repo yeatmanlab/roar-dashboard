@@ -391,7 +391,7 @@ export function AdministrationService({
 
       logger.error({ err: error, context: { userId, administrationId } }, 'Failed to get administration assignees');
 
-      throw new ApiError('Failed to retrieve administration assignees', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, administrationId },

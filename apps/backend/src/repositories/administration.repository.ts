@@ -70,14 +70,31 @@ export interface ListAuthorizedOptions extends BaseGetAllParams {
   status?: AdministrationStatus;
 }
 
+/** Represents an assignee of an administration with identifiers. */
+interface AdministrationAssignee {
+  id: string;
+  name: string;
+}
+
+/** Represents a school assignee of an administration with a parent organization ID. */
+interface AdministrationSchoolAssignee extends AdministrationAssignee {
+  parentOrgId: string;
+}
+
+/** Represents a class assignee of an administration with a school and district ID. */
+interface AdministrationClassAssignee extends AdministrationAssignee {
+  schoolId: string;
+  districtId: string;
+}
+
 /**
  * Assignees of an administration (districts, schools, classes, groups).
  */
 export interface AdministrationAssignees {
-  districts: Array<{ id: string; name: string }>;
-  schools: Array<{ id: string; name: string; parentOrgId: string }>;
-  classes: Array<{ id: string; name: string; schoolId: string; districtId: string }>;
-  groups: Array<{ id: string; name: string }>;
+  districts: AdministrationAssignee[];
+  schools: AdministrationSchoolAssignee[];
+  classes: AdministrationClassAssignee[];
+  groups: AdministrationAssignee[];
 }
 
 /**
@@ -310,23 +327,11 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
         parentOrgId: row.parentOrgId,
       }));
 
-    const classItems = classResults.map((row) => ({
-      id: row.id,
-      name: row.name,
-      schoolId: row.schoolId,
-      districtId: row.districtId,
-    }));
-
-    const groupItems = groupResults.map((row) => ({
-      id: row.id,
-      name: row.name,
-    }));
-
     return {
       districts,
       schools,
-      classes: classItems,
-      groups: groupItems,
+      classes: classResults,
+      groups: groupResults,
     };
   }
 

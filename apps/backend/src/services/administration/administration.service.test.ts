@@ -869,6 +869,7 @@ describe('AdministrationService', () => {
       await expect(
         service.getAssignees({ userId: 'admin-user', isSuperAdmin: true }, 'admin-123'),
       ).rejects.toMatchObject({
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
