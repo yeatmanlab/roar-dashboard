@@ -13,8 +13,8 @@ import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 describe('FamilyService', () => {
   describe('listUsers', () => {
-    const mockFamilyRepo = createMockFamilyRepository();
-    const mockAuthorizationService = createMockAuthorizationService();
+    let mockFamilyRepo: ReturnType<typeof createMockFamilyRepository>;
+    let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
 
     const defaultOptions = {
       page: 1,
@@ -24,6 +24,8 @@ describe('FamilyService', () => {
     };
 
     beforeEach(() => {
+      mockFamilyRepo = createMockFamilyRepository();
+      mockAuthorizationService = createMockAuthorizationService();
       vi.clearAllMocks();
     });
 
