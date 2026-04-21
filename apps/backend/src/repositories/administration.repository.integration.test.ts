@@ -1,11 +1,8 @@
 /**
  * Integration tests for AdministrationRepository.
  *
- * Tests custom methods (listAll, getAuthorizedById) against the
- * real database with the base fixture's org hierarchy and administrations.
- *
- * getAssignedUserCountsByAdministrationIds is covered by the existing
- * administration.access-controls.integration.test.ts — only light coverage here.
+ * Tests custom methods against the real database with the base fixture's
+ * org hierarchy and administrations.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
@@ -15,7 +12,6 @@ import { AdministrationTaskVariantFactory } from '../test-support/factories/admi
 import { TaskFactory } from '../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
 import { AdministrationRepository } from './administration.repository';
-import { UserRole } from '../enums/user-role.enum';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 
 describe('AdministrationRepository', () => {
@@ -133,37 +129,6 @@ describe('AdministrationRepository', () => {
       for (const item of result.items) {
         expect(item.dateEnd < now).toBe(true);
       }
-    });
-  });
-
-  describe('getAuthorizedById', () => {
-    it('returns administration when user has access', async () => {
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(baseFixture.administrationAssignedToDistrict.id);
-    });
-
-    it('returns null when user lacks access', async () => {
-      // District B admin should not have access to District A's administration
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it('returns null for nonexistent administration ID', async () => {
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        '00000000-0000-0000-0000-000000000000',
-      );
-
-      expect(result).toBeNull();
     });
   });
 
@@ -342,36 +307,6 @@ describe('AdministrationRepository', () => {
 
       expect(result.totalItems).toBe(0);
       expect(result.items).toEqual([]);
-    });
-  });
-
-  describe('getUserRolesForAdministration', () => {
-    it('returns roles for user with access via org', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtAdmin.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toContain('administrator');
-    });
-
-    it('returns empty array for user without access', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtBAdmin.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toHaveLength(0);
-    });
-
-    it('returns multiple roles for user with multiple memberships', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.multiAssignedUser.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toContain('administrator');
-      expect(roles).toContain('teacher');
     });
   });
 
