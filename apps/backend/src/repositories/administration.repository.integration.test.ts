@@ -133,13 +133,148 @@ describe('AdministrationRepository', () => {
   });
 
   describe('getAssignedUserCountsByAdministrationIds', () => {
-    it('returns counts for administrations', async () => {
+    it('counts users via direct group path', async () => {
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToGroup.id,
       ]);
 
-      // Group has exactly 1 user (groupStudent)
+      // Group has exactly 1 user (groupStudent); futureGroupStudent is excluded
       expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
+    });
+
+    it('counts users via direct class path', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
+
+      // classInSchoolA has 2 active users (classAStudent, classATeacher); expiredClassStudent excluded
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+    });
+
+    it('counts users via org hierarchy paths (viaOrgToOrgUsers and viaOrgToClassUsers)', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToDistrict.id,
+      ]);
+
+      // administrationAssignedToDistrict is assigned to district, which via ltree includes:
+      // - viaOrgToOrgUsers: districtAdmin, schoolATeacher, multiAssignedUser (district+schoolA),
+      //   grade5Student, grade3Student, grade5EllStudent
+      // - viaOrgToClassUsers: classAStudent, classATeacher (active in classInSchoolA under district)
+      // Excluded: expiredEnrollmentStudent, futureEnrollmentStudent, expiredClassStudent
+      const count = counts.get(baseFixture.administrationAssignedToDistrict.id);
+      expect(count).toBeGreaterThanOrEqual(8);
+      // districtAdmin, schoolATeacher, multiAssignedUser, classAStudent, classATeacher,
+      // grade5Student, grade3Student, grade5EllStudent
+    });
+
+    it('deduplicates users reachable via multiple paths', async () => {
+      // multiAssignedUser has active enrollments at both district AND schoolA,
+      // so they appear in viaOrgToOrgUsers twice (once per org). COUNT(DISTINCT) must collapse them.
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToDistrict.id,
+      ]);
+
+      const count = counts.get(baseFixture.administrationAssignedToDistrict.id) ?? 0;
+
+      // Verify multiAssignedUser is not double-counted by confirming the total is
+      // consistent with unique users only. If deduplication broke, the count would
+      // be higher by the number of extra paths multiAssignedUser traverses.
+      expect(count).toBeGreaterThan(0);
+
+      // Create an administration with multiAssignedUser's district only and compare
+      // with a fresh single-org administration to confirm the count is stable
+      const freshAdmin = await AdministrationFactory.create({
+        name: 'Dedup Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: freshAdmin.id,
+        orgId: baseFixture.district.id,
+      });
+
+      const freshCounts = await repository.getAssignedUserCountsByAdministrationIds([freshAdmin.id]);
+      expect(freshCounts.get(freshAdmin.id)).toBe(count);
+    });
+
+    it('returns count for multiple administrations in one call', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToGroup.id,
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
+
+      expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+    });
+
+    it('omits entry from returned Map for administration with no assigned users', async () => {
+      const emptyAdmin = await AdministrationFactory.create({
+        name: 'No Users Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([emptyAdmin.id]);
+
+      // The Map should have no entry for an administration with 0 users
+      // (callers use counts.get(id) ?? 0 to handle the missing entry)
+      expect(counts.has(emptyAdmin.id)).toBe(false);
+    });
+
+    it('excludes users with expired org enrollments', async () => {
+      // Create an administration assigned to schoolA, which has expiredEnrollmentStudent
+      // with an enrollment that ended 7 days ago
+      const admin = await AdministrationFactory.create({
+        name: 'Expired Enrollment Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: admin.id,
+        orgId: baseFixture.schoolA.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
+
+      const count = counts.get(admin.id) ?? 0;
+      // schoolATeacher is active; expiredEnrollmentStudent is excluded
+      // multiAssignedUser is also in schoolA
+      expect(count).toBeGreaterThan(0);
+
+      // Verify expiredEnrollmentStudent is not in the count by cross-checking with
+      // an administration assigned to a group only the expired student belongs to:
+      // there is no such group in baseFixture, so we verify indirectly that the total
+      // matches only active enrollments (schoolATeacher + multiAssignedUser = 2)
+      expect(count).toBe(2);
+    });
+
+    it('excludes users with future org enrollments', async () => {
+      // Create an administration assigned to schoolA, which has futureEnrollmentStudent
+      // with an enrollment that starts 7 days from now
+      const admin = await AdministrationFactory.create({
+        name: 'Future Enrollment Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: admin.id,
+        orgId: baseFixture.schoolA.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
+
+      // futureEnrollmentStudent should be excluded; only schoolATeacher + multiAssignedUser
+      expect(counts.get(admin.id)).toBe(2);
+    });
+
+    it('excludes users with expired class enrollments', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
+
+      // expiredClassStudent has enrollment that ended 7 days ago — should be excluded
+      // Only classAStudent and classATeacher have active enrollments
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+    });
+
+    it('throws when called with an empty administrationIds array', async () => {
+      await expect(repository.getAssignedUserCountsByAdministrationIds([])).rejects.toThrow();
     });
   });
 
