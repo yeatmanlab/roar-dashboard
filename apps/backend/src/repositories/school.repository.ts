@@ -11,7 +11,7 @@ import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { OrgType } from '../enums/org-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
-import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
+import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../types/user';
 import {
   getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
@@ -410,7 +410,7 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
       return { items: [], totalItems: 0 };
     }
 
-    const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
+    const sortField = orderBy?.field;
     const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 

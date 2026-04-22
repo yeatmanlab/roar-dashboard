@@ -343,7 +343,7 @@ export function SchoolService({
 
       logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school users');
 
-      throw new ApiError('Failed to retrieve school users', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, schoolId },

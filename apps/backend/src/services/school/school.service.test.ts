@@ -926,7 +926,7 @@ describe('SchoolService', () => {
       await expect(
         service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', defaultOptions),
       ).rejects.toMatchObject({
-        message: 'Failed to retrieve school users',
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
