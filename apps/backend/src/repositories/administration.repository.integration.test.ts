@@ -177,22 +177,8 @@ describe('AdministrationRepository', () => {
       const count = counts.get(baseFixture.administrationAssignedToDistrict.id) ?? 0;
 
       // Verify multiAssignedUser is not double-counted by confirming the total is
-      // consistent with unique users only. If deduplication broke, the count would
-      // be higher by the number of extra paths multiAssignedUser traverses.
-      expect(count).toBeGreaterThan(0);
-
-      // Create an administration with multiAssignedUser's district only and compare
-      // with a fresh single-org administration to confirm the count is stable
-      const freshAdmin = await AdministrationFactory.create({
-        name: 'Dedup Test Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: freshAdmin.id,
-        orgId: baseFixture.district.id,
-      });
-
-      // District hierachy has 12 unique users
+      // consistent with unique users only (12 unique users in district hierachy).
+      // If deduplication broke, the count would be higher by the number of extra paths multiAssignedUser traverses.
       expect(count).toBe(12);
     });
 
