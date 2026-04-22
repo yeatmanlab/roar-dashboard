@@ -1,4 +1,4 @@
-import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, inArray } from 'drizzle-orm';
+import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -230,7 +230,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const result = await this.db
       .select({
         administrationId: assignments.administrationId,
-        assignedCount: sql<number>`COUNT(DISTINCT ${assignments.userId})::int`,
+        assignedCount: countDistinct(assignments.userId),
       })
       .from(assignments)
       .groupBy(assignments.administrationId);
