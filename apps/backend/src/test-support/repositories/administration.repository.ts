@@ -13,10 +13,7 @@ export function createMockAdministrationRepository(): MockedObject<Administratio
     ...createMockBaseRepositoryMethods(),
     listAll: vi.fn(),
     getAssignedUserCountsByAdministrationIds: vi.fn(),
-    getDistrictsByAdministrationId: vi.fn(),
-    getSchoolsByAdministrationId: vi.fn(),
-    getClassesByAdministrationId: vi.fn(),
-    getGroupsByAdministrationId: vi.fn(),
+    getAssignees: vi.fn(),
     getTaskVariantsByAdministrationId: vi.fn(),
     getAgreementsByAdministrationId: vi.fn(),
   } as unknown as MockedObject<AdministrationRepository>;
