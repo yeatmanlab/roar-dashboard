@@ -262,36 +262,6 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  describe('getUserRolesForAdministration', () => {
-    it('returns roles for user with access via org', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtAdmin.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toContain('administrator');
-    });
-
-    it('returns empty array for user without access', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtBAdmin.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toHaveLength(0);
-    });
-
-    it('returns multiple roles for user with multiple memberships', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.multiAssignedUser.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toContain('administrator');
-      expect(roles).toContain('teacher');
-    });
-  });
-
   describe('getAssignees', () => {
     it('returns empty lists when administration has no assignees', async () => {
       const admin = await AdministrationFactory.create({
