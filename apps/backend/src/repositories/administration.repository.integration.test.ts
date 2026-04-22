@@ -1,11 +1,8 @@
 /**
  * Integration tests for AdministrationRepository.
  *
- * Tests custom methods (listAll, getAuthorizedById, getAssignees) against the
+ * Tests custom methods (listAll, getAssignedUserCountsByAdministrationIds, getAssignees) against the
  * real database with the base fixture's org hierarchy and administrations.
- *
- * getAssignedUserCountsByAdministrationIds is covered by the existing
- * administration.access-controls.integration.test.ts — only light coverage here.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
