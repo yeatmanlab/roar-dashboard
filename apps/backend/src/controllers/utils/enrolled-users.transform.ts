@@ -5,8 +5,8 @@ import { toErrorResponse } from '../../utils/to-error-response.util';
 
 /**
  * Maps a database User entity with role to the API contract EnrolledUser schema.
- * Returns select values from User and their associated role and enrollment start date
- * in organization context.
+ * Returns select values from User and their associated role(s).
+ * User can have multiple roles (e.g., student, teacher, admin) across org hierarchies.
  * @param user - The user entity to map.
  * @returns The mapped EnrolledUser.
  */

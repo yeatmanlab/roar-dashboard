@@ -110,7 +110,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, enrollmentStart: userGroups.enrollmentStart, role: userGroups.role })
+      .select({ user: users, role: userGroups.role })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
       .innerJoin(groups, eq(groups.id, userGroups.groupId))
@@ -179,7 +179,7 @@ export class GroupRepository extends BaseRepository<Group, typeof groups> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, enrollmentStart: userGroups.enrollmentStart, role: userGroups.role })
+      .select({ user: users, role: userGroups.role })
       .from(userGroups)
       .innerJoin(users, eq(users.id, userGroups.userId))
       .innerJoin(groups, eq(groups.id, userGroups.groupId))
