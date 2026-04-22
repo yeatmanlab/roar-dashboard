@@ -14,8 +14,8 @@ import { CoreDbClient } from '../db/clients';
 import type { Group } from '../db/schema';
 import { groups, userGroups, users } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { UserRole } from '../enums/user-role.enum';
-import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
+import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, groups);
