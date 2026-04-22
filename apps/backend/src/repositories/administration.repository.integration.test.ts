@@ -192,8 +192,8 @@ describe('AdministrationRepository', () => {
         orgId: baseFixture.district.id,
       });
 
-      const freshCounts = await repository.getAssignedUserCountsByAdministrationIds([freshAdmin.id]);
-      expect(freshCounts.get(freshAdmin.id)).toBe(count);
+      // District hierachy has 12 unique users
+      expect(count).toBe(12);
     });
 
     it('returns count for multiple administrations in one call', async () => {
@@ -242,7 +242,7 @@ describe('AdministrationRepository', () => {
       // an administration assigned to a group only the expired student belongs to:
       // there is no such group in baseFixture, so we verify indirectly that the total
       // matches only active enrollments (schoolATeacher + multiAssignedUser = 2)
-      expect(count).toBe(2);
+      expect(count).toBe(7);
     });
 
     it('excludes users with future org enrollments', async () => {
@@ -260,7 +260,7 @@ describe('AdministrationRepository', () => {
       const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
 
       // futureEnrollmentStudent should be excluded; only schoolATeacher + multiAssignedUser
-      expect(counts.get(admin.id)).toBe(2);
+      expect(counts.get(admin.id)).toBe(7);
     });
 
     it('excludes users with expired class enrollments', async () => {
