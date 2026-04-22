@@ -272,13 +272,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    *
    * @param administrationIds - Array of administration IDs to query
    * @returns Drizzle subquery with `{ administrationId, userId }` rows
-   * @throws {Error} If called with empty administrationIds array
    */
   private buildAdministrationUserAssignmentsQuery(administrationIds: string[]) {
-    if (administrationIds.length === 0) {
-      throw new Error('administrationIds are required for building user assignments query');
-    }
-
     const adminOrgTable = alias(orgs, 'admin_org');
     const userOrgTable = alias(orgs, 'user_org');
 
