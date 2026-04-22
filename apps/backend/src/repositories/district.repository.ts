@@ -43,7 +43,7 @@ export interface DistrictWithCounts extends District {
 /**
  * Options for listing districts with authorization
  */
-export interface ListAuthorizedOptions {
+export interface ListDistrictOptions {
   page: number;
   perPage: number;
   orderBy?: {
@@ -69,7 +69,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    *
    * All district listing methods filter by orgType = DISTRICT and optionally
    * exclude ended organizations. This helper eliminates duplication across
-   * listAll, listByIds, and listAuthorized.
+   * listAll and listByIds.
    *
    * @param includeEnded - Whether to include organizations with rosteringEnded set
    * @returns A SQL condition or undefined
@@ -91,7 +91,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    * @param options - Pagination, sorting, and optional filters
    * @returns Paginated result with districts
    */
-  async listAll(options: ListAuthorizedOptions): Promise<PaginatedResult<District | DistrictWithCounts>> {
+  async listAll(options: ListDistrictOptions): Promise<PaginatedResult<District | DistrictWithCounts>> {
     const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
 
     const where = this.buildDistrictWhereClause(includeEnded);
@@ -135,7 +135,7 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
    */
   async listByIds(
     ids: string[],
-    options: ListAuthorizedOptions,
+    options: ListDistrictOptions,
   ): Promise<PaginatedResult<District | DistrictWithCounts>> {
     const { includeEnded = false, embedCounts = false } = options;
 
