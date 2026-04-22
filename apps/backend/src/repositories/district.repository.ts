@@ -41,7 +41,7 @@ export interface DistrictWithCounts extends District {
 }
 
 /**
- * Options for listing districts with authorization
+ * Options for listing districts
  */
 export interface ListDistrictOptions {
   page: number;
