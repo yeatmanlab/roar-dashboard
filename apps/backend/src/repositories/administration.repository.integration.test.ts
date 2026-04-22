@@ -157,29 +157,25 @@ describe('AdministrationRepository', () => {
       ]);
 
       // administrationAssignedToDistrict is assigned to district, which via ltree includes:
-      // - viaOrgToOrgUsers: districtAdmin, schoolATeacher, multiAssignedUser (district+schoolA),
-      //   grade5Student, grade3Student, grade5EllStudent
+      // - viaOrgToOrgUsers: districtAdmin, schoolAAdmin, schoolAPrincipal, schoolATeacher, schoolAStudent,
+      //   schoolBStudent, multiAssignedUser (district+schoolA), grade5Student, grade3Student, grade5EllStudent
       // - viaOrgToClassUsers: classAStudent, classATeacher (active in classInSchoolA under district)
       // Excluded: expiredEnrollmentStudent, futureEnrollmentStudent, expiredClassStudent
       const count = counts.get(baseFixture.administrationAssignedToDistrict.id);
-      expect(count).toBeGreaterThanOrEqual(8);
-      // districtAdmin, schoolATeacher, multiAssignedUser, classAStudent, classATeacher,
-      // grade5Student, grade3Student, grade5EllStudent
+      expect(count).toBe(12);
     });
 
     it('deduplicates users reachable via multiple paths', async () => {
-      // multiAssignedUser has active enrollments at both district AND schoolA,
-      // so they appear in viaOrgToOrgUsers twice (once per org). COUNT(DISTINCT) must collapse them.
+      // multiAssignedUser has active enrollments at both district AND schoolA. Both orgs are in the
+      // district subtree, so viaOrgToOrgUsers emits two rows for them (one per enrollment).
+      // The full UNION ALL produces 13 rows (11 single-path users + 2 rows for multiAssignedUser),
+      // but COUNT(DISTINCT userId) must collapse them to 12 unique users.
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToDistrict.id,
       ]);
 
       const count = counts.get(baseFixture.administrationAssignedToDistrict.id) ?? 0;
-
-      // Verify multiAssignedUser is not double-counted by confirming the total is
-      // consistent with unique users only (12 unique users in district hierachy).
-      // If deduplication broke, the count would be higher by the number of extra paths multiAssignedUser traverses.
-      expect(count).toBe(12);
+      expect(count).toBe(12); // would be 13 with COUNT instead of COUNT(DISTINCT)
     });
 
     it('returns count for multiple administrations in one call', async () => {
@@ -221,8 +217,9 @@ describe('AdministrationRepository', () => {
 
       const count = counts.get(admin.id) ?? 0;
 
-      // Verify expiredEnrollmentStudent is not in the count by verifying the count matches
-      // the number of active enrollments (7 unique active users in district hierarchy)
+      // schoolA has 5 active org-level users (schoolAAdmin, schoolAPrincipal, schoolATeacher,
+      // schoolAStudent, multiAssignedUser) + 2 active class-level users (classAStudent, classATeacher).
+      // expiredEnrollmentStudent's enrollment ended 7 days ago and must be excluded.
       expect(count).toBe(7);
     });
 
@@ -240,7 +237,8 @@ describe('AdministrationRepository', () => {
 
       const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
 
-      // futureEnrollmentStudent should be excluded, leaving only the remaining 7 active users
+      // futureEnrollmentStudent's enrollment starts 7 days from now and must be excluded,
+      // leaving the same 7 active users reachable from schoolA.
       expect(counts.get(admin.id)).toBe(7);
     });
 
