@@ -220,14 +220,9 @@ describe('AdministrationRepository', () => {
       const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
 
       const count = counts.get(admin.id) ?? 0;
-      // schoolATeacher is active; expiredEnrollmentStudent is excluded
-      // multiAssignedUser is also in schoolA
-      expect(count).toBeGreaterThan(0);
 
-      // Verify expiredEnrollmentStudent is not in the count by cross-checking with
-      // an administration assigned to a group only the expired student belongs to:
-      // there is no such group in baseFixture, so we verify indirectly that the total
-      // matches only active enrollments (schoolATeacher + multiAssignedUser = 2)
+      // Verify expiredEnrollmentStudent is not in the count by verifying the count matches
+      // the number of active enrollments (7 unique active users in district hierarchy)
       expect(count).toBe(7);
     });
 
@@ -245,7 +240,7 @@ describe('AdministrationRepository', () => {
 
       const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
 
-      // futureEnrollmentStudent should be excluded; only schoolATeacher + multiAssignedUser
+      // futureEnrollmentStudent should be excluded, leaving only the remaining 7 active users
       expect(counts.get(admin.id)).toBe(7);
     });
 
