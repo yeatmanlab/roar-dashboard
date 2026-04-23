@@ -1,7 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../../errors/api-error';
-import type { EnrolledUser, EnrolledUserEntity } from '../../types/user';
+import type { EnrolledUser, EnrolledUserEntity, EnrolledFamilyUser, EnrolledFamilyUserEntity } from '../../types/user';
 import { toErrorResponse } from '../../utils/to-error-response.util';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 
 /**
  * Maps a database User entity with role to the API contract EnrolledUser schema.
@@ -30,6 +31,55 @@ function toContractEnrolledUser(user: EnrolledUserEntity): EnrolledUser {
 }
 
 /**
+ * Maps a database User entity with family role to the API contract EnrolledFamilyUser schema.
+ * Returns select values from User and their associated family roles.
+ * @param user - The user entity to map.
+ * @returns The mapped EnrolledFamilyUser.
+ */
+function toContractEnrolledFamilyUser(user: EnrolledFamilyUserEntity): EnrolledFamilyUser {
+  return {
+    id: user.id,
+    assessmentPid: user.assessmentPid,
+    nameFirst: user.nameFirst,
+    nameLast: user.nameLast,
+    username: user.username,
+    email: user.email,
+    roles: user.roles,
+    gender: user.gender,
+    grade: user.grade,
+    dob: user.dob,
+    studentId: user.studentId,
+    sisId: user.sisId,
+    stateId: user.stateId,
+    localId: user.localId,
+  };
+}
+
+/** Represents the pagination item for a paginated user response. */
+type PaginationItem = { page: number; perPage: number; totalItems: number; totalPages: number };
+
+/** Represents a paginated user response with a status and body containing items and pagination information. */
+type PaginatedUserResponse<T extends EnrolledUser | EnrolledFamilyUser> = {
+  status: typeof StatusCodes.OK;
+  body: {
+    data: {
+      items: T[];
+      pagination: PaginationItem;
+    };
+  };
+};
+
+/**
+ * Narrows an enrolled user entity to EnrolledFamilyUserEntity by checking for family-specific roles.
+ * UserFamilyRole values ('parent', 'child') are disjoint from all UserRole values.
+ */
+function isEnrolledFamilyUserEntity(
+  user: EnrolledUserEntity | EnrolledFamilyUserEntity,
+): user is EnrolledFamilyUserEntity {
+  return user.roles.some((role) => role === UserFamilyRole.PARENT || role === UserFamilyRole.CHILD);
+}
+
+/**
  * Builds a paginated response for user listing endpoints.
  * @param result - The result from the database query.
  * @param page - The current page number.
@@ -40,17 +90,25 @@ export function handleUserSubResourceResponse(
   result: { items: EnrolledUserEntity[]; totalItems: number },
   page: number,
   perPage: number,
-): {
-  status: typeof StatusCodes.OK;
-  body: {
-    data: {
-      items: EnrolledUser[];
-      pagination: { page: number; perPage: number; totalItems: number; totalPages: number };
-    };
-  };
-} {
-  const items = result.items.map((item) => toContractEnrolledUser(item)) as EnrolledUser[];
-  const totalPages = Math.ceil(result.totalItems / perPage);
+): PaginatedUserResponse<EnrolledUser>;
+export function handleUserSubResourceResponse(
+  result: { items: EnrolledFamilyUserEntity[]; totalItems: number },
+  page: number,
+  perPage: number,
+): PaginatedUserResponse<EnrolledFamilyUser>;
+export function handleUserSubResourceResponse(
+  result: { items: (EnrolledUserEntity | EnrolledFamilyUserEntity)[]; totalItems: number },
+  page: number,
+  perPage: number,
+): PaginatedUserResponse<EnrolledUser | EnrolledFamilyUser>;
+export function handleUserSubResourceResponse(
+  result: { items: (EnrolledUserEntity | EnrolledFamilyUserEntity)[]; totalItems: number },
+  page: number,
+  perPage: number,
+): PaginatedUserResponse<EnrolledUser | EnrolledFamilyUser> {
+  const items = result.items.map((item) =>
+    isEnrolledFamilyUserEntity(item) ? toContractEnrolledFamilyUser(item) : toContractEnrolledUser(item),
+  );
 
   return {
     status: StatusCodes.OK as const,
@@ -61,7 +119,7 @@ export function handleUserSubResourceResponse(
           page,
           perPage,
           totalItems: result.totalItems,
-          totalPages,
+          totalPages: Math.ceil(result.totalItems / perPage),
         },
       },
     },

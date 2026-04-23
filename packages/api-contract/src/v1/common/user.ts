@@ -104,11 +104,14 @@ export const GradeFilterSchema = z
 
 export type GradeFilter = z.infer<typeof GradeFilterSchema>;
 
-export const EnrolledUsersQuerySchema = PaginationQuerySchema.merge(
+export const EnrolledUsersBaseQuerySchema = PaginationQuerySchema.merge(
   createSortQuerySchema(ENROLLED_USERS_SORT_FIELDS, 'nameLast'),
 ).extend({
-  role: UserRoleSchema.optional(),
   grade: GradeFilterSchema,
+});
+
+export const EnrolledUsersQuerySchema = EnrolledUsersBaseQuerySchema.extend({
+  role: UserRoleSchema.optional(),
 });
 
 export type EnrolledUsersQuery = z.infer<typeof EnrolledUsersQuerySchema>;
