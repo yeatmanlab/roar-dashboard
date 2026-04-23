@@ -11,10 +11,7 @@ import type { GroupRepository } from '../../repositories/group.repository';
 export function createMockGroupRepository(): MockedObject<GroupRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
-    getAuthorizedById: vi.fn(),
-    getUserRolesForGroup: vi.fn(),
     getUsersByGroupId: vi.fn(),
-    getAuthorizedUsersByGroupId: vi.fn(),
   } as unknown as MockedObject<GroupRepository>;
 }
 
