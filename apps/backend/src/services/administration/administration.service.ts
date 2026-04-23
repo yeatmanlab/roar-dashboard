@@ -15,6 +15,12 @@ import type { Administration } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
+import {
+  administrationDistrictTuple,
+  administrationSchoolTuple,
+  administrationClassTuple,
+  administrationGroupTuple,
+} from '../authorization/helpers/fga-tuples';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -1049,6 +1055,9 @@ export function AdministrationService({
 
       // Verify orgs exist (districts and schools)
       // N.B. Orgs where rostering has ended are not returned and as such will cause a validation error.
+      // Track district and school IDs separately for FGA tuple creation
+      let districtIds: string[] = [];
+      let schoolIds: string[] = [];
       if (orgIds.length > 0) {
         const { items: existingDistricts } = await districtRepository.listByIds(orgIds, {
           page: 1,
@@ -1058,8 +1067,9 @@ export function AdministrationService({
           page: 1,
           perPage: orgIds.length,
         });
-        const existingOrgs = [...existingDistricts, ...existingSchools];
-        const existingOrgsIdSet = new Set(existingOrgs.map((o) => o.id));
+        districtIds = existingDistricts.map((d) => d.id);
+        schoolIds = existingSchools.map((s) => s.id);
+        const existingOrgsIdSet = new Set([...districtIds, ...schoolIds]);
         const missingOrgs = orgIds.filter((orgId) => !existingOrgsIdSet.has(orgId));
         if (missingOrgs.length > 0) {
           throw new ApiError(ApiErrorMessage.NOT_FOUND, {
@@ -1176,6 +1186,42 @@ export function AdministrationService({
 
       // Create the administration with all related entities in a single transaction
       const created = await administrationRepository.createWithAssignments(createInput);
+
+      // Build FGA tuples for the administration assignments
+      // These tuples enable FGA to resolve which users can access this administration
+      const fgaTuples = [
+        ...districtIds.map((districtId) => administrationDistrictTuple(created.id, districtId)),
+        ...schoolIds.map((schoolId) => administrationSchoolTuple(created.id, schoolId)),
+        ...classIds.map((classId) => administrationClassTuple(created.id, classId)),
+        ...groupIds.map((groupId) => administrationGroupTuple(created.id, groupId)),
+      ];
+
+      // Write FGA tuples with compensation on failure (Saga pattern)
+      // If FGA write fails, delete the DB record to maintain consistency
+      try {
+        await authorizationService.writeTuplesOrThrow(fgaTuples);
+      } catch (fgaError) {
+        logger.error(
+          { err: fgaError, administrationId: created.id, tupleCount: fgaTuples.length },
+          'FGA tuple write failed, compensating by deleting administration',
+        );
+
+        // Compensate: delete the administration record
+        // Junction tables have ON DELETE CASCADE, so they'll be cleaned up automatically
+        try {
+          await administrationRepository.delete({ id: created.id });
+          logger.info({ administrationId: created.id }, 'Compensation successful: administration deleted');
+        } catch (deleteError) {
+          // Compensation failed - log for manual intervention
+          logger.error(
+            { err: deleteError, administrationId: created.id },
+            'Compensation failed: administration exists without FGA tuples. Manual intervention required.',
+          );
+        }
+
+        // Re-throw the original FGA error
+        throw fgaError;
+      }
 
       logger.info({ userId, administrationId: created.id }, 'Administration created successfully');
 

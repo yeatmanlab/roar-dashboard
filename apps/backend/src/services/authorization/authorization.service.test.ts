@@ -76,6 +76,72 @@ describe('AuthorizationService', () => {
     });
   });
 
+  describe('writeTuplesOrThrow', () => {
+    it('skips the SDK call when given an empty array', async () => {
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.writeTuplesOrThrow([]);
+
+      expect(mockClient.writeTuples).not.toHaveBeenCalled();
+    });
+
+    it('calls client.writeTuples with the provided tuples', async () => {
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.writeTuplesOrThrow(sampleTuples);
+
+      expect(mockClient.writeTuples).toHaveBeenCalledWith(sampleTuples);
+    });
+
+    it('logs at debug level on success', async () => {
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.writeTuplesOrThrow(sampleTuples);
+
+      expect(logger.debug).toHaveBeenCalledWith({ tupleCount: 1 }, 'FGA tuples written successfully');
+    });
+
+    it('throws ApiError with EXTERNAL_SERVICE_FAILED on SDK failure', async () => {
+      const sdkError = new Error('FGA write failed');
+      mockClient.writeTuples.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.writeTuplesOrThrow(sampleTuples)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+    });
+
+    it('logs error when SDK fails', async () => {
+      const sdkError = new Error('FGA write failed');
+      mockClient.writeTuples.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.writeTuplesOrThrow(sampleTuples).catch(() => {});
+
+      expect(logger.error).toHaveBeenCalledWith({ err: sdkError, tupleCount: 1 }, 'Failed to write FGA tuples');
+    });
+
+    it('includes tuple count in error context', async () => {
+      const sdkError = new Error('FGA write failed');
+      mockClient.writeTuples.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      try {
+        await service.writeTuplesOrThrow(sampleTuples);
+        expect.fail('Expected writeTuplesOrThrow to throw');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        const apiError = error as ApiError;
+        expect(apiError.context).toEqual({ tupleCount: 1 });
+        expect(apiError.cause).toBe(sdkError);
+      }
+    });
+  });
+
   describe('deleteTuples', () => {
     it('skips the SDK call when given an empty array', async () => {
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });

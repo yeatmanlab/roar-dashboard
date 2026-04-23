@@ -46,6 +46,32 @@ export function AuthorizationService({
   }
 
   /**
+   * Write tuples to the FGA store, throwing on failure.
+   *
+   * Unlike `writeTuples`, this method propagates errors to callers. Use this
+   * when tuple creation must succeed for the operation to be valid (e.g., in
+   * a Saga pattern where DB writes should be rolled back if FGA fails).
+   *
+   * @param tuples - Array of TupleKey objects to write
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the FGA write fails
+   */
+  async function writeTuplesOrThrow(tuples: TupleKey[]): Promise<void> {
+    if (tuples.length === 0) return;
+    try {
+      await client.writeTuples(tuples);
+      logger.debug({ tupleCount: tuples.length }, 'FGA tuples written successfully');
+    } catch (error) {
+      logger.error({ err: error, tupleCount: tuples.length }, 'Failed to write FGA tuples');
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { tupleCount: tuples.length },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Delete tuples from the FGA store.
    *
    * Fire-and-forget: logs errors but does not throw. The Postgres write
@@ -197,5 +223,13 @@ export function AuthorizationService({
     }
   }
 
-  return { writeTuples, deleteTuples, hasPermission, requirePermission, listAccessibleObjects, hasAnyPermission };
+  return {
+    writeTuples,
+    writeTuplesOrThrow,
+    deleteTuples,
+    hasPermission,
+    requirePermission,
+    listAccessibleObjects,
+    hasAnyPermission,
+  };
 }
