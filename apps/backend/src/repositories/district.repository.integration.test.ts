@@ -1,7 +1,7 @@
 /**
  * Integration tests for DistrictRepository.
  *
- * Tests custom methods (listAll, listAuthorized, fetchDistrictCounts)
+ * Tests custom methods (listAll, listByIds, fetchDistrictCounts, getUsersByDistrictPath)
  * against the real database with the base fixture's org hierarchy.
  *
  * Verifies SQL correctness and proper filtering by orgType, rosteringEnded, etc.
@@ -142,88 +142,95 @@ describe('DistrictRepository', () => {
     });
   });
 
-  describe('listAuthorized', () => {
-    it('returns only authorized districts for a user', async () => {
-      const result = await repository.listAuthorized(
-        { userId: baseFixture.schoolAStudent.id, allowedRoles: [UserRole.STUDENT] },
-        { page: 1, perPage: 100 },
-      );
+  describe('listByIds', () => {
+    it('returns only districts matching the given IDs', async () => {
+      const result = await repository.listByIds([baseFixture.district.id], { page: 1, perPage: 100 });
 
-      const ids = result.items.map((d) => d.id);
-
-      // School A student should see parent district
-      expect(ids).toContain(baseFixture.district.id);
-
-      // Should NOT see unrelated districts
-      expect(ids).not.toContain(baseFixture.districtB.id);
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
     });
 
-    it('returns districts for class-level user', async () => {
-      const result = await repository.listAuthorized(
-        { userId: baseFixture.classAStudent.id, allowedRoles: [UserRole.STUDENT] },
-        { page: 1, perPage: 100 },
-      );
-
-      const ids = result.items.map((d) => d.id);
-
-      // Class student should see parent school's district
-      expect(ids).toContain(baseFixture.district.id);
-      expect(ids).not.toContain(baseFixture.districtB.id);
-    });
-
-    it('returns descendant districts for supervisory roles', async () => {
-      // Create a state-level org with a child district
-      const stateOrg = await OrgFactory.create({
-        orgType: OrgType.STATE,
-        name: 'Test State for Supervisory',
+    it('returns multiple districts when given multiple IDs', async () => {
+      const result = await repository.listByIds([baseFixture.district.id, baseFixture.districtB.id], {
+        page: 1,
+        perPage: 100,
       });
 
-      const childDistrict = await OrgFactory.create({
+      expect(result.totalItems).toBe(2);
+      const ids = result.items.map((d) => d.id);
+      expect(ids).toContain(baseFixture.district.id);
+      expect(ids).toContain(baseFixture.districtB.id);
+    });
+
+    it('returns empty results for empty ID array', async () => {
+      const result = await repository.listByIds([], { page: 1, perPage: 100 });
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('filters out non-district org IDs', async () => {
+      // Pass a school ID — should be excluded by the orgType=district filter
+      const result = await repository.listByIds([baseFixture.schoolA.id, baseFixture.district.id], {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('excludes ended districts by default', async () => {
+      const endedDistrict = await OrgFactory.create({
         orgType: OrgType.DISTRICT,
-        name: 'Child District for Supervisory',
-        parentOrgId: stateOrg.id,
+        name: 'Ended District for listByIds',
+        rosteringEnded: new Date('2020-01-01'),
       });
 
-      // Create an administrator at the state level
-      const stateAdmin = await UserFactory.create({
-        nameFirst: 'State',
-        nameLast: 'Admin',
+      const result = await repository.listByIds([baseFixture.district.id, endedDistrict.id], {
+        page: 1,
+        perPage: 100,
+        includeEnded: false,
       });
-
-      await UserOrgFactory.create({
-        userId: stateAdmin.id,
-        orgId: stateOrg.id,
-        role: UserRole.ADMINISTRATOR,
-      });
-
-      const result = await repository.listAuthorized(
-        { userId: stateAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        { page: 1, perPage: 100 },
-      );
 
       const ids = result.items.map((d) => d.id);
-      // State admin should see child district
-      expect(ids).toContain(childDistrict.id);
+      expect(ids).toContain(baseFixture.district.id);
+      expect(ids).not.toContain(endedDistrict.id);
+    });
+
+    it('includes ended districts when includeEnded=true', async () => {
+      const endedDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'Ended District for listByIds Include',
+        rosteringEnded: new Date('2020-01-01'),
+      });
+
+      const result = await repository.listByIds([baseFixture.district.id, endedDistrict.id], {
+        page: 1,
+        perPage: 100,
+        includeEnded: true,
+      });
+
+      const ids = result.items.map((d) => d.id);
+      expect(ids).toContain(endedDistrict.id);
     });
 
     it('respects pagination', async () => {
-      const page1 = await repository.listAuthorized(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        { page: 1, perPage: 1 },
-      );
+      const result = await repository.listByIds([baseFixture.district.id, baseFixture.districtB.id], {
+        page: 1,
+        perPage: 1,
+      });
 
-      expect(page1.items.length).toBeLessThanOrEqual(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.totalItems).toBe(2);
     });
 
     it('applies sorting', async () => {
-      const result = await repository.listAuthorized(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        {
-          page: 1,
-          perPage: 100,
-          orderBy: { field: 'name', direction: 'asc' },
-        },
-      );
+      const result = await repository.listByIds([baseFixture.district.id, baseFixture.districtB.id], {
+        page: 1,
+        perPage: 100,
+        orderBy: { field: 'name', direction: 'asc' },
+      });
 
       if (result.items.length > 1) {
         for (let i = 1; i < result.items.length; i++) {
@@ -232,103 +239,36 @@ describe('DistrictRepository', () => {
       }
     });
 
-    it('excludes ended districts by default', async () => {
-      // Create a district with rosteringEnded
-      const endedDistrict = await OrgFactory.create({
-        orgType: OrgType.DISTRICT,
-        name: 'Ended District for Auth Exclude Test',
-        rosteringEnded: new Date('2020-01-01'),
-      });
-
-      // Assign user to the ended district
-      await UserOrgFactory.create({
-        userId: baseFixture.districtAdmin.id,
-        orgId: endedDistrict.id,
-        role: UserRole.ADMINISTRATOR,
-      });
-
-      const result = await repository.listAuthorized(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        { page: 1, perPage: 1000, includeEnded: false },
-      );
-
-      const ids = result.items.map((d) => d.id);
-
-      // All returned items should have null rosteringEnded
-      for (const item of result.items) {
-        expect(item.rosteringEnded).toBeNull();
-      }
-
-      // Our ended district should NOT be in results
-      expect(ids).not.toContain(endedDistrict.id);
-    });
-
-    it('includes ended districts when includeEnded=true', async () => {
-      // Create a district with rosteringEnded
-      const endedDistrict = await OrgFactory.create({
-        orgType: OrgType.DISTRICT,
-        name: 'Ended District for Auth Test 2',
-        rosteringEnded: new Date(),
-      });
-
-      // Assign user to the ended district
-      await UserOrgFactory.create({
-        userId: baseFixture.districtAdmin.id,
-        orgId: endedDistrict.id,
-        role: UserRole.ADMINISTRATOR,
-      });
-
-      const result = await repository.listAuthorized(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        { page: 1, perPage: 100, includeEnded: true },
-      );
-
-      const ids = result.items.map((d) => d.id);
-      expect(ids).toContain(endedDistrict.id);
-    });
-
-    it('returns empty for user with no access', async () => {
-      const isolatedUser = await UserFactory.create({
-        nameFirst: 'Isolated',
-        nameLast: 'User',
-      });
-
-      const result = await repository.listAuthorized(
-        { userId: isolatedUser.id, allowedRoles: [UserRole.STUDENT] },
-        { page: 1, perPage: 100 },
-      );
-
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
-    });
-
     it('includes counts when embedCounts=true', async () => {
-      const result = await repository.listAuthorized(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        { page: 1, perPage: 100, embedCounts: true },
-      );
+      const result = await repository.listByIds([baseFixture.district.id], {
+        page: 1,
+        perPage: 100,
+        embedCounts: true,
+      });
 
-      expect(result.items.length).toBeGreaterThan(0);
-      const districtWithCounts = result.items.find((d) => d.id === baseFixture.district.id) as
-        | DistrictWithCounts
-        | undefined;
-      expect(districtWithCounts).toBeDefined();
-      expect(districtWithCounts?.counts).toBeDefined();
-      expect(districtWithCounts?.counts).toHaveProperty('users');
-      expect(districtWithCounts?.counts).toHaveProperty('schools');
-      expect(districtWithCounts?.counts).toHaveProperty('classes');
+      expect(result.items).toHaveLength(1);
+      const district = result.items[0] as DistrictWithCounts;
+      expect(district.counts).toBeDefined();
+      expect(district.counts).toHaveProperty('users');
+      expect(district.counts).toHaveProperty('schools');
+      expect(district.counts).toHaveProperty('classes');
     });
 
-    it('omits counts when embedCounts=false', async () => {
-      const result = await repository.listAuthorized(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        { page: 1, perPage: 100, embedCounts: false },
-      );
+    it('omits counts when embedCounts is not set', async () => {
+      const result = await repository.listByIds([baseFixture.district.id], { page: 1, perPage: 100 });
 
-      expect(result.items.length).toBeGreaterThan(0);
-      for (const item of result.items) {
-        expect((item as DistrictWithCounts).counts).toBeUndefined();
-      }
+      expect(result.items).toHaveLength(1);
+      expect((result.items[0] as DistrictWithCounts).counts).toBeUndefined();
+    });
+
+    it('ignores nonexistent IDs gracefully', async () => {
+      const result = await repository.listByIds(['00000000-0000-0000-0000-000000000000', baseFixture.district.id], {
+        page: 1,
+        perPage: 100,
+      });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0]!.id).toBe(baseFixture.district.id);
     });
   });
 
@@ -359,86 +299,6 @@ describe('DistrictRepository', () => {
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe(baseFixture.districtB.id);
-    });
-  });
-
-  describe('getAuthorizedById', () => {
-    it('returns district when user has access', async () => {
-      const result = await repository.getAuthorizedById(
-        {
-          userId: baseFixture.districtAdmin.id,
-          allowedRoles: [UserRole.ADMINISTRATOR],
-        },
-        baseFixture.district.id,
-      );
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(baseFixture.district.id);
-    });
-
-    it('returns null when user lacks access', async () => {
-      // District B admin should not have access to District A
-      const result = await repository.getAuthorizedById(
-        {
-          userId: baseFixture.districtBAdmin.id,
-          allowedRoles: [UserRole.ADMINISTRATOR],
-        },
-        baseFixture.district.id,
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it('returns null for nonexistent district ID', async () => {
-      const result = await repository.getAuthorizedById(
-        {
-          userId: baseFixture.districtAdmin.id,
-          allowedRoles: [UserRole.ADMINISTRATOR],
-        },
-        '00000000-0000-0000-0000-000000000000',
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it('returns district for student with access', async () => {
-      // School A student should have access to parent district
-      const result = await repository.getAuthorizedById(
-        {
-          userId: baseFixture.schoolAStudent.id,
-          allowedRoles: [UserRole.STUDENT],
-        },
-        baseFixture.district.id,
-      );
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(baseFixture.district.id);
-    });
-
-    it('returns null for student without access to district', async () => {
-      // School A student should NOT have access to District B
-      const result = await repository.getAuthorizedById(
-        {
-          userId: baseFixture.schoolAStudent.id,
-          allowedRoles: [UserRole.STUDENT],
-        },
-        baseFixture.districtB.id,
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it('filters correctly by orgType=district', async () => {
-      // Try to get a school by ID - should return null even if user has access
-      const result = await repository.getAuthorizedById(
-        {
-          userId: baseFixture.districtAdmin.id,
-          allowedRoles: [UserRole.ADMINISTRATOR],
-        },
-        baseFixture.schoolA.id,
-      );
-
-      expect(result).toBeNull();
     });
   });
 
@@ -871,59 +731,6 @@ describe('DistrictRepository', () => {
         expect(result.totalItems).toBe(0);
         expect(result.items).toEqual([]);
       });
-    });
-  });
-
-  describe('getUserRolesForDistrict', () => {
-    it('delegates to access controls and returns roles', async () => {
-      const roles = await repository.getUserRolesForDistrict(baseFixture.districtAdmin.id, baseFixture.district.id);
-
-      expect(roles).toContain(UserRole.ADMINISTRATOR);
-    });
-
-    it('returns empty array for user with no district membership', async () => {
-      const roles = await repository.getUserRolesForDistrict(baseFixture.schoolAStudent.id, baseFixture.district.id);
-
-      expect(roles).toHaveLength(0);
-    });
-  });
-
-  describe('getAuthorizedUsersByDistrictId', () => {
-    it('returns users when requesting user has authorized membership in district', async () => {
-      const result = await repository.getAuthorizedUsersByDistrictId(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.district.id,
-        baseFixture.district.path,
-        { page: 1, perPage: 100 },
-      );
-
-      expect(result.items.length).toBeGreaterThan(0);
-      const userIds = result.items.map((u) => u.id);
-      expect(userIds).toContain(baseFixture.districtAdmin.id);
-    });
-
-    it('returns empty when requesting user has no membership in district', async () => {
-      const result = await repository.getAuthorizedUsersByDistrictId(
-        { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.district.id,
-        baseFixture.district.path,
-        { page: 1, perPage: 100 },
-      );
-
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
-    });
-
-    it('returns empty when requesting user has membership but role not in allowedRoles', async () => {
-      const result = await repository.getAuthorizedUsersByDistrictId(
-        { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.district.id,
-        baseFixture.district.path,
-        { page: 1, perPage: 100 },
-      );
-
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
     });
   });
 });

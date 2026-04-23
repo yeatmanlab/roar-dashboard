@@ -47,9 +47,33 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-principal
+    relation: principal
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-counselor
+    relation: counselor
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:school-teacher
     relation: teacher
     object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-teacher
+    relation: teacher
+    object: class:class-in-school-a
     condition:
       name: active_membership
       context:
@@ -109,6 +133,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:principal-in-tree-a
+    relation: principal
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:teacher-in-tree-a
     relation: teacher
     object: school:school-a
@@ -158,7 +190,7 @@ tests:
           can_update: false
           can_delete: false
 
-  - name: District teacher can list/read their district (supervisory role)
+  - name: District teacher can list/read district but not access student data (educator tier)
     check:
       - user: user:district-teacher
         object: district:district-a
@@ -167,8 +199,12 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_list_users: true
-          can_read_scores: true
+          # District-level student data is restricted to admin_tier. A
+          # mis-rostered teacher at the district level should not gain
+          # visibility into student data across the entire district.
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
           can_create: false
           can_update: false
           can_delete: false
@@ -187,6 +223,22 @@ tests:
           can_delete: false
           can_list_users: false
           can_read_scores: false
+
+  - name: School principal can list/read parent district (ancestor visibilty via subtree)
+    check:
+      - user: user:school-principal
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          # Visibility only — not a district-level role holder
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
+          supervisory_tier_group: false
+          subtree_supervisory_tier_group: true
 
   - name: School teacher can list/read parent district (ancestor visibility via subtree)
     check:
@@ -277,6 +329,7 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+          can_list_classes: true
           can_list_users: true
           can_read_scores: true
 
@@ -293,7 +346,34 @@ tests:
           can_update: false
           can_delete: false
 
-  - name: School teacher can list/read their school
+  - name: School principal can list/read school and classes and can access student data (supervisory_tier_group)
+    check:
+      - user: user:school-principal
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_classes: true
+          can_list_users: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: School principal cannot see sibling school
+    check:
+      - user: user:school-principal
+        object: school:school-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: School teacher can list/read school but NOT list classes or access student data (educator tier)
     check:
       - user: user:school-teacher
         object: school:school-a
@@ -302,8 +382,34 @@ tests:
         assertions:
           can_list: true
           can_read: true
-          can_list_users: true
-          can_read_scores: true
+          # School-level educators cannot list classes (prevents UI bloat for
+          # classes they cannot interact with). They must be rostered on specific
+          # classes to see them.
+          can_list_classes: false
+          # School-level student data is restricted to admin_tier and
+          # school_admin_tier. Educators (teacher, aide, proctor) must be
+          # rostered on specific classes to see student data — school-level
+          # membership alone is not sufficient.
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: School teacher with direct class access cannot list school classes
+    check:
+      - user: user:school-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_classes: false
+          can_list_users: false
+          can_read_scores: false
+          can_read_progress: false
           can_create: false
           can_update: false
           can_delete: false
@@ -330,6 +436,7 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+          can_list_classes: false
           can_list_users: false
 
   - name: Student in school cannot see sibling school
@@ -351,6 +458,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_list_classes: false
           can_list_users: false
 
   - name: Student in district does NOT see descendant schools (no downward access)
@@ -375,6 +483,7 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+          can_list_classes: false
 
   # ─── Cross-org denial ──────────────────────────────────────────────
 
@@ -405,6 +514,16 @@ tests:
     check:
       - user: user:district-admin
         object: class:class-in-school-c
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+
+  - name: Principal in tree A cannot see school in tree B
+    check:
+      - user: user:principal-in-tree-a
+        object: school:school-c
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
@@ -455,6 +574,16 @@ tests:
   - name: District admin sees their district
     list_objects:
       - user: user:district-admin
+        type: district
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list:
+            - district:district-a
+
+  - name: School principal sees parent district (ancestor visibility)
+    list_objects:
+      - user: user:school-principal
         type: district
         context:
           current_time: "2025-06-15T12:00:00Z"
@@ -544,6 +673,9 @@ tests:
             users:
               - user:district-admin
               - user:district-teacher
+              - user:school-principal
+              - user:principal-in-tree-a
+              - user:school-counselor
               - user:school-teacher
               - user:teacher-in-tree-a
               - user:class-teacher
@@ -556,9 +688,14 @@ tests:
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
+          # district-teacher (educator_tier at district level) does NOT
+          # inherit to child schools — educator_tier is direct-only at
+          # every level of the hierarchy.
           can_list:
             users:
               - user:district-admin
-              - user:district-teacher
+              - user:school-principal
+              - user:principal-in-tree-a
+              - user:school-counselor
               - user:school-teacher
               - user:teacher-in-tree-a

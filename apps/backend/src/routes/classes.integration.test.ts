@@ -4,7 +4,7 @@
  * Tests the full HTTP lifecycle: middleware → controller → service → repository → DB.
  * Only Firebase token verification is mocked — everything else runs for real.
  *
- * Authorization is tested by permission tier (matching RolePermissions groupings):
+ * Authorization is tested by permission tier (resolved via OpenFGA):
  *   - superAdmin:  isSuperAdmin=true (bypasses all access control)
  *   - siteAdmin:   site_administrator
  *   - admin:       administrator
@@ -26,7 +26,11 @@ import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ClassFactory } from '../test-support/factories/class.factory';
-import type { EnrolledUserEntity } from '../types/user';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { UserRole } from '../enums/user-role.enum';
+import { UserType } from '../enums/user-type.enum';
+import type { EnrolledUser } from '@roar-dashboard/api-contract';
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
 // ═══════════════════════════════════════════════════════════════════════════
@@ -44,6 +48,10 @@ beforeAll(async () => {
   app = createTestApp(registerClassesRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+
+  // Re-sync FGA tuples to pick up tier users created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -89,14 +97,39 @@ describe('GET /v1/classes/:classId/users', () => {
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
-    it('educator tier can list users in a class within their district', async () => {
-      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(200);
+    it('educator (teacher) at district level is forbidden from listing class users (teacher does not inherit to classes)', async () => {
+      // Teacher role does NOT inherit via parent_org — a district-level teacher
+      // has no teacher role on child schools or classes, so FGA does not grant
+      // can_list_users on the class.
+      const res = await expectRoute('GET', path()).as(tiers.educator).toReturn(403);
 
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('principal at school A can list users in class (school_admin_tier inherits school→class)', async () => {
+      // Principal is rostered at schoolA. In the FGA model, principal inherits from
+      // parent_org at the class level, so schoolAPrincipal has principal role on
+      // classInSchoolA → supervisory_tier_group → can_list_users.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.items).toBeInstanceOf(Array);
       const userIds = res.body.data.items.map((user: { id: string }) => user.id);
       expect(userIds).toContain(baseFixture.classAStudent.id);
       expect(userIds).toContain(baseFixture.classATeacher.id);
-      expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
+    });
+
+    it('school-level teacher cannot list users in class (teacher does not inherit school→class)', async () => {
+      // schoolATeacher is rostered at schoolA with teacher role. In the FGA model,
+      // teacher does NOT have `from parent_org` at the class level, so the teacher
+      // role does not cascade from school to class. The school-level teacher has no
+      // role on classInSchoolA → no can_list_users.
+      authenticateAs(baseFixture.schoolATeacher);
+      const res = await request(app).get(path()).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
     it('student tier is forbidden from listing users in classes', async () => {
@@ -170,42 +203,95 @@ describe('GET /v1/classes/:classId/users', () => {
     });
 
     describe('query parameters', () => {
-      it('filters users by role parameter', async () => {
-        const res = await expectRoute('GET', `${path()}?role=student`).as(tiers.admin).toReturn(200);
+      // Test class with multiple students of different grades and roles
+      let filterTestClass: Awaited<ReturnType<typeof ClassFactory.create>>;
 
-        expect(res.body.data.items).toBeInstanceOf(Array);
-        const userIds = res.body.data.items.map((user: { id: string }) => user.id);
-        expect(userIds).toContain(baseFixture.classAStudent.id);
-        expect(userIds).not.toContain(baseFixture.classATeacher.id);
+      beforeAll(async () => {
+        // Create a dedicated class for filter tests
+        filterTestClass = await ClassFactory.create({
+          name: 'Filter Test Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+
+        // Create users with specific grades and enroll them
+        const usersToCreate = [
+          { grade: '5' as const, role: UserRole.STUDENT },
+          { grade: '5' as const, role: UserRole.STUDENT },
+          { grade: '3' as const, role: UserRole.STUDENT },
+          { grade: '7' as const, role: UserRole.STUDENT },
+          { grade: null, role: UserRole.TEACHER },
+        ];
+
+        const createdUsers = await Promise.all(
+          usersToCreate.map(({ grade }) =>
+            UserFactory.create({ userType: grade ? UserType.STUDENT : UserType.EDUCATOR, grade }),
+          ),
+        );
+
+        await Promise.all(
+          createdUsers.map((user, i) =>
+            UserClassFactory.create({ userId: user.id, classId: filterTestClass.id, role: usersToCreate[i]!.role }),
+          ),
+        );
       });
 
-      it('filters users by grade parameter', async () => {
-        const res = await expectRoute('GET', `${path()}?grade=5`).as(tiers.admin).toReturn(200);
+      const filterPath = () => `/v1/classes/${filterTestClass.id}/users`;
+
+      it('filters users by role parameter', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?role=student`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
-        // Should only return users in grade 5
-        res.body.data.items.forEach((user: EnrolledUserEntity) => {
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
+          expect(user.roles).toContain('student');
+        });
+      });
+
+      it('filters users by single grade parameter', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?grade=5`).as(tiers.superAdmin).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
           expect(user.grade).toBe('5');
+        });
+      });
+
+      it('filters users by multiple grades with comma-separated values', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?grade=3,7`).as(tiers.superAdmin).toReturn(200);
+
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
+          expect(['3', '7']).toContain(user.grade);
         });
       });
 
       it('combines role and grade filters', async () => {
-        const res = await expectRoute('GET', `${path()}?role=student&grade=5`).as(tiers.admin).toReturn(200);
+        const res = await expectRoute('GET', `${filterPath()}?role=student&grade=5`).as(tiers.superAdmin).toReturn(200);
 
         expect(res.body.data.items).toBeInstanceOf(Array);
-        // Should only contain grade 5 students
-        res.body.data.items.forEach((user: EnrolledUserEntity) => {
-          expect(user.role).toBe('student');
+        expect(res.body.data.items.length).toBeGreaterThan(0);
+        res.body.data.items.forEach((user: EnrolledUser) => {
+          expect(user.roles).toContain('student');
           expect(user.grade).toBe('5');
         });
       });
 
-      it('supports pagination with page and perPage parameters', async () => {
-        const res = await expectRoute('GET', `${path()}?page=1&perPage=1`).as(tiers.admin).toReturn(200);
+      it('returns empty array when no users match filter', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?grade=12`).as(tiers.superAdmin).toReturn(200);
 
-        expect(res.body.data.items).toHaveLength(1);
+        expect(res.body.data.items).toBeInstanceOf(Array);
+        expect(res.body.data.items).toHaveLength(0);
+      });
+
+      it('supports pagination with page and perPage parameters', async () => {
+        const res = await expectRoute('GET', `${filterPath()}?page=1&perPage=2`).as(tiers.superAdmin).toReturn(200);
+
+        expect(res.body.data.items).toHaveLength(2);
         expect(res.body.data.pagination.page).toBe(1);
-        expect(res.body.data.pagination.perPage).toBe(1);
+        expect(res.body.data.pagination.perPage).toBe(2);
         expect(res.body.data.pagination.totalItems).toBeGreaterThan(0);
         expect(res.body.data.pagination.totalPages).toBeGreaterThan(0);
       });

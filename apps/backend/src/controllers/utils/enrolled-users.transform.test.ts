@@ -5,8 +5,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { ApiError } from '../../errors/api-error';
-import { UserFactory } from '../../test-support/factories/user.factory';
-import { EnrolledUserEntity } from '../../types/user';
+import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 
 describe('handle-enrolled-users', () => {
   describe('handleSubResourceError', () => {
@@ -42,15 +41,8 @@ describe('handle-enrolled-users', () => {
   });
 
   describe('handleUserSubResourceResponse', () => {
-    const createMockEnrolledUser = (overrides: Partial<EnrolledUserEntity> = {}): EnrolledUserEntity => ({
-      ...UserFactory.build(),
-      role: UserRole.STUDENT,
-      enrollmentStart: new Date('2024-01-01T00:00:00Z'),
-      ...overrides,
-    });
-
     it('returns OK status with paginated response', () => {
-      const mockUsers = [createMockEnrolledUser()];
+      const mockUsers = [EnrolledUserFactory.build()];
       const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
       expect(result.status).toBe(StatusCodes.OK);
@@ -63,22 +55,15 @@ describe('handle-enrolled-users', () => {
       });
     });
 
-    it('converts enrollmentStart Date to ISO string', () => {
-      const mockUsers = [createMockEnrolledUser({ enrollmentStart: new Date('2024-06-15T10:30:00Z') })];
-      const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
-
-      expect(result.body.data.items[0]!.enrollmentStart).toBe('2024-06-15T10:30:00.000Z');
-    });
-
     it('includes role in response', () => {
-      const mockUsers = [createMockEnrolledUser({ role: UserRole.TEACHER })];
+      const mockUsers = [EnrolledUserFactory.build({ roles: [UserRole.TEACHER] })];
       const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 1 }, 1, 10);
 
-      expect(result.body.data.items[0]!.role).toBe(UserRole.TEACHER);
+      expect(result.body.data.items[0]!.roles).toEqual([UserRole.TEACHER]);
     });
 
     it('calculates totalPages correctly', () => {
-      const mockUsers = [createMockEnrolledUser()];
+      const mockUsers = [EnrolledUserFactory.build()];
 
       // 25 items, 10 per page = 3 pages
       const result = handleUserSubResourceResponse({ items: mockUsers, totalItems: 25 }, 1, 10);
@@ -102,7 +87,7 @@ describe('handle-enrolled-users', () => {
     });
 
     it('maps all user fields correctly', () => {
-      const mockUser = createMockEnrolledUser({
+      const mockUser = EnrolledUserFactory.build({
         id: 'test-id',
         assessmentPid: 'test-pid',
         nameFirst: 'Jane',
@@ -116,8 +101,7 @@ describe('handle-enrolled-users', () => {
         sisId: 'sis-456',
         stateId: 'state-456',
         localId: 'local-456',
-        role: UserRole.STUDENT,
-        enrollmentStart: new Date('2024-01-15T00:00:00Z'),
+        roles: [UserRole.STUDENT],
       });
 
       const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
@@ -136,15 +120,11 @@ describe('handle-enrolled-users', () => {
       expect(item.sisId).toBe('sis-456');
       expect(item.stateId).toBe('state-456');
       expect(item.localId).toBe('local-456');
-      expect(item.role).toBe(UserRole.STUDENT);
-      expect(item.enrollmentStart).toBe('2024-01-15T00:00:00.000Z');
+      expect(item.roles).toEqual([UserRole.STUDENT]);
     });
 
     it('omits sensitive and internal fields from response', () => {
-      const mockUser = createMockEnrolledUser({
-        id: 'test-id',
-        role: UserRole.STUDENT,
-      });
+      const mockUser = EnrolledUserFactory.build();
 
       const result = handleUserSubResourceResponse({ items: [mockUser], totalItems: 1 }, 1, 10);
       const item = result.body.data.items[0]!;

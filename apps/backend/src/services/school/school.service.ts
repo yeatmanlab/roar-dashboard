@@ -1,8 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import type { SchoolWithCounts } from '../../repositories/school.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
-import { rolesForPermission } from '../../constants/role-permissions';
-import { Permissions } from '../../constants/permissions';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -10,9 +8,12 @@ import { logger } from '../../logger';
 import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 import type { Class } from '../../db/schema';
+import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
 import { ClassRepository } from '../../repositories/class.repository';
-import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
 import type { ParsedFilter, FilterOperator } from '../../types/filter';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
 
 /** Type safe constant for 'eq' filter operator */
 const EQ_OPERATOR: FilterOperator = 'eq';
@@ -54,15 +55,18 @@ export interface ListSchoolClassesOptions {
 export function SchoolService({
   schoolRepository = new SchoolRepository(),
   classRepository = new ClassRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   schoolRepository?: SchoolRepository;
   classRepository?: ClassRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
    * List schools accessible to a user with pagination and sorting.
    *
-   * super_admin users have unrestricted access to all schools.
-   * Other users only see schools they're assigned to via org/class/group membership.
+   * Authorization:
+   * - Super admins have unrestricted access to all schools
+   * - Regular users see only schools for which FGA grants can_list
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param options - Query options including pagination and sorting
@@ -91,8 +95,19 @@ export function SchoolService({
       if (isSuperAdmin) {
         result = await schoolRepository.listAll(queryParams);
       } else {
-        const allowedRoles = rolesForPermission(Permissions.Organizations.LIST);
-        result = await schoolRepository.listAuthorized({ userId, allowedRoles }, queryParams);
+        // Resolve accessible school IDs from FGA, then fetch by those IDs
+        const fgaObjects = await authorizationService.listAccessibleObjects(
+          userId,
+          FgaRelation.CAN_LIST,
+          FgaType.SCHOOL,
+        );
+        const schoolIds = fgaObjects.map(extractFgaObjectId);
+
+        if (schoolIds.length === 0) {
+          return { items: [], totalItems: 0 };
+        }
+
+        result = await schoolRepository.listByIds(schoolIds, queryParams);
       }
     } catch (error) {
       if (error instanceof ApiError) {
@@ -143,21 +158,12 @@ export function SchoolService({
         return school;
       }
 
-      // 3. Check access via org hierarchy joins
-      const allowedRoles = rolesForPermission(Permissions.Organizations.READ);
-      const authorized = await schoolRepository.getAuthorizedById({ userId, allowedRoles }, schoolId);
-      if (!authorized) {
-        logger.warn({ userId, schoolId }, 'User attempted to access school without permission');
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, schoolId },
-        });
-      }
+      // 3. Check access via FGA
+      await authorizationService.requirePermission(userId, FgaRelation.CAN_READ, `${FgaType.SCHOOL}:${schoolId}`);
 
       // 4. Check if school has ended rostering (business rule, not authorization)
       // Return 404 instead of showing ended schools to regular users
-      if (authorized.rosteringEnded) {
+      if (school.rosteringEnded) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
@@ -165,7 +171,7 @@ export function SchoolService({
         });
       }
 
-      return authorized;
+      return school;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -183,31 +189,31 @@ export function SchoolService({
   }
 
   /**
-   * Authorize sub-resource access (requires supervisory role).
+   * Authorize sub-resource access (requires supervisory role via FGA).
+   *
+   * Checks that the school exists and the user has can_list_classes permission,
+   * which requires supervisory_tier_group in the FGA model.
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param schoolId - The school ID to verify access for
    * @throws {ApiError} NOT_FOUND if school doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
+   * @throws {ApiError} FORBIDDEN if user lacks supervisory permission
    */
   async function authorizeSchoolSubResourceAccess(authContext: AuthContext, schoolId: string): Promise<void> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
 
-    // Verify school access
-    await getById(authContext, schoolId);
-
-    if (isSuperAdmin) return;
-
-    const userRoles = await schoolRepository.getUserRolesForSchool(userId, schoolId);
-
-    if (!hasSupervisoryRole(userRoles)) {
-      logger.warn({ userId, schoolId, userRoles }, 'Supervised user attempted to list school sub-resources');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, schoolId, userRoles },
+    // Verify school exists (404 before 403)
+    const school = await schoolRepository.getUnrestrictedById(schoolId);
+    if (!school) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, schoolId },
       });
     }
+
+    // FGA handles both access check and supervisory role requirement
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST_CLASSES, `${FgaType.SCHOOL}:${schoolId}`);
   }
 
   /**
@@ -278,10 +284,79 @@ export function SchoolService({
     }
   }
 
+  /**
+   * Get users enrolled in a school.
+   *
+   * super_admin users can see all enrolled users.
+   * Other users can only see enrolled users if they have the `can_list_users` permission on the school.
+   *
+   * Returns all users who have an active enrollment in the specified school.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param schoolId - The school ID to get enrolled users for
+   * @param options - Pagination, sorting, and filtering options
+   * @returns Paginated result with users
+   * @throws {ApiError} NOT_FOUND if school doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access to the school
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database query fails
+   */
+  async function listUsers(
+    authContext: AuthContext,
+    schoolId: string,
+    options: EnrolledUsersQuery,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { userId, isSuperAdmin } = authContext;
+    try {
+      // getUnrestrictedById: separates 404 from 403, guards orgType so a district ID
+      // won't masquerade as a school, and avoids firing a can_read FGA check when
+      // this endpoint gates on can_list_users. See listSchoolClasses for full rationale.
+      const school = await schoolRepository.getUnrestrictedById(schoolId);
+
+      if (!school) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, schoolId },
+        });
+      }
+
+      const queryParams: ListEnrolledUsersOptions = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: { field: options.sortBy, direction: options.sortOrder },
+        ...(options.role && { role: options.role }),
+        ...(options.grade && { grade: options.grade }),
+      };
+
+      if (!isSuperAdmin) {
+        await authorizationService.requirePermission(
+          userId,
+          FgaRelation.CAN_LIST_USERS,
+          `${FgaType.SCHOOL}:${schoolId}`,
+        );
+      }
+      return await schoolRepository.getUsersBySchoolId(schoolId, queryParams);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, schoolId, options } }, 'Failed to list school users');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, schoolId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     list,
     getById,
     listSchoolClasses,
+    listUsers,
   };
 }
 

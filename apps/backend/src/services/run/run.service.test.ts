@@ -4,26 +4,20 @@ import { RunService } from './run.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
-import type {
-  MockRunRepository,
-  MockTaskVariantRepository,
-  MockAdministrationAccessControls,
-} from '../../test-support/repositories';
-import {
-  createMockRunRepository,
-  createMockTaskVariantRepository,
-  createMockAdministrationAccessControls,
-} from '../../test-support/repositories';
-import type { MockAdministrationService } from '../../test-support/services';
-import { createMockAdministrationService } from '../../test-support/services';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import type { MockRunRepository, MockTaskVariantRepository } from '../../test-support/repositories';
+import { createMockRunRepository, createMockTaskVariantRepository } from '../../test-support/repositories';
+import type { MockAdministrationService, MockAuthorizationService } from '../../test-support/services';
+import { createMockAdministrationService, createMockAuthorizationService } from '../../test-support/services';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 describe('RunService', () => {
   let authContext: AuthContext;
   let runRepository: MockRunRepository;
   let administrationService: MockAdministrationService;
-  let administrationAccessControls: MockAdministrationAccessControls;
+  let authorizationService: MockAuthorizationService;
   let runService: ReturnType<typeof RunService>;
   let taskVariantRepository: MockTaskVariantRepository;
 
@@ -45,20 +39,19 @@ describe('RunService', () => {
 
     taskVariantRepository = createMockTaskVariantRepository();
 
-    administrationAccessControls = createMockAdministrationAccessControls();
+    authorizationService = createMockAuthorizationService();
 
     runService = RunService({
       runRepository,
       administrationService,
       taskVariantRepository,
-      administrationAccessControls,
+      authorizationService,
     });
   });
 
   describe('create', () => {
     it('should create a run successfully with all parameters', async () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
@@ -69,9 +62,10 @@ describe('RunService', () => {
         { userId: 'user-123', isSuperAdmin: false },
         '660e8400-e29b-41d4-a716-446655440001',
       );
-      expect(administrationAccessControls.getUserRolesForAdministration).toHaveBeenCalledWith(
+      expect(authorizationService.requirePermission).toHaveBeenCalledWith(
         'user-123',
-        '660e8400-e29b-41d4-a716-446655440001',
+        FgaRelation.CAN_CREATE_RUN,
+        `${FgaType.ADMINISTRATION}:${validRequestBody.administrationId}`,
       );
       expect(taskVariantRepository.getTaskIdByVariantId).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000');
       expect(runRepository.create).toHaveBeenCalledWith({
@@ -102,8 +96,12 @@ describe('RunService', () => {
 
     it('should throw FORBIDDEN when user lacks permission to create run', async () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['teacher']);
-      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+      authorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
 
       await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
@@ -124,7 +122,7 @@ describe('RunService', () => {
         superAdminContext,
         '660e8400-e29b-41d4-a716-446655440001',
       );
-      expect(administrationAccessControls.getUserRolesForAdministration).not.toHaveBeenCalled();
+      expect(authorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
     it('should include metadata in run creation when provided', async () => {
@@ -137,7 +135,7 @@ describe('RunService', () => {
       };
 
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
+      authorizationService.requirePermission.mockResolvedValue(undefined);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-789' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-789' });
 
@@ -160,11 +158,11 @@ describe('RunService', () => {
       const serviceWithoutTaskVariantRepository = RunService({
         runRepository,
         administrationService,
-        administrationAccessControls,
+        authorizationService,
       });
 
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
+      authorizationService.requirePermission.mockResolvedValue(undefined);
 
       await expect(serviceWithoutTaskVariantRepository.create(authContext, validRequestBody)).rejects.toThrow();
     });
@@ -185,7 +183,7 @@ describe('RunService', () => {
 
     it('should throw UNPROCESSABLE_ENTITY when task variant does not exist', async () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
+      authorizationService.requirePermission.mockResolvedValue(undefined);
       taskVariantRepository.getTaskIdByVariantId.mockRejectedValue(
         new ApiError('Invalid task_variant_id', {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -202,7 +200,7 @@ describe('RunService', () => {
     it('should throw INTERNAL_SERVER_ERROR when getTaskIdByVariantId fails with non-ApiError', async () => {
       const dbError = new Error('Database connection failed');
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
+      authorizationService.requirePermission.mockResolvedValue(undefined);
       taskVariantRepository.getTaskIdByVariantId.mockRejectedValue(dbError);
 
       await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
@@ -214,7 +212,7 @@ describe('RunService', () => {
     it('should throw INTERNAL_SERVER_ERROR when create fails', async () => {
       const dbError = new Error('Failed to insert run');
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
+      authorizationService.requirePermission.mockResolvedValue(undefined);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockRejectedValue(dbError);
 
@@ -284,7 +282,7 @@ describe('RunService', () => {
         isAnonymous: true,
       });
 
-      expect(administrationAccessControls.getUserRolesForAdministration).not.toHaveBeenCalled();
+      expect(authorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
     it('should re-throw ApiError from create without wrapping', async () => {
@@ -293,7 +291,7 @@ describe('RunService', () => {
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
-      administrationAccessControls.getUserRolesForAdministration.mockResolvedValue(['student']);
+      authorizationService.requirePermission.mockResolvedValue(undefined);
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockRejectedValue(apiError);
 

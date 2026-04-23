@@ -1,40 +1,39 @@
 import { StatusCodes } from 'http-status-codes';
-import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
-import { Permissions } from '../../constants/permissions';
-import { rolesForPermission } from '../../constants/role-permissions';
-import type { Group } from '../../db/schema';
+import type { PaginatedResult } from '@roar-dashboard/api-contract';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { GroupRepository } from '../../repositories/group.repository';
 import type { AuthContext } from '../../types/auth-context';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
-import { hasSupervisoryRole } from '../../utils/has-supervisory-role.util';
+import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 export function GroupService({
   groupRepository = new GroupRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   groupRepository?: GroupRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
-   * Verify that a group exists and the user has access to it.
+   * Performs authorization checks for sub-resource listing.
+   * Verifies group exists and user has can_list_users permission via FGA.
    *
-   * Performs a two-step check:
-   * 1. Verify the group exists (returns 404 if not)
-   * 2. Verify the user has access (returns 403 if not, skipped for super admins)
+   * FGA's can_list_users on group requires supervisory_tier_group, which encodes
+   * both the access check and the supervisory role requirement in a single call.
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param groupId - The group ID to verify access for
-   * @returns The group if found and accessible
    * @throws {ApiError} NOT_FOUND if group doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access
+   * @throws {ApiError} FORBIDDEN if user lacks can_list_users permission
    */
-  async function verifyGroupAccess(authContext: AuthContext, groupId: string): Promise<Group> {
+  async function authorizeSubResourceAccess(authContext: AuthContext, groupId: string): Promise<void> {
     const { userId, isSuperAdmin } = authContext;
 
+    // Verify group exists (404 before 403)
     const groupEntity = await groupRepository.getById({ id: groupId });
-
     if (!groupEntity) {
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
@@ -43,51 +42,10 @@ export function GroupService({
       });
     }
 
-    if (isSuperAdmin) {
-      return groupEntity;
-    }
-
-    const allowedRoles = rolesForPermission(Permissions.Groups.LIST);
-    const authorized = await groupRepository.getAuthorizedById({ userId, allowedRoles }, groupId);
-
-    if (!authorized) {
-      logger.warn({ userId, groupId }, 'User attempted to access group resource without permission');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, groupId },
-      });
-    }
-
-    return authorized;
-  }
-
-  /**
-   * Performs authorization checks for sub-resource listing (supervisory roles only).
-   * Throws if user lacks access or is a supervised user.
-   *
-   * @param authContext - User's auth context (id and super admin flag)
-   * @param groupId - The group ID to verify access for
-   * @throws {ApiError} NOT_FOUND if group doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks access or is a supervised user
-   */
-  async function authorizeSubResourceAccess(authContext: AuthContext, groupId: string): Promise<void> {
-    const { userId, isSuperAdmin } = authContext;
-
-    await verifyGroupAccess(authContext, groupId);
-
     if (isSuperAdmin) return;
 
-    const userRoles = await groupRepository.getUserRolesForGroup(userId, groupId);
-
-    if (!hasSupervisoryRole(userRoles)) {
-      logger.warn({ userId, groupId, userRoles }, 'Supervised user attempted to list group sub-resources');
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, groupId, userRoles },
-      });
-    }
+    // FGA checks both access and supervisory role in one call
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_LIST_USERS, `${FgaType.GROUP}:${groupId}`);
   }
 
   /**
@@ -95,9 +53,8 @@ export function GroupService({
    *
    * Authorization behavior:
    * - Super admin: sees all users assigned to the group
-   * - Supervisory roles: sees users only for groups they are directly assigned to (via group membership)
-   *   - Excludes caregiver role
-   * - Supervised roles (student/guardian/parent/relative): returns 403 Forbidden
+   * - Users with can_list_users on group (supervisory_tier_group): sees all users in the group
+   * - All other roles: returns 403 Forbidden
    *
    * @param authContext - User's auth context (id and type)
    * @param groupId - The group ID to get users for
@@ -112,7 +69,7 @@ export function GroupService({
     groupId: string,
     options: EnrolledUsersQuery,
   ): Promise<PaginatedResult<EnrolledUserEntity>> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
 
     try {
       await authorizeSubResourceAccess(authContext, groupId);
@@ -128,12 +85,8 @@ export function GroupService({
         ...(options.grade && { grade: options.grade }),
       };
 
-      if (isSuperAdmin) {
-        return await groupRepository.getUsersByGroupId(groupId, queryParams);
-      }
-
-      const allowedRoles = rolesForPermission(Permissions.Users.LIST);
-      return await groupRepository.getAuthorizedUsersByGroupId({ userId, allowedRoles }, groupId, queryParams);
+      // FGA already verified permission — use unrestricted query for all authorized users
+      return await groupRepository.getUsersByGroupId(groupId, queryParams);
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
