@@ -75,7 +75,7 @@ Cypress.Commands.add('performCleverOAuth', (schoolName, username, password) => {
     ({ schoolName, username, password }) => {
       cy.get('a.AuthMethodCard--card[aria-label="Password"]').click();
 
-      cy.get('input[placeholder="Enter your school name"]').type(schoolName);
+      cy.get('[role="combobox"]').find('input[aria-autocomplete="list"]').type(schoolName);
       cy.get('ul > li').contains(schoolName).should('be.visible').click();
 
       cy.get('input#username').type(username);
