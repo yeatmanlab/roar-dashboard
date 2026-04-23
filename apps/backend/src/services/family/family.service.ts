@@ -87,7 +87,7 @@ export function FamilyService({
         'Failed to list family users',
       );
 
-      throw new ApiError('Failed to retrieve family users', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, familyId },

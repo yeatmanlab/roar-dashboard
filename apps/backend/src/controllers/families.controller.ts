@@ -21,8 +21,10 @@ export const FamiliesController = {
    */
   listUsers: async (authContext: AuthContext, familyId: string, query: EnrolledFamilyUsersQuery) => {
     try {
+      const { page, perPage } = query;
+
       const result = await familyService.listUsers(authContext, familyId, query);
-      return handleUserSubResourceResponse(result, query.page, query.perPage);
+      return handleUserSubResourceResponse(result, page, perPage);
     } catch (error) {
       return handleSubResourceError(error);
     }

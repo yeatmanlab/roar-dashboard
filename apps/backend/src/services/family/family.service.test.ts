@@ -149,7 +149,7 @@ describe('FamilyService', () => {
       await expect(
         service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'family-123', defaultOptions),
       ).rejects.toMatchObject({
-        message: 'Failed to retrieve family users',
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });

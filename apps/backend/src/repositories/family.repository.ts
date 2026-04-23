@@ -1,7 +1,6 @@
 import { eq, and, isNull, count, asc, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { SortOrder } from '@roar-dashboard/api-contract';
-import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { Family } from '../db/schema';
@@ -60,7 +59,7 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
       return { items: [], totalItems: 0 };
     }
 
-    const sortField = orderBy?.field as EnrolledUsersSortFieldType | undefined;
+    const sortField = orderBy?.field;
     const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
