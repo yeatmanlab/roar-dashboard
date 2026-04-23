@@ -28,7 +28,10 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { OrgType } from '../enums/org-type.enum';
 import { UserRole } from '../enums/user-role.enum';
-import type { EnrolledOrgUserEntity } from '../types/user';
+import { UserType } from '../enums/user-type.enum';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+import type { EnrolledUser } from '@roar-dashboard/api-contract';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -432,34 +435,96 @@ describe('GET /v1/districts/:districtId/users', () => {
   });
 
   describe('query parameters', () => {
+    // Test district with multiple users of different grades and roles
+    let filterTestDistrict: Awaited<ReturnType<typeof OrgFactory.create>>;
+
+    beforeAll(async () => {
+      // Create a dedicated district for filter tests
+      filterTestDistrict = await OrgFactory.create({
+        name: 'Filter Test District',
+        orgType: OrgType.DISTRICT,
+      });
+
+      // Create users with specific grades and enroll them
+      const usersToCreate = [
+        { grade: '5' as const, role: UserRole.STUDENT },
+        { grade: '5' as const, role: UserRole.STUDENT },
+        { grade: '3' as const, role: UserRole.STUDENT },
+        { grade: '7' as const, role: UserRole.STUDENT },
+        { grade: null, role: UserRole.ADMINISTRATOR },
+      ];
+
+      const createdUsers = await Promise.all(
+        usersToCreate.map(({ grade }) =>
+          UserFactory.create({ userType: grade ? UserType.STUDENT : UserType.ADMIN, grade }),
+        ),
+      );
+
+      await Promise.all(
+        createdUsers.map((user, i) =>
+          UserOrgFactory.create({ userId: user.id, orgId: filterTestDistrict.id, role: usersToCreate[i]!.role }),
+        ),
+      );
+    });
+
+    const filterPath = () => `/v1/districts/${filterTestDistrict.id}/users`;
+
     it('filters users by role parameter', async () => {
-      const res = await expectRoute('GET', `${districtUsersPath()}?role=administrator`)
-        .as(tiers.superAdmin)
-        .toReturn(200);
+      const res = await expectRoute('GET', `${filterPath()}?role=student`).as(tiers.superAdmin).toReturn(200);
 
       expect(res.body.data.items).toBeInstanceOf(Array);
-      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
-        expect(user.roles).toContain(UserRole.ADMINISTRATOR);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
+        expect(user.roles).toContain('student');
       });
     });
 
-    it('filters users by grade parameter', async () => {
-      const res = await expectRoute('GET', `${districtUsersPath()}?grade=5`).as(tiers.superAdmin).toReturn(200);
+    it('filters users by single grade parameter', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?grade=5`).as(tiers.superAdmin).toReturn(200);
 
       expect(res.body.data.items).toBeInstanceOf(Array);
-      res.body.data.items.forEach((user: EnrolledOrgUserEntity) => {
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
         expect(user.grade).toBe('5');
       });
     });
 
-    it('supports pagination with page and perPage parameters', async () => {
-      const res = await expectRoute('GET', `${districtUsersPath()}?page=1&perPage=5`)
-        .as(tiers.superAdmin)
-        .toReturn(200);
+    it('filters users by multiple grades with comma-separated values', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?grade=3,7`).as(tiers.superAdmin).toReturn(200);
 
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
+        expect(['3', '7']).toContain(user.grade);
+      });
+    });
+
+    it('combines role and grade filters', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?role=student&grade=5`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items.length).toBeGreaterThan(0);
+      res.body.data.items.forEach((user: EnrolledUser) => {
+        expect(user.roles).toContain('student');
+        expect(user.grade).toBe('5');
+      });
+    });
+
+    it('returns empty array when no users match filter', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?grade=12`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toBeInstanceOf(Array);
+      expect(res.body.data.items).toHaveLength(0);
+    });
+
+    it('supports pagination with page and perPage parameters', async () => {
+      const res = await expectRoute('GET', `${filterPath()}?page=1&perPage=2`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(2);
       expect(res.body.data.pagination.page).toBe(1);
-      expect(res.body.data.pagination.perPage).toBe(5);
-      expect(res.body.data.items.length).toBeLessThanOrEqual(5);
+      expect(res.body.data.pagination.perPage).toBe(2);
+      expect(res.body.data.pagination.totalItems).toBeGreaterThan(0);
+      expect(res.body.data.pagination.totalPages).toBeGreaterThan(0);
     });
   });
 

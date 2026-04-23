@@ -6,11 +6,13 @@ import type {
   SchoolDetail as ApiSchool,
   SchoolClassesListQuery,
   SchoolClass as ApiSchoolClass,
+  EnrolledUsersQuery,
 } from '@roar-dashboard/api-contract';
 import { SchoolEmbedOption } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
+import { handleUserSubResourceResponse, handleSubResourceError } from './utils/enrolled-users.transform';
 import type { Class } from '../db/schema';
 import { OrgType } from '../enums/org-type.enum';
 
@@ -234,6 +236,24 @@ export const SchoolsController = {
         ]);
       }
       throw error;
+    }
+  },
+
+  /**
+   * Lists users in a school with pagination and filtering.
+   * @param authContext The authentication context.
+   * @param schoolId The ID of the school.
+   * @param query The query parameters for listing users.
+   * @returns The list of users in the school.
+   */
+  listUsers: async (authContext: AuthContext, schoolId: string, query: EnrolledUsersQuery) => {
+    try {
+      const { page, perPage } = query;
+
+      const result = await schoolService.listUsers(authContext, schoolId, query);
+      return handleUserSubResourceResponse(result, page, perPage);
+    } catch (error) {
+      return handleSubResourceError(error);
     }
   },
 };
