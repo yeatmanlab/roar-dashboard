@@ -1,27 +1,24 @@
-import { eq, asc, desc, countDistinct, and, isNull, sql, inArray, count } from 'drizzle-orm';
-import type { SQL, Column } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { PaginatedResult } from './base.repository';
-import { BaseRepository } from './base.repository';
-import type { Org } from '../db/schema';
-import { orgs, users, userOrgs, classes, userClasses } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
-import type * as CoreDbSchema from '../db/schema/core';
-import type { UserRole } from '../enums/user-role.enum';
-import { OrgAccessControls } from './access-controls/org.access-controls';
-import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
-import { OrgType } from '../enums/org-type.enum';
-
 import type { DistrictSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import type { SQL } from 'drizzle-orm';
+import { and, asc, countDistinct, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { CoreDbClient } from '../db/clients';
+import type { Org } from '../db/schema';
+import { classes, orgs, userClasses, userOrgs, users } from '../db/schema';
+import type * as CoreDbSchema from '../db/schema/core';
+import { OrgType } from '../enums/org-type.enum';
+import type { UserRole } from '../enums/user-role.enum';
 import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
+import type { PaginatedResult } from './base.repository';
+import { BaseRepository } from './base.repository';
 import {
-  getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
+  getEnrolledUsersFilterConditions,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import { isAuthorizedMembership } from './utils/is-authorized-membership.utils';
+
 /**
  * District-specific type (Org with orgType = 'district')
  */
@@ -44,15 +41,6 @@ export interface DistrictWithCounts extends District {
 }
 
 /**
- * Explicit mapping from API sort field names to district table columns.
- * This ensures only valid columns are used for sorting.
- */
-const DISTRICT_SORT_COLUMNS = {
-  name: orgs.name,
-  abbreviation: orgs.abbreviation,
-} as const satisfies Record<DistrictSortFieldType, Column>;
-
-/**
  * Options for listing districts with authorization
  */
 export interface ListAuthorizedOptions {
@@ -70,15 +58,10 @@ export interface ListAuthorizedOptions {
  * District Repository
  *
  * Handles data access for districts (orgs with orgType = 'district').
- * Provides both unrestricted access (for super admins) and RBAC-filtered access
- * (for regular users based on their org/class/group memberships).
  */
 export class DistrictRepository extends BaseRepository<District, typeof orgs> {
-  private readonly accessControls: OrgAccessControls;
-
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, orgs);
-    this.accessControls = new OrgAccessControls(db);
   }
 
   /**
@@ -138,86 +121,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     }
 
     return result;
-  }
-
-  /**
-   * List districts the user is authorized to access.
-   *
-   * Authorization respects the org hierarchy:
-   * - User in District → sees that district (+ descendants if supervisory)
-   * - User in School → sees parent district
-   * - User in Class → sees parent school's district
-   *
-   * @param accessControlFilter - User ID and allowed roles
-   * @param options - Pagination, sorting, and optional filters
-   * @returns Paginated result with authorized districts
-   */
-  async listAuthorized(
-    accessControlFilter: AccessControlFilter,
-    options: ListAuthorizedOptions,
-  ): Promise<PaginatedResult<District | DistrictWithCounts>> {
-    const { page, perPage, orderBy, includeEnded = false, embedCounts = false } = options;
-    const offset = (page - 1) * perPage;
-
-    // Build the UNION query for accessible org IDs using access controls
-    // We'll filter for districts in the WHERE clause
-    const accessibleOrgs = this.accessControls
-      .buildUserAccessibleOrgIdsQuery(accessControlFilter)
-      .as('accessible_orgs');
-
-    const whereClause = this.buildDistrictWhereClause(includeEnded);
-
-    // Build the base join condition
-    const baseCondition = eq(orgs.id, accessibleOrgs.orgId);
-
-    // Count query
-    const countResult = await this.db
-      .select({ count: countDistinct(orgs.id) })
-      .from(orgs)
-      .innerJoin(accessibleOrgs, baseCondition)
-      .where(whereClause);
-
-    const totalItems = Number(countResult[0]?.count ?? 0);
-
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Resolve sort column
-    const sortField = orderBy?.field as DistrictSortFieldType | undefined;
-    const sortColumn =
-      sortField && sortField in DISTRICT_SORT_COLUMNS
-        ? DISTRICT_SORT_COLUMNS[sortField as keyof typeof DISTRICT_SORT_COLUMNS]
-        : orgs.name;
-    const sortDirection = orderBy?.direction === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
-
-    // Data query: join districts with the accessible IDs subquery
-    const dataResult = await this.db
-      .select({ org: orgs })
-      .from(orgs)
-      .innerJoin(accessibleOrgs, baseCondition)
-      .where(whereClause)
-      .orderBy(sortDirection, asc(orgs.id))
-      .limit(perPage)
-      .offset(offset);
-
-    let districts: (District | DistrictWithCounts)[] = dataResult.map((row) => row.org as District);
-
-    // Fetch and attach counts if requested
-    if (embedCounts && districts.length > 0) {
-      const districtIds = districts.map((d) => d.id);
-      const countsMap = await this.fetchDistrictCounts(districtIds, includeEnded);
-
-      districts = districts.map((district) => ({
-        ...district,
-        counts: countsMap.get(district.id) ?? { users: 0, schools: 0, classes: 0 },
-      }));
-    }
-
-    return {
-      items: districts,
-      totalItems,
-    };
   }
 
   /**
@@ -365,41 +268,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
   }
 
   /**
-   * Get a district by ID with authorization checks.
-   * Only returns the district if the user has access via org/class/group membership.
-   *
-   * @param filter - Access control filter with userId and allowed roles
-   * @param districtId - UUID of the district to retrieve
-   * @returns The district if found and authorized, null otherwise
-   */
-  async getAuthorizedById(filter: AccessControlFilter, districtId: string): Promise<District | null> {
-    const accessibleOrgs = this.accessControls.buildUserAccessibleOrgIdsQuery(filter).as('accessible_orgs');
-
-    const result = await this.db
-      .select({ org: orgs })
-      .from(orgs)
-      .innerJoin(accessibleOrgs, eq(orgs.id, accessibleOrgs.orgId))
-      .where(and(eq(orgs.id, districtId), eq(orgs.orgType, OrgType.DISTRICT)))
-      .limit(1);
-
-    return result[0]?.org ?? null;
-  }
-
-  /**
-   * Get user roles for a specific district.
-   * Only checks direct org membership (no ancestor/descendant access for districts).
-   *
-   * User can only hold one role per district technically.
-   *
-   * @param userId - User ID to get roles for
-   * @param districtId - District ID to check roles in
-   * @returns Array of user roles in the district
-   */
-  async getUserRolesForDistrict(userId: string, districtId: string): Promise<UserRole[]> {
-    return this.accessControls.getUserRolesForDistrict(userId, districtId);
-  }
-
-  /**
    * Get users enrolled in a district.
    *
    * Returns all users who have an active enrollment in the specified district.
@@ -485,41 +353,5 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
       })),
       totalItems,
     };
-  }
-
-  /**
-   * Get users enrolled in a district if district is accessible.
-   *
-   * Returns all users who have an active enrollment in the specified district.
-   * Only includes users with active enrollments (enrollment_start <= now and
-   * enrollment_end is null or >= now).
-   *
-   * @param accessControlFilter - Filter for authorized access control
-   * @param districtId - District ID to check for access
-   * @param districtPath - District path to use for ltree filtering
-   * @param options - Options for filtering and pagination
-   * @returns Paginated result of users enrolled in the district
-   */
-  async getAuthorizedUsersByDistrictId(
-    accessControlFilter: AccessControlFilter,
-    districtId: string,
-    districtPath: string,
-    options: ListEnrolledUsersOptions,
-  ): Promise<PaginatedResult<EnrolledUserEntity>> {
-    const { userId, allowedRoles } = accessControlFilter;
-
-    const accessibleDistrictsCount = await this.db.select({ count: count() }).from(
-      this.db
-        .select({ districtId: userOrgs.orgId })
-        .from(userOrgs)
-        .where(and(eq(userOrgs.orgId, districtId), isAuthorizedMembership(userOrgs, userId, allowedRoles)))
-        .as('accessible_districts'),
-    );
-
-    if (accessibleDistrictsCount[0]?.count === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    return this.getUsersByDistrictPath(districtPath, options);
   }
 }
