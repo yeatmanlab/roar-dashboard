@@ -1,5 +1,6 @@
-import { and, eq, asc, desc, lte, gte, lt, gt, sql, count } from 'drizzle-orm';
+import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   administrations,
@@ -15,6 +16,9 @@ import {
   orgs,
   classes,
   groups,
+  userOrgs,
+  userClasses,
+  userGroups,
   type Administration,
   type AdministrationTaskVariant,
   type Task,
@@ -36,8 +40,8 @@ import { SortOrder } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
-import { AdministrationAccessControls } from './access-controls/administration.access-controls';
-import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
+import { isAncestorOrEqual } from './utils/is-ancestor-or-equal.utils';
+import { isEnrollmentActive } from './utils/enrollment.utils';
 import { OrgType } from '../enums/org-type.enum';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 
@@ -148,19 +152,10 @@ export interface AgreementWithVersion {
  *
  * Provides data access methods for the administrations table.
  * Extends BaseRepository for standard CRUD operations.
- *
- * Uses AdministrationAccessControls for authorization-related queries (accessible administrations,
- * assigned user counts) to keep authorization logic centralized and reusable.
  */
 export class AdministrationRepository extends BaseRepository<Administration, typeof administrations> {
-  private readonly accessControls: AdministrationAccessControls;
-
-  constructor(
-    db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient,
-    accessControls: AdministrationAccessControls = new AdministrationAccessControls(db),
-  ) {
+  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, administrations);
-    this.accessControls = accessControls;
   }
 
   /**
@@ -214,34 +209,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
-   * Get a single administration by ID, only if the user is authorized to access it.
-   *
-   * Combines a direct lookup with an access control check. Returns the administration
-   * if found AND accessible, null otherwise (prevents existence leaking).
-   *
-   * @param accessControlFilter - User ID and allowed roles
-   * @param administrationId - The administration ID to retrieve
-   * @returns The administration if found and accessible, null otherwise
-   */
-  async getAuthorizedById(
-    accessControlFilter: AccessControlFilter,
-    administrationId: string,
-  ): Promise<Administration | null> {
-    const accessibleAdmins = this.accessControls
-      .buildUserAdministrationIdsQuery(accessControlFilter)
-      .as('accessible_admins');
-
-    const result = await this.db
-      .select({ administration: administrations })
-      .from(administrations)
-      .innerJoin(accessibleAdmins, eq(administrations.id, accessibleAdmins.administrationId))
-      .where(eq(administrations.id, administrationId))
-      .limit(1);
-
-    return result[0]?.administration ?? null;
-  }
-
-  /**
    * Get count of assigned users for multiple administrations.
    *
    * A user is "assigned" to an administration if they belong to an org, class, or group
@@ -249,13 +216,98 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * - Administration assigned to a district → includes users from all schools and classes in that district
    * - Administration assigned to a school → includes users from all classes in that school
    *
-   * Delegates to AdministrationAccessControls for the actual query logic.
-   *
    * @param administrationIds - Array of administration IDs to count assigned users for
    * @returns Map of administration ID to assigned user count
+   * @throws {Error} If called with empty administrationIds array
    */
   async getAssignedUserCountsByAdministrationIds(administrationIds: string[]): Promise<Map<string, number>> {
-    return this.accessControls.getAssignedUserCountsByAdministrationIds(administrationIds);
+    if (administrationIds.length === 0) {
+      throw new Error('administrationIds required for getting assigned user counts');
+    }
+
+    const assignments = this.buildAdministrationUserAssignmentsQuery(administrationIds).as('assignments');
+
+    const result = await this.db
+      .select({
+        administrationId: assignments.administrationId,
+        assignedCount: countDistinct(assignments.userId),
+      })
+      .from(assignments)
+      .groupBy(assignments.administrationId);
+
+    const countsMap = new Map<string, number>();
+    for (const row of result) {
+      countsMap.set(row.administrationId, row.assignedCount);
+    }
+
+    return countsMap;
+  }
+
+  /**
+   * Returns all users assigned to the given administrations.
+   *
+   * Respects org hierarchy — an administration assigned to a district includes
+   * users from all schools and classes in that district.
+   *
+   * Uses UNION ALL for performance (no deduplication). A user with multiple paths
+   * to an administration appears multiple times. Always use COUNT(DISTINCT userId)
+   * when aggregating.
+   *
+   * @param administrationIds - Array of administration IDs to query
+   * @returns Drizzle subquery with `{ administrationId, userId }` rows
+   */
+  private buildAdministrationUserAssignmentsQuery(administrationIds: string[]) {
+    const adminOrgTable = alias(orgs, 'admin_org');
+    const userOrgTable = alias(orgs, 'user_org');
+
+    // Path 1: Administration assigned to org → users in that org or descendant orgs
+    const viaOrgToOrgUsers = this.db
+      .select({
+        administrationId: administrationOrgs.administrationId,
+        userId: userOrgs.userId,
+      })
+      .from(administrationOrgs)
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      .innerJoin(userOrgTable, isAncestorOrEqual(adminOrgTable.path, userOrgTable.path))
+      .innerJoin(userOrgs, and(eq(userOrgs.orgId, userOrgTable.id), isEnrollmentActive(userOrgs)))
+      .where(inArray(administrationOrgs.administrationId, administrationIds));
+
+    // Path 2: Administration assigned to org → users in classes under that org
+    const viaOrgToClassUsers = this.db
+      .select({
+        administrationId: administrationOrgs.administrationId,
+        userId: userClasses.userId,
+      })
+      .from(administrationOrgs)
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      .innerJoin(classes, isAncestorOrEqual(adminOrgTable.path, classes.orgPath))
+      .innerJoin(userClasses, and(eq(userClasses.classId, classes.id), isEnrollmentActive(userClasses)))
+      .where(inArray(administrationOrgs.administrationId, administrationIds));
+
+    // Path 3: Administration assigned to class → users in that class
+    const viaDirectClass = this.db
+      .select({
+        administrationId: administrationClasses.administrationId,
+        userId: userClasses.userId,
+      })
+      .from(administrationClasses)
+      .innerJoin(
+        userClasses,
+        and(eq(userClasses.classId, administrationClasses.classId), isEnrollmentActive(userClasses)),
+      )
+      .where(inArray(administrationClasses.administrationId, administrationIds));
+
+    // Path 4: Administration assigned to group → users in that group
+    const viaDirectGroup = this.db
+      .select({
+        administrationId: administrationGroups.administrationId,
+        userId: userGroups.userId,
+      })
+      .from(administrationGroups)
+      .innerJoin(userGroups, and(eq(userGroups.groupId, administrationGroups.groupId), isEnrollmentActive(userGroups)))
+      .where(inArray(administrationGroups.administrationId, administrationIds));
+
+    return viaOrgToOrgUsers.unionAll(viaOrgToClassUsers).unionAll(viaDirectClass).unionAll(viaDirectGroup);
   }
 
   /**
@@ -333,20 +385,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       classes: classResults,
       groups: groupResults,
     };
-  }
-
-  /**
-   * Get user's roles for a specific administration.
-   *
-   * Delegates to AdministrationAccessControls to determine which roles the user
-   * has that grant access to this administration.
-   *
-   * @param userId - The user ID to get roles for
-   * @param administrationId - The administration ID to check
-   * @returns Array of roles the user has for this administration
-   */
-  async getUserRolesForAdministration(userId: string, administrationId: string): Promise<string[]> {
-    return this.accessControls.getUserRolesForAdministration(userId, administrationId);
   }
 
   /**
