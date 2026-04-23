@@ -8,7 +8,7 @@ import {
   DistrictSchoolsListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
-import { EnrolledUsersQuerySchema, EnrolledOrgUsersResponseSchema } from '../common/user';
+import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
 
 const c = initContract();
 
@@ -85,7 +85,7 @@ export const DistrictsContract = c.router(
       pathParams: z.object({ districtId: z.string().uuid() }),
       query: EnrolledUsersQuerySchema,
       responses: {
-        200: SuccessEnvelopeSchema(EnrolledOrgUsersResponseSchema),
+        200: SuccessEnvelopeSchema(EnrolledUsersResponseSchema),
         401: ErrorEnvelopeSchema,
         403: ErrorEnvelopeSchema,
         404: ErrorEnvelopeSchema,

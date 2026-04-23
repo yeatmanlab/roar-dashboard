@@ -1,7 +1,7 @@
 import { eq, asc, desc, count, and, isNull, sql } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { EnrolledUsersSortFieldType, SchoolClassSortFieldType } from '@roar-dashboard/api-contract';
+import type { SchoolClassSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
@@ -20,7 +20,7 @@ import type { Class } from '../db/schema';
 import { classes, userClasses, users } from '../db/schema';
 import type { ClassType } from '../enums/class-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
-import type { ListEnrolledUsersOptions, EnrolledUserEntity } from '../types/user';
+import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import type { ParsedFilter } from '../types/filter';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
@@ -94,6 +94,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const whereCondition = and(
       eq(userClasses.classId, classId),
       isEnrollmentActive(userClasses),
+      isNull(classes.rosteringEnded),
       ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES),
     );
 
@@ -101,6 +102,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       .select({ count: count() })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
       .where(whereCondition);
 
     const totalItems = countResult[0]?.count ?? 0;
@@ -114,16 +116,17 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })
+      .select({ user: users, role: userClasses.role })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
+      .innerJoin(classes, eq(classes.id, userClasses.classId))
       .where(whereCondition)
       .orderBy(primaryOrder, asc(users.id))
       .limit(perPage)
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
       totalItems,
     };
   }
@@ -177,7 +180,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
     const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
 
     const dataResult = await this.db
-      .select({ user: users, enrollmentStart: userClasses.enrollmentStart, role: userClasses.role })
+      .select({ user: users, role: userClasses.role })
       .from(userClasses)
       .innerJoin(users, eq(users.id, userClasses.userId))
       .innerJoin(classes, eq(classes.id, userClasses.classId))
@@ -188,7 +191,7 @@ export class ClassRepository extends BaseRepository<Class, typeof classes> {
       .offset(offset);
 
     return {
-      items: dataResult.map((row) => ({ ...row.user, enrollmentStart: row.enrollmentStart, role: row.role })),
+      items: dataResult.map((row) => ({ ...row.user, roles: [row.role] })),
       totalItems,
     };
   }
