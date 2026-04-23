@@ -1,4 +1,3 @@
-import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -6,7 +5,7 @@ import { CoreDbClient } from '../db/clients';
 import type { Group } from '../db/schema';
 import { groups, userGroups, users } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../types/user';
+import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import {
