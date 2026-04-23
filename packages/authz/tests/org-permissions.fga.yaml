@@ -277,6 +277,7 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+          can_list_classes: true
           can_list_users: true
           can_read_scores: true
 
@@ -302,6 +303,7 @@ tests:
         assertions:
           can_list: true
           can_read: true
+          can_list_classes: true
           can_list_users: true
           can_read_scores: true
           can_create: false
@@ -330,6 +332,7 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+          can_list_classes: false
           can_list_users: false
 
   - name: Student in school cannot see sibling school
@@ -351,6 +354,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_list_classes: false
           can_list_users: false
 
   - name: Student in district does NOT see descendant schools (no downward access)
@@ -375,6 +379,7 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+          can_list_classes: false
 
   # ─── Cross-org denial ──────────────────────────────────────────────
 

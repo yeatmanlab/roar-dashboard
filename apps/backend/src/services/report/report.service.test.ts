@@ -1229,14 +1229,14 @@ describe('ReportService', () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 20,
         taskStatusCounts: statusCounts,
-        studentCounts: { studentsWithRequiredTasks: 14, studentsAssigned: 5, studentsStarted: 5, studentsCompleted: 4 },
+        studentCounts: { studentsWithRequiredTasks: 20, studentsAssigned: 5, studentsStarted: 5, studentsCompleted: 4 },
       });
 
       const service = createService();
       const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
 
       // Student-level assignment counts pass through from repository
-      expect(result.studentsWithRequiredTasks).toBe(14);
+      expect(result.studentsWithRequiredTasks).toBe(20);
       expect(result.studentsAssigned).toBe(5);
       expect(result.studentsStarted).toBe(5);
       expect(result.studentsCompleted).toBe(4);

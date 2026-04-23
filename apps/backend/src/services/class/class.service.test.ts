@@ -2,19 +2,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { ClassService } from './class.service';
+import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import { UserRole } from '../../enums/user-role.enum';
 import { ClassFactory } from '../../test-support/factories/class.factory';
 import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 import { createMockClassRepository } from '../../test-support/repositories';
+import type { MockClassRepository } from '../../test-support/repositories';
+import { createMockAuthorizationService } from '../../test-support/services';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import type { MockAuthorizationService } from '../../test-support/services';
 
 describe('ClassService', () => {
-  let mockClassRepository: ReturnType<typeof createMockClassRepository>;
+  let mockClassRepository: MockClassRepository;
+  let mockAuthorizationService: MockAuthorizationService;
 
   beforeEach(() => {
     vi.resetAllMocks();
     mockClassRepository = createMockClassRepository();
+    mockAuthorizationService = createMockAuthorizationService();
   });
 
   describe('listUsers', () => {
@@ -36,11 +42,13 @@ describe('ClassService', () => {
 
       const service = ClassService({
         classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'class-123', defaultOptions);
 
       expect(mockClassRepository.getById).toHaveBeenCalledWith({ id: 'class-123' });
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockClassRepository.getUsersByClassId).toHaveBeenCalledWith('class-123', {
         page: 1,
         perPage: 25,
@@ -61,6 +69,7 @@ describe('ClassService', () => {
 
       const service = ClassService({
         classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'class-123', defaultOptions);
@@ -75,105 +84,35 @@ describe('ClassService', () => {
       expect(result.totalItems).toBe(3);
     });
 
-    it('should check authorization for non-super admin users with supervisory role', async () => {
+    it('should check FGA can_list_users for non-super admin users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
       const mockUsers = EnrolledUserFactory.buildList(2);
       mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER]);
-      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
+      mockClassRepository.getUsersByClassId.mockResolvedValue({
         items: mockUsers,
         totalItems: 2,
       });
 
       const service = ClassService({
         classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.listUsers({ userId: 'user-123', isSuperAdmin: false }, 'class-123', defaultOptions);
 
       expect(mockClassRepository.getById).toHaveBeenCalledWith({ id: 'class-123' });
-      expect(mockClassRepository.getAuthorizedById).toHaveBeenCalled();
-      expect(mockClassRepository.getUserRolesForClass).toHaveBeenCalledWith('user-123', 'class-123');
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST_USERS,
+        `${FgaType.CLASS}:class-123`,
+      );
+      expect(mockClassRepository.getUsersByClassId).toHaveBeenCalledWith('class-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+      });
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(2);
-    });
-
-    it('should allow administrator role to list users', async () => {
-      const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = EnrolledUserFactory.buildList(5);
-      mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.ADMINISTRATOR]);
-      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
-        items: mockUsers,
-        totalItems: 5,
-      });
-
-      const service = ClassService({
-        classRepository: mockClassRepository,
-      });
-
-      const result = await service.listUsers(
-        { userId: 'admin-user-123', isSuperAdmin: false },
-        'class-123',
-        defaultOptions,
-      );
-
-      expect(result.items).toHaveLength(5);
-    });
-
-    it('should allow site_administrator role to list users', async () => {
-      const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = EnrolledUserFactory.buildList(4);
-      mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.SITE_ADMINISTRATOR]);
-      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
-        items: mockUsers,
-        totalItems: 4,
-      });
-
-      const service = ClassService({
-        classRepository: mockClassRepository,
-      });
-
-      const result = await service.listUsers(
-        { userId: 'site-admin-123', isSuperAdmin: false },
-        'class-123',
-        defaultOptions,
-      );
-
-      expect(result.items).toHaveLength(4);
-    });
-
-    it('should allow user with teacher role for class but admin role for school to list users', async () => {
-      const mockClass = ClassFactory.build({ id: 'class-123' });
-      const mockUsers = EnrolledUserFactory.buildList(3);
-      mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.TEACHER, UserRole.ADMINISTRATOR]);
-      mockClassRepository.getAuthorizedUsersByClassId.mockResolvedValue({
-        items: mockUsers,
-        totalItems: 3,
-      });
-
-      const service = ClassService({
-        classRepository: mockClassRepository,
-      });
-
-      const result = await service.listUsers(
-        { userId: 'teacher-with-school-admin-123', isSuperAdmin: false },
-        'class-123',
-        defaultOptions,
-      );
-
-      expect(mockClassRepository.getUserRolesForClass).toHaveBeenCalledWith(
-        'teacher-with-school-admin-123',
-        'class-123',
-      );
-      expect(result.items).toHaveLength(3);
-      expect(result.totalItems).toBe(3);
     });
 
     it('should return empty results when class has no users', async () => {
@@ -183,6 +122,7 @@ describe('ClassService', () => {
 
       const service = ClassService({
         classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       const result = await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'class-123', defaultOptions);
@@ -196,10 +136,11 @@ describe('ClassService', () => {
 
       const service = ClassService({
         classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
-        service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
+        service.listUsers({ userId: 'admin-123', isSuperAdmin: false }, 'non-existent-id', defaultOptions),
       ).rejects.toMatchObject({
         message: ApiErrorMessage.NOT_FOUND,
         statusCode: StatusCodes.NOT_FOUND,
@@ -207,13 +148,19 @@ describe('ClassService', () => {
       });
     });
 
-    it('should throw forbidden error when non-super admin has no access to existing class', async () => {
+    it('should throw forbidden error when FGA denies can_list_users', async () => {
       const mockClass = ClassFactory.build({ id: 'class-123' });
       mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getAuthorizedById.mockResolvedValue(null);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
 
       const service = ClassService({
         classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
@@ -222,67 +169,6 @@ describe('ClassService', () => {
         message: ApiErrorMessage.FORBIDDEN,
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
-      });
-    });
-
-    it('should throw forbidden error when user has no supervisory role', async () => {
-      const mockClass = ClassFactory.build({ id: 'class-123' });
-      mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.STUDENT]);
-
-      const service = ClassService({
-        classRepository: mockClassRepository,
-      });
-
-      await expect(
-        service.listUsers({ userId: 'user-123', isSuperAdmin: false }, 'class-123', defaultOptions),
-      ).rejects.toMatchObject({
-        message: ApiErrorMessage.FORBIDDEN,
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId: 'user-123', classId: 'class-123', userRoles: [UserRole.STUDENT] },
-      });
-    });
-
-    it('should throw forbidden error for caregiver roles (guardian/parent/relative) - supervised not supervisory', async () => {
-      const mockClass = ClassFactory.build({ id: 'class-123' });
-      mockClassRepository.getById.mockResolvedValue(mockClass);
-      mockClassRepository.getAuthorizedById.mockResolvedValue(mockClass);
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.GUARDIAN]);
-
-      const service = ClassService({
-        classRepository: mockClassRepository,
-      });
-
-      await expect(
-        service.listUsers({ userId: 'caregiver-123', isSuperAdmin: false }, 'class-123', defaultOptions),
-      ).rejects.toMatchObject({
-        message: ApiErrorMessage.FORBIDDEN,
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId: 'caregiver-123', classId: 'class-123', userRoles: [UserRole.GUARDIAN] },
-      });
-
-      // Also verify parent and relative roles are rejected
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.PARENT]);
-      await expect(
-        service.listUsers({ userId: 'parent-123', isSuperAdmin: false }, 'class-123', defaultOptions),
-      ).rejects.toMatchObject({
-        message: ApiErrorMessage.FORBIDDEN,
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId: 'parent-123', classId: 'class-123', userRoles: [UserRole.PARENT] },
-      });
-
-      mockClassRepository.getUserRolesForClass.mockResolvedValue([UserRole.RELATIVE]);
-      await expect(
-        service.listUsers({ userId: 'relative-123', isSuperAdmin: false }, 'class-123', defaultOptions),
-      ).rejects.toMatchObject({
-        message: ApiErrorMessage.FORBIDDEN,
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId: 'relative-123', classId: 'class-123', userRoles: [UserRole.RELATIVE] },
       });
     });
 
@@ -294,6 +180,7 @@ describe('ClassService', () => {
 
       const service = ClassService({
         classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
       });
 
       await expect(
