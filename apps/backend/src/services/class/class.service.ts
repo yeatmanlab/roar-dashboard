@@ -1,12 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
-import type { PaginatedResult, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
+import type { PaginatedResult } from '@roar-dashboard/api-contract';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { ClassRepository } from '../../repositories/class.repository';
 import type { AuthContext } from '../../types/auth-context';
-import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../../types/user';
+import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
