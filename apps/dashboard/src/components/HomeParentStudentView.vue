@@ -5,7 +5,7 @@
       <div>
         <AppSpinner class="mb-4" />
       </div>
-      <div class="w-64 text-lg font-light">Loading Assignments</div>
+      <div class="w-64 text-lg font-light">Loading Children</div>
     </div>
 
     <div
@@ -15,13 +15,15 @@
       <div>
         <AppSpinner class="mb-4" />
       </div>
-      <div class="w-64 text-lg font-light">Administration enrollment in progress</div>
+      <div class="w-64 text-lg font-light">Registration in progress</div>
     </div>
 
-    <div v-else-if="registrationError?.length < 0" class="p-3">
+    <div v-else-if="registrationError" class="p-3">
       <PvMessage severity="error">
-        <div class="text-lg font-bold text-gray-600">Error while fetching registrations status:</div>
-        <div class="text-sm font-light text-gray-800">{{ registrationError }}</div>
+        <div class="text-lg font-bold text-gray-600">Error while completing registration:</div>
+        <div class="text-sm font-light text-gray-800">
+          {{ registrationError.message }}
+        </div>
       </PvMessage>
     </div>
 
@@ -29,25 +31,29 @@
       v-else
       class="grid flex-wrap grid-cols-1 gap-4 w-full"
       :class="{
-        'lg:grid-cols-2': Object.keys(childrenAssignments).length <= 2,
-        'lg:grid-cols-3': Object.keys(childrenAssignments).length === 3,
-        'lg:grid-cols-4': Object.keys(childrenAssignments).length >= 4,
+        'lg:grid-cols-2': childrenUids.length <= 2,
+        'lg:grid-cols-3': childrenUids.length === 3,
+        'lg:grid-cols-4': childrenUids.length >= 4,
       }"
       data-cy="parent-homepage__students-grid"
     >
-      <div v-if="Object.keys(childrenAssignments).length === 0" class="p-3">
+      <div v-if="childrenUids.length === 0" class="p-3">
         <PvMessage severity="info" class="h-full">
           <div class="text-lg font-bold text-gray-600">Add your first child</div>
           <div class="text-sm font-light text-gray-800">
-            You’ll need to add a child to your account before they can take assessments.
+            You'll need to add a child to your account before they can take assessments.
           </div>
         </PvMessage>
       </div>
-      <div v-else>
-        <template v-for="(assignments, userId) in childrenAssignments" :key="userId">
-          <StudentCard :assignments="assignments" :user-id="userId" :org-type="orgType" :org-id="orgId" />
-        </template>
-      </div>
+      <template v-else>
+        <StudentCardSimple
+          v-for="userId in childrenUids"
+          :key="userId"
+          :user-id="userId"
+          :org-type="orgType"
+          :org-id="orgId"
+        />
+      </template>
       <article
         class="flex overflow-hidden p-8 mx-auto w-full max-w-3xl bg-gray-100 rounded border-gray-200 flex-column border-1"
       >
@@ -80,23 +86,28 @@
         data-cy="enrollment-modal"
         pt:header:data-testid="dialog__header"
       >
-        <RegisterChildren :submitting="isSubmitting" @submit="handleStudentEnrollment" />
+        <RegisterChildren
+          :submitting="isSubmitting"
+          :invitation-codes="invitationCodes"
+          @submit="handleStudentEnrollment"
+        />
       </PvDialog>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import AppSpinner from '@/components/AppSpinner.vue';
-import StudentCard from '@/components/StudentCard.vue';
+import StudentCardSimple from '@/components/StudentCardSimple.vue';
 import PvMessage from 'primevue/message';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import RegisterChildren from '@/components/auth/RegisterChildren.vue';
-import { ref } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
-import { useRouter } from 'vue-router';
+import { useQueryClient } from '@tanstack/vue-query';
+import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 
 defineOptions({
   name: 'HomeParentStudentView',
@@ -111,9 +122,9 @@ defineProps({
     type: Boolean,
     required: true,
   },
-  childrenAssignments: {
-    type: Object,
-    required: true,
+  childrenUids: {
+    type: Array,
+    default: () => [],
   },
   orgType: {
     type: String,
@@ -124,16 +135,21 @@ defineProps({
     required: true,
   },
   registrationError: {
-    type: String,
+    type: Error,
     required: false,
-    default: '',
+    default: null,
+  },
+  invitationCodes: {
+    type: Array,
+    default: () => [],
   },
 });
 
-const router = useRouter();
 const isEnrollmentModalVisible = ref(false);
 const isSubmitting = ref(false);
 const toast = useToast();
+const queryClient = useQueryClient();
+const authStore = useAuthStore();
 const consentName = ref('consent-behavioral-eye-tracking');
 const emit = defineEmits(['refresh-registration']);
 
@@ -142,7 +158,6 @@ function showEnrollmentModal() {
 }
 
 async function handleStudentEnrollment(studentData) {
-  const authStore = useAuthStore();
   isSubmitting.value = true;
 
   try {
@@ -151,7 +166,7 @@ async function handleStudentEnrollment(studentData) {
       await authStore.initFirekit();
     }
     // Get current user's data for family association
-    const { email } = authStore.firebaseUser.adminFirebaseUser;
+    const { email: parentEmail } = authStore.firebaseUser.adminFirebaseUser;
 
     // Format caretaker data according to CreateParentInput interface
     const careTakerData = {
@@ -177,12 +192,12 @@ async function handleStudentEnrollment(studentData) {
 
     const formattedStudentData = studentData.map((student) => {
       // Extract email from studentUsername if it's already in email format
-      const email = student.studentUsername.includes('@')
+      const studentEmail = student.studentUsername.includes('@')
         ? student.studentUsername
         : `${student.studentUsername}@roar-auth.com`;
 
       return {
-        email,
+        email: studentEmail,
         password: student.password,
         userData: {
           name: {
@@ -216,9 +231,8 @@ async function handleStudentEnrollment(studentData) {
       throw new Error('formattedStudentData must be an array');
     }
 
-    await authStore.createNewFamily(
-      email, // careTakerEmail
-      'dummyPassword123!', // Filler password since we're using an existing account
+    await authStore.addStudentsToFamily(
+      parentEmail, // careTakerEmail
       careTakerData,
       formattedStudentData, // properly formatted students array
       consentData, // proper consent data
@@ -235,8 +249,8 @@ async function handleStudentEnrollment(studentData) {
       detail: 'Student successfully enrolled',
       life: 3000,
     });
-    // Use Vue Router to refresh the current route
-    router.go(0);
+    // Invalidate queries to refresh data without full page reload
+    queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
   } catch (error) {
     console.error('Error enrolling student:', error);
     toast.add({
@@ -245,9 +259,8 @@ async function handleStudentEnrollment(studentData) {
       detail: 'Failed to enroll student(s). Please try again.',
       life: 3000,
     });
-  } finally {
     isSubmitting.value = false;
-    isEnrollmentModalVisible.value = false;
+    // Don't close modal on error so user can see the error and retry
   }
 }
 </script>

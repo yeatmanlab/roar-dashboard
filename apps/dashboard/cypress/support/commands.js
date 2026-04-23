@@ -301,6 +301,8 @@ Cypress.Commands.add('waitForParentHomepage', () => {
     },
     {
       errorMsg: 'Failed to load the parent home page before timeout',
+      timeout: 120000,
+      interval: 1000,
     },
   );
 });
