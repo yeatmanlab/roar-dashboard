@@ -113,11 +113,7 @@ describe('Participant: Auth', () => {
       ({ schoolName, username, password }) => {
         cy.get('a.AuthMethodCard--card[aria-label="Password"]').click();
 
-<<<<<<< fix/cypress-test-clever-auth
         cy.get('[role="combobox"]').find('input[aria-autocomplete="list"]').type(schoolName);
-=======
-        cy.get('input[aria-label="School name"]').type(schoolName);
->>>>>>> main
         cy.get('ul > li').contains(schoolName).should('be.visible').click();
 
         cy.get('input#username').type(username);
