@@ -16,7 +16,10 @@
     "CORE_DATABASE_USER",
     "ASSESSMENT_DATABASE_NAME",
     "ASSESSMENT_DATABASE_USER",
-    "LOG_LEVEL"
+    "LOG_LEVEL",
+    "TEST_FIXTURE_FILE",
+    "FGA_API_URL",
+    "BACKEND_PORT"
   ],
   "globalDependencies": [".env"],
   "tasks": {

@@ -73,10 +73,11 @@ export function initTestSdk(overrides: Partial<CommandContext> = {}) {
 }
 
 /**
- * Fetches the backend's baseFixture data for use in integration tests.
+ * Reads the backend's baseFixture data from the fixture file written by server-test.ts.
  *
- * The backend provides a test endpoint that returns the seeded baseFixture
- * which includes task variants, administrations, and users created during setup.
+ * The test server entrypoint writes fixture data (task variants, users, etc.) to a JSON file
+ * during startup. This function reads that file instead of making an HTTP call, avoiding
+ * race conditions and keeping test infrastructure out of production code.
  *
  * @returns The baseFixture data with task variants and other test entities
  */
@@ -89,19 +90,23 @@ export async function getBaseFixtureData(): Promise<{
   variantForTask2: { id: string };
   variantForTask2Grade5OptionalEll: { id: string };
 }> {
-  const baseUrl = getBackendUrl();
-  const response = await fetch(`${baseUrl}/v1/test/fixture`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch baseFixture data: ${response.status} ${response.statusText}`);
+  // Import fs dynamically to avoid issues in browser environments
+  const { readFileSync } = await import('fs');
+
+  let data: Awaited<ReturnType<typeof getBaseFixtureData>>;
+
+  try {
+    const content = readFileSync(fixtureFile, 'utf-8');
+    data = JSON.parse(content);
+  } catch (error) {
+    throw new Error(
+      `Failed to read fixture data from ${fixtureFile}. ` +
+        `Ensure server-test.ts has started and written the fixture file. ` +
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
-
-  const data = (await response.json()) as Awaited<ReturnType<typeof getBaseFixtureData>>;
 
   // Cache the test user's authId as the token for subsequent requests
   if (data.testUser?.authId) {

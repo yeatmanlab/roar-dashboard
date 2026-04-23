@@ -1,5 +1,4 @@
 import { FirebaseAuthProvider } from './providers/firebase-auth.provider';
-import { TestAuthProvider } from './providers/test-auth.provider';
 
 /**
  * Decoded User JWT interface.
@@ -35,8 +34,7 @@ export interface IAuthProvider {
  * ```
  */
 export class AuthService {
-  private static provider: IAuthProvider =
-    process.env.NODE_ENV === 'test' ? new TestAuthProvider() : new FirebaseAuthProvider();
+  private static provider: IAuthProvider = new FirebaseAuthProvider();
 
   static verifyToken(token: string): Promise<DecodedUser> {
     return this.provider.verifyToken(token);

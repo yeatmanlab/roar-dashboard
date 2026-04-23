@@ -10,7 +10,7 @@ import run from '@rollup/plugin-run';
 const isDev = process.env.NODE_ENV !== 'production';
 
 export default defineConfig({
-  input: 'src/server.ts',
+  input: ['src/server.ts', 'src/server-test.ts'],
   output: isDev
     ? {
         dir: 'dist',
@@ -25,21 +25,21 @@ export default defineConfig({
         // Output to a directory with code splitting enabled.
         // IMPORTANT: Do NOT use `file` + `inlineDynamicImports: true` here.
         //
-        // server.ts uses a dynamic import(`./app`) to defer loading the application module
+        // server.ts and server-test.ts use dynamic imports to defer loading the application module
         // until after initializeDatabasePools() completes. This ensures CoreDbClient and
         // AssessmentDbClient are defined before any module-level service/repository
         // instantiation occurs (e.g., `const userService = UserService()` in auth middleware).
         //
         // inlineDynamicImports collapses this boundary into a single file, causing all
         // module-level code to execute at load time — before the DB clients are initialized.
-        // Code splitting preserves the dynamic import as a separate chunk, maintaining the
+        // Code splitting preserves the dynamic imports as separate chunks, maintaining the
         // correct initialization order.
         dir: 'dist',
         inlineDynamicImports: false,
         format: 'esm',
         sourcemap: true,
         exports: 'auto',
-        entryFileNames: 'server.js',
+        entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
       },
   plugins: [

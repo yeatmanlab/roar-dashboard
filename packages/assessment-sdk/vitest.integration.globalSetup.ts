@@ -1,20 +1,26 @@
 /**
  * Global Setup for SDK Integration Tests
  *
- * Spawns a backend server process before running integration tests.
- * The backend connects to test databases and seeds test data.
+ * Spawns a dedicated test server process before running integration tests.
+ * The test server uses server-test.ts entrypoint which:
+ * - Initializes database pools and runs migrations
+ * - Truncates tables and seeds baseFixture test data
+ * - Initializes OpenFGA store, deploys model, and syncs tuples
+ * - Mocks AuthService to accept test tokens (token = Firebase UID)
+ * - Writes fixture data to a JSON file for SDK tests to discover
  *
  * TEST DATA SEEDING:
- * - The backend automatically seeds baseFixture data via truncateAllTables() + seedBaseFixture()
- * - This creates realistic test data: org hierarchy, users, task variants, administrations
- * - Tests dynamically fetch task variant IDs and user authIds from /v1/test/fixture endpoint
+ * - baseFixture data is seeded automatically during server startup
+ * - Fixture data (task variant IDs, user authIds) is written to TEST_FIXTURE_FILE
+ * - SDK tests read the fixture file instead of making HTTP calls
  * - No hardcoded UUIDs needed — all test data is fetched at runtime
  *
  * Environment variables:
  * - BACKEND_PORT: Port for the backend server (default: 4001)
  * - CORE_DATABASE_URL: Core database connection string (required)
  * - ASSESSMENT_DATABASE_URL: Assessment database connection string (required)
- * - SEED_TEST_DATA: Set to 'true' to seed test data (default: true)
+ * - FGA_API_URL: OpenFGA server URL (default: http://localhost:8080)
+ * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
  */
 
 import { spawn } from 'node:child_process';
@@ -136,16 +142,17 @@ export default async function globalSetup() {
     );
   }
 
-  console.log(`[SDK Integration Tests] Starting backend on port ${BACKEND_PORT}...`);
+  console.log(`[SDK Integration Tests] Starting test server on port ${BACKEND_PORT}...`);
 
-  // Spawn the backend process
-  backendProcess = spawn('npm', ['run', 'start'], {
+  // Spawn the test server process using the dedicated server-test.ts entrypoint
+  // This entrypoint initializes databases, seeds fixtures, sets up FGA, and mocks auth
+  backendProcess = spawn('node', ['dist/server-test.js'], {
     cwd: backendDir,
     env: {
       ...process.env,
       NODE_ENV: 'test',
       PORT: BACKEND_PORT,
-      SEED_TEST_DATA: process.env.SEED_TEST_DATA ?? 'true',
+      TEST_FIXTURE_FILE: process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

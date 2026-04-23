@@ -17,26 +17,43 @@ Integration tests run the SDK against a locally spawned backend server that conn
 Before any integration tests run:
 
 1. **Validates environment variables** - Ensures `CORE_DATABASE_URL` and `ASSESSMENT_DATABASE_URL` are set
-2. **Spawns backend process** - Starts the backend server via `npm run start` in `apps/backend`
-3. **Waits for health endpoint** - Polls `/health` until the backend is ready (max 30 seconds)
-4. **Stores process reference** - Saves the backend process to `globalThis` for cleanup
+2. **Builds backend if needed** - Compiles backend if `dist/` doesn't exist
+3. **Spawns test server** - Starts dedicated test server via `node dist/server-test.js` in `apps/backend`
+4. **Waits for health endpoint** - Polls `/health` until the server is ready (max 30 seconds)
+5. **Stores process reference** - Saves the server process to `globalThis` for cleanup
+
+### Test Server Initialization (`server-test.ts`)
+
+The dedicated test server entrypoint initializes all test infrastructure:
+
+1. **Initializes database pools** - Connects to test databases
+2. **Runs migrations** - Sets up schema
+3. **Truncates tables** - Ensures clean state
+4. **Seeds baseFixture** - Creates comprehensive test data (orgs, users, task variants, administrations)
+5. **Initializes FGA** - Creates FGA store, deploys authorization model, syncs tuples from Postgres
+6. **Mocks AuthService** - Replaces provider with TestAuthProvider for test tokens
+7. **Writes fixture data to file** - Saves fixture IDs to `/tmp/roar-test-fixture.json` for SDK tests
+8. **Starts Express server** - Listens on configured port
 
 ### Test Execution
 
 Each integration test:
 
-1. Gets the backend URL from the global setup
-2. Makes HTTP requests directly to the backend
-3. Validates responses match the API contract
+1. Reads fixture data from file (task variant IDs, user authIds)
+2. Gets the backend URL from the global setup
+3. Makes HTTP requests directly to the backend
+4. Validates responses match the API contract
+5. Exercises real FGA authorization checks
 
-### Backend Configuration
+### Production Code
 
-When the backend starts with `NODE_ENV=test`:
+The production backend (`server.ts`) is completely clean:
 
-- Connects to test databases (`core_test`, `assessment_test`)
-- Runs migrations automatically (via `vitest.integration.globalSetup.ts`)
-- Seeds test data via factories (when `NODE_ENV=test` or `SEED_TEST_DATA=true`)
-- **Note:** FGA authorization is NOT initialized during standalone server startup (see Backend Seeding Process section)
+- No test seeding logic
+- No NODE_ENV checks
+- No test routes
+- No conditional auth providers
+- All test infrastructure isolated in `server-test.ts`
 
 ## Running Integration Tests
 
@@ -143,13 +160,14 @@ Example GitHub Actions workflow:
 
 ### Seeding Strategy
 
-**Decision: Use backend's baseFixture seeding (Option B)**
+**Decision: Use backend's baseFixture seeding with file-based discovery**
 
-Tests dynamically fetch task variant IDs from the backend's baseFixture via a test endpoint:
+Test server seeds comprehensive test data and writes fixture IDs to a file:
 
-1. Backend seeds comprehensive test data via `baseFixture` (org hierarchy, users, task variants, administrations)
-2. SDK tests call `GET /v1/test/fixture` to retrieve task variant IDs
-3. Tests use the dynamic IDs instead of hardcoded UUIDs
+1. Test server seeds baseFixture (org hierarchy, users, task variants, administrations)
+2. Test server writes fixture data to `/tmp/roar-test-fixture.json`
+3. SDK tests read the fixture file to get task variant IDs
+4. Tests use the dynamic IDs instead of hardcoded UUIDs
 
 This approach:
 
@@ -158,32 +176,53 @@ This approach:
 - ✅ Provides realistic test scenarios with proper org hierarchy
 - ✅ Aligns with backend's integration test patterns
 - ✅ Simplifies maintenance (no hardcoded IDs to update)
+- ✅ No race conditions (file written before tests start)
+- ✅ No HTTP overhead (direct file read)
+- ✅ No test routes in production code
 
-### Backend Seeding Process
+### Test Server Seeding Process
 
-When the backend starts in test mode (`NODE_ENV=test`):
+The test server (`server-test.ts`) initializes test infrastructure in this order:
 
-1. Initializes database pools
-2. Truncates all tables (ensures clean state on server startup)
-3. Seeds comprehensive baseFixture via Fishery factories:
-   - Organization hierarchy (districts, schools, classes)
-   - Users with various roles and enrollments
-   - Task variants (variantForAllGrades, variantForGrade5, variantForGrade3, etc.)
-   - Administrations assigned to various org levels
+1. **Database setup**
+   - Initializes database pools
+   - Runs migrations
+   - Truncates all tables (ensures clean state)
 
-**Note:** FGA authorization is NOT initialized during standalone server startup. SDK tests must use anonymous runs to avoid FGA permission checks. The backend's own integration tests initialize FGA via `vitest.setup.ts:46-47` (`resetFgaStoreForTestFile()` and `syncFgaTuplesFromPostgres()`), but these are not called when the server runs standalone.
+2. **Test data seeding**
+   - Seeds comprehensive baseFixture via Fishery factories:
+     - Organization hierarchy (districts, schools, classes)
+     - Users with various roles and enrollments
+     - Task variants (variantForAllGrades, variantForGrade5, variantForGrade3, etc.)
+     - Administrations assigned to various org levels
+
+3. **FGA authorization**
+   - Creates FGA store (same as backend integration tests)
+   - Deploys authorization model
+   - Syncs tuples from Postgres (reads junction tables, writes FGA tuples)
+
+4. **Authentication mocking**
+   - Replaces AuthService provider with TestAuthProvider
+   - Allows test tokens (token string = Firebase UID)
+
+5. **Fixture discovery**
+   - Writes fixture data to JSON file (`/tmp/roar-test-fixture.json`)
+   - SDK tests read this file instead of making HTTP calls
+   - Avoids race conditions and keeps test infrastructure out of production code
+
+**Key difference from old approach:** FGA is now fully initialized, so SDK tests can exercise real authorization checks instead of using anonymous runs.
 
 ### Test Authentication
 
-In test mode (`NODE_ENV=test`), the backend uses `TestAuthProvider` which treats the token string directly as the Firebase UID, bypassing Firebase Admin SDK verification. This allows SDK integration tests to authenticate without real Firebase credentials.
+In test mode, the test server mocks `AuthService` with `TestAuthProvider`, which treats the token string directly as the Firebase UID, bypassing Firebase Admin SDK verification. This allows SDK integration tests to authenticate without real Firebase credentials.
 
-The SDK test helper fetches the test user's `authId` from the `/v1/test/fixture` endpoint and uses it as the Bearer token. This ensures the token matches a real user in the seeded database, allowing all authorization checks to pass.
+The SDK test helper reads the test user's `authId` from the fixture file and uses it as the Bearer token. This ensures the token matches a real user in the seeded database, allowing all authorization checks to pass.
 
-### Test Fixture Endpoint
+### Test Fixture File
 
-**GET `/v1/test/fixture`** (test mode only, mounted at `/v1` by default)
+**File:** `/tmp/roar-test-fixture.json` (written by test server during startup)
 
-Returns the seeded baseFixture data:
+Contains the seeded baseFixture data:
 
 ```json
 {
@@ -199,19 +238,22 @@ Returns the seeded baseFixture data:
 }
 ```
 
+SDK tests read this file via `getBaseFixtureData()` in `src/test-support/sdk-test-helper.ts`.
+
 ### Authentication Token Strategy
 
 **Decision: Use real user's authId from seeded fixture**
 
-- `getBaseFixtureData()` fetches the test fixture endpoint and extracts `testUser.authId`
+- `getBaseFixtureData()` reads the fixture file and extracts `testUser.authId`
 - This real user's authId is cached in `createTestAuthContext()` before any authenticated requests
 - The token is reused across all tests for performance
 - This ensures the token matches a real user in the database, allowing authorization checks to pass
 - Token format: `<schoolAStudent.authId>` (real UUID from seeded database)
+- In test mode, `TestAuthProvider` treats the token string directly as the Firebase UID
 
 See `src/test-support/sdk-test-helper.ts` for implementation.
 
-**Important:** `getBaseFixtureData()` must be called in `beforeAll()` before any authenticated requests. If `createTestAuthContext()` is called without first fetching the fixture, it will use a fallback random token and requests will fail with 401. The current test suite has correct ordering, but this is a subtle footgun for new test files.
+**Important:** `getBaseFixtureData()` must be called in `beforeAll()` before any authenticated requests. The fixture file is written by the test server during startup, so it's guaranteed to exist before tests run.
 
 ## Debugging
 
@@ -306,22 +348,27 @@ echo $ASSESSMENT_DATABASE_URL
 
 ## Architecture Decisions
 
-### Why spawn the backend in globalSetup?
+### Why use a dedicated test server entrypoint?
 
-- **Isolation**: Each test run gets a fresh backend process
-- **Simplicity**: No need to manage a separate test server
+- **Clean separation**: All test infrastructure in one place, production code untouched
+- **Reuses patterns**: Uses same test-support utilities as backend integration tests
+- **Full authorization**: Initializes FGA same way backend tests do
+- **No race conditions**: Fixture data written to file during startup
+- **Isolation**: Each test run gets a fresh server process
 - **Reliability**: Automatic cleanup on test completion
 - **CI-friendly**: Works in containerized environments
-- **Auto-build**: Automatically builds backend if `dist/` doesn't exist, matching CI pipeline behavior where `npm run test` is called after `npm run build`
+- **Auto-build**: Automatically builds backend if `dist/` doesn't exist
 
-### Why use backend's baseFixture seeding?
+### Why use file-based fixture discovery?
 
+- **No race conditions**: Fixture file written before tests start
+- **No HTTP overhead**: Direct file read instead of HTTP call
+- **No test routes**: Keeps production code clean
+- **Clear dependency**: Tests explicitly depend on fixture file
+- **Easier debugging**: Can inspect fixture file directly
 - **Realism**: Uses the same comprehensive test data as backend integration tests
 - **Maintainability**: No hardcoded UUIDs to update when test data changes
-- **Robustness**: Fails fast if seeding doesn't complete (fixture endpoint returns 503)
 - **Alignment**: Matches backend's integration test patterns (baseFixture, Fishery factories)
-- **Flexibility**: Easy to extend with additional test scenarios using the same fixture
-- **CI-friendly**: Works seamlessly in CI pipeline where backend handles seeding
 
 ### Why use shared test token across all tests?
 
@@ -356,7 +403,11 @@ echo $ASSESSMENT_DATABASE_URL
 
 ## References
 
+- [SDK Test Architecture](./SDK_TEST_ARCHITECTURE.md) - Comprehensive architecture guide
+- [SDK Test Refactoring Summary](./SDK_TEST_REFACTORING_SUMMARY.md) - Change summary and migration path
+- [Feedback Response](./FEEDBACK_RESPONSE.md) - How refactoring addresses architectural feedback
 - [Backend Integration Tests](../../apps/backend/INTEGRATION_TESTS.md)
+- [Test Server Entrypoint](../../apps/backend/src/server-test.ts)
 - [Vitest Configuration](./vitest.config.ts)
 - [Global Setup](./vitest.integration.globalSetup.ts)
 - [Test Helper](./src/test-support/sdk-test-helper.ts)
