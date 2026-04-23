@@ -403,9 +403,6 @@ echo $ASSESSMENT_DATABASE_URL
 
 ## References
 
-- [SDK Test Architecture](./SDK_TEST_ARCHITECTURE.md) - Comprehensive architecture guide
-- [SDK Test Refactoring Summary](./SDK_TEST_REFACTORING_SUMMARY.md) - Change summary and migration path
-- [Feedback Response](./FEEDBACK_RESPONSE.md) - How refactoring addresses architectural feedback
 - [Backend Integration Tests](../../apps/backend/INTEGRATION_TESTS.md)
 - [Test Server Entrypoint](../../apps/backend/src/server-test.ts)
 - [Vitest Configuration](./vitest.config.ts)

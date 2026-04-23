@@ -8,9 +8,14 @@ import alias from '@rollup/plugin-alias';
 import run from '@rollup/plugin-run';
 
 const isDev = process.env.NODE_ENV !== 'production';
+const buildTestServer = process.env.BUILD_TEST_SERVER === 'true';
+
+// Only include server-test.ts if explicitly requested via BUILD_TEST_SERVER=true
+// This prevents the test server from being shipped with the production build
+const input = buildTestServer ? ['src/server.ts', 'src/server-test.ts'] : 'src/server.ts';
 
 export default defineConfig({
-  input: ['src/server.ts', 'src/server-test.ts'],
+  input,
   output: isDev
     ? {
         dir: 'dist',

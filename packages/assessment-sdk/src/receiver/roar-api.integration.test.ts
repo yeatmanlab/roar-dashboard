@@ -382,4 +382,36 @@ describe('Assessment SDK (integration)', () => {
       }
     });
   });
+
+  describe('FGA Authorization (non-anonymous runs)', () => {
+    it('should create an authenticated run with administrationId and exercise FGA authorization', async () => {
+      // This test exercises real FGA authorization checks.
+      // The test server initializes FGA and syncs tuples from Postgres,
+      // so this verifies end-to-end authorization behavior.
+
+      const fixtureData = await getBaseFixtureData();
+      const administrationId = fixtureData.administrationAssignedToDistrict.id;
+
+      // Create an authenticated run (non-anonymous) with administrationId
+      // The testUser (schoolAStudent) is enrolled in the district and has FGA access
+      // to administrationAssignedToDistrict via the org hierarchy.
+      const response = await api.client.runs.create({
+        body: {
+          taskVariantId,
+          taskVersion: '1.0.0',
+          isAnonymous: false,
+          administrationId,
+        },
+      });
+
+      // Should succeed because the user has FGA permission to the administration
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('data.id');
+      if (response.status === 201 && 'data' in response.body) {
+        const runId = response.body.data?.id;
+        expect(runId).toBeDefined();
+        expect(runId).toMatch(/^[0-9a-f-]{36}$/); // UUID format
+      }
+    });
+  });
 });

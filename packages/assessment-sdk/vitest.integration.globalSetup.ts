@@ -54,6 +54,10 @@ async function buildBackendIfNeeded(backendDir: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const buildProcess = spawn('npm', ['run', 'build'], {
       cwd: backendDir,
+      env: {
+        ...process.env,
+        BUILD_TEST_SERVER: 'true', // Build both server.js and server-test.js
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
