@@ -191,11 +191,7 @@ describe('ClassRepository', () => {
       });
 
       // District admin should get empty results for expired class
-      const result = await repository.getAuthorizedUsersByClassId(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        expiredClass.id,
-        { page: 1, perPage: 100 },
-      );
+      const result = await repository.getUsersByClassId(expiredClass.id, { page: 1, perPage: 100 });
 
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
