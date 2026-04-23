@@ -55,6 +55,30 @@ function toContractEnrolledFamilyUser(user: EnrolledFamilyUserEntity): EnrolledF
   };
 }
 
+/** Represents the pagination item for a paginated user response. */
+type PaginationItem = { page: number; perPage: number; totalItems: number; totalPages: number };
+
+/** Represents a paginated user response with a status and body containing items and pagination information. */
+type PaginatedUserResponse<T extends EnrolledUser | EnrolledFamilyUser> = {
+  status: typeof StatusCodes.OK;
+  body: {
+    data: {
+      items: T[];
+      pagination: PaginationItem;
+    };
+  };
+};
+
+/**
+ * Narrows an enrolled user entity to EnrolledFamilyUserEntity by checking for family-specific roles.
+ * UserFamilyRole values ('parent', 'child') are disjoint from all UserRole values.
+ */
+function isEnrolledFamilyUserEntity(
+  user: EnrolledUserEntity | EnrolledFamilyUserEntity,
+): user is EnrolledFamilyUserEntity {
+  return user.roles.some((role) => role === UserFamilyRole.PARENT || role === UserFamilyRole.CHILD);
+}
+
 /**
  * Builds a paginated response for user listing endpoints.
  * @param result - The result from the database query.
@@ -62,28 +86,29 @@ function toContractEnrolledFamilyUser(user: EnrolledFamilyUserEntity): EnrolledF
  * @param perPage - The number of items per page.
  * @returns The paginated response.
  */
-export function handleUserSubResourceResponse<T extends EnrolledUserEntity | EnrolledFamilyUserEntity>(
-  result: { items: T[]; totalItems: number },
+export function handleUserSubResourceResponse(
+  result: { items: EnrolledUserEntity[]; totalItems: number },
   page: number,
   perPage: number,
-): {
-  status: typeof StatusCodes.OK;
-  body: {
-    data: {
-      items: T extends EnrolledUserEntity ? EnrolledUser[] : EnrolledFamilyUser[];
-      pagination: { page: number; perPage: number; totalItems: number; totalPages: number };
-    };
-  };
-} {
-  const items = result.items.map((item) => {
-    // Discriminate based on role values: UserFamilyRole only has ['parent', 'child']
-    const hasFamilyRole = item.roles.some((role) => role === UserFamilyRole.PARENT || role === UserFamilyRole.CHILD);
-    if (hasFamilyRole) {
-      return toContractEnrolledFamilyUser(item as EnrolledFamilyUserEntity);
-    }
-    return toContractEnrolledUser(item as EnrolledUserEntity);
-  }) as T extends EnrolledUserEntity ? EnrolledUser[] : EnrolledFamilyUser[];
-  const totalPages = Math.ceil(result.totalItems / perPage);
+): PaginatedUserResponse<EnrolledUser>;
+export function handleUserSubResourceResponse(
+  result: { items: EnrolledFamilyUserEntity[]; totalItems: number },
+  page: number,
+  perPage: number,
+): PaginatedUserResponse<EnrolledFamilyUser>;
+export function handleUserSubResourceResponse(
+  result: { items: (EnrolledUserEntity | EnrolledFamilyUserEntity)[]; totalItems: number },
+  page: number,
+  perPage: number,
+): PaginatedUserResponse<EnrolledUser | EnrolledFamilyUser>;
+export function handleUserSubResourceResponse(
+  result: { items: (EnrolledUserEntity | EnrolledFamilyUserEntity)[]; totalItems: number },
+  page: number,
+  perPage: number,
+): PaginatedUserResponse<EnrolledUser | EnrolledFamilyUser> {
+  const items = result.items.map((item) =>
+    isEnrolledFamilyUserEntity(item) ? toContractEnrolledFamilyUser(item) : toContractEnrolledUser(item),
+  );
 
   return {
     status: StatusCodes.OK as const,
@@ -94,7 +119,7 @@ export function handleUserSubResourceResponse<T extends EnrolledUserEntity | Enr
           page,
           perPage,
           totalItems: result.totalItems,
-          totalPages,
+          totalPages: Math.ceil(result.totalItems / perPage),
         },
       },
     },
