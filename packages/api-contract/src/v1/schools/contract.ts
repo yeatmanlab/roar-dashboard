@@ -8,6 +8,7 @@ import {
   SchoolClassesListResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
+import { EnrolledUsersQuerySchema, EnrolledUsersResponseSchema } from '../common/user';
 
 const c = initContract();
 
@@ -82,6 +83,28 @@ export const SchoolsContract = c.router(
         'Returns 403 if the requesting user lacks permission to access the school. ' +
         'Returns 404 if the requested school does not exist. ' +
         'Returns 500 for unexpected server errors.',
+    },
+    listUsers: {
+      method: 'GET',
+      path: '/:schoolId/users',
+      pathParams: z.object({
+        schoolId: z.string().uuid(),
+      }),
+      query: EnrolledUsersQuerySchema,
+      responses: {
+        200: SuccessEnvelopeSchema(EnrolledUsersResponseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'List users in a school',
+      description:
+        'Returns a paginated list of users enrolled in a school. ' +
+        'Requires authentication and supervisory role on the school. ' +
+        'Returns 403 if the requesting user lacks permission to access the school. ' +
+        'Returns 404 if the requested school does not exist.',
     },
   },
   { pathPrefix: '/schools' },
