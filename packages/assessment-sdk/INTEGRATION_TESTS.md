@@ -85,9 +85,9 @@ The production backend (`server.ts`) is completely clean:
    npm run build -w apps/backend
    ```
 
-   Note: The global setup will automatically build the backend if `apps/backend/dist` doesn't exist. This requires the backend to be built before `npm run start` can run the compiled server.
+   Note: The global setup will automatically build the backend if `dist/server-test.js` doesn't exist. It checks for the test server binary specifically (not just the `dist/` directory) to ensure the build includes `BUILD_TEST_SERVER=true`.
 
-   **Caveat:** If the backend source changes but `dist/` already exists, the old build is used. If tests fail unexpectedly, try `npm run build -w apps/backend` to rebuild.
+   **Caveat:** If you previously ran `npm run build -w apps/backend` without `BUILD_TEST_SERVER=true`, the `dist/` directory exists but `dist/server-test.js` is missing. The global setup will rebuild with the correct environment variable. If tests fail unexpectedly, try `BUILD_TEST_SERVER=true npm run build -w apps/backend` to rebuild explicitly.
 
 ### Run Tests Locally
 
@@ -155,6 +155,11 @@ Example GitHub Actions workflow:
 ### Happy Path: Full Run Lifecycle
 
 - ✅ Create → Write trials → Update engagement → Complete
+
+### FGA Authorization (non-anonymous runs)
+
+- ✅ Create authenticated run with real administrationId (exercises FGA `can_create_run` check)
+- ✅ Return 403 for administration outside user hierarchy (negative case — verifies FGA denies unauthorized access)
 
 ## Test Data
 

@@ -84,6 +84,7 @@ export function initTestSdk(overrides: Partial<CommandContext> = {}) {
 export async function getBaseFixtureData(): Promise<{
   testUser: { authId: string };
   administrationAssignedToDistrict: { id: string };
+  administrationAssignedToDistrictB: { id: string };
   variantForAllGrades: { id: string };
   variantForGrade5: { id: string };
   variantForGrade3: { id: string };

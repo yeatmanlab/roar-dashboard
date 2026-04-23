@@ -42,10 +42,10 @@ let backendProcess: ReturnType<typeof spawn> | null = null;
  * Required because `npm run start` runs the compiled dist/server.js.
  */
 async function buildBackendIfNeeded(backendDir: string): Promise<void> {
-  const distDir = path.join(backendDir, 'dist');
+  const testServerBin = path.join(backendDir, 'dist', 'server-test.js');
 
-  if (existsSync(distDir)) {
-    console.log('[SDK Integration Tests] Backend already built, skipping build');
+  if (existsSync(testServerBin)) {
+    console.log('[SDK Integration Tests] Test server binary already built, skipping build');
     return;
   }
 

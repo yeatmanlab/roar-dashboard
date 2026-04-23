@@ -413,5 +413,29 @@ describe('Assessment SDK (integration)', () => {
         expect(runId).toMatch(/^[0-9a-f-]{36}$/); // UUID format
       }
     });
+
+    it('should return 403 for administration outside user hierarchy', async () => {
+      // This test verifies the negative case: user is denied access to an administration
+      // they are not authorized for. schoolAStudent is enrolled in district (and schoolA),
+      // but has no FGA tuples for districtB or its administrations.
+      // Without this test, the FGA can_create_run check could be silently disabled
+      // and the test suite would still pass.
+
+      const fixtureData = await getBaseFixtureData();
+      const unauthorizedAdminId = fixtureData.administrationAssignedToDistrictB.id;
+
+      const response = await api.client.runs.create({
+        body: {
+          taskVariantId,
+          taskVersion: '1.0.0',
+          isAnonymous: false,
+          administrationId: unauthorizedAdminId,
+        },
+      });
+
+      // Should fail because the user has no FGA permission to administrationAssignedToDistrictB
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty('error');
+    });
   });
 });

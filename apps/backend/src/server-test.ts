@@ -73,6 +73,9 @@ async function writeFixtureFile(fixtureFile: string): Promise<void> {
     administrationAssignedToDistrict: {
       id: baseFixture.administrationAssignedToDistrict.id,
     },
+    administrationAssignedToDistrictB: {
+      id: baseFixture.administrationAssignedToDistrictB.id,
+    },
     variantForAllGrades: { id: baseFixture.variantForAllGrades.id },
     variantForGrade5: { id: baseFixture.variantForGrade5.id },
     variantForGrade3: { id: baseFixture.variantForGrade3.id },
