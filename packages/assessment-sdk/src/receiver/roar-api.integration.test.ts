@@ -7,7 +7,7 @@
  * SETUP REQUIREMENTS:
  * - Backend must be running (started by vitest.integration.globalSetup.ts)
  * - Test databases must exist (CORE_DATABASE_URL, ASSESSMENT_DATABASE_URL)
- * - Backend's baseFixture must be seeded (handled by backend's SEED_TEST_DATA flag)
+ * - Backend's baseFixture is automatically seeded by server-test.ts during startup
  *   This provides task variants and administrations for testing
  *
  * AUTHENTICATION:

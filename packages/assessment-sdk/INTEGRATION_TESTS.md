@@ -17,7 +17,7 @@ Integration tests run the SDK against a locally spawned backend server that conn
 Before any integration tests run:
 
 1. **Validates environment variables** - Ensures `CORE_DATABASE_URL` and `ASSESSMENT_DATABASE_URL` are set
-2. **Builds backend if needed** - Compiles backend if `dist/` doesn't exist
+2. **Builds backend if needed** - Compiles backend if `dist/server-test.js` doesn't exist
 3. **Spawns test server** - Starts dedicated test server via `node dist/server-test.js` in `apps/backend`
 4. **Waits for health endpoint** - Polls `/health` until the server is ready (max 30 seconds)
 5. **Stores process reference** - Saves the server process to `globalThis` for cleanup
@@ -362,7 +362,7 @@ echo $ASSESSMENT_DATABASE_URL
 - **Isolation**: Each test run gets a fresh server process
 - **Reliability**: Automatic cleanup on test completion
 - **CI-friendly**: Works in containerized environments
-- **Auto-build**: Automatically builds backend if `dist/` doesn't exist
+- **Auto-build**: Automatically builds backend if `dist/server-test.js` doesn't exist
 
 ### Why use file-based fixture discovery?
 
