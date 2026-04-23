@@ -1746,8 +1746,6 @@ describe('AdministrationsController', () => {
         {
           taskVariantId: 'tv-1',
           orderIndex: 0,
-          conditionsEligibility: null,
-          conditionsRequirement: null,
         },
       ],
       agreements: ['agreement-1'],

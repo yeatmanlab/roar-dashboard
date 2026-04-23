@@ -2832,8 +2832,6 @@ describe('AdministrationService', () => {
         {
           taskVariantId: 'tv-1',
           orderIndex: 0,
-          conditionsEligibility: null,
-          conditionsRequirement: null,
         },
       ],
       agreements: ['agreement-1'],
@@ -2917,8 +2915,8 @@ describe('AdministrationService', () => {
           taskVariants: validRequest.taskVariants.map((tv) => ({
             taskVariantId: tv.taskVariantId,
             orderIndex: tv.orderIndex,
-            conditionsAssignment: tv.conditionsEligibility,
-            conditionsRequirements: tv.conditionsRequirement,
+            conditionsAssignment: null,
+            conditionsRequirements: null,
           })),
           agreementIds: validRequest.agreements,
         }),
@@ -3014,8 +3012,8 @@ describe('AdministrationService', () => {
         ...validRequest,
         isOrdered: true,
         taskVariants: [
-          { taskVariantId: 'tv-1', orderIndex: 0, conditionsEligibility: null, conditionsRequirement: null },
-          { taskVariantId: 'tv-2', orderIndex: 0, conditionsEligibility: null, conditionsRequirement: null },
+          { taskVariantId: 'tv-1', orderIndex: 0 },
+          { taskVariantId: 'tv-2', orderIndex: 0 },
         ],
       };
 

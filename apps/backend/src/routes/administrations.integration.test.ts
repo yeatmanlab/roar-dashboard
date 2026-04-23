@@ -184,8 +184,6 @@ describe('POST /v1/administrations', () => {
         {
           taskVariantId: baseFixture.variantForAllGrades.id,
           orderIndex: 0,
-          conditionsEligibility: null,
-          conditionsRequirement: null,
         },
       ],
       agreements: [],
@@ -216,8 +214,6 @@ describe('POST /v1/administrations', () => {
         {
           taskVariantId: baseFixture.variantForAllGrades.id,
           orderIndex: 0,
-          conditionsEligibility: null,
-          conditionsRequirement: null,
         },
       ],
       agreements: [agreement.id],
@@ -250,8 +246,6 @@ describe('POST /v1/administrations', () => {
         {
           taskVariantId: baseFixture.variantForAllGrades.id,
           orderIndex: 0,
-          conditionsEligibility: null,
-          conditionsRequirement: null,
         },
       ],
       agreements: [agreement.id],
@@ -279,8 +273,6 @@ describe('POST /v1/administrations', () => {
         {
           taskVariantId: baseFixture.variantForAllGrades.id,
           orderIndex: 0,
-          conditionsEligibility: null,
-          conditionsRequirement: null,
         },
       ],
       agreements: [],
@@ -304,8 +296,6 @@ describe('POST /v1/administrations', () => {
         {
           taskVariantId: baseFixture.variantForAllGrades.id,
           orderIndex: 0,
-          conditionsEligibility: null,
-          conditionsRequirement: null,
         },
       ],
       agreements: [],
