@@ -12,9 +12,7 @@ export function createMockAdministrationRepository(): MockedObject<Administratio
   return {
     ...createMockBaseRepositoryMethods(),
     listAll: vi.fn(),
-    getAuthorizedById: vi.fn(),
     getAssignedUserCountsByAdministrationIds: vi.fn(),
-    getUserRolesForAdministration: vi.fn(),
     getAssignees: vi.fn(),
     getTaskVariantsByAdministrationId: vi.fn(),
     getAgreementsByAdministrationId: vi.fn(),
