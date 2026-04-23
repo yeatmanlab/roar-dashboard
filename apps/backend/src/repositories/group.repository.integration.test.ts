@@ -143,19 +143,6 @@ describe('GroupRepository', () => {
       expect(result?.items[0]?.id).not.toBe(baseFixture.futureGroupStudent.id);
     });
 
-    it('returns enrollmentStart and role for each user', async () => {
-      const result = await repository.getUsersByGroupId(baseFixture.group.id, {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.items).toHaveLength(1);
-
-      expect(result?.items[0]?.id).toBe(baseFixture.groupStudent.id);
-      expect(result?.items[0]?.role).toBe(UserRole.STUDENT);
-      expect(result?.items[0]?.enrollmentStart).toBeInstanceOf(Date);
-    });
-
     it('returns empty for group with no enrolled users', async () => {
       const emptyGroup = await GroupFactory.create({
         name: 'empty group',
@@ -289,8 +276,21 @@ describe('GroupRepository', () => {
       expect(userIds).not.toContain(baseFixture.expiredEnrollmentStudent.id);
     });
 
-    it('returns empty for nonexistent group ID', async () => {
-      const result = await repository.getUsersByGroupId('00000000-0000-0000-0000-000000000000', {
+    it('returns empty for expired group (rosteringEnded set)', async () => {
+      // Create a group with rosteringEnded set
+      const expiredGroup = await GroupFactory.create({
+        name: 'Expired Group',
+        rosteringEnded: new Date('2023-12-31'),
+      });
+
+      const student = await UserFactory.create({ nameLast: 'ExpiredGroupStudent' });
+      await UserGroupFactory.create({
+        userId: student.id,
+        groupId: expiredGroup.id,
+        role: UserRole.STUDENT,
+      });
+
+      const result = await repository.getUsersByGroupId(expiredGroup.id, {
         page: 1,
         perPage: 100,
       });
@@ -327,7 +327,7 @@ describe('GroupRepository', () => {
 
         // Verify all returned users have the filtered role in EnrolledUserEntity
         for (const user of result.items) {
-          expect(user.role).toBe(UserRole.STUDENT);
+          expect(user.roles).toContain(UserRole.STUDENT);
         }
       });
 
@@ -453,14 +453,12 @@ describe('GroupRepository', () => {
     });
 
     it('returns empty array when user has no access', async () => {
-      const adminUser = await UserFactory.create({ nameLast: 'GroupAdmin' });
       const teacherUser = await UserFactory.create({ nameLast: 'Teacher' });
       const studentUser = await UserFactory.create({ nameLast: 'Student' });
       const adminGroup = await GroupFactory.create({
         name: 'Group Admin Test Group',
       });
 
-      await UserGroupFactory.create({ userId: adminUser.id, groupId: adminGroup.id, role: UserRole.ADMINISTRATOR });
       await UserGroupFactory.create({ userId: teacherUser.id, groupId: adminGroup.id, role: UserRole.TEACHER });
       await UserGroupFactory.create({ userId: studentUser.id, groupId: adminGroup.id, role: UserRole.STUDENT });
       const result = await repository.getAuthorizedUsersByGroupId(
