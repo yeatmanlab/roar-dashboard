@@ -537,12 +537,14 @@ export type AdministrationTreeResponse = z.infer<typeof AdministrationTreeRespon
  * Task variant input for creating an administration.
  * Each task variant includes ordering and optional eligibility/requirement conditions.
  */
-export const CreateAdministrationTaskVariantSchema = z.object({
-  taskVariantId: z.string().uuid(),
-  orderIndex: z.number().int().min(0),
-  conditionsEligibility: ConditionSchema.nullable().optional(),
-  conditionsRequirement: ConditionSchema.nullable().optional(),
-});
+export const CreateAdministrationTaskVariantSchema = z
+  .object({
+    taskVariantId: z.string().uuid(),
+    orderIndex: z.number().int().min(0),
+    conditionsEligibility: ConditionSchema.optional(),
+    conditionsRequirement: ConditionSchema.optional(),
+  })
+  .strict();
 
 export type CreateAdministrationTaskVariant = z.infer<typeof CreateAdministrationTaskVariantSchema>;
 
@@ -566,19 +568,21 @@ export type CreateAdministrationTaskVariant = z.infer<typeof CreateAdministratio
  *
  * Note: createdBy is automatically set to the authenticated user's ID.
  */
-export const CreateAdministrationRequestSchema = z.object({
-  name: z.string().min(1),
-  namePublic: z.string().min(1),
-  description: z.string().optional(),
-  dateStart: z.string().datetime(),
-  dateEnd: z.string().datetime(),
-  isOrdered: z.boolean().optional().default(false),
-  orgs: z.array(z.string().uuid()).optional().default([]),
-  classes: z.array(z.string().uuid()).optional().default([]),
-  groups: z.array(z.string().uuid()).optional().default([]),
-  taskVariants: z.array(CreateAdministrationTaskVariantSchema).min(1),
-  agreements: z.array(z.string().uuid()).optional().default([]),
-});
+export const CreateAdministrationRequestSchema = z
+  .object({
+    name: z.string().min(1),
+    namePublic: z.string().min(1),
+    description: z.string().optional(),
+    dateStart: z.string().datetime(),
+    dateEnd: z.string().datetime(),
+    isOrdered: z.boolean().optional().default(false),
+    orgs: z.array(z.string().uuid()).optional().default([]),
+    classes: z.array(z.string().uuid()).optional().default([]),
+    groups: z.array(z.string().uuid()).optional().default([]),
+    taskVariants: z.array(CreateAdministrationTaskVariantSchema).min(1),
+    agreements: z.array(z.string().uuid()).optional().default([]),
+  })
+  .strict();
 
 export type CreateAdministrationRequest = z.infer<typeof CreateAdministrationRequestSchema>;
 

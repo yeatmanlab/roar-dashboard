@@ -3210,7 +3210,7 @@ describe('AdministrationService', () => {
       // Act & Assert
       await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
-          message: 'Failed to create administration',
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
         }),

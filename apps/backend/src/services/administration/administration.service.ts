@@ -1172,7 +1172,7 @@ export function AdministrationService({
 
       logger.error({ err: error, context: { userId } }, 'Failed to create administration');
 
-      throw new ApiError('Failed to create administration', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
