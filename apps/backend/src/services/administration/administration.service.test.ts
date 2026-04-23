@@ -17,6 +17,7 @@ import type {
   TaskVariantWithAssignment,
   TreeNode,
 } from '../../repositories/administration.repository';
+import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
@@ -3164,6 +3165,94 @@ describe('AdministrationService', () => {
           message: ApiErrorMessage.NOT_FOUND,
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+    });
+
+    it('should throw error when task variant is not published', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockDraftTaskVariant = TaskVariantFactory.build({ id: 'tv-1', status: TaskVariantStatus.DRAFT });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockDraftTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw error when task variant is deprecated', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockDeprecatedTaskVariant = TaskVariantFactory.build({ id: 'tv-1', status: TaskVariantStatus.DEPRECATED });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockDeprecatedTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         }),
       );
     });

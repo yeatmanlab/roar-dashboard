@@ -18,6 +18,7 @@ import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import type {
@@ -1117,6 +1118,18 @@ export function AdministrationService({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId, missingTaskVariants },
+        });
+      }
+
+      // Verify all task variants are published (not draft or deprecated)
+      const unpublishedTaskVariants = existingTaskVariants
+        .filter((tv) => tv.status !== TaskVariantStatus.PUBLISHED)
+        .map((tv) => tv.id);
+      if (unpublishedTaskVariants.length > 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, unpublishedTaskVariants },
         });
       }
 
