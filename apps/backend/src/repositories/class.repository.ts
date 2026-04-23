@@ -18,7 +18,6 @@ import {
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
-import type * as CoreDbSchema from '../db/schema/core';
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
