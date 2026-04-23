@@ -1,11 +1,8 @@
 /**
  * Integration tests for AdministrationRepository.
  *
- * Tests custom methods (listAll, getAuthorizedById, getAssignees) against the
+ * Tests custom methods (listAll, getAssignedUserCountsByAdministrationIds, getAssignees) against the
  * real database with the base fixture's org hierarchy and administrations.
- *
- * getAssignedUserCountsByAdministrationIds is covered by the existing
- * administration.access-controls.integration.test.ts — only light coverage here.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
@@ -17,7 +14,6 @@ import { AdministrationTaskVariantFactory } from '../test-support/factories/admi
 import { TaskFactory } from '../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
 import { AdministrationRepository } from './administration.repository';
-import { UserRole } from '../enums/user-role.enum';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 
 describe('AdministrationRepository', () => {
@@ -138,75 +134,128 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  describe('getAuthorizedById', () => {
-    it('returns administration when user has access', async () => {
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(baseFixture.administrationAssignedToDistrict.id);
-    });
-
-    it('returns null when user lacks access', async () => {
-      // District B admin should not have access to District A's administration
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it('returns null for nonexistent administration ID', async () => {
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        '00000000-0000-0000-0000-000000000000',
-      );
-
-      expect(result).toBeNull();
-    });
-  });
-
   describe('getAssignedUserCountsByAdministrationIds', () => {
-    it('returns counts for administrations', async () => {
+    it('counts users via direct group path', async () => {
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToGroup.id,
       ]);
 
-      // Group has exactly 1 user (groupStudent)
+      // Group has exactly 1 user (groupStudent); futureGroupStudent is excluded
       expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
     });
-  });
 
-  describe('getUserRolesForAdministration', () => {
-    it('returns roles for user with access via org', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtAdmin.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
+    it('counts users via direct class path', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
 
-      expect(roles).toContain('administrator');
+      // classInSchoolA has 2 active users (classAStudent, classATeacher); expiredClassStudent excluded
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
     });
 
-    it('returns empty array for user without access', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtBAdmin.id,
+    it('counts users via org hierarchy paths (viaOrgToOrgUsers and viaOrgToClassUsers)', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToDistrict.id,
-      );
+      ]);
 
-      expect(roles).toHaveLength(0);
+      // administrationAssignedToDistrict is assigned to district, which via ltree includes:
+      // - viaOrgToOrgUsers: districtAdmin, schoolAAdmin, schoolAPrincipal, schoolATeacher, schoolAStudent,
+      //   schoolBStudent, multiAssignedUser (district+schoolA), grade5Student, grade3Student, grade5EllStudent
+      // - viaOrgToClassUsers: classAStudent, classATeacher (active in classInSchoolA under district)
+      // Excluded: expiredEnrollmentStudent, futureEnrollmentStudent, expiredClassStudent
+      const count = counts.get(baseFixture.administrationAssignedToDistrict.id);
+      expect(count).toBe(12);
     });
 
-    it('returns multiple roles for user with multiple memberships', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.multiAssignedUser.id,
+    it('deduplicates users reachable via multiple paths', async () => {
+      // multiAssignedUser has active enrollments at both district AND schoolA. Both orgs are in the
+      // district subtree, so viaOrgToOrgUsers emits two rows for them (one per enrollment).
+      // The full UNION ALL produces 13 rows (11 single-path users + 2 rows for multiAssignedUser),
+      // but COUNT(DISTINCT userId) must collapse them to 12 unique users.
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToDistrict.id,
-      );
+      ]);
 
-      expect(roles).toContain('administrator');
-      expect(roles).toContain('teacher');
+      const count = counts.get(baseFixture.administrationAssignedToDistrict.id) ?? 0;
+      expect(count).toBe(12); // would be 13 with COUNT instead of COUNT(DISTINCT)
+    });
+
+    it('returns count for multiple administrations in one call', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToGroup.id,
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
+
+      expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+    });
+
+    it('omits entry from returned Map for administration with no assigned users', async () => {
+      const emptyAdmin = await AdministrationFactory.create({
+        name: 'No Users Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([emptyAdmin.id]);
+
+      // The Map should have no entry for an administration with 0 users
+      // (callers use counts.get(id) ?? 0 to handle the missing entry)
+      expect(counts.has(emptyAdmin.id)).toBe(false);
+    });
+
+    it('excludes users with expired org enrollments', async () => {
+      // Create an administration assigned to schoolA, which has expiredEnrollmentStudent
+      // with an enrollment that ended 7 days ago
+      const admin = await AdministrationFactory.create({
+        name: 'Expired Enrollment Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: admin.id,
+        orgId: baseFixture.schoolA.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
+
+      const count = counts.get(admin.id) ?? 0;
+
+      // schoolA has 5 active org-level users (schoolAAdmin, schoolAPrincipal, schoolATeacher,
+      // schoolAStudent, multiAssignedUser) + 2 active class-level users (classAStudent, classATeacher).
+      // expiredEnrollmentStudent's enrollment ended 7 days ago and must be excluded.
+      expect(count).toBe(7);
+    });
+
+    it('excludes users with future org enrollments', async () => {
+      // Create an administration assigned to schoolA, which has futureEnrollmentStudent
+      // with an enrollment that starts 7 days from now
+      const admin = await AdministrationFactory.create({
+        name: 'Future Enrollment Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: admin.id,
+        orgId: baseFixture.schoolA.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
+
+      // futureEnrollmentStudent's enrollment starts 7 days from now and must be excluded,
+      // leaving the same 7 active users reachable from schoolA.
+      expect(counts.get(admin.id)).toBe(7);
+    });
+
+    it('excludes users with expired class enrollments', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
+
+      // expiredClassStudent has enrollment that ended 7 days ago — should be excluded
+      // Only classAStudent and classATeacher have active enrollments
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+    });
+
+    it('throws when called with an empty administrationIds array', async () => {
+      await expect(repository.getAssignedUserCountsByAdministrationIds([])).rejects.toThrow();
     });
   });
 

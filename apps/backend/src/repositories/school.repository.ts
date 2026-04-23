@@ -1,14 +1,23 @@
-import { eq, countDistinct, and, isNull, sql, inArray } from 'drizzle-orm';
+import { eq, countDistinct, and, isNull, sql, inArray, asc, desc } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { Org } from '../db/schema';
-import { orgs, userOrgs, classes } from '../db/schema';
+import { orgs, userOrgs, classes, userClasses, users } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-dashboard/api-contract';
 import { OrgType } from '../enums/org-type.enum';
+import type { UserRole } from '../enums/user-role.enum';
+import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../types/user';
+import {
+  getEnrolledUsersFilterConditions,
+  ENROLLED_USERS_SORT_COLUMNS,
+  UserJunctionTable,
+} from './utils/enrolled-users-query.utils';
+import { isEnrollmentActive } from './utils/enrollment.utils';
 
 /**
  * School-specific type (Org with orgType = 'school')
@@ -335,5 +344,94 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     }
 
     return result;
+  }
+
+  /**
+   * Get users enrolled in a school.
+   *
+   * Returns all users who have an active enrollment in the specified school.
+   * Only includes users with active enrollments (enrollment_start <= now and
+   * enrollment_end is null or >= now).
+   *
+   * @param schoolId - School ID to check enrollments for
+   * @param options - Options for filtering and pagination
+   * @returns Paginated result of users enrolled in the school
+   */
+  async getUsersBySchoolId(
+    schoolId: string,
+    options: ListEnrolledUsersOptions,
+  ): Promise<PaginatedResult<EnrolledUserEntity>> {
+    const { page, perPage, orderBy } = options;
+    const offset = (page - 1) * perPage;
+
+    const schoolConditions = and(
+      isEnrollmentActive(userOrgs),
+      isNull(orgs.rosteringEnded),
+      eq(orgs.id, schoolId),
+      eq(orgs.orgType, OrgType.SCHOOL),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_ORGS),
+    );
+
+    const schoolUsersQuery = this.db
+      .select({
+        userId: users.id,
+        role: userOrgs.role,
+      })
+      .from(userOrgs)
+      .innerJoin(users, eq(users.id, userOrgs.userId))
+      .innerJoin(orgs, eq(orgs.id, userOrgs.orgId))
+      .where(schoolConditions);
+
+    const classConditions = and(
+      isEnrollmentActive(userClasses),
+      isNull(classes.rosteringEnded),
+      eq(classes.schoolId, schoolId),
+      ...getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES),
+    );
+
+    const classUsersQuery = this.db
+      .select({
+        userId: users.id,
+        role: userClasses.role,
+      })
+      .from(userClasses)
+      .innerJoin(users, eq(userClasses.userId, users.id))
+      .innerJoin(classes, eq(userClasses.classId, classes.id))
+      .where(classConditions);
+
+    const combinedUsersQuery = schoolUsersQuery.union(classUsersQuery).as('combined_users');
+    const countResult = await this.db
+      .select({ count: countDistinct(combinedUsersQuery.userId) })
+      .from(combinedUsersQuery);
+
+    const totalItems = countResult[0]?.count ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    const sortField = orderBy?.field;
+    const sortColumn = sortField ? ENROLLED_USERS_SORT_COLUMNS[sortField] : users.nameLast;
+    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
+
+    const dataResult = await this.db
+      .select({
+        user: users,
+        roles: sql<UserRole[]>`json_agg(${combinedUsersQuery.role})`,
+      })
+      .from(users)
+      .innerJoin(combinedUsersQuery, eq(users.id, combinedUsersQuery.userId))
+      .groupBy(users.id)
+      .orderBy(primaryOrder, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    return {
+      items: dataResult.map((row) => ({
+        ...row.user,
+        roles: row.roles,
+      })),
+      totalItems,
+    };
   }
 }

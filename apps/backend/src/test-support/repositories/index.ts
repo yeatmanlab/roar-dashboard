@@ -15,10 +15,6 @@ export {
   createMockRunTrialInteractionsRepository,
   MockRunTrialInteractionsRepository,
 } from './run-trial-interactions.repository';
-export {
-  createMockAdministrationAccessControls,
-  MockAdministrationAccessControls,
-} from './administration-access-controls.repository';
 export { createMockAdministrationRepository, MockAdministrationRepository } from './administration.repository';
 export {
   createMockAdministrationTaskVariantRepository,
