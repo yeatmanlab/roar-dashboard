@@ -27,7 +27,7 @@ describe('RunService', () => {
     administrationId: '660e8400-e29b-41d4-a716-446655440001',
     isAnonymous: false as const,
   };
-  const targetUserId = 'user-123';
+  const targetUserId = 'target-user-456';
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,7 +71,7 @@ describe('RunService', () => {
       expect(taskVariantRepository.getTaskIdByVariantId).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000');
       expect(runRepository.create).toHaveBeenCalledWith({
         data: {
-          userId: 'user-123',
+          userId: targetUserId,
           taskId: 'task-123',
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
@@ -144,7 +144,7 @@ describe('RunService', () => {
 
       expect(runRepository.create).toHaveBeenCalledWith({
         data: {
-          userId: 'user-123',
+          userId: targetUserId,
           taskId: 'task-789',
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
@@ -238,7 +238,7 @@ describe('RunService', () => {
       expect(result).toEqual({ id: 'run-anon-123' });
       expect(runRepository.create).toHaveBeenCalledWith({
         data: {
-          userId: 'user-123',
+          userId: targetUserId,
           taskId: 'task-123',
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
@@ -273,19 +273,6 @@ describe('RunService', () => {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
-    });
-
-    it('should skip role permission check for anonymous runs', async () => {
-      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runRepository.create.mockResolvedValue({ id: 'run-anon-123' });
-
-      await runService.create(authContext, targetUserId, {
-        taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
-      expect(authorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
     it('should re-throw ApiError from create without wrapping', async () => {

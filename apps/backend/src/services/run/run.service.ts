@@ -162,7 +162,7 @@ export function RunService({
       }
 
       const data: NewRun = {
-        userId,
+        userId: targetUserId,
         taskId: result.taskId,
         taskVariantId: body.taskVariantId,
         taskVersion: body.taskVersion,
