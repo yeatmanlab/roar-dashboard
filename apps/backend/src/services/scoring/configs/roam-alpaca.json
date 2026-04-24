@@ -1,0 +1,14 @@
+{
+  "taskSlugs": ["roam-alpaca"],
+  "scoreFields": {
+    "percentile": [{ "minVersion": 0, "fieldName": null }],
+    "percentileDisplay": [{ "minVersion": 0, "fieldName": null }],
+    "standardScore": [{ "minVersion": 0, "fieldName": null }],
+    "standardScoreDisplay": [{ "minVersion": 0, "fieldName": null }],
+    "rawScore": [{ "minVersion": 0, "fieldName": null }]
+  },
+  "classification": {
+    "type": "assessment-computed",
+    "supportLevelField": "supportLevel"
+  }
+}
