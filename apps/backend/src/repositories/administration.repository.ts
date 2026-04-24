@@ -1,6 +1,7 @@
 import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   administrations,
@@ -125,6 +126,23 @@ export interface ListTreeNodesOptions {
   page: number;
   perPage: number;
 }
+
+/** Raw tree node row with total count included for pagination. */
+type TreeNodeRowWithCounts = {
+  id: string;
+  name: string;
+  entity_type: TreeNodeEntityType;
+  has_children: boolean;
+  total_count: string;
+};
+
+/** Accessible IDs for FGA scoping in tree queries. */
+export type AccessibleIds = {
+  districtIds?: string[];
+  schoolIds?: string[];
+  classIds?: string[];
+  groupIds?: string[];
+};
 
 /**
  * Options for listing agreements of an administration.
@@ -576,21 +594,13 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   async getRootTreeNodes(
     administrationId: string,
     options: ListTreeNodesOptions,
-    accessibleIds?: {
-      districtIds?: string[];
-      schoolIds?: string[];
-      classIds?: string[];
-      groupIds?: string[];
-    },
+    accessibleIds?: AccessibleIds,
   ): Promise<PaginatedResult<TreeNode>> {
     const { page, perPage } = options;
     const offset = (page - 1) * perPage;
 
     // Build FGA filters for each entity type
-    const buildFgaFilter = (
-      ids: string[] | undefined,
-      column: typeof orgs.id | typeof classes.id | typeof groups.id,
-    ) => {
+    const buildFgaFilter = (ids: string[] | undefined, column: PgColumn) => {
       if (ids && ids.length > 0) {
         return sql`AND ${column} IN (${sql.join(
           ids.map((id) => sql`${id}`),
@@ -677,20 +687,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     const result = await this.db.execute(query);
 
-    const rows = result.rows as Array<{
-      id: string;
-      name: string;
-      entity_type: string;
-      has_children: boolean;
-      total_count: string;
-    }>;
+    const rows = result.rows as TreeNodeRowWithCounts[];
 
-    const totalItems = rows.length > 0 ? parseInt(rows[0]!.total_count, 10) : 0;
+    const totalItems = rows[0] ? parseInt(rows[0].total_count, 10) : 0;
 
     const items: TreeNode[] = rows.map((row) => ({
       id: row.id,
       name: row.name,
-      entityType: row.entity_type as TreeNodeEntityType,
+      entityType: row.entity_type,
       hasChildren: row.has_children,
     }));
 
@@ -753,20 +757,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     const result = await this.db.execute(query);
 
-    const rows = result.rows as Array<{
-      id: string;
-      name: string;
-      entity_type: string;
-      has_children: boolean;
-      total_count: string;
-    }>;
+    const rows = result.rows as TreeNodeRowWithCounts[];
 
-    const totalItems = rows.length > 0 ? parseInt(rows[0]!.total_count, 10) : 0;
+    const totalItems = rows[0] ? parseInt(rows[0].total_count, 10) : 0;
 
     const items: TreeNode[] = rows.map((row) => ({
       id: row.id,
       name: row.name,
-      entityType: row.entity_type as TreeNodeEntityType,
+      entityType: row.entity_type,
       hasChildren: row.has_children,
     }));
 
@@ -825,20 +823,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     const result = await this.db.execute(query);
 
-    const rows = result.rows as Array<{
-      id: string;
-      name: string;
-      entity_type: string;
-      has_children: boolean;
-      total_count: string;
-    }>;
+    const rows = result.rows as TreeNodeRowWithCounts[];
 
-    const totalItems = rows.length > 0 ? parseInt(rows[0]!.total_count, 10) : 0;
+    const totalItems = rows[0] ? parseInt(rows[0].total_count, 10) : 0;
 
     const items: TreeNode[] = rows.map((row) => ({
       id: row.id,
       name: row.name,
-      entityType: row.entity_type as TreeNodeEntityType,
+      entityType: row.entity_type,
       hasChildren: row.has_children,
     }));
 
@@ -865,26 +857,11 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     parentEntityType: TreeParentEntityType | undefined,
     parentEntityId: string | undefined,
     options: ListTreeNodesOptions,
-    accessibleIds?: {
-      districtIds?: string[];
-      schoolIds?: string[];
-      classIds?: string[];
-      groupIds?: string[];
-    },
+    accessibleIds?: AccessibleIds,
   ): Promise<PaginatedResult<TreeNode>> {
     // Root level: all directly assigned entities
     if (!parentEntityType) {
-      const rootFilter: {
-        districtIds?: string[];
-        schoolIds?: string[];
-        classIds?: string[];
-        groupIds?: string[];
-      } = {};
-      if (accessibleIds?.districtIds) rootFilter.districtIds = accessibleIds.districtIds;
-      if (accessibleIds?.schoolIds) rootFilter.schoolIds = accessibleIds.schoolIds;
-      if (accessibleIds?.classIds) rootFilter.classIds = accessibleIds.classIds;
-      if (accessibleIds?.groupIds) rootFilter.groupIds = accessibleIds.groupIds;
-      return this.getRootTreeNodes(administrationId, options, rootFilter);
+      return this.getRootTreeNodes(administrationId, options, accessibleIds ?? {});
     }
 
     // Leaf nodes: class and group have no children

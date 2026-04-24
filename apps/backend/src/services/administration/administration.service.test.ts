@@ -2784,7 +2784,7 @@ describe('AdministrationService', () => {
 
       await expect(service.getTree(superAdminAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: 'Failed to retrieve administration tree',
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
       });
     });
 

@@ -20,6 +20,7 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import type {
+  AccessibleIds,
   AdministrationAssignees,
   AdministrationQueryOptions,
   AgreementWithVersion,
@@ -79,6 +80,29 @@ export interface ListAgreementsOptions {
   sortBy: AdministrationAgreementSortFieldType;
   sortOrder: 'asc' | 'desc';
   locale: string;
+}
+
+/**
+ * Options for the tree endpoint.
+ */
+export interface GetTreeOptions {
+  page: number;
+  perPage: number;
+  parentEntityType?: TreeParentEntityType;
+  parentEntityId?: string;
+  embed?: TreeEmbedOptionType[];
+}
+
+/**
+ * Per-node stats returned when `?embed=stats` is requested on the tree endpoint.
+ */
+export interface TreeNodeStats {
+  assignment: {
+    studentsWithRequiredTasks: number;
+    studentsAssigned: number;
+    studentsStarted: number;
+    studentsCompleted: number;
+  };
 }
 
 /**
@@ -742,17 +766,6 @@ export function AdministrationService({
   }
 
   /**
-   * Options for the tree endpoint.
-   */
-  interface GetTreeOptions {
-    page: number;
-    perPage: number;
-    parentEntityType?: TreeParentEntityType;
-    parentEntityId?: string;
-    embed?: TreeEmbedOptionType[];
-  }
-
-  /**
    * Get one level of the organization tree for an administration.
    *
    * Returns a paginated list of entities at one level of the hierarchy.
@@ -779,35 +792,23 @@ export function AdministrationService({
     authContext: AuthContext,
     administrationId: string,
     options: GetTreeOptions,
-  ): Promise<
-    PaginatedResult<
-      TreeNode & {
-        stats?: {
-          assignment: {
-            studentsWithRequiredTasks: number;
-            studentsAssigned: number;
-            studentsStarted: number;
-            studentsCompleted: number;
-          };
-        };
-      }
-    >
-  > {
+  ): Promise<PaginatedResult<TreeNode & { stats?: TreeNodeStats }>> {
     const { userId, isSuperAdmin } = authContext;
+    const { page, perPage, parentEntityType, parentEntityId, embed } = options;
 
     // Validate: parentEntityId and parentEntityType must be provided together
-    if (options.parentEntityId && !options.parentEntityType) {
+    if (parentEntityId && !parentEntityType) {
       throw new ApiError('parentEntityId requires parentEntityType', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId, administrationId, parentEntityId: options.parentEntityId },
+        context: { userId, administrationId, parentEntityId },
       });
     }
-    if (options.parentEntityType && !options.parentEntityId) {
+    if (parentEntityType && !parentEntityId) {
       throw new ApiError('parentEntityType requires parentEntityId', {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId, administrationId, parentEntityType: options.parentEntityType },
+        context: { userId, administrationId, parentEntityType },
       });
     }
 
@@ -816,14 +817,7 @@ export function AdministrationService({
       await verifyAdministrationAccess(authContext, administrationId);
 
       // Build FGA-scoped accessible IDs (undefined = no filter for super admins)
-      let accessibleIds:
-        | {
-            districtIds?: string[];
-            schoolIds?: string[];
-            classIds?: string[];
-            groupIds?: string[];
-          }
-        | undefined;
+      let accessibleIds: AccessibleIds | undefined;
 
       if (!isSuperAdmin) {
         // Fetch accessible entity IDs for each type the user can read
@@ -873,14 +867,14 @@ export function AdministrationService({
       // Fetch tree nodes from repository
       const result = await administrationRepository.getTreeNodes(
         administrationId,
-        options.parentEntityType,
-        options.parentEntityId,
-        { page: options.page, perPage: options.perPage },
+        parentEntityType,
+        parentEntityId,
+        { page, perPage },
         accessibleIds,
       );
 
       // If no stats embed requested, return as-is
-      const embedOptions = options.embed ?? [];
+      const embedOptions = embed ?? [];
       if (!embedOptions.includes(TreeEmbedOption.STATS) || result.items.length === 0) {
         return result;
       }
@@ -889,7 +883,7 @@ export function AdministrationService({
       // 1. Fetch task metadata for the administration
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
-      const zeroedStats = {
+      const zeroedStats: TreeNodeStats = {
         assignment: {
           studentsWithRequiredTasks: 0,
           studentsAssigned: 0,
@@ -939,7 +933,7 @@ export function AdministrationService({
 
       logger.error({ err: error, context: { userId, administrationId, options } }, 'Failed to get administration tree');
 
-      throw new ApiError('Failed to retrieve administration tree', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, administrationId },

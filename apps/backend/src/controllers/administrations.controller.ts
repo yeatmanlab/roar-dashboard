@@ -1,8 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
-import {
-  AdministrationService,
-  type AdministrationWithEmbeds,
+import type {
+  AdministrationWithEmbeds,
+  GetTreeOptions,
+  TreeNodeStats,
 } from '../services/administration/administration.service';
+import { AdministrationService } from '../services/administration/administration.service';
 import { ReportService } from '../services/report/report.service';
 import type {
   AdministrationsListQuery,
@@ -208,18 +210,7 @@ function handleSubResourceError(error: unknown) {
  * @param node - The tree node from the service layer
  * @returns The API-formatted tree node
  */
-function toTreeNode(
-  node: TreeNode & {
-    stats?: {
-      assignment: {
-        studentsWithRequiredTasks: number;
-        studentsAssigned: number;
-        studentsStarted: number;
-        studentsCompleted: number;
-      };
-    };
-  },
-): OrganizationTreeNode {
+function toTreeNode(node: TreeNode & { stats?: TreeNodeStats }): OrganizationTreeNode {
   const result: OrganizationTreeNode = {
     id: node.id,
     name: node.name,
@@ -507,7 +498,7 @@ export const AdministrationsController = {
     try {
       const { page, perPage } = query;
 
-      const options: Parameters<typeof administrationService.getTree>[2] = {
+      const options: GetTreeOptions = {
         page,
         perPage,
         embed: query.embed,
