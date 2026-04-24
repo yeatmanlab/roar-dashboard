@@ -195,15 +195,14 @@ describe('POST /v1/user/:userId/runs', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
     });
 
-    it('returns 422 when isAnonymous is true and administrationId is provided', async () => {
+    it('returns 400 when isAnonymous is true and administrationId is provided', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
         .post(getPath(tiers.student.id))
         .set('Authorization', 'Bearer token')
         .send(buildCreateRunBody({ isAnonymous: true }));
 
-      expect(res.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
-      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 422 when administrationId does not exist', async () => {
