@@ -131,10 +131,9 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
   // Fall back to raw score thresholds (grades >= maxGrade or no percentile)
   if (rawScore !== null) {
     const thresholdEntry = resolveVersionedEntry(classification.rawScoreThresholds, version);
-    if (!thresholdEntry) {
-      return null;
+    if (thresholdEntry) {
+      return classifyByThresholds(rawScore, thresholdEntry.thresholds.above, thresholdEntry.thresholds.some);
     }
-    return classifyByThresholds(rawScore, thresholdEntry.thresholds.above, thresholdEntry.thresholds.some);
   }
 
   return null;
