@@ -73,7 +73,10 @@ function buildCreateRunBody(overrides: Record<string, unknown> = {}) {
  */
 async function createRunAsStudent(): Promise<string> {
   authenticateAs(tiers.student);
-  const res = await request(app).post('/v1/runs').set('Authorization', 'Bearer token').send(buildCreateRunBody());
+  const res = await request(app)
+    .post(`/v1/user/${tiers.student.id}/runs`)
+    .set('Authorization', 'Bearer token')
+    .send(buildCreateRunBody());
 
   expect(res.status).toBe(StatusCodes.CREATED);
   return res.body.data.id;
@@ -113,21 +116,27 @@ function buildEngagementEventBody() {
 // POST /v1/runs
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('POST /v1/runs', () => {
-  const path = '/v1/runs';
+describe('POST /v1/user/:userId/runs', () => {
+  const getPath = (userId: string) => `/v1/user/${userId}/runs`;
 
   describe('authorization', () => {
-    it('student tier can create a run', async () => {
+    it('student tier can create a run for themselves', async () => {
       authenticateAs(tiers.student);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.student.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toEqual(expect.any(String));
     });
 
-    it('superAdmin tier can create a run', async () => {
+    it('superAdmin tier can create a run for any user', async () => {
       authenticateAs(tiers.superAdmin);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.student.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toEqual(expect.any(String));
@@ -135,7 +144,10 @@ describe('POST /v1/runs', () => {
 
     it('siteAdmin tier is forbidden from creating runs', async () => {
       authenticateAs(tiers.siteAdmin);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.siteAdmin.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -143,7 +155,10 @@ describe('POST /v1/runs', () => {
 
     it('admin tier is forbidden from creating runs', async () => {
       authenticateAs(tiers.admin);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.admin.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -151,7 +166,10 @@ describe('POST /v1/runs', () => {
 
     it('educator tier is forbidden from creating runs', async () => {
       authenticateAs(tiers.educator);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.educator.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -159,7 +177,10 @@ describe('POST /v1/runs', () => {
 
     it('caregiver tier is forbidden from creating runs', async () => {
       authenticateAs(tiers.caregiver);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.caregiver.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -168,15 +189,27 @@ describe('POST /v1/runs', () => {
 
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
-      const res = await expectRoute('POST', path).unauthenticated().toReturn(401);
+      const res = await request(app).post(getPath(faker.string.uuid())).send(buildCreateRunBody());
 
+      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 422 when isAnonymous is true and administrationId is provided', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(getPath(tiers.student.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody({ isAnonymous: true }));
+
+      expect(res.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
     });
 
     it('returns 422 when administrationId does not exist', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(path)
+        .post(getPath(tiers.student.id))
         .set('Authorization', 'Bearer token')
         .send(buildCreateRunBody({ administrationId: faker.string.uuid() }));
 
@@ -187,7 +220,7 @@ describe('POST /v1/runs', () => {
     it('returns 422 when taskVariantId does not exist', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(path)
+        .post(getPath(tiers.student.id))
         .set('Authorization', 'Bearer token')
         .send(buildCreateRunBody({ taskVariantId: faker.string.uuid() }));
 
@@ -197,7 +230,10 @@ describe('POST /v1/runs', () => {
 
     it('returns 403 when student is in a different district', async () => {
       authenticateAs({ authId: baseFixture.districtBStudent.authId! });
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(baseFixture.districtBStudent.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -209,8 +245,8 @@ describe('POST /v1/runs', () => {
 // POST /v1/runs/:runId/event
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('POST /v1/runs/:runId/event', () => {
-  const eventPath = (runId: string) => `/v1/runs/${runId}/event`;
+describe('POST /v1/user/:userId/runs/:runId/event', () => {
+  const eventPath = (userId: string, runId: string) => `/v1/user/${userId}/runs/${runId}/event`;
 
   describe('authorization — strict ownership', () => {
     it('run owner (student) can post an event', async () => {
@@ -218,7 +254,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -231,7 +267,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -244,7 +280,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs({ authId: baseFixture.districtBStudent.authId! });
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -257,7 +293,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.admin);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -272,7 +308,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildCompleteEventBody());
 
@@ -285,7 +321,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildAbortEventBody());
 
@@ -298,7 +334,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -311,7 +347,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildEngagementEventBody());
 
@@ -325,11 +361,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildCompleteEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildCompleteEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildCompleteEventBody());
 
@@ -341,11 +380,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildCompleteEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildCompleteEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildAbortEventBody());
 
@@ -357,11 +399,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildAbortEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildAbortEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildCompleteEventBody());
 
@@ -373,11 +418,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildAbortEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildAbortEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildAbortEventBody());
 
@@ -389,7 +437,7 @@ describe('POST /v1/runs/:runId/event', () => {
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const runId = await createRunAsStudent();
-      const res = await expectRoute('POST', eventPath(runId)).unauthenticated().toReturn(401);
+      const res = await expectRoute('POST', eventPath(tiers.student.id, runId)).unauthenticated().toReturn(401);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
     });
@@ -397,7 +445,7 @@ describe('POST /v1/runs/:runId/event', () => {
     it('returns 404 when runId does not exist', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(faker.string.uuid()))
+        .post(eventPath(tiers.student.id, faker.string.uuid()))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
