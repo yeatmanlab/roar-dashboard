@@ -39,26 +39,72 @@ export function RunService({
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
+   * Verify that the authenticated user has access to the target user.
+   *
+   * Performs a two-step check:
+   * 1. User can access their own runs (userId === targetUserId)
+   * 2. User has CAN_READ_CHILD permission on target user (e.g., parent/guardian access)
+   * 3. Super admins have unrestricted access
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param targetUserId - The user ID to verify access for
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
+  async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Super admins have unrestricted access
+    if (isSuperAdmin) {
+      return;
+    }
+
+    // User can access their own runs
+    if (userId === targetUserId) {
+      return;
+    }
+
+    // Check if user has permission to act on behalf of target user (e.g., parent/guardian)
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_CHILD, `${FgaType.USER}:${targetUserId}`);
+  }
+
+  /**
    * Creates a new run (assessment session instance).
    *
    * Performs the following validations and operations:
-   * 1. Rejects anonymous runs that include an administrationId
-   * 2. For non-anonymous runs, validates that the administration exists and user has access
-   * 3. For non-anonymous, non-super-admin users, checks can_create_run via FGA
-   * 4. Resolves the taskId from the provided taskVariantId
-   * 5. Creates the run record (anonymous runs use the sentinel administration ID)
+   * 1. Verifies user has access to the target user via FGA
+   * 2. Rejects anonymous runs that include an administrationId
+   * 3. For non-anonymous runs, validates that the administration exists and user has access
+   * 4. For non-anonymous, non-super-admin users, checks can_create_run via FGA
+   * 5. Resolves the taskId from the provided taskVariantId
+   * 6. Creates the run record (anonymous runs use the sentinel administration ID)
    *
    * @param authContext - Authentication context with userId and isSuperAdmin flag
+   * @param targetUserId - The user ID who will own the run (from path parameter)
    * @param body - Request body containing taskVariantId, taskVersion, optional isAnonymous flag,
    *   administrationId (required for non-anonymous runs), and optional metadata
    * @returns Promise resolving to object with id
+   * @throws ApiError with FORBIDDEN if user lacks access to target user
    * @throws ApiError with UNPROCESSABLE_ENTITY if administrationId or taskVariantId are invalid
    * @throws ApiError with FORBIDDEN if user lacks permission to create run
    * @throws ApiError with INTERNAL_SERVER_ERROR if database operation fails
    */
-  async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ id: string }> {
+  async function create(
+    authContext: AuthContext,
+    targetUserId: string,
+    body: CreateRunRequestBody,
+  ): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
     const { isAnonymous } = body;
+
+    // Verify user has access to the target user
+    try {
+      await verifyUserAccess(authContext, targetUserId);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw error;
+    }
 
     if (isAnonymous && body.administrationId) {
       throw new ApiError('administrationId must not be provided for anonymous runs', {
