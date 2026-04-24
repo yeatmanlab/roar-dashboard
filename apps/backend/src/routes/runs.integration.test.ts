@@ -144,7 +144,8 @@ describe('POST /v1/user/:userId/runs', () => {
       // Verify the run is owned by the target user, not the superAdmin
       const runId = res.body.data.id;
       const { RunRepository } = await import('../repositories/run.repository');
-      const runRepository = new RunRepository();
+      const { AssessmentDbClient } = await import('../test-support/db');
+      const runRepository = new RunRepository(AssessmentDbClient);
       const run = await runRepository.getById(runId);
       expect(run?.userId).toBe(tiers.student.id);
     });
