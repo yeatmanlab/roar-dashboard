@@ -1,0 +1,13 @@
+{
+  "taskSlugs": ["letter", "letter-es", "letter-en-ca"],
+  "scoreFields": {
+    "percentile": [{ "minVersion": 0, "fieldName": "totalPercentCorrect" }],
+    "percentileDisplay": [{ "minVersion": 0, "fieldName": "totalPercentCorrect" }],
+    "standardScore": [{ "minVersion": 0, "fieldName": null }],
+    "standardScoreDisplay": [{ "minVersion": 0, "fieldName": null }],
+    "rawScore": [{ "minVersion": 0, "fieldName": "totalCorrect" }]
+  },
+  "classification": {
+    "type": "none"
+  }
+}
