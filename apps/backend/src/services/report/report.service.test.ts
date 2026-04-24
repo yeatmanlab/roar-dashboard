@@ -146,8 +146,8 @@ describe('ReportService', () => {
       expect(result.tasks).toHaveLength(testTaskMetas.length);
       expect(result.items).toHaveLength(1);
       expect(result.items[0]!.user.firstName).toBe('Jane');
-      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('completed');
-      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('assigned');
+      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('completed-required');
+      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('assigned-required');
       expect(result.totalItems).toBe(1);
     });
 
@@ -244,8 +244,8 @@ describe('ReportService', () => {
       const service = createService();
       const result = await service.listProgressStudents(teacherAuth, testAdministrationId, testQuery);
 
-      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('started');
-      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('assigned');
+      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('started-required');
+      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('assigned-required');
     });
 
     it('returns progress data for non-super-admin (via FGA)', async () => {
@@ -286,8 +286,8 @@ describe('ReportService', () => {
         grade: '3',
         schoolName: 'Lincoln Elementary',
       });
-      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('completed');
-      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('started');
+      expect(result.items[0]!.progress[TASK_ID_1]!.status).toBe('completed-required');
+      expect(result.items[0]!.progress[TASK_ID_2]!.status).toBe('started-required');
 
       // Verify repository was called with correct scope and pagination
       expect(mockReportRepository.getProgressStudents).toHaveBeenCalledWith(
@@ -540,12 +540,12 @@ describe('ReportService', () => {
       const result = buildProgressMap(student, testTaskMetas, makeAssignedEvaluator());
 
       expect(result[TASK_ID_1]).toEqual({
-        status: 'completed',
+        status: 'completed-required',
         startedAt: '2025-09-10T08:00:00.000Z',
         completedAt: '2025-09-15T10:00:00.000Z',
       });
       expect(result[TASK_ID_2]).toEqual({
-        status: 'assigned',
+        status: 'assigned-required',
         startedAt: null,
         completedAt: null,
       });
@@ -561,26 +561,26 @@ describe('ReportService', () => {
       const result = buildProgressMap(student, testTaskMetas, makeAssignedEvaluator());
 
       expect(result[TASK_ID_1]).toEqual({
-        status: 'started',
+        status: 'started-required',
         startedAt: '2025-09-10T08:00:00.000Z',
         completedAt: null,
       });
     });
 
-    it('returns assigned for tasks with no runs when conditions are null', () => {
+    it('returns assigned-required for tasks with no runs when conditions are null', () => {
       const result = buildProgressMap(defaultStudent, testTaskMetas, makeAssignedEvaluator());
 
-      expect(result[TASK_ID_1]!.status).toBe('assigned');
-      expect(result[TASK_ID_2]!.status).toBe('assigned');
+      expect(result[TASK_ID_1]!.status).toBe('assigned-required');
+      expect(result[TASK_ID_2]!.status).toBe('assigned-required');
     });
 
-    it('returns optional when conditionsRequirements evaluates to true', () => {
+    it('returns assigned-optional when conditionsRequirements evaluates to true', () => {
       const optionalEvaluator = vi.fn().mockReturnValue({ isAssigned: true, isOptional: true });
 
       const result = buildProgressMap(defaultStudent, testTaskMetas, optionalEvaluator);
 
-      expect(result[TASK_ID_1]!.status).toBe('optional');
-      expect(result[TASK_ID_2]!.status).toBe('optional');
+      expect(result[TASK_ID_1]!.status).toBe('assigned-optional');
+      expect(result[TASK_ID_2]!.status).toBe('assigned-optional');
     });
 
     it('excludes tasks where conditionsAssignment evaluates to false', () => {
@@ -612,8 +612,55 @@ describe('ReportService', () => {
 
       const result = buildProgressMap(defaultStudent, tasksWithConditions, mixedEvaluator);
 
-      expect(result[TASK_ID_1]!.status).toBe('assigned');
-      expect(result[TASK_ID_2]!.status).toBe('optional');
+      expect(result[TASK_ID_1]!.status).toBe('assigned-required');
+      expect(result[TASK_ID_2]!.status).toBe('assigned-optional');
+    });
+
+    it('returns completed-optional when a completed run exists and task is optional', () => {
+      const optionalEvaluator = vi.fn().mockReturnValue({ isAssigned: true, isOptional: true });
+      const student: StudentProgressRow = {
+        ...defaultStudent,
+        runs: new Map([
+          [VARIANT_ID_1, { completedAt: new Date('2025-09-15T10:00:00Z'), startedAt: new Date('2025-09-10') }],
+        ]),
+      };
+
+      const result = buildProgressMap(student, testTaskMetas, optionalEvaluator);
+
+      expect(result[TASK_ID_1]!.status).toBe('completed-optional');
+      expect(result[TASK_ID_1]!.completedAt).toBe('2025-09-15T10:00:00.000Z');
+      // Task 2 has no run → assigned-optional
+      expect(result[TASK_ID_2]!.status).toBe('assigned-optional');
+    });
+
+    it('returns started-optional when a started run exists and task is optional', () => {
+      const optionalEvaluator = vi.fn().mockReturnValue({ isAssigned: true, isOptional: true });
+      const student: StudentProgressRow = {
+        ...defaultStudent,
+        runs: new Map([[VARIANT_ID_1, { completedAt: null, startedAt: new Date('2025-09-10') }]]),
+      };
+
+      const result = buildProgressMap(student, testTaskMetas, optionalEvaluator);
+
+      expect(result[TASK_ID_1]!.status).toBe('started-optional');
+      expect(result[TASK_ID_1]!.startedAt).toBe('2025-09-10T00:00:00.000Z');
+    });
+
+    it('uses isOptional from evaluator (not isAssigned) for runs when conditionsAssignment is false', () => {
+      // Student has a run but conditionsAssignment would exclude them AND task is optional.
+      // The run should still appear, and the optional flag should be respected.
+      const unassignedOptionalEvaluator = vi.fn().mockReturnValue({ isAssigned: false, isOptional: true });
+      const student: StudentProgressRow = {
+        ...defaultStudent,
+        runs: new Map([[VARIANT_ID_1, { completedAt: new Date('2025-09-15'), startedAt: new Date('2025-09-10') }]]),
+      };
+
+      const result = buildProgressMap(student, testTaskMetas, unassignedOptionalEvaluator);
+
+      // Task with run: isAssigned ignored, isOptional respected → completed-optional
+      expect(result[TASK_ID_1]!.status).toBe('completed-optional');
+      // Task without run: isAssigned=false → excluded
+      expect(result[TASK_ID_2]).toBeUndefined();
     });
 
     describe('multi-variant priority (same taskId)', () => {
@@ -667,10 +714,10 @@ describe('ReportService', () => {
 
         const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
-        expect(result[SHARED_TASK_ID]!.status).toBe('completed');
+        expect(result[SHARED_TASK_ID]!.status).toBe('completed-required');
       });
 
-      it('keeps completed when a later variant is started', () => {
+      it('keeps completed-required when a later variant is started', () => {
         // Variant A: completed, Variant B: started
         const student = buildStudent(
           new Map([
@@ -681,19 +728,19 @@ describe('ReportService', () => {
 
         const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
-        expect(result[SHARED_TASK_ID]!.status).toBe('completed');
+        expect(result[SHARED_TASK_ID]!.status).toBe('completed-required');
       });
 
-      it('keeps started when a later variant has no run', () => {
+      it('keeps started-required when a later variant has no run', () => {
         // Variant A: no run, Variant B: started, Variant C: no run
         const student = buildStudent(new Map([[VARIANT_B, { completedAt: null, startedAt: new Date('2025-09-12') }]]));
 
         const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
-        expect(result[SHARED_TASK_ID]!.status).toBe('started');
+        expect(result[SHARED_TASK_ID]!.status).toBe('started-required');
       });
 
-      it('promotes from assigned to started to completed across variants', () => {
+      it('promotes from assigned-required to started-required to completed-required across variants', () => {
         // Variant A: no run (assigned), Variant B: started, Variant C: completed
         const student = buildStudent(
           new Map([
@@ -704,7 +751,7 @@ describe('ReportService', () => {
 
         const result = buildProgressMap(student, multiVariantMetas, makeAssignedEvaluator());
 
-        expect(result[SHARED_TASK_ID]!.status).toBe('completed');
+        expect(result[SHARED_TASK_ID]!.status).toBe('completed-required');
         expect(result[SHARED_TASK_ID]!.completedAt).toBe('2025-09-15T00:00:00.000Z');
       });
 
@@ -716,6 +763,23 @@ describe('ReportService', () => {
         const keys = Object.keys(result);
         expect(keys).toHaveLength(1);
         expect(keys[0]).toBe(SHARED_TASK_ID);
+      });
+
+      it('resolves priority correctly when variants have different required/optional evaluations', () => {
+        // Variant A: no run (assigned-optional via evaluator)
+        // Variant B: started run (started-required via evaluator)
+        // Expected: started-required wins (priority 3 > 0)
+        const variantAwareEvaluator = vi
+          .fn()
+          .mockReturnValueOnce({ isAssigned: true, isOptional: true }) // Variant A: optional
+          .mockReturnValueOnce({ isAssigned: true, isOptional: false }) // Variant B: required
+          .mockReturnValueOnce({ isAssigned: true, isOptional: false }); // Variant C: required
+
+        const student = buildStudent(new Map([[VARIANT_B, { completedAt: null, startedAt: new Date('2025-09-12') }]]));
+
+        const result = buildProgressMap(student, multiVariantMetas, variantAwareEvaluator);
+
+        expect(result[SHARED_TASK_ID]!.status).toBe('started-required');
       });
     });
 
@@ -737,7 +801,7 @@ describe('ReportService', () => {
       expect(result[TASK_ID_2]!.startedAt).toBe('2025-09-15T11:00:00.000Z');
     });
 
-    it('does not call evaluator for tasks with runs', () => {
+    it('calls evaluator for all tasks including those with runs', () => {
       const evaluator = vi.fn().mockReturnValue({ isAssigned: true, isOptional: false });
       const student: StudentProgressRow = {
         ...defaultStudent,
@@ -751,14 +815,16 @@ describe('ReportService', () => {
 
       buildProgressMap(student, testTaskMetas, evaluator);
 
-      // All tasks have runs, so evaluator should not be called
-      expect(evaluator).not.toHaveBeenCalled();
+      // Evaluator is called for ALL tasks (including those with runs) to determine
+      // the required/optional distinction in the 7-level status scheme
+      expect(evaluator).toHaveBeenCalledTimes(testTaskMetas.length);
     });
 
     it('shows run status even when conditionsAssignment would exclude the student', () => {
       // If a student somehow has a run for a task whose conditionsAssignment would
       // exclude them (e.g., data changed after the run was created), we still show
-      // the run — the student's actual progress takes precedence over conditions.
+      // the run — the student's actual progress takes precedence over exclusion.
+      // The required/optional axis defaults to "required" (isOptional: false).
       const notAssignedEvaluator = vi.fn().mockReturnValue({ isAssigned: false, isOptional: false });
       const student: StudentProgressRow = {
         ...defaultStudent,
@@ -769,14 +835,14 @@ describe('ReportService', () => {
 
       const result = buildProgressMap(student, testTaskMetas, notAssignedEvaluator);
 
-      // Task-1 has a run → completed (conditions not checked)
-      expect(result[TASK_ID_1]!.status).toBe('completed');
+      // Task-1 has a run → completed-required (conditions evaluated but isAssigned ignored for runs)
+      expect(result[TASK_ID_1]!.status).toBe('completed-required');
       // Tasks 2-4 have no runs and conditionsAssignment returns false → excluded
       expect(result[TASK_ID_2]).toBeUndefined();
       expect(result[TASK_ID_3]).toBeUndefined();
       expect(result[TASK_ID_4]).toBeUndefined();
-      // Evaluator called once per task without a run (3 tasks)
-      expect(notAssignedEvaluator).toHaveBeenCalledTimes(3);
+      // Evaluator called for ALL tasks (runs + no runs) in the 7-level scheme
+      expect(notAssignedEvaluator).toHaveBeenCalledTimes(testTaskMetas.length);
     });
   });
 
@@ -790,25 +856,32 @@ describe('ReportService', () => {
 
     it('returns aggregated overview for super admin', async () => {
       const statusCounts: TaskStatusCount[] = [
-        { taskId: TASK_ID_1, status: 'completed', count: 10 },
-        { taskId: TASK_ID_1, status: 'started', count: 5 },
-        { taskId: TASK_ID_1, status: 'assigned', count: 3 },
-        { taskId: TASK_ID_2, status: 'completed', count: 8 },
-        { taskId: TASK_ID_2, status: 'assigned', count: 10 },
+        { taskId: TASK_ID_1, status: 'completed-required', count: 10 },
+        { taskId: TASK_ID_1, status: 'started-required', count: 5 },
+        { taskId: TASK_ID_1, status: 'assigned-required', count: 3 },
+        { taskId: TASK_ID_2, status: 'completed-required', count: 8 },
+        { taskId: TASK_ID_2, status: 'assigned-required', count: 10 },
       ];
 
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 20,
         taskStatusCounts: statusCounts,
+        studentCounts: {
+          studentsWithRequiredTasks: 20,
+          studentsAssigned: 2,
+          studentsStarted: 10,
+          studentsCompleted: 8,
+        },
       });
 
       const service = createService();
       const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
 
       expect(result.totalStudents).toBe(20);
-      expect(result.assigned).toBe(13); // 3 + 10
-      expect(result.started).toBe(5);
-      expect(result.completed).toBe(18); // 10 + 8
+      expect(result.studentsWithRequiredTasks).toBe(20);
+      expect(result.studentsAssigned).toBe(2);
+      expect(result.studentsStarted).toBe(10);
+      expect(result.studentsCompleted).toBe(8);
       expect(result.byTask).toHaveLength(4); // 4 unique taskIds
       expect(result.computedAt).toBeDefined();
 
@@ -817,9 +890,16 @@ describe('ReportService', () => {
       expect(task1).toEqual(
         expect.objectContaining({
           taskSlug: 'swr',
+          assignedRequired: 3,
+          assignedOptional: 0,
+          startedRequired: 5,
+          startedOptional: 0,
+          completedRequired: 10,
+          completedOptional: 0,
           assigned: 3,
           started: 5,
           completed: 10,
+          required: 18,
           optional: 0,
         }),
       );
@@ -829,9 +909,16 @@ describe('ReportService', () => {
       expect(task2).toEqual(
         expect.objectContaining({
           taskSlug: 'sre',
+          assignedRequired: 10,
+          assignedOptional: 0,
+          startedRequired: 0,
+          startedOptional: 0,
+          completedRequired: 8,
+          completedOptional: 0,
           assigned: 10,
           started: 0,
           completed: 8,
+          required: 18,
           optional: 0,
         }),
       );
@@ -840,14 +927,15 @@ describe('ReportService', () => {
     it('returns overview for non-super-admin (via FGA)', async () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 5,
-        taskStatusCounts: [{ taskId: TASK_ID_1, status: 'assigned', count: 5 }],
+        taskStatusCounts: [{ taskId: TASK_ID_1, status: 'assigned-required', count: 5 }],
+        studentCounts: { studentsWithRequiredTasks: 5, studentsAssigned: 5, studentsStarted: 0, studentsCompleted: 0 },
       });
 
       const service = createService();
       const result = await service.getProgressOverview(teacherAuth, testAdministrationId, overviewQuery);
 
       expect(result.totalStudents).toBe(5);
-      expect(result.assigned).toBe(5);
+      expect(result.studentsAssigned).toBe(5);
     });
 
     it('returns 404 when administration does not exist', async () => {
@@ -928,6 +1016,7 @@ describe('ReportService', () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 0,
         taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
       });
 
       const service = createService();
@@ -953,21 +1042,25 @@ describe('ReportService', () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 0,
         taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
       });
 
       const service = createService();
       const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
 
       expect(result.totalStudents).toBe(0);
-      expect(result.assigned).toBe(0);
-      expect(result.started).toBe(0);
-      expect(result.completed).toBe(0);
+      expect(result.studentsWithRequiredTasks).toBe(0);
+      expect(result.studentsAssigned).toBe(0);
+      expect(result.studentsStarted).toBe(0);
+      expect(result.studentsCompleted).toBe(0);
       expect(result.byTask).toHaveLength(4); // Tasks still listed with zero counts
       for (const task of result.byTask) {
-        expect(task.assigned).toBe(0);
-        expect(task.started).toBe(0);
-        expect(task.completed).toBe(0);
-        expect(task.optional).toBe(0);
+        expect(task.assignedRequired).toBe(0);
+        expect(task.assignedOptional).toBe(0);
+        expect(task.startedRequired).toBe(0);
+        expect(task.startedOptional).toBe(0);
+        expect(task.completedRequired).toBe(0);
+        expect(task.completedOptional).toBe(0);
       }
     });
 
@@ -975,28 +1068,37 @@ describe('ReportService', () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 15,
         taskStatusCounts: [
-          { taskId: TASK_ID_1, status: 'assigned', count: 5 },
-          { taskId: TASK_ID_1, status: 'optional', count: 10 },
+          { taskId: TASK_ID_1, status: 'assigned-required', count: 5 },
+          { taskId: TASK_ID_1, status: 'assigned-optional', count: 10 },
         ],
+        studentCounts: { studentsWithRequiredTasks: 5, studentsAssigned: 5, studentsStarted: 0, studentsCompleted: 0 },
       });
 
       const service = createService();
       const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
 
       const task1 = result.byTask.find((t) => t.taskId === TASK_ID_1);
-      expect(task1!.assigned).toBe(5);
+      expect(task1!.assignedRequired).toBe(5);
+      expect(task1!.assignedOptional).toBe(10);
+      expect(task1!.assigned).toBe(15); // 5 required + 10 optional
       expect(task1!.optional).toBe(10);
-      // Optional is not included in top-level totals (assigned/started/completed)
-      expect(result.assigned).toBe(5);
+      // Student-level counts reflect the 5 students with required tasks
+      expect(result.studentsAssigned).toBe(5);
     });
 
     it('preserves task ordering from metadata', async () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 10,
         taskStatusCounts: [
-          { taskId: TASK_ID_3, status: 'assigned', count: 10 },
-          { taskId: TASK_ID_1, status: 'assigned', count: 10 },
+          { taskId: TASK_ID_3, status: 'assigned-required', count: 10 },
+          { taskId: TASK_ID_1, status: 'assigned-required', count: 10 },
         ],
+        studentCounts: {
+          studentsWithRequiredTasks: 10,
+          studentsAssigned: 10,
+          studentsStarted: 0,
+          studentsCompleted: 0,
+        },
       });
 
       const service = createService();
@@ -1028,10 +1130,11 @@ describe('ReportService', () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 10,
         taskStatusCounts: [
-          { taskId: TASK_ID_1, status: 'completed', count: 7 },
-          { taskId: TASK_ID_1, status: 'started', count: 3 },
-          { taskId: TASK_ID_2, status: 'assigned', count: 10 },
+          { taskId: TASK_ID_1, status: 'completed-required', count: 7 },
+          { taskId: TASK_ID_1, status: 'started-required', count: 3 },
+          { taskId: TASK_ID_2, status: 'assigned-required', count: 10 },
         ],
+        studentCounts: { studentsWithRequiredTasks: 10, studentsAssigned: 0, studentsStarted: 3, studentsCompleted: 7 },
       });
 
       const service = createService();
@@ -1044,10 +1147,64 @@ describe('ReportService', () => {
       expect(task1!.started).toBe(3);
     });
 
+    it('returns student-level assignment counts and full 7-level per-task counts', async () => {
+      // Task 1: mix of all 6 statuses across 20 students
+      // Task 2: all required, some at each stage
+      const statusCounts: TaskStatusCount[] = [
+        { taskId: TASK_ID_1, status: 'completed-required', count: 5 },
+        { taskId: TASK_ID_1, status: 'completed-optional', count: 2 },
+        { taskId: TASK_ID_1, status: 'started-required', count: 3 },
+        { taskId: TASK_ID_1, status: 'started-optional', count: 1 },
+        { taskId: TASK_ID_1, status: 'assigned-required', count: 6 },
+        { taskId: TASK_ID_1, status: 'assigned-optional', count: 3 },
+        { taskId: TASK_ID_2, status: 'completed-required', count: 10 },
+        { taskId: TASK_ID_2, status: 'started-required', count: 5 },
+        { taskId: TASK_ID_2, status: 'assigned-required', count: 5 },
+      ];
+
+      mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
+        totalStudents: 20,
+        taskStatusCounts: statusCounts,
+        studentCounts: { studentsWithRequiredTasks: 20, studentsAssigned: 5, studentsStarted: 5, studentsCompleted: 4 },
+      });
+
+      const service = createService();
+      const result = await service.getProgressOverview(superAdminAuth, testAdministrationId, overviewQuery);
+
+      // Student-level assignment counts pass through from repository
+      expect(result.studentsWithRequiredTasks).toBe(20);
+      expect(result.studentsAssigned).toBe(5);
+      expect(result.studentsStarted).toBe(5);
+      expect(result.studentsCompleted).toBe(4);
+
+      // Task 1: full 7-level breakdown
+      const task1 = result.byTask.find((t) => t.taskId === TASK_ID_1)!;
+      expect(task1.completedRequired).toBe(5);
+      expect(task1.completedOptional).toBe(2);
+      expect(task1.startedRequired).toBe(3);
+      expect(task1.startedOptional).toBe(1);
+      expect(task1.assignedRequired).toBe(6);
+      expect(task1.assignedOptional).toBe(3);
+      // Convenience totals
+      expect(task1.completed).toBe(7); // 5 + 2
+      expect(task1.started).toBe(4); // 3 + 1
+      expect(task1.assigned).toBe(9); // 6 + 3
+      expect(task1.required).toBe(14); // 5 + 3 + 6
+      expect(task1.optional).toBe(6); // 2 + 1 + 3
+
+      // Task 2: all required
+      const task2 = result.byTask.find((t) => t.taskId === TASK_ID_2)!;
+      expect(task2.completedRequired).toBe(10);
+      expect(task2.completedOptional).toBe(0);
+      expect(task2.required).toBe(20); // 10 + 5 + 5
+      expect(task2.optional).toBe(0);
+    });
+
     it('passes task metadata with conditions to repository', async () => {
       mockReportRepository.getProgressOverviewCounts.mockResolvedValue({
         totalStudents: 5,
         taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
       });
 
       const service = createService();
