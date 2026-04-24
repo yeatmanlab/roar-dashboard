@@ -99,13 +99,8 @@ export function RunService({
     // Verify user has access to the target user
     await verifyUserAccess(authContext, targetUserId);
 
-    if (isAnonymous && body.administrationId) {
-      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId },
-      });
-    }
+    // Note: Zod schema validation already rejects isAnonymous && administrationId combination,
+    // so we don't need to check it here. This is caught at the request level (400 BAD_REQUEST).
 
     if (!isAnonymous) {
       try {

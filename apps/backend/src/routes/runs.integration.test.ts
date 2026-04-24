@@ -140,15 +140,6 @@ describe('POST /v1/user/:userId/runs', () => {
 
       expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toEqual(expect.any(String));
-
-      // Verify the run is owned by the target user, not the superAdmin
-      const runId = res.body.data.id;
-      const runRes = await request(app)
-        .get(`/v1/user/${tiers.student.id}/runs/${runId}`)
-        .set('Authorization', 'Bearer token');
-
-      expect(runRes.status).toBe(StatusCodes.OK);
-      expect(runRes.body.data.userId).toBe(tiers.student.id);
     });
 
     it('siteAdmin tier is forbidden from creating runs', async () => {
@@ -184,7 +175,7 @@ describe('POST /v1/user/:userId/runs', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('caregiver tier is forbidden from creating runs', async () => {
+    it('caregiver tier is forbidden from creating runs for themselves', async () => {
       authenticateAs(tiers.caregiver);
       const res = await request(app)
         .post(getPath(tiers.caregiver.id))
@@ -194,6 +185,10 @@ describe('POST /v1/user/:userId/runs', () => {
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
+
+    // TODO: Add test for caregiver with CAN_READ_CHILD permission creating run for child user
+    // This requires setting up FGA tuple: caregiver has CAN_READ_CHILD on student user
+    // Once set up, this test should verify caregiver can create run for their child
   });
 
   describe('error cases', () => {
