@@ -6,8 +6,8 @@
  * - `needsExtraSupport` — score is at or below the developing threshold
  *
  * `null` is returned when classification is not possible (no score data,
- * unknown task, or thresholds unavailable). Tasks with `rawscore-only` or
- * `none` classification types also return null since they display raw scores
+ * unknown task, or thresholds unavailable). Tasks with `none` classification
+ * type (e.g., letter, phonics) also return null since they display raw scores
  * without support levels.
  */
 export type SupportLevel = 'achievedSkill' | 'developingSkill' | 'needsExtraSupport';
@@ -49,11 +49,19 @@ export interface RawScoreThreshold {
 
 /**
  * Resolved score field names for looking up values in the fdwRunScores table.
- * Each field name maps to the `name` column in the `run_scores` table.
+ * Each array contains the `name` column values for that field type. Empty if the task
+ * has no applicable field. When resolved with a specific scoring version, arrays contain
+ * at most one entry; without a version, they contain all possible names across versions.
  */
 export interface ScoreFieldResolution {
-  /** The name column value for the percentile score. undefined if task has no percentile. */
+  /** Field names for the numeric percentile value. */
   percentileFieldNames: string[];
-  /** The name column value for the raw score. undefined if task has no raw score. */
+  /** Field names for the display-formatted percentile (may include angle brackets). */
+  percentileDisplayFieldNames: string[];
+  /** Field names for the numeric standard score. */
+  standardScoreFieldNames: string[];
+  /** Field names for the display-formatted standard score. */
+  standardScoreDisplayFieldNames: string[];
+  /** Field names for the raw score. */
   rawScoreFieldNames: string[];
 }

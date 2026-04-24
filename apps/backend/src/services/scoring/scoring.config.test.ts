@@ -100,9 +100,9 @@ describe('scoring config validation', () => {
       expect(config?.classification.type).toBe('percentile-then-rawscore');
     });
 
-    it('phonics uses rawscore-only', () => {
+    it('phonics uses none', () => {
       const config = getScoringConfig('phonics');
-      expect(config?.classification.type).toBe('rawscore-only');
+      expect(config?.classification.type).toBe('none');
     });
 
     it('roam-alpaca uses assessment-computed', () => {

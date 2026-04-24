@@ -8,6 +8,6 @@
     "rawScore": [{ "minVersion": 0, "fieldName": "totalCorrect" }]
   },
   "classification": {
-    "type": "rawscore-only"
+    "type": "none"
   }
 }
