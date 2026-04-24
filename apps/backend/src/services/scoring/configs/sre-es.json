@@ -9,10 +9,7 @@
   },
   "classification": {
     "type": "percentile-then-rawscore",
-    "percentileCutoffs": [
-      { "minVersion": 1, "cutoffs": { "achieved": 40, "developing": 20 } },
-      { "minVersion": 0, "cutoffs": { "achieved": 50, "developing": 25 } }
-    ],
+    "percentileCutoffs": [{ "minVersion": 1, "cutoffs": { "achieved": 40, "developing": 20 } }],
     "rawScoreThresholds": [{ "minVersion": 1, "thresholds": { "above": 25, "some": 12 } }]
   }
 }

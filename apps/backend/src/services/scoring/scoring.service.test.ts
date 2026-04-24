@@ -316,14 +316,26 @@ describe('getSupportLevel', () => {
     });
   });
 
-  describe('swr-es and sre-es version edge cases', () => {
-    it('swr-es without scoringVersion returns null for raw score (no legacy thresholds)', () => {
+  describe('swr-es and sre-es version edge cases (v0 unnormed)', () => {
+    it('swr-es v0 returns null even with percentile (unnormed version)', () => {
+      expect(
+        getSupportLevel({ grade: '3', percentile: 50, rawScore: 500, taskSlug: 'swr-es', scoringVersion: null }),
+      ).toBeNull();
+    });
+
+    it('swr-es v0 returns null for raw score (no legacy thresholds)', () => {
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 500, taskSlug: 'swr-es', scoringVersion: null }),
       ).toBeNull();
     });
 
-    it('sre-es without scoringVersion returns null for raw score (no legacy thresholds)', () => {
+    it('sre-es v0 returns null even with percentile (unnormed version)', () => {
+      expect(
+        getSupportLevel({ grade: '3', percentile: 50, rawScore: 20, taskSlug: 'sre-es', scoringVersion: null }),
+      ).toBeNull();
+    });
+
+    it('sre-es v0 returns null for raw score (no legacy thresholds)', () => {
       expect(
         getSupportLevel({ grade: '8', percentile: null, rawScore: 20, taskSlug: 'sre-es', scoringVersion: null }),
       ).toBeNull();
@@ -468,6 +480,24 @@ describe('resolveScoreFieldNames', () => {
       const result = resolveScoreFieldNames('sre', 8, 3);
       expect(result.percentileFieldNames).toEqual(['sprPercentile']);
       expect(result.standardScoreFieldNames).toEqual(['sprStandardScore']);
+    });
+
+    it('sre-es v0 returns empty arrays for normed fields (unnormed version)', () => {
+      const result = resolveScoreFieldNames('sre-es', 3, null);
+      expect(result.percentileFieldNames).toEqual([]);
+      expect(result.percentileDisplayFieldNames).toEqual([]);
+      expect(result.standardScoreFieldNames).toEqual([]);
+      expect(result.standardScoreDisplayFieldNames).toEqual([]);
+      expect(result.rawScoreFieldNames).toEqual(['sreScore']);
+    });
+
+    it('swr-es v0 returns empty arrays for normed fields (unnormed version)', () => {
+      const result = resolveScoreFieldNames('swr-es', 3, null);
+      expect(result.percentileFieldNames).toEqual([]);
+      expect(result.percentileDisplayFieldNames).toEqual([]);
+      expect(result.standardScoreFieldNames).toEqual([]);
+      expect(result.standardScoreDisplayFieldNames).toEqual([]);
+      expect(result.rawScoreFieldNames).toEqual(['roarScore']);
     });
   });
 
