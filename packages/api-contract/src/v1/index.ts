@@ -11,6 +11,7 @@ import { TaskBundlesContract } from './task-bundles/index';
 import { ClassesContract } from './classes/index';
 import { UsersContract } from './users/index';
 import { SystemContract } from './system/index';
+import { FamiliesContract } from './families/index';
 export * from './response';
 export * from './common/index';
 
@@ -30,6 +31,7 @@ export const ApiContractV1 = c.router({
   classes: ClassesContract,
   users: UsersContract,
   system: SystemContract,
+  families: FamiliesContract,
 });
 
 export * from './me/index';
@@ -44,3 +46,4 @@ export * from './task-bundles/index';
 export * from './classes/index';
 export * from './users/index';
 export * from './system/index';
+export * from './families/index';

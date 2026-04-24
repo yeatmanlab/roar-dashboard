@@ -7,6 +7,7 @@ import { registerRunsRoutes } from './runs';
 import { registerDistrictsRoutes } from './districts';
 import { registerSchoolsRoutes } from './schools';
 import { registerGroupsRoutes } from './groups';
+import { registerFamiliesRoutes } from './families';
 import { registerTasksRoutes } from './task';
 import { registerTaskVariantsRoutes } from './task-variants';
 import { registerTaskBundlesRoutes } from './task-bundles';
@@ -41,6 +42,7 @@ export function registerAllRoutes(app: Express) {
   registerDistrictsRoutes(router);
   registerSchoolsRoutes(router);
   registerGroupsRoutes(router);
+  registerFamiliesRoutes(router);
   registerTasksRoutes(router);
   registerTaskVariantsRoutes(router);
   registerTaskBundlesRoutes(router);
