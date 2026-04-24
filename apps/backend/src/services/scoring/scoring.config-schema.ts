@@ -8,19 +8,15 @@ const GradeConditionEntrySchema = z.union([
     value: z.string(),
   }),
   z.object({
-    default: z.literal(true),
+    gradeGte: z.number().int(),
     value: z.string(),
   }),
 ]);
 
-const GradeConditionalFieldSchema = z
-  .object({
-    gradeConditional: z.literal(true),
-    conditions: z.array(GradeConditionEntrySchema).min(1),
-  })
-  .refine((val) => val.conditions.filter((c) => 'default' in c && c.default === true).length === 1, {
-    message: 'Exactly one condition must have "default": true',
-  });
+const GradeConditionalFieldSchema = z.object({
+  gradeConditional: z.literal(true),
+  conditions: z.array(GradeConditionEntrySchema).min(1),
+});
 
 /**
  * A field name value: a static string, null (not applicable), or a grade-conditional object.
@@ -108,10 +104,6 @@ const PercentileThenRawscoreClassificationSchema = z.object({
   rawScoreThresholds: z.array(VersionedRawScoreThresholdSchema).min(1).superRefine(descendingMinVersion),
 });
 
-const RawscoreOnlyClassificationSchema = z.object({
-  type: z.literal('rawscore-only'),
-});
-
 const AssessmentComputedClassificationSchema = z.object({
   type: z.literal('assessment-computed'),
   supportLevelField: z.string().optional(),
@@ -123,7 +115,6 @@ const NoneClassificationSchema = z.object({
 
 const ClassificationSchema = z.discriminatedUnion('type', [
   PercentileThenRawscoreClassificationSchema,
-  RawscoreOnlyClassificationSchema,
   AssessmentComputedClassificationSchema,
   NoneClassificationSchema,
 ]);

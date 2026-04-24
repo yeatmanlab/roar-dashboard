@@ -9,7 +9,7 @@
           "gradeConditional": true,
           "conditions": [
             { "gradeLt": 6, "value": "tosrecPercentile" },
-            { "default": true, "value": "sprPercentile" }
+            { "gradeGte": 6, "value": "sprPercentile" }
           ]
         }
       }
@@ -22,7 +22,7 @@
           "gradeConditional": true,
           "conditions": [
             { "gradeLt": 6, "value": "tosrecPercentile" },
-            { "default": true, "value": "sprPercentile" }
+            { "gradeGte": 6, "value": "sprPercentile" }
           ]
         }
       }
@@ -35,7 +35,7 @@
           "gradeConditional": true,
           "conditions": [
             { "gradeLt": 6, "value": "tosrecSS" },
-            { "default": true, "value": "sprStandardScore" }
+            { "gradeGte": 6, "value": "sprStandardScore" }
           ]
         }
       }
@@ -48,7 +48,7 @@
           "gradeConditional": true,
           "conditions": [
             { "gradeLt": 6, "value": "tosrecSS" },
-            { "default": true, "value": "sprStandardScore" }
+            { "gradeGte": 6, "value": "sprStandardScore" }
           ]
         }
       }
