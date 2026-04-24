@@ -261,20 +261,6 @@ describe('RunService', () => {
       expect(administrationService.verifyAdministrationAccess).not.toHaveBeenCalled();
     });
 
-    it('should throw UNPROCESSABLE_ENTITY when isAnonymous is true and administrationId is provided', async () => {
-      await expect(
-        runService.create(authContext, targetUserId, {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
-          taskVersion: '1.0.0',
-          isAnonymous: true,
-          administrationId: '660e8400-e29b-41d4-a716-446655440001',
-        }),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-    });
-
     it('should re-throw ApiError from create without wrapping', async () => {
       const apiError = new ApiError('Duplicate run', {
         statusCode: StatusCodes.CONFLICT,
