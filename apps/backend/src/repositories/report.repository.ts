@@ -1005,11 +1005,7 @@ export class ReportRepository {
    *    query with a literal `scope_id` column. UNION (not UNION ALL) deduplicates
    *    within each scope, but a student may appear under multiple scopes.
    *
-   * 2. For each task variant, build a subquery that LEFT JOINs students against FDW runs
-   *    and computes a 7-level status priority via a CASE expression:
-   *    completed-required=5, completed-optional=4, started-required=3, started-optional=2,
-   *    assigned-required=1, assigned-optional=0, excluded=-1.
-   *    UNION ALL all variant subqueries.
+   * 2. Count total students per scope via `COUNT(DISTINCT user_id) ... GROUP BY scope_id`.
    *
    * 3. For each task variant, build a subquery that LEFT JOINs students (from the CTE)
    *    against FDW runs and computes a 7-level status priority via a CASE expression:
@@ -1017,18 +1013,14 @@ export class ReportRepository {
    *    assigned-required=1, assigned-optional=0, excluded=-1.
    *    Carries `scope_id` through. UNION ALL all variant subqueries.
    *
-   * 4. Two-level aggregation + per-student assignment-level counts:
+   * 4. Two-level aggregation + per-student assignment-level counts (per scope):
    *    - deduped: GROUP BY scope_id, user_id, task_id → MAX(status_priority) for dedup
    *    - task_counts: GROUP BY scope_id, task_id, max_priority → COUNT for per-task status counts
-   *    - required_tasks_per_student: per-student aggregation of required tasks only (priorities 1, 3, 5).
-   *      Each student is bucketed by assignment-level status per scope:
+   *    - required_tasks_per_student: per-student, per-scope aggregation of required tasks only
+   *      (priorities 1, 3, 5). Each student is bucketed by assignment-level status:
    *        completed: MIN(max_priority) = 5 (all required tasks completed)
    *        started: MAX(max_priority) >= 3 AND MIN(max_priority) < 5 (at least one started, not all done)
    *        assigned: MAX(max_priority) = 1 (all required tasks still at assigned-required)
-   *
-   * 4. Per-student completion: count students where ALL required tasks (priorities 1, 3, 5)
-   *    are at completed-required (priority 5). A student is "done" only when every required
-   *    task is completed.
    *
    * @param administrationId - The administration ID
    * @param scopes - Array of scopes to compute stats for
