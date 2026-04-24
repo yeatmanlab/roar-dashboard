@@ -26,7 +26,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
-    command = new UpdateRunEngagementFlagsCommand(mockApi);
+    command = new UpdateRunEngagementFlagsCommand(mockApi, 'participant-123');
   });
 
   it('has correct properties', () => {

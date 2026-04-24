@@ -3,7 +3,9 @@ import type { RunEventBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { FgaRelation, FgaType } from '../authorization/fga-constants';
 import { logger } from '../../logger';
+import { AuthorizationService } from '../authorization/authorization.service';
 import { RunRepository } from '../../repositories/run.repository';
 import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
@@ -29,11 +31,42 @@ export function RunEventService({
   runRepository = new RunRepository(),
   runTrialsRepository = new RunTrialsRepository(),
   runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   runRepository?: RunRepository;
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
+  /**
+   * Verify that the authenticated user has access to the target user.
+   *
+   * Performs a two-step check:
+   * 1. User can access their own runs (userId === targetUserId)
+   * 2. User has CAN_READ_CHILD permission on target user (e.g., parent/guardian access)
+   * 3. Super admins have unrestricted access
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param targetUserId - The user ID to verify access for
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
+  async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<void> {
+    const { userId, isSuperAdmin } = authContext;
+
+    // Super admins have unrestricted access
+    if (isSuperAdmin) {
+      return;
+    }
+
+    // User can access their own runs
+    if (userId === targetUserId) {
+      return;
+    }
+
+    // Check if user has permission to act on behalf of target user (e.g., parent/guardian)
+    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_CHILD, `${FgaType.USER}:${targetUserId}`);
+  }
+
   /**
    * Verifies that a run exists and is owned by the specified user.
    *
@@ -50,7 +83,7 @@ export function RunEventService({
     const run = await runRepository.getById({ id: runId });
 
     if (!run) {
-      throw new ApiError('Run not found', {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
         context: { runId, targetUserId },
@@ -83,6 +116,7 @@ export function RunEventService({
     runId: string,
     body: RunEngagementEventBody,
   ): Promise<void> {
+    await verifyUserAccess(authContext, targetUserId);
     await assertRunOwnedByUser(runId, targetUserId);
 
     try {
@@ -108,7 +142,7 @@ export function RunEventService({
         'Failed to update engagement',
       );
 
-      throw new ApiError('Failed to update engagement', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },
@@ -132,6 +166,7 @@ export function RunEventService({
     runId: string,
     body: RunTrialEventBody,
   ): Promise<void> {
+    await verifyUserAccess(authContext, targetUserId);
     await assertRunOwnedByUser(runId, targetUserId);
 
     try {
@@ -178,7 +213,7 @@ export function RunEventService({
         'Failed to write trial',
       );
 
-      throw new ApiError('Failed to write trial', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },
@@ -203,10 +238,11 @@ export function RunEventService({
     runId: string,
     body: RunAbortEventBody,
   ): Promise<void> {
+    await verifyUserAccess(authContext, targetUserId);
     const run = await assertRunOwnedByUser(runId, targetUserId);
 
     if (run.completedAt || run.abortedAt) {
-      throw new ApiError('Run is already in a terminal state', {
+      throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
         context: { runId, userId: authContext.userId },
@@ -235,7 +271,7 @@ export function RunEventService({
         'Failed to abort run',
       );
 
-      throw new ApiError('Failed to abort run', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },
@@ -260,10 +296,11 @@ export function RunEventService({
     runId: string,
     body: RunCompleteEventBody,
   ): Promise<void> {
+    await verifyUserAccess(authContext, targetUserId);
     const run = await assertRunOwnedByUser(runId, targetUserId);
 
     if (run.completedAt || run.abortedAt) {
-      throw new ApiError('Run is already in a terminal state', {
+      throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
         context: { runId, userId: authContext.userId },
@@ -293,7 +330,7 @@ export function RunEventService({
         'Failed to complete run',
       );
 
-      throw new ApiError('Failed to complete run', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },

@@ -26,7 +26,7 @@ describe('WriteTrialCommand', () => {
     vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
-    command = new WriteTrialCommand(mockApi);
+    command = new WriteTrialCommand(mockApi, 'participant-123');
   });
 
   it('has correct properties', () => {
