@@ -140,6 +140,15 @@ describe('POST /v1/user/:userId/runs', () => {
 
       expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toEqual(expect.any(String));
+
+      // Verify the run is owned by the target user, not the superAdmin
+      const runId = res.body.data.id;
+      const runRes = await request(app)
+        .get(`/v1/user/${tiers.student.id}/runs/${runId}`)
+        .set('Authorization', 'Bearer token');
+
+      expect(runRes.status).toBe(StatusCodes.OK);
+      expect(runRes.body.data.userId).toBe(tiers.student.id);
     });
 
     it('siteAdmin tier is forbidden from creating runs', async () => {

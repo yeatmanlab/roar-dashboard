@@ -33,10 +33,10 @@ export const RunsContract = c.router(
       summary: 'Create run',
       description:
         'Creates a new run owned by the specified user and returns the run id. ' +
-        'The userId path parameter must match the authenticated user OR the user must have CAN_READ_CHILD permission. ' +
+        'The userId path parameter must match the authenticated user (strict ownership — no parent/guardian bypass). ' +
         'Supports anonymous runs which skip administration validation. ' +
         'Returns 422 if the provided task variant or administration IDs are invalid or cannot be resolved. ' +
-        'Returns 403 if the user lacks access to the provided administration context or does not have permission to create runs for the specified user.',
+        'Returns 403 if the user lacks access to the provided administration context or does not own the target user.',
     },
     event: {
       method: 'POST',
@@ -56,11 +56,11 @@ export const RunsContract = c.router(
       summary: 'Post run event',
       description:
         'Posts an event to an existing run. ' +
-        'The userId path parameter must match the authenticated user OR the user must have CAN_READ_CHILD permission. ' +
+        'The userId path parameter must match the authenticated user (strict ownership — no parent/guardian bypass). ' +
         'Supports four event types: complete (marks run as finished), abort (marks run as aborted), ' +
         'trial (records a trial with optional interactions), and engagement (updates reliability flags). ' +
         'Returns 404 if the run does not exist. ' +
-        'Returns 403 if the authenticated user does not have permission to access the specified user or does not own the run. ' +
+        'Returns 403 if the authenticated user does not own the run. ' +
         'Returns 409 if the run is already in a terminal state (completed or aborted).',
     },
   },

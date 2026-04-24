@@ -97,14 +97,7 @@ export function RunService({
     const { isAnonymous } = body;
 
     // Verify user has access to the target user
-    try {
-      await verifyUserAccess(authContext, targetUserId);
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw error;
-    }
+    await verifyUserAccess(authContext, targetUserId);
 
     if (isAnonymous && body.administrationId) {
       throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
