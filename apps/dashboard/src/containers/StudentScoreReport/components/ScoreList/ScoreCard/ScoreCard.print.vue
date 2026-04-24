@@ -67,6 +67,7 @@
           :task-id="taskId"
           :student-grade="studentGrade"
           :current-assignment-id="currentAssignmentId"
+          :task-scoring-version="taskScoringVersion"
         />
       </template>
     </div>
@@ -140,6 +141,11 @@ const props = defineProps({
   currentAssignmentId: {
     type: String,
     required: true,
+  },
+  taskScoringVersion: {
+    type: Number,
+    required: false,
+    default: null,
   },
 });
 
