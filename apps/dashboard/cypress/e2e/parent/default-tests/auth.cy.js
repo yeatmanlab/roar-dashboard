@@ -22,13 +22,13 @@ describe('Parent: Auth', () => {
     cy.logout();
   });
 
-  it('Shows an error when using invalid invitation codes during sign-up', () => {
-    const invalidActivationCode = '123456';
+  it('Shows an error when using invalid invitation codes during student enrollment', () => {
+    const invalidActivationCode = '626cb856';
 
-    // Visit the sign-up page with the activation code.
+    // Visit the sign-up page with the invalid activation code.
     cy.visit(`${APP_ROUTES.REGISTER}/?code=${invalidActivationCode}`);
 
-    // Fill out parent form.
+    // Fill out parent form (code validation now happens during student enrollment).
     cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
     cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
     cy.get('[data-cy="signup__parent-email"]').type(NEW_PARENT_USERNAME);
@@ -38,42 +38,38 @@ describe('Parent: Auth', () => {
     // Accept terms and conditions.
     cy.findByTestId('checkbox__input').click();
 
-    // Verify consent dialog.
-    cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
+    // Verify consent dialog and click Continue.
+    cy.get('[data-cy="consent-modal"]').should('be.visible');
+    cy.get('[data-cy="consent-modal"]').find('button').contains('Continue').click();
+    // Wait for consent dialog to close.
+    cy.get('[data-cy="consent-modal"]').should('not.exist');
 
-    // Submit parent form.
-    cy.get('button').contains('Next').click();
+    // Submit parent form (should succeed - validation moved to student enrollment).
+    cy.get('form').find('button').contains('Register').click();
 
-    // Validate failure message.
-    cy.findByTestId('dialog__header').should('be.visible').contains('Error');
+    // Wait for parent dashboard to load and enrollment modal to close.
+    cy.waitForParentHomepage();
+    // Accept consent form for parent
+    cy.get('button').contains('Continue').click();
+    // Click "Add Child" to open enrollment modal.
+    cy.get('[data-cy="add-student-btn"]').click();
+
+    // Wait for enrollment modal to be visible and verify the invalid code is pre-populated.
+    cy.get('[data-cy="enrollment-modal"]').should('be.visible');
+    cy.get('[data-cy="activation-code-input"]').should('have.value', invalidActivationCode);
+
+    // Fill out student form.
+    cy.get('[data-cy="student-username-input"]').type('teststudent');
+    cy.get('[data-cy="student-password-input"]').type('TestPassword123!');
+    cy.get('[data-cy="student-confirm-password-input"]').type('TestPassword123!');
+
+    // Validate the activation code (should fail).
+    cy.get('[data-cy="enrollment-modal"]').find('button').contains('Validate').click();
+
+    // Validate failure message appears in error dialog.
+    cy.get('[data-cy="enrollment-modal"]').should('exist');
     cy.findByTestId('dialog__content')
       .should('be.visible')
       .contains(`The code ${invalidActivationCode} does not belong to any organization`);
-  });
-
-  it('Validates invitation codes during sign-up', () => {
-    const ORG_CODE = Cypress.env('ACTIVATION_CODE');
-    const ORG_NAME = Cypress.env('testInviteGroupName');
-
-    cy.visit(`${APP_ROUTES.REGISTER}/?code=${ORG_CODE}`);
-
-    // Fill out parent form.
-    cy.get('[data-cy="signup__parent-first-name"]').type(PARENT_FIRST_NAME);
-    cy.get('[data-cy="signup__parent-last-name"]').type(PARENT_LAST_NAME);
-    cy.get('[data-cy="signup__parent-email"]').type(NEW_PARENT_USERNAME);
-    cy.get('[data-cy="signup__parent-password"]').first().type(PARENT_PASSWORD);
-    cy.get('[data-cy="signup__parent-password-confirm"]').type(PARENT_PASSWORD);
-
-    // Accept terms and conditions.
-    cy.findByTestId('checkbox__input').click();
-
-    // Verify consent dialog.
-    cy.get('[data-cy="consent-modal"]').should('be.visible').find('button').contains('Continue').click();
-
-    // Submit parent form.
-    cy.get('button').contains('Next').click();
-
-    // Validate success message.
-    cy.get('[data-cy="child-registration__org-name"]').should('contain.text', ORG_NAME);
   });
 });

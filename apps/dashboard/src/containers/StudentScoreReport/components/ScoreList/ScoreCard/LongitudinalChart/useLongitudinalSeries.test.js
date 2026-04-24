@@ -164,13 +164,14 @@ describe('useLongitudinalSeries', () => {
         longitudinalData: [{ date: '2024-01-01', scores: { rawScore: 10, percentile: 50 } }],
         studentGrade: 5,
         taskId: 'swr',
+        taskScoringVersion: 7,
       };
 
       const { series } = useLongitudinalSeries(props);
 
       series.value;
 
-      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr');
+      expect(getDialColor).toHaveBeenCalledWith(5, 50, 10, 'swr', null, 7);
     });
   });
 
