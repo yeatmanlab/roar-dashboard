@@ -1,0 +1,15 @@
+{
+  "taskSlugs": ["sre-es"],
+  "scoreFields": {
+    "percentile": [{ "minVersion": 1, "fieldName": "percentile" }],
+    "percentileDisplay": [{ "minVersion": 1, "fieldName": "percentile" }],
+    "standardScore": [{ "minVersion": 1, "fieldName": "standardScore" }],
+    "standardScoreDisplay": [{ "minVersion": 1, "fieldName": "standardScore" }],
+    "rawScore": [{ "minVersion": 0, "fieldName": "sreScore" }]
+  },
+  "classification": {
+    "type": "percentile-then-rawscore",
+    "percentileCutoffs": [{ "minVersion": 1, "cutoffs": { "achieved": 40, "developing": 20 } }],
+    "rawScoreThresholds": [{ "minVersion": 1, "thresholds": { "above": 25, "some": 12 } }]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "taskSlugs": ["sre"],
+  "scoreFields": {
+    "percentile": [
+      { "minVersion": 4, "fieldName": "percentile" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecPercentile" },
+            { "gradeGte": 6, "value": "sprPercentile" }
+          ]
+        }
+      }
+    ],
+    "percentileDisplay": [
+      { "minVersion": 4, "fieldName": "percentile" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecPercentile" },
+            { "gradeGte": 6, "value": "sprPercentile" }
+          ]
+        }
+      }
+    ],
+    "standardScore": [
+      { "minVersion": 4, "fieldName": "standardScore" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecSS" },
+            { "gradeGte": 6, "value": "sprStandardScore" }
+          ]
+        }
+      }
+    ],
+    "standardScoreDisplay": [
+      { "minVersion": 4, "fieldName": "standardScore" },
+      {
+        "minVersion": 0,
+        "fieldName": {
+          "gradeConditional": true,
+          "conditions": [
+            { "gradeLt": 6, "value": "tosrecSS" },
+            { "gradeGte": 6, "value": "sprStandardScore" }
+          ]
+        }
+      }
+    ],
+    "rawScore": [{ "minVersion": 0, "fieldName": "sreScore" }]
+  },
+  "classification": {
+    "type": "percentile-then-rawscore",
+    "percentileCutoffs": [
+      { "minVersion": 4, "cutoffs": { "achieved": 40, "developing": 20 } },
+      { "minVersion": 0, "cutoffs": { "achieved": 50, "developing": 25 } }
+    ],
+    "rawScoreThresholds": [
+      { "minVersion": 4, "thresholds": { "above": 41, "some": 23 } },
+      { "minVersion": 0, "thresholds": { "above": 70, "some": 47 } }
+    ]
+  }
+}
