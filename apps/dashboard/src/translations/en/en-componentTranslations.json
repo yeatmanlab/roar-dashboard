@@ -47,7 +47,7 @@
     "showOptionalAssignments": "Show optional assignments",
     "loadingAssignments": "Loading Assignments",
     "selectAssignment": "Select an assignment",
-    "noAssignments": "You have no assignments!",
+    "noAssignments": "No assignments available at the moment. If you have just registered, please wait a few minutes and refresh the page.",
     "contactAdministrator": "Please contact your administrator to get added to an assignment."
   },
   "homeSelector": {
