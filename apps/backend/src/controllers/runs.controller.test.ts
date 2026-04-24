@@ -261,9 +261,9 @@ describe('RunsController', () => {
       const { RunsController } = await import('./runs.controller');
 
       const customAuthContext = { userId: 'user-456', isSuperAdmin: true };
-      await RunsController.event(customAuthContext, validRunId, validEventBody);
+      await RunsController.event(customAuthContext, mockTargetUserId, validRunId, validEventBody);
 
-      expect(mockCompleteRun).toHaveBeenCalledWith(customAuthContext, validRunId, validEventBody);
+      expect(mockCompleteRun).toHaveBeenCalledWith(customAuthContext, mockTargetUserId, validRunId, validEventBody);
     });
 
     it('should handle abort event type', async () => {
