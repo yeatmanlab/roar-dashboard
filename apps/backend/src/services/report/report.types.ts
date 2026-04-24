@@ -91,18 +91,33 @@ export interface ServiceTaskOverview {
   taskSlug: string;
   taskName: string;
   orderIndex: number;
+  /** 7-level per-status counts */
+  assignedRequired: number;
+  assignedOptional: number;
+  startedRequired: number;
+  startedOptional: number;
+  completedRequired: number;
+  completedOptional: number;
+  /** Convenience totals by progress axis */
   assigned: number;
   started: number;
   completed: number;
+  /** Convenience totals by requirement axis */
+  required: number;
   optional: number;
 }
 
 /** Return type for getProgressOverview. */
 export interface ProgressOverviewResult {
   totalStudents: number;
-  assigned: number;
-  started: number;
-  completed: number;
+  /** Students with at least one required task — denominator for assignment-level counts. */
+  studentsWithRequiredTasks: number;
+  /** Students where ALL required tasks are still at assigned-required. */
+  studentsAssigned: number;
+  /** Students with at least one required task started/completed but not all completed. */
+  studentsStarted: number;
+  /** Students where ALL required tasks are at completed-required. */
+  studentsCompleted: number;
   byTask: ServiceTaskOverview[];
   computedAt: string;
 }

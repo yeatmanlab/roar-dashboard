@@ -16,7 +16,14 @@ describe('ProgressStatus enum', () => {
     });
 
     it('contains all expected status values', () => {
-      const expected = new Set(['assigned', 'started', 'completed', 'optional']);
+      const expected = new Set([
+        'assigned-required',
+        'assigned-optional',
+        'started-required',
+        'started-optional',
+        'completed-required',
+        'completed-optional',
+      ]);
       const actual = new Set(ProgressStatusSchema.options);
 
       expect(actual).toEqual(expected);

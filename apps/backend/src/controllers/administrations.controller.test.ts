@@ -1194,7 +1194,7 @@ describe('AdministrationsController', () => {
           schoolName: 'Lincoln Elementary',
         },
         progress: {
-          'task-1': { status: 'completed', startedAt: null, completedAt: '2025-09-15T10:00:00.000Z' },
+          'task-1': { status: 'completed-required', startedAt: null, completedAt: '2025-09-15T10:00:00.000Z' },
         },
       },
     ];
@@ -1319,18 +1319,26 @@ describe('AdministrationsController', () => {
     it('returns 200 with overview data', async () => {
       const mockResult = {
         totalStudents: 20,
-        assigned: 10,
-        started: 5,
-        completed: 5,
+        studentsWithRequiredTasks: 18,
+        studentsAssigned: 10,
+        studentsStarted: 5,
+        studentsCompleted: 3,
         byTask: [
           {
             taskId: 'task-1',
             taskSlug: 'swr',
             taskName: 'ROAR - Word',
             orderIndex: 0,
+            assignedRequired: 10,
+            assignedOptional: 0,
+            startedRequired: 5,
+            startedOptional: 0,
+            completedRequired: 5,
+            completedOptional: 0,
             assigned: 10,
             started: 5,
             completed: 5,
+            required: 20,
             optional: 0,
           },
         ],
@@ -1345,6 +1353,10 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.OK);
       const data = (result.body as { data: typeof mockResult }).data;
       expect(data.totalStudents).toBe(20);
+      expect(data.studentsWithRequiredTasks).toBe(18);
+      expect(data.studentsAssigned).toBe(10);
+      expect(data.studentsStarted).toBe(5);
+      expect(data.studentsCompleted).toBe(3);
       expect(data.byTask).toHaveLength(1);
       expect(data.computedAt).toBe('2025-01-01T00:00:00.000Z');
     });
@@ -1421,9 +1433,10 @@ describe('AdministrationsController', () => {
     it('passes authContext, administrationId, and query to service', async () => {
       mockGetProgressOverview.mockResolvedValue({
         totalStudents: 0,
-        assigned: 0,
-        started: 0,
-        completed: 0,
+        studentsWithRequiredTasks: 0,
+        studentsAssigned: 0,
+        studentsStarted: 0,
+        studentsCompleted: 0,
         byTask: [],
         computedAt: '2025-01-01T00:00:00.000Z',
       });

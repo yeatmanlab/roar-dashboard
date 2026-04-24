@@ -130,11 +130,31 @@ export interface TaskStatusCount {
 }
 
 /**
+ * Per-student, assignment-level progress counts.
+ *
+ * Each student is classified into exactly one bucket based on their required tasks:
+ * - `studentsCompleted`: ALL required tasks at completed-required (priority 5)
+ * - `studentsStarted`: at least one required task started or completed, but not all completed
+ * - `studentsAssigned`: all required tasks still at assigned-required (priority 1)
+ *
+ * Students with only optional tasks (no required tasks) are excluded from all
+ * three buckets and do not count toward `studentsWithRequiredTasks`.
+ * Invariant: studentsAssigned + studentsStarted + studentsCompleted = studentsWithRequiredTasks.
+ */
+export interface StudentAssignmentLevelCounts {
+  studentsWithRequiredTasks: number;
+  studentsAssigned: number;
+  studentsStarted: number;
+  studentsCompleted: number;
+}
+
+/**
  * Result of the SQL-level progress overview aggregation.
  */
 export interface ProgressOverviewCountsResult {
   totalStudents: number;
   taskStatusCounts: TaskStatusCount[];
+  studentCounts: StudentAssignmentLevelCounts;
 }
 
 /**
@@ -675,12 +695,14 @@ export class ReportRepository {
 
   /**
    * Build a SQL CASE expression for sorting by progress status.
-   * Maps run state + condition evaluation to a numeric sort order:
-   *   completed (3) > started (2) > assigned (1) > optional (0)
    *
-   * For students with no run, uses the SQL-translated conditions to distinguish
-   * assigned from optional. Students not assigned to the task sort to -1 (excluded
-   * from visible results by the condition evaluation in buildProgressMap).
+   * 7-level priority scheme that evaluates conditions for ALL students to preserve
+   * the required/optional distinction at every stage:
+   *   completed-required (5) > completed-optional (4) > started-required (3) >
+   *   started-optional (2) > assigned-required (1) > assigned-optional (0) > excluded (-1)
+   *
+   * Uses Drizzle subquery column references (for the LEFT JOIN subquery) instead of
+   * raw SQL aliases. Mirrors buildOverviewStatusCase logic.
    */
   private buildProgressStatusSortExpression(
     sortParam: ProgressStatusSortParam,
@@ -689,31 +711,32 @@ export class ReportRepository {
   ): SQL {
     const { assignmentSql, requirementsSql } = sortParam;
 
-    // Build the CASE levels for no-run students
-    // If both conditions are undefined (null in JSONB = no restriction), all no-run students are "assigned"
+    // No conditions — all students are assigned and required
     if (!assignmentSql && !requirementsSql) {
       return sql`CASE
-        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
-        WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 5
+        WHEN ${statusRunSub.userId} IS NOT NULL THEN 3
         ELSE 1
       END`;
     }
 
+    // Assignment condition but no requirements — all assigned are required
     if (!requirementsSql) {
-      // Has assignment condition but no requirements — all assigned students are "required" (status = assigned)
       return sql`CASE
-        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
-        WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+        WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) THEN 5
+        WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) THEN 3
         WHEN (${assignmentSql}) THEN 1
         ELSE -1
       END`;
     }
 
+    // No assignment condition (all assigned) but has requirements — required vs optional
     if (!assignmentSql) {
-      // No assignment condition (assigned to all) but has requirements — assigned vs optional
       return sql`CASE
-        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
-        WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+        WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${requirementsSql}) THEN 4
+        WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 5
+        WHEN ${statusRunSub.userId} IS NOT NULL AND (${requirementsSql}) THEN 2
+        WHEN ${statusRunSub.userId} IS NOT NULL THEN 3
         WHEN (${requirementsSql}) THEN 0
         ELSE 1
       END`;
@@ -721,8 +744,10 @@ export class ReportRepository {
 
     // Both conditions present
     return sql`CASE
-      WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 3
-      WHEN ${statusRunSub.userId} IS NOT NULL THEN 2
+      WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 4
+      WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) THEN 5
+      WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 2
+      WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) THEN 3
       WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
@@ -731,7 +756,11 @@ export class ReportRepository {
 
   /**
    * Build a SQL WHERE condition for filtering by progress status.
-   * Translates status values into run-state + condition SQL conditions.
+   * Translates 7-level status values into run-state + condition SQL conditions.
+   *
+   * Each status encodes both the progress axis (assigned/started/completed) and
+   * the requirement axis (required/optional). Conditions are evaluated for all
+   * students, including those with runs.
    */
   private buildProgressStatusFilterCondition(
     filterParam: ProgressStatusFilterParam,
@@ -741,28 +770,38 @@ export class ReportRepository {
     const { statusValues, assignmentSql, requirementsSql } = filterParam;
     const conditions: SQL[] = [];
 
+    // Helper: build the "is optional" condition
+    // requirementsSql is an "optional_if" condition — true = optional
+    const isOptionalSql = requirementsSql ?? sql`false`; // null = required for all
+    const isRequiredSql = requirementsSql ? sql`NOT (${requirementsSql})` : sql`true`;
+    const isAssignedSql = assignmentSql ?? sql`true`;
+
     for (const status of statusValues) {
       switch (status) {
-        case 'completed':
-          conditions.push(isNotNull(statusRunSub.completedAt));
+        case 'completed-required':
+          conditions.push(and(isNotNull(statusRunSub.completedAt), isAssignedSql, isRequiredSql)!);
           break;
-        case 'started':
-          conditions.push(and(isNotNull(statusRunSub.userId), isNull(statusRunSub.completedAt))!);
+        case 'completed-optional':
+          conditions.push(and(isNotNull(statusRunSub.completedAt), isAssignedSql, isOptionalSql)!);
           break;
-        case 'assigned': {
-          // No run + assigned + not optional
+        case 'started-required':
+          conditions.push(
+            and(isNotNull(statusRunSub.userId), isNull(statusRunSub.completedAt), isAssignedSql, isRequiredSql)!,
+          );
+          break;
+        case 'started-optional':
+          conditions.push(
+            and(isNotNull(statusRunSub.userId), isNull(statusRunSub.completedAt), isAssignedSql, isOptionalSql)!,
+          );
+          break;
+        case 'assigned-required': {
           const noRun = isNull(statusRunSub.userId);
-          const assigned = assignmentSql ?? sql`true`;
-          const notOptional = requirementsSql ? sql`NOT (${requirementsSql})` : sql`true`;
-          conditions.push(and(noRun, assigned, notOptional)!);
+          conditions.push(and(noRun, isAssignedSql, isRequiredSql)!);
           break;
         }
-        case 'optional': {
-          // No run + assigned + optional
+        case 'assigned-optional': {
           const noRun = isNull(statusRunSub.userId);
-          const assigned = assignmentSql ?? sql`true`;
-          const optional = requirementsSql ?? sql`false`; // null requirements = required for all, never optional
-          conditions.push(and(noRun, assigned, optional)!);
+          conditions.push(and(noRun, isAssignedSql, isOptionalSql)!);
           break;
         }
       }
@@ -770,7 +809,7 @@ export class ReportRepository {
 
     if (conditions.length === 0) return undefined;
     if (conditions.length === 1) return conditions[0];
-    // Multiple status values are ORed (e.g., status:in:completed,started)
+    // Multiple status values are ORed (e.g., status:in:completed-required,started-required)
     return or(...conditions);
   }
 
@@ -955,22 +994,27 @@ export class ReportRepository {
   /**
    * Get aggregated progress overview counts using SQL-level aggregation.
    *
-   * Uses a three-step SQL approach to minimize data transfer and post-query processing:
+   * Uses a multi-step SQL approach to minimize data transfer and post-query processing:
    *
    * 1. Count total students in scope via `countDistinct` on the students-in-scope subquery.
    *
    * 2. For each task variant, build a subquery that LEFT JOINs students against FDW runs
-   *    and computes a status priority via a CASE expression (mirroring buildProgressStatusSortExpression):
-   *    completed=3, started=2, assigned=1, optional=0, excluded=-1.
+   *    and computes a 7-level status priority via a CASE expression:
+   *    completed-required=5, completed-optional=4, started-required=3, started-optional=2,
+   *    assigned-required=1, assigned-optional=0, excluded=-1.
    *    UNION ALL all variant subqueries.
    *
    * 3. GROUP BY user_id, task_id with MAX(status_priority) for multi-variant dedup,
    *    then GROUP BY task_id, status with COUNT for final per-task aggregation.
    *
+   * 4. Per-student completion: count students where ALL required tasks (priorities 1, 3, 5)
+   *    are at completed-required (priority 5). A student is "done" only when every required
+   *    task is completed.
+   *
    * @param administrationId - The administration ID
    * @param scope - The scope to query students within
    * @param taskMetas - Task metadata with condition JSONB for each variant
-   * @returns Total student count and per-task status counts
+   * @returns Total student count, per-task status counts, and per-student completion count
    */
   async getProgressOverviewCounts(
     administrationId: string,
@@ -988,7 +1032,11 @@ export class ReportRepository {
     const totalStudents = countResult[0]?.total ?? 0;
 
     if (totalStudents === 0 || taskMetas.length === 0) {
-      return { totalStudents, taskStatusCounts: [] };
+      return {
+        totalStudents,
+        taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      };
     }
 
     // 2. Build UNION ALL of per-variant status subqueries.
@@ -1021,10 +1069,15 @@ export class ReportRepository {
     // UNION ALL the variant subqueries
     const unionSql = sql.join(variantQueries, sql` UNION ALL `);
 
-    // 3. Two-level aggregation:
-    //   Inner: GROUP BY user_id, task_id → MAX(status_priority) for multi-variant dedup
-    //   Outer: GROUP BY task_id, max_priority → COUNT for final per-task status counts
-    //   Filter out status_priority = -1 (excluded students)
+    // 3. Two-level aggregation + per-student assignment-level counts:
+    //   deduped: GROUP BY user_id, task_id → MAX(status_priority) for multi-variant dedup
+    //   task_counts: GROUP BY task_id, max_priority → COUNT for per-task status counts
+    //   required_tasks_per_student: per-student aggregation of required tasks only.
+    //     Required tasks are those with max_priority IN (1, 3, 5) — i.e., on the required axis.
+    //     Each student is bucketed by assignment-level status:
+    //       completed: MIN(max_priority) = 5 (all required tasks completed)
+    //       started: MAX(max_priority) >= 3 AND MIN(max_priority) < 5 (at least one started, not all done)
+    //       assigned: MAX(max_priority) = 1 (all required tasks still at assigned-required)
     const aggregationQuery = sql`
       WITH sis AS (
         ${studentsInScopeQuery}
@@ -1040,40 +1093,93 @@ export class ReportRepository {
         FROM variant_statuses
         WHERE status_priority >= 0
         GROUP BY user_id, task_id
+      ),
+      task_counts AS (
+        SELECT
+          task_id,
+          max_priority,
+          COUNT(*)::int AS cnt
+        FROM deduped
+        GROUP BY task_id, max_priority
+      ),
+      required_tasks_per_student AS (
+        SELECT
+          user_id,
+          COUNT(*) AS required_task_count,
+          MIN(max_priority) AS min_required_priority,
+          MAX(max_priority) AS max_required_priority
+        FROM deduped
+        WHERE max_priority IN (1, 3, 5)
+        GROUP BY user_id
       )
-      SELECT
-        task_id,
-        max_priority,
-        COUNT(*)::int AS cnt
-      FROM deduped
-      GROUP BY task_id, max_priority
-      ORDER BY task_id, max_priority
+      SELECT 'task_count' AS result_type, task_id, max_priority, cnt,
+        NULL::bigint AS students_with_required, NULL::bigint AS students_completed,
+        NULL::bigint AS students_started, NULL::bigint AS students_assigned
+      FROM task_counts
+      UNION ALL
+      SELECT 'student_counts' AS result_type, NULL AS task_id, NULL AS max_priority, NULL AS cnt,
+        COUNT(*)::bigint AS students_with_required,
+        COUNT(*) FILTER (WHERE min_required_priority = 5)::bigint AS students_completed,
+        COUNT(*) FILTER (WHERE max_required_priority >= 3 AND min_required_priority < 5)::bigint AS students_started,
+        COUNT(*) FILTER (WHERE max_required_priority = 1)::bigint AS students_assigned
+      FROM required_tasks_per_student
     `;
 
     const rows = await this.db.execute(aggregationQuery);
 
-    // Map priority numbers back to status strings
-
+    // Parse results: separate task counts from student-level assignment counts
     const taskStatusCounts: TaskStatusCount[] = [];
+    let studentCounts: StudentAssignmentLevelCounts = {
+      studentsWithRequiredTasks: 0,
+      studentsAssigned: 0,
+      studentsStarted: 0,
+      studentsCompleted: 0,
+    };
+
     for (const row of rows.rows) {
-      const r = row as { task_id: string; max_priority: number; cnt: number };
-      const status = PROGRESS_PRIORITY_TO_STATUS[r.max_priority as ProgressStatusPriority];
-      if (status) {
-        taskStatusCounts.push({
-          taskId: r.task_id,
-          status,
-          count: r.cnt,
-        });
+      const r = row as {
+        result_type: string;
+        task_id: string | null;
+        max_priority: number | null;
+        cnt: number | null;
+        students_with_required: number | null;
+        students_completed: number | null;
+        students_started: number | null;
+        students_assigned: number | null;
+      };
+
+      if (r.result_type === 'student_counts') {
+        studentCounts = {
+          studentsWithRequiredTasks: Number(r.students_with_required ?? 0),
+          studentsCompleted: Number(r.students_completed ?? 0),
+          studentsStarted: Number(r.students_started ?? 0),
+          studentsAssigned: Number(r.students_assigned ?? 0),
+        };
+      } else if (r.task_id !== null && r.max_priority !== null && r.cnt !== null) {
+        const status = PROGRESS_PRIORITY_TO_STATUS[r.max_priority as ProgressStatusPriority];
+        if (status) {
+          taskStatusCounts.push({
+            taskId: r.task_id,
+            status,
+            count: r.cnt,
+          });
+        }
       }
     }
 
-    return { totalStudents, taskStatusCounts };
+    return { totalStudents, taskStatusCounts, studentCounts };
   }
 
   /**
    * Build a SQL CASE expression for overview status determination per variant.
-   * Maps run state + condition evaluation to a numeric priority:
-   *   completed (3) > started (2) > assigned (1) > optional (0) > excluded (-1)
+   *
+   * 7-level priority scheme that evaluates conditions for ALL students, including
+   * those with runs, to preserve the required/optional distinction at every stage:
+   *   completed-required (5) > completed-optional (4) > started-required (3) >
+   *   started-optional (2) > assigned-required (1) > assigned-optional (0) > excluded (-1)
+   *
+   * Note on conditionsRequirements: despite the name, this is an "optional_if" condition.
+   * When it evaluates to true, the task is OPTIONAL. When false/absent, the task is REQUIRED.
    *
    * Mirrors buildProgressStatusSortExpression but uses raw SQL column references
    * (for the LEFT JOIN alias `r`) instead of Drizzle subquery references.
@@ -1082,30 +1188,32 @@ export class ReportRepository {
     const assignmentSql = conditionToSql(meta.conditionsAssignment, REPORT_CONDITION_FIELD_MAP);
     const requirementsSql = conditionToSql(meta.conditionsRequirements, REPORT_CONDITION_FIELD_MAP);
 
-    // No conditions — all students are assigned (no optional, no exclusion)
+    // No conditions — all students are assigned and required (no optional, no exclusion)
     if (!assignmentSql && !requirementsSql) {
       return sql`CASE
-        WHEN r.completed_at IS NOT NULL THEN 3
-        WHEN r.user_id IS NOT NULL THEN 2
+        WHEN r.completed_at IS NOT NULL THEN 5
+        WHEN r.user_id IS NOT NULL THEN 3
         ELSE 1
       END`;
     }
 
-    // Assignment condition but no requirements — assigned or excluded
+    // Assignment condition but no requirements — all assigned students are required
     if (!requirementsSql) {
       return sql`CASE
-        WHEN r.completed_at IS NOT NULL THEN 3
-        WHEN r.user_id IS NOT NULL THEN 2
+        WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) THEN 5
+        WHEN r.user_id IS NOT NULL AND (${assignmentSql}) THEN 3
         WHEN (${assignmentSql}) THEN 1
         ELSE -1
       END`;
     }
 
-    // No assignment condition but has requirements — assigned vs optional
+    // No assignment condition (all assigned) but has requirements — required vs optional
     if (!assignmentSql) {
       return sql`CASE
-        WHEN r.completed_at IS NOT NULL THEN 3
-        WHEN r.user_id IS NOT NULL THEN 2
+        WHEN r.completed_at IS NOT NULL AND (${requirementsSql}) THEN 4
+        WHEN r.completed_at IS NOT NULL THEN 5
+        WHEN r.user_id IS NOT NULL AND (${requirementsSql}) THEN 2
+        WHEN r.user_id IS NOT NULL THEN 3
         WHEN (${requirementsSql}) THEN 0
         ELSE 1
       END`;
@@ -1113,8 +1221,10 @@ export class ReportRepository {
 
     // Both conditions present
     return sql`CASE
-      WHEN r.completed_at IS NOT NULL THEN 3
-      WHEN r.user_id IS NOT NULL THEN 2
+      WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 4
+      WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) THEN 5
+      WHEN r.user_id IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 2
+      WHEN r.user_id IS NOT NULL AND (${assignmentSql}) THEN 3
       WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
