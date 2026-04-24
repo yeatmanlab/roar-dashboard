@@ -77,7 +77,7 @@ function resolveFieldValue(value: FieldNameValue, gradeLevel: number | null): st
  * 1. Look up the task's scoring config
  * 2. For assessment-computed tasks: validate and return the pre-computed support level
  * 3. For percentile-then-rawscore tasks:
- *    a. For grades below percentileMaxGrade (default 6) with a percentile: use percentile cutoffs
+ *    a. For grades below percentileBelowGrade (default 6, exclusive) with a percentile: use percentile cutoffs
  *    b. Otherwise: use raw score thresholds
  * 4. For none type: return null (no classification)
  *
@@ -117,8 +117,8 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
   const gradeLevel = getGradeAsNumber(grade);
 
   // Try percentile-based classification (config-driven grade threshold).
-  // percentileMaxGrade defaults to 6; null means use percentile for all grades.
-  const maxGrade = classification.percentileMaxGrade;
+  // percentileBelowGrade defaults to 6 (exclusive); null means use percentile for all grades.
+  const maxGrade = classification.percentileBelowGrade;
   const usePercentile = percentile !== null && (maxGrade === null || (gradeLevel !== null && gradeLevel < maxGrade));
 
   if (usePercentile) {
@@ -142,6 +142,10 @@ export function getSupportLevel(input: ScoringInput): SupportLevel | null {
 
 /**
  * Get raw score thresholds for a task and scoring version.
+ *
+ * Use this to retrieve the threshold values themselves (e.g., for display in a score report).
+ * To classify a score into a support level, use {@link getSupportLevel} instead — it applies
+ * the full classification algorithm (percentile cutoffs first, then raw score fallback).
  *
  * @param taskSlug - The task slug (e.g., 'swr', 'sre')
  * @param scoringVersion - The scoring version, or null for legacy

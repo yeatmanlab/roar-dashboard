@@ -97,9 +97,9 @@ const ScoreFieldsSchema = z.record(ScoreFieldTypeSchema, VersionedFieldNameArray
 
 const PercentileThenRawscoreClassificationSchema = z.object({
   type: z.literal('percentile-then-rawscore'),
-  /** Grade below which percentile cutoffs are used instead of raw score thresholds.
-   *  Defaults to 6 (grades K-5 use percentile). Set to null to use percentile for all grades. */
-  percentileMaxGrade: z.number().int().nullable().default(6),
+  /** Exclusive upper bound: percentile cutoffs apply for grades strictly below this value.
+   *  Defaults to 6 (grades K-5 use percentile, grade 6+ uses raw score). Set to null to use percentile for all grades. */
+  percentileBelowGrade: z.number().int().nullable().default(6),
   percentileCutoffs: z.array(VersionedPercentileCutoffSchema).min(1).superRefine(descendingMinVersion),
   rawScoreThresholds: z.array(VersionedRawScoreThresholdSchema).min(1).superRefine(descendingMinVersion),
 });

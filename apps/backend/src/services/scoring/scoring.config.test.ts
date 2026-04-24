@@ -86,11 +86,11 @@ describe('scoring config validation', () => {
     expect(() => ScoringConfigSchema.parse(config)).not.toThrow();
   });
 
-  it('percentileMaxGrade defaults to 6 when omitted', () => {
+  it('percentileBelowGrade defaults to 6 when omitted', () => {
     const config = getScoringConfig('swr');
     expect(config?.classification.type).toBe('percentile-then-rawscore');
     if (config?.classification.type === 'percentile-then-rawscore') {
-      expect(config.classification.percentileMaxGrade).toBe(6);
+      expect(config.classification.percentileBelowGrade).toBe(6);
     }
   });
 
