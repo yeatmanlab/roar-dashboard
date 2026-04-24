@@ -146,7 +146,7 @@ describe('POST /v1/user/:userId/runs', () => {
       const { RunRepository } = await import('../repositories/run.repository');
       const { AssessmentDbClient } = await import('../test-support/db');
       const runRepository = new RunRepository(AssessmentDbClient);
-      const run = await runRepository.getById(runId);
+      const run = await runRepository.getById({ id: runId });
       expect(run?.userId).toBe(tiers.student.id);
     });
 
