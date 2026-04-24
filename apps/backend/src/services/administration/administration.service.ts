@@ -1,19 +1,18 @@
-import {
-  AdministrationEmbedOption,
-  TreeEmbedOption,
-  type PaginatedResult,
-  type AdministrationStats,
-  type AdministrationEmbedOptionType,
-  type AdministrationStatus,
-  type AdministrationDistrictSortFieldType,
-  type AdministrationSchoolSortFieldType,
-  type AdministrationClassSortFieldType,
-  type AdministrationGroupSortFieldType,
-  type AdministrationTaskVariantSortFieldType,
-  type AdministrationAgreementSortFieldType,
-  type TreeEmbedOptionType,
-  type TreeParentEntityType,
+import type {
+  PaginatedResult,
+  AdministrationStats,
+  AdministrationEmbedOptionType,
+  AdministrationStatus,
+  AdministrationDistrictSortFieldType,
+  AdministrationSchoolSortFieldType,
+  AdministrationClassSortFieldType,
+  AdministrationGroupSortFieldType,
+  AdministrationTaskVariantSortFieldType,
+  AdministrationAgreementSortFieldType,
+  TreeEmbedOptionType,
+  TreeParentEntityType,
 } from '@roar-dashboard/api-contract';
+import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration, Org, Class, Group } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -25,17 +24,15 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { OrgType } from '../../enums/org-type.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
-import {
-  AdministrationRepository,
-  type AdministrationQueryOptions,
-  type TaskVariantWithAssignment,
-  type AgreementWithVersion,
-  type TreeNode,
+import type {
+  AdministrationQueryOptions,
+  TaskVariantWithAssignment,
+  AgreementWithVersion,
+  TreeNode,
 } from '../../repositories/administration.repository';
-import {
-  AdministrationTaskVariantRepository,
-  type AdministrationTask,
-} from '../../repositories/administration-task-variant.repository';
+import { AdministrationRepository } from '../../repositories/administration.repository';
+import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
+import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
 import { ReportRepository } from '../../repositories/report.repository';
 import type { ReportScope } from '../../repositories/report.repository';
 import { UserRepository } from '../../repositories/user.repository';
