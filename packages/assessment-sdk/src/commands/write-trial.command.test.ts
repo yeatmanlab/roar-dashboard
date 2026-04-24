@@ -55,7 +55,7 @@ describe('WriteTrialCommand', () => {
 
     expect(eventMock).toHaveBeenCalledTimes(1);
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-123' },
+      params: { runId: 'run-123', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_TRIAL,
         trial: {
@@ -89,7 +89,7 @@ describe('WriteTrialCommand', () => {
     const result = await command.execute(input);
 
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-456' },
+      params: { runId: 'run-456', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_TRIAL,
         trial: {
@@ -123,7 +123,7 @@ describe('WriteTrialCommand', () => {
     await command.execute(input);
 
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-789' },
+      params: { runId: 'run-789', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_TRIAL,
         trial: {
@@ -160,7 +160,7 @@ describe('WriteTrialCommand', () => {
     await command.execute(input);
 
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-with-interactions' },
+      params: { runId: 'run-with-interactions', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_TRIAL,
         trial: {
@@ -201,7 +201,7 @@ describe('WriteTrialCommand', () => {
     await command.execute(input);
 
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-fullscreen' },
+      params: { runId: 'run-fullscreen', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_TRIAL,
         trial: {
@@ -240,7 +240,7 @@ describe('WriteTrialCommand', () => {
     await command.execute(input);
 
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-with-payload' },
+      params: { runId: 'run-with-payload', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_TRIAL,
         trial: {

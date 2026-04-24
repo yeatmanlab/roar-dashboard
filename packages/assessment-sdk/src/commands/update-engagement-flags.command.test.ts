@@ -54,7 +54,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
 
     expect(eventMock).toHaveBeenCalledTimes(1);
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-123' },
+      params: { runId: 'run-123', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
@@ -84,7 +84,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     const result = await command.execute(input);
 
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-456' },
+      params: { runId: 'run-456', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
@@ -117,7 +117,7 @@ describe('UpdateRunEngagementFlagsCommand', () => {
     const result = await command.execute(input);
 
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-789' },
+      params: { runId: 'run-789', userId: 'participant-123' },
       body: {
         type: RUN_EVENT_ENGAGEMENT,
         engagementFlags: {
