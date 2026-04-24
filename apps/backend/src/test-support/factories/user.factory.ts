@@ -7,7 +7,8 @@ import { users } from '../../db/schema/core';
 import { AuthProvider } from '../../enums/auth-provider.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
-import type { EnrolledUserEntity, EnrolledOrgUserEntity } from '../../types/user';
+import type { EnrolledUserEntity, EnrolledFamilyUserEntity } from '../../types/user';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 
 /**
  * Factory for creating User test objects.
@@ -95,14 +96,13 @@ export const AuthContextFactory = Factory.define<AuthContext>(() => ({
 export const EnrolledUserFactory = Factory.define<EnrolledUserEntity>(({ params }) => {
   return {
     ...UserFactory.build(),
-    role: params.role ?? UserRole.STUDENT,
-    enrollmentStart: params.enrollmentStart ?? new Date('2024-01-01T00:00:00Z'),
+    roles: params.roles ?? [UserRole.STUDENT],
   };
 });
 
-export const EnrolledOrgUserFactory = Factory.define<EnrolledOrgUserEntity>(({ params }) => {
+export const EnrolledFamilyUserFactory = Factory.define<EnrolledFamilyUserEntity>(({ params }) => {
   return {
     ...UserFactory.build(),
-    roles: params.roles ?? [UserRole.STUDENT],
+    roles: params.roles ?? [UserFamilyRole.CHILD],
   };
 });

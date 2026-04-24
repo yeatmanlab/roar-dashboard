@@ -6,19 +6,11 @@ import {
 import { ReportService } from '../services/report/report.service';
 import type {
   AdministrationsListQuery,
-  AdministrationDistrictsListQuery,
-  AdministrationSchoolsListQuery,
-  AdministrationClassesListQuery,
-  AdministrationGroupsListQuery,
   AdministrationTaskVariantsListQuery,
   AdministrationAgreementsListQuery,
   AdministrationTreeQuery,
   Administration as ContractAdministration,
   AdministrationBase as ContractAdministrationBase,
-  AdministrationDistrict,
-  AdministrationSchool,
-  AdministrationClass,
-  AdministrationGroup,
   AdministrationTaskVariantItem,
   OrganizationTreeNode,
   Condition,
@@ -28,7 +20,7 @@ import type {
   ReportTaskMetadata,
   ProgressStudent,
 } from '@roar-dashboard/api-contract';
-import type { Administration, Org, Class, Group } from '../db/schema';
+import type { Administration } from '../db/schema';
 import type {
   TaskVariantWithAssignment,
   AssignmentWithOptional,
@@ -93,22 +85,6 @@ function transformAdministration(admin: AdministrationWithEmbeds): ContractAdmin
   }
 
   return result;
-}
-
-/**
- * Maps a database entity with id and name to the API schema.
- * Used for districts, schools, classes, and groups which share the same contract shape.
- *
- * @param entity - The database entity (Org, Class, or Group)
- * @returns The API-formatted object with id and name
- */
-function toIdName(
-  entity: Org | Class | Group,
-): AdministrationDistrict | AdministrationSchool | AdministrationClass | AdministrationGroup {
-  return {
-    id: entity.id,
-    name: entity.name,
-  };
 }
 
 /**
@@ -189,38 +165,14 @@ function toAgreementItem(item: AgreementWithVersion): AdministrationAgreement {
 
 /**
  * Builds a paginated response for sub-resource listing endpoints.
- * Defaults to toIdName mapper for orgs/classes/groups; requires explicit mapper for other types.
  */
-function handleSubResourceResponse<T extends Org | Class | Group>(
-  result: { items: T[]; totalItems: number },
-  page: number,
-  perPage: number,
-): {
-  status: typeof StatusCodes.OK;
-  body: {
-    data: {
-      items: ReturnType<typeof toIdName>[];
-      pagination: { page: number; perPage: number; totalItems: number; totalPages: number };
-    };
-  };
-};
 function handleSubResourceResponse<T, R>(
   result: { items: T[]; totalItems: number },
   page: number,
   perPage: number,
   mapItem: (item: T) => R,
-): {
-  status: typeof StatusCodes.OK;
-  body: { data: { items: R[]; pagination: { page: number; perPage: number; totalItems: number; totalPages: number } } };
-};
-function handleSubResourceResponse<T, R>(
-  result: { items: T[]; totalItems: number },
-  page: number,
-  perPage: number,
-  mapItem?: (item: T) => R,
 ) {
-  const mapper = mapItem ?? (toIdName as unknown as (item: T) => R);
-  const items = result.items.map(mapper);
+  const items = result.items.map(mapItem);
   const totalPages = Math.ceil(result.totalItems / perPage);
 
   return {
@@ -371,82 +323,32 @@ export const AdministrationsController = {
   },
 
   /**
-   * List districts assigned to an administration.
+   * Get all assignees (districts, schools, classes, groups) for an administration.
    *
    * Delegates to AdministrationService for authorization and retrieval.
-   * Transforms database entities to the API response format.
    *
    * @param authContext - User's authentication context
    * @param administrationId - UUID of the administration
-   * @param query - Query parameters (pagination, sorting)
    */
-  listDistricts: async (
-    authContext: AuthContext,
-    administrationId: string,
-    query: AdministrationDistrictsListQuery,
-  ) => {
+  getAssignees: async (authContext: AuthContext, administrationId: string) => {
     try {
-      const result = await administrationService.listDistricts(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
-    } catch (error) {
-      return handleSubResourceError(error);
-    }
-  },
+      const result = await administrationService.getAssignees(authContext, administrationId);
 
-  /**
-   * List schools assigned to an administration.
-   *
-   * Delegates to AdministrationService for authorization and retrieval.
-   * Transforms database entities to the API response format.
-   *
-   * @param authContext - User's authentication context
-   * @param administrationId - UUID of the administration
-   * @param query - Query parameters (pagination, sorting)
-   */
-  listSchools: async (authContext: AuthContext, administrationId: string, query: AdministrationSchoolsListQuery) => {
-    try {
-      const result = await administrationService.listSchools(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
     } catch (error) {
-      return handleSubResourceError(error);
-    }
-  },
-
-  /**
-   * List classes assigned to an administration.
-   *
-   * Delegates to AdministrationService for authorization and retrieval.
-   * Transforms database entities to the API response format.
-   *
-   * @param authContext - User's authentication context
-   * @param administrationId - UUID of the administration
-   * @param query - Query parameters (pagination, sorting)
-   */
-  listClasses: async (authContext: AuthContext, administrationId: string, query: AdministrationClassesListQuery) => {
-    try {
-      const result = await administrationService.listClasses(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
-    } catch (error) {
-      return handleSubResourceError(error);
-    }
-  },
-
-  /**
-   * List groups assigned to an administration.
-   *
-   * Delegates to AdministrationService for authorization and retrieval.
-   * Transforms database entities to the API response format.
-   *
-   * @param authContext - User's authentication context
-   * @param administrationId - UUID of the administration
-   * @param query - Query parameters (pagination, sorting)
-   */
-  listGroups: async (authContext: AuthContext, administrationId: string, query: AdministrationGroupsListQuery) => {
-    try {
-      const result = await administrationService.listGroups(authContext, administrationId, query);
-      return handleSubResourceResponse(result, query.page, query.perPage);
-    } catch (error) {
-      return handleSubResourceError(error);
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
     }
   },
 

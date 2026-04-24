@@ -1,5 +1,6 @@
-import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, inArray } from 'drizzle-orm';
+import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   administrations,
@@ -15,11 +16,11 @@ import {
   orgs,
   classes,
   groups,
+  userOrgs,
+  userClasses,
+  userGroups,
   type Administration,
   type AdministrationTaskVariant,
-  type Org,
-  type Class,
-  type Group,
   type Task,
   type TaskVariant,
   type Agreement,
@@ -31,10 +32,6 @@ import type {
   PaginationQuery,
   SortQuery,
   AdministrationSortFieldType,
-  AdministrationDistrictSortFieldType,
-  AdministrationSchoolSortFieldType,
-  AdministrationClassSortFieldType,
-  AdministrationGroupSortFieldType,
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
   AdministrationStatus,
@@ -44,32 +41,10 @@ import { SortOrder, TreeNodeEntityType } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';
-import { AdministrationAccessControls } from './access-controls/administration.access-controls';
-import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
+import { isAncestorOrEqual } from './utils/is-ancestor-or-equal.utils';
+import { isEnrollmentActive } from './utils/enrollment.utils';
 import { OrgType } from '../enums/org-type.enum';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
-
-/**
- * Explicit mapping from API sort field names to org table columns.
- * Districts and schools share the same sort fields.
- */
-const ORG_SORT_COLUMNS: Record<AdministrationDistrictSortFieldType | AdministrationSchoolSortFieldType, Column> = {
-  name: orgs.name,
-};
-
-/**
- * Explicit mapping from API sort field names to class table columns.
- */
-const CLASS_SORT_COLUMNS: Record<AdministrationClassSortFieldType, Column> = {
-  name: classes.name,
-};
-
-/**
- * Explicit mapping from API sort field names to group table columns.
- */
-const GROUP_SORT_COLUMNS: Record<AdministrationGroupSortFieldType, Column> = {
-  name: groups.name,
-};
 
 /**
  * Explicit mapping from API sort field names to task variant columns.
@@ -100,20 +75,32 @@ export interface ListAuthorizedOptions extends BaseGetAllParams {
   status?: AdministrationStatus;
 }
 
-/**
- * Options for listing orgs (districts/schools) of an administration.
- */
-export type ListOrgsByAdministrationOptions = BasePaginatedQueryParams;
+/** Represents an assignee of an administration with identifiers. */
+interface AdministrationAssignee {
+  id: string;
+  name: string;
+}
+
+/** Represents a school assignee of an administration with a parent organization ID. */
+interface AdministrationSchoolAssignee extends AdministrationAssignee {
+  parentOrgId: string;
+}
+
+/** Represents a class assignee of an administration with a school and district ID. */
+interface AdministrationClassAssignee extends AdministrationAssignee {
+  schoolId: string;
+  districtId: string;
+}
 
 /**
- * Options for listing classes of an administration.
+ * Assignees of an administration (districts, schools, classes, groups).
  */
-export type ListClassesByAdministrationOptions = BasePaginatedQueryParams;
-
-/**
- * Options for listing groups of an administration.
- */
-export type ListGroupsByAdministrationOptions = BasePaginatedQueryParams;
+export interface AdministrationAssignees {
+  districts: AdministrationAssignee[];
+  schools: AdministrationSchoolAssignee[];
+  classes: AdministrationClassAssignee[];
+  groups: AdministrationAssignee[];
+}
 
 /**
  * Options for listing task variants of an administration.
@@ -185,19 +172,10 @@ export interface AgreementWithVersion {
  *
  * Provides data access methods for the administrations table.
  * Extends BaseRepository for standard CRUD operations.
- *
- * Uses AdministrationAccessControls for authorization-related queries (accessible administrations,
- * assigned user counts) to keep authorization logic centralized and reusable.
  */
 export class AdministrationRepository extends BaseRepository<Administration, typeof administrations> {
-  private readonly accessControls: AdministrationAccessControls;
-
-  constructor(
-    db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient,
-    accessControls: AdministrationAccessControls = new AdministrationAccessControls(db),
-  ) {
+  constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, administrations);
-    this.accessControls = accessControls;
   }
 
   /**
@@ -251,34 +229,6 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   }
 
   /**
-   * Get a single administration by ID, only if the user is authorized to access it.
-   *
-   * Combines a direct lookup with an access control check. Returns the administration
-   * if found AND accessible, null otherwise (prevents existence leaking).
-   *
-   * @param accessControlFilter - User ID and allowed roles
-   * @param administrationId - The administration ID to retrieve
-   * @returns The administration if found and accessible, null otherwise
-   */
-  async getAuthorizedById(
-    accessControlFilter: AccessControlFilter,
-    administrationId: string,
-  ): Promise<Administration | null> {
-    const accessibleAdmins = this.accessControls
-      .buildUserAdministrationIdsQuery(accessControlFilter)
-      .as('accessible_admins');
-
-    const result = await this.db
-      .select({ administration: administrations })
-      .from(administrations)
-      .innerJoin(accessibleAdmins, eq(administrations.id, accessibleAdmins.administrationId))
-      .where(eq(administrations.id, administrationId))
-      .limit(1);
-
-    return result[0]?.administration ?? null;
-  }
-
-  /**
    * Get count of assigned users for multiple administrations.
    *
    * A user is "assigned" to an administration if they belong to an org, class, or group
@@ -286,229 +236,174 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    * - Administration assigned to a district → includes users from all schools and classes in that district
    * - Administration assigned to a school → includes users from all classes in that school
    *
-   * Delegates to AdministrationAccessControls for the actual query logic.
-   *
    * @param administrationIds - Array of administration IDs to count assigned users for
    * @returns Map of administration ID to assigned user count
+   * @throws {Error} If called with empty administrationIds array
    */
   async getAssignedUserCountsByAdministrationIds(administrationIds: string[]): Promise<Map<string, number>> {
-    return this.accessControls.getAssignedUserCountsByAdministrationIds(administrationIds);
+    if (administrationIds.length === 0) {
+      throw new Error('administrationIds required for getting assigned user counts');
+    }
+
+    const assignments = this.buildAdministrationUserAssignmentsQuery(administrationIds).as('assignments');
+
+    const result = await this.db
+      .select({
+        administrationId: assignments.administrationId,
+        assignedCount: countDistinct(assignments.userId),
+      })
+      .from(assignments)
+      .groupBy(assignments.administrationId);
+
+    const countsMap = new Map<string, number>();
+    for (const row of result) {
+      countsMap.set(row.administrationId, row.assignedCount);
+    }
+
+    return countsMap;
   }
 
   /**
-   * Get orgs of a specific type assigned to an administration.
+   * Returns all users assigned to the given administrations.
    *
-   * Returns only orgs matching the specified orgType that are directly assigned
-   * to the administration via the administration_orgs junction table.
+   * Respects org hierarchy — an administration assigned to a district includes
+   * users from all schools and classes in that district.
    *
-   * @param administrationId - The administration ID to get orgs for
-   * @param orgType - The org type to filter by (e.g., 'district', 'school')
-   * @param options - Pagination and sorting options
-   * @param filterIds - Optional array of org IDs to constrain results (FGA-resolved accessible IDs)
-   * @returns Paginated result with orgs
+   * Uses UNION ALL for performance (no deduplication). A user with multiple paths
+   * to an administration appears multiple times. Always use COUNT(DISTINCT userId)
+   * when aggregating.
+   *
+   * @param administrationIds - Array of administration IDs to query
+   * @returns Drizzle subquery with `{ administrationId, userId }` rows
    */
-  private async getOrgsByAdministrationId(
-    administrationId: string,
-    orgType: OrgType,
-    options: ListOrgsByAdministrationOptions,
-    filterIds?: string[],
-  ): Promise<PaginatedResult<Org>> {
-    const { page, perPage, orderBy } = options;
-    const offset = (page - 1) * perPage;
+  private buildAdministrationUserAssignmentsQuery(administrationIds: string[]) {
+    const adminOrgTable = alias(orgs, 'admin_org');
+    const userOrgTable = alias(orgs, 'user_org');
 
-    const conditions: SQL[] = [eq(administrationOrgs.administrationId, administrationId), eq(orgs.orgType, orgType)];
-    if (filterIds?.length) {
-      conditions.push(inArray(orgs.id, filterIds));
-    }
-    const baseCondition = and(...conditions);
-
-    const countResult = await this.db
-      .select({ count: count() })
+    // Path 1: Administration assigned to org → users in that org or descendant orgs
+    const viaOrgToOrgUsers = this.db
+      .select({
+        administrationId: administrationOrgs.administrationId,
+        userId: userOrgs.userId,
+      })
       .from(administrationOrgs)
-      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
-      .where(baseCondition);
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      .innerJoin(userOrgTable, isAncestorOrEqual(adminOrgTable.path, userOrgTable.path))
+      .innerJoin(userOrgs, and(eq(userOrgs.orgId, userOrgTable.id), isEnrollmentActive(userOrgs)))
+      .where(inArray(administrationOrgs.administrationId, administrationIds));
 
-    const totalItems = countResult[0]?.count ?? 0;
-
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationDistrictSortFieldType | undefined;
-    const sortColumn = sortField ? ORG_SORT_COLUMNS[sortField] : orgs.name;
-    const sortDirection = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
-
-    const dataResult = await this.db
-      .select({ org: orgs })
+    // Path 2: Administration assigned to org → users in classes under that org
+    const viaOrgToClassUsers = this.db
+      .select({
+        administrationId: administrationOrgs.administrationId,
+        userId: userClasses.userId,
+      })
       .from(administrationOrgs)
-      .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
-      .where(baseCondition)
-      .orderBy(sortDirection)
-      .limit(perPage)
-      .offset(offset);
+      .innerJoin(adminOrgTable, eq(adminOrgTable.id, administrationOrgs.orgId))
+      .innerJoin(classes, isAncestorOrEqual(adminOrgTable.path, classes.orgPath))
+      .innerJoin(userClasses, and(eq(userClasses.classId, classes.id), isEnrollmentActive(userClasses)))
+      .where(inArray(administrationOrgs.administrationId, administrationIds));
 
-    return {
-      items: dataResult.map((row) => row.org),
-      totalItems,
-    };
-  }
-
-  /**
-   * Get districts assigned to an administration.
-   *
-   * @param administrationId - The administration ID to get districts for
-   * @param options - Pagination and sorting options
-   * @param filterIds - Optional array of district IDs to constrain results (FGA-resolved accessible IDs)
-   * @returns Paginated result with districts
-   */
-  async getDistrictsByAdministrationId(
-    administrationId: string,
-    options: ListOrgsByAdministrationOptions,
-    filterIds?: string[],
-  ): Promise<PaginatedResult<Org>> {
-    return this.getOrgsByAdministrationId(administrationId, OrgType.DISTRICT, options, filterIds);
-  }
-
-  /**
-   * Get schools assigned to an administration.
-   *
-   * @param administrationId - The administration ID to get schools for
-   * @param options - Pagination and sorting options
-   * @param filterIds - Optional array of school IDs to constrain results (FGA-resolved accessible IDs)
-   * @returns Paginated result with schools
-   */
-  async getSchoolsByAdministrationId(
-    administrationId: string,
-    options: ListOrgsByAdministrationOptions,
-    filterIds?: string[],
-  ): Promise<PaginatedResult<Org>> {
-    return this.getOrgsByAdministrationId(administrationId, OrgType.SCHOOL, options, filterIds);
-  }
-
-  /**
-   * Get classes assigned to an administration.
-   *
-   * @param administrationId - The administration ID to get classes for
-   * @param options - Pagination and sorting options
-   * @param filterIds - Optional array of class IDs to constrain results (FGA-resolved accessible IDs)
-   * @returns Paginated result with classes
-   */
-  async getClassesByAdministrationId(
-    administrationId: string,
-    options: ListClassesByAdministrationOptions,
-    filterIds?: string[],
-  ): Promise<PaginatedResult<Class>> {
-    const { page, perPage, orderBy } = options;
-    const offset = (page - 1) * perPage;
-
-    const conditions: SQL[] = [eq(administrationClasses.administrationId, administrationId)];
-    if (filterIds && filterIds.length > 0) {
-      conditions.push(inArray(classes.id, filterIds));
-    }
-    const baseCondition = and(...conditions);
-
-    const countResult = await this.db
-      .select({ count: count() })
+    // Path 3: Administration assigned to class → users in that class
+    const viaDirectClass = this.db
+      .select({
+        administrationId: administrationClasses.administrationId,
+        userId: userClasses.userId,
+      })
       .from(administrationClasses)
-      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
-      .where(baseCondition);
+      .innerJoin(
+        userClasses,
+        and(eq(userClasses.classId, administrationClasses.classId), isEnrollmentActive(userClasses)),
+      )
+      .where(inArray(administrationClasses.administrationId, administrationIds));
 
-    const totalItems = countResult[0]?.count ?? 0;
+    // Path 4: Administration assigned to group → users in that group
+    const viaDirectGroup = this.db
+      .select({
+        administrationId: administrationGroups.administrationId,
+        userId: userGroups.userId,
+      })
+      .from(administrationGroups)
+      .innerJoin(userGroups, and(eq(userGroups.groupId, administrationGroups.groupId), isEnrollmentActive(userGroups)))
+      .where(inArray(administrationGroups.administrationId, administrationIds));
 
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Use explicit column mapping for type safety
-    // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationClassSortFieldType | undefined;
-    const sortColumn = sortField ? CLASS_SORT_COLUMNS[sortField] : classes.name;
-    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
-
-    const dataResult = await this.db
-      .select({ class: classes })
-      .from(administrationClasses)
-      .innerJoin(classes, eq(classes.id, administrationClasses.classId))
-      .where(baseCondition)
-      // Add a stable secondary sort on classes.id to ensure deterministic pagination
-      .orderBy(primaryOrder, asc(classes.id))
-      .limit(perPage)
-      .offset(offset);
-
-    return {
-      items: dataResult.map((row) => row.class),
-      totalItems,
-    };
+    return viaOrgToOrgUsers.unionAll(viaOrgToClassUsers).unionAll(viaDirectClass).unionAll(viaDirectGroup);
   }
 
   /**
-   * Get user's roles for a specific administration.
+   * Get all assignees (districts, schools, classes, groups) for an administration.
    *
-   * Delegates to AdministrationAccessControls to determine which roles the user
-   * has that grant access to this administration.
+   * Executes 3 parallel queries:
+   * 1. Districts and schools via administration_orgs → orgs (split by orgType)
+   * 2. Classes via administration_classes → classes
+   * 3. Groups via administration_groups → groups
    *
-   * @param userId - The user ID to get roles for
-   * @param administrationId - The administration ID to check
-   * @returns Array of roles the user has for this administration
+   * Returns the complete assignee list for the administration.
+   *
+   * @param administrationId - The administration ID to get assignees for
+   * @returns All districts, schools, classes, and groups assigned to the administration
    */
-  async getUserRolesForAdministration(userId: string, administrationId: string): Promise<string[]> {
-    return this.accessControls.getUserRolesForAdministration(userId, administrationId);
-  }
+  async getAssignees(administrationId: string): Promise<AdministrationAssignees> {
+    const [orgResults, classResults, groupResults] = await Promise.all([
+      // Query districts and schools
+      this.db
+        .select({
+          id: orgs.id,
+          name: orgs.name,
+          orgType: orgs.orgType,
+          parentOrgId: orgs.parentOrgId,
+        })
+        .from(administrationOrgs)
+        .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+        .where(eq(administrationOrgs.administrationId, administrationId)),
+      // Query classes
+      this.db
+        .select({
+          id: classes.id,
+          name: classes.name,
+          schoolId: classes.schoolId,
+          districtId: classes.districtId,
+        })
+        .from(administrationClasses)
+        .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+        .where(eq(administrationClasses.administrationId, administrationId)),
+      // Query groups
+      this.db
+        .select({
+          id: groups.id,
+          name: groups.name,
+        })
+        .from(administrationGroups)
+        .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
+        .where(eq(administrationGroups.administrationId, administrationId)),
+    ]);
 
-  /**
-   * Get groups assigned to an administration.
-   *
-   * @param administrationId - The administration ID to get groups for
-   * @param options - Pagination and sorting options
-   * @param filterIds - Optional array of group IDs to constrain results (FGA-resolved accessible IDs)
-   * @returns Paginated result with groups
-   */
-  async getGroupsByAdministrationId(
-    administrationId: string,
-    options: ListGroupsByAdministrationOptions,
-    filterIds?: string[],
-  ): Promise<PaginatedResult<Group>> {
-    const { page, perPage, orderBy } = options;
-    const offset = (page - 1) * perPage;
+    // Split orgs into districts and schools
+    const districts = orgResults
+      .filter((row) => row.orgType === OrgType.DISTRICT)
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+      }));
 
-    const conditions: SQL[] = [eq(administrationGroups.administrationId, administrationId)];
-    if (filterIds && filterIds.length > 0) {
-      conditions.push(inArray(groups.id, filterIds));
-    }
-    const baseCondition = and(...conditions);
-
-    const countResult = await this.db
-      .select({ count: count() })
-      .from(administrationGroups)
-      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
-      .where(baseCondition);
-
-    const totalItems = countResult[0]?.count ?? 0;
-
-    if (totalItems === 0) {
-      return { items: [], totalItems: 0 };
-    }
-
-    // Use explicit column mapping for type safety
-    // Cast is safe because API contract validates the sort field before reaching repository
-    const sortField = orderBy?.field as AdministrationGroupSortFieldType | undefined;
-    const sortColumn = sortField ? GROUP_SORT_COLUMNS[sortField] : groups.name;
-    const primaryOrder = orderBy?.direction === SortOrder.DESC ? desc(sortColumn) : asc(sortColumn);
-
-    const dataResult = await this.db
-      .select({ group: groups })
-      .from(administrationGroups)
-      .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
-      .where(baseCondition)
-      // Add a stable secondary sort on groups.id to ensure deterministic pagination
-      .orderBy(primaryOrder, asc(groups.id))
-      .limit(perPage)
-      .offset(offset);
+    // Schools always have a parentOrgId (their district), but the column is nullable
+    // in the schema because districts don't have parents. Filter + assert for type safety.
+    const schools = orgResults
+      .filter(
+        (row): row is typeof row & { parentOrgId: string } =>
+          row.orgType === OrgType.SCHOOL && row.parentOrgId !== null,
+      )
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        parentOrgId: row.parentOrgId,
+      }));
 
     return {
-      items: dataResult.map((row) => row.group),
-      totalItems,
+      districts,
+      schools,
+      classes: classResults,
+      groups: groupResults,
     };
   }
 

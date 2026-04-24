@@ -334,16 +334,16 @@ tests:
           can_delete: false
           can_create_run: false
 
-  - name: School teacher sees class-level administration (descendant access)
+  - name: School teacher CANNOT see class-level administration (no descendant access for educators)
     check:
       - user: user:school-teacher
         object: administration:admin-at-class
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
-          can_list_users: true
+          can_list: false
+          can_read: false
+          can_list_users: false
           can_create: false
           can_update: false
           can_delete: false
@@ -437,15 +437,15 @@ tests:
           can_delete: false
           can_create_run: false
 
-  - name: District-level educator can list/read but NOT create/update/delete class-assigned administration
+  - name: District-level educator CANNOT see class-assigned administration (no descendant access for educators)
     check:
       - user: user:district-teacher
         object: administration:admin-at-class
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_delete: false
@@ -892,7 +892,7 @@ tests:
             - administration:admin-multi
             - administration:admin-school-and-group
 
-  - name: School teacher sees all administrations in their ancestor tree
+  - name: School teacher sees school/district administrations but NOT class (no descendant access for educators)
     list_objects:
       - user: user:school-teacher
         type: administration
@@ -902,7 +902,6 @@ tests:
           can_list:
             - administration:admin-at-district
             - administration:admin-at-school
-            - administration:admin-at-class
             - administration:admin-multi
             - administration:admin-school-and-group
 
@@ -1008,7 +1007,7 @@ tests:
 
   # ─── list_users ───────────────────────────────────────────────────
 
-  - name: Class-assigned administration lists all users with can_list
+  - name: Class-assigned administration lists all users with can_list (excludes school/district educators)
     list_users:
       - object: administration:admin-at-class
         user_filter:
@@ -1019,11 +1018,8 @@ tests:
           can_list:
             users:
               - user:district-admin
-              - user:district-teacher
               - user:sys-admin
               - user:site-admin
-              - user:district-proctor
-              - user:school-teacher
               - user:school-counselor
               - user:class-teacher
               - user:class-aide

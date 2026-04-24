@@ -24,29 +24,10 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.get(user!, id),
     },
-    listDistricts: {
+    getAssignees: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
-      handler: async ({ req: { user }, params: { id }, query }) =>
-        AdministrationsController.listDistricts(user!, id, query),
-    },
-    listSchools: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
-      middleware: [AuthGuardMiddleware],
-      handler: async ({ req: { user }, params: { id }, query }) =>
-        AdministrationsController.listSchools(user!, id, query),
-    },
-    listClasses: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
-      middleware: [AuthGuardMiddleware],
-      handler: async ({ req: { user }, params: { id }, query }) =>
-        AdministrationsController.listClasses(user!, id, query),
-    },
-    listGroups: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
-      middleware: [AuthGuardMiddleware],
-      handler: async ({ req: { user }, params: { id }, query }) =>
-        AdministrationsController.listGroups(user!, id, query),
+      handler: async ({ req: { user }, params: { id } }) => AdministrationsController.getAssignees(user!, id),
     },
     listTaskVariants: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo

@@ -1,7 +1,7 @@
 /**
  * Integration tests for ClassRepository.
  *
- * Tests custom methods (getById, getAuthorizedById) against the
+ * Tests custom methods (getById, getUsersByClassId, listBySchoolId) against the
  * real database with the base fixture's org hierarchy and classes.
  *
  * ## BaseFixture Structure Used
@@ -50,112 +50,6 @@ describe('ClassRepository', () => {
     });
   });
 
-  describe('getAuthorizedById', () => {
-    describe('returns class when user has access', () => {
-      it('district admin can access class in their district', async () => {
-        const result = await repository.getAuthorizedById(
-          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolA.id,
-        );
-
-        expect(result).not.toBeNull();
-        expect(result!.id).toBe(baseFixture.classInSchoolA.id);
-      });
-
-      it('school teacher can access class in their school', async () => {
-        const result = await repository.getAuthorizedById(
-          { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.TEACHER] },
-          baseFixture.classInSchoolA.id,
-        );
-
-        expect(result).not.toBeNull();
-        expect(result!.id).toBe(baseFixture.classInSchoolA.id);
-      });
-
-      it('class student can access their class', async () => {
-        const result = await repository.getAuthorizedById(
-          { userId: baseFixture.classAStudent.id, allowedRoles: [UserRole.STUDENT] },
-          baseFixture.classInSchoolA.id,
-        );
-
-        expect(result).not.toBeNull();
-        expect(result!.id).toBe(baseFixture.classInSchoolA.id);
-      });
-    });
-
-    describe('supervisory descendant access (district → school → class)', () => {
-      it('district admin can access all classes in all schools under their district', async () => {
-        // District admin should see classInSchoolA (under schoolA in district)
-        const resultA = await repository.getAuthorizedById(
-          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolA.id,
-        );
-        expect(resultA).not.toBeNull();
-        expect(resultA!.id).toBe(baseFixture.classInSchoolA.id);
-
-        // District admin should also see classInSchoolB (under schoolB in same district)
-        const resultB = await repository.getAuthorizedById(
-          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolB.id,
-        );
-        expect(resultB).not.toBeNull();
-        expect(resultB!.id).toBe(baseFixture.classInSchoolB.id);
-      });
-
-      it('multi-assigned user can access classes via district membership', async () => {
-        // multiAssignedUser has ADMINISTRATOR at district and TEACHER at schoolA
-        // Should be able to access classInSchoolB via district membership
-        const result = await repository.getAuthorizedById(
-          { userId: baseFixture.multiAssignedUser.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolB.id,
-        );
-        expect(result).not.toBeNull();
-        expect(result!.id).toBe(baseFixture.classInSchoolB.id);
-      });
-    });
-
-    describe('returns null when user lacks access', () => {
-      it('school A teacher cannot access class in school B', async () => {
-        const result = await repository.getAuthorizedById(
-          { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.TEACHER] },
-          baseFixture.classInSchoolB.id,
-        );
-
-        expect(result).toBeNull();
-      });
-
-      it('returns null when rostering has ended', async () => {
-        const classWithRosteringEnded = await ClassFactory.create({
-          schoolId: baseFixture.schoolA.id,
-          districtId: baseFixture.district.id,
-          rosteringEnded: new Date(),
-        });
-
-        await UserClassFactory.create({
-          userId: baseFixture.districtAdmin.id,
-          classId: classWithRosteringEnded.id,
-          role: UserRole.ADMINISTRATOR,
-        });
-
-        const result = await repository.getAuthorizedById(
-          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          classWithRosteringEnded.id,
-        );
-
-        expect(result).toBeNull();
-      });
-    });
-
-    it('returns null for nonexistent class ID', async () => {
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        '00000000-0000-0000-0000-000000000000',
-      );
-
-      expect(result).toBeNull();
-    });
-  });
-
   describe('getUsersByClassId', () => {
     // baseFixture.classInSchoolA has exactly 2 active users:
     // - classAStudent (student)
@@ -177,23 +71,6 @@ describe('ClassRepository', () => {
       expect(userIds).toContain(baseFixture.classATeacher.id);
       // Expired enrollment should be excluded
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
-    });
-
-    it('returns enrollmentStart and role for each user', async () => {
-      const result = await repository.getUsersByClassId(baseFixture.classInSchoolA.id, {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.items).toHaveLength(2);
-
-      const student = result.items.find((u) => u.id === baseFixture.classAStudent.id);
-      const teacher = result.items.find((u) => u.id === baseFixture.classATeacher.id);
-
-      expect(student?.role).toBe(UserRole.STUDENT);
-      expect(student?.enrollmentStart).toBeInstanceOf(Date);
-      expect(teacher?.role).toBe(UserRole.TEACHER);
-      expect(teacher?.enrollmentStart).toBeInstanceOf(Date);
     });
 
     it('returns empty for class with no enrolled users', async () => {
@@ -294,11 +171,27 @@ describe('ClassRepository', () => {
       expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
     });
 
-    it('returns empty for nonexistent class ID', async () => {
-      const result = await repository.getUsersByClassId('00000000-0000-0000-0000-000000000000', {
-        page: 1,
-        perPage: 100,
+    it('returns empty for expired class (rosteringEnded set)', async () => {
+      // Create a class with rosteringEnded set
+      const ClassFactory = (await import('../test-support/factories/class.factory')).ClassFactory;
+      const UserClassFactory = (await import('../test-support/factories/user-class.factory')).UserClassFactory;
+
+      const expiredClass = await ClassFactory.create({
+        name: 'Expired Class',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+        rosteringEnded: new Date('2023-12-31'),
       });
+
+      const student = await UserFactory.create({ nameLast: 'ExpiredClassStudent' });
+      await UserClassFactory.create({
+        userId: student.id,
+        classId: expiredClass.id,
+        role: UserRole.STUDENT,
+      });
+
+      // District admin should get empty results for expired class
+      const result = await repository.getUsersByClassId(expiredClass.id, { page: 1, perPage: 100 });
 
       expect(result.items).toEqual([]);
       expect(result.totalItems).toBe(0);
@@ -334,7 +227,7 @@ describe('ClassRepository', () => {
 
         // Verify all returned users have the filtered role in EnrolledUserEntity
         for (const user of result.items) {
-          expect(user.role).toBe(UserRole.STUDENT);
+          expect(user.roles).toContain(UserRole.STUDENT);
         }
       });
 
@@ -414,6 +307,7 @@ describe('ClassRepository', () => {
         expect(result.totalItems).toBe(1);
         expect(result.items).toHaveLength(1);
         expect(result.items[0]!.id).toBe(grade5Student.id);
+        expect(result.items[0]!.roles).toContain(UserRole.STUDENT);
       });
 
       it('returns empty when no users match filter', async () => {
@@ -434,105 +328,6 @@ describe('ClassRepository', () => {
 
         expect(result.totalItems).toBe(0);
         expect(result.items).toEqual([]);
-      });
-    });
-  });
-
-  describe('getAuthorizedUsersByClassId', () => {
-    // baseFixture.classInSchoolA has exactly 2 active users:
-    // - classAStudent (student)
-    // - classATeacher (teacher)
-    // - expiredClassStudent is excluded due to expired enrollment
-
-    describe('returns users when requester has access', () => {
-      it('district admin can list users in class within their district', async () => {
-        const result = await repository.getAuthorizedUsersByClassId(
-          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolA.id,
-          { page: 1, perPage: 100 },
-        );
-
-        // Exactly 2 active users in classInSchoolA
-        expect(result.totalItems).toBe(2);
-        expect(result.items).toHaveLength(2);
-
-        const userIds = result.items.map((u) => u.id);
-        expect(userIds).toContain(baseFixture.classAStudent.id);
-        expect(userIds).toContain(baseFixture.classATeacher.id);
-        // Expired enrollment should be excluded
-        expect(userIds).not.toContain(baseFixture.expiredClassStudent.id);
-      });
-
-      it('school teacher can list users in class within their school', async () => {
-        const result = await repository.getAuthorizedUsersByClassId(
-          { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.TEACHER] },
-          baseFixture.classInSchoolA.id,
-          { page: 1, perPage: 100 },
-        );
-
-        expect(result.totalItems).toBe(2);
-        expect(result.items).toHaveLength(2);
-        const userIds = result.items.map((u) => u.id);
-        expect(userIds).toContain(baseFixture.classAStudent.id);
-        expect(userIds).toContain(baseFixture.classATeacher.id);
-      });
-
-      it('class teacher can list users in their assigned class', async () => {
-        const result = await repository.getAuthorizedUsersByClassId(
-          { userId: baseFixture.classATeacher.id, allowedRoles: [UserRole.TEACHER] },
-          baseFixture.classInSchoolA.id,
-          { page: 1, perPage: 100 },
-        );
-
-        expect(result.totalItems).toBe(2);
-        expect(result.items).toHaveLength(2);
-        const userIds = result.items.map((u) => u.id);
-        expect(userIds).toContain(baseFixture.classAStudent.id);
-        expect(userIds).toContain(baseFixture.classATeacher.id);
-      });
-    });
-
-    describe('cross-org isolation', () => {
-      it('district admin can list users in classes across all schools in their district', async () => {
-        // District admin should see users in classInSchoolA (2 active users)
-        const resultA = await repository.getAuthorizedUsersByClassId(
-          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolA.id,
-          { page: 1, perPage: 100 },
-        );
-        expect(resultA.totalItems).toBe(2);
-        expect(resultA.items).toHaveLength(2);
-
-        // District admin should also see classInSchoolB (no users in baseFixture)
-        const resultB = await repository.getAuthorizedUsersByClassId(
-          { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolB.id,
-          { page: 1, perPage: 100 },
-        );
-        expect(resultB.totalItems).toBe(0);
-        expect(resultB.items).toHaveLength(0);
-      });
-
-      it('district B admin cannot access classes in district A', async () => {
-        // District B admin CANNOT access classInSchoolA (in district A)
-        const result = await repository.getAuthorizedUsersByClassId(
-          { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-          baseFixture.classInSchoolA.id,
-          { page: 1, perPage: 100 },
-        );
-        expect(result.items).toEqual([]);
-        expect(result.totalItems).toBe(0);
-      });
-
-      it('school A teacher cannot list users in class in school B', async () => {
-        const result = await repository.getAuthorizedUsersByClassId(
-          { userId: baseFixture.schoolATeacher.id, allowedRoles: [UserRole.TEACHER] },
-          baseFixture.classInSchoolB.id,
-          { page: 1, perPage: 100 },
-        );
-
-        expect(result.items).toEqual([]);
-        expect(result.totalItems).toBe(0);
       });
     });
   });

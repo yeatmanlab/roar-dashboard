@@ -1,11 +1,8 @@
 /**
  * Integration tests for AdministrationRepository.
  *
- * Tests custom methods (listAll, getAuthorizedById) against the
+ * Tests custom methods (listAll, getAssignedUserCountsByAdministrationIds, getAssignees) against the
  * real database with the base fixture's org hierarchy and administrations.
- *
- * getAssignedUserCountsByAdministrationIds is covered by the existing
- * administration.access-controls.integration.test.ts — only light coverage here.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { baseFixture } from '../test-support/fixtures';
@@ -17,7 +14,6 @@ import { AdministrationTaskVariantFactory } from '../test-support/factories/admi
 import { TaskFactory } from '../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
 import { AdministrationRepository } from './administration.repository';
-import { UserRole } from '../enums/user-role.enum';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 
 describe('AdministrationRepository', () => {
@@ -138,409 +134,302 @@ describe('AdministrationRepository', () => {
     });
   });
 
-  describe('getAuthorizedById', () => {
-    it('returns administration when user has access', async () => {
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(baseFixture.administrationAssignedToDistrict.id);
-    });
-
-    it('returns null when user lacks access', async () => {
-      // District B admin should not have access to District A's administration
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtBAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(result).toBeNull();
-    });
-
-    it('returns null for nonexistent administration ID', async () => {
-      const result = await repository.getAuthorizedById(
-        { userId: baseFixture.districtAdmin.id, allowedRoles: [UserRole.ADMINISTRATOR] },
-        '00000000-0000-0000-0000-000000000000',
-      );
-
-      expect(result).toBeNull();
-    });
-  });
-
   describe('getAssignedUserCountsByAdministrationIds', () => {
-    it('returns counts for administrations', async () => {
+    it('counts users via direct group path', async () => {
       const counts = await repository.getAssignedUserCountsByAdministrationIds([
         baseFixture.administrationAssignedToGroup.id,
       ]);
 
-      // Group has exactly 1 user (groupStudent)
+      // Group has exactly 1 user (groupStudent); futureGroupStudent is excluded
       expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
     });
-  });
 
-  describe('getDistrictsByAdministrationId', () => {
-    it('returns districts assigned to an administration', async () => {
-      // administrationAssignedToDistrict is assigned to district (which is a district org)
-      const result = await repository.getDistrictsByAdministrationId(baseFixture.administrationAssignedToDistrict.id, {
-        page: 1,
-        perPage: 100,
-      });
+    it('counts users via direct class path', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
 
-      expect(result.totalItems).toBe(1);
-      expect(result.items).toHaveLength(1);
-      expect(result.items[0]!.id).toBe(baseFixture.district.id);
-      expect(result.items[0]!.orgType).toBe('district');
+      // classInSchoolA has 2 active users (classAStudent, classATeacher); expiredClassStudent excluded
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
     });
 
-    it('returns empty when administration is assigned to non-district orgs', async () => {
-      // administrationAssignedToSchoolA is assigned to schoolA (which is a school org, not district)
-      const result = await repository.getDistrictsByAdministrationId(baseFixture.administrationAssignedToSchoolA.id, {
-        page: 1,
-        perPage: 100,
-      });
+    it('counts users via org hierarchy paths (viaOrgToOrgUsers and viaOrgToClassUsers)', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToDistrict.id,
+      ]);
 
-      expect(result.totalItems).toBe(0);
-      expect(result.items).toEqual([]);
+      // administrationAssignedToDistrict is assigned to district, which via ltree includes:
+      // - viaOrgToOrgUsers: districtAdmin, schoolAAdmin, schoolAPrincipal, schoolATeacher, schoolAStudent,
+      //   schoolBStudent, multiAssignedUser (district+schoolA), grade5Student, grade3Student, grade5EllStudent
+      // - viaOrgToClassUsers: classAStudent, classATeacher (active in classInSchoolA under district)
+      // Excluded: expiredEnrollmentStudent, futureEnrollmentStudent, expiredClassStudent
+      const count = counts.get(baseFixture.administrationAssignedToDistrict.id);
+      expect(count).toBe(12);
     });
 
-    it('returns empty when administration is assigned to classes/groups only', async () => {
-      // administrationAssignedToClassA is only assigned to a class, not any org
-      const result = await repository.getDistrictsByAdministrationId(baseFixture.administrationAssignedToClassA.id, {
-        page: 1,
-        perPage: 100,
-      });
+    it('deduplicates users reachable via multiple paths', async () => {
+      // multiAssignedUser has active enrollments at both district AND schoolA. Both orgs are in the
+      // district subtree, so viaOrgToOrgUsers emits two rows for them (one per enrollment).
+      // The full UNION ALL produces 13 rows (11 single-path users + 2 rows for multiAssignedUser),
+      // but COUNT(DISTINCT userId) must collapse them to 12 unique users.
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToDistrict.id,
+      ]);
 
-      expect(result.totalItems).toBe(0);
-      expect(result.items).toEqual([]);
+      const count = counts.get(baseFixture.administrationAssignedToDistrict.id) ?? 0;
+      expect(count).toBe(12); // would be 13 with COUNT instead of COUNT(DISTINCT)
     });
 
-    it('returns multiple districts when administration is assigned to multiple districts', async () => {
-      // Create an administration assigned to both districts
-      const multiDistrictAdmin = await AdministrationFactory.create({
-        name: 'Multi-District Admin',
+    it('returns count for multiple administrations in one call', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToGroup.id,
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
+
+      expect(counts.get(baseFixture.administrationAssignedToGroup.id)).toBe(1);
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+    });
+
+    it('omits entry from returned Map for administration with no assigned users', async () => {
+      const emptyAdmin = await AdministrationFactory.create({
+        name: 'No Users Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([emptyAdmin.id]);
+
+      // The Map should have no entry for an administration with 0 users
+      // (callers use counts.get(id) ?? 0 to handle the missing entry)
+      expect(counts.has(emptyAdmin.id)).toBe(false);
+    });
+
+    it('excludes users with expired org enrollments', async () => {
+      // Create an administration assigned to schoolA, which has expiredEnrollmentStudent
+      // with an enrollment that ended 7 days ago
+      const admin = await AdministrationFactory.create({
+        name: 'Expired Enrollment Test Admin',
         createdBy: baseFixture.districtAdmin.id,
       });
       await AdministrationOrgFactory.create({
-        administrationId: multiDistrictAdmin.id,
-        orgId: baseFixture.district.id,
+        administrationId: admin.id,
+        orgId: baseFixture.schoolA.id,
+      });
+
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
+
+      const count = counts.get(admin.id) ?? 0;
+
+      // schoolA has 5 active org-level users (schoolAAdmin, schoolAPrincipal, schoolATeacher,
+      // schoolAStudent, multiAssignedUser) + 2 active class-level users (classAStudent, classATeacher).
+      // expiredEnrollmentStudent's enrollment ended 7 days ago and must be excluded.
+      expect(count).toBe(7);
+    });
+
+    it('excludes users with future org enrollments', async () => {
+      // Create an administration assigned to schoolA, which has futureEnrollmentStudent
+      // with an enrollment that starts 7 days from now
+      const admin = await AdministrationFactory.create({
+        name: 'Future Enrollment Test Admin',
+        createdBy: baseFixture.districtAdmin.id,
       });
       await AdministrationOrgFactory.create({
-        administrationId: multiDistrictAdmin.id,
-        orgId: baseFixture.districtB.id,
+        administrationId: admin.id,
+        orgId: baseFixture.schoolA.id,
       });
 
-      const result = await repository.getDistrictsByAdministrationId(multiDistrictAdmin.id, {
-        page: 1,
-        perPage: 100,
-        orderBy: { field: 'name', direction: 'asc' },
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([admin.id]);
+
+      // futureEnrollmentStudent's enrollment starts 7 days from now and must be excluded,
+      // leaving the same 7 active users reachable from schoolA.
+      expect(counts.get(admin.id)).toBe(7);
+    });
+
+    it('excludes users with expired class enrollments', async () => {
+      const counts = await repository.getAssignedUserCountsByAdministrationIds([
+        baseFixture.administrationAssignedToClassA.id,
+      ]);
+
+      // expiredClassStudent has enrollment that ended 7 days ago — should be excluded
+      // Only classAStudent and classATeacher have active enrollments
+      expect(counts.get(baseFixture.administrationAssignedToClassA.id)).toBe(2);
+    });
+
+    it('throws when called with an empty administrationIds array', async () => {
+      await expect(repository.getAssignedUserCountsByAdministrationIds([])).rejects.toThrow();
+    });
+  });
+
+  describe('getAssignees', () => {
+    it('returns empty lists when administration has no assignees', async () => {
+      const admin = await AdministrationFactory.create({
+        name: 'No Assignees Admin',
+        createdBy: baseFixture.districtAdmin.id,
       });
 
-      expect(result.totalItems).toBe(2);
-      expect(result.items).toHaveLength(2);
+      const result = await repository.getAssignees(admin.id);
 
-      const districtIds = result.items.map((d) => d.id);
+      expect(result.districts).toEqual([]);
+      expect(result.schools).toEqual([]);
+      expect(result.classes).toEqual([]);
+      expect(result.groups).toEqual([]);
+    });
+
+    it('returns districts correctly', async () => {
+      const admin = await AdministrationFactory.create({
+        name: 'District Assignees Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: admin.id,
+        orgId: baseFixture.district.id,
+      });
+
+      const result = await repository.getAssignees(admin.id);
+
+      expect(result.districts).toHaveLength(1);
+      expect(result.districts[0]!.id).toBe(baseFixture.district.id);
+      expect(result.districts[0]!.name).toBe(baseFixture.district.name);
+      expect(result.schools).toEqual([]);
+      expect(result.classes).toEqual([]);
+      expect(result.groups).toEqual([]);
+    });
+
+    it('returns schools correctly', async () => {
+      const admin = await AdministrationFactory.create({
+        name: 'School Assignees Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({
+        administrationId: admin.id,
+        orgId: baseFixture.schoolA.id,
+      });
+
+      const result = await repository.getAssignees(admin.id);
+
+      expect(result.schools).toHaveLength(1);
+      expect(result.schools[0]!.id).toBe(baseFixture.schoolA.id);
+      expect(result.schools[0]!.name).toBe(baseFixture.schoolA.name);
+      expect(result.schools[0]!.parentOrgId).toBe(baseFixture.district.id);
+      expect(result.districts).toEqual([]);
+      expect(result.classes).toEqual([]);
+      expect(result.groups).toEqual([]);
+    });
+
+    it('returns classes with schoolId and districtId', async () => {
+      const admin = await AdministrationFactory.create({
+        name: 'Class Assignees Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationClassFactory.create({
+        administrationId: admin.id,
+        classId: baseFixture.classInSchoolA.id,
+      });
+
+      const result = await repository.getAssignees(admin.id);
+
+      expect(result.classes).toHaveLength(1);
+      expect(result.classes[0]!.id).toBe(baseFixture.classInSchoolA.id);
+      expect(result.classes[0]!.name).toBe(baseFixture.classInSchoolA.name);
+      expect(result.classes[0]!.schoolId).toBe(baseFixture.schoolA.id);
+      expect(result.classes[0]!.districtId).toBe(baseFixture.district.id);
+      expect(result.districts).toEqual([]);
+      expect(result.schools).toEqual([]);
+      expect(result.groups).toEqual([]);
+    });
+
+    it('returns groups correctly', async () => {
+      const admin = await AdministrationFactory.create({
+        name: 'Group Assignees Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationGroupFactory.create({
+        administrationId: admin.id,
+        groupId: baseFixture.group.id,
+      });
+
+      const result = await repository.getAssignees(admin.id);
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0]!.id).toBe(baseFixture.group.id);
+      expect(result.groups[0]!.name).toBe(baseFixture.group.name);
+      expect(result.districts).toEqual([]);
+      expect(result.schools).toEqual([]);
+      expect(result.classes).toEqual([]);
+    });
+
+    it('returns mixed assignee types correctly', async () => {
+      const admin = await AdministrationFactory.create({
+        name: 'Mixed Assignees Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await Promise.all([
+        AdministrationOrgFactory.create({
+          administrationId: admin.id,
+          orgId: baseFixture.district.id,
+        }),
+        AdministrationOrgFactory.create({
+          administrationId: admin.id,
+          orgId: baseFixture.schoolA.id,
+        }),
+        AdministrationClassFactory.create({
+          administrationId: admin.id,
+          classId: baseFixture.classInSchoolA.id,
+        }),
+        AdministrationGroupFactory.create({
+          administrationId: admin.id,
+          groupId: baseFixture.group.id,
+        }),
+      ]);
+
+      const result = await repository.getAssignees(admin.id);
+
+      expect(result.districts).toHaveLength(1);
+      expect(result.districts[0]!.id).toBe(baseFixture.district.id);
+
+      expect(result.schools).toHaveLength(1);
+      expect(result.schools[0]!.id).toBe(baseFixture.schoolA.id);
+
+      expect(result.classes).toHaveLength(1);
+      expect(result.classes[0]!.id).toBe(baseFixture.classInSchoolA.id);
+
+      expect(result.groups).toHaveLength(1);
+      expect(result.groups[0]!.id).toBe(baseFixture.group.id);
+    });
+
+    it('returns multiple assignees of the same type', async () => {
+      const admin = await AdministrationFactory.create({
+        name: 'Multiple Assignees Same Type Admin',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await Promise.all([
+        AdministrationOrgFactory.create({
+          administrationId: admin.id,
+          orgId: baseFixture.district.id,
+        }),
+        AdministrationOrgFactory.create({
+          administrationId: admin.id,
+          orgId: baseFixture.districtB.id,
+        }),
+      ]);
+
+      const result = await repository.getAssignees(admin.id);
+
+      expect(result.districts).toHaveLength(2);
+      const districtIds = result.districts.map((d) => d.id);
       expect(districtIds).toContain(baseFixture.district.id);
       expect(districtIds).toContain(baseFixture.districtB.id);
+      expect(result.schools).toEqual([]);
+      expect(result.classes).toEqual([]);
+      expect(result.groups).toEqual([]);
     });
 
-    it('respects pagination', async () => {
-      // Create an administration assigned to both districts
-      const paginatedAdmin = await AdministrationFactory.create({
-        name: 'Paginated Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: paginatedAdmin.id,
-        orgId: baseFixture.district.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: paginatedAdmin.id,
-        orgId: baseFixture.districtB.id,
-      });
+    it('returns empty for nonexistent administration ID', async () => {
+      const result = await repository.getAssignees('00000000-0000-0000-0000-000000000000');
 
-      // Get first page
-      const page1 = await repository.getDistrictsByAdministrationId(paginatedAdmin.id, {
-        page: 1,
-        perPage: 1,
-        orderBy: { field: 'name', direction: 'asc' },
-      });
-
-      expect(page1.totalItems).toBe(2);
-      expect(page1.items).toHaveLength(1);
-
-      // Get second page
-      const page2 = await repository.getDistrictsByAdministrationId(paginatedAdmin.id, {
-        page: 2,
-        perPage: 1,
-        orderBy: { field: 'name', direction: 'asc' },
-      });
-
-      expect(page2.totalItems).toBe(2);
-      expect(page2.items).toHaveLength(1);
-
-      // Pages should have different items
-      expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
-    });
-
-    it('sorts by name ascending by default', async () => {
-      // Create an administration assigned to both districts
-      const sortTestAdmin = await AdministrationFactory.create({
-        name: 'Sort Test Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: sortTestAdmin.id,
-        orgId: baseFixture.district.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: sortTestAdmin.id,
-        orgId: baseFixture.districtB.id,
-      });
-
-      const result = await repository.getDistrictsByAdministrationId(sortTestAdmin.id, {
-        page: 1,
-        perPage: 100,
-        orderBy: { field: 'name', direction: 'asc' },
-      });
-
-      expect(result.items.length).toBe(2);
-      // Verify ascending order
-      expect(result.items[0]!.name.toLowerCase() <= result.items[1]!.name.toLowerCase()).toBe(true);
-    });
-
-    it('supports descending sort order', async () => {
-      // Create an administration assigned to both districts
-      const descSortAdmin = await AdministrationFactory.create({
-        name: 'Desc Sort Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: descSortAdmin.id,
-        orgId: baseFixture.district.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: descSortAdmin.id,
-        orgId: baseFixture.districtB.id,
-      });
-
-      const result = await repository.getDistrictsByAdministrationId(descSortAdmin.id, {
-        page: 1,
-        perPage: 100,
-        orderBy: { field: 'name', direction: 'desc' },
-      });
-
-      expect(result.items.length).toBe(2);
-      // Verify descending order
-      expect(result.items[0]!.name.toLowerCase() >= result.items[1]!.name.toLowerCase()).toBe(true);
-    });
-
-    it('returns empty for non-existent administration ID', async () => {
-      const result = await repository.getDistrictsByAdministrationId('00000000-0000-0000-0000-000000000000', {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.totalItems).toBe(0);
-      expect(result.items).toEqual([]);
-    });
-  });
-
-  describe('getUserRolesForAdministration', () => {
-    it('returns roles for user with access via org', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtAdmin.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toContain('administrator');
-    });
-
-    it('returns empty array for user without access', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.districtBAdmin.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toHaveLength(0);
-    });
-
-    it('returns multiple roles for user with multiple memberships', async () => {
-      const roles = await repository.getUserRolesForAdministration(
-        baseFixture.multiAssignedUser.id,
-        baseFixture.administrationAssignedToDistrict.id,
-      );
-
-      expect(roles).toContain('administrator');
-      expect(roles).toContain('teacher');
-    });
-  });
-
-  describe('getSchoolsByAdministrationId', () => {
-    it('returns schools assigned to an administration', async () => {
-      // administrationAssignedToSchoolA is assigned to schoolA (which is a school org)
-      const result = await repository.getSchoolsByAdministrationId(baseFixture.administrationAssignedToSchoolA.id, {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.totalItems).toBe(1);
-      expect(result.items).toHaveLength(1);
-      expect(result.items[0]!.id).toBe(baseFixture.schoolA.id);
-      expect(result.items[0]!.orgType).toBe('school');
-    });
-
-    it('returns empty when administration is assigned to non-school orgs', async () => {
-      // administrationAssignedToDistrict is assigned to district (which is a district org, not school)
-      const result = await repository.getSchoolsByAdministrationId(baseFixture.administrationAssignedToDistrict.id, {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.totalItems).toBe(0);
-      expect(result.items).toEqual([]);
-    });
-
-    it('returns empty when administration is assigned to classes/groups only', async () => {
-      // administrationAssignedToClassA is only assigned to a class, not any org
-      const result = await repository.getSchoolsByAdministrationId(baseFixture.administrationAssignedToClassA.id, {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.totalItems).toBe(0);
-      expect(result.items).toEqual([]);
-    });
-
-    it('returns multiple schools when administration is assigned to multiple schools', async () => {
-      // Create an administration assigned to both schools
-      const multiSchoolAdmin = await AdministrationFactory.create({
-        name: 'Multi-School Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: multiSchoolAdmin.id,
-        orgId: baseFixture.schoolA.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: multiSchoolAdmin.id,
-        orgId: baseFixture.schoolB.id,
-      });
-
-      const result = await repository.getSchoolsByAdministrationId(multiSchoolAdmin.id, {
-        page: 1,
-        perPage: 100,
-        orderBy: { field: 'name', direction: 'asc' },
-      });
-
-      expect(result.totalItems).toBe(2);
-      expect(result.items).toHaveLength(2);
-
-      const schoolIds = result.items.map((s) => s.id);
-      expect(schoolIds).toContain(baseFixture.schoolA.id);
-      expect(schoolIds).toContain(baseFixture.schoolB.id);
-    });
-
-    it('respects pagination', async () => {
-      // Create an administration assigned to both schools
-      const paginatedAdmin = await AdministrationFactory.create({
-        name: 'Paginated School Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: paginatedAdmin.id,
-        orgId: baseFixture.schoolA.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: paginatedAdmin.id,
-        orgId: baseFixture.schoolB.id,
-      });
-
-      // Get first page
-      const page1 = await repository.getSchoolsByAdministrationId(paginatedAdmin.id, {
-        page: 1,
-        perPage: 1,
-        orderBy: { field: 'name', direction: 'asc' },
-      });
-
-      expect(page1.totalItems).toBe(2);
-      expect(page1.items).toHaveLength(1);
-
-      // Get second page
-      const page2 = await repository.getSchoolsByAdministrationId(paginatedAdmin.id, {
-        page: 2,
-        perPage: 1,
-        orderBy: { field: 'name', direction: 'asc' },
-      });
-
-      expect(page2.totalItems).toBe(2);
-      expect(page2.items).toHaveLength(1);
-
-      // Pages should have different items
-      expect(page1.items[0]!.id).not.toBe(page2.items[0]!.id);
-    });
-
-    it('sorts by name ascending by default', async () => {
-      // Create an administration assigned to both schools
-      const sortTestAdmin = await AdministrationFactory.create({
-        name: 'Sort Test School Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: sortTestAdmin.id,
-        orgId: baseFixture.schoolA.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: sortTestAdmin.id,
-        orgId: baseFixture.schoolB.id,
-      });
-
-      const result = await repository.getSchoolsByAdministrationId(sortTestAdmin.id, {
-        page: 1,
-        perPage: 100,
-        orderBy: { field: 'name', direction: 'asc' },
-      });
-
-      expect(result.items.length).toBe(2);
-      // Verify ascending order
-      expect(result.items[0]!.name.toLowerCase() <= result.items[1]!.name.toLowerCase()).toBe(true);
-    });
-
-    it('supports descending sort order', async () => {
-      // Create an administration assigned to both schools
-      const descSortAdmin = await AdministrationFactory.create({
-        name: 'Desc Sort School Admin',
-        createdBy: baseFixture.districtAdmin.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: descSortAdmin.id,
-        orgId: baseFixture.schoolA.id,
-      });
-      await AdministrationOrgFactory.create({
-        administrationId: descSortAdmin.id,
-        orgId: baseFixture.schoolB.id,
-      });
-
-      const result = await repository.getSchoolsByAdministrationId(descSortAdmin.id, {
-        page: 1,
-        perPage: 100,
-        orderBy: { field: 'name', direction: 'desc' },
-      });
-
-      expect(result.items.length).toBe(2);
-      // Verify descending order
-      expect(result.items[0]!.name.toLowerCase() >= result.items[1]!.name.toLowerCase()).toBe(true);
-    });
-
-    it('returns empty for non-existent administration ID', async () => {
-      const result = await repository.getSchoolsByAdministrationId('00000000-0000-0000-0000-000000000000', {
-        page: 1,
-        perPage: 100,
-      });
-
-      expect(result.totalItems).toBe(0);
-      expect(result.items).toEqual([]);
+      expect(result.districts).toEqual([]);
+      expect(result.schools).toEqual([]);
+      expect(result.classes).toEqual([]);
+      expect(result.groups).toEqual([]);
     });
   });
 

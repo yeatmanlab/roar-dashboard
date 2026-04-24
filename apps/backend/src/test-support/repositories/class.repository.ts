@@ -11,10 +11,7 @@ import type { ClassRepository } from '../../repositories/class.repository';
 export function createMockClassRepository(): MockedObject<ClassRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
-    getAuthorizedById: vi.fn(),
-    getUserRolesForClass: vi.fn(),
     getUsersByClassId: vi.fn(),
-    getAuthorizedUsersByClassId: vi.fn(),
     listBySchoolId: vi.fn(),
   } as unknown as MockedObject<ClassRepository>;
 }
