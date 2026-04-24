@@ -12,14 +12,11 @@ export function createMockSchoolRepository(): MockedObject<SchoolRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
     listAll: vi.fn(),
-    listAuthorized: vi.fn(),
     listByIds: vi.fn(),
+    listAccessibleByDistrictId: vi.fn(),
     getUnrestrictedById: vi.fn(),
-    getAuthorizedById: vi.fn(),
-    fetchSchoolCounts: vi.fn(),
-    getUserRolesForSchool: vi.fn(),
     listAllByDistrictId: vi.fn(),
-    listAuthorizedByDistrictId: vi.fn(),
+    getUsersBySchoolId: vi.fn(),
   } as unknown as MockedObject<SchoolRepository>;
 }
 

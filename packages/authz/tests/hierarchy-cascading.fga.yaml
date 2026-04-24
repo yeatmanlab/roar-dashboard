@@ -138,15 +138,15 @@ tests:
           can_update: false
           can_delete: false
 
-  - name: School teacher cascades to class
+  - name: School teacher does NOT cascade to class (educators must be explicitly assigned)
     check:
       - user: user:school-teacher
         object: class:class-a
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
-          can_list: true
-          can_read: true
+          can_list: false
+          can_read: false
           can_create: false
           can_update: false
           can_delete: false

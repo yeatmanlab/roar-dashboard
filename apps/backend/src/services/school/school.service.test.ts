@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SchoolService } from './school.service';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { ClassFactory } from '../../test-support/factories/class.factory';
+import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 import { OrgType } from '../../enums/org-type.enum';
+import { UserRole } from '../../enums/user-role.enum';
 import { SortOrder, SchoolDetailSortField } from '@roar-dashboard/api-contract';
 import { createMockSchoolRepository, createMockClassRepository } from '../../test-support/repositories';
 import type { MockSchoolRepository } from '../../test-support/repositories';
@@ -12,6 +14,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { StatusCodes } from 'http-status-codes';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 
 describe('SchoolService', () => {
   let mockSchoolRepository: MockSchoolRepository;
@@ -775,6 +778,221 @@ describe('SchoolService', () => {
       const service = createService();
 
       await expect(service.listSchoolClasses(authContext, mockSchool.id, defaultOptions)).rejects.toThrow(error);
+    });
+  });
+
+  describe('listUsers', () => {
+    const defaultOptions = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'nameLast' as const,
+      sortOrder: SortOrder.ASC,
+    };
+
+    it('should return users for super admin (unrestricted)', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      const mockUsers = EnrolledUserFactory.buildList(3);
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUsersBySchoolId.mockResolvedValue({
+        items: mockUsers,
+        totalItems: 3,
+      });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      const result = await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', defaultOptions);
+
+      expect(mockSchoolRepository.getUnrestrictedById).toHaveBeenCalledWith('school-123');
+      expect(mockSchoolRepository.getUsersBySchoolId).toHaveBeenCalledWith('school-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+      });
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+    });
+
+    it('should check authorization for non-super admin users via FGA', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      const mockUsers = EnrolledUserFactory.buildList(2);
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+      mockSchoolRepository.getUsersBySchoolId.mockResolvedValue({
+        items: mockUsers,
+        totalItems: 2,
+      });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.listUsers({ userId: 'user-123', isSuperAdmin: false }, 'school-123', defaultOptions);
+
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        FgaRelation.CAN_LIST_USERS,
+        `${FgaType.SCHOOL}:school-123`,
+      );
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should return empty results when school has no users', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUsersBySchoolId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      const result = await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', defaultOptions);
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('should throw not-found error when school does not exist', async () => {
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(
+        service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'non-existent-id', defaultOptions),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('should throw forbidden error when user lacks access to the school', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUsers({ userId: 'user-123', isSuperAdmin: false }, 'school-123', defaultOptions),
+      ).rejects.toMatchObject({
+        message: ApiErrorMessage.FORBIDDEN,
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('should bypass FGA check for super admin and use getUsersBySchoolId', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      const mockUsers = EnrolledUserFactory.buildList(2);
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUsersBySchoolId.mockResolvedValue({ items: mockUsers, totalItems: 2 });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', defaultOptions);
+
+      // Super admin skips FGA gate
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+      expect(mockSchoolRepository.getUsersBySchoolId).toHaveBeenCalledWith('school-123', expect.any(Object));
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('should throw ApiError when database query fails', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      const dbError = new Error('Connection refused');
+      mockSchoolRepository.getUsersBySchoolId.mockRejectedValue(dbError);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await expect(
+        service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', defaultOptions),
+      ).rejects.toMatchObject({
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('should pass role filter to repository', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUsersBySchoolId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', {
+        ...defaultOptions,
+        role: UserRole.STUDENT,
+      });
+
+      expect(mockSchoolRepository.getUsersBySchoolId).toHaveBeenCalledWith('school-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        role: UserRole.STUDENT,
+      });
+    });
+
+    it('should pass grade filter to repository', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      mockSchoolRepository.getUsersBySchoolId.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+      });
+
+      await service.listUsers({ userId: 'admin-123', isSuperAdmin: true }, 'school-123', {
+        ...defaultOptions,
+        grade: ['5', '6'],
+      });
+
+      expect(mockSchoolRepository.getUsersBySchoolId).toHaveBeenCalledWith('school-123', {
+        page: 1,
+        perPage: 25,
+        orderBy: { field: 'nameLast', direction: SortOrder.ASC },
+        grade: ['5', '6'],
+      });
+    });
+
+    it('should rethrow ApiError without wrapping', async () => {
+      const mockSchool = OrgFactory.build({ id: 'school-123', orgType: OrgType.SCHOOL });
+      mockSchoolRepository.getUnrestrictedById.mockResolvedValue(mockSchool);
+      const apiError = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockAuthorizationService.requirePermission.mockRejectedValue(apiError);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.listUsers({ userId: 'user-123', isSuperAdmin: false }, 'school-123', defaultOptions),
+      ).rejects.toThrow(apiError);
     });
   });
 });

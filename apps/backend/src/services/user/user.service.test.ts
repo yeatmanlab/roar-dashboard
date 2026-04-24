@@ -9,19 +9,23 @@ import { createMockUserRepository } from '../../test-support/repositories/user.r
 import { createMockUserAgreementRepository } from '../../test-support/repositories/user-agreement.repository';
 import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
+import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { PostgresErrorCode } from '../../enums/postgres-error-code.enum';
 import { AgreementType } from '../../enums/agreement-type.enum';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { logger } from '../../logger';
 
 describe('UserService', () => {
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
+  let mockAuthorizationService: ReturnType<typeof createMockAuthorizationService>;
 
   beforeEach(() => {
+    vi.resetAllMocks();
     mockUserRepository = createMockUserRepository();
-    vi.clearAllMocks();
+    mockAuthorizationService = createMockAuthorizationService();
   });
 
   describe('findByAuthId', () => {
@@ -81,13 +85,17 @@ describe('UserService', () => {
         const mockUser = UserFactory.build({ id: authContext.userId });
         mockUserRepository.getById.mockResolvedValue(mockUser);
 
-        const userService = UserService({ userRepository: mockUserRepository });
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
         const result = await userService.getById(authContext, authContext.userId);
 
         expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: authContext.userId });
         expect(result).toEqual(mockUser);
-        // Should NOT call getAuthorizedById for self-access
-        expect(mockUserRepository.getAuthorizedById).not.toHaveBeenCalled();
+        // Should NOT call FGA methods for self-access
+        expect(mockUserRepository.getUserEntityMemberships).not.toHaveBeenCalled();
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
       });
     });
 
@@ -98,52 +106,92 @@ describe('UserService', () => {
         const mockUser = UserFactory.build({ id: targetUserId });
         mockUserRepository.getById.mockResolvedValue(mockUser);
 
-        const userService = UserService({ userRepository: mockUserRepository });
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
         const result = await userService.getById(authContext, targetUserId);
 
         expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: targetUserId });
         expect(result).toEqual(mockUser);
-        // Should NOT call getAuthorizedById for super admin
-        expect(mockUserRepository.getAuthorizedById).not.toHaveBeenCalled();
+        // Should NOT call FGA methods for super admin
+        expect(mockUserRepository.getUserEntityMemberships).not.toHaveBeenCalled();
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
       });
     });
 
-    describe('supervisory access', () => {
-      it('should allow access when user is authorized via access controls', async () => {
+    describe('FGA access via entity memberships', () => {
+      it('should allow access when user has can_list_users on a target entity', async () => {
         const authContext = AuthContextFactory.build({ userId: 'teacher-123', isSuperAdmin: false });
         const targetUserId = 'student-456';
         const mockUser = UserFactory.build({ id: targetUserId });
 
         mockUserRepository.getById.mockResolvedValue(mockUser);
-        mockUserRepository.getAuthorizedById.mockResolvedValue(mockUser);
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([{ entityType: 'class', entityId: 'class-abc' }]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
 
-        const userService = UserService({ userRepository: mockUserRepository });
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
         const result = await userService.getById(authContext, targetUserId);
 
         expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: targetUserId });
-        expect(mockUserRepository.getAuthorizedById).toHaveBeenCalledWith(
-          expect.objectContaining({ userId: authContext.userId }),
-          targetUserId,
+        expect(mockUserRepository.getUserEntityMemberships).toHaveBeenCalledWith(targetUserId);
+        expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith(
+          authContext.userId,
+          FgaRelation.CAN_LIST_USERS,
+          [`${FgaType.CLASS}:class-abc`],
         );
         expect(result).toEqual(mockUser);
       });
 
-      it('should throw FORBIDDEN when user is not authorized via access controls', async () => {
+      it('should throw FORBIDDEN when user lacks can_list_users on all target entities', async () => {
         const authContext = AuthContextFactory.build({ userId: 'student-123', isSuperAdmin: false });
         const targetUserId = 'other-student-456';
         const mockUser = UserFactory.build({ id: targetUserId });
 
         mockUserRepository.getById.mockResolvedValue(mockUser);
-        mockUserRepository.getAuthorizedById.mockResolvedValue(null);
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'school', entityId: 'school-xyz' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
 
-        const userService = UserService({ userRepository: mockUserRepository });
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
 
         await expect(userService.getById(authContext, targetUserId)).rejects.toMatchObject({
           message: ApiErrorMessage.FORBIDDEN,
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId: authContext.userId, id: targetUserId },
+          context: { userId: authContext.userId, targetUserId },
         });
+      });
+
+      it('should throw FORBIDDEN when target user has no active entity memberships', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'teacher-123', isSuperAdmin: false });
+        const targetUserId = 'orphan-user-456';
+        const mockUser = UserFactory.build({ id: targetUserId });
+
+        mockUserRepository.getById.mockResolvedValue(mockUser);
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([]);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(userService.getById(authContext, targetUserId)).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: authContext.userId, targetUserId },
+        });
+
+        // Should NOT call FGA when there are no entities to check
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
       });
     });
 
@@ -827,7 +875,10 @@ describe('UserService', () => {
         mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
         mockAgreementRepository.getById.mockResolvedValue(agreement);
         mockUserRepository.getById.mockResolvedValueOnce(parent); // Requesting user
-        mockUserRepository.getAuthorizedById.mockResolvedValue(child); // Family relationship verified
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
 
         mockUserAgreementRepository.create.mockResolvedValue(createdAgreement);
 
@@ -836,6 +887,7 @@ describe('UserService', () => {
           userAgreementRepository: mockUserAgreementRepository,
           agreementVersionRepository: mockAgreementVersionRepository,
           agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         const result = await userService.recordUserAgreement(parentContext, child.id, {
@@ -843,7 +895,12 @@ describe('UserService', () => {
         });
 
         expect(result).toEqual({ id: createdAgreement.id });
-        expect(mockUserRepository.getAuthorizedById).toHaveBeenCalled();
+        expect(mockUserRepository.getUserEntityMemberships).toHaveBeenCalledWith(child.id);
+        expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith(
+          parentContext.userId,
+          FgaRelation.CAN_CONSENT_FOR_CHILD,
+          [`${FgaType.FAMILY}:family-abc`],
+        );
       });
 
       it('should throw FORBIDDEN when user lacks family relationship to target', async () => {
@@ -857,13 +914,54 @@ describe('UserService', () => {
         mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
         mockAgreementRepository.getById.mockResolvedValue(agreement);
         mockUserRepository.getById.mockResolvedValueOnce(requestingUser); // Requesting user
-        mockUserRepository.getAuthorizedById.mockResolvedValue(null); // No family relationship
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'school', entityId: 'school-xyz' },
+        ]); // No family memberships
 
         const userService = UserService({
           userRepository: mockUserRepository,
           userAgreementRepository: mockUserAgreementRepository,
           agreementVersionRepository: mockAgreementVersionRepository,
           agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          userService.recordUserAgreement(authContext, targetUser.id, {
+            agreementVersionId: agreementVersion.id,
+          }),
+        ).rejects.toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+
+        // hasAnyPermission should NOT be called when there are no family objects
+        expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      });
+
+      it('should throw FORBIDDEN when FGA denies can_consent_for_child on family', async () => {
+        const authContext = AuthContextFactory.build({ userId: 'user-123' });
+        const requestingUser = UserFactory.build({ id: authContext.userId });
+        const targetUser = UserFactory.build({ id: 'other-456', dob: '2015-01-01', grade: '3' });
+        const agreement = AgreementFactory.build({ agreementType: AgreementType.ASSENT });
+        const agreementVersion = AgreementVersionFactory.build({ agreementId: agreement.id });
+
+        mockUserRepository.getById.mockResolvedValueOnce(targetUser); // Target user
+        mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
+        mockAgreementRepository.getById.mockResolvedValue(agreement);
+        mockUserRepository.getById.mockResolvedValueOnce(requestingUser); // Requesting user
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
+
+        const userService = UserService({
+          userRepository: mockUserRepository,
+          userAgreementRepository: mockUserAgreementRepository,
+          agreementVersionRepository: mockAgreementVersionRepository,
+          agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await expect(
@@ -888,13 +986,17 @@ describe('UserService', () => {
         mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
         mockAgreementRepository.getById.mockResolvedValue(agreement);
         mockUserRepository.getById.mockResolvedValueOnce(parent); // Requesting user
-        mockUserRepository.getAuthorizedById.mockResolvedValue(adultChild); // Family relationship exists
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
 
         const userService = UserService({
           userRepository: mockUserRepository,
           userAgreementRepository: mockUserAgreementRepository,
           agreementVersionRepository: mockAgreementVersionRepository,
           agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await expect(
@@ -919,13 +1021,17 @@ describe('UserService', () => {
         mockAgreementVersionRepository.getById.mockResolvedValue(agreementVersion);
         mockAgreementRepository.getById.mockResolvedValue(agreement);
         mockUserRepository.getById.mockResolvedValueOnce(parent); // Requesting user
-        mockUserRepository.getAuthorizedById.mockResolvedValue(child); // Family relationship verified
+        mockUserRepository.getUserEntityMemberships.mockResolvedValue([
+          { entityType: 'family', entityId: 'family-abc' },
+        ]);
+        mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
 
         const userService = UserService({
           userRepository: mockUserRepository,
           userAgreementRepository: mockUserAgreementRepository,
           agreementVersionRepository: mockAgreementVersionRepository,
           agreementRepository: mockAgreementRepository,
+          authorizationService: mockAuthorizationService,
         });
 
         await expect(

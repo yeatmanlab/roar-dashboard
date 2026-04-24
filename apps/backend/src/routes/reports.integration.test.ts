@@ -62,6 +62,10 @@ beforeAll(async () => {
   app = createTestApp(registerAdministrationsRoutes);
   expectRoute = createRouteHelper(app);
   tiers = await createTierUsers(baseFixture.district.id);
+
+  // Re-sync FGA tuples to pick up tier users created above
+  const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+  await syncFgaTuplesFromPostgres();
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -111,14 +115,17 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       expect(res.body.data).toBeDefined();
     });
 
-    it('educator (teacher role) at district can access', async () => {
+    it('educator (teacher role) at district is forbidden from reading progress at district scope', async () => {
+      // District can_read_progress is restricted to admin_tier only. A teacher
+      // at the district level is not in admin_tier, so they cannot read progress
+      // at the district scope.
       authenticateAs(tiers.educator);
       const res = await request(app)
         .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
         .query(defaultQuery())
         .set('Authorization', 'Bearer token');
 
-      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
     });
 
     it('student tier returns 403', async () => {
@@ -137,6 +144,53 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       const res = await request(app)
         .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
         .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('principal at school A can read progress at school scope (school_admin_tier has can_read_progress at school)', async () => {
+      // Principal is in school_admin_tier. School-level can_read_progress = admin_tier or school_admin_tier.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+          page: 1,
+          perPage: 25,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('principal at school A is forbidden from reading progress at district scope', async () => {
+      // District can_read_progress = admin_tier only. Principal is in school_admin_tier, not admin_tier.
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(defaultQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('school-level teacher is forbidden from reading progress at school scope (educator_tier excluded)', async () => {
+      // schoolATeacher has teacher role at schoolA. School-level can_read_progress
+      // = admin_tier or school_admin_tier — educator_tier is excluded.
+      authenticateAs(baseFixture.schoolATeacher);
+      const res = await request(app)
+        .get(progressStudentsPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+          page: 1,
+          perPage: 25,
+        })
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
@@ -813,14 +867,39 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       expect(res.body.data).toBeDefined();
     });
 
-    it('educator (teacher role) at district can access', async () => {
+    it('educator (teacher role) at district is forbidden from reading progress overview at district scope', async () => {
+      // District can_read_progress is restricted to admin_tier only.
       authenticateAs(tiers.educator);
       const res = await request(app)
         .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
         .query(overviewQuery())
         .set('Authorization', 'Bearer token');
 
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('principal at school A can read progress overview at school scope (school_admin_tier)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+        })
+        .set('Authorization', 'Bearer token');
+
       expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('principal at school A is forbidden from reading progress overview at district scope', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(progressOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(overviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
     });
 
     it('student tier returns 403', async () => {

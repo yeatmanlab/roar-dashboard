@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { OrgFactory } from '../test-support/factories/org.factory';
-import { EnrolledOrgUserFactory } from '../test-support/factories/user.factory';
+import { EnrolledUserFactory } from '../test-support/factories/user.factory';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
@@ -713,7 +713,7 @@ describe('DistrictsController', () => {
 
   describe('listUsers', () => {
     it('should return paginated users with 200 status', async () => {
-      const mockUsers = EnrolledOrgUserFactory.buildList(3);
+      const mockUsers = EnrolledUserFactory.buildList(3);
       mockListUsers.mockResolvedValue({
         items: mockUsers,
         totalItems: 3,

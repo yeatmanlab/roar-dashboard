@@ -9,7 +9,10 @@ type user
 # ────────────────────────────────────────────────────────────────────────────────
 # district — top-level org in the hierarchy
 #
-# Supervisory roles cascade DOWN to child schools (via school.parent_org).
+# Only admin_tier roles cascade DOWN to child schools (via school.parent_org).
+# school_admin_tier and educator_tier roles do NOT cascade — they must be
+# directly rostered at lower levels.
+#
 # Supervised roles (student, caregivers) bubble UP from child schools
 # (via child_school).
 #
@@ -44,9 +47,10 @@ type district
 
     # Computed role tiers
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
-    define educator_tier: principal or counselor or teacher or aide or proctor
+    define school_admin_tier: principal or counselor
+    define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Subtree membership — aggregates supervisory users from the district's
@@ -69,14 +73,22 @@ type district
     # direct district membership, preserving school isolation.
     define can_list: supervisory_tier_group or subtree_supervisory_tier_group from child_school
     define can_read: supervisory_tier_group or subtree_supervisory_tier_group from child_school
-    define can_list_users: supervisory_tier_group
-    define can_read_scores: supervisory_tier_group
-    define can_read_progress: supervisory_tier_group
+    # User/score/progress visibility at the district level is restricted to
+    # admin roles. A mis-rostered teacher at the district level should not
+    # gain access to student data across the entire district.
+    define can_list_users: admin_tier
+    define can_read_scores: admin_tier
+    define can_read_progress: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # school — mid-level org, child of district, parent of classes
 #
-# Inherits supervisory roles from parent district (via parent_org).
+# Inherits admin_tier roles from parent district (via parent_org).
+# school_admin_tier (principal, counselor) and educator_tier (teacher, aide,
+# proctor) do NOT inherit — they must be directly rostered at the school.
+# This prevents accidental privilege escalation from district-level
+# mis-rostering.
+#
 # Supervised roles bubble UP from child classes (via child_class)
 # and further up to the parent district (via district.child_school).
 #
@@ -97,12 +109,12 @@ type school
     define district_administrator: [user with active_membership] or district_administrator from parent_org
     define administrator: [user with active_membership] or administrator from parent_org
 
-    define principal: [user with active_membership] or principal from parent_org
-    define counselor: [user with active_membership] or counselor from parent_org
-    define teacher: [user with active_membership] or teacher from parent_org
-    define aide: [user with active_membership] or aide from parent_org
-    define proctor: [user with active_membership] or proctor from parent_org
-    
+    define principal: [user with active_membership]
+    define counselor: [user with active_membership]
+    define teacher: [user with active_membership]
+    define aide: [user with active_membership]
+    define proctor: [user with active_membership]
+
     define guardian: [user with active_membership] or guardian from child_class
     define parent: [user with active_membership] or parent from child_class
     define relative: [user with active_membership] or relative from child_class
@@ -111,9 +123,10 @@ type school
 
     # Computed role tiers
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
-    define educator_tier: principal or counselor or teacher or aide or proctor
+    define school_admin_tier: principal or counselor
+    define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Subtree membership — aggregates supervisory users from the school's
@@ -131,16 +144,24 @@ type school
     define can_list: supervisory_tier_group
     define can_read: supervisory_tier_group
 
-    define can_list_classes: supervisory_tier_group
-    define can_list_users: supervisory_tier_group
-    define can_read_scores: supervisory_tier_group
-    define can_read_progress: supervisory_tier_group
+    # Educators (teacher, aide, proctor) must be rostered on specific classes
+    # to see student data. School-level educators should not see a list of
+    # classes they cannot interact with (UI bloat). Only admin and school_admin
+    # tiers can list classes at the school level.
+    define can_list_classes: admin_tier or school_admin_tier
+    define can_list_users: admin_tier or school_admin_tier
+    define can_read_scores: admin_tier or school_admin_tier
+    define can_read_progress: admin_tier or school_admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # class — leaf-level entity, child of school
 #
-# Inherits all roles from parent school (and transitively from district).
-# A teacher at a school is a teacher in all classes within that school.
+# Inherits admin_tier roles from parent school (and transitively from
+# district). school_admin_tier (principal, counselor) inherits from
+# parent school — a school principal can see all classes in their school.
+# educator_tier (teacher, aide, proctor) does NOT inherit — they must be
+# directly rostered on a class to hold the role here. This ensures
+# educators only see student data in classes they're assigned to.
 # ────────────────────────────────────────────────────────────────────────────────
 type class
   relations
@@ -155,9 +176,9 @@ type class
 
     define principal: [user with active_membership] or principal from parent_org
     define counselor: [user with active_membership] or counselor from parent_org
-    define teacher: [user with active_membership] or teacher from parent_org
-    define aide: [user with active_membership] or aide from parent_org
-    define proctor: [user with active_membership] or proctor from parent_org
+    define teacher: [user with active_membership]
+    define aide: [user with active_membership]
+    define proctor: [user with active_membership]
 
     define guardian: [user with active_membership]
     define parent: [user with active_membership]
@@ -167,9 +188,10 @@ type class
 
     # Computed role tiers
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
-    define educator_tier: principal or counselor or teacher or aide or proctor
+    define school_admin_tier: principal or counselor
+    define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Permissions
@@ -211,6 +233,7 @@ type family
     define can_update_child: parent
     define can_delete_child: parent
     define can_read_child: parent
+    define can_consent_for_child: parent
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -241,9 +264,10 @@ type group
 
     # Computed role tiers
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
-    define educator_tier: principal or counselor or teacher or aide or proctor
+    define school_admin_tier: principal or counselor
+    define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Permissions
@@ -298,9 +322,10 @@ type administration
 
     # Computed role tiers (defined after role resolution)
     define admin_tier: system_administrator or site_administrator or district_administrator or administrator
-    define educator_tier: principal or counselor or teacher or aide or proctor
+    define school_admin_tier: principal or counselor
+    define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or educator_tier or subtree_supervisory_tier_group from assigned_district or subtree_supervisory_tier_group from assigned_school or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
+    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier or subtree_supervisory_tier_group from assigned_district or subtree_supervisory_tier_group from assigned_school or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
 
     # Permissions
     define no_one: [user]

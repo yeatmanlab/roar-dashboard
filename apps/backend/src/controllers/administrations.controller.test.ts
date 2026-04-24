@@ -4,15 +4,11 @@ import {
   AdministrationFactory,
   AdministrationWithEmbedsFactory,
 } from '../test-support/factories/administration.factory';
-import { OrgFactory } from '../test-support/factories/org.factory';
-import { ClassFactory } from '../test-support/factories/class.factory';
-import { GroupFactory } from '../test-support/factories/group.factory';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import type { ProgressStudentsQuery, ReportTaskMetadata, ProgressStudent } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
-import { OrgType } from '../enums/org-type.enum';
 
 // Mock the AdministrationService module
 vi.mock('../services/administration/administration.service', () => ({
@@ -41,10 +37,7 @@ describe('AdministrationsController', () => {
   const mockList = vi.fn();
   const mockGet = vi.fn();
   const mockVerifyAdministrationAccess = vi.fn();
-  const mockListDistricts = vi.fn();
-  const mockListSchools = vi.fn();
-  const mockListClasses = vi.fn();
-  const mockListGroups = vi.fn();
+  const mockGetAssignees = vi.fn();
   const mockListTaskVariants = vi.fn();
   const mockListAgreements = vi.fn();
   const mockDeleteById = vi.fn();
@@ -60,10 +53,7 @@ describe('AdministrationsController', () => {
       verifyAdministrationAccess: mockVerifyAdministrationAccess,
       list: mockList,
       getById: mockGet,
-      listDistricts: mockListDistricts,
-      listSchools: mockListSchools,
-      listClasses: mockListClasses,
-      listGroups: mockListGroups,
+      getAssignees: mockGetAssignees,
       listTaskVariants: mockListTaskVariants,
       listAgreements: mockListAgreements,
       deleteById: mockDeleteById,
@@ -445,64 +435,26 @@ describe('AdministrationsController', () => {
     });
   });
 
-  describe('listDistricts', () => {
-    it('should return paginated districts with 200 status', async () => {
-      const mockDistricts = [
-        OrgFactory.build({ orgType: OrgType.DISTRICT }),
-        OrgFactory.build({ orgType: OrgType.DISTRICT }),
-      ];
-      mockListDistricts.mockResolvedValue({
-        items: mockDistricts,
-        totalItems: 2,
-      });
+  describe('getAssignees', () => {
+    it('returns 200 with assignees data', async () => {
+      const mockAssignees = {
+        districts: [{ id: 'district-1', name: 'Springfield District' }],
+        schools: [{ id: 'school-1', name: 'Lincoln Elementary', parentOrgId: 'district-1' }],
+        classes: [{ id: 'class-1', name: 'Reading 101', schoolId: 'school-1', districtId: 'district-1' }],
+        groups: [{ id: 'group-1', name: 'Cohort 7' }],
+      };
+
+      mockGetAssignees.mockResolvedValue(mockAssignees);
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
 
-      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
+      const result = await Controller.getAssignees(mockAuthContext, 'admin-123');
       const data = expectOkResponse(result);
-      expect(data.items).toHaveLength(2);
-      expect(data.pagination).toEqual({
-        page: 1,
-        perPage: 25,
-        totalItems: 2,
-        totalPages: 1,
-      });
+      expect(data).toEqual(mockAssignees);
     });
 
-    it('should transform district fields to API response format', async () => {
-      const mockDistrict = OrgFactory.build({
-        id: 'district-uuid-123',
-        name: 'Test District',
-        orgType: OrgType.DISTRICT,
-      });
-      mockListDistricts.mockResolvedValue({
-        items: [mockDistrict],
-        totalItems: 1,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      const item = data.items[0]!;
-      expect(item.id).toBe('district-uuid-123');
-      expect(item.name).toBe('Test District');
-    });
-
-    it('should return 404 when administration does not exist', async () => {
-      mockListDistricts.mockRejectedValue(
+    it('returns 404 when administration not found', async () => {
+      mockGetAssignees.mockRejectedValue(
         new ApiError('Administration not found', {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
@@ -511,25 +463,12 @@ describe('AdministrationsController', () => {
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
 
-      const result = await Controller.listDistricts(mockAuthContext, 'non-existent-id', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
+      const result = await Controller.getAssignees(mockAuthContext, 'non-existent-id');
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      expect(result.body).toEqual({
-        error: {
-          message: 'Administration not found',
-          code: 'resource/not-found',
-          traceId: expect.any(String),
-        },
-      });
     });
 
-    it('should return 403 when user lacks permission to access administration', async () => {
-      mockListDistricts.mockRejectedValue(
+    it('returns 403 when user is not super admin', async () => {
+      mockGetAssignees.mockRejectedValue(
         new ApiError('You do not have permission to perform this action', {
           statusCode: StatusCodes.FORBIDDEN,
           code: ApiErrorCode.AUTH_FORBIDDEN,
@@ -538,611 +477,30 @@ describe('AdministrationsController', () => {
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
 
-      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
+      const result = await Controller.getAssignees(mockAuthContext, 'admin-123');
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      expect(result.body).toEqual({
-        error: {
-          message: 'You do not have permission to perform this action',
-          code: 'auth/forbidden',
-          traceId: expect.any(String),
-        },
-      });
     });
 
-    it('should pass auth context, administration ID, and query parameters to service', async () => {
-      mockListDistricts.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const authContext = { userId: 'user-456', isSuperAdmin: true };
-      await Controller.listDistricts(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-
-      expect(mockListDistricts).toHaveBeenCalledWith(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-    });
-
-    it('should return empty items array when no districts found', async () => {
-      mockListDistricts.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listDistricts(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items).toEqual([]);
-      expect(data.pagination.totalItems).toBe(0);
-      expect(data.pagination.totalPages).toBe(0);
-    });
-
-    it('should re-throw non-ApiError exceptions', async () => {
-      const unexpectedError = new Error('Database connection lost');
-      mockListDistricts.mockRejectedValue(unexpectedError);
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      await expect(
-        Controller.listDistricts(mockAuthContext, 'admin-123', {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        }),
-      ).rejects.toThrow('Database connection lost');
-    });
-  });
-
-  describe('listSchools', () => {
-    it('should return paginated schools with 200 status', async () => {
-      const mockSchools = [
-        OrgFactory.build({ orgType: OrgType.SCHOOL }),
-        OrgFactory.build({ orgType: OrgType.SCHOOL }),
-      ];
-      mockListSchools.mockResolvedValue({
-        items: mockSchools,
-        totalItems: 2,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listSchools(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items).toHaveLength(2);
-      expect(data.pagination).toEqual({
-        page: 1,
-        perPage: 25,
-        totalItems: 2,
-        totalPages: 1,
-      });
-    });
-
-    it('should transform school fields to API response format', async () => {
-      const mockSchool = OrgFactory.build({
-        id: 'school-uuid-123',
-        name: 'Test School',
-        abbreviation: 'TS',
-        orgType: OrgType.SCHOOL,
-      });
-      mockListSchools.mockResolvedValue({
-        items: [mockSchool],
-        totalItems: 1,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listSchools(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      const item = data.items[0]!;
-      expect(item.id).toBe('school-uuid-123');
-      expect(item.name).toBe('Test School');
-      // School response only contains id and name (no abbreviation or location)
-      expect(Object.keys(item)).toEqual(['id', 'name']);
-    });
-
-    it('should return 404 when administration does not exist', async () => {
-      mockListSchools.mockRejectedValue(
-        new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+    it('returns 500 when service throws unexpected error', async () => {
+      mockGetAssignees.mockRejectedValue(
+        new ApiError('Failed to retrieve administration assignees', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
         }),
       );
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
 
-      const result = await Controller.listSchools(mockAuthContext, 'non-existent-id', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      expect(result.body).toEqual({
-        error: {
-          message: 'Administration not found',
-          code: 'resource/not-found',
-          traceId: expect.any(String),
-        },
-      });
+      const result = await Controller.getAssignees(mockAuthContext, 'admin-123');
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
-    it('should return 403 when user lacks permission to access administration', async () => {
-      mockListSchools.mockRejectedValue(
-        new ApiError('You do not have permission to perform this action', {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        }),
-      );
+    it('re-throws unexpected errors', async () => {
+      mockGetAssignees.mockRejectedValue(new Error('unexpected'));
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
 
-      const result = await Controller.listSchools(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      expect(result.body).toEqual({
-        error: {
-          message: 'You do not have permission to perform this action',
-          code: 'auth/forbidden',
-          traceId: expect.any(String),
-        },
-      });
-    });
-
-    it('should pass auth context, administration ID, and query parameters to service', async () => {
-      mockListSchools.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const authContext = { userId: 'user-456', isSuperAdmin: true };
-      await Controller.listSchools(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-
-      expect(mockListSchools).toHaveBeenCalledWith(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-    });
-
-    it('should return empty items array when no schools found', async () => {
-      mockListSchools.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listSchools(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items).toEqual([]);
-      expect(data.pagination.totalItems).toBe(0);
-      expect(data.pagination.totalPages).toBe(0);
-    });
-
-    it('should re-throw non-ApiError exceptions', async () => {
-      const unexpectedError = new Error('Database connection lost');
-      mockListSchools.mockRejectedValue(unexpectedError);
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      await expect(
-        Controller.listSchools(mockAuthContext, 'admin-123', {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        }),
-      ).rejects.toThrow('Database connection lost');
-    });
-  });
-
-  describe('listClasses', () => {
-    it('should return paginated classes with 200 status', async () => {
-      const mockClasses = [ClassFactory.build(), ClassFactory.build()];
-      mockListClasses.mockResolvedValue({
-        items: mockClasses,
-        totalItems: 2,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listClasses(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items).toHaveLength(2);
-      expect(data.pagination).toEqual({
-        page: 1,
-        perPage: 25,
-        totalItems: 2,
-        totalPages: 1,
-      });
-    });
-
-    it('should transform class fields to API response format', async () => {
-      const mockClass = ClassFactory.build({
-        id: 'class-uuid-123',
-        name: 'Test Class',
-      });
-      mockListClasses.mockResolvedValue({
-        items: [mockClass],
-        totalItems: 1,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listClasses(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      const item = data.items[0]!;
-      expect(item.id).toBe('class-uuid-123');
-      expect(item.name).toBe('Test Class');
-      // Class response only contains id and name
-      expect(Object.keys(item)).toEqual(['id', 'name']);
-    });
-
-    it('should return 404 when administration does not exist', async () => {
-      mockListClasses.mockRejectedValue(
-        new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        }),
-      );
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listClasses(mockAuthContext, 'non-existent-id', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      expect(result.body).toEqual({
-        error: {
-          message: 'Administration not found',
-          code: 'resource/not-found',
-          traceId: expect.any(String),
-        },
-      });
-    });
-
-    it('should return 403 when user lacks permission to access administration', async () => {
-      mockListClasses.mockRejectedValue(
-        new ApiError('You do not have permission to perform this action', {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        }),
-      );
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listClasses(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      expect(result.body).toEqual({
-        error: {
-          message: 'You do not have permission to perform this action',
-          code: 'auth/forbidden',
-          traceId: expect.any(String),
-        },
-      });
-    });
-
-    it('should pass auth context, administration ID, and query parameters to service', async () => {
-      mockListClasses.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const authContext = { userId: 'user-456', isSuperAdmin: true };
-      await Controller.listClasses(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-
-      expect(mockListClasses).toHaveBeenCalledWith(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-    });
-
-    it('should return empty items array when no classes found', async () => {
-      mockListClasses.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listClasses(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items).toEqual([]);
-      expect(data.pagination.totalItems).toBe(0);
-      expect(data.pagination.totalPages).toBe(0);
-    });
-
-    it('should calculate totalPages correctly', async () => {
-      mockListClasses.mockResolvedValue({
-        items: ClassFactory.buildList(10),
-        totalItems: 95,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listClasses(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
-    });
-
-    it('should re-throw non-ApiError exceptions', async () => {
-      const unexpectedError = new Error('Database connection lost');
-      mockListClasses.mockRejectedValue(unexpectedError);
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      await expect(
-        Controller.listClasses(mockAuthContext, 'admin-123', {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        }),
-      ).rejects.toThrow('Database connection lost');
-    });
-  });
-
-  describe('listGroups', () => {
-    it('should return paginated groups with 200 status', async () => {
-      const mockGroups = [GroupFactory.build(), GroupFactory.build()];
-      mockListGroups.mockResolvedValue({
-        items: mockGroups,
-        totalItems: 2,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listGroups(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items).toHaveLength(2);
-      expect(data.pagination).toEqual({
-        page: 1,
-        perPage: 25,
-        totalItems: 2,
-        totalPages: 1,
-      });
-    });
-
-    it('should transform group fields to API response format', async () => {
-      const mockGroup = GroupFactory.build({
-        id: 'group-uuid-123',
-        name: 'Test Group',
-      });
-      mockListGroups.mockResolvedValue({
-        items: [mockGroup],
-        totalItems: 1,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listGroups(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      const item = data.items[0]!;
-      expect(item.id).toBe('group-uuid-123');
-      expect(item.name).toBe('Test Group');
-      // Group response only contains id and name
-      expect(Object.keys(item)).toEqual(['id', 'name']);
-    });
-
-    it('should return 404 when administration does not exist', async () => {
-      mockListGroups.mockRejectedValue(
-        new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        }),
-      );
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listGroups(mockAuthContext, 'non-existent-id', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      expect(result.body).toEqual({
-        error: {
-          message: 'Administration not found',
-          code: 'resource/not-found',
-          traceId: expect.any(String),
-        },
-      });
-    });
-
-    it('should return 403 when user lacks permission to access administration', async () => {
-      mockListGroups.mockRejectedValue(
-        new ApiError('You do not have permission to perform this action', {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        }),
-      );
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listGroups(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      expect(result.status).toBe(StatusCodes.FORBIDDEN);
-      expect(result.body).toEqual({
-        error: {
-          message: 'You do not have permission to perform this action',
-          code: 'auth/forbidden',
-          traceId: expect.any(String),
-        },
-      });
-    });
-
-    it('should pass auth context, administration ID, and query parameters to service', async () => {
-      mockListGroups.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const authContext = { userId: 'user-456', isSuperAdmin: true };
-      await Controller.listGroups(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-
-      expect(mockListGroups).toHaveBeenCalledWith(authContext, 'admin-123', {
-        page: 2,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'desc',
-      });
-    });
-
-    it('should return empty items array when no groups found', async () => {
-      mockListGroups.mockResolvedValue({ items: [], totalItems: 0 });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listGroups(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 25,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.items).toEqual([]);
-      expect(data.pagination.totalItems).toBe(0);
-      expect(data.pagination.totalPages).toBe(0);
-    });
-
-    it('should calculate totalPages correctly', async () => {
-      mockListGroups.mockResolvedValue({
-        items: GroupFactory.buildList(10),
-        totalItems: 95,
-      });
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      const result = await Controller.listGroups(mockAuthContext, 'admin-123', {
-        page: 1,
-        perPage: 10,
-        sortBy: 'name',
-        sortOrder: 'asc',
-      });
-
-      const data = expectOkResponse(result);
-      expect(data.pagination.totalPages).toBe(10); // ceil(95/10) = 10
-    });
-
-    it('should re-throw non-ApiError exceptions', async () => {
-      const unexpectedError = new Error('Database connection lost');
-      mockListGroups.mockRejectedValue(unexpectedError);
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      await expect(
-        Controller.listGroups(mockAuthContext, 'admin-123', {
-          page: 1,
-          perPage: 25,
-          sortBy: 'name',
-          sortOrder: 'asc',
-        }),
-      ).rejects.toThrow('Database connection lost');
+      await expect(Controller.getAssignees(mockAuthContext, 'admin-123')).rejects.toThrow('unexpected');
     });
   });
 
