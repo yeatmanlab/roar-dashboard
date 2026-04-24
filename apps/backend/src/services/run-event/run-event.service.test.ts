@@ -12,8 +12,6 @@ import {
   MockRunTrialInteractionsRepository,
   createMockRunTrialInteractionsRepository,
 } from '../../test-support/repositories';
-import type { MockAuthorizationService } from '../../test-support/services';
-import { createMockAuthorizationService } from '../../test-support/services';
 import { RunFactory } from '../../test-support/factories/run.factory';
 
 /**
@@ -27,7 +25,6 @@ describe('RunEventService', () => {
   let runRepository: MockRunRepository;
   let runTrialsRepository: MockRunTrialRepository;
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
-  let authorizationService: MockAuthorizationService;
   let runEventsService: ReturnType<typeof RunEventService>;
 
   beforeEach(() => {
@@ -41,13 +38,10 @@ describe('RunEventService', () => {
 
     runTrialInteractionsRepository = createMockRunTrialInteractionsRepository();
 
-    authorizationService = createMockAuthorizationService();
-
     runEventsService = RunEventService({
       runRepository: runRepository,
       runTrialsRepository: runTrialsRepository,
       runTrialInteractionsRepository: runTrialInteractionsRepository,
-      authorizationService: authorizationService,
     });
   });
 
@@ -74,14 +68,7 @@ describe('RunEventService', () => {
       );
     });
 
-    it('should throw FORBIDDEN when user does not have access to target user', async () => {
-      authorizationService.requirePermission.mockRejectedValue(
-        new ApiError('Forbidden', {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-        }),
-      );
-
+    it('should throw FORBIDDEN when user does not own the run', async () => {
       const differentUserId = 'user-456';
       await expect(
         runEventsService.completeRun(authContext, differentUserId, validRunId, validBody),
@@ -106,7 +93,7 @@ describe('RunEventService', () => {
       expect(runRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should throw FORBIDDEN when user does not own the run', async () => {
+    it('should throw FORBIDDEN when run is owned by a different user', async () => {
       const mockRun = RunFactory.build({ id: validRunId, userId: 'different-user' });
       runRepository.getById.mockResolvedValue(mockRun);
 

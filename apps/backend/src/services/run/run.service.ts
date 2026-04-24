@@ -107,7 +107,7 @@ export function RunService({
     }
 
     if (isAnonymous && body.administrationId) {
-      throw new ApiError('administrationId must not be provided for anonymous runs', {
+      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         context: { userId },

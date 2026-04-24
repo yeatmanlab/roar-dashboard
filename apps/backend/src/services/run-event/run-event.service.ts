@@ -3,9 +3,7 @@ import type { RunEventBody } from '@roar-dashboard/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import { FgaRelation, FgaType } from '../authorization/fga-constants';
 import { logger } from '../../logger';
-import { AuthorizationService } from '../authorization/authorization.service';
 import { RunRepository } from '../../repositories/run.repository';
 import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
@@ -31,40 +29,33 @@ export function RunEventService({
   runRepository = new RunRepository(),
   runTrialsRepository = new RunTrialsRepository(),
   runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
-  authorizationService = AuthorizationService(),
 }: {
   runRepository?: RunRepository;
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
-  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
-   * Verify that the authenticated user has access to the target user.
+   * Verify that the authenticated user owns the target user (strict ownership).
    *
-   * Performs a two-step check:
-   * 1. User can access their own runs (userId === targetUserId)
-   * 2. User has CAN_READ_CHILD permission on target user (e.g., parent/guardian access)
-   * 3. Super admins have unrestricted access
+   * Run events are user-initiated actions, not admin operations. This enforces strict
+   * ownership: only the run owner can post events to their own runs. Even super admins
+   * cannot post events on behalf of other users.
    *
    * @param authContext - User's auth context (id and super admin flag)
    * @param targetUserId - The user ID to verify access for
-   * @throws {ApiError} FORBIDDEN if user lacks access
+   * @throws {ApiError} FORBIDDEN if user is not the run owner
    */
   async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<void> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId } = authContext;
 
-    // Super admins have unrestricted access
-    if (isSuperAdmin) {
-      return;
+    // Strict ownership: user must own the run
+    if (userId !== targetUserId) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, targetUserId },
+      });
     }
-
-    // User can access their own runs
-    if (userId === targetUserId) {
-      return;
-    }
-
-    // Check if user has permission to act on behalf of target user (e.g., parent/guardian)
-    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_CHILD, `${FgaType.USER}:${targetUserId}`);
   }
 
   /**
