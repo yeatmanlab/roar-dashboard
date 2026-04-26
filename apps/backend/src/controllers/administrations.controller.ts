@@ -462,8 +462,12 @@ export const AdministrationsController = {
    * Get aggregated score overview for an administration.
    *
    * Delegates to ReportService for authorization and aggregation.
-   * Service and contract types are structurally identical, so the result is
-   * returned directly with no transformation.
+   * The service's `ScoreOverviewResult` and the contract's `ScoreOverviewResponseSchema`
+   * are kept structurally equivalent (same field names and types: totalStudents,
+   * tasks[], computedAt) so the result can be returned directly without an explicit
+   * transform. Type compatibility is enforced at compile time via TypeScript's
+   * structural typing — see `report.types.ts` and the contract schema for the
+   * source of truth on each side.
    *
    * @param authContext - User's auth context
    * @param administrationId - The administration to report on

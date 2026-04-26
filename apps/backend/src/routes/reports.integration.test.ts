@@ -1469,6 +1469,17 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       expect(res.body.data).toBeDefined();
     });
 
+    it('site admin (site_administrator role) at district can access', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app)
+        .get(scoreOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(scoreOverviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
     it('educator (teacher role) at district is forbidden from reading scores at district scope', async () => {
       // District can_read_scores is restricted to admin_tier only.
       authenticateAs(tiers.educator);
