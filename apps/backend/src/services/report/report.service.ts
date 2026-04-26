@@ -865,6 +865,15 @@ export function buildProgressMap(
 
 // --- Score overview helpers ---
 
+/**
+ * Conventional score names that hold the assessment-computed support level
+ * for tasks like `roam-alpaca`. The scoring service's
+ * `getSupportLevelFieldName(taskSlug)` is the source of truth per slug; this
+ * list is the order in which we probe `run_scores` if the slug-specific name
+ * isn't in the score map (handles the `support_level` snake_case alias too).
+ */
+const ASSESSMENT_SUPPORT_LEVEL_FIELDS: ReadonlyArray<string> = ['supportLevel', 'support_level'];
+
 /** Nested lookup: userId → taskVariantId → scoreName → scoreValue (raw string from FDW). */
 type ScoreLookup = Map<string, Map<string, Map<string, string>>>;
 
@@ -1015,7 +1024,7 @@ function resolveNumericScore(scores: Map<string, string>, fieldNames: string[]):
  * Resolve a string score (e.g., assessment-computed support level for roam-alpaca)
  * from the score map by trying each field name in order.
  */
-function resolveStringScore(scores: Map<string, string>, fieldNames: string[]): string | null {
+function resolveStringScore(scores: Map<string, string>, fieldNames: ReadonlyArray<string>): string | null {
   for (const name of fieldNames) {
     const raw = scores.get(name);
     if (raw !== undefined) return raw;
@@ -1046,9 +1055,6 @@ function aggregateTaskGroup(
   let achievedCount = 0;
   let developingCount = 0;
   let needsSupportCount = 0;
-
-  // Conventional score names used by assessment-computed tasks (e.g., roam-alpaca)
-  const ASSESSMENT_SUPPORT_LEVEL_FIELDS = ['supportLevel', 'support_level'];
 
   for (const student of students) {
     // Check all variants for this task — use the first with completed scores
