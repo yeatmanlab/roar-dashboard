@@ -269,8 +269,14 @@ export interface StudentScoreQueryRow {
   race: string | null;
   hispanicEthnicity: boolean | null;
   homeLanguage: string | null;
-  /** Map of taskVariantId → run metadata for selected completed run. */
-  runs: Map<string, { runId: string; reliable: boolean | null; engagementFlags: string[] }>;
+  /**
+   * Map of taskVariantId → run metadata for the selected completed run.
+   *
+   * `completedAt` is the run's completion timestamp; included so the repository
+   * can pick the most recent completed run per (user, variant) without an extra
+   * lookup, and surfaced for any consumer that wants to display recency.
+   */
+  runs: Map<string, { runId: string; reliable: boolean | null; engagementFlags: string[]; completedAt: Date | null }>;
   /** Map of taskVariantId → score field name → value (raw text from run_scores). */
   scores: Map<string, Map<string, string>>;
 }
@@ -1790,10 +1796,7 @@ export class ReportRepository {
 
     // 8. Bulk fetch run metadata (reliable, engagementFlags) for displayed students
     // and bulk fetch all run scores so the service can assemble per-task entries.
-    const runsByStudent = new Map<
-      string,
-      Map<string, { runId: string; reliable: boolean | null; engagementFlags: string[] }>
-    >();
+    const runsByStudent = new Map<string, StudentScoreQueryRow['runs']>();
     const scoresByStudent = new Map<string, Map<string, Map<string, string>>>();
 
     if (taskVariantIds.length > 0) {
@@ -1821,28 +1824,30 @@ export class ReportRepository {
 
       // Pick the most recent completed run per (user, variant) — defensive against
       // the rare case where multiple useForReporting runs exist (see getCompletedRunScores).
-      const selectedRunIdByPair = new Map<string, string>();
+      // Tracking completedAt directly in the map value lets the comparison stay O(1)
+      // per row instead of scanning runRows on every duplicate.
       for (const r of runRows) {
-        const key = `${r.userId}::${r.taskVariantId}`;
         if (!runsByStudent.has(r.userId)) runsByStudent.set(r.userId, new Map());
         const studentRuns = runsByStudent.get(r.userId)!;
         const existing = studentRuns.get(r.taskVariantId);
-        const existingCompletedAt = existing
-          ? runRows.find(
-              (rr) => rr.userId === r.userId && rr.taskVariantId === r.taskVariantId && rr.runId === existing.runId,
-            )?.completedAt
-          : null;
+        const existingCompletedAt = existing?.completedAt ?? null;
         if (!existing || (r.completedAt && existingCompletedAt && r.completedAt > existingCompletedAt)) {
           studentRuns.set(r.taskVariantId, {
             runId: r.runId,
             reliable: r.reliableRun,
             engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+            completedAt: r.completedAt,
           });
-          selectedRunIdByPair.set(key, r.runId);
         }
       }
 
-      const selectedRunIds = Array.from(selectedRunIdByPair.values());
+      // Collect the selected run IDs from the deduped map (one per user/variant).
+      const selectedRunIds: string[] = [];
+      for (const studentRuns of runsByStudent.values()) {
+        for (const meta of studentRuns.values()) {
+          selectedRunIds.push(meta.runId);
+        }
+      }
       if (selectedRunIds.length > 0) {
         const scoreRows = await this.db
           .select({
@@ -1894,10 +1899,17 @@ export class ReportRepository {
 
 /**
  * Emit SQL that coerces a text grade column to a numeric grade level.
- * Strips non-digit characters; `'Kindergarten'` → NULL, `'3'` → 3, `'12'` → 12.
+ *
+ * Strips every non-digit character before casting to integer:
+ *   `'Kindergarten'` → NULL, `'3'` → 3, `'12'` → 12, `'K-3'` → 3 (the digit only).
+ *
+ * Negative grades are not part of any roster convention we currently support, so
+ * the regex deliberately excludes `-` — keeping it would let `'K-3'` parse as
+ * `-3`, which would silently mis-classify scoring config branches that compare
+ * grade against `percentileBelowGrade` (e.g., grade < 6 → percentile path).
  */
 function gradeAsIntSql(gradeColumn: SQL | Column | PgColumn): SQL {
-  return sql`CAST(NULLIF(REGEXP_REPLACE(${gradeColumn}::text, '[^0-9-]', '', 'g'), '') AS INTEGER)`;
+  return sql`CAST(NULLIF(REGEXP_REPLACE(${gradeColumn}::text, '[^0-9]', '', 'g'), '') AS INTEGER)`;
 }
 
 /**
@@ -1999,5 +2011,24 @@ function buildScoreFieldFilterCondition(
             sql`, `,
           )})`
         : undefined;
+    default:
+      // Exhaustiveness check — adding a new StudentScoresFilterOperator without
+      // updating this switch will fail compilation here. The runtime fallback
+      // is also a defensive guard against unsupported operators (e.g., `contains`
+      // is valid for user-level fields but not for score fields).
+      return assertUnreachableOperator(operator);
   }
+}
+
+/**
+ * Compile-time exhaustiveness check used by `buildScoreFieldFilterCondition`'s
+ * default branch. Adding a new `StudentScoresFilterOperator` value will produce
+ * a TypeScript error at the call site if this switch isn't extended. At runtime
+ * the function returns `undefined` (no-op filter) — defensive but visible.
+ */
+function assertUnreachableOperator(op: never): undefined {
+  // Intentionally swallow the unknown operator at runtime — the TypeScript
+  // narrowing above already prevents this branch in normal code paths.
+  void op;
+  return undefined;
 }

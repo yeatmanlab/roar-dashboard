@@ -66,6 +66,14 @@ export const ScoreReportsContract = c.router({
       'static user fields. Task IDs in dynamic fields are validated against the administration ' +
       'and return 400 if unknown. Sorting by support level uses a per-variant SQL CASE ' +
       "expression built from the scoring config's resolved cutoffs.\n\n" +
+      'Filter behavior notes:\n' +
+      '- `supportLevel:eq:optional` and `supportLevel:in:...,optional,...` are silently dropped ' +
+      'from SQL filtering — `optional` is not a classifiable support level, it depends on ' +
+      'per-student condition evaluation rather than score values, and has no SQL representation. ' +
+      'The request still returns 200 with the unfiltered (or only-the-other-values-filtered) page; ' +
+      'no warning is surfaced. Treat `optional` as a post-fetch client-side filter.\n' +
+      '- Multiple `taskId:in:<uuid>` filter entries are merged into a single allow-list ' +
+      '(unioned). Other filter fields combine via AND across entries.\n\n' +
       'Status codes:\n' +
       '- 200: Paginated student score rows returned\n' +
       '- 400: Invalid scope, unknown task ID in sort/filter, or invalid filter\n' +
