@@ -88,15 +88,20 @@ const SCORE_OVERVIEW_USER_FILTER_FIELDS: Record<string, PgColumn> = {
   'user.grade': users.grade,
 };
 
-/** Map sortBy field strings to Drizzle column references for student scores. */
-const STUDENT_SCORES_SORT_COLUMNS: Record<StudentScoresSortField, Column> = {
+/**
+ * Map sortBy field strings to Drizzle column references for student scores.
+ *
+ * `user.schoolName` is intentionally excluded — it has no direct column to
+ * point at (the value is a correlated subquery built inside the repository).
+ * The service routes that case explicitly before consulting this map, and the
+ * type omits it so any accidental lookup fails at compile time rather than
+ * silently falling back to a wrong column.
+ */
+const STUDENT_SCORES_SORT_COLUMNS: Record<Exclude<StudentScoresSortField, 'user.schoolName'>, Column> = {
   'user.lastName': users.nameLast,
   'user.firstName': users.nameFirst,
   'user.username': users.username,
   'user.grade': users.grade,
-  // user.schoolName uses a SQL subquery built inside the repository — not a column.
-  // The service routes this case via a sentinel name (handled at sort-resolution time).
-  'user.schoolName': users.id, // placeholder; not actually used at runtime for this field
 };
 
 /**
@@ -751,7 +756,7 @@ export function ReportService({
         }
       }
 
-      // 5. Resolve scoring rules per variant for SQL CASE generation in the repo
+      // 6. Resolve scoring rules per variant for SQL CASE generation in the repo
       const scoringRulesByVariant = new Map<string, ResolvedScoringRules>();
       for (const variant of taskMetas) {
         scoringRulesByVariant.set(
@@ -760,10 +765,10 @@ export function ReportService({
         );
       }
 
-      // 6. Resolve dynamic sort field (against primary variants)
+      // 7. Resolve dynamic sort field (against primary variants)
       const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId, scoringVersionByVariant, taskMetas);
 
-      // 7. Resolve dynamic score-field filters (against primary variants)
+      // 8. Resolve dynamic score-field filters (against primary variants)
       const userLevelFilters: ParsedFilter[] = [];
       const scoreFieldFilters: StudentScoresFieldFilter[] = [];
       for (const f of filter) {
@@ -791,20 +796,23 @@ export function ReportService({
         return { tasks: [], items: [], totalItems: 0 };
       }
 
-      // 8. Determine the static sort column when sorting by a user field.
+      // 9. Determine the static sort column when sorting by a user field.
       // user.schoolName is handled inside the repository as a correlated subquery,
       // so we pass undefined and rely on the dynamic-sort path falling through to
       // the repo's school-name expression. Other static fields use their column.
+      // The map deliberately omits `user.schoolName` — TypeScript's narrowing on
+      // the explicit equality check below makes the lookup safe.
       let staticSortColumn: Column | undefined;
       if (!sortField) {
         if (sortBy === 'user.schoolName') {
           staticSortColumn = undefined; // repo will use schoolNameSql
         } else {
-          staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[sortBy as StudentScoresSortField] ?? users.nameLast;
+          const key = sortBy as Exclude<StudentScoresSortField, 'user.schoolName'>;
+          staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key] ?? users.nameLast;
         }
       }
 
-      // 9. Repository call
+      // 10. Repository call
       const result = await reportRepository.getStudentScores(
         administrationId,
         { scopeType, scopeId },
@@ -816,7 +824,7 @@ export function ReportService({
         scoringRulesByVariant,
       );
 
-      // 10. Build response — dedupe per taskId, classify, set optional/completed
+      // 11. Build response — dedupe per taskId, classify, set optional/completed
       const tasksOrdered: ServiceTaskMetadata[] = uniqueTaskMetadataInOrder(taskMetas);
 
       // Resolve schoolNames for district-scope rows (not auto-populated by repo for that field)
@@ -1582,13 +1590,11 @@ function roundScoreOrNull(value: number | null): number | null {
 }
 
 /**
- * Type for the evaluateTaskVariantEligibility function from TaskService.
+ * Alias of `EligibilityEvaluator` for use in the student-scores helpers.
+ * Kept as a re-export so the consuming code reads naturally; both names refer
+ * to the same `TaskService.evaluateTaskVariantEligibility` shape.
  */
-type StudentEligibilityEvaluator = (
-  user: ConditionEvaluationUser,
-  conditionsAssignment: Condition | null,
-  conditionsRequirements: Condition | null,
-) => { isAssigned: boolean; isOptional: boolean };
+type StudentEligibilityEvaluator = EligibilityEvaluator;
 
 /**
  * Convert a single repository row into a service-shaped student row with one

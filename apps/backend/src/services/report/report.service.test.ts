@@ -2302,7 +2302,9 @@ describe('ReportService', () => {
       const row = buildQueryRow({
         userId: 'student-1',
         grade: '3',
-        runs: new Map([[VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [] }]]),
+        runs: new Map([
+          [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+        ]),
         scores: new Map([[VARIANT_ID_1, new Map([['percentile', '90']])]]),
       });
       setupDefaultStudentScoresMocks([row], 1);
@@ -2363,7 +2365,9 @@ describe('ReportService', () => {
       const row = buildQueryRow({
         userId: 'student-1',
         grade: '3',
-        runs: new Map([[VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [] }]]),
+        runs: new Map([
+          [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+        ]),
         scores: new Map([
           [
             VARIANT_ID_1,
@@ -2411,8 +2415,11 @@ describe('ReportService', () => {
         userId: 'student-1',
         grade: '3',
         runs: new Map([
-          ['var-a', { runId: 'run-a', reliable: true, engagementFlags: [] }],
-          ['var-b', { runId: 'run-b', reliable: false, engagementFlags: ['flagB'] }],
+          ['var-a', { runId: 'run-a', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-02') }],
+          [
+            'var-b',
+            { runId: 'run-b', reliable: false, engagementFlags: ['flagB'], completedAt: new Date('2025-09-01') },
+          ],
         ]),
         scores: new Map([
           ['var-a', new Map([['percentile', '90']])],
@@ -2449,7 +2456,9 @@ describe('ReportService', () => {
       const row = buildQueryRow({
         userId: 'student-1',
         grade: '3',
-        runs: new Map([[ROAM_VARIANT, { runId: 'r', reliable: true, engagementFlags: [] }]]),
+        runs: new Map([
+          [ROAM_VARIANT, { runId: 'r', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
+        ]),
         scores: new Map([[ROAM_VARIANT, new Map([['supportLevel', 'developingSkill']])]]),
       });
       setupDefaultStudentScoresMocks([row], 1);
