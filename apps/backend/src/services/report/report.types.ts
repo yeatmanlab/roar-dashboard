@@ -121,3 +121,46 @@ export interface ProgressOverviewResult {
   byTask: ServiceTaskOverview[];
   computedAt: string;
 }
+
+/** Query input for getScoreOverview. */
+export interface ScoreOverviewInput {
+  scopeType: ScopeType;
+  scopeId: string;
+  filter: ParsedFilter[];
+}
+
+/** Support level distribution counts and percentages for a single category. */
+export interface ServiceSupportLevelEntry {
+  count: number;
+  /** Percentage of totalAssessed (0-100), rounded to 1 decimal place */
+  percentage: number;
+}
+
+/** Per-task score overview with support level distribution. */
+export interface ServiceTaskScoreOverview {
+  taskId: string;
+  taskSlug: string;
+  taskName: string;
+  orderIndex: number;
+  /** Number of students with a completed run and classifiable scores */
+  totalAssessed: number;
+  /** Students with no completed run, split by assignment status */
+  totalNotAssessed: {
+    required: number;
+    optional: number;
+  };
+  /** Support level distribution (only for assessed students) */
+  supportLevels: {
+    achievedSkill: ServiceSupportLevelEntry;
+    developingSkill: ServiceSupportLevelEntry;
+    needsExtraSupport: ServiceSupportLevelEntry;
+  };
+}
+
+/** Return type for getScoreOverview. */
+export interface ScoreOverviewResult {
+  totalStudents: number;
+  tasks: ServiceTaskScoreOverview[];
+  /** ISO 8601 timestamp when the aggregation was computed */
+  computedAt: string;
+}
