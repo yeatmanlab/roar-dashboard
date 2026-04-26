@@ -719,6 +719,14 @@ export function ReportService({
             })
           : undefined;
 
+      // Short-circuit: when the taskId filter (or an empty administration) leaves
+      // no tasks in scope, no per-task entries can be assembled. Skip the
+      // pagination + score JOINs and return an empty page. Matches the analogous
+      // short-circuit in getScoreOverview.
+      if (taskMetas.length === 0) {
+        return { tasks: [], items: [], totalItems: 0 };
+      }
+
       // 8. Determine the static sort column when sorting by a user field.
       // user.schoolName is handled inside the repository as a correlated subquery,
       // so we pass undefined and rely on the dynamic-sort path falling through to
@@ -753,10 +761,16 @@ export function ReportService({
         schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(result.items.map((s) => s.userId));
       }
 
+      // Group taskMetas by taskId once — the grouping is independent of the
+      // per-student row data, so hoisting it out of the per-row map saves
+      // O(students × variants) reallocations.
+      const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
+
       const items: ServiceStudentScoreRow[] = result.items.map((row) =>
         assembleStudentScoreRow(
           row,
-          taskMetas,
+          taskOrder,
+          variantsByTaskId,
           scoringVersionByVariant,
           taskService.evaluateTaskVariantEligibility,
           scopeType,
@@ -1524,23 +1538,13 @@ type StudentEligibilityEvaluator = (
  */
 function assembleStudentScoreRow(
   row: StudentScoreQueryRow,
-  taskMetas: ReportTaskMeta[],
+  taskOrder: ReadonlyArray<string>,
+  variantsByTaskId: ReadonlyMap<string, ReportTaskMeta[]>,
   scoringVersionByVariant: Map<string, number>,
   evaluateEligibility: StudentEligibilityEvaluator,
   scopeType: ScopeType,
   schoolNamesByUser: Map<string, string> | undefined,
 ): ServiceStudentScoreRow {
-  // Group variants by taskId, preserving orderIndex order
-  const variantsByTaskId = new Map<string, ReportTaskMeta[]>();
-  const taskOrder: string[] = [];
-  for (const meta of taskMetas) {
-    if (!variantsByTaskId.has(meta.taskId)) {
-      variantsByTaskId.set(meta.taskId, []);
-      taskOrder.push(meta.taskId);
-    }
-    variantsByTaskId.get(meta.taskId)!.push(meta);
-  }
-
   const scores: Record<string, ServiceStudentScoreEntry> = {};
 
   for (const taskId of taskOrder) {
@@ -1573,10 +1577,10 @@ function assembleStudentScoreRow(
       // getSupportLevel below for correct cutoff selection.
       const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
 
-      const percentile = pickFirstNumeric(scored.scoreMap, fieldNames.percentileFieldNames);
-      const rawScore = pickFirstNumeric(scored.scoreMap, fieldNames.rawScoreFieldNames);
-      const standardScore = pickFirstNumeric(scored.scoreMap, fieldNames.standardScoreFieldNames);
-      const assessmentSupportLevel = pickFirstString(scored.scoreMap, ['supportLevel', 'support_level']);
+      const percentile = resolveNumericScore(scored.scoreMap, fieldNames.percentileFieldNames);
+      const rawScore = resolveNumericScore(scored.scoreMap, fieldNames.rawScoreFieldNames);
+      const standardScore = resolveNumericScore(scored.scoreMap, fieldNames.standardScoreFieldNames);
+      const assessmentSupportLevel = resolveStringScore(scored.scoreMap, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
 
       const supportLevel = getSupportLevel({
         grade: row.grade,
@@ -1633,25 +1637,26 @@ function assembleStudentScoreRow(
   };
 }
 
-/** Pick the first matching field name's value parsed as a number, else null. */
-function pickFirstNumeric(scoreMap: Map<string, string>, fieldNames: string[]): number | null {
-  for (const name of fieldNames) {
-    const v = scoreMap.get(name);
-    if (v !== undefined) {
-      const parsed = parseScoreValue(v);
-      if (parsed !== null) return parsed;
+/**
+ * Group task metadata by taskId, preserving the orderIndex order of the input.
+ * Returns the ordered taskId list and a map from taskId to its variants. Pure
+ * function — depends only on `taskMetas`, so the result is hoisted out of the
+ * per-student loop in `listStudentScores` to avoid recomputing it for every row.
+ */
+function groupTaskMetasByTaskId(taskMetas: ReportTaskMeta[]): {
+  taskOrder: string[];
+  variantsByTaskId: Map<string, ReportTaskMeta[]>;
+} {
+  const variantsByTaskId = new Map<string, ReportTaskMeta[]>();
+  const taskOrder: string[] = [];
+  for (const meta of taskMetas) {
+    if (!variantsByTaskId.has(meta.taskId)) {
+      variantsByTaskId.set(meta.taskId, []);
+      taskOrder.push(meta.taskId);
     }
+    variantsByTaskId.get(meta.taskId)!.push(meta);
   }
-  return null;
-}
-
-/** Pick the first matching field name's raw string value, else null. */
-function pickFirstString(scoreMap: Map<string, string>, fieldNames: string[]): string | null {
-  for (const name of fieldNames) {
-    const v = scoreMap.get(name);
-    if (v !== undefined) return v;
-  }
-  return null;
+  return { taskOrder, variantsByTaskId };
 }
 
 /**

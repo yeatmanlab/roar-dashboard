@@ -2183,6 +2183,29 @@ describe('ReportService', () => {
       expect(seenIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
     });
 
+    it('returns an empty page when taskId filter excludes every task', async () => {
+      // Filter targets a UUID not present in testTaskMetas — taskMetas becomes []
+      // and the empty-task short-circuit returns immediately. No pagination query
+      // is run; totalItems is 0 by definition because no per-task entries can be
+      // assembled when no tasks are in scope.
+      setupDefaultStudentScoresMocks();
+
+      const filteredQuery: StudentScoresInput = {
+        ...baseQuery,
+        filter: [{ field: 'taskId', operator: 'in', value: '00000000-0000-0000-0000-000000000000' }],
+      };
+
+      const service = createService();
+      const result = await service.listStudentScores(superAdminAuth, testAdministrationId, filteredQuery);
+
+      expect(result.tasks).toEqual([]);
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+      // Short-circuit means we don't touch the paginated row fetch or downstream queries
+      expect(mockReportRepository.getStudentScores).not.toHaveBeenCalled();
+      expect(mockReportRepository.getSchoolNamesForUsers).not.toHaveBeenCalled();
+    });
+
     // --- Dynamic score-field filter translation ---
 
     it('translates supportLevel:eq:achievedSkill into priority 3', async () => {
