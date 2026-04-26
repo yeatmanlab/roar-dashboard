@@ -17,6 +17,7 @@ import type {
   ProgressOverviewQuery,
   ReportTaskMetadata,
   ProgressStudent,
+  ScoreOverviewQuery,
 } from '@roar-dashboard/api-contract';
 import type { Administration } from '../db/schema';
 import type {
@@ -437,6 +438,40 @@ export const AdministrationsController = {
   getProgressOverview: async (authContext: AuthContext, administrationId: string, query: ProgressOverviewQuery) => {
     try {
       const result = await reportService.getProgressOverview(authContext, administrationId, query);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get aggregated score overview for an administration.
+   *
+   * Delegates to ReportService for authorization and aggregation.
+   * Service and contract types are structurally identical, so the result is
+   * returned directly with no transformation.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scopeType, scopeId, optional filter)
+   */
+  getScoreOverview: async (authContext: AuthContext, administrationId: string, query: ScoreOverviewQuery) => {
+    try {
+      const result = await reportService.getScoreOverview(authContext, administrationId, query);
 
       return {
         status: StatusCodes.OK as const,
