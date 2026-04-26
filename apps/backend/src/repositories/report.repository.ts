@@ -19,6 +19,7 @@ import {
 import type * as CoreDbSchema from '../db/schema/core';
 import { CoreDbClient } from '../db/clients';
 import { fdwRuns } from '../db/schema/assessment-fdw/runs';
+import { fdwRunScores } from '../db/schema/assessment-fdw/run-scores';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { ScopeType } from '../services/report/report.types';
 import { conditionToSql } from '../utils/condition-to-sql';
@@ -146,6 +147,35 @@ export interface StudentAssignmentLevelCounts {
   studentsAssigned: number;
   studentsStarted: number;
   studentsCompleted: number;
+}
+
+/**
+ * Raw student data for score overview aggregation.
+ * Includes demographic fields for condition evaluation and grade for scoring.
+ */
+export interface StudentOverviewRow {
+  userId: string;
+  grade: string | null;
+  statusEll: string | null;
+  statusIep: string | null;
+  statusFrl: string | null;
+  dob: string | null;
+  gender: string | null;
+  race: string | null;
+  hispanicEthnicity: boolean | null;
+  homeLanguage: string | null;
+}
+
+/**
+ * Raw run score row from the FDW run_scores table.
+ * The service layer resolves these into percentile/rawScore values via the
+ * scoring service's task-specific field mappings.
+ */
+export interface RunScoreRow {
+  userId: string;
+  taskVariantId: string;
+  scoreName: string;
+  scoreValue: string;
 }
 
 /**
@@ -1229,5 +1259,97 @@ export class ReportRepository {
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
     END`;
+  }
+
+  /**
+   * Get all students in scope with demographic fields for score overview aggregation.
+   * Returns all students (no pagination) so the overview can aggregate across the full population.
+   *
+   * @param scope - The scope to query students within
+   * @param filterCondition - Optional SQL filter condition (must reference users table columns only)
+   * @returns Total student count and all student rows with demographic data
+   */
+  async getAllStudentsInScope(
+    scope: ReportScope,
+    filterCondition?: SQL,
+  ): Promise<{ totalStudents: number; students: StudentOverviewRow[] }> {
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
+
+    const [countRow] = await this.db
+      .select({ total: countDistinct(users.id) })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .where(filterCondition);
+
+    const totalStudents = countRow?.total ?? 0;
+
+    if (totalStudents === 0) {
+      return { totalStudents: 0, students: [] };
+    }
+
+    const studentRows = await this.db
+      .selectDistinct({
+        userId: users.id,
+        grade: users.grade,
+        statusEll: users.statusEll,
+        statusIep: users.statusIep,
+        statusFrl: users.statusFrl,
+        dob: users.dob,
+        gender: users.gender,
+        race: users.race,
+        hispanicEthnicity: users.hispanicEthnicity,
+        homeLanguage: users.homeLanguage,
+      })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .where(filterCondition);
+
+    return { totalStudents, students: studentRows };
+  }
+
+  /**
+   * Bulk fetch completed run scores for a set of students and task variants.
+   * Returns raw score rows (scoreName + scoreValue) that the service layer
+   * resolves into percentile/rawScore using task-specific field mappings.
+   *
+   * Filters: completed runs only (completedAt IS NOT NULL), non-aborted, non-deleted,
+   * reporting-eligible. Mirrors the run filters used in `getProgressStudents`.
+   *
+   * @param administrationId - The administration ID
+   * @param studentIds - Student user IDs to fetch scores for
+   * @param taskVariantIds - Task variant IDs to fetch scores for
+   * @returns Array of raw score rows
+   */
+  async getCompletedRunScores(
+    administrationId: string,
+    studentIds: string[],
+    taskVariantIds: string[],
+  ): Promise<RunScoreRow[]> {
+    if (studentIds.length === 0 || taskVariantIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.db
+      .select({
+        userId: fdwRuns.userId,
+        taskVariantId: fdwRuns.taskVariantId,
+        scoreName: fdwRunScores.name,
+        scoreValue: fdwRunScores.value,
+      })
+      .from(fdwRuns)
+      .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+      .where(
+        and(
+          eq(fdwRuns.administrationId, administrationId),
+          inArray(fdwRuns.userId, studentIds),
+          inArray(fdwRuns.taskVariantId, taskVariantIds),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          isNotNull(fdwRuns.completedAt),
+        ),
+      );
+
+    return rows;
   }
 }

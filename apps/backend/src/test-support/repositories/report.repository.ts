@@ -15,6 +15,8 @@ export function createMockReportRepository(): MockedObject<ReportRepository> {
     getUserRolesAtOrAboveScope: vi.fn(),
     getProgressStudents: vi.fn(),
     getProgressOverviewCounts: vi.fn(),
+    getAllStudentsInScope: vi.fn(),
+    getCompletedRunScores: vi.fn(),
   } as unknown as MockedObject<ReportRepository>;
 }
 
