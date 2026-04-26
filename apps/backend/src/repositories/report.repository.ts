@@ -963,8 +963,12 @@ export class ReportRepository {
    * the user's school from their org membership regardless of which schools are part of
    * the administration. For a user enrolled in multiple schools, the alphabetically first
    * school may not be the most relevant one for the current report context.
+   *
+   * Public so that other repository methods (e.g., the student-scores listing) can
+   * reuse the same lookup at district scope without duplicating the two-phase
+   * user_orgs → user_classes fallback.
    */
-  private async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
+  async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
     const rows = await this.db
       .selectDistinct({
         userId: userOrgs.userId,
