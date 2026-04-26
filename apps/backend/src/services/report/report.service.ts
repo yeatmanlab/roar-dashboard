@@ -668,7 +668,12 @@ export function ReportService({
       // 3. Build per-task primary variant map (lowest-orderIndex variant of each task)
       const primaryVariantByTaskId = buildPrimaryVariantMap(taskMetas);
 
-      // 4. Resolve scoring versions per variant
+      // 4. Validate any dynamic score-field references in sort/filter BEFORE
+      // any further DB call — bad task IDs should fail fast as 400, not get
+      // silently swallowed into a 500 by a downstream failure.
+      validateDynamicFieldTaskIds(sortBy, filter, primaryVariantByTaskId, taskMetas);
+
+      // 5. Resolve scoring versions per variant
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams =
         taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
@@ -1353,6 +1358,43 @@ function parseScoreFieldString(field: string): { taskId: string; fieldType: Stud
 }
 
 /**
+ * Validate that every dynamic `scores.<taskId>.<field>` reference in `sortBy`
+ * and `filter` resolves to a known taskId. Throws 400 on any unknown taskId.
+ *
+ * Called before fetching scoring versions so input-validation errors fail fast
+ * as 400 rather than getting wrapped as 500 by an unrelated downstream failure.
+ */
+function validateDynamicFieldTaskIds(
+  sortBy: string,
+  filter: ParsedFilter[],
+  primaryVariantByTaskId: Map<string, ReportTaskMeta>,
+  taskMetas: ReportTaskMeta[],
+): void {
+  const knownIds = () => taskMetas.map((t) => t.taskId);
+
+  const sortParsed = parseScoreFieldString(sortBy);
+  if (sortParsed && !primaryVariantByTaskId.has(sortParsed.taskId)) {
+    throw new ApiError('Invalid task ID in sort field', {
+      statusCode: StatusCodes.BAD_REQUEST,
+      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      context: { sortBy, availableTaskIds: knownIds() },
+    });
+  }
+
+  for (const f of filter) {
+    if (f.field === 'taskId') continue;
+    const parsed = parseScoreFieldString(f.field);
+    if (parsed && !primaryVariantByTaskId.has(parsed.taskId)) {
+      throw new ApiError('Invalid task ID in filter field', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { field: f.field, availableTaskIds: knownIds() },
+      });
+    }
+  }
+}
+
+/**
  * Resolve a dynamic sort string into a `StudentScoresFieldRef` against the
  * primary variant of the referenced task. Returns null for static sort fields
  * (the caller falls back to the static-column path) and throws 400 for
@@ -1526,7 +1568,10 @@ function assembleStudentScoreRow(
     if (scored) {
       const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
       const gradeLevel = getGradeAsNumber(row.grade);
-      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel, scoringVersion);
+      // Match score-overview's resolution strategy: omit scoringVersion so all-version
+      // field names are returned. This is best-effort — the version is still passed to
+      // getSupportLevel below for correct cutoff selection.
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
 
       const percentile = pickFirstNumeric(scored.scoreMap, fieldNames.percentileFieldNames);
       const rawScore = pickFirstNumeric(scored.scoreMap, fieldNames.rawScoreFieldNames);
