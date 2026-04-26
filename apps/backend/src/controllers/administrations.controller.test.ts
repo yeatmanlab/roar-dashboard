@@ -6,7 +6,12 @@ import {
 } from '../test-support/factories/administration.factory';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
-import type { ProgressStudentsQuery, ReportTaskMetadata, ProgressStudent } from '@roar-dashboard/api-contract';
+import type {
+  ProgressStudentsQuery,
+  ReportTaskMetadata,
+  ProgressStudent,
+  ScoreOverviewQuery,
+} from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 
@@ -1447,6 +1452,108 @@ describe('AdministrationsController', () => {
       await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
 
       expect(mockGetProgressOverview).toHaveBeenCalledWith(mockAuthContext, testAdminId, testQuery);
+    });
+  });
+
+  describe('getScoreOverview', () => {
+    const testAdminId = 'admin-uuid-1';
+
+    const scoreQuery: ScoreOverviewQuery = {
+      scopeType: 'district',
+      scopeId: 'district-uuid-1',
+      filter: [],
+    };
+
+    const testScoreResult = {
+      totalStudents: 100,
+      tasks: [
+        {
+          taskId: 'task-1',
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 0,
+          totalAssessed: 80,
+          totalNotAssessed: { required: 15, optional: 5 },
+          supportLevels: {
+            achievedSkill: { count: 40, percentage: 50.0 },
+            developingSkill: { count: 25, percentage: 31.3 },
+            needsExtraSupport: { count: 15, percentage: 18.8 },
+          },
+        },
+      ],
+      computedAt: '2025-09-16T12:00:00.000Z',
+    };
+
+    it('returns 200 with score overview data', async () => {
+      mockGetScoreOverview.mockResolvedValue(testScoreResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.totalStudents).toBe(100);
+      expect(data.tasks).toHaveLength(1);
+      expect(data.tasks[0]!.supportLevels.achievedSkill.count).toBe(40);
+      expect(data.computedAt).toBe('2025-09-16T12:00:00.000Z');
+    });
+
+    it('maps ApiError to typed error response for 404', async () => {
+      mockGetScoreOverview.mockRejectedValue(
+        new ApiError('Not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('maps ApiError to typed error response for 403', async () => {
+      mockGetScoreOverview.mockRejectedValue(
+        new ApiError('Forbidden', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('maps ApiError to typed error response for 400', async () => {
+      mockGetScoreOverview.mockRejectedValue(
+        new ApiError('Bad request', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('re-throws non-ApiError errors', async () => {
+      mockGetScoreOverview.mockRejectedValue(new Error('unexpected'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery)).rejects.toThrow('unexpected');
+    });
+
+    it('passes authContext, administrationId, and query to service', async () => {
+      mockGetScoreOverview.mockResolvedValue(testScoreResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
+
+      expect(mockGetScoreOverview).toHaveBeenCalledWith(mockAuthContext, testAdminId, scoreQuery);
     });
   });
 });
