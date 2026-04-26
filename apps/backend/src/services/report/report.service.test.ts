@@ -1729,7 +1729,9 @@ describe('ReportService', () => {
 
     it('returns empty tasks array when taskId filter excludes every task', async () => {
       // Filter targets a UUID not present in testTaskMetas — taskMetas becomes []
-      // and taskGroups.length === 0 triggers the short-circuit.
+      // and taskGroups.length === 0 triggers the short-circuit. Because the short-circuit
+      // is evaluated BEFORE the student-fetch DB call, getAllStudentsInScope is also skipped
+      // and the response carries totalStudents: 0 by definition (no tasks → no aggregation).
       const students = [buildOverviewStudent({ userId: 'student-1' })];
       setupDefaultScoreOverviewMocks(students, []);
 
@@ -1742,11 +1744,33 @@ describe('ReportService', () => {
       const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery);
 
       expect(result.tasks).toHaveLength(0);
-      expect(result.totalStudents).toBe(1);
+      expect(result.totalStudents).toBe(0);
       expect(typeof result.computedAt).toBe('string');
-      // Short-circuit means we don't fetch scoring versions or run scores
+      // Short-circuit means we don't touch the student-fetch path or downstream queries
+      expect(mockReportRepository.getAllStudentsInScope).not.toHaveBeenCalled();
       expect(mockTaskVariantParameterRepository.getByTaskVariantIds).not.toHaveBeenCalled();
       expect(mockReportRepository.getCompletedRunScores).not.toHaveBeenCalled();
+    });
+
+    it('merges multiple taskId filter entries into a single allow-list', async () => {
+      // Two `taskId:in:...` filter entries should be unioned (not silently truncated to the first).
+      // The fixture has TASK_ID_1, TASK_ID_2, TASK_ID_3, TASK_ID_4 in testTaskMetas; we ask for
+      // ID_1 in the first entry and ID_3 in the second, expecting both back.
+      setupDefaultScoreOverviewMocks([buildOverviewStudent({ userId: 'student-1' })], []);
+
+      const filteredQuery: ScoreOverviewInput = {
+        ...scoreQuery,
+        filter: [
+          { field: 'taskId', operator: 'in', value: TASK_ID_1 },
+          { field: 'taskId', operator: 'in', value: TASK_ID_3 },
+        ],
+      };
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery);
+
+      const returnedIds = new Set(result.tasks.map((t) => t.taskId));
+      expect(returnedIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
     });
 
     // --- Multi-variant: any required → required (not optional) ---

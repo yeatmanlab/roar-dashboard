@@ -1315,6 +1315,16 @@ export class ReportRepository {
    * Filters: completed runs only (completedAt IS NOT NULL), non-aborted, non-deleted,
    * reporting-eligible. Mirrors the run filters used in `getProgressStudents`.
    *
+   * Run-level dedup: this query does not de-duplicate at the run level — it returns
+   * every score row for every matching run. The caller (`buildScoreLookup`) folds
+   * scores into a `userId → taskVariantId → scoreName → value` map, with last-row-wins
+   * on duplicate `(userId, taskVariantId, scoreName)` triples. That is correct only
+   * if the assessment side guarantees at most one `useForReporting=true`,
+   * non-aborted, non-deleted completed run per (user, variant). If that invariant
+   * is ever broken, multi-run scoring will silently pick the last-fetched row's
+   * value rather than e.g. the most recent one — surface this assumption here so
+   * any future change to assessment-side run lifecycle gets reviewed against it.
+   *
    * @param administrationId - The administration ID
    * @param studentIds - Student user IDs to fetch scores for
    * @param taskVariantIds - Task variant IDs to fetch scores for

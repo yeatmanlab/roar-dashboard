@@ -548,10 +548,13 @@ export function ReportService({
       // 3. Get task metadata
       let taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
-      // 4. Extract taskId filter (if any) and user-level filters separately
-      const taskIdFilter = filter.find((f) => f.field === 'taskId');
-      if (taskIdFilter) {
-        const allowedTaskIds = new Set(taskIdFilter.value.split(',').map((v) => v.trim()));
+      // 4. Extract taskId filters (if any) and user-level filters separately.
+      // Multiple `taskId:in:...` filter entries are merged into a single allow-list —
+      // a client passing `?filter=taskId:in:a,b&filter=taskId:in:c` should see all three.
+      // Using filter().flatMap() rather than find() to avoid silently dropping later entries.
+      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
+      if (taskIdFilters.length > 0) {
+        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
         taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
       }
 
@@ -563,18 +566,28 @@ export function ReportService({
             })
           : undefined;
 
-      // 5. Get all students in scope (no pagination — overview aggregates the full population)
+      // 5. Group variants by taskId for multi-variant deduplication.
+      // Multiple variants can share a taskId (e.g., grade-specific variants).
+      // Each student should be counted once per task at their best variant's score.
+      // This is pure (no I/O), so derive it before any DB calls — when a taskId
+      // filter eliminates every task we can short-circuit without touching the DB.
+      const taskGroups = groupVariantsByTaskId(taskMetas);
+
+      if (taskGroups.length === 0) {
+        return {
+          totalStudents: 0,
+          tasks: [],
+          computedAt: new Date().toISOString(),
+        };
+      }
+
+      // 6. Get all students in scope (no pagination — overview aggregates the full population)
       const { totalStudents, students } = await reportRepository.getAllStudentsInScope(
         { scopeType, scopeId },
         filterCondition,
       );
 
-      // 6. Group variants by taskId for multi-variant deduplication.
-      // Multiple variants can share a taskId (e.g., grade-specific variants).
-      // Each student should be counted once per task at their best variant's score.
-      const taskGroups = groupVariantsByTaskId(taskMetas);
-
-      if (totalStudents === 0 || taskGroups.length === 0) {
+      if (totalStudents === 0) {
         return {
           totalStudents,
           tasks: taskGroups.map(({ representative }) => buildEmptyTaskOverview(representative)),
@@ -626,7 +639,7 @@ export function ReportService({
       throw new ApiError('Failed to retrieve score overview', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, administrationId },
+        context: { userId, administrationId, scopeType, scopeId },
         cause: error,
       });
     }
