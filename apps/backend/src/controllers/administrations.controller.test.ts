@@ -1539,6 +1539,20 @@ describe('AdministrationsController', () => {
       expect(result.status).toBe(StatusCodes.BAD_REQUEST);
     });
 
+    it('maps ApiError to typed error response for 500', async () => {
+      mockGetScoreOverview.mockRejectedValue(
+        new ApiError('Internal server error', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
     it('re-throws non-ApiError errors', async () => {
       mockGetScoreOverview.mockRejectedValue(new Error('unexpected'));
 

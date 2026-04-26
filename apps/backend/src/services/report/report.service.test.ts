@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { ReportService, buildProgressMap } from './report.service';
+import { ReportService, buildProgressMap, groupVariantsByTaskId } from './report.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import {
   createMockAdministrationRepository,
@@ -1723,6 +1723,261 @@ describe('ReportService', () => {
       expect(result.tasks[0]!.taskSlug).toBe('swr');
       expect(result.tasks[0]!.taskName).toBe('ROAR - Word');
       expect(result.tasks[0]!.orderIndex).toBe(0);
+    });
+
+    // --- Empty-result short-circuit when taskId filter excludes all tasks ---
+
+    it('returns empty tasks array when taskId filter excludes every task', async () => {
+      // Filter targets a UUID not present in testTaskMetas — taskMetas becomes []
+      // and taskGroups.length === 0 triggers the short-circuit.
+      const students = [buildOverviewStudent({ userId: 'student-1' })];
+      setupDefaultScoreOverviewMocks(students, []);
+
+      const filteredQuery: ScoreOverviewInput = {
+        ...scoreQuery,
+        filter: [{ field: 'taskId', operator: 'in', value: '00000000-0000-0000-0000-000000000000' }],
+      };
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery);
+
+      expect(result.tasks).toHaveLength(0);
+      expect(result.totalStudents).toBe(1);
+      expect(typeof result.computedAt).toBe('string');
+      // Short-circuit means we don't fetch scoring versions or run scores
+      expect(mockTaskVariantParameterRepository.getByTaskVariantIds).not.toHaveBeenCalled();
+      expect(mockReportRepository.getCompletedRunScores).not.toHaveBeenCalled();
+    });
+
+    // --- Multi-variant: any required → required (not optional) ---
+
+    it('counts a not-assessed student as required when any variant is required', async () => {
+      // Variant A assigns the student as required. Variant B assigns them as optional.
+      // Per evaluateEligibilityAcrossVariants, the student should be counted as
+      // not-assessed REQUIRED because at least one variant marks them required.
+      const SHARED_TASK = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+      const variantA: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-a',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      const variantB: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-b',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 1,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+
+      mockReportRepository.getTaskMetadata.mockResolvedValue([variantA, variantB]);
+
+      const students = [buildOverviewStudent({ userId: 'student-1' })];
+      setupDefaultScoreOverviewMocks(students, []);
+
+      // Variant A: assigned + required. Variant B: assigned + optional.
+      let callCount = 0;
+      mockTaskService.evaluateTaskVariantEligibility.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return { isAssigned: true, isOptional: false };
+        return { isAssigned: true, isOptional: true };
+      });
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      expect(result.tasks[0]!.totalNotAssessed.required).toBe(1);
+      expect(result.tasks[0]!.totalNotAssessed.optional).toBe(0);
+    });
+
+    // --- Scoring version edge cases ---
+    //
+    // The scoring service's swr config exposes different percentile cutoffs by version:
+    //   v0 (legacy): achievedSkill >= 50, developingSkill >= 25
+    //   v7+:         achievedSkill >= 40, developingSkill >= 20
+    // A percentile of 45 lets us observe which version's cutoffs were applied:
+    //   v0 → developingSkill (45 < 50)
+    //   v7 → achievedSkill   (45 >= 40)
+
+    it('ignores task variant parameters whose name is not scoringVersion', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '45')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      // Param has the wrong name — should be ignored, leaving version=null (treated as 0)
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
+        { taskVariantId: VARIANT_ID_1, name: 'difficulty', value: 7, createdAt: new Date(), updatedAt: null },
+      ]);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // v0 cutoffs were applied: 45 < 50 → developingSkill, NOT achievedSkill
+      expect(swrTask.supportLevels.developingSkill.count).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
+    });
+
+    it('ignores scoringVersion values that cannot be parsed as a number', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '45')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      // Non-numeric string → Number('foo') is NaN → skipped → version stays null/0
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
+        { taskVariantId: VARIANT_ID_1, name: 'scoringVersion', value: 'foo', createdAt: new Date(), updatedAt: null },
+      ]);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevels.developingSkill.count).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
+    });
+
+    it('accepts string-numeric scoringVersion values', async () => {
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '45')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+      // String '7' → Number('7') = 7 → v7 cutoffs applied
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
+        { taskVariantId: VARIANT_ID_1, name: 'scoringVersion', value: '7', createdAt: new Date(), updatedAt: null },
+      ]);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // v7 cutoffs applied: 45 >= 40 → achievedSkill
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(1);
+      expect(swrTask.supportLevels.developingSkill.count).toBe(0);
+    });
+
+    // --- Assessment-computed support level (roam-alpaca) ---
+
+    it('classifies assessment-computed tasks via the supportLevel score field', async () => {
+      // roam-alpaca uses classification.type = 'assessment-computed' — the support level
+      // comes from the assessment, not from percentile/rawScore cutoffs.
+      const ROAM_ALPACA_TASK = 'cccccccc-aaaa-bbbb-dddd-eeeeeeeeeeee';
+      const ROAM_VARIANT = 'roam-variant-1';
+      const roamMeta: ReportTaskMeta = {
+        taskId: ROAM_ALPACA_TASK,
+        taskVariantId: ROAM_VARIANT,
+        taskSlug: 'roam-alpaca',
+        taskName: 'ROAM - Alpaca',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      mockReportRepository.getTaskMetadata.mockResolvedValue([roamMeta]);
+
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', ROAM_VARIANT, 'supportLevel', 'achievedSkill')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const roamTask = result.tasks.find((t) => t.taskId === ROAM_ALPACA_TASK)!;
+      expect(roamTask.totalAssessed).toBe(1);
+      expect(roamTask.supportLevels.achievedSkill.count).toBe(1);
+      expect(roamTask.supportLevels.developingSkill.count).toBe(0);
+      expect(roamTask.supportLevels.needsExtraSupport.count).toBe(0);
+    });
+
+    // --- parseScoreValue angle-bracket handling ---
+
+    it('classifies angle-bracket percentile strings (e.g., ">99")', async () => {
+      // Newer norming tables encode extreme values as ">99" or "<1". parseScoreValue
+      // strips the brackets so the score is still classifiable.
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '>99')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.totalAssessed).toBe(1);
+      // 99 (after bracket strip) >= 50 (v0 swr achieved cutoff) → achievedSkill
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(1);
+    });
+
+    // --- No resolvable score path ---
+
+    it('counts a student in totalAssessed but no support-level bucket when scores are unresolvable', async () => {
+      // The student's run has score rows, but none match the swr field names
+      // (e.g., 'percentile', 'wjPercentile', 'roarScore'). getSupportLevel
+      // returns null → counted in totalAssessed but no bucket increments.
+      const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'irrelevant', '42')];
+
+      setupDefaultScoreOverviewMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.totalAssessed).toBe(1);
+      expect(swrTask.supportLevels.achievedSkill.count).toBe(0);
+      expect(swrTask.supportLevels.developingSkill.count).toBe(0);
+      expect(swrTask.supportLevels.needsExtraSupport.count).toBe(0);
+      // Not-assessed should NOT be incremented either — the student is "assessed"
+      // (has a completed run with scores), they just lack a classifiable result.
+      expect(swrTask.totalNotAssessed.required).toBe(0);
+      expect(swrTask.totalNotAssessed.optional).toBe(0);
+    });
+  });
+
+  // --- groupVariantsByTaskId helper unit test ---
+
+  describe('groupVariantsByTaskId', () => {
+    function buildMeta(overrides: Partial<ReportTaskMeta> & { taskId: string; taskVariantId: string }): ReportTaskMeta {
+      return {
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+        ...overrides,
+      };
+    }
+
+    it('returns an empty array for empty input', () => {
+      expect(groupVariantsByTaskId([])).toEqual([]);
+    });
+
+    it('groups variants sharing a taskId and uses the first occurrence as the representative', () => {
+      const a = buildMeta({ taskId: 'task-1', taskVariantId: 'v-1', orderIndex: 0 });
+      const b = buildMeta({ taskId: 'task-1', taskVariantId: 'v-2', orderIndex: 1 });
+      const c = buildMeta({ taskId: 'task-2', taskVariantId: 'v-3', orderIndex: 2 });
+
+      const groups = groupVariantsByTaskId([a, b, c]);
+
+      expect(groups).toHaveLength(2);
+      expect(groups[0]!.representative).toBe(a);
+      expect(groups[0]!.variants).toEqual([a, b]);
+      expect(groups[1]!.representative).toBe(c);
+      expect(groups[1]!.variants).toEqual([c]);
+    });
+
+    it('preserves the input order across taskIds (does not sort by taskId)', () => {
+      // First-seen wins for ordering — taskId 'z' before 'a' in input → 'z' first in output.
+      const z = buildMeta({ taskId: 'z-task', taskVariantId: 'v-z', orderIndex: 0 });
+      const a = buildMeta({ taskId: 'a-task', taskVariantId: 'v-a', orderIndex: 1 });
+
+      const groups = groupVariantsByTaskId([z, a]);
+
+      expect(groups.map((g) => g.representative.taskId)).toEqual(['z-task', 'a-task']);
     });
   });
 });

@@ -1538,6 +1538,22 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
     });
+
+    it('returns 403 when class teacher requests school scope', async () => {
+      // FGA can_read_scores at the school level requires school_admin_tier or higher.
+      // A class teacher's tuples don't propagate up to the school, so the request is denied.
+      authenticateAs(baseFixture.classATeacher);
+      const res = await request(app)
+        .get(scoreOverviewPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
   });
 
   describe('scope validation', () => {
@@ -1693,6 +1709,62 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       expect(typeof data.totalStudents).toBe('number');
       expect(data.totalStudents).toBeGreaterThanOrEqual(0);
     });
+
+    it('deduplicates multi-variant tasks into one entry per taskId', async () => {
+      // The fixture assigns 4 variants of `task` (variantForAllGrades, variantForGrade5,
+      // variantForGrade3, variantOptionalForEll) and 2 variants of `task2` to
+      // administrationAssignedToDistrict. Without dedup we would see 6 entries; with
+      // dedup we expect exactly 2 (one per unique taskId).
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(scoreOverviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      const uniqueTaskIds = new Set(data.tasks.map((t: { taskId: string }) => t.taskId));
+      expect(uniqueTaskIds.size).toBe(data.tasks.length);
+      expect(uniqueTaskIds).toEqual(new Set([baseFixture.task.id, baseFixture.task2.id]));
+    });
+
+    it('returns 200 for class scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreOverviewPath(baseFixture.administrationAssignedToClassA.id))
+        .query({
+          scopeType: 'class',
+          scopeId: baseFixture.classInSchoolA.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('totalStudents');
+      expect(data).toHaveProperty('tasks');
+      expect(data).toHaveProperty('computedAt');
+    });
+
+    it('returns 200 for group scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreOverviewPath(baseFixture.administrationAssignedToGroup.id))
+        .query({
+          scopeType: 'group',
+          scopeId: baseFixture.group.id,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('totalStudents');
+      expect(data).toHaveProperty('tasks');
+      // The group administration has no task variants assigned — tasks should be empty
+      expect(data.tasks).toHaveLength(0);
+    });
   });
 
   describe('FDW-backed aggregation', () => {
@@ -1731,6 +1803,28 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       expect(taskOverview).toBeDefined();
       // At least the seeded student should be assessed
       expect(taskOverview!.totalAssessed).toBeGreaterThanOrEqual(1);
+    });
+
+    it('counts students without completed runs in totalNotAssessed', async () => {
+      // The district contains more students than the single seeded grade5Student.
+      // Every other student has no completed run with scores for `task`, so they
+      // should appear in totalNotAssessed (required or optional, depending on
+      // condition evaluation).
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreOverviewPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(scoreOverviewQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      const taskOverview = data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
+      expect(taskOverview).toBeDefined();
+      const notAssessedTotal = taskOverview!.totalNotAssessed.required + taskOverview!.totalNotAssessed.optional;
+      expect(notAssessedTotal).toBeGreaterThan(0);
+      // Every assigned student is either assessed or not-assessed — never both.
+      expect(taskOverview!.totalAssessed + notAssessedTotal).toBeLessThanOrEqual(data.totalStudents);
     });
   });
 });
