@@ -11,6 +11,7 @@ import type {
   ReportTaskMetadata,
   ProgressStudent,
   ScoreOverviewQuery,
+  StudentScoresQuery,
 } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -1570,6 +1571,151 @@ describe('AdministrationsController', () => {
       await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
 
       expect(mockGetScoreOverview).toHaveBeenCalledWith(mockAuthContext, testAdminId, scoreQuery);
+    });
+  });
+
+  describe('listStudentScores', () => {
+    const testAdminId = 'admin-uuid-1';
+
+    const studentScoresQuery: StudentScoresQuery = {
+      scopeType: 'district',
+      scopeId: 'district-uuid-1',
+      page: 1,
+      perPage: 25,
+      sortBy: 'user.lastName',
+      sortOrder: 'asc',
+      filter: [],
+    };
+
+    const testStudentScoresResult = {
+      tasks: [
+        {
+          taskId: 'task-1',
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 0,
+        },
+      ],
+      items: [
+        {
+          user: {
+            userId: 'user-1',
+            assessmentPid: null,
+            username: 'jdoe',
+            email: 'jdoe@school.edu',
+            firstName: 'Jane',
+            lastName: 'Doe',
+            grade: '3',
+            schoolName: 'Lincoln Elementary',
+          },
+          scores: {
+            'task-1': {
+              rawScore: 520,
+              percentile: 45,
+              standardScore: 102,
+              supportLevel: 'developingSkill' as const,
+              reliable: true,
+              engagementFlags: [],
+              optional: false,
+              completed: true,
+            },
+          },
+        },
+      ],
+      totalItems: 50,
+    };
+
+    it('returns 200 with paginated student scores and computed totalPages', async () => {
+      mockListStudentScores.mockResolvedValue(testStudentScoresResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.tasks).toHaveLength(1);
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0]!.scores['task-1']!.supportLevel).toBe('developingSkill');
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 50,
+        totalPages: 2, // ceil(50 / 25)
+      });
+    });
+
+    it('maps ApiError to typed error response for 400', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Bad request', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('maps ApiError to typed error response for 403', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Forbidden', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('maps ApiError to typed error response for 404', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('maps ApiError to typed error response for 500', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Internal', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('re-throws non-ApiError errors', async () => {
+      mockListStudentScores.mockRejectedValue(new Error('unexpected'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery)).rejects.toThrow(
+        'unexpected',
+      );
+    });
+
+    it('passes authContext, administrationId, and query to service', async () => {
+      mockListStudentScores.mockResolvedValue(testStudentScoresResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(mockListStudentScores).toHaveBeenCalledWith(mockAuthContext, testAdminId, studentScoresQuery);
     });
   });
 });
