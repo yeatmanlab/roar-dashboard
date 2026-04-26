@@ -1265,6 +1265,16 @@ export class ReportRepository {
    * Get all students in scope with demographic fields for score overview aggregation.
    * Returns all students (no pagination) so the overview can aggregate across the full population.
    *
+   * Implementation note: this method runs two queries — a `COUNT DISTINCT` for
+   * `totalStudents` followed by a `SELECT DISTINCT` for the row data. Between
+   * the two calls the underlying population could change (a roster sync, a
+   * `rosteringEnded` update, or a concurrent admin-assignment edit), which
+   * would let the returned `totalStudents` diverge from `students.length` by
+   * a small amount. The window is very short and the worst case is an off-by-N
+   * on the count for one request — acceptable for an aggregation endpoint that
+   * already presents instantaneous snapshots. Wrap in a transaction with
+   * `REPEATABLE READ` if precision tightens.
+   *
    * @param scope - The scope to query students within
    * @param filterCondition - Optional SQL filter condition (must reference users table columns only)
    * @returns Total student count and all student rows with demographic data
