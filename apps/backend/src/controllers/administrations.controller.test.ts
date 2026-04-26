@@ -49,6 +49,7 @@ describe('AdministrationsController', () => {
   const mockListProgressStudents = vi.fn();
   const mockGetProgressOverview = vi.fn();
   const mockGetScoreOverview = vi.fn();
+  const mockListStudentScores = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -69,6 +70,7 @@ describe('AdministrationsController', () => {
       listProgressStudents: mockListProgressStudents,
       getProgressOverview: mockGetProgressOverview,
       getScoreOverview: mockGetScoreOverview,
+      listStudentScores: mockListStudentScores,
     });
   });
   describe('list', () => {
