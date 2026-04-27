@@ -174,7 +174,10 @@ export default async function globalSetup() {
     cwd: backendDir,
     env: {
       ...process.env,
-      NODE_ENV: 'test',
+      // Use 'production' to avoid pino-pretty transport which crashes in bundled ESM
+      // (thread-stream uses __dirname, unavailable in ES modules).
+      // The test server behavior is controlled by explicit setup steps, not NODE_ENV.
+      NODE_ENV: 'production',
       PORT: BACKEND_PORT,
       TEST_FIXTURE_FILE: process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json',
     },
