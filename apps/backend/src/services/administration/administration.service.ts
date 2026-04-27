@@ -1220,7 +1220,12 @@ export function AdministrationService({
         }
 
         // Re-throw the original FGA error
-        throw fgaError;
+        throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          context: { userId, administrationId: created.id },
+          cause: fgaError,
+        });
       }
 
       logger.info({ userId, administrationId: created.id }, 'Administration created successfully');

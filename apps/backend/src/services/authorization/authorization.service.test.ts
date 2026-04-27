@@ -108,7 +108,7 @@ describe('AuthorizationService', () => {
 
       await expect(service.writeTuplesOrThrow(sampleTuples)).rejects.toThrow(
         expect.objectContaining({
-          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         }),
@@ -219,7 +219,7 @@ describe('AuthorizationService', () => {
 
       await expect(service.hasPermission('user-123', 'can_read', 'administration:admin-456')).rejects.toThrow(
         expect.objectContaining({
-          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         }),
@@ -282,7 +282,7 @@ describe('AuthorizationService', () => {
 
       await expect(service.requirePermission('user-123', 'can_read', 'administration:admin-456')).rejects.toThrow(
         expect.objectContaining({
-          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         }),
       );
@@ -340,7 +340,7 @@ describe('AuthorizationService', () => {
 
       await expect(service.listAccessibleObjects('user-123', 'can_read', 'administration')).rejects.toThrow(
         expect.objectContaining({
-          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         }),

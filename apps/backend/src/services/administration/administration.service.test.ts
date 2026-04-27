@@ -3414,7 +3414,7 @@ describe('AdministrationService', () => {
         mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
 
         // FGA write fails
-        const fgaError = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        const fgaError = new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         });
@@ -3433,7 +3433,13 @@ describe('AdministrationService', () => {
         });
 
         // Act & Assert
-        await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(fgaError);
+        await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+          expect.objectContaining({
+            message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          }),
+        );
 
         // Verify compensation: administration should be deleted
         expect(mockAdminRepo.delete).toHaveBeenCalledWith({ id: 'created-admin-id' });
@@ -3470,7 +3476,7 @@ describe('AdministrationService', () => {
         mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
 
         // FGA write fails
-        const fgaError = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        const fgaError = new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         });
@@ -3489,7 +3495,13 @@ describe('AdministrationService', () => {
         });
 
         // Act & Assert - should throw the original FGA error, not the delete error
-        await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(fgaError);
+        await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+          expect.objectContaining({
+            message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          }),
+        );
 
         // Verify compensation was attempted
         expect(mockAdminRepo.delete).toHaveBeenCalledWith({ id: 'created-admin-id' });
