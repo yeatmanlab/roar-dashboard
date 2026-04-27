@@ -1177,7 +1177,7 @@ export function ReportService({
       if (!isSuperAdmin) {
         // Self-access denied
         if (userId === targetUserId) {
-          logger.warn({ userId, targetUserId }, 'Student attempted to view their own guardian report');
+          logger.warn({ userId, targetUserId }, 'User attempted to view their own guardian report');
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
             code: ApiErrorCode.AUTH_FORBIDDEN,
