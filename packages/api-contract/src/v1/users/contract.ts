@@ -108,6 +108,7 @@ export const UsersContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(AdministrationsListResponseSchema),
         401: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
@@ -115,7 +116,8 @@ export const UsersContract = c.router(
       description:
         'Returns a paginated list of administrations the requester and specified user have access to. ' +
         'Use ?status=active|past|upcoming to filter by date status. ' +
-        'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants.',
+        'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants. ' +
+        'Returns 404 if the specified user does not exist.',
     },
   },
   { pathPrefix: '/users' },

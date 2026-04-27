@@ -1040,5 +1040,22 @@ describe('UsersController', () => {
         }),
       );
     });
+
+    it('should return 404 when target user does not exist', async () => {
+      mockGetUserAdministrations.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, 'non-existent-user', defaultQuery);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(errorBody.traceId).toBeDefined();
+    });
   });
 });

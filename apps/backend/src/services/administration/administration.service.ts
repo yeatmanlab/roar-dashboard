@@ -762,6 +762,16 @@ export function AdministrationService({
     }
 
     try {
+      // Verify target user exists
+      const targetUser = await userRepository.getById({ id: userId });
+
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId },
+        });
+      }
       const queryParams = {
         page: options.page,
         perPage: options.perPage,

@@ -2412,7 +2412,9 @@ describe('AdministrationService', () => {
 
     it('should return administrations for super admin without filtering by requester permissions', async () => {
       const mockAdmins = AdministrationFactory.buildList(3);
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
 
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
       mockAdministrationRepository.getByIds.mockResolvedValue({
         items: mockAdmins,
@@ -2421,6 +2423,7 @@ describe('AdministrationService', () => {
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2445,7 +2448,9 @@ describe('AdministrationService', () => {
 
     it('should filter administrations by intersection of target and requester permissions for non-super-admin', async () => {
       const mockAdmins = ['admin-2', 'admin-3'].map((id) => AdministrationFactory.build({ id }));
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
 
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce(['admin-1', 'admin-2', 'admin-3'].map((id) => `administration:${id}`))
         .mockResolvedValueOnce(['admin-2', 'admin-3', 'admin-4'].map((id) => `administration:${id}`));
@@ -2457,6 +2462,7 @@ describe('AdministrationService', () => {
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2488,10 +2494,14 @@ describe('AdministrationService', () => {
     });
 
     it('should return empty result when target user has no accessible administrations', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2511,7 +2521,35 @@ describe('AdministrationService', () => {
       expect(result.totalItems).toBe(0);
     });
 
+    it('should throw 404 when target user does not exist', async () => {
+      mockUserRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministrations({ userId: 'requester-user-456', isSuperAdmin: false }, 'non-existent-user', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'non-existent-user' });
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+    });
+
     it('should return empty result when non-super-admin has no common administrations with target user', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce(['admin-1', 'admin-2'].map((id) => `administration:${id}`))
         .mockResolvedValueOnce(['admin-3', 'admin-4'].map((id) => `administration:${id}`));
@@ -2523,6 +2561,7 @@ describe('AdministrationService', () => {
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2539,7 +2578,9 @@ describe('AdministrationService', () => {
 
     it('should include stats embed for super admin when requested', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
 
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`administration:${mockAdmin.id}`]);
       mockAdministrationRepository.getByIds.mockResolvedValue({
         items: [mockAdmin],
@@ -2555,6 +2596,7 @@ describe('AdministrationService', () => {
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         runRepository: mockRunRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2574,7 +2616,9 @@ describe('AdministrationService', () => {
 
     it('should not include stats embed for non-super-admin even when requested', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
 
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce([`administration:${mockAdmin.id}`])
         .mockResolvedValueOnce([`administration:${mockAdmin.id}`]);
@@ -2587,6 +2631,7 @@ describe('AdministrationService', () => {
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         runRepository: mockRunRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2603,7 +2648,9 @@ describe('AdministrationService', () => {
 
     it('should include tasks embed when requested', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
 
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`administration:${mockAdmin.id}`]);
       mockAdministrationRepository.getByIds.mockResolvedValue({
         items: [mockAdmin],
@@ -2621,6 +2668,7 @@ describe('AdministrationService', () => {
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2639,7 +2687,9 @@ describe('AdministrationService', () => {
 
     it('should include both stats and tasks embeds when requested by super admin', async () => {
       const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
 
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`administration:${mockAdmin.id}`]);
       mockAdministrationRepository.getByIds.mockResolvedValue({
         items: [mockAdmin],
@@ -2664,6 +2714,7 @@ describe('AdministrationService', () => {
         administrationRepository: mockAdministrationRepository,
         runRepository: mockRunRepository,
         administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2683,7 +2734,9 @@ describe('AdministrationService', () => {
 
     it('should apply status filter when provided', async () => {
       const mockAdmins = AdministrationFactory.buildList(2);
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
 
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
       mockAdministrationRepository.getByIds.mockResolvedValue({
         items: mockAdmins,
@@ -2692,6 +2745,7 @@ describe('AdministrationService', () => {
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
@@ -2710,10 +2764,14 @@ describe('AdministrationService', () => {
     });
 
     it('should throw internal error on database failure', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
       mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('Database connection lost'));
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 

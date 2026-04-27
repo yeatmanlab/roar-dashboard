@@ -1322,6 +1322,14 @@ describe('GET /v1/users/:userId/administrations', () => {
   });
 
   describe('validation', () => {
+    it('returns 404 when target user does not exist', async () => {
+      const res = await expectRoute('GET', '/v1/users/00000000-0000-0000-0000-000000000000/administrations')
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
     it('returns 400 for invalid UUID in userId parameter', async () => {
       const res = await expectRoute('GET', '/v1/users/not-a-valid-uuid/administrations')
         .as(tiers.superAdmin)
