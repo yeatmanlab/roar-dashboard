@@ -130,9 +130,9 @@ Shared across org types to simplify permission definitions:
 
 Permissions are defined as computed relations in each type in `authorization-model.fga`. See the model for the authoritative mapping of which role tiers grant which permissions. CUD permissions (`can_create`, `can_update`, `can_delete`) resolve to `no_one` — they are super-admin-only, enforced in the app layer.
 
-User creation is an exception to the CUD restrictions under the current model. A user with the computed role `admin_tier` has the permission `can_create_users` on entity types `district`, `school`, and `group`. This permission is still enforced in the app layer by first checking the requesting user for super-admin status to allow for authorization bypass, and then checking `can_create_users` for each entity type present in the `memberhips` field of the request body.
+User creation is an exception to the CUD restrictions under the current model. A user with the computed role `admin_tier` has the permission `can_create_users` on entity types `district`, `school`, and `group`. This permission is still enforced in the app layer by first checking the requesting user for super-admin status to allow for authorization bypass, and then checking `can_create_users` for each entity type present in the `memberships` field of the request body.
 
-For `class` entities, this means that a user with the `admin_tier` computed role can create users in a class only if that uses possess the `can_create_users` permissions on the parent school of the class.
+For `class` entities, this means that a user with the `admin_tier` computed role can create users in a class only if that user possess the `can_create_users` permissions on the parent school of the class.
 
 For `family` entities, no computed user tier is currently allowed to create users, and implementation of the `can_create_users` permission on `family` entities is planned for a future enhancement.
 

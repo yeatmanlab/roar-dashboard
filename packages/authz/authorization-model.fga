@@ -79,7 +79,6 @@ type district
     define can_list_users: admin_tier
     define can_read_scores: admin_tier
     define can_read_progress: admin_tier
-    # User creation is allowed by admin_tier only
     define can_create_users: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -154,7 +153,8 @@ type school
     define can_list_users: admin_tier or school_admin_tier
     define can_read_scores: admin_tier or school_admin_tier
     define can_read_progress: admin_tier or school_admin_tier
-    # User creation is allowed by admin_tier only
+    # User creation requires higher privilege than listing/reading — school_admin_tier
+    # (principals, counselors) can view users but may not create them.
     define can_create_users: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
