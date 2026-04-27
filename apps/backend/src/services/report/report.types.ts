@@ -273,7 +273,15 @@ export interface ServiceHistoricalScore {
 }
 
 /** Per-task entry in the individual student report. */
-export interface ServiceIndividualStudentReportTask {
+/**
+ * Per-task entry shape shared between the admin-scoped individual student
+ * report and the guardian / longitudinal student report.
+ *
+ * The two endpoints differ only in whether per-task `historicalScores` are
+ * present: the admin-scoped report attaches them here; the guardian report
+ * carries longitudinal data at the response root keyed by task slug.
+ */
+export interface ServiceStudentReportTaskBase {
   taskId: string;
   taskSlug: string;
   taskName: string;
@@ -289,6 +297,9 @@ export interface ServiceIndividualStudentReportTask {
   subscores?: Record<string, ServiceSubscoreEntry>;
   /** Present only for PA tasks. */
   skillsToWorkOn?: string[];
+}
+
+export interface ServiceIndividualStudentReportTask extends ServiceStudentReportTaskBase {
   historicalScores: ServiceHistoricalScore[];
 }
 
@@ -316,4 +327,40 @@ export interface IndividualStudentReportResult {
   tasks: ServiceIndividualStudentReportTask[];
   completedTaskCount: number;
   totalTaskCount: number;
+}
+
+// --- Guardian / longitudinal student report ---
+
+/**
+ * Per-task entry on a single administration in the guardian student report.
+ *
+ * Identical to `ServiceStudentReportTaskBase` — historical data on the
+ * guardian endpoint lives at the response root in `longitudinalScores`.
+ */
+export type ServiceGuardianTaskEntry = ServiceStudentReportTaskBase;
+
+/** One administration entry in the guardian report. */
+export interface ServiceGuardianAdministrationEntry {
+  administrationId: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string;
+  tasks: ServiceGuardianTaskEntry[];
+}
+
+/** Header-level student info for the guardian report (adds schoolName). */
+export interface ServiceGuardianReportStudent {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  grade: string | null;
+  schoolName: string | null;
+}
+
+/** Return type for getGuardianStudentReport. */
+export interface GuardianStudentReportResult {
+  student: ServiceGuardianReportStudent;
+  administrations: ServiceGuardianAdministrationEntry[];
+  longitudinalScores: Record<string, ServiceHistoricalScore[]>;
 }
