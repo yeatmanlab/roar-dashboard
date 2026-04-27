@@ -454,7 +454,7 @@ import {
   includedValidityFlags,
   roamAlpacaSubskills,
   getTagColor,
-  roamFluencyTasks,
+  roamFluencySubskills,
   roamFluencySubskillHeaders,
   getPaSkillsToWorkOn,
   PA_SUBTASK_I18N_KEYS,
@@ -1160,6 +1160,32 @@ const computeAssignmentAndRunData = computed(() => {
             const { fc, fr } = currRowScores[taskId];
             const totalRawScore = (fc?.rawScore ?? 0) + (fr?.rawScore ?? 0);
             currRowScores[taskId].rawScore = totalRawScore === 0 ? null : totalRawScore;
+          } else {
+            const scores = _get(assessment, 'scores.computed');
+            // Verify non-response modality scores (1.3.6+) by confirming that at least one subskill is present
+            const hasSubskills = scores ? Object.keys(scores).some((key) => roamFluencySubskills[key]) : false;
+            if (hasSubskills) {
+              const allIncorrectSkills = [];
+              Object.keys(roamFluencySubskills).forEach((subskill) => {
+                const subskillInfo = _get(assessment, `scores.computed.${subskill}`);
+                if (subskillInfo) {
+                  currRowScores[taskId][subskill] = {
+                    percentCorrect: `${subskillInfo.subPercentCorrect * 100}%`,
+                    ...subskillInfo,
+                  };
+                  const subskillIncorrectSkills = _get(
+                    assessment,
+                    `scores.computed.composite.incorrectSkills.${subskill}`,
+                  );
+                  if (subskillIncorrectSkills) allIncorrectSkills.push(...subskillIncorrectSkills.split(','));
+                }
+              });
+              // Multiplication & division subskills are considered the same when counting the total
+              currRowScores[taskId].composite = {
+                totalIncorrectSkills: new Set(allIncorrectSkills).size,
+                ...scores.composite,
+              };
+            }
           }
 
           scoreFilterTags += ' Assessed ';
@@ -1335,19 +1361,6 @@ const computeAssignmentAndRunData = computed(() => {
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
-
-    // We only want to display the ROAM Tasks if the recruitment param is responseModality
-    // Otherwise, remove them from the runsByTaskId object to prevent including them in TaskReports.
-    // Response modality admins who switch mid-way will no longer see the subscore tables
-    const assessments = administrationData.value.assessments;
-    for (const assessment of assessments) {
-      if (roamFluencyTasks.includes(assessment.taskId)) {
-        const recruitment = assessment.params.recruitment;
-        if (recruitment !== 'responseModality') {
-          delete filteredRunsByTaskId[assessment.taskId];
-        }
-      }
-    }
 
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }

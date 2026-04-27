@@ -24,6 +24,7 @@ import {
   roamAlpacaSubskillHeaders,
   roamFluencySubskillHeaders,
   roamFluencyTasks,
+  roamFluencySubskills,
 } from '@/helpers/reports';
 
 const props = defineProps({
@@ -35,6 +36,7 @@ const props = defineProps({
   orgId: { type: String, default: '' },
   administrationName: { type: String, default: '' },
   orgName: { type: String, default: '' },
+  recruitmentType: { type: String, default: '' },
 });
 
 const authStore = useAuthStore();
@@ -103,10 +105,35 @@ const columns = computed(() => {
     );
   }
   if (roamFluencyTasks.includes(props.taskId)) {
-    tableColumns.push(
-      { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
-      { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
-    );
+    if (props.recruitmentType === 'responseModality') {
+      tableColumns.push(
+        { field: `scores.${props.taskId}.fr.rawScore`, header: 'Free Response', dataType: 'text', sort: false },
+        { field: `scores.${props.taskId}.fc.rawScore`, header: 'Multiple Choice', dataType: 'text', sort: false },
+      );
+    } else {
+      tableColumns.push({
+        field: `scores.${props.taskId}.composite.rawScore`,
+        header: 'Overall Score',
+        dataType: 'text',
+        sort: false,
+      });
+
+      Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
+        tableColumns.push({
+          field: `scores.${props.taskId}.${subskillId}.percentCorrect`,
+          header: subskill,
+          dataType: 'text',
+          sort: false,
+        });
+      });
+
+      tableColumns.push({
+        field: `scores.${props.taskId}.composite.totalIncorrectSkills`,
+        header: 'No. of Skills to Work On',
+        dataType: 'text',
+        sort: false,
+      });
+    }
   }
   if (props.taskId === 'phonics') {
     const subcategories = [
@@ -210,13 +237,53 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     }
     if (roamFluencyTasks.includes(props.taskId)) {
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
-      });
+      if (props.recruitmentType === 'responseModality') {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
+        });
 
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
-      });
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
+        });
+      } else {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
+        });
+
+        // Create a column for each property of a subskill
+        Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
+          _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
+          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+            _set(
+              tableRow,
+              `${subskill} - ${propertyHeader}`,
+              _get(scores, `${props.taskId}.${subskillId}.${property}`),
+            );
+          });
+          // fluency-calf returns scores for multiplication and division but does not report skills assessed for those operations
+          if (
+            props.taskId === 'fluency-arf' ||
+            (props.taskId === 'fluency-calf' && (subskillId === 'subtraction' || subskillId === 'addition'))
+          ) {
+            _set(
+              tableRow,
+              `${subskill} - Skills Assessed`,
+              _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`),
+            );
+          }
+        });
+
+        let incorrectSkills = '';
+        // Format each subskill and its incorrect skills on a new line for Skills to Work On column
+        Object.entries(roamFluencySubskills).forEach(([property, propertyHeader]) => {
+          const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
+          if (incorrectSkillsForProperty) {
+            incorrectSkills += `${propertyHeader}: ${incorrectSkillsForProperty}\n`;
+          }
+        });
+
+        _set(tableRow, 'Skills To Work On', incorrectSkills);
+      }
     }
     if (props.taskId === 'phonics') {
       const subcategories = [
@@ -279,13 +346,54 @@ const exportAll = async () => {
       _set(tableRow, 'Total', _get(scores, 'pa.total'));
       _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'));
     } else if (roamFluencyTasks.includes(props.taskId)) {
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
-      });
+      if (props.recruitmentType === 'responseModality') {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Free Response - ${propertyHeader}`, _get(scores, `${props.taskId}.fr.${property}`));
+        });
 
-      Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
-        _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
-      });
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `Multiple Choice - ${propertyHeader}`, _get(scores, `${props.taskId}.fc.${property}`));
+        });
+      } else {
+        Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+          _set(tableRow, `${propertyHeader}`, _get(scores, `${props.taskId}.${property}`));
+        });
+
+        // Create a column for each property of a subskill
+        Object.entries(roamFluencySubskills).forEach(([subskillId, subskill]) => {
+          _set(tableRow, `${subskill} - Percent Correct`, _get(scores, `${props.taskId}.${subskillId}.percentCorrect`));
+          Object.entries(roamFluencySubskillHeaders).forEach(([property, propertyHeader]) => {
+            _set(
+              tableRow,
+              `${subskill} - ${propertyHeader}`,
+              _get(scores, `${props.taskId}.${subskillId}.${property}`),
+            );
+          });
+          // fluency-calf returns scores for multiplication and division but does not report skills assessed for those operations
+          if (
+            props.taskId === 'fluency-arf' ||
+            (props.taskId === 'fluency-calf' && (subskillId === 'subtraction' || subskillId === 'addition'))
+          ) {
+            _set(
+              tableRow,
+              `${subskill} - Skills Assessed`,
+              _get(scores, `${props.taskId}.${subskillId}.skillsAssessed`),
+            );
+          }
+        });
+
+        let incorrectSkills = '';
+
+        // Format each subskill and its incorrect skills on a new line for Skills to Work On column
+        Object.entries(roamFluencySubskills).forEach(([property, propertyHeader]) => {
+          const incorrectSkillsForProperty = _get(scores, `${props.taskId}.composite.incorrectSkills.${property}`);
+          if (incorrectSkillsForProperty) {
+            incorrectSkills += `${propertyHeader}: ${incorrectSkillsForProperty}\n`;
+          }
+        });
+
+        _set(tableRow, 'Skills To Work On', incorrectSkills);
+      }
     } else if (props.taskId === 'roam-alpaca') {
       _set(tableRow, 'Raw Score', _get(scores, `${props.taskId}.composite.roarScore`));
       _set(tableRow, 'Grade Estimate', _get(scores, `${props.taskId}.composite.gradeEstimate`));
