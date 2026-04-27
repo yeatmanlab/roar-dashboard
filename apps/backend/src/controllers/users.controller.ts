@@ -1,12 +1,20 @@
 import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
-import type { UserResponse, UpdateUserRequestBody, RecordUserAgreementRequestBody } from '@roar-dashboard/api-contract';
+import type {
+  UserResponse,
+  UpdateUserRequestBody,
+  RecordUserAgreementRequestBody,
+  GuardianStudentReportResponse,
+} from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
+import { ReportService } from '../services/report/report.service';
+import type { GuardianStudentReportResult } from '../services/report/report.types';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 
 const userService = UserService();
+const reportService = ReportService();
 
 /**
  * Transform a User database record into a UserResponse API schema.
@@ -161,4 +169,55 @@ export const UsersController = {
       throw error;
     }
   },
+
+  /**
+   * Get a longitudinal student score report for a guardian or supervisory caller.
+   *
+   * Authorization is delegated to ReportService.getGuardianStudentReport — the
+   * controller only maps the typed `ApiError` failures back into ts-rest
+   * responses. The endpoint accepts no query parameters; the response shape
+   * mirrors the API contract exactly (the service already returns dates as
+   * ISO strings), so transformation is a near-identity.
+   *
+   * @param authContext - Requesting user's authentication context
+   * @param userId - UUID of the target student
+   */
+  getGuardianStudentReport: async (authContext: AuthContext, userId: string) => {
+    try {
+      const result = await reportService.getGuardianStudentReport(authContext, userId);
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: toGuardianStudentReportResponse(result),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
 };
+
+/**
+ * Map a service-layer guardian report into the API response shape.
+ *
+ * The service already produces the right field names and ISO-stringifies
+ * dates, so this is largely a structural pass-through. Keeping it in the
+ * controller (rather than the service) preserves the boundary: services
+ * deal in domain types, controllers translate to API contract types.
+ */
+function toGuardianStudentReportResponse(result: GuardianStudentReportResult): GuardianStudentReportResponse {
+  return {
+    student: result.student,
+    administrations: result.administrations,
+    longitudinalScores: result.longitudinalScores,
+  };
+}
