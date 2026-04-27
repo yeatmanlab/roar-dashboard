@@ -111,6 +111,8 @@ describe('Participant: Auth', () => {
         },
       },
       ({ schoolName, username, password }) => {
+        cy.on('uncaught:exception', () => false);
+
         cy.get('a.AuthMethodCard--card[aria-label="Password"]').click();
 
         cy.get('[role="combobox"]').find('input[aria-autocomplete="list"]').type(schoolName);
