@@ -1106,6 +1106,57 @@ export function AdministrationService({
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, options },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Get a specific administration for a user. Both requester and target user must have access to the administration.
+   * @param authContext - The authentication context of the requester.
+   * @param userId - The ID of the user to get the administration for.
+   * @param administrationId - The ID of the administration to get.
+   * @returns The administration with the specified ID.
+   */
+  async function getUserAdministration(authContext: AuthContext, userId: string, administrationId: string) {
+    const { userId: requesterUserId, isSuperAdmin } = authContext;
+
+    if (requesterUserId === userId) {
+      return getById(authContext, administrationId);
+    }
+
+    try {
+      const targetUser = await userRepository.getById({ id: userId });
+
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId },
+        });
+      }
+
+      const administration = await verifyAdministrationAccess({ userId, isSuperAdmin: false }, administrationId);
+
+      if (isSuperAdmin) {
+        return administration;
+      }
+
+      await authorizationService.requirePermission(
+        requesterUserId,
+        FgaRelation.CAN_READ,
+        `${FgaType.ADMINISTRATION}:${administrationId}`,
+      );
+      return administration;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to get user administration');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, administrationId },
       });
     }
@@ -1398,5 +1449,6 @@ export function AdministrationService({
     getUserAdministrations,
     getTree,
     create,
+    getUserAdministration,
   };
 }
