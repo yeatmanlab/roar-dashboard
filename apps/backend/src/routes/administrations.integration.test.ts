@@ -283,7 +283,7 @@ describe('POST /v1/administrations', () => {
     expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
   });
 
-  it('returns 404 when a referenced entity does not exist', async () => {
+  it('returns 422 when a referenced entity does not exist', async () => {
     const body = {
       name: 'New Admin Name',
       namePublic: 'New Admin Public Name',
@@ -301,9 +301,9 @@ describe('POST /v1/administrations', () => {
       agreements: [],
     };
 
-    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(404);
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(422);
 
-    expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
   });
 });
 

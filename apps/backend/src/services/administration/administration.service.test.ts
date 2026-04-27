@@ -3088,9 +3088,9 @@ describe('AdministrationService', () => {
       // Act & Assert
       await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
-          message: ApiErrorMessage.NOT_FOUND,
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         }),
       );
     });
@@ -3119,9 +3119,9 @@ describe('AdministrationService', () => {
       // Act & Assert
       await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
-          message: ApiErrorMessage.NOT_FOUND,
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         }),
       );
     });
@@ -3162,9 +3162,9 @@ describe('AdministrationService', () => {
       // Act & Assert
       await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
         expect.objectContaining({
-          message: ApiErrorMessage.NOT_FOUND,
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         }),
       );
     });

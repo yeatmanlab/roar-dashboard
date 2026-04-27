@@ -985,7 +985,6 @@ export function AdministrationService({
    * @throws {ApiError} FORBIDDEN if user is not a super admin
    * @throws {ApiError} UNPROCESSABLE_ENTITY if validation fails (date range, duplicate orderIndex, missing assignments)
    * @throws {ApiError} CONFLICT if an administration with the same name already exists
-   * @throws {ApiError} NOT_FOUND if any referenced entity doesn't exist
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
    */
   async function create(authContext: AuthContext, request: CreateAdministrationRequest): Promise<Administration> {
@@ -1072,9 +1071,9 @@ export function AdministrationService({
         const existingOrgsIdSet = new Set([...districtIds, ...schoolIds]);
         const missingOrgs = orgIds.filter((orgId) => !existingOrgsIdSet.has(orgId));
         if (missingOrgs.length > 0) {
-          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-            statusCode: StatusCodes.NOT_FOUND,
-            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
             context: { userId, missingOrgs },
           });
         }
@@ -1090,9 +1089,9 @@ export function AdministrationService({
         const existingClassIdSet = new Set(existingClasses.map((c) => c.id));
         const missingClasses = classIds.filter((id) => !existingClassIdSet.has(id));
         if (missingClasses.length > 0) {
-          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-            statusCode: StatusCodes.NOT_FOUND,
-            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
             context: { userId, missingClasses },
           });
         }
@@ -1108,9 +1107,9 @@ export function AdministrationService({
         const existingGroupIdSet = new Set(existingGroups.map((g) => g.id));
         const missingGroups = groupIds.filter((id) => !existingGroupIdSet.has(id));
         if (missingGroups.length > 0) {
-          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-            statusCode: StatusCodes.NOT_FOUND,
-            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
             context: { userId, missingGroups },
           });
         }
@@ -1124,9 +1123,9 @@ export function AdministrationService({
       const existingTaskVariantIdSet = new Set(existingTaskVariants.map((tv) => tv.id));
       const missingTaskVariants = taskVariantIds.filter((id) => !existingTaskVariantIdSet.has(id));
       if (missingTaskVariants.length > 0) {
-        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
           context: { userId, missingTaskVariants },
         });
       }
@@ -1152,9 +1151,9 @@ export function AdministrationService({
         const existingAgreementIdSet = new Set(existingAgreements.map((a) => a.id));
         const missingAgreements = agreementIds.filter((id) => !existingAgreementIdSet.has(id));
         if (missingAgreements.length > 0) {
-          throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-            statusCode: StatusCodes.NOT_FOUND,
-            code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
             context: { userId, missingAgreements },
           });
         }
