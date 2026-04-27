@@ -3031,7 +3031,7 @@ describe('ReportService', () => {
       expect(phonicsTask.skillsToWorkOn).toBeUndefined();
     });
 
-    it('falls back to legacy roarScore-vs-PA_SKILL_LEGACY_THRESHOLD when percentCorrect is missing', async () => {
+    it('falls back to legacy roarScore-vs-PA_SKILL_LEGACY_THRESHOLD when percentCorrect cannot be derived', async () => {
       const PA_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000001';
       const PA_VARIANT_ID = 'pa-variant-1';
       mockReportRepository.getTaskMetadata.mockResolvedValue([
@@ -3046,17 +3046,18 @@ describe('ReportService', () => {
         },
       ]);
       setupDefaults();
-      // No fsmPercentCorrect/lsmPercentCorrect/delPercentCorrect rows.
-      // FSM correct=10 (< 15 legacy threshold) → in skillsToWorkOn
-      // LSM correct=18 (>= 15 legacy threshold) → NOT in skillsToWorkOn
-      // DEL correct=12 (< 15 legacy threshold) → in skillsToWorkOn
+      // Legacy assessment runs only emit the per-subtask `correct` count — no
+      // `attempted` and no `percentCorrect`. With both inputs to the percent
+      // computation missing, the helper returns `percentCorrect: null` for each
+      // subscore, and `computeSkillsToWorkOn` falls through to the legacy
+      // `correct < PA_SKILL_LEGACY_THRESHOLD (15)` branch.
+      //   FSM correct=10 (< 15) → in skillsToWorkOn
+      //   LSM correct=18 (>= 15) → NOT in skillsToWorkOn
+      //   DEL correct=12 (< 15) → in skillsToWorkOn
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
         { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmCorrect', scoreValue: '10' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmAttempted', scoreValue: '20' },
         { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmCorrect', scoreValue: '18' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmAttempted', scoreValue: '20' },
         { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delCorrect', scoreValue: '12' },
-        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delAttempted', scoreValue: '20' },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3077,10 +3078,7 @@ describe('ReportService', () => {
       );
 
       const paTask = result.tasks.find((t) => t.taskId === PA_TASK_ID)!;
-      // Note: percentCorrect IS computed from correct/attempted when no
-      // percentCorrectName is configured AND the score row is missing — but here
-      // the config DOES declare a percentCorrectName for PA, so the score-row
-      // miss yields percentCorrect=null, exercising the legacy fallback path.
+      // No attempted, no percentCorrect row → percentCorrect can't be derived
       expect(paTask.subscores!.FSM!.percentCorrect).toBeNull();
       expect(paTask.subscores!.LSM!.percentCorrect).toBeNull();
       expect(paTask.subscores!.DEL!.percentCorrect).toBeNull();
