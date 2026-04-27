@@ -2,13 +2,13 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // @ts-expect-error - Vitest supports projects in test config but TypeScript's InlineConfig type doesn't reflect it
+    // @ts-expect-error Vitest supports projects but TS types lag behind
     projects: [
       {
         test: {
           name: 'unit',
           include: ['src/**/*.test.ts'],
-          exclude: ['src/**/roar-api.integration.test.ts', '**/node_modules/**'],
+          exclude: ['src/**/*.integration.test.ts', '**/node_modules/**'],
           globals: true,
           environment: 'node',
           setupFiles: ['./vitest.setup.ts'],
