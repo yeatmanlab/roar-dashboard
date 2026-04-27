@@ -20,7 +20,7 @@
  * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
  *
  * Usage:
- *   NODE_ENV=test node dist/server-test.js
+ *   NODE_ENV=production node dist/server-test.js
  */
 
 import 'dotenv/config';
@@ -69,6 +69,9 @@ async function writeFixtureFile(fixtureFile: string): Promise<void> {
   const fixtureData = {
     testUser: {
       authId: baseFixture.schoolAStudent.authId,
+    },
+    schoolATeacher: {
+      authId: baseFixture.schoolATeacher.authId,
     },
     administrationAssignedToDistrict: {
       id: baseFixture.administrationAssignedToDistrict.id,

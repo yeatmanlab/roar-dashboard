@@ -19,7 +19,9 @@
     "LOG_LEVEL",
     "TEST_FIXTURE_FILE",
     "FGA_API_URL",
-    "BACKEND_PORT"
+    "BACKEND_PORT",
+    "BUILD_TEST_SERVER",
+    "RUN_INTEGRATION_TESTS"
   ],
   "globalDependencies": [".env"],
   "tasks": {
@@ -47,6 +49,11 @@
       "inputs": ["$TURBO_DEFAULT$", ".env.test"],
       "outputs": ["coverage/**"],
       "passThroughEnv": ["CORE_DATABASE_URL", "ASSESSMENT_DATABASE_URL", "VITEST_PROJECT"]
+    },
+    "@yeatmanlab/assessment-sdk#test": {
+      "dependsOn": ["roar-backend#test", "^build"],
+      "inputs": ["$TURBO_DEFAULT$"],
+      "outputs": ["coverage/**"]
     },
     "test:watch": {
       "outputs": ["coverage/**"]

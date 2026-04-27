@@ -9,18 +9,31 @@
  * - Mocks AuthService to accept test tokens (token = Firebase UID)
  * - Writes fixture data to a JSON file for SDK tests to discover
  *
+ * PREREQUISITES:
+ * - PostgreSQL must be running on the connection string specified by CORE_DATABASE_URL
+ * - OpenFGA must be running on the URL specified by FGA_API_URL (default: http://localhost:8080)
+ * - Backend must be built: `npm run build -w apps/backend`
+ *   (This setup automatically builds if dist/server-test.js is missing)
+ *
  * TEST DATA SEEDING:
  * - baseFixture data is seeded automatically during server startup
  * - Fixture data (task variant IDs, user authIds) is written to TEST_FIXTURE_FILE
  * - SDK tests read the fixture file instead of making HTTP calls
  * - No hardcoded UUIDs needed — all test data is fetched at runtime
  *
- * Environment variables:
+ * ENVIRONMENT VARIABLES:
  * - BACKEND_PORT: Port for the backend server (default: 4001)
  * - CORE_DATABASE_URL: Core database connection string (required)
  * - ASSESSMENT_DATABASE_URL: Assessment database connection string (required)
  * - FGA_API_URL: OpenFGA server URL (default: http://localhost:8080)
  * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
+ *
+ * TROUBLESHOOTING:
+ * - "Cannot find module 'dist/server-test.js'": Run `npm run build -w apps/backend`
+ * - "EADDRINUSE: port 4001 already in use": Change BACKEND_PORT or kill the existing process
+ * - "Connection refused" on database: Ensure PostgreSQL is running on CORE_DATABASE_URL
+ * - "Connection refused" on FGA: Ensure OpenFGA is running on FGA_API_URL
+ * - Fixture file not found: Check TEST_FIXTURE_FILE path and ensure server started successfully
  */
 
 import { spawn } from 'node:child_process';
@@ -39,7 +52,7 @@ let backendProcess: ReturnType<typeof spawn> | null = null;
 
 /**
  * Builds the backend if not already built.
- * Required because `npm run start` runs the compiled dist/server.js.
+ * Required because the global setup runs `node dist/server-test.js` directly.
  */
 async function buildBackendIfNeeded(backendDir: string): Promise<void> {
   const testServerBin = path.join(backendDir, 'dist', 'server-test.js');
@@ -97,9 +110,9 @@ async function buildBackendIfNeeded(backendDir: string): Promise<void> {
 }
 
 /**
- * Waits for the backend to be ready by polling the health endpoint.
+ * Waits for the backend to be ready by polling the health endpoint and fixture file.
  */
-async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<void> {
+async function waitForBackendHealth(port: string, fixtureFile: string, maxAttempts = 30): Promise<void> {
   const healthUrl = `http://localhost:${port}/health`;
   let lastError: Error | null = null;
 
@@ -111,8 +124,9 @@ async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<voi
       const response = await fetch(healthUrl, { signal: controller.signal });
       clearTimeout(timeoutId);
 
-      if (response.ok) {
+      if (response.ok && existsSync(fixtureFile)) {
         console.log(`[SDK Integration Tests] Backend is healthy at ${healthUrl}`);
+        console.log(`[SDK Integration Tests] Fixture file exists at ${fixtureFile}`);
         return;
       }
     } catch (error) {
@@ -127,6 +141,12 @@ async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<voi
 }
 
 export default async function globalSetup() {
+  // Skip backend startup when integration tests are not requested
+  if (process.env.RUN_INTEGRATION_TESTS !== 'true') {
+    console.log('[SDK Integration Tests] Skipping global setup (RUN_INTEGRATION_TESTS not set)');
+    return;
+  }
+
   // Validate required environment variables
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
   for (const key of required) {
@@ -154,9 +174,14 @@ export default async function globalSetup() {
     cwd: backendDir,
     env: {
       ...process.env,
-      NODE_ENV: 'test',
+      // Use 'production' to avoid pino-pretty transport which crashes in bundled ESM
+      // (thread-stream uses __dirname, unavailable in ES modules).
+      // The test server behavior is controlled by explicit setup steps, not NODE_ENV.
+      NODE_ENV: 'production',
       PORT: BACKEND_PORT,
       TEST_FIXTURE_FILE: process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json',
+      // Provide absolute path so bundled code doesn't rely on __dirname-relative resolution
+      AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -185,14 +210,21 @@ export default async function globalSetup() {
   });
 
   // Wait for backend to be ready
+  const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
   try {
     await Promise.race([
-      waitForBackendHealth(BACKEND_PORT),
+      waitForBackendHealth(BACKEND_PORT, fixtureFile),
       new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error(`[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms`)),
-          BACKEND_START_TIMEOUT,
-        ),
+        setTimeout(() => {
+          const dbUrl = process.env.CORE_DATABASE_URL ? '(set)' : '(not set)';
+          const fgaUrl = process.env.FGA_API_URL || 'http://localhost:8080';
+          reject(
+            new Error(
+              `[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms. ` +
+                `Check that PostgreSQL (${dbUrl}) and OpenFGA (${fgaUrl}) are running.`,
+            ),
+          );
+        }, BACKEND_START_TIMEOUT),
       ),
     ]);
   } catch (error) {

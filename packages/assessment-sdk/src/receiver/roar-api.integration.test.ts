@@ -20,17 +20,30 @@
  *   - Task variants (variantForAllGrades, variantForGrade5, etc.)
  *   - Administrations assigned to various org levels
  *   - Users with different roles and enrollments
+ *
+ * RUNNING INTEGRATION TESTS:
+ * - These tests are skipped by default locally (no RUN_INTEGRATION_TESTS env var)
+ * - They require external services (PostgreSQL, OpenFGA) to be running
+ * - In CI, they run automatically with RUN_INTEGRATION_TESTS=true
+ * - To run locally: RUN_INTEGRATION_TESTS=true npm run test -w packages/assessment-sdk
+ * - Or: RUN_INTEGRATION_TESTS=true npm run test:integration -w packages/assessment-sdk
+ *   (the test:integration script requires the env var to register the integration project)
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { initTestSdk, getBaseFixtureData } from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
 
-describe('Assessment SDK (integration)', () => {
+describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration)', () => {
   let api: RoarApi;
   let taskVariantId: string;
 
   beforeAll(async () => {
+    // Guard: Vitest still runs beforeAll hooks for skipped suites, so bail early
+    if (!process.env.RUN_INTEGRATION_TESTS) {
+      return;
+    }
+
     const sdk = initTestSdk();
     api = sdk.api;
 
@@ -109,8 +122,9 @@ describe('Assessment SDK (integration)', () => {
         },
       });
 
-      expect(response.status).toBe(422);
-      expect(response.body).toHaveProperty('error');
+      expect(response.status).toBe(400);
+      // ts-rest returns Zod validation errors as { issues: [...] }, not the app's ErrorEnvelope
+      expect(response.body).toHaveProperty('issues');
     });
   });
 
@@ -418,7 +432,7 @@ describe('Assessment SDK (integration)', () => {
       // This test verifies the negative case: user is denied access to an administration
       // they are not authorized for. schoolAStudent is enrolled in district (and schoolA),
       // but has no FGA tuples for districtB or its administrations.
-      // Without this test, the FGA can_create_run check could be silently disabled
+      // Without this test, the FGA can_read check could be silently disabled
       // and the test suite would still pass.
 
       const fixtureData = await getBaseFixtureData();
@@ -434,6 +448,42 @@ describe('Assessment SDK (integration)', () => {
       });
 
       // Should fail because the user has no FGA permission to administrationAssignedToDistrictB
+      expect(response.status).toBe(403);
+      expect(response.body).toHaveProperty('error');
+    });
+
+    it('should return 403 when user lacks CAN_CREATE_RUN permission', async () => {
+      // This test verifies the CAN_CREATE_RUN authorization gate specifically.
+      // schoolATeacher has CAN_READ access to administrationAssignedToDistrict
+      // (via org hierarchy) but does NOT have CAN_CREATE_RUN permission.
+      // The flow is:
+      // 1. verifyAdministrationAccess checks CAN_READ → passes
+      // 2. requirePermission checks CAN_CREATE_RUN → fails with 403
+      // Without this test, the CAN_CREATE_RUN check could be silently disabled
+      // and the test suite would still pass.
+
+      const fixtureData = await getBaseFixtureData();
+      const administrationId = fixtureData.administrationAssignedToDistrict.id;
+
+      // Create a new SDK instance with schoolATeacher's token
+      const teacherAuthId = fixtureData.schoolATeacher.authId;
+      const teacherSdk = initTestSdk({
+        auth: {
+          getToken: async () => teacherAuthId,
+          refreshToken: async () => teacherAuthId,
+        },
+      });
+
+      const response = await teacherSdk.api.client.runs.create({
+        body: {
+          taskVariantId,
+          taskVersion: '1.0.0',
+          isAnonymous: false,
+          administrationId,
+        },
+      });
+
+      // Should fail because schoolATeacher lacks CAN_CREATE_RUN permission
       expect(response.status).toBe(403);
       expect(response.body).toHaveProperty('error');
     });
