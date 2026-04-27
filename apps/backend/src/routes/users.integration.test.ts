@@ -2257,8 +2257,13 @@ describe('GET /v1/users/:userId/reports/scores', () => {
     });
 
     it('educator without overlap is forbidden', async () => {
-      // schoolBStudent is in school B; tiers.educator is only in classInSchoolA → no overlap.
-      const res = await expectRoute('GET', reportPath(baseFixture.schoolBStudent.id)).as(tiers.educator).toReturn(403);
+      // tiers.educator is a TEACHER at the main district (created by createTierUsers
+      // with `district.id`). districtBStudent lives under districtB — a fully
+      // disjoint district hierarchy — so no ltree ancestry, class, or group
+      // overlap exists between them.
+      const res = await expectRoute('GET', reportPath(baseFixture.districtBStudent.id))
+        .as(tiers.educator)
+        .toReturn(403);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
@@ -2304,10 +2309,17 @@ describe('GET /v1/users/:userId/reports/scores', () => {
     });
 
     it('returns 404 for a student with rosteringEnded set', async () => {
-      const endedStudent = await UserFactory.create({
-        userType: 'student',
-        rosteringEnded: new Date('2025-01-01'),
-      });
+      // UserFactory.onCreate strips `rosteringEnded` from the insert payload, so
+      // setting it via the factory override has no DB-level effect. Set it
+      // explicitly with an UPDATE after the create to exercise the
+      // rostering-ended branch in the service.
+      const endedStudent = await UserFactory.create({ userType: 'student' });
+      const { eq } = await import('drizzle-orm');
+      const { CoreDbClient } = await import('../db/clients');
+      const { users } = await import('../db/schema');
+      await CoreDbClient.update(users)
+        .set({ rosteringEnded: new Date('2025-01-01') })
+        .where(eq(users.id, endedStudent.id));
 
       const res = await expectRoute('GET', reportPath(endedStudent.id)).as(tiers.superAdmin).toReturn(404);
 
@@ -2315,8 +2327,11 @@ describe('GET /v1/users/:userId/reports/scores', () => {
     });
 
     it('returns 400 for a malformed userId path parameter', async () => {
-      const res = await expectRoute('GET', reportPath('not-a-uuid')).as(tiers.superAdmin).toReturn(400);
-      expect(res.body.error).toBeDefined();
+      // ts-rest validates path params before the request reaches the global
+      // error handler, so the response body shape is the validator's native
+      // shape (not our `{ error: { ... } }` envelope). Asserting the 400
+      // status is sufficient — the body shape is owned by ts-rest.
+      await expectRoute('GET', reportPath('not-a-uuid')).as(tiers.superAdmin).toReturn(400);
     });
   });
 
