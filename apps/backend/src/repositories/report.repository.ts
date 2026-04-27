@@ -2129,90 +2129,95 @@ export class ReportRepository {
   ): Promise<boolean> {
     if (supervisorRoles.length === 0) return false;
 
-    const supOrgs = alias(userOrgs, 'sup_uo');
-    const supOrgEntity = alias(orgs, 'sup_org');
-    const supClasses = alias(userClasses, 'sup_uc');
-    const supGroups = alias(userGroups, 'sup_ug');
+    // Composite role-list literal for embedding in IN (...) clauses below.
+    // `sql.join` on enum values is parameterized by the driver; the enum
+    // values themselves are typed (`UserRole`) so there's no injection
+    // surface to worry about.
+    const roleList = sql.join(
+      supervisorRoles.map((r) => sql`${r}`),
+      sql`, `,
+    );
 
-    // Path 1: supervisor's user_orgs path contains student's user_orgs path
-    // (or class.orgPath via the second EXISTS branch below).
-    const orgOverlap = await this.db
-      .select({ ok: sql<number>`1` })
-      .from(supOrgs)
-      .innerJoin(supOrgEntity, eq(supOrgs.orgId, supOrgEntity.id))
-      .where(
-        and(
-          eq(supOrgs.userId, supervisorUserId),
-          inArray(supOrgs.role, supervisorRoles as UserRole[]),
-          isEnrollmentActive(supOrgs),
-          isNull(supOrgEntity.rosteringEnded),
-          or(
-            sql`EXISTS (
-              SELECT 1 FROM ${userOrgs} stu_uo
-              INNER JOIN ${orgs} stu_org ON stu_uo.org_id = stu_org.id
-              WHERE stu_uo.user_id = ${studentUserId}
-                AND stu_uo.role = ${UserRole.STUDENT}
-                AND stu_uo.enrollment_start <= NOW()
-                AND (stu_uo.enrollment_end IS NULL OR stu_uo.enrollment_end > NOW())
-                AND stu_org.rostering_ended IS NULL
-                AND stu_org.path <@ ${supOrgEntity.path}
-            )`,
-            sql`EXISTS (
-              SELECT 1 FROM ${userClasses} stu_uc
-              INNER JOIN ${classes} stu_cls ON stu_uc.class_id = stu_cls.id
-              WHERE stu_uc.user_id = ${studentUserId}
-                AND stu_uc.role = ${UserRole.STUDENT}
-                AND stu_uc.enrollment_start <= NOW()
-                AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
-                AND stu_cls.rostering_ended IS NULL
-                AND stu_cls.org_path <@ ${supOrgEntity.path}
-            )`,
-          ),
-        ),
-      )
-      .limit(1);
+    // One round-trip across all three overlap paths. PostgreSQL's planner
+    // short-circuits the OR/EXISTS chain once any branch matches, so this
+    // is no slower than the previous chained-Drizzle implementation in the
+    // happy path and is one round-trip cheaper in the no-overlap path.
+    const result = await this.db.execute<{ ok: number }>(sql`
+      SELECT 1 AS ok
+      WHERE
+        -- Path 1: supervisor's user_orgs path contains a student effective path
+        EXISTS (
+          SELECT 1
+          FROM ${userOrgs} sup_uo
+          INNER JOIN ${orgs} sup_org ON sup_uo.org_id = sup_org.id
+          WHERE sup_uo.user_id = ${supervisorUserId}
+            AND sup_uo.role IN (${roleList})
+            AND sup_uo.enrollment_start <= NOW()
+            AND (sup_uo.enrollment_end IS NULL OR sup_uo.enrollment_end > NOW())
+            AND sup_org.rostering_ended IS NULL
+            AND (
+              EXISTS (
+                SELECT 1 FROM ${userOrgs} stu_uo
+                INNER JOIN ${orgs} stu_org ON stu_uo.org_id = stu_org.id
+                WHERE stu_uo.user_id = ${studentUserId}
+                  AND stu_uo.role = ${UserRole.STUDENT}
+                  AND stu_uo.enrollment_start <= NOW()
+                  AND (stu_uo.enrollment_end IS NULL OR stu_uo.enrollment_end > NOW())
+                  AND stu_org.rostering_ended IS NULL
+                  AND stu_org.path <@ sup_org.path
+              )
+              OR EXISTS (
+                SELECT 1 FROM ${userClasses} stu_uc
+                INNER JOIN ${classes} stu_cls ON stu_uc.class_id = stu_cls.id
+                WHERE stu_uc.user_id = ${studentUserId}
+                  AND stu_uc.role = ${UserRole.STUDENT}
+                  AND stu_uc.enrollment_start <= NOW()
+                  AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+                  AND stu_cls.rostering_ended IS NULL
+                  AND stu_cls.org_path <@ sup_org.path
+              )
+            )
+        )
+        OR
+        -- Path 2: supervisor and student share a class directly.
+        EXISTS (
+          SELECT 1
+          FROM ${userClasses} sup_uc
+          INNER JOIN ${classes} c ON sup_uc.class_id = c.id
+          INNER JOIN ${userClasses} stu_uc
+            ON stu_uc.class_id = sup_uc.class_id
+            AND stu_uc.user_id = ${studentUserId}
+          WHERE sup_uc.user_id = ${supervisorUserId}
+            AND sup_uc.role IN (${roleList})
+            AND sup_uc.enrollment_start <= NOW()
+            AND (sup_uc.enrollment_end IS NULL OR sup_uc.enrollment_end > NOW())
+            AND stu_uc.role = ${UserRole.STUDENT}
+            AND stu_uc.enrollment_start <= NOW()
+            AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+            AND c.rostering_ended IS NULL
+        )
+        OR
+        -- Path 3: supervisor and student share a group directly.
+        EXISTS (
+          SELECT 1
+          FROM ${userGroups} sup_ug
+          INNER JOIN ${groups} g ON sup_ug.group_id = g.id
+          INNER JOIN ${userGroups} stu_ug
+            ON stu_ug.group_id = sup_ug.group_id
+            AND stu_ug.user_id = ${studentUserId}
+          WHERE sup_ug.user_id = ${supervisorUserId}
+            AND sup_ug.role IN (${roleList})
+            AND sup_ug.enrollment_start <= NOW()
+            AND (sup_ug.enrollment_end IS NULL OR sup_ug.enrollment_end > NOW())
+            AND stu_ug.role = ${UserRole.STUDENT}
+            AND stu_ug.enrollment_start <= NOW()
+            AND (stu_ug.enrollment_end IS NULL OR stu_ug.enrollment_end > NOW())
+            AND g.rostering_ended IS NULL
+        )
+      LIMIT 1
+    `);
 
-    if (orgOverlap.length > 0) return true;
-
-    // Path 2: supervisor and student share a class directly.
-    const classOverlap = await this.db
-      .select({ ok: sql<number>`1` })
-      .from(supClasses)
-      .innerJoin(classes, eq(supClasses.classId, classes.id))
-      .innerJoin(userClasses, and(eq(userClasses.classId, supClasses.classId), eq(userClasses.userId, studentUserId))!)
-      .where(
-        and(
-          eq(supClasses.userId, supervisorUserId),
-          inArray(supClasses.role, supervisorRoles as UserRole[]),
-          isEnrollmentActive(supClasses),
-          eq(userClasses.role, UserRole.STUDENT),
-          isEnrollmentActive(userClasses),
-          isNull(classes.rosteringEnded),
-        ),
-      )
-      .limit(1);
-
-    if (classOverlap.length > 0) return true;
-
-    // Path 3: supervisor and student share a group directly.
-    const groupOverlap = await this.db
-      .select({ ok: sql<number>`1` })
-      .from(supGroups)
-      .innerJoin(groups, eq(supGroups.groupId, groups.id))
-      .innerJoin(userGroups, and(eq(userGroups.groupId, supGroups.groupId), eq(userGroups.userId, studentUserId))!)
-      .where(
-        and(
-          eq(supGroups.userId, supervisorUserId),
-          inArray(supGroups.role, supervisorRoles as UserRole[]),
-          isEnrollmentActive(supGroups),
-          eq(userGroups.role, UserRole.STUDENT),
-          isEnrollmentActive(userGroups),
-          isNull(groups.rosteringEnded),
-        ),
-      )
-      .limit(1);
-
-    return groupOverlap.length > 0;
+    return result.rows.length > 0;
   }
 
   /**

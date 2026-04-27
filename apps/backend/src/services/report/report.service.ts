@@ -80,7 +80,6 @@ import { UserRepository } from '../../repositories/user.repository';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { filterSupervisoryRoles } from '../../repositories/utils/supervisory-roles.utils';
-import { UserRole } from '../../enums/user-role.enum';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
@@ -1188,23 +1187,14 @@ export function ReportService({
 
         // Guardian linkage first (cheaper, single query). If the caller
         // isn't a guardian, fall through to the supervisory + org-overlap
-        // guard.
+        // guard. The overlap check itself enforces the role gate — it only
+        // matches the supervisor side against the allow-listed supervisory
+        // roles, so a supervised caller (e.g., a student) drops out there.
         const isLinkedGuardian = await reportRepository.verifyGuardianStudentLink(userId, targetUserId);
 
         if (!isLinkedGuardian) {
           const allowedRoles = rolesForPermission(Permissions.Reports.Score.READ);
-          const supervisoryRoles = filterSupervisoryRoles(allowedRoles) as UserRole[];
-
-          // No supervisory roles permitted by `Reports.Score.READ` ⇒ caller
-          // is a supervised role and there's no overlap path open.
-          if (supervisoryRoles.length === 0) {
-            logger.warn({ userId, targetUserId }, 'Caller is neither a linked guardian nor a supervisory role');
-            throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-              statusCode: StatusCodes.FORBIDDEN,
-              code: ApiErrorCode.AUTH_FORBIDDEN,
-              context: { userId, targetUserId },
-            });
-          }
+          const supervisoryRoles = filterSupervisoryRoles(allowedRoles);
 
           const hasOverlap = await reportRepository.verifyUserOrgOverlap(userId, targetUserId, supervisoryRoles);
           if (!hasOverlap) {

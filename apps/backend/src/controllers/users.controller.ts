@@ -193,8 +193,10 @@ export const UsersController = {
       };
     } catch (error) {
       if (error instanceof ApiError) {
+        // The 400 response in the contract is reserved for ts-rest path-param
+        // validation failures, which surface before this handler runs — so
+        // BAD_REQUEST is intentionally absent from the ApiError mapping list.
         return toErrorResponse(error, [
-          StatusCodes.BAD_REQUEST,
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
