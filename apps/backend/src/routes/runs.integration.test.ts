@@ -195,18 +195,17 @@ describe('POST /v1/user/:userId/runs', () => {
     });
 
     it('caregiver with CAN_READ_CHILD permission can create run for child user', async () => {
-      // Set up FGA tuple: caregiver has CAN_READ_CHILD on student user
-      const { FgaClient } = await import('../clients/fga.client');
-      const { FgaType, FgaRelation } = await import('../services/authorization/fga-constants');
-      const fgaClient = FgaClient.getClient();
+      // Set up family relationship: caregiver is parent, student is child
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
 
-      await fgaClient.writeTuples([
-        {
-          user: `${FgaType.USER}:${tiers.caregiver.id}`,
-          relation: FgaRelation.CAN_READ_CHILD,
-          object: `${FgaType.USER}:${tiers.student.id}`,
-        },
-      ]);
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: tiers.caregiver.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: tiers.student.id, familyId: family.id, role: 'child' });
+
+      // Sync FGA tuples to pick up the new family relationships
+      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+      await syncFgaTuplesFromPostgres();
 
       authenticateAs(tiers.caregiver);
       const res = await request(app)
