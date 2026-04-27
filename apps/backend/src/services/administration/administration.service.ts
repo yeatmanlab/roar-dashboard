@@ -734,6 +734,119 @@ export function AdministrationService({
     }
   }
 
+  /**
+   * List administrations accessible to a requester and target user with pagination, sorting, and optional embeds.
+   *
+   * super_admin users have unrestricted access to all administrations.
+   * Other requesters only see target user's administrations they're also assigned to via org/class/group membership.
+   *
+   * **Embed restrictions:**
+   * - `stats`: Only returned for super_admin users (expensive query, sensitive data).
+   *   Non-super-admins requesting stats will receive results without stats silently.
+   * - `tasks`: Available to all users.
+   *
+   * @param authContext - Authentication context
+   * @param userId - User ID to get administrations for
+   * @param options - List options with pagination and embeds
+   * @returns Paginated result with optional embeds (stats, tasks)
+   */
+  async function getUserAdministrations(
+    authContext: AuthContext,
+    userId: string,
+    options: ListOptions,
+  ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
+    const { userId: requesterUserId, isSuperAdmin } = authContext;
+    try {
+      const queryParams = {
+        page: options.page,
+        perPage: options.perPage,
+        orderBy: {
+          field: options.sortBy,
+          direction: options.sortOrder,
+        },
+        ...(options.status && { status: options.status }),
+      };
+
+      const targetUserAdmins = await authorizationService.listAccessibleObjects(
+        userId,
+        FgaRelation.CAN_LIST,
+        FgaType.ADMINISTRATION,
+      );
+      const targetUserAdminIds = targetUserAdmins.map(extractFgaObjectId);
+
+      if (targetUserAdminIds.length === 0) {
+        return { items: [], totalItems: 0 };
+      }
+      // Fetch administrations based on user role and authorization
+      let result;
+
+      if (isSuperAdmin) {
+        result = await administrationRepository.getByIds(targetUserAdminIds, queryParams);
+      } else {
+        const requesterUserAdmins = await authorizationService.listAccessibleObjects(
+          requesterUserId,
+          FgaRelation.CAN_LIST,
+          FgaType.ADMINISTRATION,
+        );
+        const requesterUserAdminIds = requesterUserAdmins.map(extractFgaObjectId);
+        result = await administrationRepository.getByIds(
+          targetUserAdminIds.filter((id) => requesterUserAdminIds.includes(id)),
+          queryParams,
+        );
+      }
+
+      // If no embeds requested, return as-is
+      const embedOptions = options.embed ?? [];
+      if (embedOptions.length === 0) {
+        return result;
+      }
+
+      // Early return if no items to embed data onto
+      if (result.items.length === 0) {
+        return result;
+      }
+
+      const administrationIds = result.items.map((admin) => admin.id);
+      const shouldEmbedStats = isSuperAdmin && embedOptions.includes(AdministrationEmbedOption.STATS);
+      const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
+
+      // Fetch embed data (throws on failure)
+      const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
+      const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
+
+      // Attach embeds to each administration
+      const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {
+        const adminWithEmbeds: AdministrationWithEmbeds = { ...admin };
+
+        if (statsMap) {
+          adminWithEmbeds.stats = statsMap.get(admin.id) ?? { assigned: 0, started: 0, completed: 0 };
+        }
+
+        if (tasksMap) {
+          adminWithEmbeds.tasks = tasksMap.get(admin.id) ?? [];
+        }
+
+        return adminWithEmbeds;
+      });
+
+      return {
+        items: itemsWithEmbeds,
+        totalItems: result.totalItems,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to get user administrations');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     verifyAdministrationAccess,
     list,
@@ -742,5 +855,6 @@ export function AdministrationService({
     listTaskVariants,
     listAgreements,
     deleteById,
+    getUserAdministrations,
   };
 }
