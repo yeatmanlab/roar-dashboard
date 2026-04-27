@@ -43,25 +43,25 @@ type AgeCategory = (typeof AgeCategory)[keyof typeof AgeCategory];
 /** Interface for user name fields in the create user payload. */
 interface CreateUserName {
   first: string;
-  middle?: string;
+  middle?: string | undefined;
   last: string;
 }
 
 /** Interface for user demographic fields in the create user payload. */
 interface CreateUserDemographics {
-  gender?: string | null;
-  race?: string | null;
-  statusEll?: string | null;
-  statusFrl?: FreeReducedLunchStatus | null;
-  statusIep?: string | null;
-  hispanicEthnicity?: boolean | null;
-  homeLanguage?: string | null;
+  gender?: string | null | undefined;
+  race?: string | null | undefined;
+  statusEll?: string | null | undefined;
+  statusFrl?: FreeReducedLunchStatus | null | undefined;
+  statusIep?: string | null | undefined;
+  hispanicEthnicity?: boolean | null | undefined;
+  homeLanguage?: string | null | undefined;
 }
 
 /** Interface for user identifier fields in the create user payload. */
 interface CreateUserIdentifiers {
-  stateId?: string | null;
-  pid?: string | null;
+  stateId?: string | undefined;
+  pid?: string | undefined;
 }
 
 /** Interface for user membership fields in the create user payload. */
@@ -69,8 +69,8 @@ interface CreateUserMemberships {
   entityType: EntityType;
   entityId: string;
   role: UserRole;
-  enrollmentStart?: string | null;
-  enrollmentEnd?: string | null;
+  enrollmentStart?: string | undefined;
+  enrollmentEnd?: string | undefined;
 }
 
 /**
@@ -83,11 +83,11 @@ interface CreateUserData {
   email: string;
   password: string;
   name: CreateUserName;
-  dob?: string | null;
-  grade?: Grade | null;
-  demographics?: CreateUserDemographics | null;
-  identifiers?: CreateUserIdentifiers | null;
-  memberships?: CreateUserMemberships[] | null;
+  dob?: string | null | undefined;
+  grade?: Grade | null | undefined;
+  demographics?: CreateUserDemographics | undefined;
+  identifiers?: CreateUserIdentifiers | undefined;
+  memberships: CreateUserMemberships[];
 }
 
 /**

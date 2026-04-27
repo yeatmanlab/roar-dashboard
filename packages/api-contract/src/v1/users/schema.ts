@@ -56,14 +56,13 @@ export const UserMembershipSchema = z.object({
   entityType: EntityTypeSchema,
   entityId: z.string().uuid(),
   role: UserRoleSchema,
-  enrollmentStart: z.string().datetime().nullable().optional(),
-  enrollmentEnd: z.string().datetime().nullable().optional(),
+  enrollmentStart: z.string().datetime().optional(),
+  enrollmentEnd: z.string().datetime().optional(),
 });
 
 const CreateUserNameSchema = z.object({
   first: z.string().regex(IDENTIFIER_WITH_SPACES),
-  // TODO: Determine if middle name should be required or optional, and if it can be null (does frontend client set it to null if not provided?)
-  middle: z.string().regex(IDENTIFIER_WITH_SPACES).nullable().optional(),
+  middle: z.string().regex(IDENTIFIER_WITH_SPACES).optional(),
   last: z.string().regex(IDENTIFIER_WITH_SPACES),
 });
 
@@ -78,8 +77,8 @@ const CreateUserDemographicsSchema = z.object({
 });
 
 const CreateUserIdentifiersSchema = z.object({
-  stateId: z.string().nullable().optional(),
-  pid: z.string().nullable().optional(),
+  stateId: z.string().optional(),
+  pid: z.string().optional(),
 });
 
 /**
@@ -102,10 +101,10 @@ export const CreateUserRequestBodySchema = z
     // TODO: Determine password requirements (length, complexity) and enforce them here
     password: z.string().min(8), // Assuming a password field is required for user creation
     name: CreateUserNameSchema,
-    dob: z.string().date().nullable(),
-    grade: UserGradeSchema.nullable(),
-    demographics: CreateUserDemographicsSchema.nullable().optional(),
-    identifiers: CreateUserIdentifiersSchema.nullable().optional(),
+    dob: z.string().date().nullable().optional(),
+    grade: UserGradeSchema.nullable().optional(),
+    demographics: CreateUserDemographicsSchema.optional(),
+    identifiers: CreateUserIdentifiersSchema.optional(),
     memberships: z.array(UserMembershipSchema).min(1),
   })
   .strict();
