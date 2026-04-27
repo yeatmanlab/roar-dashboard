@@ -23,6 +23,9 @@ export function createMockReportRepository(): MockedObject<ReportRepository> {
     getHistoricalRunsForUser: vi.fn(),
     getScoresForRunIds: vi.fn(),
     getCompletedRunsForUser: vi.fn(),
+    verifyGuardianStudentLink: vi.fn(),
+    verifyUserOrgOverlap: vi.fn(),
+    getStudentAdministrations: vi.fn(),
   } as unknown as MockedObject<ReportRepository>;
 }
 
