@@ -110,9 +110,9 @@ async function buildBackendIfNeeded(backendDir: string): Promise<void> {
 }
 
 /**
- * Waits for the backend to be ready by polling the health endpoint.
+ * Waits for the backend to be ready by polling the health endpoint and fixture file.
  */
-async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<void> {
+async function waitForBackendHealth(port: string, fixtureFile: string, maxAttempts = 30): Promise<void> {
   const healthUrl = `http://localhost:${port}/health`;
   let lastError: Error | null = null;
 
@@ -124,8 +124,9 @@ async function waitForBackendHealth(port: string, maxAttempts = 30): Promise<voi
       const response = await fetch(healthUrl, { signal: controller.signal });
       clearTimeout(timeoutId);
 
-      if (response.ok) {
+      if (response.ok && existsSync(fixtureFile)) {
         console.log(`[SDK Integration Tests] Backend is healthy at ${healthUrl}`);
+        console.log(`[SDK Integration Tests] Fixture file exists at ${fixtureFile}`);
         return;
       }
     } catch (error) {
@@ -198,9 +199,10 @@ export default async function globalSetup() {
   });
 
   // Wait for backend to be ready
+  const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
   try {
     await Promise.race([
-      waitForBackendHealth(BACKEND_PORT),
+      waitForBackendHealth(BACKEND_PORT, fixtureFile),
       new Promise<never>((_, reject) =>
         setTimeout(
           () => reject(new Error(`[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms`)),
