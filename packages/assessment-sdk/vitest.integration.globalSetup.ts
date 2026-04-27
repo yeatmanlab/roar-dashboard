@@ -162,6 +162,16 @@ export default async function globalSetup() {
 
   console.log(`[SDK Integration Tests] Starting test server on port ${BACKEND_PORT}...`);
 
+  // Validate that required environment variables are set
+  const requiredEnvVars = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'];
+  const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+  if (missingEnvVars.length > 0) {
+    throw new Error(
+      `[SDK Integration Tests] Missing required environment variables: ${missingEnvVars.join(', ')}. ` +
+        `These must be set before running integration tests.`,
+    );
+  }
+
   // Spawn the test server process using the dedicated server-test.ts entrypoint
   // This entrypoint initializes databases, seeds fixtures, sets up FGA, and mocks auth
   backendProcess = spawn('node', ['dist/server-test.js'], {
@@ -205,7 +215,16 @@ export default async function globalSetup() {
       waitForBackendHealth(BACKEND_PORT, fixtureFile),
       new Promise<never>((_, reject) =>
         setTimeout(
-          () => reject(new Error(`[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms`)),
+          () => {
+            const dbUrl = process.env.CORE_DATABASE_URL ? '(set)' : '(not set)';
+            const fgaUrl = process.env.FGA_API_URL || 'http://localhost:8080';
+            reject(
+              new Error(
+                `[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms. ` +
+                  `Check that PostgreSQL (${dbUrl}) and OpenFGA (${fgaUrl}) are running.`,
+              ),
+            );
+          },
           BACKEND_START_TIMEOUT,
         ),
       ),
