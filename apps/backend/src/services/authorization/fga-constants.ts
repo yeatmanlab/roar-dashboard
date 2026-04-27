@@ -58,6 +58,7 @@ export const FgaRelation = {
   CAN_DELETE: 'can_delete',
   CAN_LIST_CLASSES: 'can_list_classes',
   CAN_LIST_USERS: 'can_list_users',
+  CAN_CREATE_USERS: 'can_create_users',
   CAN_READ_SCORES: 'can_read_scores',
   CAN_READ_PROGRESS: 'can_read_progress',
   CAN_CREATE_RUN: 'can_create_run',
