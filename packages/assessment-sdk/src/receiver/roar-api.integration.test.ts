@@ -452,11 +452,11 @@ describe('Assessment SDK (integration)', () => {
       const administrationId = fixtureData.administrationAssignedToDistrict.id;
 
       // Create a new SDK instance with schoolATeacher's token
+      const teacherAuthId = fixtureData.schoolATeacher.authId;
       const teacherSdk = initTestSdk({
         auth: {
-          uid: fixtureData.schoolATeacher.authId,
-          token: fixtureData.schoolATeacher.authId,
-          claims: {},
+          getToken: async () => teacherAuthId,
+          refreshToken: async () => teacherAuthId,
         },
       });
 
