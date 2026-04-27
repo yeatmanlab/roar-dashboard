@@ -19,7 +19,8 @@
     "LOG_LEVEL",
     "TEST_FIXTURE_FILE",
     "FGA_API_URL",
-    "BACKEND_PORT"
+    "BACKEND_PORT",
+    "BUILD_TEST_SERVER"
   ],
   "globalDependencies": [".env"],
   "tasks": {
