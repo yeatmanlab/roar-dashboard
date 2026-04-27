@@ -194,9 +194,37 @@ describe('POST /v1/user/:userId/runs', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    // TODO: Add test for caregiver with CAN_READ_CHILD permission creating run for child user
-    // This requires setting up FGA tuple: caregiver has CAN_READ_CHILD on student user
-    // Once set up, this test should verify caregiver can create run for their child
+    it('caregiver with CAN_READ_CHILD permission can create run for child user', async () => {
+      // Set up FGA tuple: caregiver has CAN_READ_CHILD on student user
+      const { FgaClient } = await import('../clients/fga.client');
+      const { FgaType, FgaRelation } = await import('../services/authorization/fga-constants');
+      const fgaClient = FgaClient.getClient();
+
+      await fgaClient.writeTuples([
+        {
+          user: `${FgaType.USER}:${tiers.caregiver.id}`,
+          relation: FgaRelation.CAN_READ_CHILD,
+          object: `${FgaType.USER}:${tiers.student.id}`,
+        },
+      ]);
+
+      authenticateAs(tiers.caregiver);
+      const res = await request(app)
+        .post(getPath(tiers.student.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
+
+      expect(res.status).toBe(StatusCodes.CREATED);
+      expect(res.body.data.id).toEqual(expect.any(String));
+
+      // Verify the run is owned by the student, not the caregiver
+      const runId = res.body.data.id;
+      const { RunRepository } = await import('../repositories/run.repository');
+      const { AssessmentDbClient } = await import('../test-support/db');
+      const runRepository = new RunRepository(AssessmentDbClient);
+      const run = await runRepository.getById({ id: runId });
+      expect(run?.userId).toBe(tiers.student.id);
+    });
   });
 
   describe('error cases', () => {
