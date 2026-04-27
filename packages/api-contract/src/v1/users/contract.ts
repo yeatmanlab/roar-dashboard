@@ -7,7 +7,11 @@ import {
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
-import { AdministrationsListQuerySchema, AdministrationsListResponseSchema } from '../administrations/schema';
+import {
+  AdministrationsListQuerySchema,
+  AdministrationsListResponseSchema,
+  AdministrationBaseSchema,
+} from '../administrations/schema';
 
 const c = initContract();
 
@@ -120,6 +124,27 @@ export const UsersContract = c.router(
         'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants. ' +
         'Returns 403 if the requester does not have access to any administrations for the specified user. ' +
         'Returns 404 if the specified user does not exist.',
+    },
+    getUserAdministration: {
+      method: 'GET',
+      path: '/:userId/administrations/:administrationId',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+        administrationId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationBaseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a specific administration for a user',
+      description:
+        'Returns a specific administration for the specified user. ' +
+        'Returns 403 if the requester does not have access to the administration for the specified user. ' +
+        'Returns 404 if the specified user or administration does not exist.',
     },
   },
   { pathPrefix: '/users' },
