@@ -9,18 +9,31 @@
  * - Mocks AuthService to accept test tokens (token = Firebase UID)
  * - Writes fixture data to a JSON file for SDK tests to discover
  *
+ * PREREQUISITES:
+ * - PostgreSQL must be running on the connection string specified by CORE_DATABASE_URL
+ * - OpenFGA must be running on the URL specified by FGA_API_URL (default: http://localhost:8080)
+ * - Backend must be built: `npm run build -w apps/backend`
+ *   (This setup automatically builds if dist/server-test.js is missing)
+ *
  * TEST DATA SEEDING:
  * - baseFixture data is seeded automatically during server startup
  * - Fixture data (task variant IDs, user authIds) is written to TEST_FIXTURE_FILE
  * - SDK tests read the fixture file instead of making HTTP calls
  * - No hardcoded UUIDs needed — all test data is fetched at runtime
  *
- * Environment variables:
+ * ENVIRONMENT VARIABLES:
  * - BACKEND_PORT: Port for the backend server (default: 4001)
  * - CORE_DATABASE_URL: Core database connection string (required)
  * - ASSESSMENT_DATABASE_URL: Assessment database connection string (required)
  * - FGA_API_URL: OpenFGA server URL (default: http://localhost:8080)
  * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
+ *
+ * TROUBLESHOOTING:
+ * - "Cannot find module 'dist/server-test.js'": Run `npm run build -w apps/backend`
+ * - "EADDRINUSE: port 4001 already in use": Change BACKEND_PORT or kill the existing process
+ * - "Connection refused" on database: Ensure PostgreSQL is running on CORE_DATABASE_URL
+ * - "Connection refused" on FGA: Ensure OpenFGA is running on FGA_API_URL
+ * - Fixture file not found: Check TEST_FIXTURE_FILE path and ensure server started successfully
  */
 
 import { spawn } from 'node:child_process';

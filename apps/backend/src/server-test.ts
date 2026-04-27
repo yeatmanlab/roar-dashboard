@@ -70,6 +70,9 @@ async function writeFixtureFile(fixtureFile: string): Promise<void> {
     testUser: {
       authId: baseFixture.schoolAStudent.authId,
     },
+    schoolATeacher: {
+      authId: baseFixture.schoolATeacher.authId,
+    },
     administrationAssignedToDistrict: {
       id: baseFixture.administrationAssignedToDistrict.id,
     },
