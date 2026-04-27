@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import type { UpdateUserRequestBody } from '@roar-dashboard/api-contract';
+import type { UpdateUserRequestBody, AdministrationsListQuery } from '@roar-dashboard/api-contract';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
+import { AdministrationWithEmbedsFactory } from '../test-support/factories/administration.factory';
 import { MockedUserService } from '../test-support/services/user.service';
+import { MockedAdministrationService } from '../test-support/services/administration.service';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
@@ -12,7 +14,13 @@ vi.mock('../services/user', () => ({
   UserService: vi.fn(),
 }));
 
+// Mock the AdministrationService module
+vi.mock('../services/administration/administration.service', () => ({
+  AdministrationService: vi.fn(),
+}));
+
 import { UserService } from '../services/user';
+import { AdministrationService } from '../services/administration/administration.service';
 
 /**
  * Type-safe assertion helper for success responses.
@@ -40,18 +48,31 @@ describe('UsersController', () => {
   const mockGetById = vi.fn();
   const mockUpdate = vi.fn();
   const mockRecordUserAgreement = vi.fn();
+  const mockGetUserAdministrations = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup the mock service
+    // Setup the mock UserService
     vi.mocked(UserService).mockReturnValue({
       findByAuthId: vi.fn(),
       getById: mockGetById,
       update: mockUpdate,
       recordUserAgreement: mockRecordUserAgreement,
     } as MockedUserService);
+
+    // Setup the mock AdministrationService
+    vi.mocked(AdministrationService).mockReturnValue({
+      verifyAdministrationAccess: vi.fn(),
+      list: vi.fn(),
+      getById: vi.fn(),
+      getAssignees: vi.fn(),
+      listTaskVariants: vi.fn(),
+      listAgreements: vi.fn(),
+      deleteById: vi.fn(),
+      getUserAdministrations: mockGetUserAdministrations,
+    } as MockedAdministrationService);
   });
 
   describe('get', () => {
@@ -672,6 +693,352 @@ describe('UsersController', () => {
       const data = expectCreatedResponse(result);
       expect(data.id).toBe('agreement-parent-child-123');
       expect(mockRecordUserAgreement).toHaveBeenCalledWith(parentAuthContext, childUserId, validBody);
+    });
+  });
+
+  describe('listUserAdministrations', () => {
+    const targetUserId = 'target-user-123';
+    const defaultQuery: AdministrationsListQuery = {
+      page: 1,
+      perPage: 25,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+      embed: [],
+    };
+
+    it('should return 200 with paginated administrations when successful', async () => {
+      const mockAdmins = AdministrationWithEmbedsFactory.buildList(3, {
+        id: 'admin-1',
+        name: 'Test Admin 1',
+        namePublic: 'Public Admin 1',
+        dateStart: new Date('2024-01-01T00:00:00.000Z'),
+        dateEnd: new Date('2024-12-31T23:59:59.999Z'),
+        createdAt: new Date('2023-12-01T10:00:00.000Z'),
+        isOrdered: true,
+      });
+
+      mockGetUserAdministrations.mockResolvedValue({
+        items: mockAdmins,
+        totalItems: 3,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(3);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 3,
+        totalPages: 1,
+      });
+    });
+
+    it('should transform administration fields correctly', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
+        id: 'admin-transform',
+        name: 'Internal Name',
+        namePublic: 'Public Name',
+        dateStart: new Date('2024-01-01T00:00:00.000Z'),
+        dateEnd: new Date('2024-12-31T23:59:59.999Z'),
+        createdAt: new Date('2023-12-01T10:00:00.000Z'),
+        isOrdered: false,
+      });
+
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]).toMatchObject({
+        id: 'admin-transform',
+        name: 'Internal Name',
+        publicName: 'Public Name',
+        dates: {
+          start: '2024-01-01T00:00:00.000Z',
+          end: '2024-12-31T23:59:59.999Z',
+          created: '2023-12-01T10:00:00.000Z',
+        },
+        isOrdered: false,
+      });
+    });
+
+    it('should include stats when embedded', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
+        stats: {
+          assigned: 100,
+          started: 75,
+          completed: 50,
+        },
+      });
+
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const query: AdministrationsListQuery = {
+        ...defaultQuery,
+        embed: ['stats'],
+      };
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, query);
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.stats).toEqual({
+        assigned: 100,
+        started: 75,
+        completed: 50,
+      });
+    });
+
+    it('should include tasks when embedded', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
+        tasks: [
+          {
+            taskId: 'task-1',
+            taskName: 'Task One',
+            variantId: 'variant-1',
+            variantName: 'Variant One',
+            orderIndex: 0,
+          },
+        ],
+      });
+
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const query: AdministrationsListQuery = {
+        ...defaultQuery,
+        embed: ['tasks'],
+      };
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, query);
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]!.tasks).toHaveLength(1);
+      expect(data.items[0]!.tasks![0]).toMatchObject({
+        taskId: 'task-1',
+        taskName: 'Task One',
+        variantId: 'variant-1',
+        variantName: 'Variant One',
+        orderIndex: 0,
+      });
+    });
+
+    it('should not include stats or tasks when not embedded', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build();
+
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]).not.toHaveProperty('stats');
+      expect(data.items[0]).not.toHaveProperty('tasks');
+    });
+
+    it('should pass status filter to service when provided', async () => {
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const query: AdministrationsListQuery = {
+        ...defaultQuery,
+        status: 'active',
+      };
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.listUserAdministrations(mockAuthContext, targetUserId, query);
+
+      expect(mockGetUserAdministrations).toHaveBeenCalledWith(
+        mockAuthContext,
+        targetUserId,
+        expect.objectContaining({
+          status: 'active',
+        }),
+      );
+    });
+
+    it('should not pass status filter to service when not provided', async () => {
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      expect(mockGetUserAdministrations).toHaveBeenCalledWith(
+        mockAuthContext,
+        targetUserId,
+        expect.not.objectContaining({
+          status: expect.anything(),
+        }),
+      );
+    });
+
+    it('should calculate totalPages correctly', async () => {
+      mockGetUserAdministrations.mockResolvedValue({
+        items: AdministrationWithEmbedsFactory.buildList(10),
+        totalItems: 47,
+      });
+
+      const query: AdministrationsListQuery = {
+        page: 1,
+        perPage: 10,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: [],
+      };
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, query);
+
+      const data = expectOkResponse(result);
+      expect(data.pagination.totalPages).toBe(5); // Math.ceil(47 / 10)
+    });
+
+    it('should handle empty results', async () => {
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items).toEqual([]);
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 0,
+        totalPages: 0,
+      });
+    });
+
+    it('should delegate to service with correct arguments', async () => {
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const query: AdministrationsListQuery = {
+        page: 2,
+        perPage: 50,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        embed: ['stats', 'tasks'],
+        status: 'active',
+      };
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.listUserAdministrations(mockAuthContext, targetUserId, query);
+
+      expect(mockGetUserAdministrations).toHaveBeenCalledWith(mockAuthContext, targetUserId, {
+        page: 2,
+        perPage: 50,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        embed: ['stats', 'tasks'],
+        status: 'active',
+      });
+      expect(mockGetUserAdministrations).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockGetUserAdministrations.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected database error');
+      mockGetUserAdministrations.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery)).rejects.toThrow(
+        'Unexpected database error',
+      );
+    });
+
+    it('should handle pagination on second page', async () => {
+      mockGetUserAdministrations.mockResolvedValue({
+        items: AdministrationWithEmbedsFactory.buildList(25),
+        totalItems: 100,
+      });
+
+      const query: AdministrationsListQuery = {
+        page: 2,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        embed: [],
+      };
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, query);
+
+      const data = expectOkResponse(result);
+      expect(data.pagination).toEqual({
+        page: 2,
+        perPage: 25,
+        totalItems: 100,
+        totalPages: 4,
+      });
+    });
+
+    it('should handle different sort options', async () => {
+      mockGetUserAdministrations.mockResolvedValue({
+        items: [],
+        totalItems: 0,
+      });
+
+      const query: AdministrationsListQuery = {
+        page: 1,
+        perPage: 25,
+        sortBy: 'name',
+        sortOrder: 'asc',
+        embed: [],
+      };
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.listUserAdministrations(mockAuthContext, targetUserId, query);
+
+      expect(mockGetUserAdministrations).toHaveBeenCalledWith(
+        mockAuthContext,
+        targetUserId,
+        expect.objectContaining({
+          sortBy: 'name',
+          sortOrder: 'asc',
+        }),
+      );
     });
   });
 });
