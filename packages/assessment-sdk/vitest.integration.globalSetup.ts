@@ -214,19 +214,16 @@ export default async function globalSetup() {
     await Promise.race([
       waitForBackendHealth(BACKEND_PORT, fixtureFile),
       new Promise<never>((_, reject) =>
-        setTimeout(
-          () => {
-            const dbUrl = process.env.CORE_DATABASE_URL ? '(set)' : '(not set)';
-            const fgaUrl = process.env.FGA_API_URL || 'http://localhost:8080';
-            reject(
-              new Error(
-                `[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms. ` +
-                  `Check that PostgreSQL (${dbUrl}) and OpenFGA (${fgaUrl}) are running.`,
-              ),
-            );
-          },
-          BACKEND_START_TIMEOUT,
-        ),
+        setTimeout(() => {
+          const dbUrl = process.env.CORE_DATABASE_URL ? '(set)' : '(not set)';
+          const fgaUrl = process.env.FGA_API_URL || 'http://localhost:8080';
+          reject(
+            new Error(
+              `[SDK Integration Tests] Backend startup timeout after ${BACKEND_START_TIMEOUT}ms. ` +
+                `Check that PostgreSQL (${dbUrl}) and OpenFGA (${fgaUrl}) are running.`,
+            ),
+          );
+        }, BACKEND_START_TIMEOUT),
       ),
     ]);
   } catch (error) {
