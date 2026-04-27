@@ -3,6 +3,7 @@ import type { User, NewUserAgreement } from '../../db/schema';
 import type { UserType } from '../../enums/user-type.enum';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
+import type { UserRole } from '../../enums/user-role.enum';
 import { EntityType } from '../../types/entity-type';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
@@ -38,6 +39,56 @@ const AgeCategory = {
   UNKNOWN: 'UNKNOWN',
 } as const;
 type AgeCategory = (typeof AgeCategory)[keyof typeof AgeCategory];
+
+/** Interface for user name fields in the create user payload. */
+interface CreateUserName {
+  first: string;
+  middle?: string;
+  last: string;
+}
+
+/** Interface for user demographic fields in the create user payload. */
+interface CreateUserDemographics {
+  gender?: string | null;
+  race?: string | null;
+  statusEll?: string | null;
+  statusFrl?: FreeReducedLunchStatus | null;
+  statusIep?: string | null;
+  hispanicEthnicity?: boolean | null;
+  homeLanguage?: string | null;
+}
+
+/** Interface for user identifier fields in the create user payload. */
+interface CreateUserIdentifiers {
+  stateId?: string | null;
+  pid?: string | null;
+}
+
+/** Interface for user membership fields in the create user payload. */
+interface CreateUserMemberships {
+  entityType: EntityType;
+  entityId: string;
+  role: UserRole;
+  enrollmentStart?: string | null;
+  enrollmentEnd?: string | null;
+}
+
+/**
+ * Fields for creating a single user.
+ *
+ * System manages id, assessmentPid, authId, authProvider, isSuperAdmin, schoolLevel, createdAt, and updatedAt — these are intentionally excluded
+ * from the create payload.
+ */
+interface CreateUserData {
+  email: string;
+  password: string;
+  name: CreateUserName;
+  dob?: string | null;
+  grade?: Grade | null;
+  demographics?: CreateUserDemographics | null;
+  identifiers?: CreateUserIdentifiers | null;
+  memberships?: CreateUserMemberships[] | null;
+}
 
 /**
  * The subset of user fields that may be updated via PATCH /users/:id.
@@ -243,6 +294,10 @@ export function UserService({
         cause: error,
       });
     }
+  }
+
+  async function create(authContext: AuthContext, body: CreateUserData): Promise<{ id: string }> {
+    return { id: 'placeholder-id' };
   }
 
   /**
@@ -632,5 +687,5 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById, update, recordUserAgreement, getUnsignedTosAgreements };
+  return { findByAuthId, getById, create, update, recordUserAgreement, getUnsignedTosAgreements };
 }
