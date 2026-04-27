@@ -758,7 +758,7 @@ export function AdministrationService({
     const { userId: requesterUserId, isSuperAdmin } = authContext;
 
     if (requesterUserId === userId) {
-      return await list(authContext, options);
+      return list(authContext, options);
     }
 
     try {
@@ -793,7 +793,7 @@ export function AdministrationService({
         return { items: [], totalItems: 0 };
       }
       // Fetch administrations based on user role and authorization
-      let result;
+      let result: PaginatedResult<Administration>;
 
       if (isSuperAdmin) {
         result = await administrationRepository.getByIds(targetUserAdminIds, queryParams);
@@ -803,11 +803,23 @@ export function AdministrationService({
           FgaRelation.CAN_LIST,
           FgaType.ADMINISTRATION,
         );
-        const requesterUserAdminIds = requesterUserAdmins.map(extractFgaObjectId);
-        result = await administrationRepository.getByIds(
-          targetUserAdminIds.filter((id) => requesterUserAdminIds.includes(id)),
-          queryParams,
-        );
+        const requesterUserAdminIds = new Set(requesterUserAdmins.map(extractFgaObjectId));
+        const intersectedIds = targetUserAdminIds.filter((id) => requesterUserAdminIds.has(id));
+
+        if (intersectedIds.length === 0) {
+          logger.warn(
+            { requesterUserId, userId },
+            'User attempted to list administrations for user they have no shared access with',
+          );
+
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requesterUserId, targetUserId: userId },
+          });
+        }
+
+        result = await administrationRepository.getByIds(intersectedIds, queryParams);
       }
 
       // If no embeds requested, return as-is
@@ -826,8 +838,8 @@ export function AdministrationService({
       const shouldEmbedTasks = embedOptions.includes(AdministrationEmbedOption.TASKS);
 
       // Fetch embed data (throws on failure)
-      const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, userId) : null;
-      const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, userId) : null;
+      const statsMap = shouldEmbedStats ? await fetchStatsEmbed(administrationIds, requesterUserId) : null;
+      const tasksMap = shouldEmbedTasks ? await fetchTasksEmbed(administrationIds, requesterUserId) : null;
 
       // Attach embeds to each administration
       const itemsWithEmbeds: AdministrationWithEmbeds[] = result.items.map((admin) => {

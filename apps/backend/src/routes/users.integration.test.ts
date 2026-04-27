@@ -1330,6 +1330,15 @@ describe('GET /v1/users/:userId/administrations', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
+    it('returns 403 when non-super-admin tries to list administrations for user with no shared access', async () => {
+      // districtBStudent is in a different district from tiers.admin (who is in districtA)
+      const res = await expectRoute('GET', `/v1/users/${baseFixture.districtBStudent.id}/administrations`)
+        .as(tiers.admin)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
     it('returns 400 for invalid UUID in userId parameter', async () => {
       const res = await expectRoute('GET', '/v1/users/not-a-valid-uuid/administrations')
         .as(tiers.superAdmin)

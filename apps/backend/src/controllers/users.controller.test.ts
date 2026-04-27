@@ -1057,5 +1057,22 @@ describe('UsersController', () => {
       expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
       expect(errorBody.traceId).toBeDefined();
     });
+
+    it('should return 403 when requester has no shared administrations with target user', async () => {
+      mockGetUserAdministrations.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.listUserAdministrations(mockAuthContext, targetUserId, defaultQuery);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      expect(errorBody.traceId).toBeDefined();
+    });
   });
 });

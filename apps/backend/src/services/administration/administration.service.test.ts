@@ -2546,7 +2546,7 @@ describe('AdministrationService', () => {
       expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
     });
 
-    it('should return empty result when non-super-admin has no common administrations with target user', async () => {
+    it('should throw 403 when non-super-admin has no common administrations with target user', async () => {
       const mockUser = UserFactory.build({ id: 'target-user-123' });
 
       mockUserRepository.getById.mockResolvedValue(mockUser);
@@ -2554,26 +2554,27 @@ describe('AdministrationService', () => {
         .mockResolvedValueOnce(['admin-1', 'admin-2'].map((id) => `administration:${id}`))
         .mockResolvedValueOnce(['admin-3', 'admin-4'].map((id) => `administration:${id}`));
 
-      mockAdministrationRepository.getByIds.mockResolvedValue({
-        items: [],
-        totalItems: 0,
-      });
-
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
         userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
-      const result = await service.getUserAdministrations(
-        { userId: 'requester-user-456', isSuperAdmin: false },
-        'target-user-123',
-        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc' },
-      );
+      await expect(
+        service.getUserAdministrations({ userId: 'requester-user-456', isSuperAdmin: false }, 'target-user-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 403,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
 
-      expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith([], expect.any(Object));
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(2);
+      expect(mockAdministrationRepository.getByIds).not.toHaveBeenCalled();
     });
 
     it('should include stats embed for super admin when requested', async () => {
