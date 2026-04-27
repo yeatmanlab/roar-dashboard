@@ -99,6 +99,7 @@ jobs:
       - name: Build backend with test server
         run: npm run build -w apps/backend
         env:
+          NODE_ENV: test
           BUILD_TEST_SERVER: 'true'
 
       - name: Run all tests
