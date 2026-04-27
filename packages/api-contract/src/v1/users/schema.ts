@@ -85,13 +85,16 @@ const CreateUserIdentifiersSchema = z.object({
 /**
  * Request body schema for POST /users
  *
+ * This endpoint should be used when creating a single user with specific profile information and memberships.
+ * For bulk user creation, consider implementing a separate bulk endpoint (e.g., POST /users/bulk) that accepts an array of user objects.
+ *
  * Excluded from this schema (system-managed, not settable via API):
  * - id, assessmentPid, authId, authProvider — identity/rostering fields
  * - isSuperAdmin — security-sensitive, not user-updatable
  * - schoolLevel — DB-generated from grade
  * - createdAt, updatedAt — managed by DB triggers
  *
- *   Unknown fields in the request body will be rejected with a validation error.
+ * Unknown fields in the request body will be rejected with a validation error.
  */
 export const CreateUserRequestBodySchema = z
   .object({
