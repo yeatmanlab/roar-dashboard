@@ -64,7 +64,32 @@ export function RunService({
     }
 
     // Check if user has permission to act on behalf of target user (e.g., parent/guardian)
-    await authorizationService.requirePermission(userId, FgaRelation.CAN_READ_CHILD, `${FgaType.USER}:${targetUserId}`);
+    // Find all families where the user is a parent and has can_read_child permission
+    const accessibleFamilies = await authorizationService.listAccessibleObjects(
+      userId,
+      FgaRelation.CAN_READ_CHILD,
+      FgaType.FAMILY,
+    );
+
+    // Check if the target user is a child in any of these families
+    let hasAccess = false;
+    for (const familyObject of accessibleFamilies) {
+      // familyObject is like "family:family-id"
+      // Check if target user can list this family (which means they're a member)
+      const isMember = await authorizationService.hasPermission(targetUserId, FgaRelation.CAN_LIST, familyObject);
+      if (isMember) {
+        hasAccess = true;
+        break;
+      }
+    }
+
+    if (!hasAccess) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, targetUserId },
+      });
+    }
   }
 
   /**

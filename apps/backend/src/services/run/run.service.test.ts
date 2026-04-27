@@ -41,6 +41,9 @@ describe('RunService', () => {
     taskVariantRepository = createMockTaskVariantRepository();
 
     authorizationService = createMockAuthorizationService();
+    // Mock the family access check for tests where userId !== targetUserId
+    authorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.FAMILY}:family-123`]);
+    authorizationService.hasPermission.mockResolvedValue(true);
 
     runService = RunService({
       runRepository,
