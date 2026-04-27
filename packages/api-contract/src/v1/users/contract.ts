@@ -111,7 +111,7 @@ export const UsersContract = c.router(
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,
-      summary: 'List administrations for a user',
+      summary: 'List administrations for a specified user',
       description:
         'Returns a paginated list of administrations the requester and specified user have access to. ' +
         'Use ?status=active|past|upcoming to filter by date status. ' +
