@@ -375,3 +375,126 @@ export type IndividualStudentReportResponse = z.infer<typeof IndividualStudentRe
 export const IndividualStudentReportQuerySchema = ReportScopeQuerySchema;
 
 export type IndividualStudentReportQuery = z.infer<typeof IndividualStudentReportQuerySchema>;
+
+// --- Task Subscores schemas ---
+
+/**
+ * One column descriptor in the task subscores response. The frontend uses
+ * this metadata to render the per-task table header without hard-coding
+ * column lists per task slug.
+ */
+export const TaskSubscoreColumnSchema = z.object({
+  /** Stable column identifier; appears as a key in `subscores` row entries. */
+  key: z.string(),
+  /** Human-readable label for the column header. */
+  label: z.string(),
+});
+
+export type TaskSubscoreColumn = z.infer<typeof TaskSubscoreColumnSchema>;
+
+/**
+ * One value cell in a task-subscore row. Three shapes are supported:
+ * - Item-level scores render as `"correct/attempted"` strings (e.g., `"15/19"`)
+ * - Percent / total / raw-score values render as numbers
+ * - Computed strings (skills/letters/sounds to work on) render as comma-separated text
+ */
+export const TaskSubscoreValueSchema = z.union([z.string(), z.number(), z.null()]);
+
+export type TaskSubscoreValue = z.infer<typeof TaskSubscoreValueSchema>;
+
+/**
+ * One row in the task subscores response — student demographics plus the
+ * per-column subscore values. Keys in `subscores` correspond exactly to
+ * the `subscoreColumns[].key` values returned with the same response so
+ * the frontend can iterate the columns and look up cells by key.
+ */
+export const TaskSubscoreRowSchema = z.object({
+  user: ReportUserInfoSchema,
+  subscores: z.record(z.string(), TaskSubscoreValueSchema),
+});
+
+export type TaskSubscoreRow = z.infer<typeof TaskSubscoreRowSchema>;
+
+/**
+ * Pattern matching `subscores.<key>` for dynamic sort/filter — the key is
+ * validated against the task's registered subscore columns in the service
+ * layer. Unknown keys return 400.
+ */
+export const SUBSCORE_FIELD_PATTERN = /^subscores\.[a-zA-Z][a-zA-Z0-9_]*$/;
+
+/**
+ * Static sort fields for the task subscores endpoint.
+ *
+ * Also accepts dynamic `subscores.<key>` fields via pattern matching. The
+ * key is validated server-side against the task's registered subscore
+ * columns; unknown keys return 400.
+ */
+export const TASK_SUBSCORES_SORT_FIELDS = [
+  'user.lastName',
+  'user.firstName',
+  'user.username',
+  'user.grade',
+  'user.schoolName',
+] as const;
+
+export type TaskSubscoresSortField = (typeof TASK_SUBSCORES_SORT_FIELDS)[number];
+
+/**
+ * Static filter fields for the task subscores endpoint.
+ *
+ * Also accepts dynamic `subscores.<key>` fields. Numeric subscore filters
+ * (`gte`, `lte`, `eq`, `neq`) are evaluated against the column's
+ * percent-correct value where one is defined; columns without a numeric
+ * representation (e.g., `skillsToWorkOn`) reject numeric operators.
+ */
+export const TASK_SUBSCORES_FILTER_FIELDS = [
+  'user.grade',
+  'user.firstName',
+  'user.lastName',
+  'user.username',
+  'user.email',
+  'user.schoolName',
+] as const;
+
+export type TaskSubscoresFilterField = (typeof TASK_SUBSCORES_FILTER_FIELDS)[number];
+
+/**
+ * Query schema for the task subscores endpoint. Combines pagination, scope,
+ * filter (with dynamic `subscores.<key>` support), and sort (with dynamic
+ * `subscores.<key>` support).
+ */
+export const TaskSubscoresQuerySchema = PaginationQuerySchema.merge(ReportScopeQuerySchema)
+  .merge(
+    createFilterQuerySchema(TASK_SUBSCORES_FILTER_FIELDS, {
+      dynamicFieldPatterns: [SUBSCORE_FIELD_PATTERN],
+      dynamicFieldHint: 'subscores.<key>',
+    }),
+  )
+  .merge(
+    createDynamicSortQuerySchema(
+      TASK_SUBSCORES_SORT_FIELDS,
+      'user.lastName',
+      'asc',
+      [SUBSCORE_FIELD_PATTERN],
+      'subscores.<key>',
+    ),
+  );
+
+export type TaskSubscoresQuery = z.infer<typeof TaskSubscoresQuerySchema>;
+
+/**
+ * Response schema for the task subscores endpoint.
+ *
+ * `task` carries the same identifying metadata as other report responses.
+ * `subscoreColumns` declares the column ordering and labels — the frontend
+ * iterates this array, then looks up each row's value by key. Tasks without
+ * a registered subscore schema return 400 from this endpoint.
+ */
+export const TaskSubscoresResponseSchema = z.object({
+  task: ReportTaskMetadataSchema,
+  subscoreColumns: z.array(TaskSubscoreColumnSchema),
+  items: z.array(TaskSubscoreRowSchema),
+  pagination: PaginationMetaSchema,
+});
+
+export type TaskSubscoresResponse = z.infer<typeof TaskSubscoresResponseSchema>;
