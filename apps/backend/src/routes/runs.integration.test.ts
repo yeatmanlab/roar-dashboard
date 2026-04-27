@@ -198,14 +198,33 @@ describe('POST /v1/user/:userId/runs', () => {
       // Set up family relationship: caregiver is parent, student is child
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FgaClient } = await import('../clients/fga.client');
+      const { familyMembershipTuple } = await import('../services/authorization/helpers/fga-tuples');
 
       const family = await FamilyFactory.create();
-      await UserFamilyFactory.create({ userId: tiers.caregiver.id, familyId: family.id, role: 'parent' });
-      await UserFamilyFactory.create({ userId: tiers.student.id, familyId: family.id, role: 'child' });
+      const caregiverFamily = await UserFamilyFactory.create({
+        userId: tiers.caregiver.id,
+        familyId: family.id,
+        role: 'parent',
+      });
+      const studentFamily = await UserFamilyFactory.create({
+        userId: tiers.student.id,
+        familyId: family.id,
+        role: 'child',
+      });
 
-      // Sync FGA tuples to pick up the new family relationships
-      const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
-      await syncFgaTuplesFromPostgres();
+      // Write FGA tuples for the family relationships
+      const fgaClient = FgaClient.getClient();
+      await fgaClient.writeTuples([
+        familyMembershipTuple(
+          tiers.caregiver.id,
+          family.id,
+          'parent',
+          caregiverFamily.joinedOn,
+          caregiverFamily.leftOn,
+        ),
+        familyMembershipTuple(tiers.student.id, family.id, 'child', studentFamily.joinedOn, studentFamily.leftOn),
+      ]);
 
       authenticateAs(tiers.caregiver);
       const res = await request(app)
