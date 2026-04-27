@@ -4,7 +4,7 @@ import type { UpdateUserRequestBody, AdministrationsListQuery } from '@roar-dash
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
 import { AdministrationWithEmbedsFactory } from '../test-support/factories/administration.factory';
 import { MockedUserService } from '../test-support/services/user.service';
-import { MockedAdministrationService } from '../test-support/services/administration.service';
+import { MockAdministrationService } from '../test-support/services/administration.service';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
@@ -72,7 +72,7 @@ describe('UsersController', () => {
       listAgreements: vi.fn(),
       deleteById: vi.fn(),
       getUserAdministrations: mockGetUserAdministrations,
-    } as MockedAdministrationService);
+    } as MockAdministrationService);
   });
 
   describe('get', () => {
