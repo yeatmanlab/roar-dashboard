@@ -31,6 +31,9 @@ export default defineConfig({
           },
           testTimeout: 30000,
           hookTimeout: 30000,
+          // Skip integration tests by default unless explicitly requested
+          // Run with: vitest --project integration
+          skip: !process.env.RUN_INTEGRATION_TESTS,
         },
       },
     ],
