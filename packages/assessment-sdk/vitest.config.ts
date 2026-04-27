@@ -8,13 +8,13 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['src/**/*.test.ts'],
-          exclude: ['src/**/*.integration.test.ts', '**/node_modules/**'],
+          exclude: ['src/**/roar-api.integration.test.ts', '**/node_modules/**'],
           globals: true,
           environment: 'node',
           setupFiles: ['./vitest.setup.ts'],
         },
       },
-      ...(process.env.RUN_INTEGRATION_TESTS
+      ...(process.env.RUN_INTEGRATION_TESTS === 'true'
         ? [
             {
               test: {

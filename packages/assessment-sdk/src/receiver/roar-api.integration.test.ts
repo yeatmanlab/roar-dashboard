@@ -26,7 +26,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { initTestSdk, getBaseFixtureData } from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
 
-describe('Assessment SDK (integration)', () => {
+describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration)', () => {
   let api: RoarApi;
   let taskVariantId: string;
 
