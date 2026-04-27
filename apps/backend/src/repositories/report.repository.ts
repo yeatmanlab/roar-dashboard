@@ -100,8 +100,8 @@ export interface ProgressStatusSortParam {
   taskVariantId: string;
   /** SQL condition for conditionsAssignment (from conditionToSql). undefined = assigned to all. */
   assignmentSql: SQL | undefined;
-  /** SQL condition for conditionsRequirements (from conditionToSql). undefined = required for all. */
-  requirementsSql: SQL | undefined;
+  /** SQL condition for optional_if (conditionsRequirements). When true, the task is optional. undefined = required for all. */
+  optionalIfSql: SQL | undefined;
 }
 
 /**
@@ -115,8 +115,8 @@ export interface ProgressStatusFilterParam {
   statusValues: string[];
   /** SQL condition for conditionsAssignment. undefined = assigned to all. */
   assignmentSql: SQL | undefined;
-  /** SQL condition for conditionsRequirements. undefined = required for all. */
-  requirementsSql: SQL | undefined;
+  /** SQL condition for optional_if (conditionsRequirements). When true, the task is optional. undefined = required for all. */
+  optionalIfSql: SQL | undefined;
 }
 
 /**
@@ -709,10 +709,10 @@ export class ReportRepository {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery type is complex
     statusRunSub: any,
   ): SQL {
-    const { assignmentSql, requirementsSql } = sortParam;
+    const { assignmentSql, optionalIfSql } = sortParam;
 
     // No conditions — all students are assigned and required
-    if (!assignmentSql && !requirementsSql) {
+    if (!assignmentSql && !optionalIfSql) {
       return sql`CASE
         WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 5
         WHEN ${statusRunSub.userId} IS NOT NULL THEN 3
@@ -720,8 +720,8 @@ export class ReportRepository {
       END`;
     }
 
-    // Assignment condition but no requirements — all assigned are required
-    if (!requirementsSql) {
+    // Assignment condition but no optional_if — all assigned are required
+    if (!optionalIfSql) {
       return sql`CASE
         WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) THEN 5
         WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) THEN 3
@@ -730,25 +730,25 @@ export class ReportRepository {
       END`;
     }
 
-    // No assignment condition (all assigned) but has requirements — required vs optional
+    // No assignment condition (all assigned) but has optional_if — required vs optional
     if (!assignmentSql) {
       return sql`CASE
-        WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${requirementsSql}) THEN 4
+        WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${optionalIfSql}) THEN 4
         WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 5
-        WHEN ${statusRunSub.userId} IS NOT NULL AND (${requirementsSql}) THEN 2
+        WHEN ${statusRunSub.userId} IS NOT NULL AND (${optionalIfSql}) THEN 2
         WHEN ${statusRunSub.userId} IS NOT NULL THEN 3
-        WHEN (${requirementsSql}) THEN 0
+        WHEN (${optionalIfSql}) THEN 0
         ELSE 1
       END`;
     }
 
     // Both conditions present
     return sql`CASE
-      WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 4
+      WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) AND (${optionalIfSql}) THEN 4
       WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) THEN 5
-      WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 2
+      WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) AND (${optionalIfSql}) THEN 2
       WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) THEN 3
-      WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
+      WHEN (${assignmentSql}) AND (${optionalIfSql}) THEN 0
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
     END`;
@@ -767,13 +767,11 @@ export class ReportRepository {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery type is complex
     statusRunSub: any,
   ): SQL | undefined {
-    const { statusValues, assignmentSql, requirementsSql } = filterParam;
+    const { statusValues, assignmentSql, optionalIfSql } = filterParam;
     const conditions: SQL[] = [];
 
-    // Helper: build the "is optional" condition
-    // requirementsSql is an "optional_if" condition — true = optional
-    const isOptionalSql = requirementsSql ?? sql`false`; // null = required for all
-    const isRequiredSql = requirementsSql ? sql`NOT (${requirementsSql})` : sql`true`;
+    const isOptionalSql = optionalIfSql ?? sql`false`; // undefined = required for all
+    const isRequiredSql = optionalIfSql ? sql`NOT (${optionalIfSql})` : sql`true`;
     const isAssignedSql = assignmentSql ?? sql`true`;
 
     for (const status of statusValues) {
@@ -1256,10 +1254,10 @@ export class ReportRepository {
    */
   private buildOverviewStatusCase(meta: ReportTaskMeta): SQL {
     const assignmentSql = conditionToSql(meta.conditionsAssignment, REPORT_CONDITION_FIELD_MAP);
-    const requirementsSql = conditionToSql(meta.conditionsRequirements, REPORT_CONDITION_FIELD_MAP);
+    const isOptionalSql = conditionToSql(meta.conditionsRequirements, REPORT_CONDITION_FIELD_MAP);
 
     // No conditions — all students are assigned and required (no optional, no exclusion)
-    if (!assignmentSql && !requirementsSql) {
+    if (!assignmentSql && !isOptionalSql) {
       return sql`CASE
         WHEN r.completed_at IS NOT NULL THEN 5
         WHEN r.user_id IS NOT NULL THEN 3
@@ -1268,7 +1266,7 @@ export class ReportRepository {
     }
 
     // Assignment condition but no requirements — all assigned students are required
-    if (!requirementsSql) {
+    if (!isOptionalSql) {
       return sql`CASE
         WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) THEN 5
         WHEN r.user_id IS NOT NULL AND (${assignmentSql}) THEN 3
@@ -1280,22 +1278,22 @@ export class ReportRepository {
     // No assignment condition (all assigned) but has requirements — required vs optional
     if (!assignmentSql) {
       return sql`CASE
-        WHEN r.completed_at IS NOT NULL AND (${requirementsSql}) THEN 4
+        WHEN r.completed_at IS NOT NULL AND (${isOptionalSql}) THEN 4
         WHEN r.completed_at IS NOT NULL THEN 5
-        WHEN r.user_id IS NOT NULL AND (${requirementsSql}) THEN 2
+        WHEN r.user_id IS NOT NULL AND (${isOptionalSql}) THEN 2
         WHEN r.user_id IS NOT NULL THEN 3
-        WHEN (${requirementsSql}) THEN 0
+        WHEN (${isOptionalSql}) THEN 0
         ELSE 1
       END`;
     }
 
     // Both conditions present
     return sql`CASE
-      WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 4
+      WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) AND (${isOptionalSql}) THEN 4
       WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) THEN 5
-      WHEN r.user_id IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 2
+      WHEN r.user_id IS NOT NULL AND (${assignmentSql}) AND (${isOptionalSql}) THEN 2
       WHEN r.user_id IS NOT NULL AND (${assignmentSql}) THEN 3
-      WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
+      WHEN (${assignmentSql}) AND (${isOptionalSql}) THEN 0
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
     END`;
