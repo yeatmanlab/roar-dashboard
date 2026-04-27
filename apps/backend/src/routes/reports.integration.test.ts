@@ -2542,5 +2542,49 @@ describe('GET /v1/administrations/:id/reports/scores/students/:userId', () => {
       const { data } = res.body;
       expect(data.completedTaskCount).toBeGreaterThanOrEqual(1);
     });
+
+    it('every per-task entry includes a Type tag with Required or Optional', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      for (const task of res.body.data.tasks) {
+        const typeTag = task.tags.find((t: { label: string }) => t.label === 'Type');
+        expect(typeTag).toBeDefined();
+        expect(['Required', 'Optional']).toContain(typeTag.value);
+      }
+    });
+  });
+
+  describe('class and group scopes', () => {
+    it('returns 200 for class scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToClassA.id, baseFixture.classAStudent.id))
+        .query({ scopeType: 'class', scopeId: baseFixture.classInSchoolA.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const { data } = res.body;
+      expect(data.student.userId).toBe(baseFixture.classAStudent.id);
+      expect(data.administration.id).toBe(baseFixture.administrationAssignedToClassA.id);
+    });
+
+    it('returns 200 for group scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToGroup.id, baseFixture.groupStudent.id))
+        .query({ scopeType: 'group', scopeId: baseFixture.group.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const { data } = res.body;
+      expect(data.student.userId).toBe(baseFixture.groupStudent.id);
+      // Group administration has no task variants assigned — tasks empty but query 200s
+      expect(data.tasks).toEqual([]);
+    });
   });
 });

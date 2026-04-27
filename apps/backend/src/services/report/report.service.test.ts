@@ -2978,5 +2978,275 @@ describe('ReportService', () => {
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
     });
+
+    // --- Coverage gap tests ---
+
+    it('extracts phonics subscores via the same config-driven path as PA', async () => {
+      const PHONICS_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000002';
+      const PHONICS_VARIANT_ID = 'phonics-variant-1';
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        {
+          taskId: PHONICS_TASK_ID,
+          taskVariantId: PHONICS_VARIANT_ID,
+          taskSlug: 'phonics',
+          taskName: 'ROAR - Phonics',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ]);
+      setupDefaults();
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        // cvc: 8/10
+        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'cvcCorrect', scoreValue: '8' },
+        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'cvcAttempted', scoreValue: '10' },
+        // digraph: 5/10
+        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'digraphCorrect', scoreValue: '5' },
+        { userId: targetUserId, taskVariantId: PHONICS_VARIANT_ID, scoreName: 'digraphAttempted', scoreValue: '10' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'phonics-run',
+          taskVariantId: PHONICS_VARIANT_ID,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const phonicsTask = result.tasks.find((t) => t.taskId === PHONICS_TASK_ID)!;
+      // phonics has no percentCorrectName, so percentCorrect is computed from correct/attempted
+      expect(phonicsTask.subscores).toBeDefined();
+      expect(phonicsTask.subscores!.cvc).toMatchObject({ correct: 8, attempted: 10, percentCorrect: 80 });
+      expect(phonicsTask.subscores!.digraph).toMatchObject({ correct: 5, attempted: 10, percentCorrect: 50 });
+      // skillsToWorkOn is PA-only — phonics task should NOT include it
+      expect(phonicsTask.skillsToWorkOn).toBeUndefined();
+    });
+
+    it('falls back to legacy roarScore-vs-PA_SKILL_LEGACY_THRESHOLD when percentCorrect is missing', async () => {
+      const PA_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000001';
+      const PA_VARIANT_ID = 'pa-variant-1';
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        {
+          taskId: PA_TASK_ID,
+          taskVariantId: PA_VARIANT_ID,
+          taskSlug: 'pa',
+          taskName: 'ROAR - Phoneme',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ]);
+      setupDefaults();
+      // No fsmPercentCorrect/lsmPercentCorrect/delPercentCorrect rows.
+      // FSM correct=10 (< 15 legacy threshold) → in skillsToWorkOn
+      // LSM correct=18 (>= 15 legacy threshold) → NOT in skillsToWorkOn
+      // DEL correct=12 (< 15 legacy threshold) → in skillsToWorkOn
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmCorrect', scoreValue: '10' },
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmAttempted', scoreValue: '20' },
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmCorrect', scoreValue: '18' },
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmAttempted', scoreValue: '20' },
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delCorrect', scoreValue: '12' },
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delAttempted', scoreValue: '20' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'pa-run',
+          taskVariantId: PA_VARIANT_ID,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const paTask = result.tasks.find((t) => t.taskId === PA_TASK_ID)!;
+      // Note: percentCorrect IS computed from correct/attempted when no
+      // percentCorrectName is configured AND the score row is missing — but here
+      // the config DOES declare a percentCorrectName for PA, so the score-row
+      // miss yields percentCorrect=null, exercising the legacy fallback path.
+      expect(paTask.subscores!.FSM!.percentCorrect).toBeNull();
+      expect(paTask.subscores!.LSM!.percentCorrect).toBeNull();
+      expect(paTask.subscores!.DEL!.percentCorrect).toBeNull();
+      // skillsToWorkOn falls back to correct count vs legacy threshold (15)
+      expect(paTask.skillsToWorkOn).toEqual(['FSM', 'DEL']);
+    });
+
+    it('returns empty skillsToWorkOn when all PA subscores meet the threshold', async () => {
+      const PA_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000001';
+      const PA_VARIANT_ID = 'pa-variant-1';
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        {
+          taskId: PA_TASK_ID,
+          taskVariantId: PA_VARIANT_ID,
+          taskSlug: 'pa',
+          taskName: 'ROAR - Phoneme',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ]);
+      setupDefaults();
+      // All three at 90% → all above 78.9% threshold
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'fsmPercentCorrect', scoreValue: '90' },
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'lsmPercentCorrect', scoreValue: '90' },
+        { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delPercentCorrect', scoreValue: '90' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'pa-run',
+          taskVariantId: PA_VARIANT_ID,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const paTask = result.tasks.find((t) => t.taskId === PA_TASK_ID)!;
+      expect(paTask.skillsToWorkOn).toEqual([]);
+    });
+
+    it('uses the first variant with completed scores for multi-variant tasks (per-task dedup)', async () => {
+      const SHARED_TASK = 'aaaaaaaa-bbbb-cccc-dddd-000000000099';
+      const variantA: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-a',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      const variantB: ReportTaskMeta = {
+        taskId: SHARED_TASK,
+        taskVariantId: 'var-b',
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 1,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      mockReportRepository.getTaskMetadata.mockResolvedValue([variantA, variantB]);
+      setupDefaults();
+      // Student has scores on BOTH variants — variant A wins (lower orderIndex).
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { userId: targetUserId, taskVariantId: 'var-a', scoreName: 'percentile', scoreValue: '90' },
+        { userId: targetUserId, taskVariantId: 'var-b', scoreName: 'percentile', scoreValue: '10' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-a',
+          taskVariantId: 'var-a',
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+        {
+          runId: 'run-b',
+          taskVariantId: 'var-b',
+          reliable: false,
+          engagementFlags: ['flagB'],
+          completedAt: new Date('2025-09-02'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      // One entry per taskId, with variant-A's scores and run metadata
+      expect(result.tasks).toHaveLength(1);
+      const taskEntry = result.tasks[0]!;
+      expect(taskEntry.taskId).toBe(SHARED_TASK);
+      expect(taskEntry.scores.percentile).toBe(90);
+      expect(taskEntry.reliable).toBe(true);
+      expect(taskEntry.engagementFlags).toEqual([]);
+    });
+
+    it('emits Reliability=Unreliable with warn severity for an unreliable run', async () => {
+      setupDefaults();
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '50' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'unreliable-run',
+          taskVariantId: VARIANT_ID_1,
+          reliable: false,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.reliable).toBe(false);
+      const reliabilityTag = swrTask.tags.find((t) => t.label === 'Reliability')!;
+      expect(reliabilityTag.value).toBe('Unreliable');
+      expect(reliabilityTag.severity).toBe('warn');
+    });
+
+    it('surfaces engagementFlags from the run row', async () => {
+      setupDefaults();
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '50' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'flagged-run',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: ['guess', 'inattentive'],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.engagementFlags).toEqual(['guess', 'inattentive']);
+    });
   });
 });
