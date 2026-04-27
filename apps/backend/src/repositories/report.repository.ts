@@ -1,4 +1,4 @@
-import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray } from 'drizzle-orm';
+import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray, lte } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -252,7 +252,7 @@ export interface ResolvedScoringRules {
  * administrations whose `dateStart` is on or before a target date.
  *
  * The service layer joins these with the per-run score rows (returned
- * separately by `getHistoricalScoresForRuns`) to assemble the per-task
+ * separately by `getScoresForRunIds`) to assemble the per-task
  * `historicalScores` arrays in the response.
  */
 export interface HistoricalRunRow {
@@ -1928,7 +1928,7 @@ export class ReportRepository {
         and(
           eq(fdwRuns.userId, userId),
           inArray(fdwRuns.taskId, taskIds),
-          sql`${administrations.dateStart} <= ${currentAdminDateStart}`,
+          lte(administrations.dateStart, currentAdminDateStart),
           isNull(fdwRuns.deletedAt),
           isNull(fdwRuns.abortedAt),
           eq(fdwRuns.useForReporting, true),
