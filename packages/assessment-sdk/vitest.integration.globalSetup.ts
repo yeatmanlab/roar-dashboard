@@ -162,16 +162,6 @@ export default async function globalSetup() {
 
   console.log(`[SDK Integration Tests] Starting test server on port ${BACKEND_PORT}...`);
 
-  // Validate that required environment variables are set
-  const requiredEnvVars = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'];
-  const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
-  if (missingEnvVars.length > 0) {
-    throw new Error(
-      `[SDK Integration Tests] Missing required environment variables: ${missingEnvVars.join(', ')}. ` +
-        `These must be set before running integration tests.`,
-    );
-  }
-
   // Spawn the test server process using the dedicated server-test.ts entrypoint
   // This entrypoint initializes databases, seeds fixtures, sets up FGA, and mocks auth
   backendProcess = spawn('node', ['dist/server-test.js'], {

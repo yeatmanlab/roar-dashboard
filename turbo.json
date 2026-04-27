@@ -20,7 +20,8 @@
     "TEST_FIXTURE_FILE",
     "FGA_API_URL",
     "BACKEND_PORT",
-    "BUILD_TEST_SERVER"
+    "BUILD_TEST_SERVER",
+    "RUN_INTEGRATION_TESTS"
   ],
   "globalDependencies": [".env"],
   "tasks": {
