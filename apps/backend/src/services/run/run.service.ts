@@ -6,6 +6,7 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import { RunRepository } from '../../repositories/run.repository';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
+import { FamilyRepository } from '../../repositories/family.repository';
 import { AdministrationService } from '../administration/administration.service';
 import type { NewRun } from '../../db/schema';
 
@@ -32,11 +33,13 @@ export function RunService({
   administrationService = AdministrationService(),
   taskVariantRepository = new TaskVariantRepository(),
   authorizationService = AuthorizationService(),
+  familyRepository = new FamilyRepository(),
 }: {
   runRepository?: RunRepository;
   administrationService?: ReturnType<typeof AdministrationService>;
   taskVariantRepository?: TaskVariantRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
+  familyRepository?: FamilyRepository;
 } = {}) {
   /**
    * Verify that the authenticated user has access to the target user.
@@ -64,16 +67,13 @@ export function RunService({
     }
 
     // Check if user has permission to act on behalf of target user (e.g., parent/guardian)
-    // Find all families where the user is a parent and has can_read_child permission
-    const accessibleFamilies = await authorizationService.listAccessibleObjects(
-      userId,
-      FgaRelation.CAN_READ_CHILD,
-      FgaType.FAMILY,
-    );
+    // 1. Look up families the target user belongs to
+    // 2. Check if the authenticated user has CAN_READ_CHILD on any of those families
+    const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
+    const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
+    const hasAccess = await authorizationService.hasAnyPermission(userId, FgaRelation.CAN_READ_CHILD, familyObjects);
 
-    // If the user has can_read_child on any family, they can create runs for users in that family
-    // The FGA model ensures that only parents can have can_read_child, so this is a safe check
-    if (accessibleFamilies.length === 0) {
+    if (!hasAccess) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,

@@ -5,8 +5,16 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import type { MockRunRepository, MockTaskVariantRepository } from '../../test-support/repositories';
-import { createMockRunRepository, createMockTaskVariantRepository } from '../../test-support/repositories';
+import type {
+  MockRunRepository,
+  MockTaskVariantRepository,
+  MockFamilyRepository,
+} from '../../test-support/repositories';
+import {
+  createMockRunRepository,
+  createMockTaskVariantRepository,
+  createMockFamilyRepository,
+} from '../../test-support/repositories';
 import type { MockAdministrationService, MockAuthorizationService } from '../../test-support/services';
 import { createMockAdministrationService, createMockAuthorizationService } from '../../test-support/services';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
@@ -18,6 +26,7 @@ describe('RunService', () => {
   let runRepository: MockRunRepository;
   let administrationService: MockAdministrationService;
   let authorizationService: MockAuthorizationService;
+  let familyRepository: MockFamilyRepository;
   let runService: ReturnType<typeof RunService>;
   let taskVariantRepository: MockTaskVariantRepository;
 
@@ -42,14 +51,18 @@ describe('RunService', () => {
 
     authorizationService = createMockAuthorizationService();
     // Mock the family access check for tests where userId !== targetUserId
-    authorizationService.listAccessibleObjects.mockResolvedValue([`${FgaType.FAMILY}:family-123`]);
-    authorizationService.hasPermission.mockResolvedValue(true);
+    authorizationService.hasAnyPermission.mockResolvedValue(true);
+
+    familyRepository = createMockFamilyRepository();
+    // Mock target user belonging to a family
+    familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
 
     runService = RunService({
       runRepository,
       administrationService,
       taskVariantRepository,
       authorizationService,
+      familyRepository,
     });
   });
 
