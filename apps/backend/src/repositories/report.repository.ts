@@ -1889,7 +1889,7 @@ export class ReportRepository {
    * to assemble per-task historical entries and label trend chart points.
    *
    * Score rows are NOT included; the service follows up with
-   * `getHistoricalScoresForRuns` keyed by the run IDs returned here. Splitting
+   * `getScoresForRunIds` keyed by the run IDs returned here. Splitting
    * the two queries keeps the data shape predictable and lets the service
    * decide which scores to surface per task.
    *
