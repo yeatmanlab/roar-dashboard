@@ -96,6 +96,11 @@ jobs:
         with:
           test_path: packages/authz/tests
 
+      - name: Build backend with test server
+        run: npm run build -w apps/backend
+        env:
+          BUILD_TEST_SERVER: 'true'
+
       - name: Run all tests
         run: npm run test
 
