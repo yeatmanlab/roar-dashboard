@@ -1,8 +1,8 @@
-import type { Administration } from '../../db/schema';
 import type {
   Administration as ContractAdministrationBase,
   Administration as ContractAdministration,
 } from '@roar-dashboard/api-contract';
+import type { Administration } from '../../db/schema';
 import type { AdministrationWithEmbeds } from '../../services/administration/administration.service';
 /**
  * Maps a database Administration entity to the base API schema.
