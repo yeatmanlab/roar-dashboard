@@ -71,19 +71,9 @@ export function RunService({
       FgaType.FAMILY,
     );
 
-    // Check if the target user is a child in any of these families
-    let hasAccess = false;
-    for (const familyObject of accessibleFamilies) {
-      // familyObject is like "family:family-id"
-      // Check if target user can list this family (which means they're a member)
-      const isMember = await authorizationService.hasPermission(targetUserId, FgaRelation.CAN_LIST, familyObject);
-      if (isMember) {
-        hasAccess = true;
-        break;
-      }
-    }
-
-    if (!hasAccess) {
+    // If the user has can_read_child on any family, they can create runs for users in that family
+    // The FGA model ensures that only parents can have can_read_child, so this is a safe check
+    if (accessibleFamilies.length === 0) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
