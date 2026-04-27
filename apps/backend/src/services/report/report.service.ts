@@ -34,9 +34,19 @@ import type {
   GuardianStudentReportResult,
   ServiceGuardianAdministrationEntry,
   ServiceGuardianTaskEntry,
+  TaskSubscoresInput,
+  TaskSubscoresResult,
+  ServiceTaskSubscoreColumn,
+  ServiceTaskSubscoreRow,
+  ServiceTaskSubscoreValue,
   ParsedFilter,
 } from './report.types';
-import { PROGRESS_TASK_STATUS_PATTERN, SCORE_TASK_FIELD_PATTERN } from '@roar-dashboard/api-contract';
+import {
+  PROGRESS_TASK_STATUS_PATTERN,
+  SCORE_TASK_FIELD_PATTERN,
+  SUBSCORE_FIELD_PATTERN,
+  SortOrder,
+} from '@roar-dashboard/api-contract';
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -61,6 +71,8 @@ import type {
   StudentScoreQueryRow,
   ResolvedScoringRules,
   HistoricalRunRow,
+  TaskSubscoreNumericFilter,
+  TaskSubscoreNumericSort,
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -75,7 +87,12 @@ import {
   PA_SKILL_THRESHOLD,
   PA_SKILL_LEGACY_THRESHOLD,
   PA_SUBTASK_KEYS,
+  getTaskSubscoreColumns,
+  getPublicSubscoreColumns,
+  getNumericFieldNameForSubscore,
+  formatTaskSubscoreColumnValue,
 } from '../scoring';
+import type { TaskSubscoreColumnDef } from '../scoring';
 import { UserRepository } from '../../repositories/user.repository';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
@@ -1334,6 +1351,285 @@ export function ReportService({
     }
   }
 
+  /**
+   * List per-student subscore breakdown for a single task in an administration.
+   *
+   * Authorization mirrors the score-overview / student-scores endpoints
+   * (admin FGA + scope FGA). Additional contract guarantees:
+   *
+   * - **404** if the task isn't in the administration.
+   * - **400** if the task has no registered subscore schema (SWR, SRE, etc.).
+   * - **400** if a `subscores.<key>` sort or numeric filter targets a key
+   *   the registry doesn't expose, or one whose column kind has no
+   *   numeric form (e.g., `stringPassthrough` or `paSkillsToWorkOn`).
+   *
+   * Per-row assembly: students with multiple completed variants of the
+   * task are deduplicated by lowest-`orderIndex` variant — matching the
+   * dedup rule used by every other score-report endpoint. Each column's
+   * value is then formatted via the registry helper (`itemLevel` becomes
+   * `"correct/attempted"`, `number` becomes a possibly-rounded number,
+   * `stringPassthrough` is forwarded as-is, `paSkillsToWorkOn` is
+   * computed via the existing PA threshold helper).
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to query
+   * @param taskId - The task to fetch subscores for
+   * @param query - Pagination + scope + filter + sort
+   * @returns Paginated subscore rows + column metadata
+   */
+  async function listTaskSubscores(
+    authContext: AuthContext,
+    administrationId: string,
+    taskId: string,
+    query: TaskSubscoresInput,
+  ): Promise<TaskSubscoresResult> {
+    const { userId } = authContext;
+    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
+
+    try {
+      // 1. Authorization (admin + scope FGA)
+      await verifyAdministrationScoreReadAccess(authContext, administrationId);
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
+
+      // 2. Resolve task + variants in this administration. 404 if the task
+      // isn't part of this administration's task variant set.
+      const allTaskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const variantsForTask = allTaskMetas.filter((t) => t.taskId === taskId);
+      if (variantsForTask.length === 0) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId, taskId },
+        });
+      }
+
+      // Multi-variant dedup: pick the lowest-orderIndex variant as the
+      // representative for slug + display + sort/filter compilation.
+      const orderedVariants = [...variantsForTask].sort((a, b) => a.orderIndex - b.orderIndex);
+      const primaryVariant = orderedVariants[0]!;
+      const taskSlug = primaryVariant.taskSlug;
+
+      // 3. Look up the subscore registry for this task. Tasks without a
+      // registered table return 400 — the score-overview / student-scores
+      // endpoints are the right entry points for those tasks.
+      const columnDefs = getTaskSubscoreColumns(taskSlug);
+      if (!columnDefs) {
+        logger.warn(
+          { userId, administrationId, taskId, taskSlug },
+          'Task has no registered subscore table; returning 400',
+        );
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, administrationId, taskId, taskSlug },
+        });
+      }
+      const publicColumns = getPublicSubscoreColumns(taskSlug)!;
+      const registryByKey = new Map<string, TaskSubscoreColumnDef>(columnDefs.map((c) => [c.key, c]));
+
+      // 4. Resolve scoring versions per variant (used by PA skillsToWorkOn computation)
+      const taskVariantIds = orderedVariants.map((v) => v.taskVariantId);
+      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
+      const scoringVersionByVariant = new Map<string, number>();
+      for (const param of allParams) {
+        if (param.name === 'scoringVersion') {
+          const version = typeof param.value === 'number' ? param.value : Number(param.value);
+          if (!isNaN(version)) {
+            scoringVersionByVariant.set(param.taskVariantId, version);
+          }
+        }
+      }
+
+      // 5. Validate + resolve sort. Static user fields use the existing
+      // STUDENT_SCORES_SORT_COLUMNS map; `subscores.<key>` is validated
+      // against the registry and translated to a `run_scores.name`.
+      let staticSortColumn: Column | undefined;
+      let subscoreSort: TaskSubscoreNumericSort | null = null;
+
+      if (SUBSCORE_FIELD_PATTERN.test(sortBy)) {
+        const subscoreKey = sortBy.slice('subscores.'.length);
+        const numericName = getNumericFieldNameForSubscore(taskSlug, subscoreKey);
+        if (!registryByKey.has(subscoreKey) || numericName === null) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.BAD_REQUEST,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, taskId, taskSlug, subscoreKey, sortBy },
+          });
+        }
+        subscoreSort = { scoreName: numericName };
+      } else if (sortBy === 'user.schoolName') {
+        // schoolName isn't a sortable column on the user table — leave the
+        // sortColumn undefined; the repo currently doesn't compile a
+        // school-name sort for task-subscores. Static fallback to
+        // users.nameLast keeps results stable.
+        staticSortColumn = users.nameLast;
+      } else {
+        const key = sortBy as Exclude<StudentScoresSortField, 'user.schoolName'>;
+        staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key] ?? users.nameLast;
+      }
+
+      // 6. Validate + resolve filters. Subscore filters require numeric
+      // operators; user-level filters compile to SQL via the shared
+      // STUDENT_SCORES_USER_FILTER_FIELDS map.
+      const userLevelFilters: ParsedFilter[] = [];
+      const subscoreNumericFilters: TaskSubscoreNumericFilter[] = [];
+      const numericOperators = new Set<TaskSubscoreNumericFilter['operator']>(['gte', 'lte', 'eq', 'neq']);
+
+      for (const f of filter) {
+        if (SUBSCORE_FIELD_PATTERN.test(f.field)) {
+          const subscoreKey = f.field.slice('subscores.'.length);
+          if (!registryByKey.has(subscoreKey)) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey },
+            });
+          }
+          const numericName = getNumericFieldNameForSubscore(taskSlug, subscoreKey);
+          if (!numericName) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey, reason: 'column-has-no-numeric-form' },
+            });
+          }
+          if (!numericOperators.has(f.operator as TaskSubscoreNumericFilter['operator'])) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey, operator: f.operator },
+            });
+          }
+          const value = Number(f.value);
+          if (Number.isNaN(value)) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.BAD_REQUEST,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: { userId, taskId, taskSlug, subscoreKey, value: f.value },
+            });
+          }
+          subscoreNumericFilters.push({
+            scoreName: numericName,
+            operator: f.operator as TaskSubscoreNumericFilter['operator'],
+            value,
+          });
+          continue;
+        }
+        userLevelFilters.push(f);
+      }
+
+      const filterCondition =
+        userLevelFilters.length > 0
+          ? buildFilterConditions(userLevelFilters, STUDENT_SCORES_USER_FILTER_FIELDS, {
+              gradeAwareFields: GRADE_AWARE_FIELDS,
+            })
+          : undefined;
+
+      // 7. Repository call
+      const sortDirectionEnum = sortOrder === 'desc' ? SortOrder.DESC : SortOrder.ASC;
+      const result = await reportRepository.getTaskSubscoreStudents(
+        administrationId,
+        { scopeType, scopeId },
+        taskVariantIds,
+        {
+          page,
+          perPage,
+          sortColumn: staticSortColumn,
+          sortDirection: sortDirectionEnum,
+        },
+        filterCondition,
+        subscoreSort,
+        subscoreNumericFilters,
+      );
+
+      // 8. Resolve school names if district scope
+      let schoolNamesByUser: Map<string, string> | null = null;
+      if (scopeType === 'district' && result.items.length > 0) {
+        const userIds = result.items.map((row) => row.userId);
+        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(userIds);
+      }
+
+      // 9. Per-row assembly via registry-driven value formatter.
+      const items: ServiceTaskSubscoreRow[] = result.items.map((row) => {
+        // Multi-variant dedup: choose the first variant (by orderIndex) the
+        // student has any score rows for.
+        let scoredVariantId: string | null = null;
+        let scoredScoreMap: Map<string, string> | null = null;
+        for (const v of orderedVariants) {
+          const map = row.scores.get(v.taskVariantId);
+          if (map && map.size > 0) {
+            scoredVariantId = v.taskVariantId;
+            scoredScoreMap = map;
+            break;
+          }
+        }
+        const scoreMap = scoredScoreMap ?? new Map<string, string>();
+        // PA-only precomputation for the `paSkillsToWorkOn` column.
+        let paSkillsToWorkOn: string[] | null = null;
+        if (taskSlug === 'pa') {
+          const paSubscores = extractSubscoresFromScoreMap(scoreMap, taskSlug);
+          paSkillsToWorkOn = computeSkillsToWorkOn(taskSlug, paSubscores);
+        }
+
+        const subscores: Record<string, ServiceTaskSubscoreValue> = {};
+        for (const column of columnDefs) {
+          subscores[column.key] = formatTaskSubscoreColumnValue({
+            column,
+            scoreMap,
+            paSkillsToWorkOn,
+          });
+        }
+        // Suppress an unused-variable lint error — scoredVariantId can be
+        // useful for downstream debugging hooks but isn't surfaced today.
+        void scoredVariantId;
+
+        return {
+          user: {
+            userId: row.userId,
+            assessmentPid: row.assessmentPid,
+            username: row.username,
+            email: row.email,
+            firstName: row.nameFirst,
+            lastName: row.nameLast,
+            grade: row.grade,
+            ...(scopeType === 'district' ? { schoolName: schoolNamesByUser?.get(row.userId) ?? null } : {}),
+          },
+          subscores,
+        };
+      });
+
+      const taskMetadata: ServiceTaskMetadata = {
+        taskId: primaryVariant.taskId,
+        taskSlug: primaryVariant.taskSlug,
+        taskName: primaryVariant.taskName,
+        orderIndex: primaryVariant.orderIndex,
+      };
+
+      const subscoreColumns: ServiceTaskSubscoreColumn[] = publicColumns;
+
+      return {
+        task: taskMetadata,
+        subscoreColumns,
+        items,
+        totalItems: result.totalItems,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, taskId, scopeType, scopeId } },
+        'Failed to list task subscores',
+      );
+
+      throw new ApiError('Failed to retrieve task subscores', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, taskId, scopeType, scopeId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     listProgressStudents,
     getProgressOverview,
@@ -1341,6 +1637,7 @@ export function ReportService({
     listStudentScores,
     getIndividualStudentReport,
     getGuardianStudentReport,
+    listTaskSubscores,
   };
 }
 
