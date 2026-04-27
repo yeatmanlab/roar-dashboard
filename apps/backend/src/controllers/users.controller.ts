@@ -11,7 +11,7 @@ import { UserService } from '../services/user';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
-import { transformAdministration } from './utils/administration.transform';
+import { transformAdministration, transformAdministrationBase } from './utils/administration.transform';
 
 const userService = UserService();
 const administrationService = AdministrationService();
@@ -240,7 +240,7 @@ export const UsersController = {
       return {
         status: StatusCodes.OK as const,
         body: {
-          data: transformAdministration(administration),
+          data: transformAdministrationBase(administration),
         },
       };
     } catch (error) {
