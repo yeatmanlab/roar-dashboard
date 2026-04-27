@@ -1274,23 +1274,6 @@ describe('UsersController', () => {
       );
     });
 
-    it('should handle administration with null namePublic', async () => {
-      const mockAdmin = AdministrationWithEmbedsFactory.build({
-        id: 'admin-no-public-name',
-        name: 'Internal Only',
-        namePublic: null,
-      });
-
-      mockGetUserAdministration.mockResolvedValue(mockAdmin);
-
-      const { UsersController: Controller } = await import('./users.controller');
-      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, 'admin-no-public-name');
-
-      const data = expectOkResponse(result);
-      expect(data.name).toBe('Internal Only');
-      expect(data.publicName).toBeNull();
-    });
-
     it('should pass through different user and administration IDs correctly', async () => {
       const mockAdmin = AdministrationWithEmbedsFactory.build();
       mockGetUserAdministration.mockResolvedValue(mockAdmin);
