@@ -5,6 +5,8 @@ import {
   ScoreOverviewResponseSchema,
   StudentScoresQuerySchema,
   StudentScoresResponseSchema,
+  IndividualStudentReportQuerySchema,
+  IndividualStudentReportResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../../../response';
 
@@ -80,6 +82,42 @@ export const ScoreReportsContract = c.router({
       '- 401: Missing or invalid authentication token\n' +
       '- 403: User lacks can_read_scores at the requested administration or scope level\n' +
       '- 404: Administration not found\n' +
+      '- 500: Internal server error',
+  },
+  getIndividualStudentReport: {
+    method: 'GET',
+    path: '/:id/reports/scores/students/:userId',
+    pathParams: z.object({
+      id: z.string().uuid(),
+      userId: z.string().uuid(),
+    }),
+    query: IndividualStudentReportQuerySchema,
+    responses: {
+      200: SuccessEnvelopeSchema(IndividualStudentReportResponseSchema),
+      400: ErrorEnvelopeSchema,
+      401: ErrorEnvelopeSchema,
+      403: ErrorEnvelopeSchema,
+      404: ErrorEnvelopeSchema,
+      500: ErrorEnvelopeSchema,
+    },
+    strictStatusCodes: true,
+    summary: "Get a single student's detailed score report for an administration",
+    description:
+      "Returns a single student's complete score report for one administration: " +
+      'header context (student info, administration metadata), per-task entries with ' +
+      'all score types, support level, tags, subscores (PA/phonics), skillsToWorkOn (PA), ' +
+      'and chronological historical scores from prior administrations up to and ' +
+      'including the current one.\n\n' +
+      'Authorization is the same two-FGA-check pattern as the score overview ' +
+      '(can_read_scores on administration, then on the requested scope) plus a third ' +
+      'check that the target student is in the requested scope. Students whose ' +
+      '`rosteringEnded` is set are treated as not-found (404).\n\n' +
+      'Status codes:\n' +
+      '- 200: Student report returned\n' +
+      '- 400: Invalid scope or invalid path/query parameters\n' +
+      '- 401: Missing or invalid authentication token\n' +
+      '- 403: User lacks can_read_scores at the requested administration or scope level\n' +
+      '- 404: Administration not found, or student not in scope (or rostering-ended)\n' +
       '- 500: Internal server error',
   },
 });
