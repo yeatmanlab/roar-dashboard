@@ -21,6 +21,8 @@ import type {
   StudentScoreRow,
   IndividualStudentReportQuery,
   IndividualStudentReportResponse,
+  TaskSubscoresQuery,
+  TaskSubscoresResponse,
 } from '@roar-dashboard/api-contract';
 import type {
   AgreementWithVersion,
@@ -601,6 +603,58 @@ export const AdministrationsController = {
     try {
       const result = await reportService.getIndividualStudentReport(authContext, administrationId, targetUserId, query);
       const data: IndividualStudentReportResponse = result;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: { data },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List per-student subscores for a single task in an administration.
+   *
+   * Delegates to ReportService for authorization, sort/filter validation,
+   * and per-row registry-driven value formatting. The service returns a
+   * shape that already matches the API contract (column metadata + items
+   * + totals); the controller simply assembles the paginated envelope.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - UUID of the administration
+   * @param taskId - UUID of the target task
+   * @param query - Pagination + scope + filter + sort parameters
+   */
+  listTaskSubscores: async (
+    authContext: AuthContext,
+    administrationId: string,
+    taskId: string,
+    query: TaskSubscoresQuery,
+  ) => {
+    try {
+      const result = await reportService.listTaskSubscores(authContext, administrationId, taskId, query);
+
+      const totalPages = Math.ceil(result.totalItems / query.perPage);
+      const data: TaskSubscoresResponse = {
+        task: result.task,
+        subscoreColumns: result.subscoreColumns,
+        items: result.items,
+        pagination: {
+          page: query.page,
+          perPage: query.perPage,
+          totalItems: result.totalItems,
+          totalPages,
+        },
+      };
 
       return {
         status: StatusCodes.OK as const,
