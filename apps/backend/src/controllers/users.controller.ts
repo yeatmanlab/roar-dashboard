@@ -223,4 +223,35 @@ export const UsersController = {
       throw error;
     }
   },
+
+  /**
+   * Get a specific administration for a user.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param userId - UUID of the user
+   * @param administrationId - UUID of the administration
+   * @returns Administration data
+   */
+  getUserAdministration: async (authContext: AuthContext, userId: string, administrationId: string) => {
+    try {
+      const administration = await administrationService.getUserAdministration(authContext, userId, administrationId);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformAdministration(administration),
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
 };

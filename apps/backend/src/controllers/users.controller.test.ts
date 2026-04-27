@@ -49,6 +49,7 @@ describe('UsersController', () => {
   const mockUpdate = vi.fn();
   const mockRecordUserAgreement = vi.fn();
   const mockGetUserAdministrations = vi.fn();
+  const mockGetUserAdministration = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
@@ -72,6 +73,7 @@ describe('UsersController', () => {
       listAgreements: vi.fn(),
       deleteById: vi.fn(),
       getUserAdministrations: mockGetUserAdministrations,
+      getUserAdministration: mockGetUserAdministration,
     } as MockAdministrationService);
   });
 
@@ -1073,6 +1075,231 @@ describe('UsersController', () => {
       expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
       expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
       expect(errorBody.traceId).toBeDefined();
+    });
+  });
+
+  describe('getUserAdministration', () => {
+    const targetUserId = 'target-user-123';
+    const administrationId = 'admin-456';
+
+    it('should return 200 with administration when successful', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
+        id: administrationId,
+        name: 'Test Administration',
+        namePublic: 'Public Test Admin',
+        dateStart: new Date('2024-01-01T00:00:00.000Z'),
+        dateEnd: new Date('2024-12-31T23:59:59.999Z'),
+        createdAt: new Date('2023-12-01T10:00:00.000Z'),
+        isOrdered: true,
+      });
+
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const data = expectOkResponse(result);
+      expect(data).toMatchObject({
+        id: administrationId,
+        name: 'Test Administration',
+        publicName: 'Public Test Admin',
+        dates: {
+          start: '2024-01-01T00:00:00.000Z',
+          end: '2024-12-31T23:59:59.999Z',
+          created: '2023-12-01T10:00:00.000Z',
+        },
+        isOrdered: true,
+      });
+    });
+
+    it('should transform administration fields correctly', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
+        id: 'admin-transform',
+        name: 'Internal Name',
+        namePublic: 'Public Name',
+        dateStart: new Date('2024-06-15T08:30:00.000Z'),
+        dateEnd: new Date('2024-09-30T17:00:00.000Z'),
+        createdAt: new Date('2024-05-01T12:00:00.000Z'),
+        isOrdered: false,
+      });
+
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, 'admin-transform');
+
+      const data = expectOkResponse(result);
+      expect(data.id).toBe('admin-transform');
+      expect(data.name).toBe('Internal Name');
+      expect(data.publicName).toBe('Public Name');
+      expect(data.dates.start).toBe('2024-06-15T08:30:00.000Z');
+      expect(data.dates.end).toBe('2024-09-30T17:00:00.000Z');
+      expect(data.dates.created).toBe('2024-05-01T12:00:00.000Z');
+      expect(data.isOrdered).toBe(false);
+    });
+
+    it('should delegate to service with correct arguments', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build();
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      expect(mockGetUserAdministration).toHaveBeenCalledWith(mockAuthContext, targetUserId, administrationId);
+      expect(mockGetUserAdministration).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle self-access scenario', async () => {
+      const selfUserId = 'self-user-123';
+      const selfAuthContext = AuthContextFactory.build({ userId: selfUserId, isSuperAdmin: false });
+      const mockAdmin = AdministrationWithEmbedsFactory.build({ id: 'admin-self' });
+
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(selfAuthContext, selfUserId, 'admin-self');
+
+      const data = expectOkResponse(result);
+      expect(data.id).toBe('admin-self');
+      expect(mockGetUserAdministration).toHaveBeenCalledWith(selfAuthContext, selfUserId, 'admin-self');
+    });
+
+    it("should handle super admin accessing another user's administration", async () => {
+      const superAdminContext = AuthContextFactory.build({ userId: 'admin-123', isSuperAdmin: true });
+      const mockAdmin = AdministrationWithEmbedsFactory.build({ id: 'admin-super' });
+
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(superAdminContext, targetUserId, 'admin-super');
+
+      const data = expectOkResponse(result);
+      expect(data.id).toBe('admin-super');
+      expect(mockGetUserAdministration).toHaveBeenCalledWith(superAdminContext, targetUserId, 'admin-super');
+    });
+
+    it('should return 404 when target user does not exist', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, 'non-existent-user', administrationId);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, 'non-existent-admin');
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should return 403 when target user lacks access to administration', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should return 403 when requester lacks access to administration', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      mockGetUserAdministration.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+      expect(errorBody.traceId).toBeDefined();
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected database error');
+      mockGetUserAdministration.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.getUserAdministration(mockAuthContext, targetUserId, administrationId)).rejects.toThrow(
+        'Unexpected database error',
+      );
+    });
+
+    it('should handle administration with null namePublic', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build({
+        id: 'admin-no-public-name',
+        name: 'Internal Only',
+        namePublic: null,
+      });
+
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getUserAdministration(mockAuthContext, targetUserId, 'admin-no-public-name');
+
+      const data = expectOkResponse(result);
+      expect(data.name).toBe('Internal Only');
+      expect(data.publicName).toBeNull();
+    });
+
+    it('should pass through different user and administration IDs correctly', async () => {
+      const mockAdmin = AdministrationWithEmbedsFactory.build();
+      mockGetUserAdministration.mockResolvedValue(mockAdmin);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await Controller.getUserAdministration(mockAuthContext, 'user-abc', 'admin-xyz');
+
+      expect(mockGetUserAdministration).toHaveBeenCalledWith(mockAuthContext, 'user-abc', 'admin-xyz');
     });
   });
 });
