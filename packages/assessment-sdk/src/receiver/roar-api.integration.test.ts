@@ -123,7 +123,8 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(response.status).toBe(400);
-      expect(response.body).toHaveProperty('error');
+      // ts-rest returns Zod validation errors as { issues: [...] }, not the app's ErrorEnvelope
+      expect(response.body).toHaveProperty('issues');
     });
   });
 
