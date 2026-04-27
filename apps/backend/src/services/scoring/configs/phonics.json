@@ -9,5 +9,16 @@
   },
   "classification": {
     "type": "none"
+  },
+  "subscores": {
+    "cvc": { "correctName": "cvcCorrect", "attemptedName": "cvcAttempted" },
+    "digraph": { "correctName": "digraphCorrect", "attemptedName": "digraphAttempted" },
+    "initial_blend": { "correctName": "initialBlendCorrect", "attemptedName": "initialBlendAttempted" },
+    "tri_blend": { "correctName": "triBlendCorrect", "attemptedName": "triBlendAttempted" },
+    "final_blend": { "correctName": "finalBlendCorrect", "attemptedName": "finalBlendAttempted" },
+    "r_controlled": { "correctName": "rControlledCorrect", "attemptedName": "rControlledAttempted" },
+    "r_cluster": { "correctName": "rClusterCorrect", "attemptedName": "rClusterAttempted" },
+    "silent_e": { "correctName": "silentECorrect", "attemptedName": "silentEAttempted" },
+    "vowel_team": { "correctName": "vowelTeamCorrect", "attemptedName": "vowelTeamAttempted" }
   }
 }

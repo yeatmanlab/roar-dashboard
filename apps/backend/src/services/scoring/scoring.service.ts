@@ -272,6 +272,53 @@ export function getSupportLevelFieldName(taskSlug: string): string | null {
   return config.classification.supportLevelField ?? null;
 }
 
+/**
+ * Get the subscore declaration block for a task, or `null` for tasks without
+ * sub-skill breakdowns.
+ *
+ * The returned record is keyed by the response-side subscore key (e.g., `FSM`,
+ * `cvc`) and the value declares the `run_scores.name` values that hold the
+ * `correct`, `attempted`, and (optionally) `percentCorrect` counts.
+ *
+ * @param taskSlug - The task slug
+ * @returns The subscores config block, or `null` if absent
+ */
+export function getSubscoresConfig(taskSlug: string): ScoringConfig['subscores'] | null {
+  const config = getScoringConfig(taskSlug);
+  return config?.subscores ?? null;
+}
+
+// --- PA-specific constants ---
+
+/**
+ * PA proficiency threshold (~78.9%) — a subscore is flagged as "needs work"
+ * when its `percentCorrect` is below this value.
+ *
+ * Ported from the legacy frontend constant in `apps/dashboard/src/helpers/reports.js`
+ * (`(15 / 19) * 100`). Lives in the backend scoring service so the
+ * individual-student-report endpoint can compute `skillsToWorkOn` server-side.
+ */
+export const PA_SKILL_THRESHOLD = (15 / 19) * 100;
+
+/**
+ * Legacy PA proficiency threshold for fixed-item (non-adaptive) PA assessments
+ * that only emit a `roarScore` correct count without a `percentCorrect`.
+ * A subscore is flagged as "needs work" when `roarScore < 15`.
+ *
+ * Ported from `PA_SKILL_LEGACY_THRESHOLD` in the legacy frontend helper. The
+ * backend service falls back to this only when `percentCorrect` is unavailable.
+ */
+export const PA_SKILL_LEGACY_THRESHOLD = 15;
+
+/**
+ * Canonical ordering of PA subscore keys. The response's `skillsToWorkOn` array
+ * preserves this order; the same keys appear as the response-side keys in the
+ * `subscores` map declared by `pa.json`'s `subscores` block.
+ */
+export const PA_SUBTASK_KEYS = ['FSM', 'LSM', 'DEL'] as const;
+
+export type PaSubtaskKey = (typeof PA_SUBTASK_KEYS)[number];
+
 // --- Internal helpers ---
 
 /**
