@@ -75,6 +75,7 @@ describe('AdministrationsController', () => {
       getScoreOverview: mockGetScoreOverview,
       listStudentScores: mockListStudentScores,
       getIndividualStudentReport: mockGetIndividualStudentReport,
+      getGuardianStudentReport: vi.fn(),
     });
   });
   describe('list', () => {
