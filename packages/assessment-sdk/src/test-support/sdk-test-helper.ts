@@ -21,7 +21,7 @@ export function getBackendPort(): string {
  */
 export function getBackendUrl(): string {
   const port = getBackendPort();
-  return `http://localhost:${port}`;
+  return `http://localhost:${port}/v1`;
 }
 
 /**
