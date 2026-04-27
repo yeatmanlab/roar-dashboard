@@ -756,6 +756,11 @@ export function AdministrationService({
     options: ListOptions,
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId: requesterUserId, isSuperAdmin } = authContext;
+
+    if (requesterUserId === userId) {
+      return await list(authContext, options);
+    }
+
     try {
       const queryParams = {
         page: options.page,

@@ -2378,6 +2378,38 @@ describe('AdministrationService', () => {
   });
 
   describe('getUserAdministrations', () => {
+    it('should delegate to list() when user requests their own administrations (self-access)', async () => {
+      const mockAdmins = AdministrationFactory.buildList(2);
+
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: mockAdmins,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations({ userId: 'user-123', isSuperAdmin: false }, 'user-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+
+      // Should only call FGA once (for the requester, not separately for target)
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        'can_list',
+        'administration',
+      );
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
     it('should return administrations for super admin without filtering by requester permissions', async () => {
       const mockAdmins = AdministrationFactory.buildList(3);
 
