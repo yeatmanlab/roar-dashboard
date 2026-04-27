@@ -1090,3 +1090,154 @@ describe('POST /v1/users/:userId/agreements', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/users/:userId/reports/scores  (#1687 Guardian Student Report)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/users/:userId/reports/scores', () => {
+  function reportPath(userId: string) {
+    return `/v1/users/${userId}/reports/scores`;
+  }
+
+  describe('authorization', () => {
+    it('returns 401 without auth', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('super admin can access any student', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('admin tier (administrator at district) can access an in-scope student', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).as(tiers.admin).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('educator tier with class overlap can access a student in their class', async () => {
+      // The beforeAll attached `tiers.educator` to classInSchoolA; classAStudent is enrolled there.
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).as(tiers.educator).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('educator without overlap is forbidden', async () => {
+      // schoolBStudent is in school B; tiers.educator is only in classInSchoolA → no overlap.
+      const res = await expectRoute('GET', reportPath(baseFixture.schoolBStudent.id)).as(tiers.educator).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('linked caregiver (parent) can access their child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: tiers.caregiver.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      const res = await expectRoute('GET', reportPath(child.id)).as(tiers.caregiver).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(child.id);
+    });
+
+    it('caregiver who is not linked to the student is forbidden', async () => {
+      // tiers.caregiver has no user_families link to schoolAStudent.
+      const res = await expectRoute('GET', reportPath(baseFixture.schoolAStudent.id)).as(tiers.caregiver).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student attempting to view their own report is forbidden', async () => {
+      // schoolAStudent is a student tier user — calling for themselves should be denied.
+      const studentAsTier = {
+        id: baseFixture.schoolAStudent.id,
+        authId: baseFixture.schoolAStudent.authId!,
+      };
+      const res = await expectRoute('GET', reportPath(baseFixture.schoolAStudent.id)).as(studentAsTier).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 404 for an unknown user ID', async () => {
+      const res = await expectRoute('GET', reportPath('00000000-0000-0000-0000-000000000000'))
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 for a student with rosteringEnded set', async () => {
+      const endedStudent = await UserFactory.create({
+        userType: 'student',
+        rosteringEnded: new Date('2025-01-01'),
+      });
+
+      const res = await expectRoute('GET', reportPath(endedStudent.id)).as(tiers.superAdmin).toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 for a malformed userId path parameter', async () => {
+      const res = await expectRoute('GET', reportPath('not-a-uuid')).as(tiers.superAdmin).toReturn(400);
+      expect(res.body.error).toBeDefined();
+    });
+  });
+
+  describe('response shape', () => {
+    it('returns 200 with student, administrations, and longitudinalScores', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.grade5Student.id)).as(tiers.superAdmin).toReturn(200);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('student');
+      expect(data).toHaveProperty('administrations');
+      expect(data).toHaveProperty('longitudinalScores');
+
+      // Header
+      expect(data.student.userId).toBe(baseFixture.grade5Student.id);
+      expect(data.student).toHaveProperty('firstName');
+      expect(data.student).toHaveProperty('lastName');
+      expect(data.student).toHaveProperty('grade');
+      expect(data.student).toHaveProperty('schoolName');
+
+      // Per-admin entries: array, each with required fields
+      expect(Array.isArray(data.administrations)).toBe(true);
+      for (const admin of data.administrations) {
+        expect(admin).toHaveProperty('administrationId');
+        expect(admin).toHaveProperty('name');
+        expect(admin).toHaveProperty('dateStart');
+        expect(admin).toHaveProperty('dateEnd');
+        expect(typeof admin.dateStart).toBe('string');
+        expect(Array.isArray(admin.tasks)).toBe(true);
+
+        // Per-task entries omit historicalScores (longitudinal data is at the response root)
+        for (const task of admin.tasks) {
+          expect(task).not.toHaveProperty('historicalScores');
+          expect(task).toHaveProperty('tags');
+          // Type tag is always present
+          expect(task.tags.some((t: { label: string }) => t.label === 'Type')).toBe(true);
+        }
+      }
+
+      // Longitudinal map
+      expect(typeof data.longitudinalScores).toBe('object');
+    });
+
+    it('administrations are sorted ascending by dateStart', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.grade5Student.id)).as(tiers.superAdmin).toReturn(200);
+
+      const dates = (res.body.data.administrations as Array<{ dateStart: string }>).map((a) =>
+        new Date(a.dateStart).getTime(),
+      );
+      for (let i = 1; i < dates.length; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i - 1]!);
+      }
+    });
+  });
+});
