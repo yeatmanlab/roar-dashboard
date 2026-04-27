@@ -37,8 +37,8 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
   let taskVariantId: string;
 
   beforeAll(async () => {
-    // Only initialize if integration tests are enabled
-    // This prevents fixture file errors when tests are skipped
+    // Guard: only run if RUN_INTEGRATION_TESTS is set
+    // describe.skipIf() skips tests but still runs beforeAll, so we need this guard
     if (!process.env.RUN_INTEGRATION_TESTS) {
       return;
     }
