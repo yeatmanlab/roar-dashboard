@@ -20,7 +20,7 @@
  * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
  *
  * Usage:
- *   NODE_ENV=test node dist/server-test.js
+ *   NODE_ENV=production node dist/server-test.js
  */
 
 import 'dotenv/config';

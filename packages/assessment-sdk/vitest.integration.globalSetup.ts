@@ -52,7 +52,7 @@ let backendProcess: ReturnType<typeof spawn> | null = null;
 
 /**
  * Builds the backend if not already built.
- * Required because `npm run start` runs the compiled dist/server.js.
+ * Required because the global setup runs `node dist/server-test.js` directly.
  */
 async function buildBackendIfNeeded(backendDir: string): Promise<void> {
   const testServerBin = path.join(backendDir, 'dist', 'server-test.js');
