@@ -27,6 +27,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:group-admin
+    relation: administrator
+    object: group:group-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
 
   # ─── Administration assigned to group ──────────────────────────────
   - user: group:group-a
@@ -83,6 +91,59 @@ tests:
           can_list: false
           can_read: false
           can_list_users: false
+
+  # ─── can_create_users ─────────────────────────────────────────────
+
+  - name: Group admin can list/read group and create users but not CUD
+    check:
+      - user: user:group-admin
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_create_users: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: Group teacher cannot create users in their group (educator tier)
+    check:
+      - user: user:group-teacher
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: Group student cannot create users in their group
+    check:
+      - user: user:group-student
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: Group guardian cannot create users in their group
+    check:
+      - user: user:group-guardian
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: Non-member cannot create users in group
+    check:
+      - user: user:nobody
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
 
   - name: Group student can list/read and create runs on group-assigned administration
     check:
