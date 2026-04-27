@@ -26,6 +26,8 @@
  * - They require external services (PostgreSQL, OpenFGA) to be running
  * - In CI, they run automatically with RUN_INTEGRATION_TESTS=true
  * - To run locally: RUN_INTEGRATION_TESTS=true npm run test -w packages/assessment-sdk
+ * - Or: RUN_INTEGRATION_TESTS=true npm run test:integration -w packages/assessment-sdk
+ *   (the test:integration script requires the env var to register the integration project)
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
