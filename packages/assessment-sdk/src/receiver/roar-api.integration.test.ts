@@ -122,7 +122,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
         },
       });
 
-      expect(response.status).toBe(422);
+      expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
     });
   });
