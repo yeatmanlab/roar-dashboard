@@ -51,7 +51,7 @@
       "passThroughEnv": ["CORE_DATABASE_URL", "ASSESSMENT_DATABASE_URL", "VITEST_PROJECT"]
     },
     "@yeatmanlab/assessment-sdk#test": {
-      "dependsOn": ["apps/backend#test", "^build"],
+      "dependsOn": ["roar-backend#test", "^build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]
     },
