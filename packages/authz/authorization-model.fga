@@ -79,6 +79,8 @@ type district
     define can_list_users: admin_tier
     define can_read_scores: admin_tier
     define can_read_progress: admin_tier
+    # User creation is allowed by admin_tier only
+    define can_create_users: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # school — mid-level org, child of district, parent of classes
@@ -152,6 +154,8 @@ type school
     define can_list_users: admin_tier or school_admin_tier
     define can_read_scores: admin_tier or school_admin_tier
     define can_read_progress: admin_tier or school_admin_tier
+    # User creation is allowed by admin_tier only
+    define can_create_users: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # class — leaf-level entity, child of school
@@ -223,7 +227,7 @@ type family
     define can_create: no_one
     define can_update: no_one
     define can_delete: no_one
-    
+
     define can_list: parent
     define can_read: parent
     define can_list_users: parent
@@ -280,6 +284,8 @@ type group
     define can_list: supervisory_tier_group
     define can_read: supervisory_tier_group
     define can_list_users: supervisory_tier_group
+    # User creation is allowed by admin_tier only
+    define can_create_users: admin_tier
 
 # ────────────────────────────────────────────────────────────────────────────────
 # administration — an assessment administration assigned to orgs, classes,
@@ -309,7 +315,7 @@ type administration
     define site_administrator: site_administrator from assigned_district or site_administrator from assigned_school or site_administrator from assigned_class or site_administrator from assigned_group
     define district_administrator: district_administrator from assigned_district or district_administrator from assigned_school or district_administrator from assigned_class or district_administrator from assigned_group
     define administrator: administrator from assigned_district or administrator from assigned_school or administrator from assigned_class or administrator from assigned_group
-    
+
     define principal: principal from assigned_district or principal from assigned_school or principal from assigned_class or principal from assigned_group
     define counselor: counselor from assigned_district or counselor from assigned_school or counselor from assigned_class or counselor from assigned_group
     define teacher: teacher from assigned_district or teacher from assigned_school or teacher from assigned_class or teacher from assigned_group
