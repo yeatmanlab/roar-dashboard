@@ -20,6 +20,12 @@
  *   - Task variants (variantForAllGrades, variantForGrade5, etc.)
  *   - Administrations assigned to various org levels
  *   - Users with different roles and enrollments
+ *
+ * RUNNING INTEGRATION TESTS:
+ * - These tests are skipped by default locally (no RUN_INTEGRATION_TESTS env var)
+ * - They require external services (PostgreSQL, OpenFGA) to be running
+ * - In CI, they run automatically with RUN_INTEGRATION_TESTS=true
+ * - To run locally: RUN_INTEGRATION_TESTS=true npm run test -w packages/assessment-sdk
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
