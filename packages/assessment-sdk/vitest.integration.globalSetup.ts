@@ -180,6 +180,8 @@ export default async function globalSetup() {
       NODE_ENV: 'production',
       PORT: BACKEND_PORT,
       TEST_FIXTURE_FILE: process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json',
+      // Provide absolute path so bundled code doesn't rely on __dirname-relative resolution
+      AUTHZ_MODEL_PATH: path.resolve(backendDir, '../../packages/authz/authorization-model.fga'),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
