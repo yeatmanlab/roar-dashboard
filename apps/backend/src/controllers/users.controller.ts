@@ -112,10 +112,12 @@ export const UsersController = {
    */
   create: async (authContext: AuthContext, body: CreateUserRequestBody) => {
     try {
-      await userService.create(authContext, body);
+      const { id } = await userService.create(authContext, body);
       return {
         status: StatusCodes.CREATED as const,
-        body: undefined,
+        body: {
+          data: { id },
+        },
       };
     } catch (error) {
       if (error instanceof ApiError) {
