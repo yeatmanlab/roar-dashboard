@@ -2644,6 +2644,7 @@ describe('ReportService', () => {
     // --- Per-task assembly ---
 
     it('classifies a completed task and emits required tags', async () => {
+      setupDefaults();
       const completedScoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
@@ -2651,7 +2652,6 @@ describe('ReportService', () => {
         scoreValue: '90',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
-      setupDefaults();
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
@@ -2730,6 +2730,7 @@ describe('ReportService', () => {
     // --- Subscores ---
 
     it('extracts PA subscores and computes skillsToWorkOn for keys below threshold', async () => {
+      setupDefaults();
       // Use a PA-slug task in metadata
       const PA_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000001';
       const PA_VARIANT_ID = 'pa-variant-1';
@@ -2759,7 +2760,6 @@ describe('ReportService', () => {
         { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delPercentCorrect', scoreValue: '60' },
       ];
       mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
-      setupDefaults();
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
@@ -2778,6 +2778,7 @@ describe('ReportService', () => {
     });
 
     it('omits subscores and skillsToWorkOn for tasks without a subscores config block', async () => {
+      setupDefaults();
       const completedScoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
@@ -2785,7 +2786,6 @@ describe('ReportService', () => {
         scoreValue: '50',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
-      setupDefaults();
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
@@ -2803,6 +2803,7 @@ describe('ReportService', () => {
     // --- Historical scores ---
 
     it('builds historicalScores per task, sorted ascending by administration dateStart', async () => {
+      setupDefaults();
       const completedScoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
@@ -2843,7 +2844,6 @@ describe('ReportService', () => {
         { runId: 'run-older', scoreName: 'percentile', scoreValue: '40' },
         { runId: 'run-newer', scoreName: 'percentile', scoreValue: '50' },
       ]);
-      setupDefaults();
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
@@ -2881,6 +2881,7 @@ describe('ReportService', () => {
     // --- Counts ---
 
     it('returns completedTaskCount and totalTaskCount', async () => {
+      setupDefaults();
       // Only one variant has scores — TASK_ID_1
       const scoreRow: RunScoreRow = {
         userId: targetUserId,
@@ -2889,7 +2890,6 @@ describe('ReportService', () => {
         scoreValue: '50',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([scoreRow]);
-      setupDefaults();
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
