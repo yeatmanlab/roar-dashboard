@@ -14,29 +14,25 @@ export default defineConfig({
           setupFiles: ['./vitest.setup.ts'],
         },
       },
-      ...(process.env.RUN_INTEGRATION_TESTS === 'true'
-        ? [
-            {
-              test: {
-                name: 'integration',
-                include: ['src/**/*.integration.test.ts'],
-                exclude: ['**/node_modules/**'],
-                globals: true,
-                environment: 'node',
-                setupFiles: ['./vitest.setup.ts'],
-                globalSetup: ['./vitest.integration.globalSetup.ts'],
-                pool: 'forks',
-                poolOptions: {
-                  forks: {
-                    singleFork: true,
-                  },
-                },
-                testTimeout: 30000,
-                hookTimeout: 30000,
-              },
+      {
+        test: {
+          name: 'integration',
+          include: ['src/**/*.integration.test.ts'],
+          exclude: ['**/node_modules/**'],
+          globals: true,
+          environment: 'node',
+          setupFiles: ['./vitest.setup.ts'],
+          globalSetup: ['./vitest.integration.globalSetup.ts'],
+          pool: 'forks',
+          poolOptions: {
+            forks: {
+              singleFork: true,
             },
-          ]
-        : []),
+          },
+          testTimeout: 30000,
+          hookTimeout: 30000,
+        },
+      },
     ],
     coverage: {
       enabled: false,

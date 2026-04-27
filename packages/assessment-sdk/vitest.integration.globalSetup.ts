@@ -141,6 +141,12 @@ async function waitForBackendHealth(port: string, fixtureFile: string, maxAttemp
 }
 
 export default async function globalSetup() {
+  // Skip backend startup when integration tests are not requested
+  if (process.env.RUN_INTEGRATION_TESTS !== 'true') {
+    console.log('[SDK Integration Tests] Skipping global setup (RUN_INTEGRATION_TESTS not set)');
+    return;
+  }
+
   // Validate required environment variables
   const required = ['CORE_DATABASE_URL', 'ASSESSMENT_DATABASE_URL'] as const;
   for (const key of required) {
