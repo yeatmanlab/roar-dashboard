@@ -2526,6 +2526,7 @@ describe('ReportService', () => {
     function setupDefaults(opts?: { studentInScope?: boolean }) {
       mockReportRepository.verifyStudentInScope.mockResolvedValue(opts?.studentInScope ?? true);
       mockReportRepository.getCompletedRunScores.mockResolvedValue([]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([]);
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue([]);
       mockReportRepository.getScoresForRunIds.mockResolvedValue([]);
       mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
@@ -2652,6 +2653,15 @@ describe('ReportService', () => {
         scoreValue: '90',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
@@ -2760,6 +2770,15 @@ describe('ReportService', () => {
         { userId: targetUserId, taskVariantId: PA_VARIANT_ID, scoreName: 'delPercentCorrect', scoreValue: '60' },
       ];
       mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'pa-run-1',
+          taskVariantId: PA_VARIANT_ID,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
@@ -2786,6 +2805,15 @@ describe('ReportService', () => {
         scoreValue: '50',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
 
       const service = createService();
       const result = await service.getIndividualStudentReport(
@@ -2811,6 +2839,15 @@ describe('ReportService', () => {
         scoreValue: '60',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'current-run',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
 
       // Two prior-administration runs for swr (TASK_ID_1) — out-of-order to verify sort.
       const historicalRuns: HistoricalRunRow[] = [
@@ -2890,6 +2927,15 @@ describe('ReportService', () => {
         scoreValue: '50',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([scoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
 
       const service = createService();
       const result = await service.getIndividualStudentReport(

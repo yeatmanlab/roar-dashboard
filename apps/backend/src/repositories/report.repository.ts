@@ -2019,6 +2019,70 @@ export class ReportRepository {
   }
 
   /**
+   * Bulk fetch run-level metadata for one student's completed runs in one
+   * administration, restricted to a list of task variants.
+   *
+   * Returns the run id plus the fields the individual-student-report endpoint
+   * surfaces alongside scores: `reliable` (from `reliableRun`),
+   * `engagementFlags`, and `completedAt`. The companion `getCompletedRunScores`
+   * method returns the score values; together they let the service assemble
+   * the per-task entry without losing run-level signals.
+   *
+   * Multiple completed runs per (user, variant) are not deduplicated here —
+   * the service is responsible for picking one (typically the most recent).
+   * The same `useForReporting=true` invariant documented on
+   * `getCompletedRunScores` applies: the assessment side guarantees at most
+   * one such run per (user, variant) in practice.
+   *
+   * Filters mirror `getCompletedRunScores`: completed runs only
+   * (`completedAt IS NOT NULL`), non-aborted, non-deleted, reporting-eligible.
+   */
+  async getCompletedRunsForUser(
+    administrationId: string,
+    userId: string,
+    taskVariantIds: string[],
+  ): Promise<
+    Array<{
+      runId: string;
+      taskVariantId: string;
+      reliable: boolean | null;
+      engagementFlags: string[];
+      completedAt: Date;
+    }>
+  > {
+    if (taskVariantIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        runId: fdwRuns.id,
+        taskVariantId: fdwRuns.taskVariantId,
+        reliableRun: fdwRuns.reliableRun,
+        engagementFlags: fdwRuns.engagementFlags,
+        completedAt: fdwRuns.completedAt,
+      })
+      .from(fdwRuns)
+      .where(
+        and(
+          eq(fdwRuns.administrationId, administrationId),
+          eq(fdwRuns.userId, userId),
+          inArray(fdwRuns.taskVariantId, taskVariantIds),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          isNotNull(fdwRuns.completedAt),
+        ),
+      );
+
+    return rows.map((r) => ({
+      runId: r.runId,
+      taskVariantId: r.taskVariantId,
+      reliable: r.reliableRun,
+      engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+      completedAt: r.completedAt!,
+    }));
+  }
+
+  /**
    * Bulk fetch all run_scores rows for the given run IDs.
    *
    * Companion to `getHistoricalRunsForUser` — the service uses this to attach

@@ -928,10 +928,14 @@ export function ReportService({
         }
       }
 
-      // 6. Fetch the student's current-admin runs/scores and historical runs/scores in parallel
+      // 6. Fetch the student's current-admin scores, run metadata, and historical
+      // runs/scores in parallel. Run metadata (reliable, engagementFlags) lives
+      // on the runs row; getCompletedRunScores only returns score rows, so we
+      // also call getCompletedRunsForUser for the run-level signals.
       const taskIdsInAdmin = Array.from(new Set(taskMetas.map((t) => t.taskId)));
-      const [currentScoreRows, historicalRuns] = await Promise.all([
+      const [currentScoreRows, currentRunRows, historicalRuns] = await Promise.all([
         reportRepository.getCompletedRunScores(administrationId, [targetUserId], taskVariantIds),
+        reportRepository.getCompletedRunsForUser(administrationId, targetUserId, taskVariantIds),
         reportRepository.getHistoricalRunsForUser(targetUserId, administration.dateStart, taskIdsInAdmin),
       ]);
 
@@ -944,6 +948,22 @@ export function ReportService({
 
       // Index current-admin scores: variantId → name → value
       const currentScoresByVariant = buildVariantScoreLookup(currentScoreRows);
+
+      // Index current-admin run metadata: variantId → most-recent-completed run.
+      // When multiple runs match the (user, variant) — defensive against the rare
+      // multi-run case — pick the latest by completedAt.
+      const currentRunByVariant = new Map<string, { reliable: boolean | null; engagementFlags: string[] }>();
+      const seenRunCompletedAt = new Map<string, Date>();
+      for (const r of currentRunRows) {
+        const existing = seenRunCompletedAt.get(r.taskVariantId);
+        if (!existing || r.completedAt > existing) {
+          currentRunByVariant.set(r.taskVariantId, {
+            reliable: r.reliable,
+            engagementFlags: r.engagementFlags,
+          });
+          seenRunCompletedAt.set(r.taskVariantId, r.completedAt);
+        }
+      }
 
       // Index historical scores: runId → name → value
       const historicalScoresByRun = buildRunScoreLookup(historicalScoreRows);
@@ -985,6 +1005,7 @@ export function ReportService({
 
         if (scoredVariant && scoredScoreMap) {
           completedTaskCount++;
+          const runMeta = currentRunByVariant.get(scoredVariant.taskVariantId) ?? null;
           const taskEntry = buildAssessedTaskEntry(
             taskMeta,
             scoredVariant,
@@ -995,6 +1016,7 @@ export function ReportService({
             historicalRuns,
             historicalScoresByRun,
             scoringVersionByVariant,
+            runMeta,
           );
           tasks.push(taskEntry);
         } else {
@@ -2114,6 +2136,7 @@ function buildAssessedTaskEntry(
   historicalRuns: HistoricalRunRow[],
   historicalScoresByRun: Map<string, Map<string, string>>,
   scoringVersionByVariant: Map<string, number>,
+  runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
 ): ServiceIndividualStudentReportTask {
   const gradeLevel = getGradeAsNumber(grade);
   const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel);
@@ -2134,17 +2157,13 @@ function buildAssessedTaskEntry(
     assessmentSupportLevel,
   }) as ServiceSupportLevelValue | null;
 
-  // The reliable/engagementFlags fields aren't in scoreMap — they live on the
-  // run row. We don't have direct access to that here; the scoring map is what
-  // getCompletedRunScores returns. For this endpoint we accept the simplification
-  // that we don't have run-level metadata at hand for the assessed entry's
-  // reliable/engagementFlags. Leave them as conservative defaults: reliable=true
-  // when classified, engagementFlags=[]. A follow-up can plumb the run row through.
-  // TODO(roar-issue): plumb reliableRun + engagementFlags from the current-admin
-  // run row through to this assembly. The information is already fetched indirectly
-  // through getCompletedRunScores's run JOIN; surface it on the row type.
-  const reliable = true;
-  const engagementFlags: string[] = [];
+  // Run-level signals come from `getCompletedRunsForUser` (the score map only
+  // carries score values, not run metadata). When the lookup turns up no run
+  // for the variant — defensive against eventual-consistency edge cases between
+  // run and score writes — we conservatively report `reliable: null` and an
+  // empty engagement-flags list rather than fabricating a "reliable" reading.
+  const reliable = runMeta?.reliable ?? null;
+  const engagementFlags = runMeta?.engagementFlags ?? [];
 
   const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug);
   const skillsToWorkOn = computeSkillsToWorkOn(scoredVariant.taskSlug, subscores);
