@@ -37,7 +37,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -56,10 +56,15 @@ let backendProcess: ReturnType<typeof spawn> | null = null;
  */
 async function buildBackendIfNeeded(backendDir: string): Promise<void> {
   const testServerBin = path.join(backendDir, 'dist', 'server-test.js');
+  const sourceFile = path.join(backendDir, 'src', 'server-test.ts');
 
-  if (existsSync(testServerBin)) {
-    console.log('[SDK Integration Tests] Test server binary already built, skipping build');
-    return;
+  if (existsSync(testServerBin) && existsSync(sourceFile)) {
+    const binStats = statSync(testServerBin);
+    const srcStats = statSync(sourceFile);
+    if (binStats.mtime > srcStats.mtime) {
+      console.log('[SDK Integration Tests] Test server binary is up-to-date');
+      return;
+    }
   }
 
   console.log('[SDK Integration Tests] Building backend...');

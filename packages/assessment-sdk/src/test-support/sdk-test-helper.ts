@@ -25,34 +25,34 @@ export function getBackendUrl(): string {
 }
 
 /**
- * Creates a test auth context with a cached token.
- *
- * In test mode (NODE_ENV=test), TestAuthProvider treats the token directly as the Firebase UID.
- * The token must be a real user's authId from the seeded database — getBaseFixtureData() fetches
- * schoolAStudent.authId and caches it here before any authenticated requests are made.
- *
- * The token is cached and reused across all tests for performance.
- *
- * @returns Auth context with getToken and refreshToken methods
+ * Cached test token that is populated by getBaseFixtureData().
+ * Must be initialized before any authenticated SDK requests are made.
  */
 let cachedTestToken: string | null = null;
 
 /**
- * Creates a test auth context with a cached token.
+ * Creates a test auth context that uses the cached token.
  *
- * Generates a test token on first call and caches it for reuse across all tests.
- * The cached token is later replaced by getBaseFixtureData() with the actual test user's authId.
+ * The token must be initialized by calling getBaseFixtureData() before making any authenticated requests.
+ * This ensures the SDK uses the actual test user's authId from the seeded database.
  *
  * @returns Auth context object with getToken and refreshToken async methods
+ * @throws Error if called before getBaseFixtureData() has initialized the token
  */
 export function createTestAuthContext() {
-  if (!cachedTestToken) {
-    cachedTestToken = 'test-token-' + Math.random().toString(36).slice(2);
-  }
-
   return {
-    getToken: async () => cachedTestToken!,
-    refreshToken: async () => cachedTestToken!,
+    getToken: async () => {
+      if (!cachedTestToken) {
+        throw new Error('Test token not initialized. Call getBaseFixtureData() first.');
+      }
+      return cachedTestToken;
+    },
+    refreshToken: async () => {
+      if (!cachedTestToken) {
+        throw new Error('Test token not initialized. Call getBaseFixtureData() first.');
+      }
+      return cachedTestToken;
+    },
   };
 }
 
