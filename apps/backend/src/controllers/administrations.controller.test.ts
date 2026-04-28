@@ -1819,31 +1819,6 @@ describe('AdministrationsController', () => {
       }
     });
 
-    it('should return 404 when service throws not found error for missing entity', async () => {
-      // Arrange
-      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { userId: 'user-123', missingOrgs: ['org-1'] },
-      });
-      mockCreate.mockRejectedValue(error);
-
-      const { AdministrationsController: Controller } = await import('./administrations.controller');
-
-      // Act
-      const result = await Controller.create(mockAuthContext, validRequestBody);
-
-      // Assert
-      expect(result.status).toBe(StatusCodes.NOT_FOUND);
-      if ('error' in result.body) {
-        expect(result.body.error).toMatchObject({
-          message: ApiErrorMessage.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        });
-        expect(result.body.error).toHaveProperty('traceId');
-      }
-    });
-
     it('should return 403 when service throws forbidden error', async () => {
       // Arrange
       const error = new ApiError(ApiErrorMessage.FORBIDDEN, {

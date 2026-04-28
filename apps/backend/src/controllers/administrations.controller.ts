@@ -586,7 +586,6 @@ export const AdministrationsController = {
       if (error instanceof ApiError) {
         return toErrorResponse(error, [
           StatusCodes.BAD_REQUEST,
-          StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
           StatusCodes.CONFLICT,
           StatusCodes.UNPROCESSABLE_ENTITY,
