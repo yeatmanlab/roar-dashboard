@@ -6,6 +6,7 @@
 
 import { initAssessmentSdk } from '../index';
 import type { CommandContext } from '../command/command';
+import type { TestFixture } from '@roar-dashboard/api-contract/test-fixture.type';
 
 /**
  * Gets the backend port from the global setup.
@@ -25,26 +26,34 @@ export function getBackendUrl(): string {
 }
 
 /**
- * Creates a test auth context with a cached token.
- *
- * In test mode (NODE_ENV=test), TestAuthProvider treats the token directly as the Firebase UID.
- * The token must be a real user's authId from the seeded database — getBaseFixtureData() fetches
- * schoolAStudent.authId and caches it here before any authenticated requests are made.
- *
- * The token is cached and reused across all tests for performance.
- *
- * @returns Auth context with getToken and refreshToken methods
+ * Cached test token that is populated by getBaseFixtureData().
+ * Must be initialized before any authenticated SDK requests are made.
  */
 let cachedTestToken: string | null = null;
 
+/**
+ * Creates a test auth context that uses the cached token.
+ *
+ * The token must be initialized by calling getBaseFixtureData() before making any authenticated requests.
+ * This ensures the SDK uses the actual test user's authId from the seeded database.
+ *
+ * @returns Auth context object with getToken and refreshToken async methods
+ * @throws Error if called before getBaseFixtureData() has initialized the token
+ */
 export function createTestAuthContext() {
-  if (!cachedTestToken) {
-    cachedTestToken = 'test-token-' + Math.random().toString(36).slice(2);
-  }
-
   return {
-    getToken: async () => cachedTestToken!,
-    refreshToken: async () => cachedTestToken!,
+    getToken: async () => {
+      if (!cachedTestToken) {
+        throw new Error('Test token not initialized. Call getBaseFixtureData() first.');
+      }
+      return cachedTestToken;
+    },
+    refreshToken: async () => {
+      if (!cachedTestToken) {
+        throw new Error('Test token not initialized. Call getBaseFixtureData() first.');
+      }
+      return cachedTestToken;
+    },
   };
 }
 
@@ -81,24 +90,13 @@ export function initTestSdk(overrides: Partial<CommandContext> = {}) {
  *
  * @returns The baseFixture data with task variants and other test entities
  */
-export async function getBaseFixtureData(): Promise<{
-  testUser: { authId: string };
-  schoolATeacher: { authId: string };
-  administrationAssignedToDistrict: { id: string };
-  administrationAssignedToDistrictB: { id: string };
-  variantForAllGrades: { id: string };
-  variantForGrade5: { id: string };
-  variantForGrade3: { id: string };
-  variantOptionalForEll: { id: string };
-  variantForTask2: { id: string };
-  variantForTask2Grade5OptionalEll: { id: string };
-}> {
+export async function getBaseFixtureData(): Promise<TestFixture> {
   const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
 
   // Import fs dynamically to avoid issues in browser environments
   const { readFileSync } = await import('fs');
 
-  let data: Awaited<ReturnType<typeof getBaseFixtureData>>;
+  let data: TestFixture;
 
   try {
     const content = readFileSync(fixtureFile, 'utf-8');

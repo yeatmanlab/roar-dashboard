@@ -5,31 +5,52 @@ import type {
   AdministrationStatus,
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
+  TreeEmbedOptionType,
+  TreeParentEntityType,
+  CreateAdministrationRequest,
 } from '@roar-dashboard/api-contract';
-import { AdministrationEmbedOption } from '@roar-dashboard/api-contract';
+import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
+import {
+  administrationDistrictTuple,
+  administrationSchoolTuple,
+  administrationClassTuple,
+  administrationGroupTuple,
+} from '../authorization/helpers/fga-tuples';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import type {
+  AccessibleIds,
   AdministrationAssignees,
   AdministrationQueryOptions,
-  TaskVariantWithAssignment,
   AgreementWithVersion,
+  TaskVariantWithAssignment,
+  TreeNode,
+  CreateAdministrationInput,
 } from '../../repositories/administration.repository';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
+import { ReportRepository } from '../../repositories/report.repository';
+import type { ReportScope } from '../../repositories/report.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
 import { TaskService } from '../task/task.service';
+import { DistrictRepository } from '../../repositories/district.repository';
+import { SchoolRepository } from '../../repositories/school.repository';
+import { ClassRepository } from '../../repositories/class.repository';
+import { GroupRepository } from '../../repositories/group.repository';
+import { TaskVariantRepository } from '../../repositories/task-variant.repository';
+import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { Condition } from '../../types/condition';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
 
@@ -77,6 +98,29 @@ export interface ListAgreementsOptions {
 }
 
 /**
+ * Options for the tree endpoint.
+ */
+export interface GetTreeOptions {
+  page: number;
+  perPage: number;
+  parentEntityType?: TreeParentEntityType;
+  parentEntityId?: string;
+  embed?: TreeEmbedOptionType[];
+}
+
+/**
+ * Per-node stats returned when `?embed=stats` is requested on the tree endpoint.
+ */
+export interface TreeNodeStats {
+  assignment: {
+    studentsWithRequiredTasks: number;
+    studentsAssigned: number;
+    studentsStarted: number;
+    studentsCompleted: number;
+  };
+}
+
+/**
  * AdministrationService
  *
  * Provides administration-related business logic operations.
@@ -88,17 +132,31 @@ export interface ListAgreementsOptions {
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
-  runRepository = new RunRepository(),
+  reportRepository = new ReportRepository(),
   userRepository = new UserRepository(),
-  taskService = TaskService(),
   authorizationService = AuthorizationService(),
+  runRepository = new RunRepository(),
+  taskService = TaskService(),
+  districtRepository = new DistrictRepository(),
+  schoolRepository = new SchoolRepository(),
+  classRepository = new ClassRepository(),
+  groupRepository = new GroupRepository(),
+  taskVariantRepository = new TaskVariantRepository(),
+  agreementRepository = new AgreementRepository(),
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
+  reportRepository?: ReportRepository;
   runRepository?: RunRepository;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
+  districtRepository?: DistrictRepository;
+  schoolRepository?: SchoolRepository;
+  classRepository?: ClassRepository;
+  groupRepository?: GroupRepository;
+  taskVariantRepository?: TaskVariantRepository;
+  agreementRepository?: AgreementRepository;
 } = {}) {
   /**
    * Verify that an administration exists and the user has access to it.
@@ -734,6 +792,458 @@ export function AdministrationService({
     }
   }
 
+  /**
+   * Get one level of the organization tree for an administration.
+   *
+   * Returns a paginated list of entities at one level of the hierarchy.
+   * When no parent params are provided, returns all direct assignees of
+   * the administration (districts, schools, classes, and groups).
+   * Districts expand to child schools, schools to child classes.
+   * Classes and groups are leaf nodes.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all entities assigned to the administration
+   * - Other users: must have access to the administration, and results are
+   *   scoped to entities the user can see via FGA
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration ID
+   * @param options - Query options (pagination, parent, embed)
+   * @returns Paginated tree nodes with optional stats
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   * @throws {ApiError} BAD_REQUEST if parentEntityId/parentEntityType provided without the other
+   * @throws {ApiError} NOT_FOUND if parent entity doesn't exist
+   */
+  async function getTree(
+    authContext: AuthContext,
+    administrationId: string,
+    options: GetTreeOptions,
+  ): Promise<PaginatedResult<TreeNode & { stats?: TreeNodeStats }>> {
+    const { userId, isSuperAdmin } = authContext;
+    const { page, perPage, parentEntityType, parentEntityId, embed } = options;
+
+    // Validate: parentEntityId and parentEntityType must be provided together
+    if (parentEntityId && !parentEntityType) {
+      throw new ApiError('parentEntityId requires parentEntityType', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, administrationId, parentEntityId },
+      });
+    }
+    if (parentEntityType && !parentEntityId) {
+      throw new ApiError('parentEntityType requires parentEntityId', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, administrationId, parentEntityType },
+      });
+    }
+
+    try {
+      // Verify administration exists and user has access (404 before 403)
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      // Build FGA-scoped accessible IDs (undefined = no filter for super admins)
+      let accessibleIds: AccessibleIds | undefined;
+
+      if (!isSuperAdmin) {
+        // Fetch accessible entity IDs for each type the user can read
+        const [districtObjects, schoolObjects, classObjects, groupObjects] = await Promise.all([
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.DISTRICT).catch((err) => {
+            throw new ApiError('Failed to resolve district access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.DISTRICT },
+              cause: err,
+            });
+          }),
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.SCHOOL).catch((err) => {
+            throw new ApiError('Failed to resolve school access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.SCHOOL },
+              cause: err,
+            });
+          }),
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.CLASS).catch((err) => {
+            throw new ApiError('Failed to resolve class access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.CLASS },
+              cause: err,
+            });
+          }),
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.GROUP).catch((err) => {
+            throw new ApiError('Failed to resolve group access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.GROUP },
+              cause: err,
+            });
+          }),
+        ]);
+
+        accessibleIds = {
+          districtIds: districtObjects.map(extractFgaObjectId),
+          schoolIds: schoolObjects.map(extractFgaObjectId),
+          classIds: classObjects.map(extractFgaObjectId),
+          groupIds: groupObjects.map(extractFgaObjectId),
+        };
+      }
+
+      // Fetch tree nodes from repository
+      const result = await administrationRepository.getTreeNodes(
+        administrationId,
+        parentEntityType,
+        parentEntityId,
+        { page, perPage },
+        accessibleIds,
+      );
+
+      // If no stats embed requested, return as-is
+      const embedOptions = embed ?? [];
+      if (!embedOptions.includes(TreeEmbedOption.STATS) || result.items.length === 0) {
+        return result;
+      }
+
+      // Resolve real assignment stats per node via bulk progress overview counts.
+      // 1. Fetch task metadata for the administration
+      const taskMetas = await reportRepository.getTaskMetadata(administrationId);
+
+      const zeroedStats: TreeNodeStats = {
+        assignment: {
+          studentsWithRequiredTasks: 0,
+          studentsAssigned: 0,
+          studentsStarted: 0,
+          studentsCompleted: 0,
+        },
+      };
+
+      if (taskMetas.length === 0) {
+        // No tasks configured — return zeroed stats
+        const itemsWithStats = result.items.map((node) => ({ ...node, stats: zeroedStats }));
+        return { items: itemsWithStats, totalItems: result.totalItems };
+      }
+
+      // 2. Build scopes from tree nodes (entityType maps directly to ScopeType)
+      const scopes: ReportScope[] = result.items.map((node) => ({
+        scopeType: node.entityType,
+        scopeId: node.id,
+      }));
+
+      // 3. Fetch bulk stats for all nodes in one query
+      const statsMap = await reportRepository.getProgressOverviewCountsBulk(administrationId, scopes, taskMetas);
+
+      // 4. Extract per-student assignment-level counts per node
+      const itemsWithStats = result.items.map((node) => {
+        const scopeResult = statsMap.get(node.id);
+        if (!scopeResult) {
+          return { ...node, stats: zeroedStats };
+        }
+
+        return {
+          ...node,
+          stats: {
+            assignment: {
+              studentsWithRequiredTasks: scopeResult.studentCounts.studentsWithRequiredTasks,
+              studentsAssigned: scopeResult.studentCounts.studentsAssigned,
+              studentsStarted: scopeResult.studentCounts.studentsStarted,
+              studentsCompleted: scopeResult.studentCounts.studentsCompleted,
+            },
+          },
+        };
+      });
+
+      return { items: itemsWithStats, totalItems: result.totalItems };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, administrationId, options } }, 'Failed to get administration tree');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+      });
+    }
+  }
+
+  /**
+   * Create a new administration with task variants and entity assignments.
+   *
+   * Validates:
+   * - dateEnd must be after dateStart
+   * - At least one task variant must be provided (enforced by schema)
+   * - If isOrdered is true, task variant orderIndex values must be unique
+   * - At least one org, class, or group must be assigned
+   * - Name must be unique (case-insensitive)
+   * - All referenced entities (orgs, classes, groups, task variants, agreements) must exist
+   *
+   * @param authContext - User's authentication context
+   * @param request - The create administration request body
+   * @returns The created administration
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if validation fails (date range, duplicate orderIndex, missing assignments)
+   * @throws {ApiError} CONFLICT if an administration with the same name already exists
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
+   */
+  async function create(authContext: AuthContext, request: CreateAdministrationRequest): Promise<Administration> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId, isSuperAdmin },
+      });
+    }
+
+    try {
+      // Parse dates
+      const dateStart = new Date(request.dateStart);
+      const dateEnd = new Date(request.dateEnd);
+
+      // Validate date range: dateEnd must be after dateStart
+      if (dateEnd <= dateStart) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, reason: 'dateEnd must be after dateStart' },
+        });
+      }
+
+      // Validate unique orderIndex values when isOrdered is true
+      if (request.isOrdered) {
+        const orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
+        const uniqueIndices = new Set(orderIndices);
+        if (uniqueIndices.size !== orderIndices.length) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, reason: 'Task variant orderIndex values must be unique when isOrdered is true' },
+          });
+        }
+      }
+
+      // Validate there is at least one org, class, or group assigned
+      if (request.orgs.length === 0 && request.classes.length === 0 && request.groups.length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, reason: 'At least one org, class, or group must be assigned' },
+        });
+      }
+
+      // Validate name is unique
+      const nameExists = await administrationRepository.existsByName(request.name);
+      if (nameExists) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, name: request.name, reason: 'An administration with this name already exists' },
+        });
+      }
+
+      // Validate that all referenced entities exist
+      // Use parallel fetches for efficiency
+      const orgIds = request.orgs;
+      const classIds = request.classes;
+      const groupIds = request.groups;
+      const taskVariantIds = request.taskVariants.map((tv) => tv.taskVariantId);
+      const agreementIds = request.agreements;
+
+      // Verify orgs exist (districts and schools)
+      // N.B. Orgs where rostering has ended are not returned and as such will cause a validation error.
+      // Track district and school IDs separately for FGA tuple creation
+      let districtIds: string[] = [];
+      let schoolIds: string[] = [];
+      if (orgIds.length > 0) {
+        const { items: existingDistricts } = await districtRepository.listByIds(orgIds, {
+          page: 1,
+          perPage: orgIds.length,
+        });
+        const { items: existingSchools } = await schoolRepository.listByIds(orgIds, {
+          page: 1,
+          perPage: orgIds.length,
+        });
+        districtIds = existingDistricts.map((d) => d.id);
+        schoolIds = existingSchools.map((s) => s.id);
+        const existingOrgsIdSet = new Set([...districtIds, ...schoolIds]);
+        const missingOrgs = orgIds.filter((orgId) => !existingOrgsIdSet.has(orgId));
+        if (missingOrgs.length > 0) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, missingOrgs },
+          });
+        }
+      }
+
+      // Verify classes exist
+      // N.B. Classes where rostering has ended are not returned and as such will cause a validation error.
+      if (classIds.length > 0) {
+        const { items: existingClasses } = await classRepository.getByIds(classIds, {
+          page: 1,
+          perPage: classIds.length,
+        });
+        const existingClassIdSet = new Set(existingClasses.map((c) => c.id));
+        const missingClasses = classIds.filter((id) => !existingClassIdSet.has(id));
+        if (missingClasses.length > 0) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, missingClasses },
+          });
+        }
+      }
+
+      // Verify groups exist
+      // N.B. Groups where rostering has ended are not returned and as such will cause a validation error.
+      if (groupIds.length > 0) {
+        const { items: existingGroups } = await groupRepository.getByIds(groupIds, {
+          page: 1,
+          perPage: groupIds.length,
+        });
+        const existingGroupIdSet = new Set(existingGroups.map((g) => g.id));
+        const missingGroups = groupIds.filter((id) => !existingGroupIdSet.has(id));
+        if (missingGroups.length > 0) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, missingGroups },
+          });
+        }
+      }
+
+      // Verify task variants exist
+      const { items: existingTaskVariants } = await taskVariantRepository.getByIds(taskVariantIds, {
+        page: 1,
+        perPage: taskVariantIds.length,
+      });
+      const existingTaskVariantIdSet = new Set(existingTaskVariants.map((tv) => tv.id));
+      const missingTaskVariants = taskVariantIds.filter((id) => !existingTaskVariantIdSet.has(id));
+      if (missingTaskVariants.length > 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, missingTaskVariants },
+        });
+      }
+
+      // Verify all task variants are published (not draft or deprecated)
+      const unpublishedTaskVariants = existingTaskVariants
+        .filter((tv) => tv.status !== TaskVariantStatus.PUBLISHED)
+        .map((tv) => tv.id);
+      if (unpublishedTaskVariants.length > 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, unpublishedTaskVariants },
+        });
+      }
+
+      // Verify agreements exist
+      if (agreementIds.length > 0) {
+        const { items: existingAgreements } = await agreementRepository.getByIds(agreementIds, {
+          page: 1,
+          perPage: agreementIds.length,
+        });
+        const existingAgreementIdSet = new Set(existingAgreements.map((a) => a.id));
+        const missingAgreements = agreementIds.filter((id) => !existingAgreementIdSet.has(id));
+        if (missingAgreements.length > 0) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, missingAgreements },
+          });
+        }
+      }
+
+      // Build the input for the repository
+      // createdBy is set to the authenticated user's ID
+      const createInput: CreateAdministrationInput = {
+        administration: {
+          name: request.name,
+          namePublic: request.namePublic,
+          description: request.description ?? '',
+          dateStart,
+          dateEnd,
+          isOrdered: request.isOrdered ?? false,
+          createdBy: userId,
+        },
+        orgIds,
+        classIds,
+        groupIds,
+        taskVariants: request.taskVariants.map((tv) => ({
+          taskVariantId: tv.taskVariantId,
+          orderIndex: tv.orderIndex,
+          conditionsAssignment: tv.conditionsEligibility ?? null,
+          conditionsRequirements: tv.conditionsRequirement ?? null,
+        })),
+        agreementIds,
+      };
+
+      // Create the administration with all related entities in a single transaction
+      const created = await administrationRepository.createWithAssignments(createInput);
+
+      // Build FGA tuples for the administration assignments
+      // These tuples enable FGA to resolve which users can access this administration
+      const fgaTuples = [
+        ...districtIds.map((districtId) => administrationDistrictTuple(created.id, districtId)),
+        ...schoolIds.map((schoolId) => administrationSchoolTuple(created.id, schoolId)),
+        ...classIds.map((classId) => administrationClassTuple(created.id, classId)),
+        ...groupIds.map((groupId) => administrationGroupTuple(created.id, groupId)),
+      ];
+
+      // Write FGA tuples with compensation on failure (Saga pattern)
+      // If FGA write fails, delete the DB record to maintain consistency
+      try {
+        await authorizationService.writeTuplesOrThrow(fgaTuples);
+      } catch (fgaError) {
+        logger.error(
+          { err: fgaError, administrationId: created.id, tupleCount: fgaTuples.length },
+          'FGA tuple write failed, compensating by deleting administration',
+        );
+
+        // Compensate: delete the administration record
+        // Junction tables have ON DELETE CASCADE, so they'll be cleaned up automatically
+        try {
+          await administrationRepository.delete({ id: created.id });
+          logger.info({ administrationId: created.id }, 'Compensation successful: administration deleted');
+        } catch (deleteError) {
+          // Compensation failed - log for manual intervention
+          logger.error(
+            { err: deleteError, administrationId: created.id },
+            'Compensation failed: administration exists without FGA tuples. Manual intervention required.',
+          );
+        }
+
+        // Re-throw the original FGA error
+        throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          context: { userId, administrationId: created.id },
+          cause: fgaError,
+        });
+      }
+
+      logger.info({ userId, administrationId: created.id }, 'Administration created successfully');
+
+      return created;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to create administration');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     verifyAdministrationAccess,
     list,
@@ -742,5 +1252,7 @@ export function AdministrationService({
     listTaskVariants,
     listAgreements,
     deleteById,
+    getTree,
+    create,
   };
 }

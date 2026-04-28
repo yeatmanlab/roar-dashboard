@@ -30,4 +30,7 @@ export enum ApiErrorMessage {
 
   /** Generic internal server error - use for unexpected errors */
   INTERNAL_SERVER_ERROR = 'An internal server error occurred',
+
+  /** Generic external service unavailable error - use when a downstream dependency is unavailable */
+  EXTERNAL_SERVICE_UNAVAILABLE = 'An external service is currently unavailable',
 }

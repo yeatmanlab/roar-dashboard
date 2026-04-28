@@ -12,19 +12,35 @@ import { RunFactory } from '../../test-support/factories/run.factory';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import type { AssignmentWithOptional, TaskVariantWithAssignment } from '../../repositories/administration.repository';
+import type {
+  AssignmentWithOptional,
+  TaskVariantWithAssignment,
+  TreeNode,
+} from '../../repositories/administration.repository';
+import { TaskVariantStatus } from '../../enums/task-variant-status.enum';
 import {
   createMockAdministrationRepository,
   createMockAdministrationTaskVariantRepository,
+  createMockReportRepository,
   createMockRunRepository,
   createMockUserRepository,
+  createMockDistrictRepository,
+  createMockSchoolRepository,
+  createMockClassRepository,
+  createMockGroupRepository,
+  createMockTaskVariantRepository,
+  createMockAgreementRepository,
 } from '../../test-support/repositories';
 import { createMockAuthorizationService, createMockTaskService } from '../../test-support/services';
 import type { MockAuthorizationService } from '../../test-support/services';
+import { OrgFactory } from '../../test-support/factories/org.factory';
+import { ClassFactory } from '../../test-support/factories/class.factory';
+import { GroupFactory } from '../../test-support/factories/group.factory';
 
 describe('AdministrationService', () => {
   let mockAdministrationRepository: ReturnType<typeof createMockAdministrationRepository>;
   let mockAdministrationTaskVariantRepository: ReturnType<typeof createMockAdministrationTaskVariantRepository>;
+  let mockReportRepository: ReturnType<typeof createMockReportRepository>;
   let mockUserRepository: ReturnType<typeof createMockUserRepository>;
   let mockRunRepository: ReturnType<typeof createMockRunRepository>;
   let mockTaskService: ReturnType<typeof createMockTaskService>;
@@ -34,6 +50,7 @@ describe('AdministrationService', () => {
     vi.resetAllMocks();
     mockAdministrationRepository = createMockAdministrationRepository();
     mockAdministrationTaskVariantRepository = createMockAdministrationTaskVariantRepository();
+    mockReportRepository = createMockReportRepository();
     mockUserRepository = createMockUserRepository();
     mockRunRepository = createMockRunRepository();
     mockTaskService = createMockTaskService();
@@ -2374,6 +2391,1226 @@ describe('AdministrationService', () => {
           message: 'Failed to delete administration',
         },
       );
+    });
+  });
+
+  describe('getTree', () => {
+    const superAdminAuth = { userId: 'super-admin', isSuperAdmin: true };
+    const regularUserAuth = { userId: 'regular-user', isSuperAdmin: false };
+    const testAdminId = 'admin-tree-123';
+    const defaultOptions = { page: 1, perPage: 25, embed: [] as 'stats'[] };
+    const mockAdmin = AdministrationFactory.build({ id: testAdminId });
+
+    const mockTreeNodes: TreeNode[] = [
+      { id: 'district-1', name: 'District A', entityType: 'district', hasChildren: true },
+      { id: 'school-1', name: 'School B', entityType: 'school', hasChildren: true },
+      { id: 'class-1', name: 'Class C', entityType: 'class', hasChildren: false },
+      { id: 'group-1', name: 'Group A', entityType: 'group', hasChildren: false },
+    ];
+
+    function createService() {
+      return AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        reportRepository: mockReportRepository,
+        authorizationService: mockAuthorizationService,
+      });
+    }
+
+    it('should throw 400 when parentEntityId is provided without parentEntityType', async () => {
+      const service = createService();
+
+      await expect(
+        service.getTree(superAdminAuth, testAdminId, {
+          ...defaultOptions,
+          parentEntityId: 'some-id',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw 400 when parentEntityType is provided without parentEntityId', async () => {
+      const service = createService();
+
+      await expect(
+        service.getTree(superAdminAuth, testAdminId, {
+          ...defaultOptions,
+          parentEntityType: 'district',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should call verifyAdministrationAccess to check existence and authorization', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getTree(superAdminAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+    });
+
+    it('should skip FGA calls for super admins and pass undefined accessibleIds', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, defaultOptions);
+
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        undefined,
+        undefined,
+        { page: 1, perPage: 25 },
+        undefined,
+      );
+      expect(result.items).toHaveLength(4);
+      expect(result.totalItems).toBe(4);
+    });
+
+    it('should call FGA for non-super-admin users and pass accessible IDs', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      // Mock FGA responses for all 4 entity types
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['district:district-1', 'district:district-2']) // districts
+        .mockResolvedValueOnce(['school:school-1']) // schools
+        .mockResolvedValueOnce(['class:class-1', 'class:class-2']) // classes
+        .mockResolvedValueOnce(['group:group-1']); // groups
+
+      const service = createService();
+      await service.getTree(regularUserAuth, testAdminId, defaultOptions);
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(4);
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        undefined,
+        undefined,
+        { page: 1, perPage: 25 },
+        {
+          districtIds: ['district-1', 'district-2'],
+          schoolIds: ['school-1'],
+          classIds: ['class-1', 'class-2'],
+          groupIds: ['group-1'],
+        },
+      );
+    });
+
+    it('should pass parentEntityType and parentEntityId to repository', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = createService();
+      await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        parentEntityType: 'district',
+        parentEntityId: 'district-1',
+      });
+
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        'district',
+        'district-1',
+        { page: 1, perPage: 25 },
+        undefined,
+      );
+    });
+
+    it('should return nodes without stats when embed=stats is not requested', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, defaultOptions);
+
+      expect(result.items[0]).not.toHaveProperty('stats');
+      expect(mockReportRepository.getTaskMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should attach real stats when embed=stats is requested', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      // Mock task metadata
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        {
+          taskId: 'task-1',
+          taskVariantId: 'tv-1',
+          taskSlug: 'swr',
+          taskName: 'SWR',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ]);
+
+      // Mock bulk stats — return student-level counts for district-1 and school-1, zero for others
+      const statsMap = new Map();
+      statsMap.set('district-1', {
+        totalStudents: 50,
+        taskStatusCounts: [
+          { taskId: 'task-1', status: 'assigned-required', count: 20 },
+          { taskId: 'task-1', status: 'started-required', count: 15 },
+          { taskId: 'task-1', status: 'completed-required', count: 10 },
+        ],
+        studentCounts: {
+          studentsWithRequiredTasks: 45,
+          studentsAssigned: 20,
+          studentsStarted: 15,
+          studentsCompleted: 10,
+        },
+      });
+      statsMap.set('school-1', {
+        totalStudents: 30,
+        taskStatusCounts: [
+          { taskId: 'task-1', status: 'assigned-required', count: 12 },
+          { taskId: 'task-1', status: 'completed-required', count: 8 },
+        ],
+        studentCounts: {
+          studentsWithRequiredTasks: 20,
+          studentsAssigned: 12,
+          studentsStarted: 0,
+          studentsCompleted: 8,
+        },
+      });
+      statsMap.set('class-1', {
+        totalStudents: 0,
+        taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      statsMap.set('group-1', {
+        totalStudents: 0,
+        taskStatusCounts: [],
+        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      mockReportRepository.getProgressOverviewCountsBulk.mockResolvedValue(statsMap);
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      // district-1: student-level counts from bulk result
+      expect(result.items[0]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 45, studentsAssigned: 20, studentsStarted: 15, studentsCompleted: 10 },
+      });
+      // school-1: student-level counts from bulk result
+      expect(result.items[1]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 20, studentsAssigned: 12, studentsStarted: 0, studentsCompleted: 8 },
+      });
+      // class-1: zeroed
+      expect(result.items[2]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+
+      // Verify bulk method was called with correct scopes
+      expect(mockReportRepository.getProgressOverviewCountsBulk).toHaveBeenCalledWith(
+        testAdminId,
+        [
+          { scopeType: 'district', scopeId: 'district-1' },
+          { scopeType: 'school', scopeId: 'school-1' },
+          { scopeType: 'class', scopeId: 'class-1' },
+          { scopeType: 'group', scopeId: 'group-1' },
+        ],
+        expect.any(Array),
+      );
+    });
+
+    it('should return zeroed stats when no task metadata exists', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      // No tasks configured for the administration
+      mockReportRepository.getTaskMetadata.mockResolvedValue([]);
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      expect(result.items[0]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      expect(mockReportRepository.getProgressOverviewCountsBulk).not.toHaveBeenCalled();
+    });
+
+    it('should return zeroed stats for nodes missing from the bulk stats map', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        {
+          taskId: 'task-1',
+          taskVariantId: 'tv-1',
+          taskSlug: 'swr',
+          taskName: 'SWR',
+          orderIndex: 0,
+          conditionsAssignment: null,
+          conditionsRequirements: null,
+        },
+      ]);
+
+      // Bulk stats only returns results for district-1 — other scopes are missing
+      const statsMap = new Map();
+      statsMap.set('district-1', {
+        totalStudents: 50,
+        taskStatusCounts: [],
+        studentCounts: {
+          studentsWithRequiredTasks: 40,
+          studentsAssigned: 20,
+          studentsStarted: 12,
+          studentsCompleted: 8,
+        },
+      });
+      mockReportRepository.getProgressOverviewCountsBulk.mockResolvedValue(statsMap);
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      // district-1 has real stats
+      expect(result.items[0]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 40, studentsAssigned: 20, studentsStarted: 12, studentsCompleted: 8 },
+      });
+      // school-1, class-1, group-1 are missing from statsMap → zeroed
+      expect(result.items[1]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      expect(result.items[2]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+      expect(result.items[3]!.stats).toEqual({
+        assignment: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
+      });
+    });
+
+    it('should not attach stats when result is empty even if embed=stats', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        ...defaultOptions,
+        embed: ['stats'],
+      });
+
+      expect(result.items).toHaveLength(0);
+      expect(mockReportRepository.getTaskMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should pass accessible IDs together with parentEntityType for non-super-admin drill-down', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
+
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['district:d1']) // districts
+        .mockResolvedValueOnce(['school:s1']) // schools
+        .mockResolvedValueOnce(['class:c1']) // classes
+        .mockResolvedValueOnce(['group:g1']); // groups
+
+      const service = createService();
+      await service.getTree(regularUserAuth, testAdminId, {
+        ...defaultOptions,
+        parentEntityType: 'district',
+        parentEntityId: 'd1',
+      });
+
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        'district',
+        'd1',
+        { page: 1, perPage: 25 },
+        {
+          districtIds: ['d1'],
+          schoolIds: ['s1'],
+          classIds: ['c1'],
+          groupIds: ['g1'],
+        },
+      );
+    });
+
+    it('should return result without stats when embed option is undefined', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({
+        items: mockTreeNodes,
+        totalItems: 4,
+      });
+
+      const service = createService();
+      const result = await service.getTree(superAdminAuth, testAdminId, {
+        page: 1,
+        perPage: 25,
+      });
+
+      expect(result.items).toHaveLength(4);
+      expect(result.items[0]).not.toHaveProperty('stats');
+    });
+
+    it('should wrap FGA failures as 500 ApiError', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('FGA down'));
+
+      const service = createService();
+
+      await expect(service.getTree(regularUserAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: 'database/query-failed',
+      });
+    });
+
+    it('should wrap unexpected repository errors as 500 ApiError', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockRejectedValue(new Error('DB error'));
+
+      const service = createService();
+
+      await expect(service.getTree(superAdminAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+      });
+    });
+
+    it('should re-throw ApiError from verifyAdministrationAccess when FGA denies access', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      // FGA: can_read permission denied via requirePermission
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = createService();
+
+      await expect(service.getTree(regularUserAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+      });
+    });
+  });
+
+  describe('create', () => {
+    const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+    const superAdminAuthContext = { userId: 'super-admin-123', isSuperAdmin: true };
+    const validRequest = {
+      name: 'Test Administration',
+      namePublic: 'Public Test Name',
+      description: 'Test description',
+      dateStart: '2024-01-01T00:00:00Z',
+      dateEnd: '2024-12-31T23:59:59Z',
+      isOrdered: false,
+      orgs: ['org-1', 'org-2'],
+      classes: ['class-1'],
+      groups: ['group-1'],
+      taskVariants: [
+        {
+          taskVariantId: 'tv-1',
+          orderIndex: 0,
+        },
+      ],
+      agreements: ['agreement-1'],
+    };
+
+    it('should throw forbidden error when non-super admin attempts to create', async () => {
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+      });
+
+      await expect(service.create(mockAuthContext, validRequest)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      // Should not make any repository calls
+      expect(mockAdministrationRepository.createWithAssignments).not.toHaveBeenCalled();
+    });
+
+    it('should create administration successfully with valid data', async () => {
+      // Arrange
+      const mockCreatedAdmin = AdministrationFactory.build();
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      // Mock all repository calls
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      mockAdministrationRepository.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
+
+      // Mock district and school repositories
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      // Create service with all repositories
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act
+      const result = await service.create(superAdminAuthContext, validRequest);
+
+      // Assert
+      expect(result).toBe(mockCreatedAdmin);
+      expect(mockAdministrationRepository.createWithAssignments).toHaveBeenCalledWith(
+        expect.objectContaining({
+          administration: expect.objectContaining({
+            name: validRequest.name,
+            namePublic: validRequest.namePublic,
+            dateStart: new Date(validRequest.dateStart),
+            dateEnd: new Date(validRequest.dateEnd),
+            isOrdered: validRequest.isOrdered,
+            createdBy: superAdminAuthContext.userId,
+          }),
+          orgIds: validRequest.orgs,
+          classIds: validRequest.classes,
+          groupIds: validRequest.groups,
+          taskVariants: validRequest.taskVariants.map((tv) => ({
+            taskVariantId: tv.taskVariantId,
+            orderIndex: tv.orderIndex,
+            conditionsAssignment: null,
+            conditionsRequirements: null,
+          })),
+          agreementIds: validRequest.agreements,
+        }),
+      );
+    });
+
+    it('should create administration successfully when orgs array contains only school IDs', async () => {
+      // Arrange
+      const mockCreatedAdmin = AdministrationFactory.build();
+      const mockSchool = OrgFactory.build({ id: 'school-1', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      // Request with only school IDs in orgs array
+      const schoolOnlyRequest = {
+        ...validRequest,
+        orgs: ['school-1'],
+      };
+
+      // Mock all repository calls
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      mockAdministrationRepository.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+
+      // District returns empty (no districts found), school returns the school
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act
+      const result = await service.create(superAdminAuthContext, schoolOnlyRequest);
+
+      // Assert
+      expect(result).toBe(mockCreatedAdmin);
+      expect(mockAdministrationRepository.createWithAssignments).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orgIds: ['school-1'],
+        }),
+      );
+    });
+
+    it('should throw error when dateEnd is before dateStart', async () => {
+      // Arrange
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+      });
+      const invalidRequest = {
+        ...validRequest,
+        dateStart: '2024-12-31T23:59:59Z',
+        dateEnd: '2024-01-01T00:00:00Z',
+      };
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, invalidRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw error when task variant order indices are not unique and isOrdered is true', async () => {
+      // Arrange
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+      });
+      const invalidRequest = {
+        ...validRequest,
+        isOrdered: true,
+        taskVariants: [
+          { taskVariantId: 'tv-1', orderIndex: 0 },
+          { taskVariantId: 'tv-2', orderIndex: 0 },
+        ],
+      };
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, invalidRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw error when no org, class, or group is assigned', async () => {
+      // Arrange
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+      });
+      const invalidRequest = {
+        ...validRequest,
+        orgs: [],
+        classes: [],
+        groups: [],
+      };
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, invalidRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw conflict error when administration name already exists', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(true);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.CONFLICT,
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        }),
+      );
+    });
+
+    it('should throw error when referenced org does not exist', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw error when referenced class does not exist', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw error when referenced task variant does not exist', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw error when task variant is not published', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockDraftTaskVariant = TaskVariantFactory.build({ id: 'tv-1', status: TaskVariantStatus.DRAFT });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockDraftTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should throw error when task variant is deprecated', async () => {
+      // Arrange
+      mockAdministrationRepository.existsByName.mockResolvedValue(false);
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockDeprecatedTaskVariant = TaskVariantFactory.build({ id: 'tv-1', status: TaskVariantStatus.DEPRECATED });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockDeprecatedTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+    });
+
+    it('should handle database errors gracefully', async () => {
+      // Arrange
+      const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+      const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+      const mockClass = ClassFactory.build({ id: 'class-1' });
+      const mockGroup = GroupFactory.build({ id: 'group-1' });
+      const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+      const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+      const mockAdminRepo = createMockAdministrationRepository();
+      const mockUserRepo = createMockUserRepository();
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      const mockClassRepo = createMockClassRepository();
+      const mockGroupRepo = createMockGroupRepository();
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const mockAgreementRepo = createMockAgreementRepository();
+      mockAdminRepo.existsByName.mockResolvedValue(false);
+      mockAdminRepo.createWithAssignments.mockRejectedValue(new Error('Database error'));
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+      mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+      mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+      mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdminRepo,
+        userRepository: mockUserRepo,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+        classRepository: mockClassRepo,
+        groupRepository: mockGroupRepo,
+        taskVariantRepository: mockTaskVariantRepo,
+        agreementRepository: mockAgreementRepo,
+      });
+
+      // Act & Assert
+      await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+    });
+
+    describe('FGA tuple creation', () => {
+      it('should write FGA tuples after successful database creation', async () => {
+        // Arrange
+        const mockCreatedAdmin = AdministrationFactory.build({ id: 'created-admin-id' });
+        const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+        const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+        const mockClass = ClassFactory.build({ id: 'class-1' });
+        const mockGroup = GroupFactory.build({ id: 'group-1' });
+        const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+        const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+        const mockAdminRepo = createMockAdministrationRepository();
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const mockClassRepo = createMockClassRepository();
+        const mockGroupRepo = createMockGroupRepository();
+        const mockTaskVariantRepo = createMockTaskVariantRepository();
+        const mockAgreementRepo = createMockAgreementRepository();
+        const mockAuthService = createMockAuthorizationService();
+
+        mockAdminRepo.existsByName.mockResolvedValue(false);
+        mockAdminRepo.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
+        mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+        mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+        mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+        mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+        mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+        mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdminRepo,
+          userRepository: mockUserRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          classRepository: mockClassRepo,
+          groupRepository: mockGroupRepo,
+          taskVariantRepository: mockTaskVariantRepo,
+          agreementRepository: mockAgreementRepo,
+          authorizationService: mockAuthService,
+        });
+
+        // Act
+        await service.create(superAdminAuthContext, validRequest);
+
+        // Assert - FGA tuples should be written with correct structure
+        expect(mockAuthService.writeTuplesOrThrow).toHaveBeenCalledTimes(1);
+        const writtenTuples = mockAuthService.writeTuplesOrThrow.mock.calls[0]![0];
+
+        // Should have 4 tuples: 1 district, 1 school, 1 class, 1 group
+        expect(writtenTuples).toHaveLength(4);
+
+        // Verify district tuple
+        expect(writtenTuples).toContainEqual({
+          user: 'district:org-1',
+          relation: 'assigned_district',
+          object: 'administration:created-admin-id',
+        });
+
+        // Verify school tuple
+        expect(writtenTuples).toContainEqual({
+          user: 'school:org-2',
+          relation: 'assigned_school',
+          object: 'administration:created-admin-id',
+        });
+
+        // Verify class tuple
+        expect(writtenTuples).toContainEqual({
+          user: 'class:class-1',
+          relation: 'assigned_class',
+          object: 'administration:created-admin-id',
+        });
+
+        // Verify group tuple
+        expect(writtenTuples).toContainEqual({
+          user: 'group:group-1',
+          relation: 'assigned_group',
+          object: 'administration:created-admin-id',
+        });
+      });
+
+      it('should delete administration when FGA tuple write fails (compensation)', async () => {
+        // Arrange
+        const mockCreatedAdmin = AdministrationFactory.build({ id: 'created-admin-id' });
+        const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+        const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+        const mockClass = ClassFactory.build({ id: 'class-1' });
+        const mockGroup = GroupFactory.build({ id: 'group-1' });
+        const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+        const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+        const mockAdminRepo = createMockAdministrationRepository();
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const mockClassRepo = createMockClassRepository();
+        const mockGroupRepo = createMockGroupRepository();
+        const mockTaskVariantRepo = createMockTaskVariantRepository();
+        const mockAgreementRepo = createMockAgreementRepository();
+        const mockAuthService = createMockAuthorizationService();
+
+        mockAdminRepo.existsByName.mockResolvedValue(false);
+        mockAdminRepo.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
+        mockAdminRepo.delete.mockResolvedValue(undefined);
+        mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+        mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+        mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+        mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+        mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+        mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+        // FGA write fails
+        const fgaError = new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        });
+        mockAuthService.writeTuplesOrThrow.mockRejectedValue(fgaError);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdminRepo,
+          userRepository: mockUserRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          classRepository: mockClassRepo,
+          groupRepository: mockGroupRepo,
+          taskVariantRepository: mockTaskVariantRepo,
+          agreementRepository: mockAgreementRepo,
+          authorizationService: mockAuthService,
+        });
+
+        // Act & Assert
+        await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+          expect.objectContaining({
+            message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          }),
+        );
+
+        // Verify compensation: administration should be deleted
+        expect(mockAdminRepo.delete).toHaveBeenCalledWith({ id: 'created-admin-id' });
+      });
+
+      it('should still throw FGA error even if compensation delete fails', async () => {
+        // Arrange
+        const mockCreatedAdmin = AdministrationFactory.build({ id: 'created-admin-id' });
+        const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+        const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+        const mockClass = ClassFactory.build({ id: 'class-1' });
+        const mockGroup = GroupFactory.build({ id: 'group-1' });
+        const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+        const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+        const mockAdminRepo = createMockAdministrationRepository();
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const mockClassRepo = createMockClassRepository();
+        const mockGroupRepo = createMockGroupRepository();
+        const mockTaskVariantRepo = createMockTaskVariantRepository();
+        const mockAgreementRepo = createMockAgreementRepository();
+        const mockAuthService = createMockAuthorizationService();
+
+        mockAdminRepo.existsByName.mockResolvedValue(false);
+        mockAdminRepo.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
+        // Compensation delete also fails
+        mockAdminRepo.delete.mockRejectedValue(new Error('Delete failed'));
+        mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+        mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+        mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+        mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+        mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+        mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+        // FGA write fails
+        const fgaError = new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        });
+        mockAuthService.writeTuplesOrThrow.mockRejectedValue(fgaError);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdminRepo,
+          userRepository: mockUserRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          classRepository: mockClassRepo,
+          groupRepository: mockGroupRepo,
+          taskVariantRepository: mockTaskVariantRepo,
+          agreementRepository: mockAgreementRepo,
+          authorizationService: mockAuthService,
+        });
+
+        // Act & Assert - should throw the original FGA error, not the delete error
+        await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow(
+          expect.objectContaining({
+            message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+          }),
+        );
+
+        // Verify compensation was attempted
+        expect(mockAdminRepo.delete).toHaveBeenCalledWith({ id: 'created-admin-id' });
+      });
+
+      it('should not write FGA tuples if database creation fails', async () => {
+        // Arrange
+        const mockDistrict = OrgFactory.build({ id: 'org-1', orgType: 'district' });
+        const mockSchool = OrgFactory.build({ id: 'org-2', orgType: 'school' });
+        const mockClass = ClassFactory.build({ id: 'class-1' });
+        const mockGroup = GroupFactory.build({ id: 'group-1' });
+        const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+        const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+        const mockAdminRepo = createMockAdministrationRepository();
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const mockClassRepo = createMockClassRepository();
+        const mockGroupRepo = createMockGroupRepository();
+        const mockTaskVariantRepo = createMockTaskVariantRepository();
+        const mockAgreementRepo = createMockAgreementRepository();
+        const mockAuthService = createMockAuthorizationService();
+
+        mockAdminRepo.existsByName.mockResolvedValue(false);
+        mockAdminRepo.createWithAssignments.mockRejectedValue(new Error('Database error'));
+        mockDistrictRepo.listByIds.mockResolvedValue({ items: [mockDistrict], totalItems: 1 });
+        mockSchoolRepo.listByIds.mockResolvedValue({ items: [mockSchool], totalItems: 1 });
+        mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+        mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+        mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+        mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdminRepo,
+          userRepository: mockUserRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          classRepository: mockClassRepo,
+          groupRepository: mockGroupRepo,
+          taskVariantRepository: mockTaskVariantRepo,
+          agreementRepository: mockAgreementRepo,
+          authorizationService: mockAuthService,
+        });
+
+        // Act & Assert
+        await expect(service.create(superAdminAuthContext, validRequest)).rejects.toThrow();
+
+        // FGA tuples should NOT be written since DB creation failed
+        expect(mockAuthService.writeTuplesOrThrow).not.toHaveBeenCalled();
+      });
+
+      it('should handle empty orgs array (only classes and groups)', async () => {
+        // Arrange
+        const mockCreatedAdmin = AdministrationFactory.build({ id: 'created-admin-id' });
+        const mockClass = ClassFactory.build({ id: 'class-1' });
+        const mockGroup = GroupFactory.build({ id: 'group-1' });
+        const mockTaskVariant = TaskVariantFactory.build({ id: 'tv-1' });
+        const mockAgreement = AgreementFactory.build({ id: 'agreement-1' });
+
+        const requestWithNoOrgs = {
+          ...validRequest,
+          orgs: [],
+        };
+
+        const mockAdminRepo = createMockAdministrationRepository();
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const mockClassRepo = createMockClassRepository();
+        const mockGroupRepo = createMockGroupRepository();
+        const mockTaskVariantRepo = createMockTaskVariantRepository();
+        const mockAgreementRepo = createMockAgreementRepository();
+        const mockAuthService = createMockAuthorizationService();
+
+        mockAdminRepo.existsByName.mockResolvedValue(false);
+        mockAdminRepo.createWithAssignments.mockResolvedValue(mockCreatedAdmin);
+        mockClassRepo.getByIds.mockResolvedValue({ items: [mockClass], totalItems: 1 });
+        mockGroupRepo.getByIds.mockResolvedValue({ items: [mockGroup], totalItems: 1 });
+        mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [mockTaskVariant], totalItems: 1 });
+        mockAgreementRepo.getByIds.mockResolvedValue({ items: [mockAgreement], totalItems: 1 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdminRepo,
+          userRepository: mockUserRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          classRepository: mockClassRepo,
+          groupRepository: mockGroupRepo,
+          taskVariantRepository: mockTaskVariantRepo,
+          agreementRepository: mockAgreementRepo,
+          authorizationService: mockAuthService,
+        });
+
+        // Act
+        await service.create(superAdminAuthContext, requestWithNoOrgs);
+
+        // Assert - should only have class and group tuples (no district/school)
+        const writtenTuples = mockAuthService.writeTuplesOrThrow.mock.calls[0]![0];
+        expect(writtenTuples).toHaveLength(2);
+        expect(writtenTuples).toContainEqual({
+          user: 'class:class-1',
+          relation: 'assigned_class',
+          object: 'administration:created-admin-id',
+        });
+        expect(writtenTuples).toContainEqual({
+          user: 'group:group-1',
+          relation: 'assigned_group',
+          object: 'administration:created-admin-id',
+        });
+      });
     });
   });
 });

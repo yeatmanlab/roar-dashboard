@@ -30,6 +30,8 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationClassFactory } from '../test-support/factories/administration-class.factory';
+import { AdministrationGroupFactory } from '../test-support/factories/administration-group.factory';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { AdministrationAgreementFactory } from '../test-support/factories/administration-agreement.factory';
@@ -153,6 +155,155 @@ describe('GET /v1/administrations', () => {
       expect(res.body.data.items).toHaveLength(0);
       expect(res.body.data.pagination.totalItems).toBe(0);
     });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/administrations
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/administrations', () => {
+  it('returns 401 when unauthenticated', async () => {
+    const res = await expectRoute('POST', '/v1/administrations').unauthenticated().withBody({}).toReturn(401);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+  });
+
+  it('non-super admin tiers are forbidden from creating an administration', async () => {
+    const body = {
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
+      description: 'Integration create test',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.district.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [],
+    };
+
+    await expectRoute('POST', '/v1/administrations').as(tiers.admin).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.siteAdmin).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.educator).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.student).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.caregiver).withBody(body).toReturn(403);
+  });
+
+  it('superAdmin tier can create an administration and returns the new ID', async () => {
+    const agreement = await AgreementFactory.create({ name: 'Agreement Name' });
+    await AgreementVersionFactory.create({ locale: 'en-US' }, { transient: { agreementId: agreement.id } });
+
+    const body = {
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
+      description: 'Integration create test',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.district.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [agreement.id],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+    expect(res.body.data).toMatch(/[0-9a-fA-F-]{36}/);
+
+    const getRes = await expectRoute('GET', `/v1/administrations/${res.body.data}`).as(tiers.superAdmin).toReturn(200);
+
+    expect(getRes.body.data.id).toBe(res.body.data);
+  });
+
+  it('superAdmin tier can create an administration when orgs contains only a school ID', async () => {
+    const agreement = await AgreementFactory.create({ name: 'Agreement Name (School Only)' });
+    await AgreementVersionFactory.create({ locale: 'en-US' }, { transient: { agreementId: agreement.id } });
+
+    const body = {
+      name: 'Admin Name (School Only)',
+      namePublic: 'Admin Public Name (School Only)',
+      description: 'Integration create test (school-only org)',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.schoolA.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [agreement.id],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+    expect(res.body.data).toMatch(/[0-9a-fA-F-]{36}/);
+
+    const getRes = await expectRoute('GET', `/v1/administrations/${res.body.data}`).as(tiers.superAdmin).toReturn(200);
+
+    expect(getRes.body.data.id).toBe(res.body.data);
+  });
+
+  it('returns 422 when dateEnd is before dateStart', async () => {
+    const body = {
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
+      dateStart: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      orgs: [baseFixture.district.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(422);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+  });
+
+  it('returns 422 when a referenced entity does not exist', async () => {
+    const body = {
+      name: 'New Admin Name',
+      namePublic: 'New Admin Public Name',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      orgs: ['00000000-0000-0000-0000-000000000000'],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(422);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
   });
 });
 
@@ -547,13 +698,11 @@ describe('GET /v1/administrations/:id/agreements', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('DELETE /v1/administrations/:id', () => {
-  /**
-   * Creates a fresh administration assigned to the given org for delete tests.
-   * Each delete test needs its own administration to avoid side effects.
-   */
   let deletableCounter = 0;
-  async function createDeletableAdministration(orgId: string = baseFixture.district.id) {
+
+  async function createDeletableAdministration() {
     deletableCounter += 1;
+    const orgId = baseFixture.district.id;
     const admin = await AdministrationFactory.create({
       name: `Deletable Admin ${deletableCounter}`,
       createdBy: baseFixture.districtAdmin.id,
@@ -659,6 +808,314 @@ describe('DELETE /v1/administrations/:id', () => {
         .toReturn(409);
 
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/administrations/:id/tree
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/administrations/:id/tree', () => {
+  // administrationAssignedToDistrict has the district directly assigned via administration_orgs
+  const adminId = () => baseFixture.administrationAssignedToDistrict.id;
+  const treePath = () => `/v1/administrations/${adminId()}/tree`;
+
+  describe('root level — all direct assignees', () => {
+    it('superAdmin sees all direct assignees at root level', async () => {
+      // Create an administration assigned to multiple entity types
+      const multiAdmin = await AdministrationFactory.create({
+        name: 'Tree Multi-Entity Test',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await Promise.all([
+        AdministrationOrgFactory.create({ administrationId: multiAdmin.id, orgId: baseFixture.district.id }),
+        AdministrationOrgFactory.create({ administrationId: multiAdmin.id, orgId: baseFixture.schoolA.id }),
+        AdministrationClassFactory.create({
+          administrationId: multiAdmin.id,
+          classId: baseFixture.classInSchoolB.id,
+        }),
+        AdministrationGroupFactory.create({ administrationId: multiAdmin.id, groupId: baseFixture.group.id }),
+      ]);
+      await Promise.all([
+        writeFgaAdministrationAssignment(multiAdmin.id, baseFixture.district.id, FgaType.DISTRICT),
+        writeFgaAdministrationAssignment(multiAdmin.id, baseFixture.schoolA.id, FgaType.SCHOOL),
+        writeFgaAdministrationAssignment(multiAdmin.id, baseFixture.classInSchoolB.id, FgaType.CLASS),
+        writeFgaAdministrationAssignment(multiAdmin.id, baseFixture.group.id, FgaType.GROUP),
+      ]);
+
+      const res = await expectRoute('GET', `/v1/administrations/${multiAdmin.id}/tree`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.district.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(baseFixture.classInSchoolB.id);
+      expect(ids).toContain(baseFixture.group.id);
+
+      // Verify entity types
+      const typeMap = new Map(
+        res.body.data.items.map((item: { id: string; entityType: string }) => [item.id, item.entityType]),
+      );
+      expect(typeMap.get(baseFixture.district.id)).toBe('district');
+      expect(typeMap.get(baseFixture.schoolA.id)).toBe('school');
+      expect(typeMap.get(baseFixture.classInSchoolB.id)).toBe('class');
+      expect(typeMap.get(baseFixture.group.id)).toBe('group');
+    });
+
+    it('superAdmin sees the district assignee for the base fixture administration', async () => {
+      const res = await expectRoute('GET', treePath()).as(tiers.superAdmin).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.district.id);
+    });
+
+    it('admin tier sees only their accessible entities', async () => {
+      const res = await expectRoute('GET', treePath()).as(tiers.admin).toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.district.id);
+    });
+
+    it('student tier can access tree (has can_read on administration)', async () => {
+      const res = await expectRoute('GET', treePath()).as(tiers.student).toReturn(200);
+
+      expect(res.body.data).toHaveProperty('items');
+      expect(res.body.data).toHaveProperty('pagination');
+    });
+
+    it('caregiver tier is forbidden from accessing tree', async () => {
+      const res = await expectRoute('GET', treePath()).as(tiers.caregiver).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('hasChildren', () => {
+    it('district node has hasChildren=true when it has child schools', async () => {
+      const res = await expectRoute('GET', treePath()).as(tiers.superAdmin).toReturn(200);
+
+      const districtNode = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.district.id);
+      expect(districtNode).toBeDefined();
+      // baseFixture.district has schoolA and schoolB as children
+      expect(districtNode.hasChildren).toBe(true);
+    });
+
+    it('class node always has hasChildren=false', async () => {
+      // Create administration with a directly assigned class
+      const classAdmin = await AdministrationFactory.create({
+        name: 'Tree Class Leaf Test',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationClassFactory.create({
+        administrationId: classAdmin.id,
+        classId: baseFixture.classInSchoolA.id,
+      });
+      await writeFgaAdministrationAssignment(classAdmin.id, baseFixture.classInSchoolA.id, FgaType.CLASS);
+
+      const res = await expectRoute('GET', `/v1/administrations/${classAdmin.id}/tree`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const classNode = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.classInSchoolA.id);
+      expect(classNode).toBeDefined();
+      expect(classNode.hasChildren).toBe(false);
+    });
+
+    it('group node always has hasChildren=false', async () => {
+      const groupAdmin = await AdministrationFactory.create({
+        name: 'Tree Group Leaf Test',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationGroupFactory.create({
+        administrationId: groupAdmin.id,
+        groupId: baseFixture.group.id,
+      });
+      await writeFgaAdministrationAssignment(groupAdmin.id, baseFixture.group.id, FgaType.GROUP);
+
+      const res = await expectRoute('GET', `/v1/administrations/${groupAdmin.id}/tree`)
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const groupNode = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.group.id);
+      expect(groupNode).toBeDefined();
+      expect(groupNode.hasChildren).toBe(false);
+    });
+  });
+
+  describe('drill-down — district children', () => {
+    it('returns all child schools of a district when drilling down', async () => {
+      const res = await expectRoute(
+        'GET',
+        `${treePath()}?parentEntityType=district&parentEntityId=${baseFixture.district.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      // baseFixture.district has schoolA and schoolB as children
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.schoolA.id);
+      expect(ids).toContain(baseFixture.schoolB.id);
+
+      // All items should be schools
+      for (const item of res.body.data.items) {
+        expect(item.entityType).toBe('school');
+      }
+    });
+
+    it('school children have hasChildren=true when they have classes', async () => {
+      const res = await expectRoute(
+        'GET',
+        `${treePath()}?parentEntityType=district&parentEntityId=${baseFixture.district.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      // schoolA has classInSchoolA, schoolB has classInSchoolB
+      const schoolANode = res.body.data.items.find((item: { id: string }) => item.id === baseFixture.schoolA.id);
+      expect(schoolANode).toBeDefined();
+      expect(schoolANode.hasChildren).toBe(true);
+    });
+  });
+
+  describe('drill-down — school children', () => {
+    it('returns all child classes of a school when drilling down', async () => {
+      const res = await expectRoute(
+        'GET',
+        `${treePath()}?parentEntityType=school&parentEntityId=${baseFixture.schoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(baseFixture.classInSchoolA.id);
+
+      for (const item of res.body.data.items) {
+        expect(item.entityType).toBe('class');
+        expect(item.hasChildren).toBe(false);
+      }
+    });
+  });
+
+  describe('drill-down — leaf nodes', () => {
+    it('returns empty items for class parent', async () => {
+      const res = await expectRoute(
+        'GET',
+        `${treePath()}?parentEntityType=class&parentEntityId=${baseFixture.classInSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(0);
+      expect(res.body.data.pagination.totalItems).toBe(0);
+    });
+
+    it('returns empty items for group parent', async () => {
+      // Use an administration that has a group assigned
+      const groupAdmin = await AdministrationFactory.create({
+        name: 'Tree Group Drill-Down Test',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationGroupFactory.create({
+        administrationId: groupAdmin.id,
+        groupId: baseFixture.group.id,
+      });
+      await writeFgaAdministrationAssignment(groupAdmin.id, baseFixture.group.id, FgaType.GROUP);
+
+      const res = await expectRoute(
+        'GET',
+        `/v1/administrations/${groupAdmin.id}/tree?parentEntityType=group&parentEntityId=${baseFixture.group.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(200);
+
+      expect(res.body.data.items).toHaveLength(0);
+    });
+  });
+
+  describe('embed=stats', () => {
+    it('returns assignment stats when embed=stats is requested', async () => {
+      const res = await expectRoute('GET', `${treePath()}?embed=stats`).as(tiers.superAdmin).toReturn(200);
+
+      // administrationAssignedToDistrict has task variants and students in the fixture.
+      // Each node should have a stats object with numeric counts.
+      for (const item of res.body.data.items) {
+        expect(item).toHaveProperty('stats');
+        expect(item.stats).toHaveProperty('assignment');
+        expect(item.stats.assignment).toHaveProperty('studentsWithRequiredTasks');
+        expect(item.stats.assignment).toHaveProperty('studentsAssigned');
+        expect(item.stats.assignment).toHaveProperty('studentsStarted');
+        expect(item.stats.assignment).toHaveProperty('studentsCompleted');
+        expect(typeof item.stats.assignment.studentsWithRequiredTasks).toBe('number');
+        expect(typeof item.stats.assignment.studentsAssigned).toBe('number');
+        expect(typeof item.stats.assignment.studentsStarted).toBe('number');
+        expect(typeof item.stats.assignment.studentsCompleted).toBe('number');
+
+        // Verify the invariant holds per node
+        const { studentsAssigned, studentsStarted, studentsCompleted, studentsWithRequiredTasks } =
+          item.stats.assignment;
+        expect(studentsAssigned + studentsStarted + studentsCompleted).toBe(studentsWithRequiredTasks);
+      }
+    });
+
+    it('omits stats when embed=stats is not requested', async () => {
+      const res = await expectRoute('GET', treePath()).as(tiers.superAdmin).toReturn(200);
+
+      for (const item of res.body.data.items) {
+        expect(item).not.toHaveProperty('stats');
+      }
+    });
+  });
+
+  describe('pagination', () => {
+    it('respects perPage limit', async () => {
+      const res = await expectRoute('GET', `${treePath()}?perPage=1`).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.items.length).toBeLessThanOrEqual(1);
+      expect(res.body.data.pagination.perPage).toBe(1);
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('GET', treePath()).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 404 for a non-existent administration', async () => {
+      const res = await expectRoute('GET', '/v1/administrations/00000000-0000-0000-0000-000000000000/tree')
+        .as(tiers.admin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 403 when user lacks access to the administration', async () => {
+      authenticateAs(baseFixture.districtBAdmin);
+      const res = await request(app)
+        .get(`/v1/administrations/${baseFixture.administrationAssignedToSchoolA.id}/tree`)
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 400 when parentEntityId is provided without parentEntityType', async () => {
+      const res = await expectRoute('GET', `${treePath()}?parentEntityId=${baseFixture.district.id}`)
+        .as(tiers.superAdmin)
+        .toReturn(400);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('returns 400 when parentEntityType is provided without parentEntityId', async () => {
+      const res = await expectRoute('GET', `${treePath()}?parentEntityType=district`)
+        .as(tiers.superAdmin)
+        .toReturn(400);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
     });
   });
 });

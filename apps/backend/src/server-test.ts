@@ -27,6 +27,7 @@ import 'dotenv/config';
 import fs from 'fs';
 import http from 'http';
 import type { Express } from 'express';
+import type { TestFixture } from '@roar-dashboard/api-contract/test-fixture.type';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { truncateAllTables, runMigrations } from './test-support/db';
 import { seedBaseFixture } from './test-support/fixtures';
@@ -66,7 +67,15 @@ async function writeFixtureFile(fixtureFile: string): Promise<void> {
     throw new Error('[server-test] baseFixture not seeded');
   }
 
-  const fixtureData = {
+  if (!baseFixture.schoolAStudent.authId) {
+    throw new Error('[server-test] schoolAStudent.authId not seeded');
+  }
+
+  if (!baseFixture.schoolATeacher.authId) {
+    throw new Error('[server-test] schoolATeacher.authId not seeded');
+  }
+
+  const fixtureData: TestFixture = {
     testUser: {
       authId: baseFixture.schoolAStudent.authId,
     },

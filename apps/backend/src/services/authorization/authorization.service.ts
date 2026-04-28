@@ -46,6 +46,32 @@ export function AuthorizationService({
   }
 
   /**
+   * Write tuples to the FGA store, throwing on failure.
+   *
+   * Unlike `writeTuples`, this method propagates errors to callers. Use this
+   * when tuple creation must succeed for the operation to be valid (e.g., in
+   * a Saga pattern where DB writes should be rolled back if FGA fails).
+   *
+   * @param tuples - Array of TupleKey objects to write
+   * @throws {ApiError} EXTERNAL_SERVICE_UNAVAILABLE if the FGA write fails
+   */
+  async function writeTuplesOrThrow(tuples: TupleKey[]): Promise<void> {
+    if (tuples.length === 0) return;
+    try {
+      await client.writeTuples(tuples);
+      logger.debug({ tupleCount: tuples.length }, 'FGA tuples written successfully');
+    } catch (error) {
+      logger.error({ err: error, tupleCount: tuples.length }, 'Failed to write FGA tuples');
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { tupleCount: tuples.length },
+        cause: error,
+      });
+    }
+  }
+
+  /**
    * Delete tuples from the FGA store.
    *
    * Fire-and-forget: logs errors but does not throw. The Postgres write
@@ -76,6 +102,7 @@ export function AuthorizationService({
    * @param relation - The FGA relation to check (e.g., `can_read`)
    * @param object - The fully-qualified FGA object (e.g., `administration:abc-123`)
    * @returns true if the user has the relation on the object, false otherwise
+   * @throws {ApiError} EXTERNAL_SERVICE_UNAVAILABLE if the FGA check fails
    */
   async function hasPermission(userId: string, relation: FgaRelation, object: string): Promise<boolean> {
     try {
@@ -88,7 +115,7 @@ export function AuthorizationService({
       return result.allowed === true;
     } catch (error) {
       logger.error({ err: error, context: { userId, relation, object } }, 'FGA permission check failed');
-      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, relation, object },
@@ -134,6 +161,7 @@ export function AuthorizationService({
    * @param relation - The FGA relation to check (e.g., `can_read`)
    * @param type - The FGA object type (e.g., `administration`)
    * @returns Array of fully-qualified FGA object strings (e.g., `['administration:abc']`)
+   * @throws {ApiError} EXTERNAL_SERVICE_UNAVAILABLE if the FGA list fails
    */
   async function listAccessibleObjects(userId: string, relation: FgaRelation, type: FgaType): Promise<string[]> {
     try {
@@ -146,7 +174,7 @@ export function AuthorizationService({
       return result.objects;
     } catch (error) {
       logger.error({ err: error, context: { userId, relation, type } }, 'FGA list accessible objects failed');
-      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, relation, type },
@@ -167,6 +195,7 @@ export function AuthorizationService({
    * @param relation - The FGA relation to check (e.g., `can_list_users`)
    * @param objects - Array of fully-qualified FGA objects (e.g., `['district:abc', 'class:def']`)
    * @returns true if the user has the relation on at least one object, false otherwise
+   * @throws {ApiError} EXTERNAL_SERVICE_UNAVAILABLE if the FGA batch check fails
    */
   async function hasAnyPermission(userId: string, relation: FgaRelation, objects: string[]): Promise<boolean> {
     if (objects.length === 0) return false;
@@ -188,7 +217,7 @@ export function AuthorizationService({
         { err: error, context: { userId, relation, objectCount: objects.length } },
         'FGA batch check failed',
       );
-      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, relation, objectCount: objects.length },
@@ -197,5 +226,13 @@ export function AuthorizationService({
     }
   }
 
-  return { writeTuples, deleteTuples, hasPermission, requirePermission, listAccessibleObjects, hasAnyPermission };
+  return {
+    writeTuples,
+    writeTuplesOrThrow,
+    deleteTuples,
+    hasPermission,
+    requirePermission,
+    listAccessibleObjects,
+    hasAnyPermission,
+  };
 }

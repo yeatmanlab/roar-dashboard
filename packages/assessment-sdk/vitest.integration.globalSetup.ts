@@ -37,7 +37,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -56,10 +56,15 @@ let backendProcess: ReturnType<typeof spawn> | null = null;
  */
 async function buildBackendIfNeeded(backendDir: string): Promise<void> {
   const testServerBin = path.join(backendDir, 'dist', 'server-test.js');
+  const sourceFile = path.join(backendDir, 'src', 'server-test.ts');
 
-  if (existsSync(testServerBin)) {
-    console.log('[SDK Integration Tests] Test server binary already built, skipping build');
-    return;
+  if (existsSync(testServerBin) && existsSync(sourceFile)) {
+    const binStats = statSync(testServerBin);
+    const srcStats = statSync(sourceFile);
+    if (binStats.mtime > srcStats.mtime) {
+      console.log('[SDK Integration Tests] Test server binary is up-to-date');
+      return;
+    }
   }
 
   console.log('[SDK Integration Tests] Building backend...');
@@ -140,6 +145,18 @@ async function waitForBackendHealth(port: string, fixtureFile: string, maxAttemp
   );
 }
 
+/**
+ * Global setup for SDK integration tests.
+ *
+ * Spawns a test server process that initializes the database, seeds test data,
+ * sets up OpenFGA authorization, and writes fixture data for SDK tests to consume.
+ * Waits for the server to be healthy before returning.
+ *
+ * Requires CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL environment variables.
+ * Automatically builds the backend if dist/server-test.js is missing.
+ *
+ * @returns Promise that resolves when the test server is ready
+ */
 export default async function globalSetup() {
   // Skip backend startup when integration tests are not requested
   if (process.env.RUN_INTEGRATION_TESTS !== 'true') {
@@ -176,7 +193,8 @@ export default async function globalSetup() {
       ...process.env,
       // Use 'production' to avoid pino-pretty transport which crashes in bundled ESM
       // (thread-stream uses __dirname, unavailable in ES modules).
-      // The test server behavior is controlled by explicit setup steps, not NODE_ENV.
+      // Trade-off: logs are JSON only, less readable during debugging.
+      // For human-readable logs, rebuild locally: NODE_ENV=development npm run test -w packages/assessment-sdk
       NODE_ENV: 'production',
       PORT: BACKEND_PORT,
       TEST_FIXTURE_FILE: process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json',
@@ -241,12 +259,22 @@ export default async function globalSetup() {
   globalThis.__BACKEND_PORT__ = BACKEND_PORT;
 }
 
+/**
+ * Global teardown for SDK integration tests.
+ *
+ * Kills the test server process spawned by globalSetup.
+ * Waits for the process to fully close before returning.
+ *
+ * @returns Promise that resolves when the backend process has been terminated
+ */
 export async function teardown() {
   // @ts-expect-error globalThis doesn't have __BACKEND_PROCESS__ in type definitions
   const proc = globalThis.__BACKEND_PROCESS__ as ReturnType<typeof spawn> | undefined;
-  if (proc) {
-    proc.kill();
-    await new Promise<void>((resolve) => proc.on('close', resolve));
+  if (proc && !proc.killed) {
+    proc.kill('SIGTERM');
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+    const close = new Promise<void>((resolve) => proc.on('close', resolve));
+    await Promise.race([timeout, close]);
     console.log('[SDK Integration Tests] Backend process terminated');
   }
 }
