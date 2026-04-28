@@ -643,4 +643,304 @@ describe('AdministrationRepository', () => {
       expect(page2.items[0]!.variant.name).toBe('Beta Variant');
     });
   });
+
+  describe('getTreeNodes', () => {
+    const defaultOptions = { page: 1, perPage: 25 };
+
+    describe('root level (no parent)', () => {
+      it('returns districts directly assigned to the administration', async () => {
+        // administrationAssignedToDistrict has baseFixture.district via administration_orgs
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          undefined,
+          undefined,
+          defaultOptions,
+        );
+
+        const ids = result.items.map((item) => item.id);
+        expect(ids).toContain(baseFixture.district.id);
+
+        const districtNode = result.items.find((item) => item.id === baseFixture.district.id);
+        expect(districtNode).toBeDefined();
+        expect(districtNode!.entityType).toBe('district');
+        expect(districtNode!.name).toBe(baseFixture.district.name);
+      });
+
+      it('returns all 4 entity types when all are directly assigned', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'Tree All Types Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await Promise.all([
+          AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.district.id }),
+          AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.schoolA.id }),
+          AdministrationClassFactory.create({ administrationId: admin.id, classId: baseFixture.classInSchoolB.id }),
+          AdministrationGroupFactory.create({ administrationId: admin.id, groupId: baseFixture.group.id }),
+        ]);
+
+        const result = await repository.getTreeNodes(admin.id, undefined, undefined, defaultOptions);
+
+        const entityTypes = result.items.map((item) => item.entityType);
+        expect(entityTypes).toContain('district');
+        expect(entityTypes).toContain('school');
+        expect(entityTypes).toContain('class');
+        expect(entityTypes).toContain('group');
+        expect(result.totalItems).toBe(4);
+      });
+
+      it('filters by FGA accessible district IDs when provided', async () => {
+        // Create admin assigned to both districts
+        const admin = await AdministrationFactory.create({
+          name: 'Tree FGA Filter Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await Promise.all([
+          AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.district.id }),
+          AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.districtB.id }),
+        ]);
+
+        // Only district A is accessible
+        const result = await repository.getTreeNodes(admin.id, undefined, undefined, defaultOptions, {
+          districtIds: [baseFixture.district.id],
+        });
+
+        const ids = result.items.map((item) => item.id);
+        expect(ids).toContain(baseFixture.district.id);
+        expect(ids).not.toContain(baseFixture.districtB.id);
+      });
+
+      it('returns empty when FGA provides an empty accessible list', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          undefined,
+          undefined,
+          defaultOptions,
+          { districtIds: [], groupIds: [] },
+        );
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('returns empty for an administration with no assignments', async () => {
+        const emptyAdmin = await AdministrationFactory.create({
+          name: 'Tree Empty Admin Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+
+        const result = await repository.getTreeNodes(emptyAdmin.id, undefined, undefined, defaultOptions);
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+    });
+
+    describe('hasChildren', () => {
+      it('district has hasChildren=true when it has child schools', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          undefined,
+          undefined,
+          defaultOptions,
+        );
+
+        const districtNode = result.items.find((item) => item.id === baseFixture.district.id);
+        expect(districtNode).toBeDefined();
+        // baseFixture.district has schoolA and schoolB
+        expect(districtNode!.hasChildren).toBe(true);
+      });
+
+      it('class and group nodes always have hasChildren=false', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'Tree hasChildren Leaf Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await Promise.all([
+          AdministrationClassFactory.create({ administrationId: admin.id, classId: baseFixture.classInSchoolA.id }),
+          AdministrationGroupFactory.create({ administrationId: admin.id, groupId: baseFixture.group.id }),
+        ]);
+
+        const result = await repository.getTreeNodes(admin.id, undefined, undefined, defaultOptions);
+
+        for (const item of result.items) {
+          expect(item.hasChildren).toBe(false);
+        }
+      });
+    });
+
+    describe('district drill-down', () => {
+      it('returns all child schools of the district', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'district',
+          baseFixture.district.id,
+          defaultOptions,
+        );
+
+        const ids = result.items.map((item) => item.id);
+        // baseFixture.district has schoolA and schoolB as children
+        expect(ids).toContain(baseFixture.schoolA.id);
+        expect(ids).toContain(baseFixture.schoolB.id);
+
+        for (const item of result.items) {
+          expect(item.entityType).toBe('school');
+        }
+      });
+
+      it('school nodes report hasChildren based on whether they have classes', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'district',
+          baseFixture.district.id,
+          defaultOptions,
+        );
+
+        const schoolANode = result.items.find((item) => item.id === baseFixture.schoolA.id);
+        expect(schoolANode).toBeDefined();
+        // schoolA has classInSchoolA
+        expect(schoolANode!.hasChildren).toBe(true);
+      });
+
+      it('filters schools by FGA accessible IDs', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'district',
+          baseFixture.district.id,
+          defaultOptions,
+          { schoolIds: [baseFixture.schoolA.id] },
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(baseFixture.schoolA.id);
+      });
+
+      it('returns empty for a district with no child schools', async () => {
+        // districtB has schoolInDistrictB, but let's test with a fresh district if possible
+        // Use districtB — it has one school (schoolInDistrictB)
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'district',
+          '00000000-0000-0000-0000-000000000000', // non-existent district
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(0);
+      });
+    });
+
+    describe('school drill-down', () => {
+      it('returns all child classes of the school', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'school',
+          baseFixture.schoolA.id,
+          defaultOptions,
+        );
+
+        const ids = result.items.map((item) => item.id);
+        expect(ids).toContain(baseFixture.classInSchoolA.id);
+
+        for (const item of result.items) {
+          expect(item.entityType).toBe('class');
+          expect(item.hasChildren).toBe(false);
+        }
+      });
+
+      it('filters classes by FGA accessible IDs when empty', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'school',
+          baseFixture.schoolA.id,
+          defaultOptions,
+          { classIds: [] }, // empty = no access
+        );
+
+        expect(result.items).toHaveLength(0);
+      });
+
+      it('filters classes to only FGA-accessible IDs when non-empty', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'school',
+          baseFixture.schoolA.id,
+          defaultOptions,
+          { classIds: [baseFixture.classInSchoolA.id] },
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+      });
+    });
+
+    describe('leaf node drill-down', () => {
+      it('returns empty for class parent', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'class',
+          baseFixture.classInSchoolA.id,
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+
+      it('returns empty for group parent', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToGroup.id,
+          'group',
+          baseFixture.group.id,
+          defaultOptions,
+        );
+
+        expect(result.items).toHaveLength(0);
+        expect(result.totalItems).toBe(0);
+      });
+    });
+
+    describe('pagination', () => {
+      it('paginates root level results', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'Tree Pagination Test',
+          createdBy: baseFixture.districtAdmin.id,
+        });
+        await Promise.all([
+          AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.district.id }),
+          AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.districtB.id }),
+          AdministrationGroupFactory.create({ administrationId: admin.id, groupId: baseFixture.group.id }),
+        ]);
+
+        const page1 = await repository.getTreeNodes(admin.id, undefined, undefined, { page: 1, perPage: 2 });
+        expect(page1.items).toHaveLength(2);
+        expect(page1.totalItems).toBe(3);
+
+        const page2 = await repository.getTreeNodes(admin.id, undefined, undefined, { page: 2, perPage: 2 });
+        expect(page2.items).toHaveLength(1);
+        expect(page2.totalItems).toBe(3);
+
+        // No overlap between pages
+        const page1Ids = page1.items.map((item) => item.id);
+        const page2Ids = page2.items.map((item) => item.id);
+        for (const id of page2Ids) {
+          expect(page1Ids).not.toContain(id);
+        }
+      });
+
+      it('sorts by name ascending with id tiebreaker', async () => {
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'district',
+          baseFixture.district.id,
+          { page: 1, perPage: 100 },
+        );
+
+        // Verify sorted by name
+        for (let i = 1; i < result.items.length; i++) {
+          const prev = result.items[i - 1]!.name.toLowerCase();
+          const curr = result.items[i]!.name.toLowerCase();
+          expect(prev <= curr).toBe(true);
+        }
+      });
+    });
+  });
 });

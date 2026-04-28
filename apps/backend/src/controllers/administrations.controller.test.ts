@@ -41,6 +41,7 @@ describe('AdministrationsController', () => {
   const mockListTaskVariants = vi.fn();
   const mockListAgreements = vi.fn();
   const mockDeleteById = vi.fn();
+  const mockGetTree = vi.fn();
   const mockListProgressStudents = vi.fn();
   const mockGetProgressOverview = vi.fn();
   const mockGetUserAdministrations = vi.fn();
@@ -59,6 +60,7 @@ describe('AdministrationsController', () => {
       listAgreements: mockListAgreements,
       deleteById: mockDeleteById,
       getUserAdministrations: mockGetUserAdministrations,
+      getTree: mockGetTree,
     });
 
     vi.mocked(ReportService).mockReturnValue({
@@ -1041,6 +1043,283 @@ describe('AdministrationsController', () => {
           locale: 'en-US',
         }),
       ).rejects.toThrow('Database connection lost');
+    });
+  });
+
+  describe('getTree', () => {
+    const testAdminId = 'admin-tree-123';
+    const defaultQuery = { page: 1, perPage: 25, embed: [] as 'stats'[] };
+
+    it('should return 200 with paginated tree nodes at root level including all entity types', async () => {
+      mockGetTree.mockResolvedValue({
+        items: [
+          { id: 'district-1', name: 'District A', entityType: 'district', hasChildren: true },
+          { id: 'school-1', name: 'School A', entityType: 'school', hasChildren: true },
+          { id: 'class-1', name: 'Class A', entityType: 'class', hasChildren: false },
+          { id: 'group-1', name: 'Group A', entityType: 'group', hasChildren: false },
+        ],
+        totalItems: 4,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(4);
+      expect(data.items[0]).toEqual({
+        id: 'district-1',
+        name: 'District A',
+        entityType: 'district',
+        hasChildren: true,
+      });
+      expect(data.items[1]).toEqual({
+        id: 'school-1',
+        name: 'School A',
+        entityType: 'school',
+        hasChildren: true,
+      });
+      expect(data.items[2]).toEqual({
+        id: 'class-1',
+        name: 'Class A',
+        entityType: 'class',
+        hasChildren: false,
+      });
+      expect(data.items[3]).toEqual({
+        id: 'group-1',
+        name: 'Group A',
+        entityType: 'group',
+        hasChildren: false,
+      });
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 4,
+        totalPages: 1,
+      });
+    });
+
+    it('should include stats when embed=stats and stats are present', async () => {
+      mockGetTree.mockResolvedValue({
+        items: [
+          {
+            id: 'district-1',
+            name: 'District A',
+            entityType: 'district',
+            hasChildren: true,
+            stats: {
+              assignment: {
+                studentsWithRequiredTasks: 17,
+                studentsAssigned: 10,
+                studentsStarted: 5,
+                studentsCompleted: 2,
+              },
+            },
+          },
+        ],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, {
+        ...defaultQuery,
+        embed: ['stats'],
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]).toHaveProperty('stats');
+      expect(data.items[0]!.stats).toEqual({
+        assignment: {
+          studentsWithRequiredTasks: 17,
+          studentsAssigned: 10,
+          studentsStarted: 5,
+          studentsCompleted: 2,
+        },
+      });
+    });
+
+    it('should omit stats when not present on nodes', async () => {
+      mockGetTree.mockResolvedValue({
+        items: [{ id: 'district-1', name: 'District A', entityType: 'district', hasChildren: true }],
+        totalItems: 1,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, defaultQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]).not.toHaveProperty('stats');
+    });
+
+    it('should handle mixed nodes where some have stats and some do not', async () => {
+      mockGetTree.mockResolvedValue({
+        items: [
+          {
+            id: 'district-1',
+            name: 'District A',
+            entityType: 'district',
+            hasChildren: true,
+            stats: {
+              assignment: {
+                studentsWithRequiredTasks: 17,
+                studentsAssigned: 10,
+                studentsStarted: 5,
+                studentsCompleted: 2,
+              },
+            },
+          },
+          { id: 'group-1', name: 'Group A', entityType: 'group', hasChildren: false },
+        ],
+        totalItems: 2,
+      });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, {
+        ...defaultQuery,
+        embed: ['stats'],
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items[0]).toHaveProperty('stats');
+      expect(data.items[0]!.stats).toEqual({
+        assignment: {
+          studentsWithRequiredTasks: 17,
+          studentsAssigned: 10,
+          studentsStarted: 5,
+          studentsCompleted: 2,
+        },
+      });
+      expect(data.items[1]).not.toHaveProperty('stats');
+    });
+
+    it('should pass parentEntityType and parentEntityId to service when provided', async () => {
+      mockGetTree.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await Controller.getTree(mockAuthContext, testAdminId, {
+        ...defaultQuery,
+        parentEntityType: 'district' as const,
+        parentEntityId: 'district-123',
+      });
+
+      expect(mockGetTree).toHaveBeenCalledWith(
+        mockAuthContext,
+        testAdminId,
+        expect.objectContaining({
+          page: 1,
+          perPage: 25,
+          parentEntityType: 'district',
+          parentEntityId: 'district-123',
+        }),
+      );
+    });
+
+    it('should not pass parentEntityType/parentEntityId when not provided', async () => {
+      mockGetTree.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await Controller.getTree(mockAuthContext, testAdminId, defaultQuery);
+
+      const callArgs = mockGetTree.mock.calls[0]![2] as Record<string, unknown>;
+      expect(callArgs).not.toHaveProperty('parentEntityType');
+      expect(callArgs).not.toHaveProperty('parentEntityId');
+    });
+
+    it('should return 400 when parentEntityId is provided without parentEntityType', async () => {
+      mockGetTree.mockRejectedValue(
+        new ApiError('parentEntityId requires parentEntityType', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, defaultQuery);
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(result.body).toEqual({
+        error: {
+          message: 'parentEntityId requires parentEntityType',
+          code: 'request/validation-failed',
+          traceId: expect.any(String),
+        },
+      });
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      mockGetTree.mockRejectedValue(
+        new ApiError('The requested resource was not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, defaultQuery);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('should return 403 when user lacks access', async () => {
+      mockGetTree.mockRejectedValue(
+        new ApiError('You do not have permission to perform this action', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, defaultQuery);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('should return 500 on internal error', async () => {
+      mockGetTree.mockRejectedValue(
+        new ApiError('Failed to retrieve tree data', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, defaultQuery);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('should re-throw non-ApiError errors', async () => {
+      mockGetTree.mockRejectedValue(new Error('unexpected'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.getTree(mockAuthContext, testAdminId, defaultQuery)).rejects.toThrow('unexpected');
+    });
+
+    it('should return empty items for leaf nodes', async () => {
+      mockGetTree.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.getTree(mockAuthContext, testAdminId, {
+        ...defaultQuery,
+        parentEntityType: 'class' as const,
+        parentEntityId: 'class-123',
+      });
+
+      const data = expectOkResponse(result);
+      expect(data.items).toHaveLength(0);
+      expect(data.pagination.totalItems).toBe(0);
+      expect(data.pagination.totalPages).toBe(0);
     });
   });
 
