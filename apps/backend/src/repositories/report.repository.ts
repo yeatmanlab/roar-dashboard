@@ -103,8 +103,8 @@ export interface ProgressStatusSortParam {
   taskVariantId: string;
   /** SQL condition for conditionsAssignment (from conditionToSql). undefined = assigned to all. */
   assignmentSql: SQL | undefined;
-  /** SQL condition for conditionsRequirements (from conditionToSql). undefined = required for all. */
-  requirementsSql: SQL | undefined;
+  /** SQL condition for optional_if (conditionsRequirements). When true, the task is optional. undefined = required for all. */
+  optionalIfSql: SQL | undefined;
 }
 
 /**
@@ -118,8 +118,8 @@ export interface ProgressStatusFilterParam {
   statusValues: string[];
   /** SQL condition for conditionsAssignment. undefined = assigned to all. */
   assignmentSql: SQL | undefined;
-  /** SQL condition for conditionsRequirements. undefined = required for all. */
-  requirementsSql: SQL | undefined;
+  /** SQL condition for optional_if (conditionsRequirements). When true, the task is optional. undefined = required for all. */
+  optionalIfSql: SQL | undefined;
 }
 
 /**
@@ -867,10 +867,10 @@ export class ReportRepository {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery type is complex
     statusRunSub: any,
   ): SQL {
-    const { assignmentSql, requirementsSql } = sortParam;
+    const { assignmentSql, optionalIfSql } = sortParam;
 
     // No conditions — all students are assigned and required
-    if (!assignmentSql && !requirementsSql) {
+    if (!assignmentSql && !optionalIfSql) {
       return sql`CASE
         WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 5
         WHEN ${statusRunSub.userId} IS NOT NULL THEN 3
@@ -878,8 +878,8 @@ export class ReportRepository {
       END`;
     }
 
-    // Assignment condition but no requirements — all assigned are required
-    if (!requirementsSql) {
+    // Assignment condition but no optional_if — all assigned are required
+    if (!optionalIfSql) {
       return sql`CASE
         WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) THEN 5
         WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) THEN 3
@@ -888,25 +888,25 @@ export class ReportRepository {
       END`;
     }
 
-    // No assignment condition (all assigned) but has requirements — required vs optional
+    // No assignment condition (all assigned) but has optional_if — required vs optional
     if (!assignmentSql) {
       return sql`CASE
-        WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${requirementsSql}) THEN 4
+        WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${optionalIfSql}) THEN 4
         WHEN ${statusRunSub.completedAt} IS NOT NULL THEN 5
-        WHEN ${statusRunSub.userId} IS NOT NULL AND (${requirementsSql}) THEN 2
+        WHEN ${statusRunSub.userId} IS NOT NULL AND (${optionalIfSql}) THEN 2
         WHEN ${statusRunSub.userId} IS NOT NULL THEN 3
-        WHEN (${requirementsSql}) THEN 0
+        WHEN (${optionalIfSql}) THEN 0
         ELSE 1
       END`;
     }
 
     // Both conditions present
     return sql`CASE
-      WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 4
+      WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) AND (${optionalIfSql}) THEN 4
       WHEN ${statusRunSub.completedAt} IS NOT NULL AND (${assignmentSql}) THEN 5
-      WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 2
+      WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) AND (${optionalIfSql}) THEN 2
       WHEN ${statusRunSub.userId} IS NOT NULL AND (${assignmentSql}) THEN 3
-      WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
+      WHEN (${assignmentSql}) AND (${optionalIfSql}) THEN 0
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
     END`;
@@ -925,13 +925,11 @@ export class ReportRepository {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery type is complex
     statusRunSub: any,
   ): SQL | undefined {
-    const { statusValues, assignmentSql, requirementsSql } = filterParam;
+    const { statusValues, assignmentSql, optionalIfSql } = filterParam;
     const conditions: SQL[] = [];
 
-    // Helper: build the "is optional" condition
-    // requirementsSql is an "optional_if" condition — true = optional
-    const isOptionalSql = requirementsSql ?? sql`false`; // null = required for all
-    const isRequiredSql = requirementsSql ? sql`NOT (${requirementsSql})` : sql`true`;
+    const isOptionalSql = optionalIfSql ?? sql`false`; // undefined = required for all
+    const isRequiredSql = optionalIfSql ? sql`NOT (${optionalIfSql})` : sql`true`;
     const isAssignedSql = assignmentSql ?? sql`true`;
 
     for (const status of statusValues) {
@@ -1154,66 +1152,106 @@ export class ReportRepository {
   }
 
   /**
-   * Get aggregated progress overview counts using SQL-level aggregation.
+   * Get aggregated progress overview counts for multiple scopes in a single query.
    *
-   * Uses a multi-step SQL approach to minimize data transfer and post-query processing:
+   * Extends the single-scope pattern to N scopes by adding a `scope_id` discriminator
+   * column to both the students-in-scope CTE and the variant status subqueries.
+   * All scopes share one pass through the variant × student × run join, so cost
+   * scales with total students across scopes, not with the number of scopes.
    *
-   * 1. Count total students in scope via `countDistinct` on the students-in-scope subquery.
+   * Uses a multi-step SQL approach:
    *
-   * 2. For each task variant, build a subquery that LEFT JOINs students against FDW runs
-   *    and computes a 7-level status priority via a CASE expression:
+   * 1. Build a multi-scope students-in-scope CTE by UNIONing each scope's student
+   *    query with a literal `scope_id` column. UNION (not UNION ALL) deduplicates
+   *    within each scope, but a student may appear under multiple scopes.
+   *
+   * 2. Count total students per scope via `COUNT(DISTINCT user_id) ... GROUP BY scope_id`.
+   *
+   * 3. For each task variant, build a subquery that LEFT JOINs students (from the CTE)
+   *    against FDW runs and computes a 7-level status priority via a CASE expression:
    *    completed-required=5, completed-optional=4, started-required=3, started-optional=2,
    *    assigned-required=1, assigned-optional=0, excluded=-1.
-   *    UNION ALL all variant subqueries.
+   *    Carries `scope_id` through. UNION ALL all variant subqueries.
    *
-   * 3. GROUP BY user_id, task_id with MAX(status_priority) for multi-variant dedup,
-   *    then GROUP BY task_id, status with COUNT for final per-task aggregation.
-   *
-   * 4. Per-student completion: count students where ALL required tasks (priorities 1, 3, 5)
-   *    are at completed-required (priority 5). A student is "done" only when every required
-   *    task is completed.
+   * 4. Two-level aggregation + per-student assignment-level counts (per scope):
+   *    - deduped: GROUP BY scope_id, user_id, task_id → MAX(status_priority) for dedup
+   *    - task_counts: GROUP BY scope_id, task_id, max_priority → COUNT for per-task status counts
+   *    - required_tasks_per_student: per-student, per-scope aggregation of required tasks only
+   *      (priorities 1, 3, 5). Each student is bucketed by assignment-level status:
+   *        completed: MIN(max_priority) = 5 (all required tasks completed)
+   *        started: MAX(max_priority) >= 3 AND MIN(max_priority) < 5 (at least one started, not all done)
+   *        assigned: MAX(max_priority) = 1 (all required tasks still at assigned-required)
    *
    * @param administrationId - The administration ID
-   * @param scope - The scope to query students within
+   * @param scopes - Array of scopes to compute stats for
    * @param taskMetas - Task metadata with condition JSONB for each variant
-   * @returns Total student count, per-task status counts, and per-student completion count
+   * @returns Map of scopeId → ProgressOverviewCountsResult
    */
-  async getProgressOverviewCounts(
+  async getProgressOverviewCountsBulk(
     administrationId: string,
-    scope: ReportScope,
+    scopes: ReportScope[],
     taskMetas: ReportTaskMeta[],
-  ): Promise<ProgressOverviewCountsResult> {
-    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
+  ): Promise<Map<string, ProgressOverviewCountsResult>> {
+    const resultMap = new Map<string, ProgressOverviewCountsResult>();
 
-    // 1. Count total students in scope
-    const countResult = await this.db
-      .select({ total: countDistinct(users.id) })
-      .from(users)
-      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
-
-    const totalStudents = countResult[0]?.total ?? 0;
-
-    if (totalStudents === 0 || taskMetas.length === 0) {
-      return {
-        totalStudents,
-        taskStatusCounts: [],
-        studentCounts: { studentsWithRequiredTasks: 0, studentsAssigned: 0, studentsStarted: 0, studentsCompleted: 0 },
-      };
+    if (scopes.length === 0) {
+      return resultMap;
     }
 
-    // 2. Build UNION ALL of per-variant status subqueries.
-    // Each subquery LEFT JOINs students with runs for one variant and computes
-    // a status priority via CASE. The students-in-scope query is defined as a CTE
-    // (sis) so it's written once by Drizzle and referenced by name in each branch.
-    const studentsInScopeQuery = this.buildStudentInScopeQuery(scope);
+    // 1. Build multi-scope students-in-scope CTE.
+    // Each scope's student query gets a literal scope_id column.
+    const scopeQueries: SQL[] = scopes.map((scope) => {
+      const studentQuery = this.buildStudentInScopeQuery(scope);
+      return sql`SELECT ${scope.scopeId}::text AS scope_id, sub.user_id FROM (${studentQuery}) sub`;
+    });
 
+    const multiScopeSisSql = sql.join(scopeQueries, sql` UNION `);
+
+    // 2. Count total students per scope
+    const countQuery = sql`
+      WITH sis AS (
+        ${multiScopeSisSql}
+      )
+      SELECT scope_id, COUNT(DISTINCT user_id)::int AS total
+      FROM sis
+      GROUP BY scope_id
+    `;
+
+    const countRows = await this.db.execute(countQuery);
+
+    const totalStudentsMap = new Map<string, number>();
+    for (const row of countRows.rows) {
+      const r = row as { scope_id: string; total: number };
+      totalStudentsMap.set(r.scope_id, r.total);
+    }
+
+    // Initialize result map with zeroed results for all scopes
+    for (const scope of scopes) {
+      resultMap.set(scope.scopeId, {
+        totalStudents: totalStudentsMap.get(scope.scopeId) ?? 0,
+        taskStatusCounts: [],
+        studentCounts: {
+          studentsWithRequiredTasks: 0,
+          studentsAssigned: 0,
+          studentsStarted: 0,
+          studentsCompleted: 0,
+        },
+      });
+    }
+
+    // If no students at all or no tasks, return early with zeroed results
+    const hasAnyStudents = [...totalStudentsMap.values()].some((total) => total > 0);
+    if (!hasAnyStudents || taskMetas.length === 0) {
+      return resultMap;
+    }
+
+    // 3. Build UNION ALL of per-variant status subqueries with scope_id.
+    // The multi-scope CTE is referenced as `sis` in each variant subquery.
     const variantQueries: SQL[] = taskMetas.map((meta) => {
       const statusCase = this.buildOverviewStatusCase(meta);
-      // Uses fully qualified table names (not aliases) because conditionToSql generates
-      // Drizzle SQL referencing "app"."users"."column" — PostgreSQL requires the same
-      // naming used in the FROM clause for column resolution.
       return sql`
         SELECT
+          sis.scope_id,
           ${users.id} AS user_id,
           ${meta.taskId}::text AS task_id,
           (${statusCase}) AS status_priority
@@ -1228,13 +1266,12 @@ export class ReportRepository {
       `;
     });
 
-    // UNION ALL the variant subqueries
     const unionSql = sql.join(variantQueries, sql` UNION ALL `);
 
-    // 3. Two-level aggregation + per-student assignment-level counts:
-    //   deduped: GROUP BY user_id, task_id → MAX(status_priority) for multi-variant dedup
-    //   task_counts: GROUP BY task_id, max_priority → COUNT for per-task status counts
-    //   required_tasks_per_student: per-student aggregation of required tasks only.
+    // 4. Two-level aggregation + per-student assignment-level counts (per scope):
+    //   deduped: GROUP BY scope_id, user_id, task_id → MAX(status_priority) for multi-variant dedup
+    //   task_counts: GROUP BY scope_id, task_id, max_priority → COUNT for per-task status counts
+    //   required_tasks_per_student: per-student, per-scope aggregation of required tasks only.
     //     Required tasks are those with max_priority IN (1, 3, 5) — i.e., on the required axis.
     //     Each student is bucketed by assignment-level status:
     //       completed: MIN(max_priority) = 5 (all required tasks completed)
@@ -1242,65 +1279,62 @@ export class ReportRepository {
     //       assigned: MAX(max_priority) = 1 (all required tasks still at assigned-required)
     const aggregationQuery = sql`
       WITH sis AS (
-        ${studentsInScopeQuery}
+        ${multiScopeSisSql}
       ),
       variant_statuses AS (
         ${unionSql}
       ),
       deduped AS (
         SELECT
+          scope_id,
           user_id,
           task_id,
           MAX(status_priority) AS max_priority
         FROM variant_statuses
         WHERE status_priority >= 0
-        GROUP BY user_id, task_id
+        GROUP BY scope_id, user_id, task_id
       ),
       task_counts AS (
         SELECT
+          scope_id,
           task_id,
           max_priority,
           COUNT(*)::int AS cnt
         FROM deduped
-        GROUP BY task_id, max_priority
+        GROUP BY scope_id, task_id, max_priority
       ),
       required_tasks_per_student AS (
         SELECT
+          scope_id,
           user_id,
           COUNT(*) AS required_task_count,
           MIN(max_priority) AS min_required_priority,
           MAX(max_priority) AS max_required_priority
         FROM deduped
         WHERE max_priority IN (1, 3, 5)
-        GROUP BY user_id
+        GROUP BY scope_id, user_id
       )
-      SELECT 'task_count' AS result_type, task_id, max_priority, cnt,
+      SELECT 'task_count' AS result_type, scope_id, task_id, max_priority, cnt,
         NULL::bigint AS students_with_required, NULL::bigint AS students_completed,
         NULL::bigint AS students_started, NULL::bigint AS students_assigned
       FROM task_counts
       UNION ALL
-      SELECT 'student_counts' AS result_type, NULL AS task_id, NULL AS max_priority, NULL AS cnt,
+      SELECT 'student_counts' AS result_type, scope_id, NULL AS task_id, NULL AS max_priority, NULL AS cnt,
         COUNT(*)::bigint AS students_with_required,
         COUNT(*) FILTER (WHERE min_required_priority = 5)::bigint AS students_completed,
         COUNT(*) FILTER (WHERE max_required_priority >= 3 AND min_required_priority < 5)::bigint AS students_started,
         COUNT(*) FILTER (WHERE max_required_priority = 1)::bigint AS students_assigned
       FROM required_tasks_per_student
+      GROUP BY scope_id
     `;
 
     const rows = await this.db.execute(aggregationQuery);
 
-    // Parse results: separate task counts from student-level assignment counts
-    const taskStatusCounts: TaskStatusCount[] = [];
-    let studentCounts: StudentAssignmentLevelCounts = {
-      studentsWithRequiredTasks: 0,
-      studentsAssigned: 0,
-      studentsStarted: 0,
-      studentsCompleted: 0,
-    };
-
+    // Parse results: distribute task counts and student-level counts into per-scope results
     for (const row of rows.rows) {
       const r = row as {
         result_type: string;
+        scope_id: string;
         task_id: string | null;
         max_priority: number | null;
         cnt: number | null;
@@ -1310,8 +1344,11 @@ export class ReportRepository {
         students_assigned: number | null;
       };
 
+      const scopeResult = resultMap.get(r.scope_id);
+      if (!scopeResult) continue;
+
       if (r.result_type === 'student_counts') {
-        studentCounts = {
+        scopeResult.studentCounts = {
           studentsWithRequiredTasks: Number(r.students_with_required ?? 0),
           studentsCompleted: Number(r.students_completed ?? 0),
           studentsStarted: Number(r.students_started ?? 0),
@@ -1320,7 +1357,7 @@ export class ReportRepository {
       } else if (r.task_id !== null && r.max_priority !== null && r.cnt !== null) {
         const status = PROGRESS_PRIORITY_TO_STATUS[r.max_priority as ProgressStatusPriority];
         if (status) {
-          taskStatusCounts.push({
+          scopeResult.taskStatusCounts.push({
             taskId: r.task_id,
             status,
             count: r.cnt,
@@ -1329,7 +1366,38 @@ export class ReportRepository {
       }
     }
 
-    return { totalStudents, taskStatusCounts, studentCounts };
+    return resultMap;
+  }
+
+  /**
+   * Get aggregated progress overview counts for a single scope.
+   *
+   * Delegates to {@link getProgressOverviewCountsBulk} with a single-element array,
+   * extracting the result for the given scope.
+   *
+   * @param administrationId - The administration ID
+   * @param scope - The scope to query students within
+   * @param taskMetas - Task metadata with condition JSONB for each variant
+   * @returns Total student count, per-task status counts, and per-student assignment-level counts
+   */
+  async getProgressOverviewCounts(
+    administrationId: string,
+    scope: ReportScope,
+    taskMetas: ReportTaskMeta[],
+  ): Promise<ProgressOverviewCountsResult> {
+    const bulkResult = await this.getProgressOverviewCountsBulk(administrationId, [scope], taskMetas);
+    return (
+      bulkResult.get(scope.scopeId) ?? {
+        totalStudents: 0,
+        taskStatusCounts: [],
+        studentCounts: {
+          studentsWithRequiredTasks: 0,
+          studentsAssigned: 0,
+          studentsStarted: 0,
+          studentsCompleted: 0,
+        },
+      }
+    );
   }
 
   /**
@@ -1348,10 +1416,10 @@ export class ReportRepository {
    */
   private buildOverviewStatusCase(meta: ReportTaskMeta): SQL {
     const assignmentSql = conditionToSql(meta.conditionsAssignment, REPORT_CONDITION_FIELD_MAP);
-    const requirementsSql = conditionToSql(meta.conditionsRequirements, REPORT_CONDITION_FIELD_MAP);
+    const isOptionalSql = conditionToSql(meta.conditionsRequirements, REPORT_CONDITION_FIELD_MAP);
 
     // No conditions — all students are assigned and required (no optional, no exclusion)
-    if (!assignmentSql && !requirementsSql) {
+    if (!assignmentSql && !isOptionalSql) {
       return sql`CASE
         WHEN r.completed_at IS NOT NULL THEN 5
         WHEN r.user_id IS NOT NULL THEN 3
@@ -1360,7 +1428,7 @@ export class ReportRepository {
     }
 
     // Assignment condition but no requirements — all assigned students are required
-    if (!requirementsSql) {
+    if (!isOptionalSql) {
       return sql`CASE
         WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) THEN 5
         WHEN r.user_id IS NOT NULL AND (${assignmentSql}) THEN 3
@@ -1372,22 +1440,22 @@ export class ReportRepository {
     // No assignment condition (all assigned) but has requirements — required vs optional
     if (!assignmentSql) {
       return sql`CASE
-        WHEN r.completed_at IS NOT NULL AND (${requirementsSql}) THEN 4
+        WHEN r.completed_at IS NOT NULL AND (${isOptionalSql}) THEN 4
         WHEN r.completed_at IS NOT NULL THEN 5
-        WHEN r.user_id IS NOT NULL AND (${requirementsSql}) THEN 2
+        WHEN r.user_id IS NOT NULL AND (${isOptionalSql}) THEN 2
         WHEN r.user_id IS NOT NULL THEN 3
-        WHEN (${requirementsSql}) THEN 0
+        WHEN (${isOptionalSql}) THEN 0
         ELSE 1
       END`;
     }
 
     // Both conditions present
     return sql`CASE
-      WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 4
+      WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) AND (${isOptionalSql}) THEN 4
       WHEN r.completed_at IS NOT NULL AND (${assignmentSql}) THEN 5
-      WHEN r.user_id IS NOT NULL AND (${assignmentSql}) AND (${requirementsSql}) THEN 2
+      WHEN r.user_id IS NOT NULL AND (${assignmentSql}) AND (${isOptionalSql}) THEN 2
       WHEN r.user_id IS NOT NULL AND (${assignmentSql}) THEN 3
-      WHEN (${assignmentSql}) AND (${requirementsSql}) THEN 0
+      WHEN (${assignmentSql}) AND (${isOptionalSql}) THEN 0
       WHEN (${assignmentSql}) THEN 1
       ELSE -1
     END`;

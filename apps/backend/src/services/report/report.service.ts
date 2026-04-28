@@ -1165,11 +1165,11 @@ function findTaskOrThrow(taskId: string, taskMetas: ReportTaskMeta[]): ReportTas
  */
 function buildConditionSqlParams(task: ReportTaskMeta): {
   assignmentSql: ReturnType<typeof conditionToSql>;
-  requirementsSql: ReturnType<typeof conditionToSql>;
+  optionalIfSql: ReturnType<typeof conditionToSql>;
 } {
   return {
     assignmentSql: conditionToSql(task.conditionsAssignment, REPORT_CONDITION_FIELD_MAP),
-    requirementsSql: conditionToSql(task.conditionsRequirements, REPORT_CONDITION_FIELD_MAP),
+    optionalIfSql: conditionToSql(task.conditionsRequirements, REPORT_CONDITION_FIELD_MAP),
   };
 }
 
@@ -1190,13 +1190,13 @@ function resolveProgressSort(
   const taskId = extractTaskIdFromField(sortBy);
   if (taskId) {
     const task = findTaskOrThrow(taskId, taskMetas);
-    const { assignmentSql, requirementsSql } = buildConditionSqlParams(task);
+    const { assignmentSql, optionalIfSql } = buildConditionSqlParams(task);
     return {
       sortColumn: undefined,
       progressStatusSort: {
         taskVariantId: task.taskVariantId,
         assignmentSql,
-        requirementsSql,
+        optionalIfSql,
       },
     };
   }
@@ -1235,13 +1235,13 @@ function resolveProgressFilters(
         });
       }
       const task = findTaskOrThrow(taskId, taskMetas);
-      const { assignmentSql, requirementsSql } = buildConditionSqlParams(task);
+      const { assignmentSql, optionalIfSql } = buildConditionSqlParams(task);
       const statusValues = f.operator === 'in' ? f.value.split(',').map((v) => v.trim()) : [f.value];
       progressStatusFilters.push({
         taskVariantId: task.taskVariantId,
         statusValues,
         assignmentSql,
-        requirementsSql,
+        optionalIfSql,
       });
     } else {
       userFilters.push(f);
