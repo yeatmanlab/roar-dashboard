@@ -1457,13 +1457,10 @@ export function ReportService({
           });
         }
         subscoreSort = { scoreName: numericName };
-      } else if (sortBy === 'user.schoolName') {
-        // schoolName isn't a sortable column on the user table — leave the
-        // sortColumn undefined; the repo currently doesn't compile a
-        // school-name sort for task-subscores. Static fallback to
-        // users.nameLast keeps results stable.
-        staticSortColumn = users.nameLast;
       } else {
+        // The contract enforces sortBy ∈ TASK_SUBSCORES_SORT_FIELDS, which no
+        // longer includes `user.schoolName` — sortable user fields here are
+        // limited to the columns present in STUDENT_SCORES_SORT_COLUMNS.
         const key = sortBy as Exclude<StudentScoresSortField, 'user.schoolName'>;
         staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key] ?? users.nameLast;
       }
