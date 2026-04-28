@@ -6,6 +6,7 @@
 
 import { initAssessmentSdk } from '../index';
 import type { CommandContext } from '../command/command';
+import type { TestFixture } from '@roar-dashboard/api-contract/test-fixture.type';
 
 /**
  * Gets the backend port from the global setup.
@@ -89,24 +90,13 @@ export function initTestSdk(overrides: Partial<CommandContext> = {}) {
  *
  * @returns The baseFixture data with task variants and other test entities
  */
-export async function getBaseFixtureData(): Promise<{
-  testUser: { authId: string };
-  schoolATeacher: { authId: string };
-  administrationAssignedToDistrict: { id: string };
-  administrationAssignedToDistrictB: { id: string };
-  variantForAllGrades: { id: string };
-  variantForGrade5: { id: string };
-  variantForGrade3: { id: string };
-  variantOptionalForEll: { id: string };
-  variantForTask2: { id: string };
-  variantForTask2Grade5OptionalEll: { id: string };
-}> {
+export async function getBaseFixtureData(): Promise<TestFixture> {
   const fixtureFile = process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json';
 
   // Import fs dynamically to avoid issues in browser environments
   const { readFileSync } = await import('fs');
 
-  let data: Awaited<ReturnType<typeof getBaseFixtureData>>;
+  let data: TestFixture;
 
   try {
     const content = readFileSync(fixtureFile, 'utf-8');

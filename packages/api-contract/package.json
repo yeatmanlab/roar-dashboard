@@ -6,6 +6,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs"
+    },
+    "./test-fixture.type": {
+      "types": "./dist/test-fixture.type.d.ts",
+      "import": "./dist/test-fixture.type.mjs"
     }
   },
   "module": "dist/index.mjs",
