@@ -35,6 +35,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:group-platform-admin
+    relation: platform_admin
+    object: group:group-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
 
   # ─── Administration assigned to group ──────────────────────────────
   - user: group:group-a
@@ -94,9 +102,24 @@ tests:
 
   # ─── can_create_users ─────────────────────────────────────────────
 
-  - name: Group admin can list/read group and create users but not CUD
+  - name: Group admin (OneRoster role) can list/read group but cannot create users
     check:
       - user: user:group-admin
+        object: group:group-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_create_users: false
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: Group platform admin can create users in their group
+    check:
+      - user: user:group-platform-admin
         object: group:group-a
         context:
           current_time: "2025-06-15T12:00:00Z"

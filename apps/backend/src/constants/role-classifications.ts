@@ -21,6 +21,7 @@ import type { UserRole } from '../enums/user-role.enum';
 export const HIERARCHICAL_USER_ACCESS_ROLES: UserRole[] = [
   'administrator',
   'district_administrator',
+  'platform_admin',
   'principal',
   'site_administrator',
   'system_administrator',
@@ -42,6 +43,7 @@ export const SUPERVISORY_ROLES: UserRole[] = [
   'aide',
   'counselor',
   'district_administrator',
+  'platform_admin',
   'principal',
   'proctor',
   'site_administrator',

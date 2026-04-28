@@ -88,6 +88,7 @@ export const FGA_CLASS_VALID_ROLES: ReadonlySet<UserRole> = new Set([
   UserRole.GUARDIAN,
   UserRole.PARENT,
   UserRole.RELATIVE,
+  // platform_admin intentionally excluded — it cascades to classes via parent_org, not direct class assignment
 ]);
 
 /**

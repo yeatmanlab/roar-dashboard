@@ -32,6 +32,10 @@ type district
     define site_administrator: [user with active_membership]
     define district_administrator: [user with active_membership]
     define administrator: [user with active_membership]
+    # ROAR-specific role for CSV/dashboard-created users with elevated create privileges.
+    # Not part of the OneRoster standard. External providers naturally overwrite this role
+    # on sync — transitioning to an external provider intentionally surrenders platform management.
+    define platform_admin: [user with active_membership]
 
     define principal: [user with active_membership]
     define counselor: [user with active_membership]
@@ -50,7 +54,7 @@ type district
     define school_admin_tier: principal or counselor
     define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or platform_admin or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Subtree membership — aggregates supervisory users from the district's
@@ -76,10 +80,12 @@ type district
     # User/score/progress visibility at the district level is restricted to
     # admin roles. A mis-rostered teacher at the district level should not
     # gain access to student data across the entire district.
-    define can_list_users: admin_tier
-    define can_read_scores: admin_tier
-    define can_read_progress: admin_tier
-    define can_create_users: admin_tier
+    define can_list_users: admin_tier or platform_admin
+    define can_read_scores: admin_tier or platform_admin
+    define can_read_progress: admin_tier or platform_admin
+    # Only platform_admin can create users — admin_tier (OneRoster roles) cannot,
+    # ensuring create-user capability is never granted to externally-rostered users.
+    define can_create_users: platform_admin
 
 # ────────────────────────────────────────────────────────────────────────────────
 # school — mid-level org, child of district, parent of classes
@@ -109,6 +115,7 @@ type school
     define site_administrator: [user with active_membership] or site_administrator from parent_org
     define district_administrator: [user with active_membership] or district_administrator from parent_org
     define administrator: [user with active_membership] or administrator from parent_org
+    define platform_admin: [user with active_membership] or platform_admin from parent_org
 
     define principal: [user with active_membership]
     define counselor: [user with active_membership]
@@ -127,7 +134,7 @@ type school
     define school_admin_tier: principal or counselor
     define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or platform_admin or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Subtree membership — aggregates supervisory users from the school's
@@ -149,13 +156,13 @@ type school
     # to see student data. School-level educators should not see a list of
     # classes they cannot interact with (UI bloat). Only admin and school_admin
     # tiers can list classes at the school level.
-    define can_list_classes: admin_tier or school_admin_tier
-    define can_list_users: admin_tier or school_admin_tier
-    define can_read_scores: admin_tier or school_admin_tier
-    define can_read_progress: admin_tier or school_admin_tier
-    # User creation requires higher privilege than listing/reading — school_admin_tier
-    # (principals, counselors) can view users but may not create them.
-    define can_create_users: admin_tier
+    define can_list_classes: admin_tier or platform_admin or school_admin_tier
+    define can_list_users: admin_tier or platform_admin or school_admin_tier
+    define can_read_scores: admin_tier or platform_admin or school_admin_tier
+    define can_read_progress: admin_tier or platform_admin or school_admin_tier
+    # Only platform_admin can create users — admin_tier (OneRoster roles) cannot,
+    # ensuring create-user capability is never granted to externally-rostered users.
+    define can_create_users: platform_admin
 
 # ────────────────────────────────────────────────────────────────────────────────
 # class — leaf-level entity, child of school
@@ -177,6 +184,7 @@ type class
     define site_administrator: [user with active_membership] or site_administrator from parent_org
     define district_administrator: [user with active_membership] or district_administrator from parent_org
     define administrator: [user with active_membership] or administrator from parent_org
+    define platform_admin: [user with active_membership] or platform_admin from parent_org
 
     define principal: [user with active_membership] or principal from parent_org
     define counselor: [user with active_membership] or counselor from parent_org
@@ -195,7 +203,7 @@ type class
     define school_admin_tier: principal or counselor
     define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or platform_admin or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Permissions
@@ -253,6 +261,7 @@ type group
     define site_administrator: [user with active_membership]
     define district_administrator: [user with active_membership]
     define administrator: [user with active_membership]
+    define platform_admin: [user with active_membership]
 
     define principal: [user with active_membership]
     define counselor: [user with active_membership]
@@ -271,7 +280,7 @@ type group
     define school_admin_tier: principal or counselor
     define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier
+    define supervisory_tier_group: admin_tier or platform_admin or school_admin_tier or educator_tier
     define member: supervisory_tier_group or caregiver_tier or student
 
     # Permissions
@@ -284,8 +293,9 @@ type group
     define can_list: supervisory_tier_group
     define can_read: supervisory_tier_group
     define can_list_users: supervisory_tier_group
-    # User creation is allowed by admin_tier only
-    define can_create_users: admin_tier
+    # Only platform_admin can create users — admin_tier (OneRoster roles) cannot,
+    # ensuring create-user capability is never granted to externally-rostered users.
+    define can_create_users: platform_admin
 
 # ────────────────────────────────────────────────────────────────────────────────
 # administration — an assessment administration assigned to orgs, classes,
@@ -315,6 +325,7 @@ type administration
     define site_administrator: site_administrator from assigned_district or site_administrator from assigned_school or site_administrator from assigned_class or site_administrator from assigned_group
     define district_administrator: district_administrator from assigned_district or district_administrator from assigned_school or district_administrator from assigned_class or district_administrator from assigned_group
     define administrator: administrator from assigned_district or administrator from assigned_school or administrator from assigned_class or administrator from assigned_group
+    define platform_admin: platform_admin from assigned_district or platform_admin from assigned_school or platform_admin from assigned_class or platform_admin from assigned_group
 
     define principal: principal from assigned_district or principal from assigned_school or principal from assigned_class or principal from assigned_group
     define counselor: counselor from assigned_district or counselor from assigned_school or counselor from assigned_class or counselor from assigned_group
@@ -331,7 +342,7 @@ type administration
     define school_admin_tier: principal or counselor
     define educator_tier: teacher or aide or proctor
     define caregiver_tier: guardian or parent or relative
-    define supervisory_tier_group: admin_tier or school_admin_tier or educator_tier or subtree_supervisory_tier_group from assigned_district or subtree_supervisory_tier_group from assigned_school or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
+    define supervisory_tier_group: admin_tier or platform_admin or school_admin_tier or educator_tier or subtree_supervisory_tier_group from assigned_district or subtree_supervisory_tier_group from assigned_school or supervisory_tier_group from assigned_class or supervisory_tier_group from assigned_group
 
     # Permissions
     define no_one: [user]
