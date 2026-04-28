@@ -438,14 +438,14 @@ export const SUBSCORE_FIELD_PATTERN = /^subscores\.[a-zA-Z][a-zA-Z0-9_]*$/;
  * Also accepts dynamic `subscores.<key>` fields via pattern matching. The
  * key is validated server-side against the task's registered subscore
  * columns; unknown keys return 400.
+ *
+ * `user.schoolName` is intentionally absent from the sort fields — it's
+ * filterable (against district scope) but not sortable on this endpoint,
+ * since the repository doesn't compile a school-name sort path. Static
+ * user-table columns (`lastName`, `firstName`, `username`, `grade`) are
+ * the only allowed user-side sort keys.
  */
-export const TASK_SUBSCORES_SORT_FIELDS = [
-  'user.lastName',
-  'user.firstName',
-  'user.username',
-  'user.grade',
-  'user.schoolName',
-] as const;
+export const TASK_SUBSCORES_SORT_FIELDS = ['user.lastName', 'user.firstName', 'user.username', 'user.grade'] as const;
 
 export type TaskSubscoresSortField = (typeof TASK_SUBSCORES_SORT_FIELDS)[number];
 

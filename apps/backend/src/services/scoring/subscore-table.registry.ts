@@ -34,8 +34,6 @@
  * config-only and do not require code changes.
  */
 
-import type { Column } from 'drizzle-orm';
-
 // --- Column type definitions (discriminated union) ---
 
 export interface TaskSubscoreColumnBase {
@@ -385,8 +383,3 @@ export function formatTaskSubscoreColumnValue(args: {
     }
   }
 }
-
-// --- Drizzle column reference (just used for type alias parity with the
-// rest of the codebase — kept so the registry doesn't need to import the
-// runtime Drizzle module) ---
-export type DrizzleColumn = Column;

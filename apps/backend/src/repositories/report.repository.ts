@@ -1955,10 +1955,31 @@ export class ReportRepository {
 
     const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
 
-    /** Build a runs+run_scores subquery exposing one (variantSet, name) score value per user. */
+    // Encode each variant's position in `taskVariantIds` (which the caller
+    // passes in lowest-orderIndex-first order) as a SQL expression. Used by
+    // the per-user dedup ORDER BY below so the score subquery returns the
+    // lowest-orderIndex variant's value per student, matching the
+    // multi-variant dedup rule applied at the service layer for display.
+    const variantPositionExpr = sql`array_position(ARRAY[${sql.join(
+      taskVariantIds.map((v) => sql`${v}::uuid`),
+      sql`, `,
+    )}]::uuid[], ${fdwRuns.taskVariantId})`;
+
+    /**
+     * Build a runs+run_scores subquery exposing one (variantSet, name) score
+     * value per user.
+     *
+     * Uses `SELECT DISTINCT ON (user_id) … ORDER BY user_id, variantPosition`
+     * so a student who has completed multiple variants of the task collapses
+     * to a single row carrying the lowest-orderIndex variant's score. Without
+     * the dedup, a student with two completed variants would appear twice in
+     * the page (the count query uses `countDistinct(users.id)` so the page
+     * size would silently shrink), and sort comparisons would be against a
+     * non-deterministic value.
+     */
     const buildScoreSub = (alias: string, scoreName: string) =>
       this.db
-        .select({
+        .selectDistinctOn([fdwRuns.userId], {
           userId: fdwRuns.userId,
           value: fdwRunScores.value,
         })
@@ -1975,6 +1996,7 @@ export class ReportRepository {
             eq(fdwRunScores.name, scoreName),
           ),
         )
+        .orderBy(fdwRuns.userId, variantPositionExpr)
         .as(alias);
 
     // Restrict the population to students with at least one completed
@@ -2632,6 +2654,13 @@ function gradeAsIntSql(gradeColumn: SQL | Column | PgColumn): SQL {
  * Emit SQL that strips non-numeric characters from a text score value and casts
  * to NUMERIC. Handles angle-bracket strings like `'>99'` (→ 99) and `'<1'` (→ 1).
  * Used for percentile/rawScore/standardScore values stored as text in run_scores.
+ *
+ * Note for sort/filter call sites: angle-bracket values lose their `>` / `<`
+ * before comparison, so a stored value of `">99"` evaluates as `99` and a
+ * filter like `subscores.cvc:gte:80` against `">99"` is `99 >= 80 = true`.
+ * This is consistent with how the dashboard renders these values
+ * (`formatTaskSubscoreColumnValue` preserves the angle-bracket form for
+ * display), but means filters compare against the bare numeric portion.
  */
 function numericValueSql(valueExpr: SQL | Column): SQL {
   return sql`CAST(NULLIF(REGEXP_REPLACE(${valueExpr}, '[^0-9.-]', '', 'g'), '') AS NUMERIC)`;
