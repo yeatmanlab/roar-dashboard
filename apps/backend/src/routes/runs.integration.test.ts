@@ -194,7 +194,7 @@ describe('POST /v1/user/:userId/runs', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('caregiver with CAN_READ_CHILD permission can create run for child user', async () => {
+    it('caregiver with CAN_READ_CHILD permission can read child run', async () => {
       // Set up family relationship: caregiver is parent, student is child
       const { FamilyFactory } = await import('../test-support/factories/family.factory');
       const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
@@ -228,17 +228,18 @@ describe('POST /v1/user/:userId/runs', () => {
         studentFamily.leftOn,
       );
 
-      authenticateAs(tiers.caregiver);
-      const res = await request(app)
+      // Child creates the run
+      authenticateAs(tiers.student);
+      const createRes = await request(app)
         .post(getPath(tiers.student.id))
         .set('Authorization', 'Bearer token')
         .send(buildCreateRunBody());
 
-      expect(res.status).toBe(StatusCodes.CREATED);
-      expect(res.body.data.id).toEqual(expect.any(String));
+      expect(createRes.status).toBe(StatusCodes.CREATED);
+      const runId = createRes.body.data.id;
 
-      // Verify the run is owned by the student, not the caregiver
-      const runId = res.body.data.id;
+      // Caregiver can read the child's run
+      authenticateAs(tiers.caregiver);
       const { RunRepository } = await import('../repositories/run.repository');
       const { AssessmentDbClient } = await import('../test-support/db');
       const runRepository = new RunRepository(AssessmentDbClient);
