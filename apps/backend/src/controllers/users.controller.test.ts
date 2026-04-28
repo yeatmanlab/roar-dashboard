@@ -12,7 +12,15 @@ vi.mock('../services/user', () => ({
   UserService: vi.fn(),
 }));
 
+// Mock the ReportService module — only `getGuardianStudentReport` is
+// exercised here; the other methods are stubbed so the returned shape
+// satisfies the closure's structural type.
+vi.mock('../services/report/report.service', () => ({
+  ReportService: vi.fn(),
+}));
+
 import { UserService } from '../services/user';
+import { ReportService } from '../services/report/report.service';
 
 /**
  * Type-safe assertion helper for success responses.
@@ -40,6 +48,7 @@ describe('UsersController', () => {
   const mockGetById = vi.fn();
   const mockUpdate = vi.fn();
   const mockRecordUserAgreement = vi.fn();
+  const mockGetGuardianStudentReport = vi.fn();
   const mockAuthContext = AuthContextFactory.build({ userId: 'user-123', isSuperAdmin: false });
 
   beforeEach(() => {
@@ -52,6 +61,17 @@ describe('UsersController', () => {
       update: mockUpdate,
       recordUserAgreement: mockRecordUserAgreement,
     } as MockedUserService);
+
+    // Setup the mock report service (only getGuardianStudentReport is
+    // controlled per-test; others are non-null stubs to satisfy typing).
+    vi.mocked(ReportService).mockReturnValue({
+      listProgressStudents: vi.fn(),
+      getProgressOverview: vi.fn(),
+      getScoreOverview: vi.fn(),
+      listStudentScores: vi.fn(),
+      getIndividualStudentReport: vi.fn(),
+      getGuardianStudentReport: mockGetGuardianStudentReport,
+    });
   });
 
   describe('get', () => {
@@ -672,6 +692,128 @@ describe('UsersController', () => {
       const data = expectCreatedResponse(result);
       expect(data.id).toBe('agreement-parent-child-123');
       expect(mockRecordUserAgreement).toHaveBeenCalledWith(parentAuthContext, childUserId, validBody);
+    });
+  });
+
+  describe('getGuardianStudentReport', () => {
+    const targetUserId = 'student-uuid-1';
+    const sampleResult = {
+      student: {
+        userId: targetUserId,
+        firstName: 'Jane',
+        lastName: 'Doe',
+        username: 'jdoe',
+        grade: '3',
+        schoolName: 'Lincoln Elementary',
+      },
+      administrations: [
+        {
+          administrationId: 'admin-1',
+          name: 'Fall 2024',
+          dateStart: '2024-09-01T00:00:00.000Z',
+          dateEnd: '2024-12-15T00:00:00.000Z',
+          tasks: [
+            {
+              taskId: 'task-1',
+              taskSlug: 'swr',
+              taskName: 'ROAR - Word',
+              orderIndex: 0,
+              scores: { rawScore: 520, percentile: 45, standardScore: 102 },
+              supportLevel: 'developingSkill' as const,
+              reliable: true,
+              optional: false,
+              completed: true,
+              engagementFlags: [],
+              tags: [
+                { label: 'Type', value: 'Required', severity: 'info' as const },
+                { label: 'Reliability', value: 'Reliable', severity: 'success' as const },
+              ],
+            },
+          ],
+        },
+      ],
+      longitudinalScores: {
+        swr: [
+          {
+            administrationId: 'admin-1',
+            administrationName: 'Fall 2024',
+            date: '2024-12-15T00:00:00.000Z',
+            scores: { rawScore: 520, percentile: 45, standardScore: 102 },
+          },
+        ],
+      },
+    };
+
+    it('returns 200 with the service result wrapped in the success envelope', async () => {
+      mockGetGuardianStudentReport.mockResolvedValue(sampleResult);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getGuardianStudentReport(mockAuthContext, targetUserId);
+
+      const data = expectOkResponse(result);
+      expect(data.student.userId).toBe(targetUserId);
+      expect(data.student.schoolName).toBe('Lincoln Elementary');
+      expect(data.administrations).toHaveLength(1);
+      expect(data.administrations[0]!.tasks[0]!.taskSlug).toBe('swr');
+      expect(data.longitudinalScores.swr).toHaveLength(1);
+
+      expect(mockGetGuardianStudentReport).toHaveBeenCalledWith(mockAuthContext, targetUserId);
+    });
+
+    it('maps a NOT_FOUND ApiError to a 404 response', async () => {
+      mockGetGuardianStudentReport.mockRejectedValue(
+        new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getGuardianStudentReport(mockAuthContext, targetUserId);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.NOT_FOUND);
+      expect(errorBody.message).toBe(ApiErrorMessage.NOT_FOUND);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('maps a FORBIDDEN ApiError to a 403 response', async () => {
+      mockGetGuardianStudentReport.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getGuardianStudentReport(mockAuthContext, targetUserId);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('maps an INTERNAL_SERVER_ERROR ApiError to a 500 response', async () => {
+      mockGetGuardianStudentReport.mockRejectedValue(
+        new ApiError('Failed to retrieve guardian student report', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.getGuardianStudentReport(mockAuthContext, targetUserId);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+    });
+
+    it('re-throws non-ApiError exceptions so the global handler can take them', async () => {
+      mockGetGuardianStudentReport.mockRejectedValue(new Error('connection reset'));
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await expect(Controller.getGuardianStudentReport(mockAuthContext, targetUserId)).rejects.toThrow(
+        'connection reset',
+      );
     });
   });
 });

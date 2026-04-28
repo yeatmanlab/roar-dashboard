@@ -7,6 +7,7 @@ import {
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
+import { GuardianStudentReportContract } from './reports/scores/index';
 
 const c = initContract();
 
@@ -96,6 +97,8 @@ export const UsersContract = c.router(
         'Returns 409 if the user has already consented to the given agreement version. ' +
         'Returns 500 if an internal server error occurs.',
     },
+    // Nest guardian / longitudinal score report sub-router under /users
+    scoreReports: GuardianStudentReportContract,
   },
   { pathPrefix: '/users' },
 );

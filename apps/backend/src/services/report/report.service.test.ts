@@ -3332,4 +3332,375 @@ describe('ReportService', () => {
       expect(swrTask.engagementFlags).toEqual(['guess', 'inattentive']);
     });
   });
+
+  describe('getGuardianStudentReport', () => {
+    const targetUserId = 'student-guardian-1';
+    const guardianAuth = { userId: 'guardian-user-id', isSuperAdmin: false };
+    const teacherAuthLocal = { userId: 'teacher-user-id', isSuperAdmin: false };
+    const studentSelfAuth = { userId: targetUserId, isSuperAdmin: false };
+    const supervisedAuth = { userId: 'supervised-user-id', isSuperAdmin: false };
+
+    const ADMIN_OLDER = {
+      id: 'admin-old',
+      name: 'Fall 2024 Assessment',
+      dateStart: new Date('2024-09-01T00:00:00Z'),
+      dateEnd: new Date('2024-12-15T00:00:00Z'),
+    };
+    const ADMIN_NEWER = {
+      id: 'admin-new',
+      name: 'Spring 2025 Assessment',
+      dateStart: new Date('2025-02-01T00:00:00Z'),
+      dateEnd: new Date('2025-04-15T00:00:00Z'),
+    };
+
+    function setupGuardianDefaults(opts?: {
+      user?: ReturnType<typeof UserFactory.build> | null;
+      adminMetas?: (typeof ADMIN_OLDER)[];
+      schoolName?: string | null;
+      taskMetadataByAdmin?: Map<string, ReportTaskMeta[]>;
+    }) {
+      const adminMetas = opts?.adminMetas ?? [];
+      mockUserRepository.getById.mockResolvedValue(
+        opts?.user === null
+          ? null
+          : (opts?.user ??
+              UserFactory.build({
+                id: targetUserId,
+                nameFirst: 'Jane',
+                nameLast: 'Doe',
+                username: 'jdoe',
+                grade: '3',
+                rosteringEnded: null,
+              })),
+      );
+      mockReportRepository.verifyGuardianStudentLink.mockResolvedValue(false);
+      mockReportRepository.verifyUserOrgOverlap.mockResolvedValue(false);
+      mockReportRepository.getStudentAdministrations.mockResolvedValue(adminMetas);
+      mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(
+        new Map(
+          opts?.schoolName === undefined
+            ? [[targetUserId, 'Lincoln Elementary']]
+            : opts.schoolName === null
+              ? []
+              : [[targetUserId, opts.schoolName]],
+        ),
+      );
+      // Per-admin task metadata: default to the standard 4 tasks for each admin
+      mockReportRepository.getTaskMetadata.mockImplementation(async (adminId: string) => {
+        const map = opts?.taskMetadataByAdmin;
+        if (map && map.has(adminId)) return map.get(adminId)!;
+        return testTaskMetas;
+      });
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([]);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+    }
+
+    // --- Authorization ---
+
+    it('returns 404 when target student does not exist', async () => {
+      setupGuardianDefaults({ user: null });
+
+      const service = createService();
+      await expect(service.getGuardianStudentReport(guardianAuth, targetUserId)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('returns 404 when target student has rosteringEnded', async () => {
+      setupGuardianDefaults({
+        user: UserFactory.build({
+          id: targetUserId,
+          rosteringEnded: new Date('2025-01-01'),
+        }),
+      });
+
+      const service = createService();
+      await expect(service.getGuardianStudentReport(guardianAuth, targetUserId)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+      // Auth checks should not have been reached after the 404
+      expect(mockReportRepository.verifyGuardianStudentLink).not.toHaveBeenCalled();
+      expect(mockReportRepository.verifyUserOrgOverlap).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when a student attempts to view their own report', async () => {
+      setupGuardianDefaults();
+
+      const service = createService();
+      await expect(service.getGuardianStudentReport(studentSelfAuth, targetUserId)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('returns 403 when caller is neither a linked guardian nor a supervisory role', async () => {
+      setupGuardianDefaults();
+      mockReportRepository.verifyGuardianStudentLink.mockResolvedValue(false);
+      // Supervisory roles list is non-empty (Reports.Score.READ allows several);
+      // it's the org-overlap check that fails for this caller.
+      mockReportRepository.verifyUserOrgOverlap.mockResolvedValue(false);
+
+      const service = createService();
+      await expect(service.getGuardianStudentReport(supervisedAuth, targetUserId)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+    });
+
+    it('returns 200 when caller is a linked guardian (no overlap check needed)', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+      mockReportRepository.verifyGuardianStudentLink.mockResolvedValue(true);
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(guardianAuth, targetUserId);
+
+      expect(result.student.userId).toBe(targetUserId);
+      expect(mockReportRepository.verifyGuardianStudentLink).toHaveBeenCalledWith(guardianAuth.userId, targetUserId);
+      expect(mockReportRepository.verifyUserOrgOverlap).not.toHaveBeenCalled();
+    });
+
+    it('returns 200 when caller is a supervisory role with org overlap', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+      mockReportRepository.verifyGuardianStudentLink.mockResolvedValue(false);
+      mockReportRepository.verifyUserOrgOverlap.mockResolvedValue(true);
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(teacherAuthLocal, targetUserId);
+
+      expect(result.student.userId).toBe(targetUserId);
+      expect(mockReportRepository.verifyUserOrgOverlap).toHaveBeenCalledWith(
+        teacherAuthLocal.userId,
+        targetUserId,
+        expect.any(Array),
+      );
+    });
+
+    it('super admin bypasses both guardian and org-overlap checks', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+
+      const service = createService();
+      await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(mockReportRepository.verifyGuardianStudentLink).not.toHaveBeenCalled();
+      expect(mockReportRepository.verifyUserOrgOverlap).not.toHaveBeenCalled();
+    });
+
+    it('checks guardian link before org overlap', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+      mockReportRepository.verifyGuardianStudentLink.mockResolvedValue(true);
+      mockReportRepository.verifyUserOrgOverlap.mockResolvedValue(true); // would pass, but should be skipped
+
+      const service = createService();
+      await service.getGuardianStudentReport(guardianAuth, targetUserId);
+
+      expect(mockReportRepository.verifyGuardianStudentLink).toHaveBeenCalledOnce();
+      expect(mockReportRepository.verifyUserOrgOverlap).not.toHaveBeenCalled();
+    });
+
+    // --- Empty / shape ---
+
+    it('returns an empty payload when the student has no administrations', async () => {
+      setupGuardianDefaults({ adminMetas: [] });
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(result.student.userId).toBe(targetUserId);
+      expect(result.student.firstName).toBe('Jane');
+      expect(result.student.schoolName).toBe('Lincoln Elementary');
+      expect(result.administrations).toEqual([]);
+      expect(result.longitudinalScores).toEqual({});
+      // No per-admin task fetch should have happened
+      expect(mockReportRepository.getTaskMetadata).not.toHaveBeenCalled();
+    });
+
+    it('returns null schoolName when no school is found', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER], schoolName: null });
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(result.student.schoolName).toBeNull();
+    });
+
+    it('emits administrations in the order returned by the repository', async () => {
+      // Repository contract is "ascending by dateStart"; we trust that ordering
+      // and don't re-sort. Verify the service preserves the order.
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER, ADMIN_NEWER] });
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(result.administrations).toHaveLength(2);
+      expect(result.administrations[0]!.administrationId).toBe('admin-old');
+      expect(result.administrations[0]!.dateStart).toBe(ADMIN_OLDER.dateStart.toISOString());
+      expect(result.administrations[1]!.administrationId).toBe('admin-new');
+    });
+
+    it('omits historicalScores from per-administration task entries', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '60' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-old',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2024-12-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      const swrEntry = result.administrations[0]!.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect('historicalScores' in swrEntry).toBe(false);
+    });
+
+    // --- Longitudinal scores ---
+
+    it('builds longitudinalScores keyed by task slug, ordered chronologically', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER, ADMIN_NEWER] });
+      // Score the swr task in both administrations: 40 in older, 60 in newer.
+      mockReportRepository.getCompletedRunScores.mockImplementation(async (adminId: string) => {
+        if (adminId === ADMIN_OLDER.id) {
+          return [{ userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '40' }];
+        }
+        return [{ userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '60' }];
+      });
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2024-12-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(result.longitudinalScores.swr).toBeDefined();
+      expect(result.longitudinalScores.swr).toHaveLength(2);
+      // Older admin first (chronological)
+      expect(result.longitudinalScores.swr![0]!.administrationId).toBe(ADMIN_OLDER.id);
+      expect(result.longitudinalScores.swr![0]!.scores.percentile).toBe(40);
+      expect(result.longitudinalScores.swr![1]!.administrationId).toBe(ADMIN_NEWER.id);
+      expect(result.longitudinalScores.swr![1]!.scores.percentile).toBe(60);
+      // Date anchored to admin dateEnd
+      expect(result.longitudinalScores.swr![0]!.date).toBe(ADMIN_OLDER.dateEnd.toISOString());
+    });
+
+    it('omits a task slug from longitudinalScores when the student never completed it', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+      // No scores returned ⇒ no completed runs anywhere.
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([]);
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      expect(result.longitudinalScores).toEqual({});
+      // But administrations still contains entries (unassessed) for visible tasks
+      expect(result.administrations[0]!.tasks.length).toBeGreaterThan(0);
+    });
+
+    // --- Multi-variant ---
+
+    it('per-administration: picks the first variant with completed scores (multi-variant dedup)', async () => {
+      // Two variants for swr in this admin; only the second has scores.
+      const altVariantId = 'tv-uuid-1111-1111-1111-aaaaaaaaaaaa';
+      const swrPrimary: ReportTaskMeta = {
+        taskId: TASK_ID_1,
+        taskVariantId: VARIANT_ID_1,
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+      const swrAlt: ReportTaskMeta = { ...swrPrimary, taskVariantId: altVariantId };
+      const taskMetadataByAdmin = new Map<string, ReportTaskMeta[]>([[ADMIN_OLDER.id, [swrPrimary, swrAlt]]]);
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER], taskMetadataByAdmin });
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        // Primary variant (lowest orderIndex) has no completed score in this admin;
+        // include only the alt variant's score, which means the primary is skipped
+        // and the alt becomes the scored variant.
+        { userId: targetUserId, taskVariantId: altVariantId, scoreName: 'percentile', scoreValue: '55' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-alt',
+          taskVariantId: altVariantId,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2024-12-10'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      const swrEntry = result.administrations[0]!.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrEntry.completed).toBe(true);
+      expect(swrEntry.scores.percentile).toBe(55);
+      expect(result.longitudinalScores.swr).toHaveLength(1);
+      expect(result.longitudinalScores.swr![0]!.scores.percentile).toBe(55);
+    });
+
+    // --- Tags & reliability ---
+
+    it('emits Required + Reliability tags for completed runs', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '70' },
+      ]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'run-1',
+          taskVariantId: VARIANT_ID_1,
+          reliable: false,
+          engagementFlags: [],
+          completedAt: new Date('2024-12-01'),
+        },
+      ]);
+
+      const service = createService();
+      const result = await service.getGuardianStudentReport(superAdminAuth, targetUserId);
+
+      const swrEntry = result.administrations[0]!.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrEntry.reliable).toBe(false);
+      const reliabilityTag = swrEntry.tags.find((t) => t.label === 'Reliability');
+      expect(reliabilityTag).toBeDefined();
+      expect(reliabilityTag!.value).toBe('Unreliable');
+    });
+
+    // --- Error handling ---
+
+    it('wraps unexpected repository errors in a 500', async () => {
+      setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
+      mockReportRepository.getStudentAdministrations.mockRejectedValue(new Error('connection reset'));
+
+      const service = createService();
+      await expect(service.getGuardianStudentReport(superAdminAuth, targetUserId)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('re-throws ApiError without wrapping', async () => {
+      setupGuardianDefaults({ user: null });
+
+      const service = createService();
+      await expect(service.getGuardianStudentReport(superAdminAuth, targetUserId)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+  });
 });

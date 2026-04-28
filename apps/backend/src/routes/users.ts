@@ -30,6 +30,14 @@ export function registerUserRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, params: { userId }, body }) =>
         UsersController.recordUserAgreement(user!, userId, body),
     },
+    scoreReports: {
+      getGuardianStudentReport: {
+        // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+        middleware: [AuthGuardMiddleware],
+        handler: async ({ req: { user }, params: { userId } }) =>
+          UsersController.getGuardianStudentReport(user!, userId),
+      },
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo
