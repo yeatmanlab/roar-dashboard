@@ -21,6 +21,7 @@ import type {
   ScoreOverviewInput,
   StudentScoresInput,
   IndividualStudentReportInput,
+  TaskSubscoresInput,
 } from './report.types';
 import type {
   ReportTaskMeta,
@@ -3700,6 +3701,534 @@ describe('ReportService', () => {
       await expect(service.getGuardianStudentReport(superAdminAuth, targetUserId)).rejects.toMatchObject({
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+  });
+
+  describe('listTaskSubscores', () => {
+    // Phonics task as the canonical exercise — registry-verified columns and
+    // numeric sort/filter capabilities. Uses TASK_ID_3 / VARIANT_ID_3 from the
+    // outer describe's testTaskMetas so we can reuse the same mock factories.
+    const PHONICS_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000003';
+    const PHONICS_VARIANT_ID = 'phonics-variant-1';
+    const PA_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000004';
+    const PA_VARIANT_ID = 'pa-variant-1';
+    const SWR_TASK_ID = 'aaaaaaaa-bbbb-cccc-dddd-000000000005';
+    const SWR_VARIANT_ID = 'swr-variant-1';
+
+    function phonicsTaskMeta(): ReportTaskMeta {
+      return {
+        taskId: PHONICS_TASK_ID,
+        taskVariantId: PHONICS_VARIANT_ID,
+        taskSlug: 'phonics',
+        taskName: 'ROAR - Phonics',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+    }
+    function paTaskMeta(): ReportTaskMeta {
+      return {
+        taskId: PA_TASK_ID,
+        taskVariantId: PA_VARIANT_ID,
+        taskSlug: 'pa',
+        taskName: 'ROAR - Phonological Awareness',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+    }
+    function swrTaskMeta(): ReportTaskMeta {
+      return {
+        taskId: SWR_TASK_ID,
+        taskVariantId: SWR_VARIANT_ID,
+        taskSlug: 'swr',
+        taskName: 'ROAR - Word',
+        orderIndex: 0,
+        conditionsAssignment: null,
+        conditionsRequirements: null,
+      };
+    }
+
+    function defaultQuery(overrides?: Partial<TaskSubscoresInput>): TaskSubscoresInput {
+      return {
+        scopeType: 'district',
+        scopeId: 'district-uuid-1',
+        page: 1,
+        perPage: 25,
+        sortBy: 'user.lastName',
+        sortOrder: 'asc',
+        filter: [],
+        ...overrides,
+      };
+    }
+
+    function setupRepoDefaults(opts?: { taskMeta?: ReportTaskMeta; pageItems?: any[]; totalItems?: number }) {
+      mockReportRepository.getTaskMetadata.mockResolvedValue([opts?.taskMeta ?? phonicsTaskMeta()]);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockReportRepository.getTaskSubscoreStudents.mockResolvedValue({
+        items: opts?.pageItems ?? [],
+        totalItems: opts?.totalItems ?? 0,
+      });
+      mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(new Map());
+    }
+
+    // --- Authorization ---
+
+    it('returns 404 when administration does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(teacherAuth, testAdministrationId, PHONICS_TASK_ID, defaultQuery()),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('returns 403 when FGA denies can_read_scores at administration level', async () => {
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(teacherAuth, testAdministrationId, PHONICS_TASK_ID, defaultQuery()),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.FORBIDDEN });
+    });
+
+    it('returns 400 when scope is not assigned to administration', async () => {
+      mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(false);
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(teacherAuth, testAdministrationId, PHONICS_TASK_ID, defaultQuery()),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    // --- 404 / 400 paths specific to task subscores ---
+
+    it('returns 404 when the task is not part of the administration', async () => {
+      setupRepoDefaults({ taskMeta: paTaskMeta() }); // admin has PA, not phonics
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(superAdminAuth, testAdministrationId, PHONICS_TASK_ID, defaultQuery()),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('returns 400 for tasks without a registered subscore schema (e.g., SWR)', async () => {
+      setupRepoDefaults({ taskMeta: swrTaskMeta() });
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(superAdminAuth, testAdministrationId, SWR_TASK_ID, defaultQuery()),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for an unknown subscores.<key> in sortBy', async () => {
+      setupRepoDefaults();
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PHONICS_TASK_ID,
+          defaultQuery({ sortBy: 'subscores.notARealKey' }),
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 for an unknown subscores.<key> in filter', async () => {
+      setupRepoDefaults();
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PHONICS_TASK_ID,
+          defaultQuery({
+            filter: [{ field: 'subscores.notARealKey', operator: 'gte' as const, value: '50' }],
+          }),
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 when filtering on a column with no numeric form', async () => {
+      // PA's `skillsToWorkOn` is a computed column (kind: 'paSkillsToWorkOn')
+      // — there is no numeric run_scores.name to filter against.
+      setupRepoDefaults({ taskMeta: paTaskMeta() });
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PA_TASK_ID,
+          defaultQuery({
+            filter: [{ field: 'subscores.skillsToWorkOn', operator: 'gte' as const, value: '50' }],
+          }),
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 when a non-numeric operator is used on a subscore filter', async () => {
+      setupRepoDefaults();
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PHONICS_TASK_ID,
+          defaultQuery({
+            filter: [{ field: 'subscores.cvc', operator: 'contains' as const, value: '50' }],
+          }),
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 400 when subscore filter value is not numeric', async () => {
+      setupRepoDefaults();
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(
+          superAdminAuth,
+          testAdministrationId,
+          PHONICS_TASK_ID,
+          defaultQuery({
+            filter: [{ field: 'subscores.cvc', operator: 'gte' as const, value: 'not-a-number' }],
+          }),
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    // --- Response shape: column metadata ---
+
+    it('returns the registered phonics columns in the expected order', async () => {
+      setupRepoDefaults();
+
+      const service = createService();
+      const result = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery(),
+      );
+
+      const keys = result.subscoreColumns.map((c) => c.key);
+      expect(keys).toEqual([
+        'cvc',
+        'digraph',
+        'initialBlend',
+        'tripleBlend',
+        'finalBlend',
+        'rControlled',
+        'rCluster',
+        'silentE',
+        'vowelTeam',
+        'totalPercentCorrect',
+      ]);
+    });
+
+    it('returns the registered PA columns in the expected order', async () => {
+      setupRepoDefaults({ taskMeta: paTaskMeta() });
+
+      const service = createService();
+      const result = await service.listTaskSubscores(superAdminAuth, testAdministrationId, PA_TASK_ID, defaultQuery());
+
+      const keys = result.subscoreColumns.map((c) => c.key);
+      expect(keys).toEqual(['firstSound', 'lastSound', 'deletion', 'total', 'skillsToWorkOn']);
+    });
+
+    // --- Per-row formatting ---
+
+    it('formats phonics rows with itemLevel "X/Y" strings + numeric totalPercentCorrect', async () => {
+      setupRepoDefaults({
+        pageItems: [
+          {
+            userId: 'student-1',
+            assessmentPid: 'pid-1',
+            username: 'jdoe',
+            email: 'jdoe@school.edu',
+            nameFirst: 'Jane',
+            nameLast: 'Doe',
+            grade: '3',
+            scores: new Map([
+              [
+                PHONICS_VARIANT_ID,
+                new Map([
+                  ['cvcCorrect', '15'],
+                  ['cvcAttempted', '19'],
+                  ['cvcPercentCorrect', '78.9'],
+                  ['totalPercentCorrect', '78.5'],
+                ]),
+              ],
+            ]),
+          },
+        ],
+        totalItems: 1,
+      });
+
+      const service = createService();
+      const result = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery(),
+      );
+
+      expect(result.items).toHaveLength(1);
+      const row = result.items[0]!;
+      expect(row.subscores.cvc).toBe('15/19');
+      expect(row.subscores.totalPercentCorrect).toBe(79); // rounded
+      // Columns the row didn't have data for collapse to null.
+      expect(row.subscores.digraph).toBeNull();
+    });
+
+    it('emits PA skillsToWorkOn as a comma-separated list when subscores fall below threshold', async () => {
+      setupRepoDefaults({
+        taskMeta: paTaskMeta(),
+        pageItems: [
+          {
+            userId: 'student-1',
+            assessmentPid: null,
+            username: 'jdoe',
+            email: null,
+            nameFirst: 'Jane',
+            nameLast: 'Doe',
+            grade: '1',
+            scores: new Map([
+              [
+                PA_VARIANT_ID,
+                new Map([
+                  ['fsmCorrect', '15'],
+                  ['fsmAttempted', '19'],
+                  ['fsmPercentCorrect', '78.9'],
+                  ['lsmCorrect', '18'],
+                  ['lsmAttempted', '19'],
+                  ['lsmPercentCorrect', '94.7'],
+                  ['delCorrect', '12'],
+                  ['delAttempted', '19'],
+                  ['delPercentCorrect', '63.2'],
+                ]),
+              ],
+            ]),
+          },
+        ],
+        totalItems: 1,
+      });
+
+      const service = createService();
+      const result = await service.listTaskSubscores(superAdminAuth, testAdministrationId, PA_TASK_ID, defaultQuery());
+
+      const row = result.items[0]!;
+      expect(row.subscores.firstSound).toBe('15/19');
+      expect(row.subscores.lastSound).toBe('18/19');
+      expect(row.subscores.deletion).toBe('12/19');
+      // FSM is exactly at threshold (78.9 >= 78.9 ⇒ NOT in skills list — but
+      // the helper treats >= threshold as proficient). DEL is below.
+      expect(typeof row.subscores.skillsToWorkOn).toBe('string');
+      expect(row.subscores.skillsToWorkOn as string).toMatch(/DEL/);
+    });
+
+    // --- Sort + filter compilation forwarded to the repository ---
+
+    it('forwards subscores.<key> sort to the repository as a numeric scoreName', async () => {
+      setupRepoDefaults();
+
+      const service = createService();
+      await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery({ sortBy: 'subscores.cvc', sortOrder: 'desc' }),
+      );
+
+      expect(mockReportRepository.getTaskSubscoreStudents).toHaveBeenCalledWith(
+        testAdministrationId,
+        expect.objectContaining({ scopeType: 'district' }),
+        [PHONICS_VARIANT_ID],
+        expect.any(Object),
+        undefined,
+        { scoreName: 'cvcPercentCorrect' },
+        [],
+      );
+    });
+
+    it('forwards subscores.<key> filter to the repository as a numeric filter', async () => {
+      setupRepoDefaults();
+
+      const service = createService();
+      await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery({
+          filter: [{ field: 'subscores.cvc', operator: 'gte' as const, value: '80' }],
+        }),
+      );
+
+      expect(mockReportRepository.getTaskSubscoreStudents).toHaveBeenCalledWith(
+        testAdministrationId,
+        expect.any(Object),
+        [PHONICS_VARIANT_ID],
+        expect.any(Object),
+        undefined,
+        null,
+        [{ scoreName: 'cvcPercentCorrect', operator: 'gte', value: 80 }],
+      );
+    });
+
+    // --- District scope school name resolution ---
+
+    it('attaches schoolName for district scope (and not otherwise)', async () => {
+      setupRepoDefaults({
+        pageItems: [
+          {
+            userId: 'student-1',
+            assessmentPid: null,
+            username: 'jdoe',
+            email: null,
+            nameFirst: 'Jane',
+            nameLast: 'Doe',
+            grade: '3',
+            scores: new Map(),
+          },
+        ],
+        totalItems: 1,
+      });
+      mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(new Map([['student-1', 'Lincoln Elementary']]));
+
+      const service = createService();
+      const districtResult = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery({ scopeType: 'district' }),
+      );
+      expect(districtResult.items[0]!.user.schoolName).toBe('Lincoln Elementary');
+
+      // School scope ⇒ schoolName must be omitted from the row entirely.
+      const schoolResult = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery({ scopeType: 'school' }),
+      );
+      expect('schoolName' in schoolResult.items[0]!.user).toBe(false);
+    });
+
+    // --- Multi-variant dedup ---
+
+    it('picks the lowest-orderIndex variant the student has scores for', async () => {
+      const altVariantId = 'phonics-variant-2';
+      mockReportRepository.getTaskMetadata.mockResolvedValue([
+        // Out-of-order on purpose to verify the service sorts before picking.
+        { ...phonicsTaskMeta(), taskVariantId: altVariantId, orderIndex: 1 },
+        phonicsTaskMeta(),
+      ]);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockReportRepository.getTaskSubscoreStudents.mockResolvedValue({
+        items: [
+          {
+            userId: 'student-1',
+            assessmentPid: null,
+            username: null,
+            email: null,
+            nameFirst: 'Jane',
+            nameLast: 'Doe',
+            grade: '3',
+            scores: new Map([
+              // Only the alt variant has data — the primary's map is empty.
+              [PHONICS_VARIANT_ID, new Map()],
+              [
+                altVariantId,
+                new Map([
+                  ['cvcCorrect', '12'],
+                  ['cvcAttempted', '19'],
+                ]),
+              ],
+            ]),
+          },
+        ],
+        totalItems: 1,
+      });
+      mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(new Map());
+
+      const service = createService();
+      const result = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery({ scopeType: 'school' }),
+      );
+
+      // The primary (orderIndex 0) variant has no scores; the service falls
+      // through to the alt variant, so the row reports the alt's data.
+      const row = result.items[0]!;
+      expect(row.subscores.cvc).toBe('12/19');
+    });
+
+    // --- Pagination + total ---
+
+    it('returns the repository totalItems count', async () => {
+      setupRepoDefaults({ pageItems: [], totalItems: 73 });
+
+      const service = createService();
+      const result = await service.listTaskSubscores(
+        superAdminAuth,
+        testAdministrationId,
+        PHONICS_TASK_ID,
+        defaultQuery(),
+      );
+      expect(result.totalItems).toBe(73);
+    });
+
+    // --- Error handling ---
+
+    it('wraps unexpected repository errors in a 500', async () => {
+      mockReportRepository.getTaskMetadata.mockResolvedValue([phonicsTaskMeta()]);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+      mockReportRepository.getTaskSubscoreStudents.mockRejectedValue(new Error('connection reset'));
+
+      const service = createService();
+      await expect(
+        service.listTaskSubscores(superAdminAuth, testAdministrationId, PHONICS_TASK_ID, defaultQuery()),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
     });
   });
