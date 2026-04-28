@@ -5,8 +5,10 @@ import type {
   AdministrationStatus,
   AdministrationTaskVariantSortFieldType,
   AdministrationAgreementSortFieldType,
+  TreeEmbedOptionType,
+  TreeParentEntityType,
 } from '@roar-dashboard/api-contract';
-import { AdministrationEmbedOption } from '@roar-dashboard/api-contract';
+import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
@@ -18,14 +20,18 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import type {
+  AccessibleIds,
   AdministrationAssignees,
   AdministrationQueryOptions,
-  TaskVariantWithAssignment,
   AgreementWithVersion,
+  TaskVariantWithAssignment,
+  TreeNode,
 } from '../../repositories/administration.repository';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
+import { ReportRepository } from '../../repositories/report.repository';
+import type { ReportScope } from '../../repositories/report.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { RunRepository } from '../../repositories/run.repository';
@@ -77,6 +83,29 @@ export interface ListAgreementsOptions {
 }
 
 /**
+ * Options for the tree endpoint.
+ */
+export interface GetTreeOptions {
+  page: number;
+  perPage: number;
+  parentEntityType?: TreeParentEntityType;
+  parentEntityId?: string;
+  embed?: TreeEmbedOptionType[];
+}
+
+/**
+ * Per-node stats returned when `?embed=stats` is requested on the tree endpoint.
+ */
+export interface TreeNodeStats {
+  assignment: {
+    studentsWithRequiredTasks: number;
+    studentsAssigned: number;
+    studentsStarted: number;
+    studentsCompleted: number;
+  };
+}
+
+/**
  * AdministrationService
  *
  * Provides administration-related business logic operations.
@@ -88,6 +117,7 @@ export interface ListAgreementsOptions {
 export function AdministrationService({
   administrationRepository = new AdministrationRepository(),
   administrationTaskVariantRepository = new AdministrationTaskVariantRepository(),
+  reportRepository = new ReportRepository(),
   runRepository = new RunRepository(),
   userRepository = new UserRepository(),
   taskService = TaskService(),
@@ -95,6 +125,7 @@ export function AdministrationService({
 }: {
   administrationRepository?: AdministrationRepository;
   administrationTaskVariantRepository?: AdministrationTaskVariantRepository;
+  reportRepository?: ReportRepository;
   runRepository?: RunRepository;
   userRepository?: UserRepository;
   taskService?: ReturnType<typeof TaskService>;
@@ -734,6 +765,183 @@ export function AdministrationService({
     }
   }
 
+  /**
+   * Get one level of the organization tree for an administration.
+   *
+   * Returns a paginated list of entities at one level of the hierarchy.
+   * When no parent params are provided, returns all direct assignees of
+   * the administration (districts, schools, classes, and groups).
+   * Districts expand to child schools, schools to child classes.
+   * Classes and groups are leaf nodes.
+   *
+   * Authorization behavior:
+   * - Super admin: sees all entities assigned to the administration
+   * - Other users: must have access to the administration, and results are
+   *   scoped to entities the user can see via FGA
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration ID
+   * @param options - Query options (pagination, parent, embed)
+   * @returns Paginated tree nodes with optional stats
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   * @throws {ApiError} BAD_REQUEST if parentEntityId/parentEntityType provided without the other
+   * @throws {ApiError} NOT_FOUND if parent entity doesn't exist
+   */
+  async function getTree(
+    authContext: AuthContext,
+    administrationId: string,
+    options: GetTreeOptions,
+  ): Promise<PaginatedResult<TreeNode & { stats?: TreeNodeStats }>> {
+    const { userId, isSuperAdmin } = authContext;
+    const { page, perPage, parentEntityType, parentEntityId, embed } = options;
+
+    // Validate: parentEntityId and parentEntityType must be provided together
+    if (parentEntityId && !parentEntityType) {
+      throw new ApiError('parentEntityId requires parentEntityType', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, administrationId, parentEntityId },
+      });
+    }
+    if (parentEntityType && !parentEntityId) {
+      throw new ApiError('parentEntityType requires parentEntityId', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, administrationId, parentEntityType },
+      });
+    }
+
+    try {
+      // Verify administration exists and user has access (404 before 403)
+      await verifyAdministrationAccess(authContext, administrationId);
+
+      // Build FGA-scoped accessible IDs (undefined = no filter for super admins)
+      let accessibleIds: AccessibleIds | undefined;
+
+      if (!isSuperAdmin) {
+        // Fetch accessible entity IDs for each type the user can read
+        const [districtObjects, schoolObjects, classObjects, groupObjects] = await Promise.all([
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.DISTRICT).catch((err) => {
+            throw new ApiError('Failed to resolve district access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.DISTRICT },
+              cause: err,
+            });
+          }),
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.SCHOOL).catch((err) => {
+            throw new ApiError('Failed to resolve school access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.SCHOOL },
+              cause: err,
+            });
+          }),
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.CLASS).catch((err) => {
+            throw new ApiError('Failed to resolve class access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.CLASS },
+              cause: err,
+            });
+          }),
+          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.GROUP).catch((err) => {
+            throw new ApiError('Failed to resolve group access', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, fgaType: FgaType.GROUP },
+              cause: err,
+            });
+          }),
+        ]);
+
+        accessibleIds = {
+          districtIds: districtObjects.map(extractFgaObjectId),
+          schoolIds: schoolObjects.map(extractFgaObjectId),
+          classIds: classObjects.map(extractFgaObjectId),
+          groupIds: groupObjects.map(extractFgaObjectId),
+        };
+      }
+
+      // Fetch tree nodes from repository
+      const result = await administrationRepository.getTreeNodes(
+        administrationId,
+        parentEntityType,
+        parentEntityId,
+        { page, perPage },
+        accessibleIds,
+      );
+
+      // If no stats embed requested, return as-is
+      const embedOptions = embed ?? [];
+      if (!embedOptions.includes(TreeEmbedOption.STATS) || result.items.length === 0) {
+        return result;
+      }
+
+      // Resolve real assignment stats per node via bulk progress overview counts.
+      // 1. Fetch task metadata for the administration
+      const taskMetas = await reportRepository.getTaskMetadata(administrationId);
+
+      const zeroedStats: TreeNodeStats = {
+        assignment: {
+          studentsWithRequiredTasks: 0,
+          studentsAssigned: 0,
+          studentsStarted: 0,
+          studentsCompleted: 0,
+        },
+      };
+
+      if (taskMetas.length === 0) {
+        // No tasks configured — return zeroed stats
+        const itemsWithStats = result.items.map((node) => ({ ...node, stats: zeroedStats }));
+        return { items: itemsWithStats, totalItems: result.totalItems };
+      }
+
+      // 2. Build scopes from tree nodes (entityType maps directly to ScopeType)
+      const scopes: ReportScope[] = result.items.map((node) => ({
+        scopeType: node.entityType,
+        scopeId: node.id,
+      }));
+
+      // 3. Fetch bulk stats for all nodes in one query
+      const statsMap = await reportRepository.getProgressOverviewCountsBulk(administrationId, scopes, taskMetas);
+
+      // 4. Extract per-student assignment-level counts per node
+      const itemsWithStats = result.items.map((node) => {
+        const scopeResult = statsMap.get(node.id);
+        if (!scopeResult) {
+          return { ...node, stats: zeroedStats };
+        }
+
+        return {
+          ...node,
+          stats: {
+            assignment: {
+              studentsWithRequiredTasks: scopeResult.studentCounts.studentsWithRequiredTasks,
+              studentsAssigned: scopeResult.studentCounts.studentsAssigned,
+              studentsStarted: scopeResult.studentCounts.studentsStarted,
+              studentsCompleted: scopeResult.studentCounts.studentsCompleted,
+            },
+          },
+        };
+      });
+
+      return { items: itemsWithStats, totalItems: result.totalItems };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, administrationId, options } }, 'Failed to get administration tree');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     verifyAdministrationAccess,
     list,
@@ -742,5 +950,6 @@ export function AdministrationService({
     listTaskVariants,
     listAgreements,
     deleteById,
+    getTree,
   };
 }
