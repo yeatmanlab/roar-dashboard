@@ -55,6 +55,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-platform-admin
+    relation: platform_admin
+    object: school:school-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:school-principal
     relation: principal
     object: school:school-a
@@ -791,6 +799,7 @@ tests:
               - user:district-admin
               - user:district-platform-admin
               - user:district-teacher
+              - user:school-platform-admin
               - user:school-principal
               - user:principal-in-tree-a
               - user:school-counselor
@@ -813,6 +822,7 @@ tests:
             users:
               - user:district-admin
               - user:district-platform-admin
+              - user:school-platform-admin
               - user:school-principal
               - user:principal-in-tree-a
               - user:school-counselor
@@ -857,6 +867,35 @@ tests:
     check:
       - user: user:district-platform-admin
         object: district:district-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_users: false
+
+  - name: School-directly-rostered platform admin has full permissions at that school
+    check:
+      - user: user:school-platform-admin
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_read_scores: true
+          can_read_progress: true
+          can_list_classes: true
+          can_create_users: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: School-directly-rostered platform admin cannot access sibling school
+    check:
+      - user: user:school-platform-admin
+        object: school:school-b
         context:
           current_time: "2025-06-15T12:00:00Z"
         assertions:
