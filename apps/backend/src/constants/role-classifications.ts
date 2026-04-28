@@ -69,3 +69,17 @@ export const SUPERVISED_ROLES: UserRole[] = ['student', 'guardian', 'parent', 'r
  * that are in their children's organizations or classes
  */
 export const CARETAKER_ROLES: UserRole[] = ['guardian', 'parent', 'relative'];
+
+/**
+ * TODO (#1778): https://github.com/yeatmanlab/roar-project-management/issues/1778
+ *
+ * When the sync pipeline refactor lands, define an `EXTERNAL_PROVIDER_ASSIGNABLE_ROLES`
+ * constant here — an explicit allowlist of of roles that external roster providers
+ * (Clever, ClassLink, NYCPS) are permittedto write to `user_orgs`.
+ * `platform_admin` must be excluded from that list.
+ *
+ * Until then, protection is passive: external providers use the OneRoster role
+ * spec and do not know `platform_admin` exists, so they will not write it.
+ * A guard here ensures a future sync pipeline change cannot accidentally grant
+ * `platform_admin` to an externally-rostered user.
+ */

@@ -38,13 +38,15 @@ Administrations represent assessment sessions assigned to entities at any level.
 
 All roles come from the `user_role` database enum, derived into TypeScript via `pgEnumToConst()`.
 
-**All roles:** administrator, aide, counselor, district_administrator, guardian, parent, principal, proctor, relative, site_administrator, student, system_administrator, teacher.
+**All roles (14 total — 13 OneRoster + 1 ROAR-specific):** administrator, aide, counselor, district_administrator, guardian, parent, platform_admin, principal, proctor, relative, site_administrator, student, system_administrator, teacher.
+
+`platform_admin` is not part of the OneRoster standard. It is assigned only to users created via CSV upload or the dashboard user creation form, and grants `can_create_users` in addition to standard admin permissions. External providers (Clever, ClassLink, NYCPS) do not write this role.
 
 ### Supervisory vs. supervised
 
 Roles are classified in `apps/backend/src/constants/role-classifications.ts`:
 
-**Supervisory roles** (can see descendant entities): administrator, aide, counselor, district_administrator, principal, proctor, site_administrator, system_administrator, teacher.
+**Supervisory roles** (can see descendant entities): administrator, aide, counselor, district_administrator, platform_admin, principal, proctor, site_administrator, system_administrator, teacher. (`platform_admin` is ROAR-specific, not a OneRoster role.)
 
 **Supervised roles** (can only see ancestor entities): student, guardian, parent, relative.
 
