@@ -18,6 +18,8 @@ import type {
   ProgressStudentsQuery,
   ReportTaskMetadata,
   ScoreOverviewQuery,
+  StudentScoresQuery,
+  StudentScoreRow,
   TreeNodeStats,
 } from '@roar-dashboard/api-contract';
 import type { Administration } from '../db/schema';
@@ -504,6 +506,56 @@ export const AdministrationsController = {
         status: StatusCodes.OK as const,
         body: {
           data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List paginated per-student scores for an administration.
+   *
+   * Delegates to ReportService for authorization, score classification, and
+   * per-row dedup across multi-variant tasks. The service returns
+   * `ServiceStudentScoreRow` objects whose shape is structurally equivalent
+   * to the contract's `StudentScoreRow`, so the result is returned directly.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Pagination, sort, filter, and scope parameters
+   */
+  listStudentScores: async (authContext: AuthContext, administrationId: string, query: StudentScoresQuery) => {
+    try {
+      const result = await reportService.listStudentScores(authContext, administrationId, query);
+
+      // Service and contract types are structurally equivalent (same field
+      // names: tasks[], items[], totalItems). The cast is implicit via TS structural
+      // typing — see report.types.ts for the source of truth on each side.
+      const tasks: ReportTaskMetadata[] = result.tasks;
+      const items: StudentScoreRow[] = result.items;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            tasks,
+            items,
+            pagination: {
+              page: query.page,
+              perPage: query.perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / query.perPage),
+            },
+          },
         },
       };
     } catch (error) {
