@@ -98,22 +98,22 @@ define can_delete: no_one
 
 Each role is modeled as its own FGA relation — no tier mapping. Tuples use the role name directly from Postgres.
 
-| Role                     | FGA relation             | Tier           | Cascading                    |
-| ------------------------ | ------------------------ | -------------- | ---------------------------- |
-| `system_administrator`   | `system_administrator`   | siteAdmin      | Down + subtree (supervisory) |
-| `site_administrator`     | `site_administrator`     | siteAdmin      | Down + subtree               |
-| `district_administrator` | `district_administrator` | admin          | Down + subtree               |
-| `administrator`          | `administrator`          | admin          | Down + subtree               |
-| `platform_admin`         | `platform_admin`         | platformAdmin  | Down + subtree (supervisory) |
-| `principal`              | `principal`              | educator       | Down + subtree               |
-| `counselor`              | `counselor`              | educator       | Down + subtree               |
-| `teacher`                | `teacher`                | educator       | Down + subtree               |
-| `aide`                   | `aide`                   | educator       | Down + subtree               |
-| `proctor`                | `proctor`                | educator       | Down + subtree               |
-| `student`                | `student`                | student        | Up (supervised)              |
-| `guardian`               | `guardian`               | caregiver      | Up                           |
-| `parent`                 | `parent`                 | caregiver      | Up                           |
-| `relative`               | `relative`               | caregiver      | Up                           |
+| Role                     | FGA relation             | Tier          | Cascading                    |
+| ------------------------ | ------------------------ | ------------- | ---------------------------- |
+| `system_administrator`   | `system_administrator`   | siteAdmin     | Down + subtree (supervisory) |
+| `site_administrator`     | `site_administrator`     | siteAdmin     | Down + subtree               |
+| `district_administrator` | `district_administrator` | admin         | Down + subtree               |
+| `administrator`          | `administrator`          | admin         | Down + subtree               |
+| `platform_admin`         | `platform_admin`         | platformAdmin | Down + subtree (supervisory) |
+| `principal`              | `principal`              | educator      | Down + subtree               |
+| `counselor`              | `counselor`              | educator      | Down + subtree               |
+| `teacher`                | `teacher`                | educator      | Down + subtree               |
+| `aide`                   | `aide`                   | educator      | Down + subtree               |
+| `proctor`                | `proctor`                | educator      | Down + subtree               |
+| `student`                | `student`                | student       | Up (supervised)              |
+| `guardian`               | `guardian`               | caregiver     | Up                           |
+| `parent`                 | `parent`                 | caregiver     | Up                           |
+| `relative`               | `relative`               | caregiver     | Up                           |
 
 > **`platform_admin` is ROAR-specific** — not part of the OneRoster v1.1/v1.2 standard. Assigned only to users created via CSV upload or the dashboard user creation form. External rostering providers (Clever, ClassLink, NYCPS) do not know this role exists, so it is naturally overwritten when an org transitions to an external provider.
 
@@ -143,8 +143,7 @@ For `family` entities, no computed user tier is currently allowed to create user
 
 - **`can_create_users`**: Gated on `platform_admin` role for `district`, `school`, and `group` entities only. `admin_tier` (OneRoster roles) intentionally excluded — externally-rostered administrators cannot create users.
 - **`can_list_users` on family:** Gated on `parent` — only parents can list family members. Children cannot.
-- **Groups have the full role model:** `user_groups` has a `role` column like `user_orgs`, so groups define all 13 roles with `active_membership` conditions, not just flat `member`.
-- **Groups are standalone — no org hierarchy cascading:** Groups have no `parent_org` link, so org-level roles (e.g., district admin) do not cascade into groups. A user must be an explicit member of a group to see it. This is intentional — groups are independent of the org tree.
+- **Groups have the full role model:** `user_groups` has a `role` column like `user_orgs`, so groups define all 14 roles (13 OneRoster + 1 ROAR-specific) with `active_membership` conditions, not just flat `member`.
 
 ## Bidirectional hierarchy
 
