@@ -193,7 +193,8 @@ export default async function globalSetup() {
       ...process.env,
       // Use 'production' to avoid pino-pretty transport which crashes in bundled ESM
       // (thread-stream uses __dirname, unavailable in ES modules).
-      // The test server behavior is controlled by explicit setup steps, not NODE_ENV.
+      // Trade-off: logs are JSON only, less readable during debugging.
+      // For human-readable logs, rebuild locally: NODE_ENV=development npm run test -w packages/assessment-sdk
       NODE_ENV: 'production',
       PORT: BACKEND_PORT,
       TEST_FIXTURE_FILE: process.env.TEST_FIXTURE_FILE || '/tmp/roar-test-fixture.json',
@@ -269,9 +270,11 @@ export default async function globalSetup() {
 export async function teardown() {
   // @ts-expect-error globalThis doesn't have __BACKEND_PROCESS__ in type definitions
   const proc = globalThis.__BACKEND_PROCESS__ as ReturnType<typeof spawn> | undefined;
-  if (proc) {
-    proc.kill();
-    await new Promise<void>((resolve) => proc.on('close', resolve));
+  if (proc && !proc.killed) {
+    proc.kill('SIGTERM');
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 5000));
+    const close = new Promise<void>((resolve) => proc.on('close', resolve));
+    await Promise.race([timeout, close]);
     console.log('[SDK Integration Tests] Backend process terminated');
   }
 }
