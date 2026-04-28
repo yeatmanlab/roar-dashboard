@@ -2680,15 +2680,20 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
     });
 
-    it('principal at school A passes auth at school scope (and reaches the 400 path)', async () => {
+    it('principal at school A passes auth at school scope (lands the 404 task-not-in-admin path)', async () => {
+      // baseFixture only assigns task variants to administrationAssignedToDistrict;
+      // administrationAssignedToSchoolA has no task variants registered. The 404
+      // here proves auth passed (otherwise we'd see 403 first) and the service
+      // reached the "task not in admin" guard — adequate principal-tier auth
+      // coverage without touching the shared fixture.
       authenticateAs(baseFixture.schoolAPrincipal);
       const res = await request(app)
         .get(taskSubscoresPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.task.id))
         .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id, page: 1, perPage: 25 })
         .set('Authorization', 'Bearer token');
 
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
-      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
     it('returns 403 for an admin in a different district', async () => {
