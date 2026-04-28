@@ -1460,9 +1460,10 @@ export function ReportService({
       } else {
         // The contract enforces sortBy ∈ TASK_SUBSCORES_SORT_FIELDS, which no
         // longer includes `user.schoolName` — sortable user fields here are
-        // limited to the columns present in STUDENT_SCORES_SORT_COLUMNS.
+        // limited to the keys present in STUDENT_SCORES_SORT_COLUMNS, so the
+        // map lookup is guaranteed to resolve.
         const key = sortBy as Exclude<StudentScoresSortField, 'user.schoolName'>;
-        staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key] ?? users.nameLast;
+        staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key];
       }
 
       // 6. Validate + resolve filters. Subscore filters require numeric
