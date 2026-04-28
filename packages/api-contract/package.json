@@ -8,8 +8,7 @@
       "import": "./dist/index.mjs"
     },
     "./test-fixture.type": {
-      "types": "./dist/test-fixture.type.d.ts",
-      "import": "./dist/test-fixture.type.mjs"
+      "types": "./dist/test-fixture.type.d.ts"
     }
   },
   "module": "dist/index.mjs",
