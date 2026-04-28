@@ -231,3 +231,91 @@ export interface StudentScoresResult {
   items: ServiceStudentScoreRow[];
   totalItems: number;
 }
+
+/** Query input for getIndividualStudentReport. */
+export interface IndividualStudentReportInput {
+  scopeType: ScopeType;
+  scopeId: string;
+}
+
+/**
+ * Severity styling for a tag, mirroring PrimeVue's tag severity values.
+ * The service emits these as plain strings; the contract enum (TagSeverity)
+ * narrows them on the response side.
+ */
+export type ServiceTagSeverity = 'info' | 'success' | 'warn' | 'danger' | 'secondary' | 'contrast';
+
+/** A single tag in a per-task entry of the individual student report. */
+export interface ServiceTaskTag {
+  label: string;
+  value: string;
+  severity: ServiceTagSeverity;
+}
+
+/** Per-task scores object for the individual student report. */
+export interface ServiceTaskScores {
+  rawScore: number | null;
+  percentile: number | null;
+  standardScore: number | null;
+}
+
+/** A single subscore entry. */
+export interface ServiceSubscoreEntry {
+  correct: number | null;
+  attempted: number | null;
+  percentCorrect: number | null;
+}
+
+/** A historical score entry under a task. */
+export interface ServiceHistoricalScore {
+  administrationId: string;
+  administrationName: string;
+  date: string;
+  scores: ServiceTaskScores;
+}
+
+/** Per-task entry in the individual student report. */
+export interface ServiceIndividualStudentReportTask {
+  taskId: string;
+  taskSlug: string;
+  taskName: string;
+  orderIndex: number;
+  scores: ServiceTaskScores;
+  supportLevel: ServiceSupportLevelValue | null;
+  reliable: boolean | null;
+  optional: boolean;
+  completed: boolean;
+  engagementFlags: string[];
+  tags: ServiceTaskTag[];
+  /** Present only for tasks declaring a `subscores` block in their scoring config. */
+  subscores?: Record<string, ServiceSubscoreEntry>;
+  /** Present only for PA tasks. */
+  skillsToWorkOn?: string[];
+  historicalScores: ServiceHistoricalScore[];
+}
+
+/** Header-level student info. */
+export interface ServiceIndividualStudentReportStudent {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  grade: string | null;
+}
+
+/** Header-level administration metadata. */
+export interface ServiceIndividualStudentReportAdministration {
+  id: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string;
+}
+
+/** Return type for getIndividualStudentReport. */
+export interface IndividualStudentReportResult {
+  student: ServiceIndividualStudentReportStudent;
+  administration: ServiceIndividualStudentReportAdministration;
+  tasks: ServiceIndividualStudentReportTask[];
+  completedTaskCount: number;
+  totalTaskCount: number;
+}

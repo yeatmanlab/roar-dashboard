@@ -1,4 +1,4 @@
-import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray } from 'drizzle-orm';
+import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray, lte } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -10,6 +10,7 @@ import {
   orgs,
   classes,
   groups,
+  administrations,
   administrationOrgs,
   administrationClasses,
   administrationGroups,
@@ -241,6 +242,30 @@ export interface ResolvedScoringRules {
   percentileFieldNames: string[];
   rawScoreFieldNames: string[];
   standardScoreFieldNames: string[];
+}
+
+/**
+ * One historical run row for the individual-student-report endpoint.
+ *
+ * The repository returns one of these per (administration, taskVariant) the
+ * student has a completed, reporting-eligible run for — across all
+ * administrations whose `dateStart` is on or before a target date.
+ *
+ * The service layer joins these with the per-run score rows (returned
+ * separately by `getScoresForRunIds`) to assemble the per-task
+ * `historicalScores` arrays in the response.
+ */
+export interface HistoricalRunRow {
+  runId: string;
+  userId: string;
+  taskId: string;
+  taskVariantId: string;
+  administrationId: string;
+  administrationName: string;
+  administrationDateStart: Date;
+  completedAt: Date;
+  reliableRun: boolean | null;
+  engagementFlags: string[];
 }
 
 /**
@@ -1892,6 +1917,196 @@ export class ReportRepository {
     }));
 
     return { items, totalItems };
+  }
+
+  /**
+   * Verify that a student is in the requested scope as a STUDENT-role enrollment
+   * AND has not had their roster ended.
+   *
+   * Two checks combined:
+   * 1. The user's enrollment passes `buildStudentInScopeQuery` — they appear as
+   *    a student in the scope's org/class/group hierarchy and the underlying
+   *    org/class/group does not have `rosteringEnded` set.
+   * 2. The user record itself does not have `rosteringEnded` set.
+   *
+   * Returns `true` only when both pass. The service uses this to surface a 404
+   * for individual-student-report requests targeting a user not in scope (or
+   * whose own roster has ended), as required by the ticket.
+   */
+  async verifyStudentInScope(scope: ReportScope, userId: string): Promise<boolean> {
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+
+    const rows = await this.db
+      .select({ userId: users.id })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .where(and(eq(users.id, userId), isNull(users.rosteringEnded)))
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  /**
+   * Fetch historical run rows for one student across all administrations whose
+   * `dateStart` is on or before `currentAdminDateStart`, restricted to a list of
+   * task IDs (so callers don't pull in irrelevant runs from other tasks the
+   * student happened to complete in earlier administrations).
+   *
+   * Returns one row per (administration, taskVariant) with run-level metadata
+   * and the parent administration's name and start date — the service uses these
+   * to assemble per-task historical entries and label trend chart points.
+   *
+   * Score rows are NOT included; the service follows up with
+   * `getScoresForRunIds` keyed by the run IDs returned here. Splitting
+   * the two queries keeps the data shape predictable and lets the service
+   * decide which scores to surface per task.
+   *
+   * Filters: completed runs only, non-aborted, non-deleted, reporting-eligible.
+   * Includes the current administration too (because `<=`), which the service
+   * treats as the most-recent point on the trend line.
+   *
+   * @param userId - The student's user ID
+   * @param currentAdminDateStart - Inclusive upper bound on `administration.dateStart`
+   * @param taskIds - Restrict to these task IDs (typically the current admin's tasks)
+   * @returns One row per (administration, taskVariant) with run + admin metadata
+   */
+  async getHistoricalRunsForUser(
+    userId: string,
+    currentAdminDateStart: Date,
+    taskIds: string[],
+  ): Promise<HistoricalRunRow[]> {
+    if (taskIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        runId: fdwRuns.id,
+        userId: fdwRuns.userId,
+        taskId: fdwRuns.taskId,
+        taskVariantId: fdwRuns.taskVariantId,
+        administrationId: fdwRuns.administrationId,
+        administrationName: administrations.name,
+        administrationDateStart: administrations.dateStart,
+        completedAt: fdwRuns.completedAt,
+        reliableRun: fdwRuns.reliableRun,
+        engagementFlags: fdwRuns.engagementFlags,
+      })
+      .from(fdwRuns)
+      .innerJoin(administrations, eq(fdwRuns.administrationId, administrations.id))
+      .where(
+        and(
+          eq(fdwRuns.userId, userId),
+          inArray(fdwRuns.taskId, taskIds),
+          lte(administrations.dateStart, currentAdminDateStart),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          isNotNull(fdwRuns.completedAt),
+        ),
+      );
+
+    return rows.map((r) => ({
+      runId: r.runId,
+      userId: r.userId,
+      taskId: r.taskId,
+      taskVariantId: r.taskVariantId,
+      administrationId: r.administrationId,
+      administrationName: r.administrationName,
+      administrationDateStart: r.administrationDateStart,
+      completedAt: r.completedAt!,
+      reliableRun: r.reliableRun,
+      engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+    }));
+  }
+
+  /**
+   * Bulk fetch run-level metadata for one student's completed runs in one
+   * administration, restricted to a list of task variants.
+   *
+   * Returns the run id plus the fields the individual-student-report endpoint
+   * surfaces alongside scores: `reliable` (from `reliableRun`),
+   * `engagementFlags`, and `completedAt`. The companion `getCompletedRunScores`
+   * method returns the score values; together they let the service assemble
+   * the per-task entry without losing run-level signals.
+   *
+   * Multiple completed runs per (user, variant) are not deduplicated here —
+   * the service is responsible for picking one (typically the most recent).
+   * The same `useForReporting=true` invariant documented on
+   * `getCompletedRunScores` applies: the assessment side guarantees at most
+   * one such run per (user, variant) in practice.
+   *
+   * Filters mirror `getCompletedRunScores`: completed runs only
+   * (`completedAt IS NOT NULL`), non-aborted, non-deleted, reporting-eligible.
+   */
+  async getCompletedRunsForUser(
+    administrationId: string,
+    userId: string,
+    taskVariantIds: string[],
+  ): Promise<
+    Array<{
+      runId: string;
+      taskVariantId: string;
+      reliable: boolean | null;
+      engagementFlags: string[];
+      completedAt: Date;
+    }>
+  > {
+    if (taskVariantIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        runId: fdwRuns.id,
+        taskVariantId: fdwRuns.taskVariantId,
+        reliableRun: fdwRuns.reliableRun,
+        engagementFlags: fdwRuns.engagementFlags,
+        completedAt: fdwRuns.completedAt,
+      })
+      .from(fdwRuns)
+      .where(
+        and(
+          eq(fdwRuns.administrationId, administrationId),
+          eq(fdwRuns.userId, userId),
+          inArray(fdwRuns.taskVariantId, taskVariantIds),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          isNotNull(fdwRuns.completedAt),
+        ),
+      );
+
+    return rows.map((r) => ({
+      runId: r.runId,
+      taskVariantId: r.taskVariantId,
+      reliable: r.reliableRun,
+      engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+      completedAt: r.completedAt!,
+    }));
+  }
+
+  /**
+   * Bulk fetch all run_scores rows for the given run IDs.
+   *
+   * Companion to `getHistoricalRunsForUser` — the service uses this to attach
+   * scores to historical entries. Returns raw `(runId, scoreName, scoreValue)`
+   * triples; the service is responsible for resolving them via
+   * `resolveScoreFieldNames` against the run's task slug + scoring version.
+   *
+   * Splitting from the runs query (rather than a single JOIN) keeps the row
+   * count proportional to (runs × scoresPerRun) only when scores actually
+   * exist, and lets the service short-circuit when no historical runs exist.
+   */
+  async getScoresForRunIds(runIds: string[]): Promise<Array<{ runId: string; scoreName: string; scoreValue: string }>> {
+    if (runIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        runId: fdwRunScores.runId,
+        scoreName: fdwRunScores.name,
+        scoreValue: fdwRunScores.value,
+      })
+      .from(fdwRunScores)
+      .where(inArray(fdwRunScores.runId, runIds));
+
+    return rows;
   }
 }
 

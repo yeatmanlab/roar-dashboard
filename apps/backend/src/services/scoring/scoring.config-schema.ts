@@ -119,12 +119,48 @@ const ClassificationSchema = z.discriminatedUnion('type', [
   NoneClassificationSchema,
 ]);
 
+// --- Subscores ---
+
+/**
+ * Per-subscore field-name conventions for tasks that emit sub-skill breakdowns
+ * (PA: FSM/LSM/DEL; phonics: cvc/digraph/initial_blend/...).
+ *
+ * Each entry declares the `name` value used in `app_assessment_fdw.run_scores`
+ * for that subscore and the kind of data we expect:
+ *
+ * - `correctName` — the score row whose `value` holds the correct count.
+ * - `attemptedName` — the score row whose `value` holds the attempted count.
+ * - `percentCorrectName` — optional. When provided, the service uses this
+ *   pre-computed percent rather than re-deriving from correct/attempted.
+ *
+ * Names are matched case-sensitively against `run_scores.name`. The response
+ * key (e.g., `FSM`, `cvc`) is the map key used in this config — that's what
+ * the API surfaces in the per-task `subscores` object.
+ */
+const SubscoreFieldEntrySchema = z.object({
+  correctName: z.string(),
+  attemptedName: z.string(),
+  percentCorrectName: z.string().optional(),
+});
+
+/**
+ * Subscores config block. The top-level `key` is the response key (e.g., `FSM`,
+ * `cvc`) and the value declares the run_scores names that populate it.
+ */
+const SubscoresSchema = z.record(z.string(), SubscoreFieldEntrySchema);
+
 // --- Top-level scoring config ---
 
 export const ScoringConfigSchema = z.object({
   taskSlugs: z.array(z.string()).min(1),
   scoreFields: ScoreFieldsSchema,
   classification: ClassificationSchema,
+  /**
+   * Optional subscores declaration. Tasks without sub-skill breakdowns omit
+   * this block. The individual student report response only includes a
+   * `subscores` field on per-task entries when this block is present.
+   */
+  subscores: SubscoresSchema.optional(),
 });
 
 // --- Inferred types ---

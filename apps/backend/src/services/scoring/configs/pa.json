@@ -58,5 +58,22 @@
       { "minVersion": 0, "cutoffs": { "achieved": 50, "developing": 25 } }
     ],
     "rawScoreThresholds": [{ "minVersion": 0, "thresholds": { "above": 55, "some": 45 } }]
+  },
+  "subscores": {
+    "FSM": {
+      "correctName": "fsmCorrect",
+      "attemptedName": "fsmAttempted",
+      "percentCorrectName": "fsmPercentCorrect"
+    },
+    "LSM": {
+      "correctName": "lsmCorrect",
+      "attemptedName": "lsmAttempted",
+      "percentCorrectName": "lsmPercentCorrect"
+    },
+    "DEL": {
+      "correctName": "delCorrect",
+      "attemptedName": "delAttempted",
+      "percentCorrectName": "delPercentCorrect"
+    }
   }
 }
