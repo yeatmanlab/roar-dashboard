@@ -17,6 +17,7 @@ import type {
   ProgressStudent,
   ProgressStudentsQuery,
   ReportTaskMetadata,
+  ScoreOverviewQuery,
   TreeNodeStats,
 } from '@roar-dashboard/api-contract';
 import type { Administration } from '../db/schema';
@@ -460,6 +461,44 @@ export const AdministrationsController = {
   getProgressOverview: async (authContext: AuthContext, administrationId: string, query: ProgressOverviewQuery) => {
     try {
       const result = await reportService.getProgressOverview(authContext, administrationId, query);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get aggregated score overview for an administration.
+   *
+   * Delegates to ReportService for authorization and aggregation.
+   * The service's `ScoreOverviewResult` and the contract's `ScoreOverviewResponseSchema`
+   * are kept structurally equivalent (same field names and types: totalStudents,
+   * tasks[], computedAt) so the result can be returned directly without an explicit
+   * transform. Type compatibility is enforced at compile time via TypeScript's
+   * structural typing — see `report.types.ts` and the contract schema for the
+   * source of truth on each side.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scopeType, scopeId, optional filter)
+   */
+  getScoreOverview: async (authContext: AuthContext, administrationId: string, query: ScoreOverviewQuery) => {
+    try {
+      const result = await reportService.getScoreOverview(authContext, administrationId, query);
 
       return {
         status: StatusCodes.OK as const,

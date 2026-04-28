@@ -65,6 +65,14 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
           AdministrationsController.getProgressOverview(user!, id, query),
       },
     },
+    scoreReports: {
+      getOverview: {
+        // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+        middleware: [AuthGuardMiddleware],
+        handler: async ({ req: { user }, params: { id }, query }) =>
+          AdministrationsController.getScoreOverview(user!, id, query),
+      },
+    },
   });
 
   // @ts-expect-error - Express v4/v5 types mismatch in monorepo
