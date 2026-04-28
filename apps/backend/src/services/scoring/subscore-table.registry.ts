@@ -373,7 +373,7 @@ export function formatTaskSubscoreColumnValue(args: {
 
     case 'stringPassthrough': {
       const raw = scoreMap.get(column.name);
-      if (raw === undefined || raw === null) return null;
+      if (raw === undefined) return null;
       return raw;
     }
 
