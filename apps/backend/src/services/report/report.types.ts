@@ -366,3 +366,49 @@ export interface GuardianStudentReportResult {
   administrations: ServiceGuardianAdministrationEntry[];
   longitudinalScores: Record<string, ServiceHistoricalScore[]>;
 }
+
+// --- Task Subscores ---
+
+export interface TaskSubscoresInput {
+  scopeType: ScopeType;
+  scopeId: string;
+  page: number;
+  perPage: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  filter: ParsedFilter[];
+}
+
+/** One value cell in a task-subscore row. */
+export type ServiceTaskSubscoreValue = string | number | null;
+
+/** Display column metadata returned alongside subscore rows. */
+export interface ServiceTaskSubscoreColumn {
+  key: string;
+  label: string;
+}
+
+/**
+ * One row in the task subscores response — student demographics plus the
+ * column-keyed subscore values.
+ */
+export interface ServiceTaskSubscoreRow {
+  user: {
+    userId: string;
+    assessmentPid: string | null;
+    username: string | null;
+    email: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    grade: string | null;
+    schoolName?: string | null;
+  };
+  subscores: Record<string, ServiceTaskSubscoreValue>;
+}
+
+export interface TaskSubscoresResult {
+  task: ServiceTaskMetadata;
+  subscoreColumns: ServiceTaskSubscoreColumn[];
+  items: ServiceTaskSubscoreRow[];
+  totalItems: number;
+}

@@ -27,6 +27,7 @@ export function createMockReportRepository(): MockedObject<ReportRepository> {
     verifyGuardianStudentLink: vi.fn(),
     verifyUserOrgOverlap: vi.fn(),
     getStudentAdministrations: vi.fn(),
+    getTaskSubscoreStudents: vi.fn(),
   } as unknown as MockedObject<ReportRepository>;
 }
 

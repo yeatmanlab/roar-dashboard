@@ -13,6 +13,7 @@ import type {
   ScoreOverviewQuery,
   StudentScoresQuery,
   IndividualStudentReportQuery,
+  TaskSubscoresQuery,
 } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -54,6 +55,7 @@ describe('AdministrationsController', () => {
   const mockGetScoreOverview = vi.fn();
   const mockListStudentScores = vi.fn();
   const mockGetIndividualStudentReport = vi.fn();
+  const mockListTaskSubscores = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -78,6 +80,7 @@ describe('AdministrationsController', () => {
       listStudentScores: mockListStudentScores,
       getIndividualStudentReport: mockGetIndividualStudentReport,
       getGuardianStudentReport: vi.fn(),
+      listTaskSubscores: mockListTaskSubscores,
     });
   });
   describe('list', () => {
@@ -2159,6 +2162,148 @@ describe('AdministrationsController', () => {
         targetUserId,
         reportQuery,
       );
+    });
+  });
+
+  describe('listTaskSubscores', () => {
+    const testAdminId = 'admin-123';
+    const testTaskId = 'task-456';
+
+    function buildQuery(overrides?: Partial<TaskSubscoresQuery>): TaskSubscoresQuery {
+      return {
+        scopeType: 'district',
+        scopeId: 'district-uuid',
+        page: 1,
+        perPage: 25,
+        sortBy: 'user.lastName',
+        sortOrder: 'asc',
+        filter: [],
+        ...overrides,
+      };
+    }
+
+    function buildServiceResult() {
+      return {
+        task: { taskId: testTaskId, taskSlug: 'phonics', taskName: 'ROAR - Phonics', orderIndex: 0 },
+        subscoreColumns: [
+          { key: 'cvc', label: 'CVC' },
+          { key: 'totalPercentCorrect', label: 'Total % Correct' },
+        ],
+        items: [
+          {
+            user: {
+              userId: 'student-1',
+              assessmentPid: 'pid-1',
+              username: 'jdoe',
+              email: 'jdoe@school.edu',
+              firstName: 'Jane',
+              lastName: 'Doe',
+              grade: '3',
+              schoolName: 'Lincoln Elementary',
+            },
+            subscores: { cvc: '15/19', totalPercentCorrect: 79 },
+          },
+        ],
+        totalItems: 1,
+      };
+    }
+
+    it('returns 200 with task metadata, columns, items, and pagination', async () => {
+      mockListTaskSubscores.mockResolvedValue(buildServiceResult());
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, buildQuery());
+
+      expect(result.status).toBe(StatusCodes.OK);
+      const body = result.body as {
+        data: { task: unknown; subscoreColumns: unknown; items: unknown[]; pagination: unknown };
+      };
+      expect(body.data.task).toMatchObject({ taskId: testTaskId, taskSlug: 'phonics' });
+      expect(body.data.subscoreColumns).toHaveLength(2);
+      expect(body.data.items).toHaveLength(1);
+      expect(body.data.pagination).toEqual({ page: 1, perPage: 25, totalItems: 1, totalPages: 1 });
+    });
+
+    it('computes totalPages from totalItems and perPage', async () => {
+      mockListTaskSubscores.mockResolvedValue({ ...buildServiceResult(), totalItems: 73 });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(
+        mockAuthContext,
+        testAdminId,
+        testTaskId,
+        buildQuery({ perPage: 25 }),
+      );
+
+      const body = result.body as { data: { pagination: { totalPages: number } } };
+      expect(body.data.pagination.totalPages).toBe(3); // ceil(73/25)
+    });
+
+    it('passes auth context, admin ID, task ID, and query through to the service', async () => {
+      mockListTaskSubscores.mockResolvedValue(buildServiceResult());
+      const query = buildQuery({ sortBy: 'subscores.cvc', sortOrder: 'desc' });
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, query);
+
+      expect(mockListTaskSubscores).toHaveBeenCalledWith(mockAuthContext, testAdminId, testTaskId, query);
+    });
+
+    it('maps a 400 ApiError to a BAD_REQUEST response', async () => {
+      mockListTaskSubscores.mockRejectedValue(
+        new ApiError('invalid', { statusCode: StatusCodes.BAD_REQUEST, code: ApiErrorCode.REQUEST_VALIDATION_FAILED }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, buildQuery());
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(result.body).toHaveProperty('error');
+    });
+
+    it('maps a 403 ApiError to a FORBIDDEN response', async () => {
+      mockListTaskSubscores.mockRejectedValue(
+        new ApiError('forbidden', { statusCode: StatusCodes.FORBIDDEN, code: ApiErrorCode.AUTH_FORBIDDEN }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, buildQuery());
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('maps a 404 ApiError to a NOT_FOUND response', async () => {
+      mockListTaskSubscores.mockRejectedValue(
+        new ApiError('not found', { statusCode: StatusCodes.NOT_FOUND, code: ApiErrorCode.RESOURCE_NOT_FOUND }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, buildQuery());
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('maps a 500 ApiError to an INTERNAL_SERVER_ERROR response', async () => {
+      mockListTaskSubscores.mockRejectedValue(
+        new ApiError('boom', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, buildQuery());
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('re-throws non-ApiError exceptions for the global handler', async () => {
+      mockListTaskSubscores.mockRejectedValue(new Error('connection reset'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await expect(
+        Controller.listTaskSubscores(mockAuthContext, testAdminId, testTaskId, buildQuery()),
+      ).rejects.toThrow('connection reset');
     });
   });
 });
