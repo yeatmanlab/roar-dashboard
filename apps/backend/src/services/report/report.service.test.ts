@@ -32,6 +32,7 @@ import type {
   StudentScoreQueryRow,
   TaskStatusCount,
   HistoricalRunRow,
+  TaskSubscoreQueryRow,
 } from '../../repositories/report.repository';
 import { Operator } from '../../types/condition';
 
@@ -3752,7 +3753,11 @@ describe('ReportService', () => {
       };
     }
 
-    function setupRepoDefaults(opts?: { taskMeta?: ReportTaskMeta; pageItems?: any[]; totalItems?: number }) {
+    function setupRepoDefaults(opts?: {
+      taskMeta?: ReportTaskMeta;
+      pageItems?: TaskSubscoreQueryRow[];
+      totalItems?: number;
+    }) {
       mockReportRepository.getTaskMetadata.mockResolvedValue([opts?.taskMeta ?? phonicsTaskMeta()]);
       mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
       mockReportRepository.getTaskSubscoreStudents.mockResolvedValue({
