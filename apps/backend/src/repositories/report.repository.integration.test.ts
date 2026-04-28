@@ -7,9 +7,12 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { ReportRepository } from './report.repository';
-import type { ReportScope } from './report.repository';
+import type { ReportScope, ReportTaskMeta, ProgressOverviewCountsResult } from './report.repository';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
+import { AdministrationFactory } from '../test-support/factories/administration.factory';
+import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
 
 let repo: ReportRepository;
 
@@ -384,5 +387,188 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       expect(noRunStudent).toBeDefined();
       expect(noRunStudent!.runs.has(allGradesVariantId)).toBe(false);
     });
+  });
+});
+
+describe('ReportRepository.getProgressOverviewCountsBulk — multi-scope aggregation', () => {
+  /**
+   * Uses a separate administration with two simple task variants (no conditions)
+   * assigned to two school scopes. Runs are seeded to produce distinct student
+   * distributions at each scope, verifying the scope_id discriminator partitions
+   * task counts and student-level counts correctly.
+   *
+   * Scope layout:
+   *   School A: schoolAStudent (org), classAStudent (class in school A)
+   *   School B: schoolBStudent (org)
+   *
+   * Task variants: two required tasks (no conditions), from task and task2.
+   *
+   * Run seeding:
+   *   schoolAStudent: completed both → completed
+   *   classAStudent:  completed task1 only → started
+   *   schoolBStudent: no runs → assigned
+   */
+  let bulkAdminId: string;
+  let bulkTaskMetas: ReportTaskMeta[];
+  let schoolAScope: ReportScope;
+  let schoolBScope: ReportScope;
+  let bulkResult: Map<string, ProgressOverviewCountsResult>;
+
+  beforeAll(async () => {
+    const bulkRepo = new ReportRepository();
+
+    // Create a dedicated administration for this test suite
+    const bulkAdmin = await AdministrationFactory.create({
+      name: 'Bulk Overview Test Administration',
+      createdBy: baseFixture.districtAdmin.id,
+    });
+    bulkAdminId = bulkAdmin.id;
+
+    // Assign administration to both schools
+    await Promise.all([
+      AdministrationOrgFactory.create({ administrationId: bulkAdminId, orgId: baseFixture.schoolA.id }),
+      AdministrationOrgFactory.create({ administrationId: bulkAdminId, orgId: baseFixture.schoolB.id }),
+    ]);
+
+    // Assign two unconditional task variants (required for all students)
+    await Promise.all([
+      AdministrationTaskVariantFactory.create({
+        administrationId: bulkAdminId,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        orderIndex: 0,
+      }),
+      AdministrationTaskVariantFactory.create({
+        administrationId: bulkAdminId,
+        taskVariantId: baseFixture.variantForTask2.id,
+        orderIndex: 1,
+      }),
+    ]);
+
+    // Fetch resolved task metadata
+    bulkTaskMetas = await bulkRepo.getTaskMetadata(bulkAdminId);
+
+    // Seed runs:
+    // schoolAStudent: completed both tasks → bucket: completed
+    await RunFactory.create({
+      userId: baseFixture.schoolAStudent.id,
+      taskId: baseFixture.task.id,
+      taskVariantId: baseFixture.variantForAllGrades.id,
+      administrationId: bulkAdminId,
+      useForReporting: true,
+      completedAt: new Date('2025-07-01T10:00:00Z'),
+    });
+    await RunFactory.create({
+      userId: baseFixture.schoolAStudent.id,
+      taskId: baseFixture.task2.id,
+      taskVariantId: baseFixture.variantForTask2.id,
+      administrationId: bulkAdminId,
+      useForReporting: true,
+      completedAt: new Date('2025-07-01T11:00:00Z'),
+    });
+
+    // classAStudent: completed task1, no run on task2 → bucket: started
+    await RunFactory.create({
+      userId: baseFixture.classAStudent.id,
+      taskId: baseFixture.task.id,
+      taskVariantId: baseFixture.variantForAllGrades.id,
+      administrationId: bulkAdminId,
+      useForReporting: true,
+      completedAt: new Date('2025-07-01T12:00:00Z'),
+    });
+
+    // schoolBStudent: no runs → bucket: assigned
+
+    // Execute the bulk query with both scopes
+    schoolAScope = { scopeType: 'school', scopeId: baseFixture.schoolA.id };
+    schoolBScope = { scopeType: 'school', scopeId: baseFixture.schoolB.id };
+    bulkResult = await bulkRepo.getProgressOverviewCountsBulk(bulkAdminId, [schoolAScope, schoolBScope], bulkTaskMetas);
+  });
+
+  it('returns results for both scopes', () => {
+    expect(bulkResult.size).toBe(2);
+    expect(bulkResult.has(baseFixture.schoolA.id)).toBe(true);
+    expect(bulkResult.has(baseFixture.schoolB.id)).toBe(true);
+  });
+
+  it('computes correct totalStudents per scope', () => {
+    // School A: schoolAStudent (org) + classAStudent (class in school A)
+    expect(bulkResult.get(baseFixture.schoolA.id)!.totalStudents).toBe(2);
+    // School B: schoolBStudent (org)
+    expect(bulkResult.get(baseFixture.schoolB.id)!.totalStudents).toBe(1);
+  });
+
+  it('computes independent student-level counts per scope', () => {
+    const schoolACounts = bulkResult.get(baseFixture.schoolA.id)!.studentCounts;
+    expect(schoolACounts.studentsWithRequiredTasks).toBe(2);
+    expect(schoolACounts.studentsCompleted).toBe(1); // schoolAStudent
+    expect(schoolACounts.studentsStarted).toBe(1); // classAStudent
+    expect(schoolACounts.studentsAssigned).toBe(0);
+
+    const schoolBCounts = bulkResult.get(baseFixture.schoolB.id)!.studentCounts;
+    expect(schoolBCounts.studentsWithRequiredTasks).toBe(1);
+    expect(schoolBCounts.studentsCompleted).toBe(0);
+    expect(schoolBCounts.studentsStarted).toBe(0);
+    expect(schoolBCounts.studentsAssigned).toBe(1); // schoolBStudent
+  });
+
+  it('satisfies the assigned + started + completed = studentsWithRequiredTasks invariant per scope', () => {
+    for (const scopeId of [baseFixture.schoolA.id, baseFixture.schoolB.id]) {
+      const counts = bulkResult.get(scopeId)!.studentCounts;
+      expect(counts.studentsAssigned + counts.studentsStarted + counts.studentsCompleted).toBe(
+        counts.studentsWithRequiredTasks,
+      );
+    }
+  });
+
+  it('computes independent task status counts per scope', () => {
+    const schoolATaskCounts = bulkResult.get(baseFixture.schoolA.id)!.taskStatusCounts;
+    const schoolBTaskCounts = bulkResult.get(baseFixture.schoolB.id)!.taskStatusCounts;
+
+    // School A task1 (variantForAllGrades): 2 students completed → 2× completed-required
+    const schoolATask1Completed = schoolATaskCounts.filter(
+      (tc) => tc.taskId === baseFixture.task.id && tc.status === 'completed-required',
+    );
+    expect(schoolATask1Completed).toHaveLength(1);
+    expect(schoolATask1Completed[0]!.count).toBe(2);
+
+    // School A task2 (variantForTask2): 1 completed (schoolAStudent), 1 assigned (classAStudent)
+    const schoolATask2Completed = schoolATaskCounts.filter(
+      (tc) => tc.taskId === baseFixture.task2.id && tc.status === 'completed-required',
+    );
+    expect(schoolATask2Completed).toHaveLength(1);
+    expect(schoolATask2Completed[0]!.count).toBe(1);
+
+    const schoolATask2Assigned = schoolATaskCounts.filter(
+      (tc) => tc.taskId === baseFixture.task2.id && tc.status === 'assigned-required',
+    );
+    expect(schoolATask2Assigned).toHaveLength(1);
+    expect(schoolATask2Assigned[0]!.count).toBe(1);
+
+    // School B task1: 1 student assigned → 1× assigned-required
+    const schoolBTask1Assigned = schoolBTaskCounts.filter(
+      (tc) => tc.taskId === baseFixture.task.id && tc.status === 'assigned-required',
+    );
+    expect(schoolBTask1Assigned).toHaveLength(1);
+    expect(schoolBTask1Assigned[0]!.count).toBe(1);
+
+    // School B task2: 1 student assigned → 1× assigned-required
+    const schoolBTask2Assigned = schoolBTaskCounts.filter(
+      (tc) => tc.taskId === baseFixture.task2.id && tc.status === 'assigned-required',
+    );
+    expect(schoolBTask2Assigned).toHaveLength(1);
+    expect(schoolBTask2Assigned[0]!.count).toBe(1);
+  });
+
+  it('does not leak students across scopes', () => {
+    // School B should have no completed or started students
+    const schoolBCounts = bulkResult.get(baseFixture.schoolB.id)!.studentCounts;
+    expect(schoolBCounts.studentsCompleted).toBe(0);
+    expect(schoolBCounts.studentsStarted).toBe(0);
+
+    // School B should have no completed-required task counts
+    const schoolBCompleted = bulkResult
+      .get(baseFixture.schoolB.id)!
+      .taskStatusCounts.filter((tc) => tc.status === 'completed-required');
+    expect(schoolBCompleted).toHaveLength(0);
   });
 });
