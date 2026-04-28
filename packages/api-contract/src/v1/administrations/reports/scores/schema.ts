@@ -456,6 +456,12 @@ export type TaskSubscoresSortField = (typeof TASK_SUBSCORES_SORT_FIELDS)[number]
  * (`gte`, `lte`, `eq`, `neq`) are evaluated against the column's
  * percent-correct value where one is defined; columns without a numeric
  * representation (e.g., `skillsToWorkOn`) reject numeric operators.
+ *
+ * `user.schoolName` filtering is deferred — the service-layer filter map
+ * (`STUDENT_SCORES_USER_FILTER_FIELDS`) doesn't compile a school-name
+ * predicate for this endpoint, so the contract doesn't advertise it as a
+ * filterable field. (The same gap exists on `listStudentScores` and is
+ * tracked there as a follow-up.)
  */
 export const TASK_SUBSCORES_FILTER_FIELDS = [
   'user.grade',
@@ -463,7 +469,6 @@ export const TASK_SUBSCORES_FILTER_FIELDS = [
   'user.lastName',
   'user.username',
   'user.email',
-  'user.schoolName',
 ] as const;
 
 export type TaskSubscoresFilterField = (typeof TASK_SUBSCORES_FILTER_FIELDS)[number];
