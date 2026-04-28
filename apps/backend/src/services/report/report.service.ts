@@ -1553,12 +1553,10 @@ export function ReportService({
       const items: ServiceTaskSubscoreRow[] = result.items.map((row) => {
         // Multi-variant dedup: choose the first variant (by orderIndex) the
         // student has any score rows for.
-        let scoredVariantId: string | null = null;
         let scoredScoreMap: Map<string, string> | null = null;
         for (const v of orderedVariants) {
           const map = row.scores.get(v.taskVariantId);
           if (map && map.size > 0) {
-            scoredVariantId = v.taskVariantId;
             scoredScoreMap = map;
             break;
           }
@@ -1579,9 +1577,6 @@ export function ReportService({
             paSkillsToWorkOn,
           });
         }
-        // Suppress an unused-variable lint error — scoredVariantId can be
-        // useful for downstream debugging hooks but isn't surfaced today.
-        void scoredVariantId;
 
         return {
           user: {

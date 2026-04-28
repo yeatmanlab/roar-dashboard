@@ -2644,6 +2644,52 @@ describe('GET /v1/administrations/:id/reports/scores/tasks/:taskId', () => {
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
     });
+
+    // The fixture's task has an auto-generated slug not in the subscore
+    // registry, so admin / site-admin tier callers cleanly land 400 — that's
+    // the expected behavior and proves they're not blocked at the auth layer.
+    it('admin tier passes auth and reaches the registry-validation 400 path', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoreQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('siteAdmin tier passes auth and reaches the registry-validation 400 path', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoreQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('principal at school A passes auth at school scope (and reaches the 400 path)', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.task.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('returns 403 for an admin in a different district', async () => {
+      authenticateAs(baseFixture.districtBAdmin);
+      const res = await request(app)
+        .get(taskSubscoresPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.task.id))
+        .query(subscoreQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
   });
 
   describe('error paths', () => {
