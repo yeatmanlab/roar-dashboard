@@ -140,6 +140,18 @@ async function waitForBackendHealth(port: string, fixtureFile: string, maxAttemp
   );
 }
 
+/**
+ * Global setup for SDK integration tests.
+ *
+ * Spawns a test server process that initializes the database, seeds test data,
+ * sets up OpenFGA authorization, and writes fixture data for SDK tests to consume.
+ * Waits for the server to be healthy before returning.
+ *
+ * Requires CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL environment variables.
+ * Automatically builds the backend if dist/server-test.js is missing.
+ *
+ * @returns Promise that resolves when the test server is ready
+ */
 export default async function globalSetup() {
   // Skip backend startup when integration tests are not requested
   if (process.env.RUN_INTEGRATION_TESTS !== 'true') {
@@ -241,6 +253,14 @@ export default async function globalSetup() {
   globalThis.__BACKEND_PORT__ = BACKEND_PORT;
 }
 
+/**
+ * Global teardown for SDK integration tests.
+ *
+ * Kills the test server process spawned by globalSetup.
+ * Waits for the process to fully close before returning.
+ *
+ * @returns Promise that resolves when the backend process has been terminated
+ */
 export async function teardown() {
   // @ts-expect-error globalThis doesn't have __BACKEND_PROCESS__ in type definitions
   const proc = globalThis.__BACKEND_PROCESS__ as ReturnType<typeof spawn> | undefined;

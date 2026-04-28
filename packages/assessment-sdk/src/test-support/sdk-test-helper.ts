@@ -37,6 +37,14 @@ export function getBackendUrl(): string {
  */
 let cachedTestToken: string | null = null;
 
+/**
+ * Creates a test auth context with a cached token.
+ *
+ * Generates a test token on first call and caches it for reuse across all tests.
+ * The cached token is later replaced by getBaseFixtureData() with the actual test user's authId.
+ *
+ * @returns Auth context object with getToken and refreshToken async methods
+ */
 export function createTestAuthContext() {
   if (!cachedTestToken) {
     cachedTestToken = 'test-token-' + Math.random().toString(36).slice(2);
