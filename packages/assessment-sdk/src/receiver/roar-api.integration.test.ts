@@ -31,7 +31,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { initTestSdk, getBaseFixtureData } from '../test-support/sdk-test-helper';
+import { initTestSdk, getBaseFixtureData, getTestUserId, getTeacherUserId } from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration)', () => {
@@ -57,8 +57,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
   describe('POST /v1/runs (create run)', () => {
     it('should create an anonymous run successfully', async () => {
       const taskVersion = '1.0.0';
+      const userId = getTestUserId();
 
       const response = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion,
@@ -77,8 +79,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
     it('should create a run with metadata', async () => {
       const taskVersion = '1.0.0';
       const metadata = { source: 'test-dashboard', sessionId: 'sess-123' };
+      const userId = getTestUserId();
 
       const response = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion,
@@ -96,8 +100,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
     it('should return 422 for invalid task variant ID', async () => {
       const invalidTaskVariantId = '00000000-0000-0000-0000-000000000000';
       const taskVersion = '1.0.0';
+      const userId = getTestUserId();
 
       const response = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId: invalidTaskVariantId,
           taskVersion,
@@ -112,8 +118,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
     it('should reject anonymous run with administrationId', async () => {
       const taskVersion = '1.0.0';
       const administrationId = '660e8400-e29b-41d4-a716-446655440001';
+      const userId = getTestUserId();
 
       const response = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion,
@@ -131,7 +139,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
   describe('POST /v1/runs/:runId/event (run events)', () => {
     it('should complete a run successfully', async () => {
       // Create a run first
+      const userId = getTestUserId();
       const createResponse = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -149,7 +159,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // Complete the run
       const completeResponse = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'complete',
           metadata: { finalScore: 85 },
@@ -164,7 +174,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
     it('should write a trial to a run', async () => {
       // Create a run first
+      const userId = getTestUserId();
       const createResponse = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -181,7 +193,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // Write a trial
       const trialResponse = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'trial',
           trial: {
@@ -210,7 +222,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
     it('should abort a run', async () => {
       // Create a run first
+      const userId = getTestUserId();
       const createResponse = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -227,7 +241,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // Abort the run
       const abortResponse = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'abort',
         },
@@ -241,7 +255,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
     it('should update engagement flags', async () => {
       // Create a run first
+      const userId = getTestUserId();
       const createResponse = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -258,7 +274,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // Update engagement
       const engagementResponse = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'engagement',
           engagementFlags: {
@@ -279,9 +295,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
     it('should return 404 for non-existent run', async () => {
       const nonExistentRunId = '00000000-0000-0000-0000-000000000000';
+      const userId = getTestUserId();
 
       const response = await api.client.runs.event({
-        params: { runId: nonExistentRunId },
+        params: { userId, runId: nonExistentRunId },
         body: {
           type: 'complete',
         },
@@ -293,7 +310,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
     it('should return 409 when completing an already completed run', async () => {
       // Create and complete a run
+      const userId = getTestUserId();
       const createResponse = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -309,7 +328,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       expect(runId).toBeDefined();
 
       const firstComplete = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'complete',
         },
@@ -318,7 +337,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // Try to complete again
       const secondComplete = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'complete',
         },
@@ -332,7 +351,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
   describe('Happy path: Full run lifecycle', () => {
     it('should complete a full run lifecycle: create -> trial -> complete', async () => {
       // 1. Create run
+      const userId = getTestUserId();
       const createResponse = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -350,7 +371,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       // 2. Write multiple trials
       for (let i = 0; i < 3; i++) {
         const trialResponse = await api.client.runs.event({
-          params: { runId: runId! },
+          params: { userId, runId: runId! },
           body: {
             type: 'trial',
             trial: {
@@ -366,7 +387,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // 3. Update engagement
       const engagementResponse = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'engagement',
           engagementFlags: {
@@ -383,7 +404,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // 4. Complete run
       const completeResponse = await api.client.runs.event({
-        params: { runId: runId! },
+        params: { userId, runId: runId! },
         body: {
           type: 'complete',
           metadata: { finalScore: 67 },
@@ -409,7 +430,9 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       // Create an authenticated run (non-anonymous) with administrationId
       // The testUser (schoolAStudent) is enrolled in the district and has FGA access
       // to administrationAssignedToDistrict via the org hierarchy.
+      const userId = getTestUserId();
       const response = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -437,8 +460,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       const fixtureData = await getBaseFixtureData();
       const unauthorizedAdminId = fixtureData.administrationAssignedToDistrictB.id;
+      const userId = getTestUserId();
 
       const response = await api.client.runs.create({
+        params: { userId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
@@ -467,6 +492,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       // Create a new SDK instance with schoolATeacher's token
       const teacherAuthId = fixtureData.schoolATeacher.authId;
+      const teacherUserId = getTeacherUserId();
       const teacherSdk = initTestSdk({
         auth: {
           getToken: async () => teacherAuthId,
@@ -475,6 +501,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       const response = await teacherSdk.api.client.runs.create({
+        params: { userId: teacherUserId },
         body: {
           taskVariantId,
           taskVersion: '1.0.0',
