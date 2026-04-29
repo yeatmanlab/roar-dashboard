@@ -72,7 +72,7 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
-      const result = await runService.create(authContext, targetUserId, validRequestBody);
+      const result = await runService.create(authContext, 'user-123', validRequestBody);
 
       expect(result).toEqual({ id: 'run-uuid-123' });
       expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
@@ -87,7 +87,7 @@ describe('RunService', () => {
       expect(taskVariantRepository.getTaskIdByVariantId).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000');
       expect(runRepository.create).toHaveBeenCalledWith({
         data: {
-          userId: targetUserId,
+          userId: 'user-123',
           taskId: 'task-123',
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
@@ -324,7 +324,10 @@ describe('RunService', () => {
       it('should throw FORBIDDEN when requester lacks CAN_CREATE_RUN_FOR_CHILD permission', async () => {
         administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
         authorizationService.requirePermission.mockResolvedValue(undefined);
-        authorizationService.hasAnyPermission.mockResolvedValue(false);
+        // First call (CAN_READ_CHILD in verifyUserAccess) succeeds, second call (CAN_CREATE_RUN_FOR_CHILD) fails
+        authorizationService.hasAnyPermission
+          .mockResolvedValueOnce(true) // CAN_READ_CHILD check passes
+          .mockResolvedValueOnce(false); // CAN_CREATE_RUN_FOR_CHILD check fails
 
         await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
           statusCode: StatusCodes.FORBIDDEN,
@@ -333,7 +336,9 @@ describe('RunService', () => {
         });
 
         expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(targetUserId);
-        expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
+        // Check the second call to hasAnyPermission (CAN_CREATE_RUN_FOR_CHILD)
+        expect(authorizationService.hasAnyPermission).toHaveBeenNthCalledWith(
+          2,
           'user-123',
           FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
           ['family:family-123'],
@@ -361,6 +366,7 @@ describe('RunService', () => {
         familyRepository.getFamilyIdsForUser.mockResolvedValue([]);
         administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
         authorizationService.requirePermission.mockResolvedValue(undefined);
+        // First call (CAN_READ_CHILD in verifyUserAccess) fails because no families
         authorizationService.hasAnyPermission.mockResolvedValue(false);
 
         await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
@@ -368,11 +374,8 @@ describe('RunService', () => {
           code: ApiErrorCode.AUTH_FORBIDDEN,
         });
 
-        expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
-          'user-123',
-          FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
-          [],
-        );
+        // The first call to hasAnyPermission (CAN_READ_CHILD) will fail because no families
+        expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith('user-123', FgaRelation.CAN_READ_CHILD, []);
       });
 
       it('should allow super admin to create run for different user without CAN_CREATE_RUN_FOR_CHILD check', async () => {

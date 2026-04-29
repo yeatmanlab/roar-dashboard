@@ -64,7 +64,12 @@ describe('RunEventService', () => {
   describe('verifyUserAccess', () => {
     it('should allow access when requester owns the run', async () => {
       const targetUserId = 'user-123';
-      await runEventsService.completeRun(authContext, targetUserId, 'run-123', {
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(authContext, targetUserId, validRunId, {
         type: 'complete' as const,
       });
 
@@ -187,6 +192,8 @@ describe('RunEventService', () => {
 
     it('should throw FORBIDDEN when user does not own the run', async () => {
       const differentUserId = 'user-456';
+      authorizationService.hasAnyPermission.mockResolvedValue(false);
+
       await expect(
         runEventsService.completeRun(authContext, differentUserId, validRunId, validBody),
       ).rejects.toMatchObject({
@@ -194,7 +201,7 @@ describe('RunEventService', () => {
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
 
-      expect(runRepository.getById).not.toHaveBeenCalled();
+      expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(differentUserId);
     });
 
     it('should throw NOT_FOUND when run does not exist', async () => {

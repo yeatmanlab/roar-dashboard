@@ -144,17 +144,18 @@ export function RunService({
       }
 
       if (!isSuperAdmin) {
-        // FGA checks if the target user has can_create_run on this administration
+        // FGA checks if the requester has can_create_run on this administration
         await authorizationService.requirePermission(
-          targetUserId,
+          requesterUserId,
           FgaRelation.CAN_CREATE_RUN,
           `${FgaType.ADMINISTRATION}:${body.administrationId!}`,
         );
       }
 
-      if (requesterUserId !== targetUserId) {
+      if (requesterUserId !== targetUserId && !isSuperAdmin) {
         // Requester is creating a run for a different user (e.g., parent creating for child).
         // Check if requester has can_create_run_for_child permission on any family containing the target user.
+        // Super admins bypass this check.
         const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
         const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
         const hasAccess = await authorizationService.hasAnyPermission(
