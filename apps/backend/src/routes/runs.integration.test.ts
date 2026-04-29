@@ -480,13 +480,29 @@ describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating ru
     // Create family relationship
     const family = await FamilyFactory.create();
 
-    // Add parent and child to family
-    await UserFamilyFactory.create({ userId: parentUser.id, familyId: family.id, role: 'parent' });
-    await UserFamilyFactory.create({ userId: childUser.id, familyId: family.id, role: 'child' });
+    // Add parent and child to family with enrollment dates
+    const now = new Date();
+    const pastDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year ago
+    const futureDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
 
-    // Write FGA tuples for family relationships
-    await writeFgaFamilyMembership(parentUser.id, family.id, 'parent', null, null);
-    await writeFgaFamilyMembership(childUser.id, family.id, 'child', null, null);
+    await UserFamilyFactory.create({
+      userId: parentUser.id,
+      familyId: family.id,
+      role: 'parent',
+      joinedOn: pastDate,
+      leftOn: null,
+    });
+    await UserFamilyFactory.create({
+      userId: childUser.id,
+      familyId: family.id,
+      role: 'child',
+      joinedOn: pastDate,
+      leftOn: null,
+    });
+
+    // Write FGA tuples for family relationships with enrollment dates
+    await writeFgaFamilyMembership(parentUser.id, family.id, 'parent', pastDate, futureDate);
+    await writeFgaFamilyMembership(childUser.id, family.id, 'child', pastDate, futureDate);
 
     // Parent creates run for child
     authenticateAs({ authId: parentUser.authId! });
@@ -518,8 +534,18 @@ describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating ru
 
     // Create family for child only (parent not in it)
     const family = await FamilyFactory.create();
-    await UserFamilyFactory.create({ userId: childUser.id, familyId: family.id, role: 'child' });
-    await writeFgaFamilyMembership(childUser.id, family.id, 'child', null, null);
+    const now = new Date();
+    const pastDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year ago
+    const futureDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
+
+    await UserFamilyFactory.create({
+      userId: childUser.id,
+      familyId: family.id,
+      role: 'child',
+      joinedOn: pastDate,
+      leftOn: null,
+    });
+    await writeFgaFamilyMembership(childUser.id, family.id, 'child', pastDate, futureDate);
 
     // Parent tries to create run for child (but has no family relationship)
     authenticateAs({ authId: parentUser.authId! });
