@@ -108,7 +108,7 @@ export function RunService({
     targetUserId: string,
     body: CreateRunRequestBody,
   ): Promise<{ id: string }> {
-    const { userId, isSuperAdmin } = authContext;
+    const { userId: requesterUserId, isSuperAdmin } = authContext;
     const { isAnonymous } = body;
 
     // Verify user has access to the target user
@@ -126,7 +126,7 @@ export function RunService({
             throw new ApiError('Invalid administration ID', {
               statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
               code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-              context: { userId, administrationId: body.administrationId },
+              context: { requesterUserId, targetUserId, administrationId: body.administrationId },
               cause: error,
             });
           }
@@ -135,7 +135,7 @@ export function RunService({
             throw new ApiError(ApiErrorMessage.FORBIDDEN, {
               statusCode: StatusCodes.FORBIDDEN,
               code: ApiErrorCode.AUTH_FORBIDDEN,
-              context: { userId, administrationId: body.administrationId },
+              context: { requesterUserId, targetUserId, administrationId: body.administrationId },
               cause: error,
             });
           }
@@ -144,12 +144,32 @@ export function RunService({
       }
 
       if (!isSuperAdmin) {
-        // FGA checks if the user has can_create_run on this administration
+        // FGA checks if the target user has can_create_run on this administration
         await authorizationService.requirePermission(
-          userId,
+          targetUserId,
           FgaRelation.CAN_CREATE_RUN,
           `${FgaType.ADMINISTRATION}:${body.administrationId!}`,
         );
+      }
+
+      if (requesterUserId !== targetUserId) {
+        // Requester is creating a run for a different user (e.g., parent creating for child).
+        // Check if requester has can_create_run_for_child permission on any family containing the target user.
+        const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
+        const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
+        const hasAccess = await authorizationService.hasAnyPermission(
+          requesterUserId,
+          FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+          familyObjects,
+        );
+
+        if (!hasAccess) {
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requesterUserId, targetUserId },
+          });
+        }
       }
     }
 
@@ -160,7 +180,7 @@ export function RunService({
         throw new ApiError('Invalid task variant ID', {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, taskVariantId: body.taskVariantId },
+          context: { targetUserId, requesterUserId, taskVariantId: body.taskVariantId },
         });
       }
 
@@ -184,7 +204,8 @@ export function RunService({
         {
           err: error,
           context: {
-            userId,
+            targetUserId,
+            requesterUserId,
             taskVariantId: body.taskVariantId,
             taskVersion: body.taskVersion,
             administrationId: body.administrationId,
@@ -197,7 +218,7 @@ export function RunService({
       throw new ApiError('Failed to create run', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId },
+        context: { targetUserId, requesterUserId },
         cause: error,
       });
     }

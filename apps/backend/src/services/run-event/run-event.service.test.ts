@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { RunEventService } from './run-event.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import type { AuthContext } from '../../types/auth-context';
 import {
   MockRunRepository,
@@ -11,8 +12,13 @@ import {
   createMockRunTrialRepository,
   MockRunTrialInteractionsRepository,
   createMockRunTrialInteractionsRepository,
+  MockFamilyRepository,
+  createMockFamilyRepository,
 } from '../../test-support/repositories';
+import type { MockAuthorizationService } from '../../test-support/services';
+import { createMockAuthorizationService } from '../../test-support/services';
 import { RunFactory } from '../../test-support/factories/run.factory';
+import { FgaRelation } from '../authorization/fga-constants';
 
 /**
  * RunEventService Tests
@@ -25,6 +31,8 @@ describe('RunEventService', () => {
   let runRepository: MockRunRepository;
   let runTrialsRepository: MockRunTrialRepository;
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
+  let familyRepository: MockFamilyRepository;
+  let authorizationService: MockAuthorizationService;
   let runEventsService: ReturnType<typeof RunEventService>;
 
   beforeEach(() => {
@@ -38,10 +46,119 @@ describe('RunEventService', () => {
 
     runTrialInteractionsRepository = createMockRunTrialInteractionsRepository();
 
+    familyRepository = createMockFamilyRepository();
+    familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
+
+    authorizationService = createMockAuthorizationService();
+    authorizationService.hasAnyPermission.mockResolvedValue(true);
+
     runEventsService = RunEventService({
       runRepository: runRepository,
       runTrialsRepository: runTrialsRepository,
       runTrialInteractionsRepository: runTrialInteractionsRepository,
+      familyRepository: familyRepository,
+      authorizationService: authorizationService,
+    });
+  });
+
+  describe('verifyUserAccess', () => {
+    it('should allow access when requester owns the run', async () => {
+      const targetUserId = 'user-123';
+      await runEventsService.completeRun(authContext, targetUserId, 'run-123', {
+        type: 'complete' as const,
+      });
+
+      // If no error is thrown, the access check passed
+      // (completeRun calls verifyUserAccess internally)
+      expect(familyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
+      expect(authorizationService.hasAnyPermission).not.toHaveBeenCalled();
+    });
+
+    it('should check CAN_CREATE_RUN_FOR_CHILD when requester differs from target user', async () => {
+      const requesterContext = { userId: 'parent-456', isSuperAdmin: false };
+      const targetUserId = 'child-789';
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(requesterContext, targetUserId, validRunId, {
+        type: 'complete' as const,
+      });
+
+      expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(targetUserId);
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
+        'parent-456',
+        FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+        ['family:family-123'],
+      );
+    });
+
+    it('should throw FORBIDDEN when requester lacks CAN_CREATE_RUN_FOR_CHILD permission', async () => {
+      const requesterContext = { userId: 'parent-456', isSuperAdmin: false };
+      const targetUserId = 'child-789';
+      authorizationService.hasAnyPermission.mockResolvedValue(false);
+
+      await expect(
+        runEventsService.completeRun(requesterContext, targetUserId, 'run-123', {
+          type: 'complete' as const,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+
+      expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(targetUserId);
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
+        'parent-456',
+        FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+        ['family:family-123'],
+      );
+    });
+
+    it('should handle multiple family IDs when checking CAN_CREATE_RUN_FOR_CHILD', async () => {
+      const requesterContext = { userId: 'parent-456', isSuperAdmin: false };
+      const targetUserId = 'child-789';
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+
+      familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123', 'family-456', 'family-789']);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(requesterContext, targetUserId, validRunId, {
+        type: 'complete' as const,
+      });
+
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
+        'parent-456',
+        FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+        ['family:family-123', 'family:family-456', 'family:family-789'],
+      );
+    });
+
+    it('should throw FORBIDDEN when target user has no families and requester differs', async () => {
+      const requesterContext = { userId: 'parent-456', isSuperAdmin: false };
+      const targetUserId = 'child-789';
+
+      familyRepository.getFamilyIdsForUser.mockResolvedValue([]);
+      authorizationService.hasAnyPermission.mockResolvedValue(false);
+
+      await expect(
+        runEventsService.completeRun(requesterContext, targetUserId, 'run-123', {
+          type: 'complete' as const,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
+        'parent-456',
+        FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+        [],
+      );
     });
   });
 

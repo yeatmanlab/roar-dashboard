@@ -7,6 +7,9 @@ import { logger } from '../../logger';
 import { RunRepository } from '../../repositories/run.repository';
 import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
+import { FamilyRepository } from '../../repositories/family.repository';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import type { AuthContext } from '../../types/auth-context';
 
 type RunCompleteEventBody = Extract<RunEventBody, { type: 'complete' }>;
@@ -23,16 +26,22 @@ type RunEngagementEventBody = Extract<RunEventBody, { type: 'engagement' }>;
  * @param runRepository - Repository for accessing run data (injected for testing)
  * @param runTrialsRepository - Repository for accessing run trials (injected for testing)
  * @param runTrialInteractionsRepository - Repository for accessing run trial interactions (injected for testing)
+ * @param familyRepository - Repository for accessing family relationships (injected for testing)
+ * @param authorizationService - FGA authorization service (injected for testing)
  * @returns Object with event handling methods
  */
 export function RunEventService({
   runRepository = new RunRepository(),
   runTrialsRepository = new RunTrialsRepository(),
   runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
+  familyRepository = new FamilyRepository(),
+  authorizationService = AuthorizationService(),
 }: {
   runRepository?: RunRepository;
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
+  familyRepository?: FamilyRepository;
+  authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /**
    * Verify that the authenticated user owns the target user (strict ownership).
@@ -46,14 +55,28 @@ export function RunEventService({
    * @throws {ApiError} FORBIDDEN if user is not the run owner
    */
   async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<void> {
-    const { userId } = authContext;
+    const { userId: requesterUserId } = authContext;
 
-    // Strict ownership: user must own the run
-    if (userId !== targetUserId) {
+    if (requesterUserId === targetUserId) {
+      // User owns the run — allow access
+      return;
+    }
+
+    // Requester is posting an event for a different user (e.g., parent posting for child).
+    // Check if requester has can_create_run_for_child permission on any family containing the target user.
+    const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
+    const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
+    const hasAccess = await authorizationService.hasAnyPermission(
+      requesterUserId,
+      FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+      familyObjects,
+    );
+
+    if (!hasAccess) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, targetUserId },
+        context: { requesterUserId, targetUserId },
       });
     }
   }

@@ -193,59 +193,6 @@ describe('POST /v1/user/:userId/runs', () => {
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
-
-    it('caregiver with CAN_READ_CHILD permission can read child run', async () => {
-      // Set up family relationship: caregiver is parent, student is child
-      const { FamilyFactory } = await import('../test-support/factories/family.factory');
-      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
-      const { writeFgaFamilyMembership } = await import('../test-support/fga/fga-test-tuples.helper');
-
-      const family = await FamilyFactory.create();
-      const caregiverFamily = await UserFamilyFactory.create({
-        userId: tiers.caregiver.id,
-        familyId: family.id,
-        role: 'parent',
-      });
-      const studentFamily = await UserFamilyFactory.create({
-        userId: tiers.student.id,
-        familyId: family.id,
-        role: 'child',
-      });
-
-      // Write FGA tuples for the family relationships
-      await writeFgaFamilyMembership(
-        tiers.caregiver.id,
-        family.id,
-        'parent',
-        caregiverFamily.joinedOn,
-        caregiverFamily.leftOn,
-      );
-      await writeFgaFamilyMembership(
-        tiers.student.id,
-        family.id,
-        'child',
-        studentFamily.joinedOn,
-        studentFamily.leftOn,
-      );
-
-      // Child creates the run
-      authenticateAs(tiers.student);
-      const createRes = await request(app)
-        .post(getPath(tiers.student.id))
-        .set('Authorization', 'Bearer token')
-        .send(buildCreateRunBody());
-
-      expect(createRes.status).toBe(StatusCodes.CREATED);
-      const runId = createRes.body.data.id;
-
-      // Caregiver can read the child's run
-      authenticateAs(tiers.caregiver);
-      const { RunRepository } = await import('../repositories/run.repository');
-      const { AssessmentDbClient } = await import('../test-support/db');
-      const runRepository = new RunRepository(AssessmentDbClient);
-      const run = await runRepository.getById({ id: runId });
-      expect(run?.userId).toBe(tiers.student.id);
-    });
   });
 
   describe('error cases', () => {

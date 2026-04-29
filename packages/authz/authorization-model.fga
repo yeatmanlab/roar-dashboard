@@ -234,6 +234,7 @@ type family
     define can_delete_child: parent
     define can_read_child: parent
     define can_consent_for_child: parent
+    define can_create_run_for_child: parent
 
 
 # ────────────────────────────────────────────────────────────────────────────────
