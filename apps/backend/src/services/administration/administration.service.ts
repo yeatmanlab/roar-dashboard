@@ -809,11 +809,7 @@ export function AdministrationService({
    * @returns Paginated result with optional embeds (stats, tasks)
    * @throws {ApiError} NOT_FOUND if target user doesn't exist
    * @throws {ApiError} FORBIDDEN if requester lacks access to target user's administrations
-<<<<<<< HEAD
    * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
-=======
-   * @throws {ApiError} INTERNAL_SERVER_ERROR for unexpected error such as database query failures
->>>>>>> 5605a32f8 (Update jsdocs with error documentation)
    */
   async function getUserAdministrations(
     authContext: AuthContext,
