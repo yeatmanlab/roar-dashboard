@@ -1395,6 +1395,7 @@ describe('GET /v1/users/:userId/administrations', () => {
 
 describe('POST /v1/users', () => {
   let platformAdmin: { id: string; authId: string };
+  let schoolAPlatformAdmin: { id: string; authId: string };
   let groupPlatformAdmin: { id: string; authId: string };
   let otherGroup: { id: string };
 
@@ -1473,6 +1474,14 @@ describe('POST /v1/users', () => {
       role: UserRole.PLATFORM_ADMIN,
     });
     platformAdmin = { id: platformAdminUser.id, authId: platformAdminUser.authId! };
+
+    const schoolAPlatformAdminUser = await UserFactory.create({ nameFirst: 'SchoolA Platform', nameLast: 'Admin' });
+    await UserOrgFactory.create({
+      userId: schoolAPlatformAdminUser.id,
+      orgId: baseFixture.schoolA.id,
+      role: UserRole.PLATFORM_ADMIN,
+    });
+    schoolAPlatformAdmin = { id: schoolAPlatformAdminUser.id, authId: schoolAPlatformAdminUser.authId! };
 
     const groupPlatformAdminUser = await UserFactory.create({ nameFirst: 'Group Platform', nameLast: 'Admin' });
     await UserGroupFactory.create({
@@ -1657,6 +1666,54 @@ describe('POST /v1/users', () => {
         .toReturn(StatusCodes.FORBIDDEN);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('district platform_admin cannot create a user in a group without explicit group platform_admin', async () => {
+      // platformAdmin has can_create_users on baseFixture.district via the org hierarchy.
+      // Groups have no hierarchy — district platform_admin does NOT inherit to groups.
+      // can_create_users on a group requires explicit platform_admin on that specific group.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(platformAdmin)
+        .withBody({
+          email: makeEmail('district-admin-cross-group'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'group', entityId: baseFixture.group.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('school platform_admin cannot create a user in a class in a sibling school', async () => {
+      // schoolAPlatformAdmin has can_create_users on schoolA only.
+      // The class→parent-school FGA check resolves classInSchoolB to schoolB —
+      // schoolAPlatformAdmin has no can_create_users on schoolB.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(schoolAPlatformAdmin)
+        .withBody({
+          email: makeEmail('school-admin-sibling-class'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'class', entityId: baseFixture.classInSchoolB.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('platform_admin can create a user with both district and family memberships', async () => {
+      // Family is explicitly excluded from FGA can_create_users checks — the district
+      // membership passes authorization and the family membership is written without an
+      // additional FGA check (known gap, tracked separately).
+      const body = validBodyForFamilyInDistrict('platform-admin-family');
+      const res = await expectRoute('POST', '/v1/users').as(platformAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      expect(memberships.find((m) => m.entityId === baseFixture.district.id)).toBeDefined();
+      expect(memberships.find((m) => m.entityId === sharedFamily.id)).toBeDefined();
     });
 
     it('admin tier (administrator role) cannot create users — no can_create_users in FGA', async () => {
