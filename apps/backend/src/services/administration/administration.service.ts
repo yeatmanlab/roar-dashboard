@@ -1137,7 +1137,8 @@ export function AdministrationService({
         });
       }
 
-      const administration = await verifyAdministrationAccess({ userId, isSuperAdmin: false }, administrationId);
+      // Requires authContext of target user so isSuperAdmin is manually set to false
+      const administration = await getById({ userId, isSuperAdmin: false }, administrationId);
 
       if (isSuperAdmin) {
         return administration;
@@ -1148,6 +1149,7 @@ export function AdministrationService({
         FgaRelation.CAN_READ,
         `${FgaType.ADMINISTRATION}:${administrationId}`,
       );
+
       return administration;
     } catch (error) {
       if (error instanceof ApiError) throw error;
