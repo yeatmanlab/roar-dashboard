@@ -50,6 +50,7 @@ describe('AdministrationsController', () => {
   const mockDeleteById = vi.fn();
   const mockGetTree = vi.fn();
   const mockCreate = vi.fn();
+  const mockUpdate = vi.fn();
   const mockListProgressStudents = vi.fn();
   const mockGetProgressOverview = vi.fn();
   const mockGetScoreOverview = vi.fn();
@@ -74,6 +75,7 @@ describe('AdministrationsController', () => {
       getTree: mockGetTree,
       create: mockCreate,
       getUserAdministration: mockGetUserAdministration,
+      update: mockUpdate,
     });
 
     vi.mocked(ReportService).mockReturnValue({

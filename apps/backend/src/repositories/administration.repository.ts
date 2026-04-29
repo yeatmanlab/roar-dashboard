@@ -203,6 +203,32 @@ export interface CreateAdministrationInput {
 }
 
 /**
+ * Input for updating an administration with all related junction table entries.
+ * All fields are optional - only those present will be updated.
+ * Array fields use replacement logic (delete/update/insert).
+ */
+export interface UpdateAdministrationInput {
+  administration?: Partial<{
+    name: string;
+    namePublic: string;
+    description: string;
+    dateStart: Date;
+    dateEnd: Date;
+    isOrdered: boolean;
+  }>;
+  orgIds?: string[];
+  classIds?: string[];
+  groupIds?: string[];
+  taskVariants?: Array<{
+    taskVariantId: string;
+    orderIndex: number;
+    conditionsAssignment?: unknown;
+    conditionsRequirements?: unknown;
+  }>;
+  agreementIds?: string[];
+}
+
+/**
  * Administration Repository
  *
  * Provides data access methods for the administrations table.
@@ -996,5 +1022,168 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .limit(1);
 
     return result.length > 0;
+  }
+
+  /**
+   * Check if an administration with the given name already exists, excluding a specific ID.
+   * Used for update validation to allow keeping the same name.
+   *
+   * @param name - The name to check
+   * @param excludeId - The administration ID to exclude from the check
+   * @returns true if another administration with this name exists, false otherwise
+   */
+  async existsByNameExcludingId(name: string, excludeId: string): Promise<boolean> {
+    const result = await this.db
+      .select({ id: administrations.id })
+      .from(administrations)
+      .where(and(sql`lower(${administrations.name}) = lower(${name})`, sql`${administrations.id} != ${excludeId}`))
+      .limit(1);
+
+    return result.length > 0;
+  }
+
+  /**
+   * Updates an administration with all related junction table entries in a single transaction.
+   *
+   * Uses replacement logic for array fields:
+   * - Deletes all existing records for the junction table
+   * - Inserts all new records from the input
+   *
+   * Only updates fields that are present in the input.
+   *
+   * @param administrationId - The ID of the administration to update
+   * @param input - The update data (all fields optional)
+   * @returns The updated administration record
+   * @throws If any operation fails, the entire transaction is rolled back
+   */
+  async updateWithAssignments(administrationId: string, input: UpdateAdministrationInput): Promise<Administration> {
+    return this.runTransaction({
+      fn: async (tx) => {
+        // Update the main administration record if any fields are provided
+        if (input.administration && Object.keys(input.administration).length > 0) {
+          await tx.update(administrations).set(input.administration).where(eq(administrations.id, administrationId));
+        }
+
+        // Replace org assignments if provided
+        if (input.orgIds !== undefined) {
+          await tx.delete(administrationOrgs).where(eq(administrationOrgs.administrationId, administrationId));
+          if (input.orgIds.length > 0) {
+            await tx.insert(administrationOrgs).values(
+              input.orgIds.map((orgId) => ({
+                administrationId,
+                orgId,
+              })),
+            );
+          }
+        }
+
+        // Replace class assignments if provided
+        if (input.classIds !== undefined) {
+          await tx.delete(administrationClasses).where(eq(administrationClasses.administrationId, administrationId));
+          if (input.classIds.length > 0) {
+            await tx.insert(administrationClasses).values(
+              input.classIds.map((classId) => ({
+                administrationId,
+                classId,
+              })),
+            );
+          }
+        }
+
+        // Replace group assignments if provided
+        if (input.groupIds !== undefined) {
+          await tx.delete(administrationGroups).where(eq(administrationGroups.administrationId, administrationId));
+          if (input.groupIds.length > 0) {
+            await tx.insert(administrationGroups).values(
+              input.groupIds.map((groupId) => ({
+                administrationId,
+                groupId,
+              })),
+            );
+          }
+        }
+
+        // Replace task variant assignments if provided
+        if (input.taskVariants !== undefined) {
+          await tx
+            .delete(administrationTaskVariants)
+            .where(eq(administrationTaskVariants.administrationId, administrationId));
+          if (input.taskVariants.length > 0) {
+            await tx.insert(administrationTaskVariants).values(
+              input.taskVariants.map((tv) => ({
+                administrationId,
+                taskVariantId: tv.taskVariantId,
+                orderIndex: tv.orderIndex,
+                conditionsAssignment: tv.conditionsAssignment,
+                conditionsRequirements: tv.conditionsRequirements,
+              })),
+            );
+          }
+        }
+
+        // Replace agreement requirements if provided
+        if (input.agreementIds !== undefined) {
+          await tx
+            .delete(administrationAgreements)
+            .where(eq(administrationAgreements.administrationId, administrationId));
+          if (input.agreementIds.length > 0) {
+            await tx.insert(administrationAgreements).values(
+              input.agreementIds.map((agreementId) => ({
+                administrationId,
+                agreementId,
+              })),
+            );
+          }
+        }
+
+        // Fetch and return the updated administration
+        const [updated] = await tx.select().from(administrations).where(eq(administrations.id, administrationId));
+
+        return updated!;
+      },
+    });
+  }
+
+  /**
+   * Get the current assignees for an administration.
+   * Used by the update service to determine what FGA tuples need to be added/removed.
+   *
+   * @param administrationId - The administration ID
+   * @returns Object with arrays of district, school, class, and group IDs
+   */
+  async getCurrentAssigneeIds(
+    administrationId: string,
+  ): Promise<{ districtIds: string[]; schoolIds: string[]; classIds: string[]; groupIds: string[] }> {
+    const [orgResults, classResults, groupResults] = await Promise.all([
+      this.db
+        .select({
+          id: orgs.id,
+          orgType: orgs.orgType,
+        })
+        .from(administrationOrgs)
+        .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
+        .where(eq(administrationOrgs.administrationId, administrationId)),
+      this.db
+        .select({
+          id: classes.id,
+        })
+        .from(administrationClasses)
+        .innerJoin(classes, eq(classes.id, administrationClasses.classId))
+        .where(eq(administrationClasses.administrationId, administrationId)),
+      this.db
+        .select({
+          id: groups.id,
+        })
+        .from(administrationGroups)
+        .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
+        .where(eq(administrationGroups.administrationId, administrationId)),
+    ]);
+
+    return {
+      districtIds: orgResults.filter((o) => o.orgType === OrgType.DISTRICT).map((o) => o.id),
+      schoolIds: orgResults.filter((o) => o.orgType === OrgType.SCHOOL).map((o) => o.id),
+      classIds: classResults.map((c) => c.id),
+      groupIds: groupResults.map((g) => g.id),
+    };
   }
 }
