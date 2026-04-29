@@ -1708,7 +1708,7 @@ describe('POST /v1/users', () => {
 
   describe('entity validation', () => {
     it('returns 422 when super admin provides a non-existent district entityId', async () => {
-      // Super admin skips FGA; Firebase createUser runs, then DB FK violation fires → 422
+      // Super admin skips FGA; entity existence is checked pre-flight via districtRepository.getById
       const body = {
         ...validBodyForDistrict('bad-district'),
         memberships: [{ entityType: 'district', entityId: '00000000-0000-0000-0000-000000000000', role: 'student' }],
