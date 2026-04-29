@@ -1,24 +1,37 @@
 import type { AuthContext } from '../../types/auth-context';
-import type { User, NewUserAgreement } from '../../db/schema';
-import type { UserType } from '../../enums/user-type.enum';
+import type { User, NewUserAgreement, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../../db/schema';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import type { UserRole } from '../../enums/user-role.enum';
+import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import { EntityType } from '../../types/entity-type';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
-import { isUniqueViolation, unwrapDrizzleError } from '../../errors';
+import { isUniqueViolation, isForeignKeyViolation, unwrapDrizzleError } from '../../errors';
 import { logger } from '../../logger';
 import { UserRepository } from '../../repositories/user.repository';
 import { UserAgreementRepository } from '../../repositories/user-agreement.repository';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
+import { generateAssessmentPid } from '../../utils/assessment-pid.util';
+import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
 import { AuthorizationService } from '../authorization/authorization.service';
-import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { FgaType, FgaRelation, FGA_CLASS_VALID_ROLES } from '../authorization/fga-constants';
+import {
+  districtMembershipTuple,
+  schoolMembershipTuple,
+  classMembershipTuple,
+  groupMembershipTuple,
+  familyMembershipTuple,
+} from '../authorization/helpers/fga-tuples';
+import { UserType } from '../../enums/user-type.enum';
+import { AuthProvider } from '../../enums/auth-provider.enum';
+import { isFirebaseError } from '../../types/firebase';
+import { FirebaseErrorCode } from '../../enums/firebase-error-codes.enum';
 
 // Types for the unsigned TOS agreements response
 interface TosAgreementVersion {
@@ -296,8 +309,404 @@ export function UserService({
     }
   }
 
+  /**
+   * Create a new user with memberships across three external systems.
+   *
+   * Implements a saga with explicit compensation so a failure in any system
+   * rolls back the others, leaving the platform in a consistent state.
+   *
+   * Operation sequence: Auth → DB → FGA
+   *
+   * Authorization behavior:
+   * - Super admin: allowed unconditionally.
+   * - All others: must have `can_create_users` on every membership target.
+   *   - district / school / group: checked directly.
+   *   - class: checked on the parent school (the FGA model defines no `can_create_users`
+   *     on the `class` type; it cascades from the parent school instead).
+   *   - family: no `can_create_users` check (families are self-managed).
+   *
+   * @param authContext - Requesting user's auth context
+   * @param body - User fields and initial memberships
+   * @returns The newly created user's ID
+   * @throws {ApiError} FORBIDDEN (403) if authorization fails
+   * @throws {ApiError} CONFLICT (409) if email / assessmentPid already exists
+   * @throws {ApiError} UNPROCESSABLE_ENTITY (422) if a membership entityId doesn't resolve
+   * @throws {ApiError} TOO_MANY_REQUESTS (429) if Firebase Auth rate-limits the request
+   * @throws {ApiError} INTERNAL_SERVER_ERROR (500) on unexpected failures or unrecoverable compensation
+   */
   async function create(authContext: AuthContext, body: CreateUserData): Promise<{ id: string }> {
-    return { id: 'placeholder-id' };
+    const { userId, isSuperAdmin } = authContext;
+
+    // ── Step 1: Authorization + entity existence pre-flight ───────────────────
+    //
+    // For non-super-admins, resolve the FGA object for each membership and call
+    // requirePermission. For class memberships, look up the parent school first —
+    // `can_create_users` is defined on school, not class.
+    //
+    // Entity existence is checked implicitly: findClassParentSchool returns null
+    // for a non-existent class, and the FGA model requires district/school/group
+    // to have tuples; missing entities have no tuples so requirePermission throws 403.
+    // Super admins skip FGA checks but we still verify classes exist.
+
+    if (!isSuperAdmin) {
+      await Promise.all(
+        body.memberships.map(async (membership) => {
+          if (membership.entityType === EntityType.CLASS) {
+            const schoolId = await userRepository.findClassParentSchool(membership.entityId);
+            if (!schoolId) {
+              logger.warn({ userId, classId: membership.entityId }, 'Class not found during user create pre-flight');
+              throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+                statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+                code: ApiErrorCode.RESOURCE_NOT_FOUND,
+                context: { userId, classId: membership.entityId },
+              });
+            }
+            await authorizationService.requirePermission(
+              userId,
+              FgaRelation.CAN_CREATE_USERS,
+              `${FgaType.SCHOOL}:${schoolId}`,
+            );
+          } else if (membership.entityType !== EntityType.FAMILY) {
+            await authorizationService.requirePermission(
+              userId,
+              FgaRelation.CAN_CREATE_USERS,
+              `${ENTITY_TYPE_TO_FGA_TYPE[membership.entityType]}:${membership.entityId}`,
+            );
+          }
+        }),
+      );
+    } else {
+      // Super admin: only verify classes exist (DB FK covers the rest at write time)
+      await Promise.all(
+        body.memberships
+          .filter((m) => m.entityType === EntityType.CLASS)
+          .map(async (m) => {
+            const schoolId = await userRepository.findClassParentSchool(m.entityId);
+            if (!schoolId) {
+              logger.warn({ userId, classId: m.entityId }, 'Class not found during user create pre-flight');
+              throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+                statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+                code: ApiErrorCode.RESOURCE_NOT_FOUND,
+                context: { userId, classId: m.entityId },
+              });
+            }
+          }),
+      );
+    }
+
+    // ── Step 2: Pre-flight uniqueness check ───────────────────────────────────
+    //
+    // Avoids creating an orphaned Firebase auth account for a user that already
+    // exists in Postgres. PID is checked too when the caller provides one.
+
+    const assessmentPid =
+      body.identifiers?.pid ??
+      generateAssessmentPid({
+        userId: body.email,
+        // Prefixes could be derived from the first district/school membership abbreviation;
+        // omitted for now to keep this endpoint consistent with the current cloud function
+        // default (checksum-only) for new single-user creation.
+      });
+
+    const alreadyExists = await userRepository.existsByUniqueFields({
+      email: body.email,
+      assessmentPid,
+    });
+
+    if (alreadyExists) {
+      throw new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { userId, email: body.email },
+      });
+    }
+
+    // Also check Firebase Auth — a user might exist there without a DB row
+    try {
+      await FirebaseAuthClient.getUserByEmail(body.email);
+      // If getUserByEmail succeeds, the account already exists
+      throw new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { userId, email: body.email },
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      // `auth/user-not-found` is the expected case — swallow and continue
+      if (!isFirebaseError(error) || error.code !== FirebaseErrorCode.USER_NOT_FOUND) {
+        logger.error(
+          { err: error, context: { userId, email: body.email } },
+          'Firebase getUserByEmail failed during pre-flight',
+        );
+        throw new ApiError('Failed to check Firebase user existence', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, email: body.email },
+          cause: error,
+        });
+      }
+    }
+
+    // ── Step 3: Firebase Auth createUser ─────────────────────────────────────
+
+    let firebaseUid: string;
+    try {
+      const authRecord = await FirebaseAuthClient.createUser({
+        email: body.email,
+        password: body.password,
+        displayName: [body.name.first, body.name.last].filter(Boolean).join(' '),
+      });
+      firebaseUid = authRecord.uid;
+    } catch (error) {
+      if (isFirebaseError(error) && error.code === FirebaseErrorCode.EMAIL_ALREADY_EXISTS) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, email: body.email },
+        });
+      }
+
+      if (isFirebaseError(error) && error.code === FirebaseErrorCode.TOO_MANY_REQUESTS) {
+        throw new ApiError(ApiErrorMessage.RATE_LIMITED, {
+          statusCode: StatusCodes.TOO_MANY_REQUESTS,
+          code: ApiErrorCode.RATE_LIMITED,
+          context: { userId, email: body.email },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, email: body.email } }, 'Firebase createUser failed');
+      throw new ApiError('Failed to create Firebase auth account', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, email: body.email },
+        cause: error,
+      });
+    }
+
+    // ── Step 4: DB transaction (user row + junction rows) ────────────────────
+    //
+    // On failure: compensate by deleting the Firebase auth account.
+
+    let newUserId: string;
+    try {
+      const enrollmentStart = new Date();
+
+      const orgMemberships: Omit<NewUserOrg, 'userId'>[] = body.memberships
+        .filter((m) => m.entityType === EntityType.DISTRICT || m.entityType === EntityType.SCHOOL)
+        .map((m) => ({
+          orgId: m.entityId,
+          role: m.role,
+          enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
+          enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
+        }));
+
+      const classMemberships: Omit<NewUserClass, 'userId'>[] = body.memberships
+        .filter((m) => m.entityType === EntityType.CLASS)
+        .map((m) => ({
+          classId: m.entityId,
+          role: m.role,
+          enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
+          enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
+        }));
+
+      const groupMemberships: Omit<NewUserGroup, 'userId'>[] = body.memberships
+        .filter((m) => m.entityType === EntityType.GROUP)
+        .map((m) => ({
+          groupId: m.entityId,
+          role: m.role,
+          enrollmentStart: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
+          enrollmentEnd: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
+        }));
+
+      const familyMemberships: Omit<NewUserFamily, 'userId'>[] = body.memberships
+        .filter((m) => m.entityType === EntityType.FAMILY)
+        .map((m) => ({
+          familyId: m.entityId,
+          // Family roles come from userFamilyRoleEnum ('parent' | 'child' | 'guardian')
+          // Cast is safe: the contract schema validates role values match the DB enum
+          role: m.role as NewUserFamily['role'],
+          joinedOn: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
+          leftOn: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
+        }));
+
+      const result = await userRepository.createWithMemberships(
+        {
+          authId: firebaseUid,
+          authProvider: [AuthProvider.PASSWORD],
+          email: body.email,
+          nameFirst: body.name.first,
+          nameMiddle: body.name.middle ?? null,
+          nameLast: body.name.last,
+          dob: body.dob ?? null,
+          grade: body.grade ?? null,
+          assessmentPid,
+          userType: UserType.STUDENT,
+          statusEll: body.demographics?.statusEll ?? null,
+          statusFrl: body.demographics?.statusFrl ?? null,
+          statusIep: body.demographics?.statusIep ?? null,
+          gender: body.demographics?.gender ?? null,
+          race: body.demographics?.race ?? null,
+          hispanicEthnicity: body.demographics?.hispanicEthnicity ?? null,
+          homeLanguage: body.demographics?.homeLanguage ?? null,
+          stateId: body.identifiers?.stateId ?? null,
+          isSuperAdmin: false,
+        },
+        orgMemberships,
+        classMemberships,
+        groupMemberships,
+        familyMemberships,
+      );
+
+      newUserId = result.id;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      const dbError = unwrapDrizzleError(error);
+
+      if (isUniqueViolation(dbError)) {
+        // Compensate: roll back the Firebase auth account
+        await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'DB unique violation');
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, email: body.email },
+          cause: error,
+        });
+      }
+
+      if (isForeignKeyViolation(dbError)) {
+        // A membership entityId didn't resolve — FK constraint fired
+        await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'FK violation on membership entity');
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, email: body.email },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, email: body.email } }, 'DB write failed during user create');
+      await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'DB write failure');
+      throw new ApiError('Failed to create user record', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, email: body.email, firebaseUid },
+        cause: error,
+      });
+    }
+
+    // ── Step 5: FGA tuple writes ──────────────────────────────────────────────
+    //
+    // On failure: compensate by deleting FGA tuples, then the DB row, then Firebase.
+
+    const fgaTuples = buildMembershipTuples(newUserId, body.memberships);
+
+    try {
+      await authorizationService.writeTuplesOrThrow(fgaTuples);
+    } catch (error) {
+      logger.error(
+        { err: error, context: { userId, newUserId, email: body.email, firebaseUid } },
+        'FGA write failed during user create — beginning compensation',
+      );
+
+      // Best-effort: delete any tuples that may have been partially written
+      const deleteTuples: TupleKeyWithoutCondition[] = fgaTuples.map(({ user, relation, object }) => ({
+        user,
+        relation,
+        object,
+      }));
+      await authorizationService.deleteTuples(deleteTuples);
+
+      // Delete the DB row (cascade removes junction rows)
+      try {
+        await userRepository.delete({ id: newUserId });
+      } catch (dbDeleteError) {
+        logger.error(
+          { err: dbDeleteError, context: { userId, newUserId, firebaseUid } },
+          'DB delete compensation failed after FGA write failure — manual cleanup required',
+        );
+      }
+
+      // Delete the Firebase auth account
+      await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'FGA write failure');
+
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, newUserId, email: body.email, firebaseUid },
+        cause: error,
+      });
+    }
+
+    logger.info({ userId, newUserId, email: body.email }, 'Created user');
+    return { id: newUserId };
+  }
+
+  /**
+   * Delete a Firebase auth account as a saga compensation step.
+   *
+   * Failures are logged with full context but not re-thrown — the caller surfaces
+   * a 500 to the client regardless. The structured log provides a paper trail for
+   * manual reconciliation.
+   */
+  async function compensateDeleteFirebaseUser(
+    firebaseUid: string,
+    requestingUserId: string,
+    email: string,
+    reason: string,
+  ): Promise<void> {
+    try {
+      await FirebaseAuthClient.deleteUser(firebaseUid);
+    } catch (compensationError) {
+      logger.error(
+        { err: compensationError, context: { requestingUserId, firebaseUid, email, reason } },
+        'Firebase deleteUser compensation failed — orphaned auth account requires manual cleanup',
+      );
+    }
+  }
+
+  /**
+   * Build the FGA membership tuples for a newly created user.
+   *
+   * Class tuples are skipped for roles excluded from `FGA_CLASS_VALID_ROLES`
+   * (admin-tier roles cascade via the org hierarchy and must not be written
+   * directly to the class type).
+   */
+  function buildMembershipTuples(newUserId: string, memberships: CreateUserMemberships[]): TupleKey[] {
+    const tuples: TupleKey[] = [];
+    const now = new Date();
+
+    for (const m of memberships) {
+      const start = m.enrollmentStart ? new Date(m.enrollmentStart) : now;
+      const end = m.enrollmentEnd ? new Date(m.enrollmentEnd) : null;
+
+      if (m.entityType === EntityType.DISTRICT) {
+        tuples.push(districtMembershipTuple(newUserId, m.entityId, m.role, start, end));
+      } else if (m.entityType === EntityType.SCHOOL) {
+        tuples.push(schoolMembershipTuple(newUserId, m.entityId, m.role, start, end));
+      } else if (m.entityType === EntityType.CLASS) {
+        if (FGA_CLASS_VALID_ROLES.has(m.role)) {
+          tuples.push(classMembershipTuple(newUserId, m.entityId, m.role, start, end));
+        }
+      } else if (m.entityType === EntityType.GROUP) {
+        tuples.push(groupMembershipTuple(newUserId, m.entityId, m.role, start, end));
+      } else if (m.entityType === EntityType.FAMILY) {
+        // Family roles are 'parent' | 'child' — cast is safe because the contract schema
+        // validates the role against the userFamilyRoleEnum before it reaches the service
+        tuples.push(
+          familyMembershipTuple(
+            newUserId,
+            m.entityId,
+            m.role as Parameters<typeof familyMembershipTuple>[2],
+            start,
+            end,
+          ),
+        );
+      }
+    }
+
+    return tuples;
   }
 
   /**

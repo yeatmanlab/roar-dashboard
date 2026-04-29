@@ -1,8 +1,8 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { User } from '../db/schema';
+import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
 import { EntityType } from '../types/entity-type';
-import { users, userOrgs, userClasses, userGroups, userFamilies, orgs } from '../db/schema';
+import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';
@@ -99,5 +99,108 @@ export class UserRepository extends BaseRepository<User, typeof users> {
       ...groupRows.map((r) => ({ entityType: EntityType.GROUP, entityId: r.entityId })),
       ...familyRows.map((r) => ({ entityType: EntityType.FAMILY, entityId: r.entityId })),
     ];
+  }
+
+  /**
+   * Resolve the parent school ID for a class.
+   *
+   * The service layer checks `can_create_users` on the parent school (not the class itself),
+   * because the FGA model does not define `can_create_users` on the `class` type.
+   *
+   * @param classId - UUID of the class
+   * @returns The parent school's org ID, or null if the class doesn't exist
+   */
+  async findClassParentSchool(classId: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ schoolId: classes.schoolId })
+      .from(classes)
+      .where(eq(classes.id, classId))
+      .limit(1);
+    return row?.schoolId ?? null;
+  }
+
+  /**
+   * Create a user row and all junction-table memberships in a single DB transaction.
+   *
+   * Inserts the `users` row and all `user_orgs`, `user_classes`, `user_groups`, and
+   * `user_families` rows atomically. The caller (service layer) is responsible for
+   * Firebase Auth creation and FGA tuple writes — those happen outside this transaction.
+   *
+   * @param userData - The user fields to insert (excluding system-managed fields)
+   * @param orgMemberships - Rows to insert into `user_orgs`
+   * @param classMemberships - Rows to insert into `user_classes`
+   * @param groupMemberships - Rows to insert into `user_groups`
+   * @param familyMemberships - Rows to insert into `user_families`
+   * @returns The newly created user's ID
+   */
+  async createWithMemberships(
+    userData: Omit<NewUser, 'id'>,
+    orgMemberships: Omit<NewUserOrg, 'userId'>[],
+    classMemberships: Omit<NewUserClass, 'userId'>[],
+    groupMemberships: Omit<NewUserGroup, 'userId'>[],
+    familyMemberships: Omit<NewUserFamily, 'userId'>[],
+  ): Promise<{ id: string }> {
+    return this.db.transaction(async (tx) => {
+      const [created] = await tx.insert(users).values(userData).returning({ id: users.id });
+
+      if (!created) {
+        throw new Error('User insert returned no rows');
+      }
+
+      const { id: userId } = created;
+
+      if (orgMemberships.length > 0) {
+        await tx.insert(userOrgs).values(orgMemberships.map((m) => ({ ...m, userId })));
+      }
+
+      if (classMemberships.length > 0) {
+        await tx.insert(userClasses).values(classMemberships.map((m) => ({ ...m, userId })));
+      }
+
+      if (groupMemberships.length > 0) {
+        await tx.insert(userGroups).values(groupMemberships.map((m) => ({ ...m, userId })));
+      }
+
+      if (familyMemberships.length > 0) {
+        await tx.insert(userFamilies).values(familyMemberships.map((m) => ({ ...m, userId })));
+      }
+
+      return { id: userId };
+    });
+  }
+
+  /**
+   * Check whether a user with the given email, username, or assessmentPid already exists.
+   *
+   * Used for pre-flight uniqueness checks before writing to Firebase Auth or the DB,
+   * to surface 409 Conflict early without initiating any external writes.
+   *
+   * @param params - At least one of email, username, or assessmentPid must be provided
+   * @returns true if a matching row exists
+   */
+  async existsByUniqueFields({
+    email,
+    username,
+    assessmentPid,
+  }: {
+    email?: string;
+    username?: string;
+    assessmentPid?: string;
+  }): Promise<boolean> {
+    const conditions = [
+      email ? eq(users.email, email) : null,
+      username ? eq(users.username, username) : null,
+      assessmentPid ? eq(users.assessmentPid, assessmentPid) : null,
+    ].filter((c) => c !== null);
+
+    if (conditions.length === 0) return false;
+
+    const [row] = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(or(...conditions))
+      .limit(1);
+
+    return row !== undefined;
   }
 }
