@@ -211,7 +211,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.FAMILY, entityId: 'family-uuid', role: UserRole.GUARDIAN as UserRole }],
+        memberships: [{ entityType: EntityType.FAMILY, entityId: 'family-uuid', role: UserRole.PARENT as UserRole }],
       };
 
       await service.create(authContext, body);
@@ -250,6 +250,35 @@ describe('UserService.create', () => {
         memberships: [{ entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT as UserRole }],
       };
       mockGroupRepo.getById.mockResolvedValue(null);
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
+
+    it('super admin: non-existent school entityId → 422 before Firebase call', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.SCHOOL, entityId: schoolId, role: UserRole.STUDENT as UserRole }],
+      };
+      mockSchoolRepo.getById.mockResolvedValue(null);
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
+
+    it('super admin: non-existent family entityId → 422 before Firebase call', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const familyId = 'family-uuid-1';
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserRole.STUDENT as UserRole }],
+      };
+      mockFamilyRepo.getById.mockResolvedValue(null);
 
       await expect(service.create(authContext, body)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
