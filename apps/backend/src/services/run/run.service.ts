@@ -170,7 +170,7 @@ export function RunService({
         );
       }
 
-      if (requesterUserId !== targetUserId && !isSuperAdmin) {
+      if (isParentForChildRun) {
         // Requester is creating a run for a different user (e.g., parent creating for child).
         // Check if requester has can_create_run_for_child permission on any family containing the target user.
         // Super admins bypass this check.
