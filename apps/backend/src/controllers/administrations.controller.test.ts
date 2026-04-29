@@ -9,6 +9,7 @@ import { AgreementVersionFactory } from '../test-support/factories/agreement-ver
 import type { ProgressStudentsQuery, ReportTaskMetadata, ProgressStudent } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../enums/api-error-message.enum';
 
 // Mock the AdministrationService module
 vi.mock('../services/administration/administration.service', () => ({
@@ -42,6 +43,7 @@ describe('AdministrationsController', () => {
   const mockListAgreements = vi.fn();
   const mockDeleteById = vi.fn();
   const mockGetTree = vi.fn();
+  const mockCreate = vi.fn();
   const mockListProgressStudents = vi.fn();
   const mockGetProgressOverview = vi.fn();
   const mockGetUserAdministrations = vi.fn();
@@ -61,6 +63,7 @@ describe('AdministrationsController', () => {
       deleteById: mockDeleteById,
       getUserAdministrations: mockGetUserAdministrations,
       getTree: mockGetTree,
+      create: mockCreate,
     });
 
     vi.mocked(ReportService).mockReturnValue({
@@ -1726,6 +1729,156 @@ describe('AdministrationsController', () => {
       await Controller.getProgressOverview(mockAuthContext, testAdminId, testQuery);
 
       expect(mockGetProgressOverview).toHaveBeenCalledWith(mockAuthContext, testAdminId, testQuery);
+    });
+  });
+
+  describe('create', () => {
+    const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
+    const validRequestBody = {
+      name: 'Test Administration',
+      namePublic: 'Public Test Name',
+      description: 'Test description',
+      dateStart: '2024-01-01T00:00:00Z',
+      dateEnd: '2024-12-31T23:59:59Z',
+      isOrdered: false,
+      orgs: ['org-1', 'org-2'],
+      classes: ['class-1'],
+      groups: ['group-1'],
+      taskVariants: [
+        {
+          taskVariantId: 'tv-1',
+          orderIndex: 0,
+        },
+      ],
+      agreements: ['agreement-1'],
+    };
+
+    it('should create administration and return 201 with the administration ID', async () => {
+      // Arrange
+      const mockCreatedAdmin = AdministrationFactory.build();
+      mockCreate.mockResolvedValue(mockCreatedAdmin);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      // Act
+      const result = await Controller.create(mockAuthContext, validRequestBody);
+
+      // Assert
+      expect(result.status).toBe(StatusCodes.CREATED);
+      expect(result.body).toEqual({
+        data: mockCreatedAdmin.id,
+      });
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, validRequestBody);
+    });
+
+    it('should return 422 when service throws validation error for date range', async () => {
+      // Arrange
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId: 'user-123', reason: 'dateEnd must be after dateStart' },
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      // Act
+      const result = await Controller.create(mockAuthContext, validRequestBody);
+
+      // Assert
+      expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+        expect(result.body.error).toHaveProperty('traceId');
+      }
+    });
+
+    it('should return 422 when service throws validation error for missing assignments', async () => {
+      // Arrange
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId: 'user-123', reason: 'At least one org, class, or group must be assigned' },
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      // Act
+      const result = await Controller.create(mockAuthContext, validRequestBody);
+
+      // Assert
+      expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+        expect(result.body.error).toHaveProperty('traceId');
+      }
+    });
+
+    it('should return 403 when service throws forbidden error', async () => {
+      // Arrange
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId: 'user-123', resourceId: 'some-resource' },
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      // Act
+      const result = await Controller.create(mockAuthContext, validRequestBody);
+
+      // Assert
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+        expect(result.body.error).toHaveProperty('traceId');
+      }
+    });
+
+    it('should return 409 when service throws conflict error for duplicate name', async () => {
+      // Arrange
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { userId: 'user-123', name: 'Test Administration' },
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      // Act
+      const result = await Controller.create(mockAuthContext, validRequestBody);
+
+      // Assert
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+        expect(result.body.error).toHaveProperty('traceId');
+      }
+    });
+
+    it('should throw when service throws unexpected error', async () => {
+      // Arrange
+      const error = new Error('Unexpected database error');
+      mockCreate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.create(mockAuthContext, validRequestBody)).rejects.toThrow('Unexpected database error');
     });
   });
 });
