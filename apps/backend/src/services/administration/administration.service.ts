@@ -780,6 +780,9 @@ export function AdministrationService({
    * @param userId - User ID to get administrations for
    * @param options - List options with pagination and embeds
    * @returns Paginated result with optional embeds (stats, tasks)
+   * @throws {ApiError} NOT_FOUND if target user doesn't exist
+   * @throws {ApiError} FORBIDDEN if requester lacks access to target user's administrations
+   * @throws {ApiError} INTERNAL_SERVER_ERROR for unexpected error such as database query failures
    */
   async function getUserAdministrations(
     authContext: AuthContext,
