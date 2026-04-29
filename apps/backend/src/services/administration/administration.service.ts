@@ -1119,7 +1119,11 @@ export function AdministrationService({
    * @param administrationId - The ID of the administration to get.
    * @returns The administration with the specified ID.
    */
-  async function getUserAdministration(authContext: AuthContext, userId: string, administrationId: string) {
+  async function getUserAdministration(
+    authContext: AuthContext,
+    userId: string,
+    administrationId: string,
+  ): Promise<Administration> {
     const { userId: requesterUserId, isSuperAdmin } = authContext;
 
     if (requesterUserId === userId) {
