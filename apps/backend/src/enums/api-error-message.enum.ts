@@ -37,7 +37,6 @@ export enum ApiErrorMessage {
   /** Rate limit exceeded — use when a downstream service rejects the request due to too many requests */
   RATE_LIMITED = 'Too many requests. Use bulk import for large batches.',
 
+  /** Generic unprocessable entity error - use when a request could not be processed due to invalid data or a reference resolution failure */
   UNPROCESSABLE_ENTITY = 'The request could not be processed due to invalid data',
-
-  INVALID_REFERENCE = 'The reference provided is invalid',
 }

@@ -374,7 +374,7 @@ export function UserService({
                 { userId, classId: membership.entityId, totalMemberships: body.memberships.length },
                 'Class not found during user create pre-flight',
               );
-              throw new ApiError(ApiErrorMessage.INVALID_REFERENCE, {
+              throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
                 statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
                 code: ApiErrorCode.RESOURCE_NOT_FOUND,
                 context: { userId, classId: membership.entityId },
@@ -392,8 +392,12 @@ export function UserService({
               `${ENTITY_TYPE_TO_FGA_TYPE[membership.entityType]}:${membership.entityId}`,
             );
           }
-          // TODO: Family authorization gap — any authenticated user can currently add members to any family.
-          // Fix in follow-up PR: check can_create_child on the family (only parents may add members).
+          // TODO: Two family gaps to fix in follow-up PR (see issue #1774):
+          // 1. Authorization: no can_create_child check — any authenticated user can add members to any family.
+          //    Fix: call authorizationService.requirePermission(userId, CAN_CREATE_CHILD, family:entityId).
+          // 2. Existence: no pre-flight existence check for family entityIds — an invalid familyId won't be caught
+          //    until the DB FK constraint fires after Firebase account creation, triggering compensation deletion.
+          //    Fix: call familyRepository.getById(entityId) before the FGA check, same as the super-admin path.
           // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1774
         }),
       );
@@ -407,7 +411,7 @@ export function UserService({
           const exists = await verifyMembershipEntityExists(entityType, entityId);
           if (!exists) {
             logger.warn({ userId, entityType, entityId }, 'Membership entity not found during user create pre-flight');
-            throw new ApiError(ApiErrorMessage.INVALID_REFERENCE, {
+            throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
               statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
               code: ApiErrorCode.RESOURCE_NOT_FOUND,
               context: { userId, entityType, entityId },
@@ -606,7 +610,7 @@ export function UserService({
       if (isForeignKeyViolation(dbError)) {
         // A membership entityId didn't resolve — FK constraint fired
         await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'FK violation on membership entity');
-        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId, email: body.email },
