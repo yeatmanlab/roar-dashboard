@@ -1,12 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
-import type { AdministrationWithEmbeds, GetTreeOptions } from '../services/administration/administration.service';
+import type { GetTreeOptions } from '../services/administration/administration.service';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ReportService } from '../services/report/report.service';
 import type {
-  Administration as ContractAdministration,
   AdministrationAgreement,
   AdministrationAgreementsListQuery,
-  AdministrationBase as ContractAdministrationBase,
   AdministrationTaskVariantItem,
   AdministrationTaskVariantsListQuery,
   AdministrationTreeQuery,
@@ -20,7 +18,6 @@ import type {
   TreeNodeStats,
   CreateAdministrationRequest,
 } from '@roar-dashboard/api-contract';
-import type { Administration } from '../db/schema';
 import type {
   AgreementWithVersion,
   AssignmentWithOptional,
@@ -30,6 +27,7 @@ import type {
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';
+import { transformAdministrationBase, transformAdministration } from './utils/administration.transform';
 
 const administrationService = AdministrationService();
 const reportService = ReportService();
@@ -41,50 +39,6 @@ const reportService = ReportService();
  */
 function hasOptionalFlag(assignment: TaskVariantWithAssignment['assignment']): assignment is AssignmentWithOptional {
   return 'optional' in assignment && typeof (assignment as AssignmentWithOptional).optional === 'boolean';
-}
-
-/**
- * Maps a database Administration entity to the base API schema.
- * Converts Date fields to ISO strings and renames fields to match the contract.
- *
- * @param admin - The database Administration entity
- * @returns The API-formatted administration base object
- */
-function transformAdministrationBase(admin: Administration): ContractAdministrationBase {
-  return {
-    id: admin.id,
-    name: admin.name,
-    publicName: admin.namePublic,
-    dates: {
-      start: admin.dateStart.toISOString(),
-      end: admin.dateEnd.toISOString(),
-      created: admin.createdAt.toISOString(),
-    },
-    isOrdered: admin.isOrdered,
-  };
-}
-
-/**
- * Maps a database Administration entity to the full API schema, attaching
- * optional embed data (stats, tasks) when present.
- *
- * @param admin - The database Administration entity with optional embeds
- * @returns The API-formatted administration object with embedded data
- */
-function transformAdministration(admin: AdministrationWithEmbeds): ContractAdministration {
-  const result: ContractAdministration = transformAdministrationBase(admin);
-
-  // Include stats if embedded
-  if (admin.stats) {
-    result.stats = admin.stats;
-  }
-
-  // Include tasks if embedded
-  if (admin.tasks) {
-    result.tasks = admin.tasks;
-  }
-
-  return result;
 }
 
 /**
