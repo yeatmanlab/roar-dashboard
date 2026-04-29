@@ -31,6 +31,14 @@ tuples:
       context:
         grant_start: "2020-01-01T00:00:00Z"
         grant_end: "9999-12-31T23:59:59Z"
+  - user: user:district-platform-admin
+    relation: platform_admin
+    object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
   - user: user:district-teacher
     relation: teacher
     object: district:district-a
@@ -42,6 +50,14 @@ tuples:
   - user: user:district-student
     relation: student
     object: district:district-a
+    condition:
+      name: active_membership
+      context:
+        grant_start: "2020-01-01T00:00:00Z"
+        grant_end: "9999-12-31T23:59:59Z"
+  - user: user:school-platform-admin
+    relation: platform_admin
+    object: school:school-a
     condition:
       name: active_membership
       context:
@@ -177,6 +193,15 @@ tests:
           can_read_scores: true
           can_read_progress: true
 
+  - name: District admin (OneRoster role) cannot create users in their district
+    check:
+      - user: user:district-admin
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
   - name: District admin cannot see other district
     check:
       - user: user:district-admin
@@ -209,6 +234,15 @@ tests:
           can_update: false
           can_delete: false
 
+  - name: District teacher cannot create users in their district
+    check:
+      - user: user:district-teacher
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
   - name: District student cannot list/read their district (supervisory only)
     check:
       - user: user:district-student
@@ -223,6 +257,33 @@ tests:
           can_delete: false
           can_list_users: false
           can_read_scores: false
+
+  - name: District student cannot create users in their district
+    check:
+      - user: user:district-student
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: Guardian in district cannot create users in their district
+    check:
+      - user: user:guardian-in-school
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: District admin cannot create users in another district
+    check:
+      - user: user:district-admin
+        object: district:district-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
 
   - name: School principal can list/read parent district (ancestor visibilty via subtree)
     check:
@@ -240,6 +301,15 @@ tests:
           supervisory_tier_group: false
           subtree_supervisory_tier_group: true
 
+  - name: School principal cannot create users in their school
+    check:
+      - user: user:school-principal
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
   - name: School teacher can list/read parent district (ancestor visibility via subtree)
     check:
       - user: user:school-teacher
@@ -256,6 +326,15 @@ tests:
           supervisory_tier_group: false
           subtree_supervisory_tier_group: true
 
+  - name: School teacher cannot create users in their school
+    check:
+      - user: user:school-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
   - name: Class teacher can list/read parent district (ancestor visibility via subtree, two hops)
     check:
       - user: user:class-teacher
@@ -269,6 +348,15 @@ tests:
           can_list_users: false
           can_read_scores: false
           can_read_progress: false
+
+  - name: Class teacher cannot create users in parent school (class has no can_create_users — checked via parent school)
+    check:
+      - user: user:class-teacher
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
 
   - name: Student in school cannot list/read parent district (supervisory only)
     check:
@@ -345,6 +433,42 @@ tests:
           can_create: false
           can_update: false
           can_delete: false
+
+  - name: District admin (OneRoster role) cannot create users in sibling school
+    check:
+      - user: user:district-admin
+        object: school:school-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: District admin (OneRoster role) cannot create users in descendant school
+    check:
+      - user: user:district-admin
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: School counselor cannot create users in their school
+    check:
+      - user: user:school-counselor
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
+
+  - name: Student in school cannot create users in their school
+    check:
+      - user: user:student-in-school
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_create_users: false
 
   - name: School principal can list/read school and classes and can access student data (supervisory_tier_group)
     check:
@@ -509,6 +633,7 @@ tests:
         assertions:
           can_list: false
           can_read: false
+          can_create_users: false
 
   - name: Admin in tree A cannot see class in tree B
     check:
@@ -672,7 +797,9 @@ tests:
           can_list:
             users:
               - user:district-admin
+              - user:district-platform-admin
               - user:district-teacher
+              - user:school-platform-admin
               - user:school-principal
               - user:principal-in-tree-a
               - user:school-counselor
@@ -694,8 +821,84 @@ tests:
           can_list:
             users:
               - user:district-admin
+              - user:district-platform-admin
+              - user:school-platform-admin
               - user:school-principal
               - user:principal-in-tree-a
               - user:school-counselor
               - user:school-teacher
               - user:teacher-in-tree-a
+
+  # ─── platform_admin permissions ───────────────────────────────────────
+
+  - name: Platform admin has full supervisory permissions and can create users in their district
+    check:
+      - user: user:district-platform-admin
+        object: district:district-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_read_scores: true
+          can_read_progress: true
+          can_create_users: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: Platform admin can create users in descendant school (cascade via parent_org)
+    check:
+      - user: user:district-platform-admin
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_read_scores: true
+          can_read_progress: true
+          can_list_classes: true
+          can_create_users: true
+
+  - name: Platform admin cannot access another district
+    check:
+      - user: user:district-platform-admin
+        object: district:district-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_users: false
+
+  - name: School-directly-rostered platform admin has full permissions at that school
+    check:
+      - user: user:school-platform-admin
+        object: school:school-a
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: true
+          can_read: true
+          can_list_users: true
+          can_read_scores: true
+          can_read_progress: true
+          can_list_classes: true
+          can_create_users: true
+          can_create: false
+          can_update: false
+          can_delete: false
+
+  - name: School-directly-rostered platform admin cannot access sibling school
+    check:
+      - user: user:school-platform-admin
+        object: school:school-b
+        context:
+          current_time: "2025-06-15T12:00:00Z"
+        assertions:
+          can_list: false
+          can_read: false
+          can_create_users: false
