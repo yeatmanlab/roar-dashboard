@@ -18,7 +18,9 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "check-types": "turbo run check-types",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seed:researcher": "bash scripts/assessment-sdk/seed-researcher.sh",
+    "seed:researcher:runs": "bash scripts/assessment-sdk/seed-researcher-runs.sh"
   },
   "devDependencies": {
     "prettier": "^3.6.0",
