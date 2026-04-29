@@ -212,7 +212,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.FAMILY, entityId: 'family-uuid', role: UserRole.PARENT }],
+        memberships: [{ entityType: EntityType.FAMILY, entityId: 'family-uuid', role: UserFamilyRole.PARENT }],
       };
 
       await service.create(authContext, body);
