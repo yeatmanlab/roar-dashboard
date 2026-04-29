@@ -1118,6 +1118,9 @@ export function AdministrationService({
    * @param userId - The ID of the user to get the administration for.
    * @param administrationId - The ID of the administration to get.
    * @returns The administration with the specified ID.
+   * @throws {ApiError} NOT_FOUND if target user or administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if requester lacks access to target user's administrations
+   * @throws {ApiError} INTERNAL_SERVER_ERROR for unexpected error such as database query failures
    */
   async function getUserAdministration(
     authContext: AuthContext,
