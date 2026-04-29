@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import type { UpdateUserRequestBody, AdministrationsListQuery } from '@roar-dashboard/api-contract';
+import type {
+  CreateUserRequestBody,
+  UpdateUserRequestBody,
+  AdministrationsListQuery,
+} from '@roar-dashboard/api-contract';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
 import { AdministrationWithEmbedsFactory } from '../test-support/factories/administration.factory';
-import { MockedUserService } from '../test-support/services/user.service';
-import { MockAdministrationService } from '../test-support/services/administration.service';
+import { createMockUserService } from '../test-support/services/user.service';
+import { createMockAdministrationService } from '../test-support/services/administration.service';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
@@ -46,6 +50,7 @@ function expectErrorResponse(
 
 describe('UsersController', () => {
   const mockGetById = vi.fn();
+  const mockCreate = vi.fn();
   const mockUpdate = vi.fn();
   const mockRecordUserAgreement = vi.fn();
   const mockGetUserAdministrations = vi.fn();
@@ -55,24 +60,17 @@ describe('UsersController', () => {
     vi.clearAllMocks();
 
     // Setup the mock UserService
-    vi.mocked(UserService).mockReturnValue({
-      findByAuthId: vi.fn(),
-      getById: mockGetById,
-      update: mockUpdate,
-      recordUserAgreement: mockRecordUserAgreement,
-    } as MockedUserService);
+    const mockUserService = createMockUserService();
+    mockUserService.getById = mockGetById;
+    mockUserService.create = mockCreate;
+    mockUserService.update = mockUpdate;
+    mockUserService.recordUserAgreement = mockRecordUserAgreement;
+    vi.mocked(UserService).mockReturnValue(mockUserService);
 
     // Setup the mock AdministrationService
-    vi.mocked(AdministrationService).mockReturnValue({
-      verifyAdministrationAccess: vi.fn(),
-      list: vi.fn(),
-      getById: vi.fn(),
-      getAssignees: vi.fn(),
-      listTaskVariants: vi.fn(),
-      listAgreements: vi.fn(),
-      deleteById: vi.fn(),
-      getUserAdministrations: mockGetUserAdministrations,
-    } as MockAdministrationService);
+    const mockAdministrationService = createMockAdministrationService();
+    mockAdministrationService.getUserAdministrations = mockGetUserAdministrations;
+    vi.mocked(AdministrationService).mockReturnValue(mockAdministrationService);
   });
 
   describe('get', () => {
@@ -512,6 +510,160 @@ describe('UsersController', () => {
       const { UsersController: Controller } = await import('./users.controller');
 
       await expect(Controller.update(superAdminContext, targetUserId, validBody)).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('create', () => {
+    const authContext = AuthContextFactory.build({ userId: 'admin-123', isSuperAdmin: true });
+    const validBody: CreateUserRequestBody = {
+      email: 'newuser@example.com',
+      password: 'securepassword123',
+      name: { first: 'Jane', last: 'Doe' },
+      userType: 'student',
+      memberships: [{ entityId: 'org-uuid-123', entityType: 'school', role: 'student' }],
+    };
+
+    /**
+     * Helper to expect 201 Created response with user ID.
+     */
+    function expectCreatedResponse(result: { status: number; body: { data: { id: string } } | { error: unknown } }) {
+      expect(result.status).toBe(StatusCodes.CREATED);
+      expect(result.body).toHaveProperty('data');
+      return (result.body as { data: { id: string } }).data;
+    }
+
+    it('should return 201 Created with new user ID on success', async () => {
+      const newUserId = 'new-user-uuid-123';
+      mockCreate.mockResolvedValue({ id: newUserId });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const data = expectCreatedResponse(result);
+      expect(data.id).toBe(newUserId);
+    });
+
+    it('should delegate to the service with the correct arguments', async () => {
+      mockCreate.mockResolvedValue({ id: 'new-user-uuid-123' });
+
+      const { UsersController: Controller } = await import('./users.controller');
+      await Controller.create(authContext, validBody);
+
+      expect(mockCreate).toHaveBeenCalledWith(authContext, validBody);
+      expect(mockCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return 400 when service throws BAD_REQUEST', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_INVALID,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.BAD_REQUEST);
+      expect(errorBody.message).toBe(ApiErrorMessage.REQUEST_VALIDATION_FAILED);
+      expect(errorBody.code).toBe(ApiErrorCode.REQUEST_INVALID);
+    });
+
+    it('should return 401 when service throws UNAUTHORIZED', async () => {
+      const error = new ApiError(ApiErrorMessage.UNAUTHORIZED, {
+        statusCode: StatusCodes.UNAUTHORIZED,
+        code: ApiErrorCode.AUTH_REQUIRED,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.UNAUTHORIZED);
+      expect(errorBody.message).toBe(ApiErrorMessage.UNAUTHORIZED);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('should return 403 when service throws FORBIDDEN', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody.message).toBe(ApiErrorMessage.FORBIDDEN);
+      expect(errorBody.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('should return 409 when service throws CONFLICT', async () => {
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.CONFLICT);
+      expect(errorBody.message).toBe(ApiErrorMessage.CONFLICT);
+      expect(errorBody.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('should return 422 when service throws UNPROCESSABLE_ENTITY', async () => {
+      const error = new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_INVALID,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.UNPROCESSABLE_ENTITY);
+      expect(errorBody.message).toBe(ApiErrorMessage.UNPROCESSABLE_ENTITY);
+    });
+
+    it('should return 429 when service throws TOO_MANY_REQUESTS', async () => {
+      const error = new ApiError(ApiErrorMessage.RATE_LIMITED, {
+        statusCode: StatusCodes.TOO_MANY_REQUESTS,
+        code: ApiErrorCode.RATE_LIMITED,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.TOO_MANY_REQUESTS);
+      expect(errorBody.message).toBe(ApiErrorMessage.RATE_LIMITED);
+      expect(errorBody.code).toBe(ApiErrorCode.RATE_LIMITED);
+    });
+
+    it('should return 500 when service throws INTERNAL_SERVER_ERROR', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { UsersController: Controller } = await import('./users.controller');
+      const result = await Controller.create(authContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody.message).toBe(ApiErrorMessage.INTERNAL_SERVER_ERROR);
+      expect(errorBody.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+    });
+
+    it('should re-throw non-ApiError exceptions', async () => {
+      const unexpectedError = new Error('Unexpected error');
+      mockCreate.mockRejectedValue(unexpectedError);
+
+      const { UsersController: Controller } = await import('./users.controller');
+
+      await expect(Controller.create(authContext, validBody)).rejects.toThrow('Unexpected error');
     });
   });
 
