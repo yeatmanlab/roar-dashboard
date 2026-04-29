@@ -40,6 +40,7 @@ import { UserRole } from '../../enums/user-role.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { FgaRelation } from '../authorization/fga-constants';
 import { logger } from '../../logger';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -178,7 +179,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT as UserRole }],
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
       };
       mockUserRepo.findClassParentSchool.mockResolvedValue(schoolId);
 
@@ -196,7 +197,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT as UserRole }],
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
       };
       mockUserRepo.findClassParentSchool.mockResolvedValue(null);
 
@@ -211,7 +212,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.FAMILY, entityId: 'family-uuid', role: UserRole.PARENT as UserRole }],
+        memberships: [{ entityType: EntityType.FAMILY, entityId: 'family-uuid', role: UserRole.PARENT }],
       };
 
       await service.create(authContext, body);
@@ -223,7 +224,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT as UserRole }],
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
       };
       mockUserRepo.findClassParentSchool.mockResolvedValue(null);
 
@@ -247,7 +248,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT as UserRole }],
+        memberships: [{ entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT }],
       };
       mockGroupRepo.getById.mockResolvedValue(null);
 
@@ -261,7 +262,7 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.SCHOOL, entityId: schoolId, role: UserRole.STUDENT as UserRole }],
+        memberships: [{ entityType: EntityType.SCHOOL, entityId: schoolId, role: UserRole.STUDENT }],
       };
       mockSchoolRepo.getById.mockResolvedValue(null);
 
@@ -276,7 +277,7 @@ describe('UserService.create', () => {
       const familyId = 'family-uuid-1';
       const body = {
         ...validBody,
-        memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserRole.STUDENT as UserRole }],
+        memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserFamilyRole.CHILD }],
       };
       mockFamilyRepo.getById.mockResolvedValue(null);
 
