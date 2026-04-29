@@ -1,12 +1,20 @@
 import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
-import type { UserResponse, UpdateUserRequestBody, RecordUserAgreementRequestBody } from '@roar-dashboard/api-contract';
+import type {
+  UserResponse,
+  UpdateUserRequestBody,
+  RecordUserAgreementRequestBody,
+  AdministrationsListQuery,
+} from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
+import { AdministrationService } from '../services/administration/administration.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
+import { transformAdministration } from './utils/administration.transform';
 
 const userService = UserService();
+const administrationService = AdministrationService();
 
 /**
  * Transform a User database record into a UserResponse API schema.
@@ -155,6 +163,60 @@ export const UsersController = {
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
           StatusCodes.CONFLICT,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List specified user's administrations with pagination, sorting, optional status filter, and embeds.
+   *
+   * Delegates to AdministrationService for authorization and retrieval.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param userId - UUID of the user whose administrations to list
+   * @param query - Query parameters (pagination, sorting, status filter, embed options)
+   */
+  listUserAdministrations: async (authContext: AuthContext, userId: string, query: AdministrationsListQuery) => {
+    try {
+      const { page, perPage, sortBy, sortOrder, embed, status } = query;
+
+      const result = await administrationService.getUserAdministrations(authContext, userId, {
+        page,
+        perPage,
+        sortBy,
+        sortOrder,
+        embed,
+        ...(status && { status }),
+      });
+
+      // Transform to API response format
+      const items = result.items.map(transformAdministration);
+
+      const totalPages = Math.ceil(result.totalItems / perPage);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            items,
+            pagination: {
+              page,
+              perPage,
+              totalItems: result.totalItems,
+              totalPages,
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }

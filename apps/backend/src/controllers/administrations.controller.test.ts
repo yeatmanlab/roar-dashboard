@@ -46,6 +46,7 @@ describe('AdministrationsController', () => {
   const mockCreate = vi.fn();
   const mockListProgressStudents = vi.fn();
   const mockGetProgressOverview = vi.fn();
+  const mockGetUserAdministrations = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -60,6 +61,7 @@ describe('AdministrationsController', () => {
       listTaskVariants: mockListTaskVariants,
       listAgreements: mockListAgreements,
       deleteById: mockDeleteById,
+      getUserAdministrations: mockGetUserAdministrations,
       getTree: mockGetTree,
       create: mockCreate,
     });
