@@ -314,6 +314,17 @@ describe('RunService', () => {
 
         await runService.create(authContext, targetUserId, validRequestBody);
 
+        // Administration access uses child's context (parent doesn't need admin access)
+        expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
+          { userId: targetUserId, isSuperAdmin: false },
+          validRequestBody.administrationId,
+        );
+        // CAN_CREATE_RUN checked against child (the run owner), not the parent
+        expect(authorizationService.requirePermission).toHaveBeenCalledWith(
+          targetUserId,
+          FgaRelation.CAN_CREATE_RUN,
+          `${FgaType.ADMINISTRATION}:${validRequestBody.administrationId}`,
+        );
         expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(targetUserId);
         expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
           'user-123',
@@ -356,6 +367,12 @@ describe('RunService', () => {
 
         await runService.create(authContext, targetUserId, validRequestBody);
 
+        // CAN_CREATE_RUN checked against child (the run owner)
+        expect(authorizationService.requirePermission).toHaveBeenCalledWith(
+          targetUserId,
+          FgaRelation.CAN_CREATE_RUN,
+          `${FgaType.ADMINISTRATION}:${validRequestBody.administrationId}`,
+        );
         expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
           'user-123',
           FgaRelation.CAN_CREATE_RUN_FOR_CHILD,

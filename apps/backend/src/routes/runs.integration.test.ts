@@ -469,13 +469,22 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
 describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating run for child', () => {
   it('parent with CAN_CREATE_RUN_FOR_CHILD can create run for child', async () => {
     const { UserFactory } = await import('../test-support/factories/user.factory');
+    const { UserOrgFactory } = await import('../test-support/factories/user-org.factory');
     const { FamilyFactory } = await import('../test-support/factories/family.factory');
     const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+    const { UserRole } = await import('../enums/user-role.enum');
     const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
     // Create parent and child users
     const parentUser = await UserFactory.create({ nameFirst: 'Parent', nameLast: 'User' });
     const childUser = await UserFactory.create({ nameFirst: 'Child', nameLast: 'User', grade: '5' });
+
+    // Enroll child as student in the district so they have CAN_CREATE_RUN on the administration
+    await UserOrgFactory.create({
+      userId: childUser.id,
+      orgId: baseFixture.district.id,
+      role: UserRole.STUDENT,
+    });
 
     // Create family relationship
     const family = await FamilyFactory.create();
@@ -492,7 +501,7 @@ describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating ru
       role: 'child',
     });
 
-    // Sync FGA tuples from database to ensure family memberships are available for authorization
+    // Sync FGA tuples from database to ensure all memberships are available for authorization
     await syncFgaTuplesFromPostgres();
 
     // Parent creates run for child

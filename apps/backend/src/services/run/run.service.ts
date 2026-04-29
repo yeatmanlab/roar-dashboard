@@ -126,8 +126,17 @@ export function RunService({
     // so we don't need to check it here. This is caught at the request level (400 BAD_REQUEST).
 
     if (!isAnonymous) {
+      // When a parent creates a run for their child, the child is the one who needs
+      // access to the administration and CAN_CREATE_RUN permission — not the parent.
+      // The parent's authorization is verified separately via CAN_CREATE_RUN_FOR_CHILD.
+      // Super admins always use their own context (they bypass FGA checks anyway).
+      const isParentForChildRun = requesterUserId !== targetUserId && !isSuperAdmin;
+      const administrationAuthContext: AuthContext = isParentForChildRun
+        ? { userId: targetUserId, isSuperAdmin: false }
+        : authContext;
+
       try {
-        await administrationService.verifyAdministrationAccess(authContext, body.administrationId!);
+        await administrationService.verifyAdministrationAccess(administrationAuthContext, body.administrationId!);
       } catch (error) {
         if (error instanceof ApiError) {
           if (error.statusCode === StatusCodes.NOT_FOUND) {
@@ -152,9 +161,10 @@ export function RunService({
       }
 
       if (!isSuperAdmin) {
-        // FGA checks if the requester has can_create_run on this administration
+        // FGA checks if the run owner has can_create_run on this administration.
+        // For self-runs, this is the requester. For parent-for-child runs, this is the child.
         await authorizationService.requirePermission(
-          requesterUserId,
+          isParentForChildRun ? targetUserId : requesterUserId,
           FgaRelation.CAN_CREATE_RUN,
           `${FgaType.ADMINISTRATION}:${body.administrationId!}`,
         );
