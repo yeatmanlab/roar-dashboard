@@ -2,8 +2,8 @@ import type { AuthContext } from '../../types/auth-context';
 import type { User, NewUserAgreement, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../../db/schema';
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
-import type { UserRole } from '../../enums/user-role.enum';
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
+import { UserFamilyRole, UserRole } from '../../enums/user-role.enum';
 import { EntityType } from '../../types/entity-type';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
@@ -85,10 +85,24 @@ interface CreateUserIdentifiers {
 interface CreateUserMemberships {
   entityType: EntityType;
   entityId: string;
-  role: UserRole;
+  role: UserRole | UserFamilyRole;
   enrollmentStart?: string | undefined;
   enrollmentEnd?: string | undefined;
 }
+
+/**
+ * Narrowed membership types used only in the create function for type-safe mapping.
+ * The flat CreateUserMemberships interface is kept for controller compatibility —
+ * Zod's z.union() inference flattens the discriminated union before it reaches the service.
+ */
+type OrgMembership = CreateUserMemberships & {
+  entityType: Exclude<EntityType, 'family'>;
+  role: UserRole;
+};
+type FamilyMembership = CreateUserMemberships & {
+  entityType: 'family';
+  role: UserFamilyRole;
+};
 
 /**
  * Fields for creating a single user.
@@ -525,6 +539,7 @@ export function UserService({
       const enrollmentStart = new Date();
 
       const orgMemberships: Omit<NewUserOrg, 'userId'>[] = body.memberships
+        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.DISTRICT || m.entityType === EntityType.SCHOOL)
         .map((m) => ({
           orgId: m.entityId,
@@ -534,6 +549,7 @@ export function UserService({
         }));
 
       const classMemberships: Omit<NewUserClass, 'userId'>[] = body.memberships
+        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.CLASS)
         .map((m) => ({
           classId: m.entityId,
@@ -543,6 +559,7 @@ export function UserService({
         }));
 
       const groupMemberships: Omit<NewUserGroup, 'userId'>[] = body.memberships
+        .filter(isOrgMembership)
         .filter((m) => m.entityType === EntityType.GROUP)
         .map((m) => ({
           groupId: m.entityId,
@@ -552,12 +569,10 @@ export function UserService({
         }));
 
       const familyMemberships: Omit<NewUserFamily, 'userId'>[] = body.memberships
-        .filter((m) => m.entityType === EntityType.FAMILY)
+        .filter(isFamilyMembership)
         .map((m) => ({
           familyId: m.entityId,
-          // Family roles come from userFamilyRoleEnum ('parent' | 'child' | 'guardian')
-          // Cast is safe: the contract schema validates role values match the DB enum
-          role: m.role as NewUserFamily['role'],
+          role: m.role,
           joinedOn: m.enrollmentStart ? new Date(m.enrollmentStart) : enrollmentStart,
           leftOn: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
         }));
@@ -690,6 +705,26 @@ export function UserService({
   }
 
   /**
+   * Type guard for `OrgMembership`.
+   *
+   * @param m The membership to check.
+   * @returns `true` if the membership is an `OrgMembership`, `false` otherwise.
+   */
+  function isOrgMembership(m: CreateUserMemberships): m is OrgMembership {
+    return m.entityType !== EntityType.FAMILY;
+  }
+
+  /**
+   * Type guard for `FamilyMembership`.
+   *
+   * @param m The membership to check.
+   * @returns `true` if the membership is a `FamilyMembership`, `false` otherwise.
+   */
+  function isFamilyMembership(m: CreateUserMemberships): m is FamilyMembership {
+    return m.entityType === EntityType.FAMILY;
+  }
+
+  /**
    * Delete a Firebase auth account as a saga compensation step.
    *
    * Failures are logged with full context but not re-thrown — the caller surfaces
@@ -724,31 +759,24 @@ export function UserService({
     const now = new Date();
 
     for (const m of memberships) {
+      const isOrgMember = isOrgMembership(m);
+      const isFamilyMember = isFamilyMembership(m);
+
       const start = m.enrollmentStart ? new Date(m.enrollmentStart) : now;
       const end = m.enrollmentEnd ? new Date(m.enrollmentEnd) : null;
 
-      if (m.entityType === EntityType.DISTRICT) {
+      if (isOrgMember && m.entityType === EntityType.DISTRICT) {
         tuples.push(districtMembershipTuple(newUserId, m.entityId, m.role, start, end));
-      } else if (m.entityType === EntityType.SCHOOL) {
+      } else if (isOrgMember && m.entityType === EntityType.SCHOOL) {
         tuples.push(schoolMembershipTuple(newUserId, m.entityId, m.role, start, end));
-      } else if (m.entityType === EntityType.CLASS) {
+      } else if (isOrgMember && m.entityType === EntityType.CLASS) {
         if (FGA_CLASS_VALID_ROLES.has(m.role)) {
           tuples.push(classMembershipTuple(newUserId, m.entityId, m.role, start, end));
         }
-      } else if (m.entityType === EntityType.GROUP) {
+      } else if (isOrgMember && m.entityType === EntityType.GROUP) {
         tuples.push(groupMembershipTuple(newUserId, m.entityId, m.role, start, end));
-      } else if (m.entityType === EntityType.FAMILY) {
-        // Family roles are 'parent' | 'child' — cast is safe because the contract schema
-        // validates the role against the userFamilyRoleEnum before it reaches the service
-        tuples.push(
-          familyMembershipTuple(
-            newUserId,
-            m.entityId,
-            m.role as Parameters<typeof familyMembershipTuple>[2],
-            start,
-            end,
-          ),
-        );
+      } else if (isFamilyMember) {
+        tuples.push(familyMembershipTuple(newUserId, m.entityId, m.role, start, end));
       }
     }
 

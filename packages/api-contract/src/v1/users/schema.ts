@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { EntityTypeSchema } from '../common/entity';
 import {
   UserTypeSchema,
   UserGradeSchema,
@@ -8,6 +7,7 @@ import {
   AuthProviderSchema,
   FreeReducedLunchStatusSchema,
 } from '../common/user';
+import { UserFamilyRoleSchema } from '../families/schema';
 import { IDENTIFIER_WITH_SPACES } from '../common/regex';
 
 /**
@@ -52,13 +52,34 @@ export const UserResponseSchema = z.object({
 
 export type UserResponse = z.infer<typeof UserResponseSchema>;
 
-export const UserMembershipSchema = z.object({
-  entityType: EntityTypeSchema,
+const membershipBase = {
   entityId: z.string().uuid(),
-  role: UserRoleSchema,
   enrollmentStart: z.string().datetime().optional(),
   enrollmentEnd: z.string().datetime().optional(),
+};
+
+/**
+ * Membership schema for org/class/group entities.
+ * Uses the full OneRoster user role set — 'child' is not a valid org role.
+ */
+const OrgMembershipSchema = z.object({
+  ...membershipBase,
+  entityType: z.enum(['district', 'school', 'class', 'group']),
+  role: UserRoleSchema,
 });
+
+/**
+ * Membership schema for family entities.
+ * Only 'parent' and 'child' are valid family roles.
+ */
+const FamilyMembershipSchema = z.object({
+  ...membershipBase,
+  entityType: z.literal('family'),
+  role: UserFamilyRoleSchema,
+});
+
+export const UserMembershipSchema = z.union([OrgMembershipSchema, FamilyMembershipSchema]);
+export type UserMembership = z.infer<typeof UserMembershipSchema>;
 
 const CreateUserNameSchema = z.object({
   first: z.string().regex(IDENTIFIER_WITH_SPACES),
