@@ -2394,6 +2394,420 @@ describe('AdministrationService', () => {
     });
   });
 
+  describe('getUserAdministrations', () => {
+    it('should delegate to list() when user requests their own administrations (self-access)', async () => {
+      const mockAdmins = AdministrationFactory.buildList(2);
+
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: mockAdmins,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations({ userId: 'user-123', isSuperAdmin: false }, 'user-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+
+      // Should only call FGA once (for the requester, not separately for target)
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'user-123',
+        'can_list',
+        'administration',
+      );
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should return administrations for super admin without filtering by requester permissions', async () => {
+      const mockAdmins = AdministrationFactory.buildList(3);
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: mockAdmins,
+        totalItems: 3,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations(
+        { userId: 'super-admin', isSuperAdmin: true },
+        'target-user-123',
+        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc' },
+      );
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_list',
+        'administration',
+      );
+      expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith(
+        mockAdmins.map((a) => a.id),
+        expect.objectContaining({ page: 1, perPage: 25 }),
+      );
+      expect(result.items).toHaveLength(3);
+      expect(result.totalItems).toBe(3);
+    });
+
+    it('should filter administrations by intersection of target and requester permissions for non-super-admin', async () => {
+      const mockAdmins = ['admin-2', 'admin-3'].map((id) => AdministrationFactory.build({ id }));
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['admin-1', 'admin-2', 'admin-3'].map((id) => `administration:${id}`))
+        .mockResolvedValueOnce(['admin-2', 'admin-3', 'admin-4'].map((id) => `administration:${id}`));
+
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: mockAdmins,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations(
+        { userId: 'requester-user-456', isSuperAdmin: false },
+        'target-user-123',
+        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc' },
+      );
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(2);
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenNthCalledWith(
+        1,
+        'target-user-123',
+        'can_list',
+        'administration',
+      );
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenNthCalledWith(
+        2,
+        'requester-user-456',
+        'can_list',
+        'administration',
+      );
+      expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith(
+        ['admin-2', 'admin-3'],
+        expect.objectContaining({ page: 1, perPage: 25 }),
+      );
+      expect(result.items).toHaveLength(2);
+      expect(result.totalItems).toBe(2);
+    });
+
+    it('should return empty result when target user has no accessible administrations', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([]);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations(
+        { userId: 'requester-user', isSuperAdmin: false },
+        'target-user-123',
+        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc' },
+      );
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_list',
+        'administration',
+      );
+      expect(mockAdministrationRepository.getByIds).not.toHaveBeenCalled();
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+    });
+
+    it('should throw 404 when target user does not exist', async () => {
+      mockUserRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministrations({ userId: 'requester-user-456', isSuperAdmin: false }, 'non-existent-user', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 404,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'non-existent-user' });
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+    });
+
+    it('should throw 403 when non-super-admin has no common administrations with target user', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['admin-1', 'admin-2'].map((id) => `administration:${id}`))
+        .mockResolvedValueOnce(['admin-3', 'admin-4'].map((id) => `administration:${id}`));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministrations({ userId: 'requester-user-456', isSuperAdmin: false }, 'target-user-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 403,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(2);
+      expect(mockAdministrationRepository.getByIds).not.toHaveBeenCalled();
+    });
+
+    it('should include stats embed for super admin when requested', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`administration:${mockAdmin.id}`]);
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+      mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(
+        new Map([[mockAdmin.id, 10]]),
+      );
+      mockRunRepository.getRunStatsByAdministrationIds.mockResolvedValue(
+        new Map([[mockAdmin.id, { started: 5, completed: 3 }]]),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runRepository: mockRunRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations(
+        { userId: 'super-admin', isSuperAdmin: true },
+        'target-user-123',
+        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
+      );
+
+      expect(mockAdministrationRepository.getAssignedUserCountsByAdministrationIds).toHaveBeenCalledWith([
+        mockAdmin.id,
+      ]);
+      expect(mockRunRepository.getRunStatsByAdministrationIds).toHaveBeenCalledWith([mockAdmin.id]);
+      expect(result.items[0]).toHaveProperty('stats');
+      expect(result.items[0]!.stats).toEqual({ assigned: 10, started: 5, completed: 3 });
+    });
+
+    it('should not include stats embed for non-super-admin even when requested', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce([`administration:${mockAdmin.id}`])
+        .mockResolvedValueOnce([`administration:${mockAdmin.id}`]);
+
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runRepository: mockRunRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations(
+        { userId: 'requester-user-456', isSuperAdmin: false },
+        'target-user-123',
+        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats'] },
+      );
+
+      expect(mockAdministrationRepository.getAssignedUserCountsByAdministrationIds).not.toHaveBeenCalled();
+      expect(mockRunRepository.getRunStatsByAdministrationIds).not.toHaveBeenCalled();
+      expect(result.items[0]).not.toHaveProperty('stats');
+    });
+
+    it('should include tasks embed when requested', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`administration:${mockAdmin.id}`]);
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+        new Map([
+          [
+            mockAdmin.id,
+            [{ taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 }],
+          ],
+        ]),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations(
+        { userId: 'super-admin', isSuperAdmin: true },
+        'target-user-123',
+        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['tasks'] },
+      );
+
+      expect(mockAdministrationTaskVariantRepository.getByAdministrationIds).toHaveBeenCalledWith([mockAdmin.id]);
+      expect(result.items[0]).toHaveProperty('tasks');
+      expect(result.items[0]!.tasks).toEqual([
+        { taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 },
+      ]);
+    });
+
+    it('should include both stats and tasks embeds when requested by super admin', async () => {
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-1' });
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue([`administration:${mockAdmin.id}`]);
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: [mockAdmin],
+        totalItems: 1,
+      });
+      mockAdministrationRepository.getAssignedUserCountsByAdministrationIds.mockResolvedValue(
+        new Map([[mockAdmin.id, 10]]),
+      );
+      mockRunRepository.getRunStatsByAdministrationIds.mockResolvedValue(
+        new Map([[mockAdmin.id, { started: 5, completed: 3 }]]),
+      );
+      mockAdministrationTaskVariantRepository.getByAdministrationIds.mockResolvedValue(
+        new Map([
+          [
+            mockAdmin.id,
+            [{ taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 }],
+          ],
+        ]),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        runRepository: mockRunRepository,
+        administrationTaskVariantRepository: mockAdministrationTaskVariantRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministrations(
+        { userId: 'super-admin', isSuperAdmin: true },
+        'target-user-123',
+        { page: 1, perPage: 25, sortBy: 'createdAt', sortOrder: 'desc', embed: ['stats', 'tasks'] },
+      );
+
+      expect(result.items[0]).toHaveProperty('stats');
+      expect(result.items[0]).toHaveProperty('tasks');
+      expect(result.items[0]!.stats).toEqual({ assigned: 10, started: 5, completed: 3 });
+      expect(result.items[0]!.tasks).toEqual([
+        { taskId: 'task-1', taskName: 'Task 1', variantId: 'variant-1', variantName: 'Variant 1', orderIndex: 0 },
+      ]);
+    });
+
+    it('should apply status filter when provided', async () => {
+      const mockAdmins = AdministrationFactory.buildList(2);
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
+      mockAdministrationRepository.getByIds.mockResolvedValue({
+        items: mockAdmins,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.getUserAdministrations({ userId: 'super-admin', isSuperAdmin: true }, 'target-user-123', {
+        page: 1,
+        perPage: 25,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        status: 'active',
+      });
+
+      expect(mockAdministrationRepository.getByIds).toHaveBeenCalledWith(
+        mockAdmins.map((a) => a.id),
+        expect.objectContaining({ status: 'active' }),
+      );
+    });
+
+    it('should throw internal error on database failure', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAuthorizationService.listAccessibleObjects.mockRejectedValue(new Error('Database connection lost'));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministrations({ userId: 'super-admin', isSuperAdmin: true }, 'target-user-123', {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: 500,
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
+
   describe('getTree', () => {
     const superAdminAuth = { userId: 'super-admin', isSuperAdmin: true };
     const regularUserAuth = { userId: 'regular-user', isSuperAdmin: false };
