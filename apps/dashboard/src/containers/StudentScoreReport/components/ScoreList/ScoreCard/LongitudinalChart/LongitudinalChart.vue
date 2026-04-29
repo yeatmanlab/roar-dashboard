@@ -161,9 +161,9 @@ const chartOptions = computed(() => {
             if (p.assignmentId === props.currentAssignmentId) lines.push(`✦ ${t('scoreReports.currentScoreReport')} ✦`);
 
             // Always show all available scores in a consistent order
-            if (p.rawScore != null) lines.push(`Raw Score: ${p.rawScore}`);
-            if (p.percentile != null) lines.push(`Percentile: ${p.percentile}`);
-            if (p.standardScore != null) lines.push(`Standard Score: ${p.standardScore}`);
+            if (p.rawScore != null) lines.push(`${t('scoreReports.rawScore')}: ${p.rawScore}`);
+            if (p.percentile != null) lines.push(`${t('scoreReports.percentileScore')}: ${p.percentile}`);
+            if (p.standardScore != null) lines.push(`${t('scoreReports.standardScore')}: ${p.standardScore}`);
 
             return lines;
           },
