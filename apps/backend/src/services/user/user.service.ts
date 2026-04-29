@@ -3,7 +3,8 @@ import type { User, NewUserAgreement, NewUserOrg, NewUserClass, NewUserGroup, Ne
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
-import { UserFamilyRole, UserRole } from '../../enums/user-role.enum';
+import { UserRole } from '../../enums/user-role.enum';
+import { UserFamilyRole } from '../../enums/user-family-role.enum';
 import { EntityType } from '../../types/entity-type';
 import { StatusCodes } from 'http-status-codes';
 import { AgreementType } from '../../enums/agreement-type.enum';
