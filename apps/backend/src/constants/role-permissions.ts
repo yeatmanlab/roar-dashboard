@@ -102,12 +102,15 @@ export const RolePermissions: Record<UserRoleType, readonly Permission[]> = (() 
     Permissions.Tasks.LAUNCH,
   ];
 
+  const platformAdmin: readonly Permission[] = [...admin, Permissions.Users.CREATE];
+
   // ── Role → tier mapping ─────────────────────────────────────────────
   return {
     [UserRole.SYSTEM_ADMINISTRATOR]: siteAdmin,
     [UserRole.SITE_ADMINISTRATOR]: siteAdmin,
     [UserRole.DISTRICT_ADMINISTRATOR]: admin,
     [UserRole.ADMINISTRATOR]: admin,
+    [UserRole.PLATFORM_ADMIN]: platformAdmin,
     [UserRole.PRINCIPAL]: educator,
     [UserRole.COUNSELOR]: educator,
     [UserRole.TEACHER]: educator,
