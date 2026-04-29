@@ -9,12 +9,13 @@ describe('role-permissions', () => {
     it('should return all roles with administrations.* or administrations.list for administrations.list', () => {
       const roles = rolesForPermission(Permissions.Administrations.LIST);
 
-      // All 13 roles have either administrations.* or administrations.list
+      // All 14 roles have either administrations.* or administrations.list
       expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
       expect(roles).toContain(UserRole.ADMINISTRATOR);
+      expect(roles).toContain(UserRole.PLATFORM_ADMIN);
       expect(roles).toContain(UserRole.TEACHER);
       expect(roles).toContain(UserRole.STUDENT);
-      expect(roles).toHaveLength(13);
+      expect(roles).toHaveLength(14);
     });
 
     it('should throw for administrations.create since no role has it explicitly', () => {
@@ -26,15 +27,16 @@ describe('role-permissions', () => {
     it('should handle wildcard matching for nested permissions', () => {
       const roles = rolesForPermission(Permissions.Reports.Score.READ);
 
-      // siteAdmin, admin, educator have reports.score.* (ALL)
+      // siteAdmin, admin, platform_admin, educator have reports.score.* (ALL)
       // caregiver has reports.score.read directly
       // student does not have reports access
       expect(roles).toContain(UserRole.SITE_ADMINISTRATOR);
       expect(roles).toContain(UserRole.ADMINISTRATOR);
+      expect(roles).toContain(UserRole.PLATFORM_ADMIN);
       expect(roles).toContain(UserRole.TEACHER);
       expect(roles).toContain(UserRole.GUARDIAN);
       expect(roles).not.toContain(UserRole.STUDENT);
-      expect(roles).toHaveLength(12);
+      expect(roles).toHaveLength(13);
     });
 
     it('should throw error for unknown permission', () => {
@@ -86,6 +88,16 @@ describe('role-permissions', () => {
       expect(RolePermissions[UserRole.STUDENT]).toBeDefined();
       expect(RolePermissions[UserRole.STUDENT]).toContain(Permissions.Administrations.LIST);
       expect(RolePermissions[UserRole.STUDENT]).toContain(Permissions.Tasks.LAUNCH);
+    });
+
+    it('should define permissions for platform_admin including Users.CREATE', () => {
+      expect(RolePermissions[UserRole.PLATFORM_ADMIN]).toBeDefined();
+      expect(RolePermissions[UserRole.PLATFORM_ADMIN]).toContain(Permissions.Administrations.LIST);
+      expect(RolePermissions[UserRole.PLATFORM_ADMIN]).toContain(Permissions.Administrations.READ);
+      expect(RolePermissions[UserRole.PLATFORM_ADMIN]).toContain(Permissions.Users.CREATE);
+      // admin_tier (OneRoster roles) should NOT have Users.CREATE
+      expect(RolePermissions[UserRole.ADMINISTRATOR]).not.toContain(Permissions.Users.CREATE);
+      expect(RolePermissions[UserRole.DISTRICT_ADMINISTRATOR]).not.toContain(Permissions.Users.CREATE);
     });
   });
 
