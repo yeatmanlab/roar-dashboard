@@ -5950,7 +5950,7 @@ describe('AdministrationService', () => {
         ),
       ).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: 'Failed to retrieve administration',
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
     });

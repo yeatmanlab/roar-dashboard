@@ -1129,10 +1129,6 @@ export function AdministrationService({
   ): Promise<Administration> {
     const { userId: requesterUserId, isSuperAdmin } = authContext;
 
-    if (requesterUserId === userId) {
-      return getById(authContext, administrationId);
-    }
-
     try {
       const targetUser = await userRepository.getById({ id: userId });
 
@@ -1144,10 +1140,12 @@ export function AdministrationService({
         });
       }
 
-      // Requires authContext of target user so isSuperAdmin is manually set to false
-      const administration = await getById({ userId, isSuperAdmin: false }, administrationId);
+      const administration = await verifyAdministrationAccess(
+        { userId, isSuperAdmin: targetUser.isSuperAdmin },
+        administrationId,
+      );
 
-      if (isSuperAdmin) {
+      if (isSuperAdmin || requesterUserId === userId) {
         return administration;
       }
 
@@ -1161,7 +1159,10 @@ export function AdministrationService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to get user administration');
+      logger.error(
+        { err: error, context: { requesterUserId, userId, administrationId } },
+        'Failed to get user administration',
+      );
 
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
