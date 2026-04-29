@@ -471,7 +471,7 @@ describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating ru
     const { UserFactory } = await import('../test-support/factories/user.factory');
     const { FamilyFactory } = await import('../test-support/factories/family.factory');
     const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
-    const { writeFgaFamilyMembership } = await import('../test-support/fga/fga-test-tuples.helper');
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
     // Create parent and child users
     const parentUser = await UserFactory.create({ nameFirst: 'Parent', nameLast: 'User' });
@@ -480,29 +480,20 @@ describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating ru
     // Create family relationship
     const family = await FamilyFactory.create();
 
-    // Add parent and child to family with enrollment dates
-    const now = new Date();
-    const pastDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year ago
-    const futureDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
-
+    // Add parent and child to family
     await UserFamilyFactory.create({
       userId: parentUser.id,
       familyId: family.id,
       role: 'parent',
-      joinedOn: pastDate,
-      leftOn: null,
     });
     await UserFamilyFactory.create({
       userId: childUser.id,
       familyId: family.id,
       role: 'child',
-      joinedOn: pastDate,
-      leftOn: null,
     });
 
-    // Write FGA tuples for family relationships with enrollment dates
-    await writeFgaFamilyMembership(parentUser.id, family.id, 'parent', pastDate, futureDate);
-    await writeFgaFamilyMembership(childUser.id, family.id, 'child', pastDate, futureDate);
+    // Sync FGA tuples from database to ensure family memberships are available for authorization
+    await syncFgaTuplesFromPostgres();
 
     // Parent creates run for child
     authenticateAs({ authId: parentUser.authId! });
@@ -526,7 +517,7 @@ describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating ru
     const { UserFactory } = await import('../test-support/factories/user.factory');
     const { FamilyFactory } = await import('../test-support/factories/family.factory');
     const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
-    const { writeFgaFamilyMembership } = await import('../test-support/fga/fga-test-tuples.helper');
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
 
     // Create parent and child users in different families
     const parentUser = await UserFactory.create({ nameFirst: 'Unrelated', nameLast: 'Parent' });
@@ -534,18 +525,14 @@ describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating ru
 
     // Create family for child only (parent not in it)
     const family = await FamilyFactory.create();
-    const now = new Date();
-    const pastDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year ago
-    const futureDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
-
     await UserFamilyFactory.create({
       userId: childUser.id,
       familyId: family.id,
       role: 'child',
-      joinedOn: pastDate,
-      leftOn: null,
     });
-    await writeFgaFamilyMembership(childUser.id, family.id, 'child', pastDate, futureDate);
+
+    // Sync FGA tuples from database
+    await syncFgaTuplesFromPostgres();
 
     // Parent tries to create run for child (but has no family relationship)
     authenticateAs({ authId: parentUser.authId! });
