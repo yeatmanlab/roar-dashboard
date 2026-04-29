@@ -33,7 +33,7 @@ export const RunsContract = c.router(
       summary: 'Create run',
       description:
         'Creates a new run owned by the specified user and returns the run id. ' +
-        'Super admins have unrestricted access. Users may create runs for their own account, or on behalf of a child user if they hold CAN_READ_CHILD permission. ' +
+        'Super admins have unrestricted access. Users may create runs for their own account, or on behalf of a child user if they hold both CAN_READ_CHILD and CAN_CREATE_RUN_FOR_CHILD permissions (non-anonymous runs only; anonymous runs skip the CAN_CREATE_RUN_FOR_CHILD check). ' +
         'Supports anonymous runs which skip administration validation. ' +
         'Returns 422 if the provided task variant or administration IDs are invalid or cannot be resolved. ' +
         'Returns 403 if the user lacks access to the provided administration context or does not have permission to create runs for the specified user.',

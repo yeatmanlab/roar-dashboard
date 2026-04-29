@@ -461,3 +461,74 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAN_CREATE_RUN_FOR_CHILD — Parent/Guardian Creating Run for Child
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating run for child', () => {
+  it('parent with CAN_CREATE_RUN_FOR_CHILD can create run for child', async () => {
+    const { UserFactory } = await import('../test-support/factories/user.factory');
+    const { FamilyFactory } = await import('../test-support/factories/family.factory');
+    const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+    const { writeFgaFamilyMembership } = await import('../test-support/fga/fga-test-tuples.helper');
+
+    // Create parent and child users
+    const parentUser = await UserFactory.create({ nameFirst: 'Parent', nameLast: 'User' });
+    const childUser = await UserFactory.create({ nameFirst: 'Child', nameLast: 'User', grade: '5' });
+
+    // Create family relationship
+    const family = await FamilyFactory.create();
+
+    // Add parent and child to family
+    await UserFamilyFactory.create({ userId: parentUser.id, familyId: family.id, role: 'parent' });
+    await UserFamilyFactory.create({ userId: childUser.id, familyId: family.id, role: 'child' });
+
+    // Write FGA tuples for family relationships
+    await writeFgaFamilyMembership(parentUser.id, family.id, 'parent', null, null);
+    await writeFgaFamilyMembership(childUser.id, family.id, 'child', null, null);
+
+    // Parent creates run for child
+    authenticateAs({ authId: parentUser.authId! });
+    const res = await request(app)
+      .post(`/v1/user/${childUser.id}/runs`)
+      .set('Authorization', 'Bearer token')
+      .send(buildCreateRunBody());
+
+    expect(res.status).toBe(StatusCodes.CREATED);
+    expect(res.body.data.id).toEqual(expect.any(String));
+
+    // Verify run is owned by child, not parent
+    const { RunRepository } = await import('../repositories/run.repository');
+    const { AssessmentDbClient } = await import('../test-support/db');
+    const runRepository = new RunRepository(AssessmentDbClient);
+    const run = await runRepository.getById({ id: res.body.data.id });
+    expect(run?.userId).toBe(childUser.id);
+  });
+
+  it('parent without CAN_CREATE_RUN_FOR_CHILD cannot create run for child', async () => {
+    const { UserFactory } = await import('../test-support/factories/user.factory');
+    const { FamilyFactory } = await import('../test-support/factories/family.factory');
+    const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+    const { writeFgaFamilyMembership } = await import('../test-support/fga/fga-test-tuples.helper');
+
+    // Create parent and child users in different families
+    const parentUser = await UserFactory.create({ nameFirst: 'Unrelated', nameLast: 'Parent' });
+    const childUser = await UserFactory.create({ nameFirst: 'Unrelated', nameLast: 'Child', grade: '5' });
+
+    // Create family for child only (parent not in it)
+    const family = await FamilyFactory.create();
+    await UserFamilyFactory.create({ userId: childUser.id, familyId: family.id, role: 'child' });
+    await writeFgaFamilyMembership(childUser.id, family.id, 'child', null, null);
+
+    // Parent tries to create run for child (but has no family relationship)
+    authenticateAs({ authId: parentUser.authId! });
+    const res = await request(app)
+      .post(`/v1/user/${childUser.id}/runs`)
+      .set('Authorization', 'Bearer token')
+      .send(buildCreateRunBody());
+
+    expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+  });
+});

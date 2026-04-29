@@ -51,6 +51,7 @@ describe('RunService', () => {
 
     authorizationService = createMockAuthorizationService();
     // Mock the family access check for tests where userId !== targetUserId
+    // First call is CAN_READ_CHILD in verifyUserAccess, second is CAN_CREATE_RUN_FOR_CHILD in create
     authorizationService.hasAnyPermission.mockResolvedValue(true);
 
     familyRepository = createMockFamilyRepository();

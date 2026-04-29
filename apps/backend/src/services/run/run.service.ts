@@ -49,21 +49,26 @@ export function RunService({
    * 2. User has CAN_READ_CHILD permission on target user (e.g., parent/guardian access)
    * 3. Super admins have unrestricted access
    *
+   * Returns the target user's family IDs when cross-user access is granted via CAN_READ_CHILD,
+   * allowing callers to reuse this data for subsequent FGA checks (e.g., CAN_CREATE_RUN_FOR_CHILD)
+   * without redundant database queries.
+   *
    * @param authContext - User's auth context (id and super admin flag)
    * @param targetUserId - The user ID to verify access for
+   * @returns Family IDs of the target user if cross-user access granted, empty array otherwise
    * @throws {ApiError} FORBIDDEN if user lacks access
    */
-  async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<void> {
+  async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<string[]> {
     const { userId, isSuperAdmin } = authContext;
 
     // Super admins have unrestricted access
     if (isSuperAdmin) {
-      return;
+      return [];
     }
 
     // User can access their own runs
     if (userId === targetUserId) {
-      return;
+      return [];
     }
 
     // Check if user has permission to act on behalf of target user (e.g., parent/guardian)
@@ -80,6 +85,9 @@ export function RunService({
         context: { userId, targetUserId },
       });
     }
+
+    // Return family IDs so caller can reuse them for CAN_CREATE_RUN_FOR_CHILD check
+    return targetFamilyIds;
   }
 
   /**
@@ -111,8 +119,8 @@ export function RunService({
     const { userId: requesterUserId, isSuperAdmin } = authContext;
     const { isAnonymous } = body;
 
-    // Verify user has access to the target user
-    await verifyUserAccess(authContext, targetUserId);
+    // Verify user has access to the target user and get family IDs for potential reuse
+    const targetFamilyIds = await verifyUserAccess(authContext, targetUserId);
 
     // Note: Zod schema validation already rejects isAnonymous && administrationId combination,
     // so we don't need to check it here. This is caught at the request level (400 BAD_REQUEST).
@@ -156,7 +164,7 @@ export function RunService({
         // Requester is creating a run for a different user (e.g., parent creating for child).
         // Check if requester has can_create_run_for_child permission on any family containing the target user.
         // Super admins bypass this check.
-        const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
+        // Reuse targetFamilyIds from verifyUserAccess to avoid redundant database query.
         const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
         const hasAccess = await authorizationService.hasAnyPermission(
           requesterUserId,
