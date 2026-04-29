@@ -8,6 +8,7 @@ export const UserRoleSchema = z.enum([
   'district_administrator',
   'guardian',
   'parent',
+  'platform_admin',
   'principal',
   'proctor',
   'relative',
