@@ -35,7 +35,8 @@ const createdStoreIds: string[] = [];
 function getModelJson(): Omit<AuthorizationModel, 'id'> {
   if (cachedModelJson) return cachedModelJson;
 
-  const dslPath = path.resolve(__dirname, '../../../../../packages/authz/authorization-model.fga');
+  const dslPath =
+    process.env.AUTHZ_MODEL_PATH || path.resolve(__dirname, '../../../../../packages/authz/authorization-model.fga');
   const dsl = fs.readFileSync(dslPath, 'utf-8');
   cachedModelJson = transformer.transformDSLToJSONObject(dsl);
   return cachedModelJson;
