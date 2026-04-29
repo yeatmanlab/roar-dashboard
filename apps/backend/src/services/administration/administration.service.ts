@@ -1101,7 +1101,7 @@ export function AdministrationService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
-      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to get administration tree');
+      logger.error({ err: error, context: { userId, administrationId, options } }, 'Failed to get administration tree');
 
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
