@@ -1149,6 +1149,11 @@ export function AdministrationService({
         return administration;
       }
 
+      // Separate log to track cross-user access attempts
+      logger.warn(
+        { requesterUserId, userId, administrationId },
+        'Requester attempting cross-user administration access',
+      );
       await authorizationService.requirePermission(
         requesterUserId,
         FgaRelation.CAN_READ,
