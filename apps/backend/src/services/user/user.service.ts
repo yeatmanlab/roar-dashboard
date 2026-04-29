@@ -370,7 +370,10 @@ export function UserService({
           if (membership.entityType === EntityType.CLASS) {
             const schoolId = await userRepository.findClassParentSchool(membership.entityId);
             if (!schoolId) {
-              logger.warn({ userId, classId: membership.entityId }, 'Class not found during user create pre-flight');
+              logger.warn(
+                { userId, classId: membership.entityId, totalMemberships: body.memberships.length },
+                'Class not found during user create pre-flight',
+              );
               throw new ApiError(ApiErrorMessage.INVALID_REFERENCE, {
                 statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
                 code: ApiErrorCode.RESOURCE_NOT_FOUND,
