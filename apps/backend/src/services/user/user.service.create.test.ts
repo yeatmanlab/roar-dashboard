@@ -25,11 +25,19 @@ import { createMockUserRepository } from '../../test-support/repositories/user.r
 import { createMockUserAgreementRepository } from '../../test-support/repositories/user-agreement.repository';
 import { createMockAgreementVersionRepository } from '../../test-support/repositories/agreement-version.repository';
 import { createMockAgreementRepository } from '../../test-support/repositories/agreement.repository';
+import { createMockDistrictRepository } from '../../test-support/repositories/district.repository';
+import { createMockSchoolRepository } from '../../test-support/repositories/school.repository';
+import { createMockGroupRepository } from '../../test-support/repositories/group.repository';
+import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
+import { OrgFactory } from '../../test-support/factories/org.factory';
+import { GroupFactory } from '../../test-support/factories/group.factory';
+import { FamilyFactory } from '../../test-support/factories/family.factory';
 import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { EntityType } from '../../types/entity-type';
 import { UserRole } from '../../enums/user-role.enum';
+import { UserType } from '../../enums/user-type.enum';
 import { FgaRelation } from '../authorization/fga-constants';
 import { logger } from '../../logger';
 
@@ -68,7 +76,8 @@ const validBody = {
   email: 'student@example.com',
   password: 'password123',
   name: { first: 'Test', last: 'Student' },
-  memberships: [{ entityType: EntityType.DISTRICT, entityId: districtId, role: UserRole.PLATFORM_ADMIN as UserRole }],
+  userType: UserType.ADMIN,
+  memberships: [{ entityType: EntityType.DISTRICT, entityId: districtId, role: UserRole.PLATFORM_ADMIN }],
 };
 
 const newUserId = 'new-user-uuid';
@@ -78,11 +87,19 @@ const firebaseUid = 'firebase-uid-abc';
 
 describe('UserService.create', () => {
   let mockUserRepo: ReturnType<typeof createMockUserRepository>;
+  let mockDistrictRepo: ReturnType<typeof createMockDistrictRepository>;
+  let mockSchoolRepo: ReturnType<typeof createMockSchoolRepository>;
+  let mockGroupRepo: ReturnType<typeof createMockGroupRepository>;
+  let mockFamilyRepo: ReturnType<typeof createMockFamilyRepository>;
   let mockAuthzService: ReturnType<typeof createMockAuthorizationService>;
   let service: ReturnType<typeof UserService>;
 
   beforeEach(() => {
     mockUserRepo = createMockUserRepository();
+    mockDistrictRepo = createMockDistrictRepository();
+    mockSchoolRepo = createMockSchoolRepository();
+    mockGroupRepo = createMockGroupRepository();
+    mockFamilyRepo = createMockFamilyRepository();
     mockAuthzService = createMockAuthorizationService();
 
     service = UserService({
@@ -90,12 +107,20 @@ describe('UserService.create', () => {
       userAgreementRepository: createMockUserAgreementRepository(),
       agreementVersionRepository: createMockAgreementVersionRepository(),
       agreementRepository: createMockAgreementRepository(),
+      districtRepository: mockDistrictRepo,
+      schoolRepository: mockSchoolRepo,
+      groupRepository: mockGroupRepo,
+      familyRepository: mockFamilyRepo,
       authorizationService: mockAuthzService,
     });
 
     // Happy-path defaults — individual tests override as needed
     mockUserRepo.findClassParentSchool.mockResolvedValue(schoolId);
     mockUserRepo.existsByUniqueFields.mockResolvedValue(false);
+    mockDistrictRepo.getById.mockResolvedValue(OrgFactory.build());
+    mockSchoolRepo.getById.mockResolvedValue(OrgFactory.build());
+    mockGroupRepo.getById.mockResolvedValue(GroupFactory.build());
+    mockFamilyRepo.getById.mockResolvedValue(FamilyFactory.build());
     mockUserRepo.createWithMemberships.mockResolvedValue({ id: newUserId });
     mockUserRepo.delete.mockResolvedValue(undefined);
 
@@ -201,6 +226,30 @@ describe('UserService.create', () => {
         memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT as UserRole }],
       };
       mockUserRepo.findClassParentSchool.mockResolvedValue(null);
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
+
+    it('super admin: non-existent district entityId → 422 before Firebase call', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockDistrictRepo.getById.mockResolvedValue(null);
+
+      await expect(service.create(authContext, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
+
+    it('super admin: non-existent group entityId → 422 before Firebase call', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT as UserRole }],
+      };
+      mockGroupRepo.getById.mockResolvedValue(null);
 
       await expect(service.create(authContext, body)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,

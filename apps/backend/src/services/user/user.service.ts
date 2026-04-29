@@ -16,6 +16,10 @@ import { UserRepository } from '../../repositories/user.repository';
 import { UserAgreementRepository } from '../../repositories/user-agreement.repository';
 import { AgreementVersionRepository } from '../../repositories/agreement-version.repository';
 import { AgreementRepository } from '../../repositories/agreement.repository';
+import { DistrictRepository } from '../../repositories/district.repository';
+import { SchoolRepository } from '../../repositories/school.repository';
+import { GroupRepository } from '../../repositories/group.repository';
+import { FamilyRepository } from '../../repositories/family.repository';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
 import { generateAssessmentPid } from '../../utils/assessment-pid.util';
 import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
@@ -96,6 +100,7 @@ interface CreateUserData {
   email: string;
   password: string;
   name: CreateUserName;
+  userType: UserType;
   dob?: string | null | undefined;
   grade?: Grade | null | undefined;
   demographics?: CreateUserDemographics | undefined;
@@ -158,12 +163,20 @@ export function UserService({
   userAgreementRepository = new UserAgreementRepository(),
   agreementVersionRepository = new AgreementVersionRepository(),
   agreementRepository = new AgreementRepository(),
+  districtRepository = new DistrictRepository(),
+  schoolRepository = new SchoolRepository(),
+  groupRepository = new GroupRepository(),
+  familyRepository = new FamilyRepository(),
   authorizationService = AuthorizationService(),
 }: {
   userRepository?: UserRepository;
   userAgreementRepository?: UserAgreementRepository;
   agreementVersionRepository?: AgreementVersionRepository;
   agreementRepository?: AgreementRepository;
+  districtRepository?: DistrictRepository;
+  schoolRepository?: SchoolRepository;
+  groupRepository?: GroupRepository;
+  familyRepository?: FamilyRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /** Map repository entity types to FGA object type prefixes. */
@@ -343,10 +356,13 @@ export function UserService({
     // requirePermission. For class memberships, look up the parent school first —
     // `can_create_users` is defined on school, not class.
     //
-    // Entity existence is checked implicitly: findClassParentSchool returns null
-    // for a non-existent class, and the FGA model requires district/school/group
-    // to have tuples; missing entities have no tuples so requirePermission throws 403.
-    // Super admins skip FGA checks but we still verify classes exist.
+    // Entity existence for non-super-admins is checked implicitly: findClassParentSchool
+    // returns null for a non-existent class, and the FGA model requires district/school/group
+    // to have tuples so requirePermission throws 403 for missing entities.
+    //
+    // Super admins skip FGA but get explicit entity existence checks for all membership
+    // types — without this, an invalid ID would only fail at the DB FK constraint after
+    // Firebase has already created an account that then needs compensating deletion.
 
     if (!isSuperAdmin) {
       await Promise.all(
@@ -355,7 +371,7 @@ export function UserService({
             const schoolId = await userRepository.findClassParentSchool(membership.entityId);
             if (!schoolId) {
               logger.warn({ userId, classId: membership.entityId }, 'Class not found during user create pre-flight');
-              throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+              throw new ApiError(ApiErrorMessage.INVALID_REFERENCE, {
                 statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
                 code: ApiErrorCode.RESOURCE_NOT_FOUND,
                 context: { userId, classId: membership.entityId },
@@ -373,31 +389,40 @@ export function UserService({
               `${ENTITY_TYPE_TO_FGA_TYPE[membership.entityType]}:${membership.entityId}`,
             );
           }
+          // TODO: Family authorization gap — any authenticated user can currently add members to any family.
+          // Fix in follow-up PR: check can_create_child on the family (only parents may add members).
+          // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1774
         }),
       );
     } else {
-      // Super admin: only verify classes exist (DB FK covers the rest at write time)
+      // Super admin: verify all membership entity IDs exist before touching Firebase.
+      // Without this, an invalid entity ID would only fail at the DB FK constraint (step 4),
+      // after a Firebase account has already been created and needs compensating deletion.
+
       await Promise.all(
-        body.memberships
-          .filter((m) => m.entityType === EntityType.CLASS)
-          .map(async (m) => {
-            const schoolId = await userRepository.findClassParentSchool(m.entityId);
-            if (!schoolId) {
-              logger.warn({ userId, classId: m.entityId }, 'Class not found during user create pre-flight');
-              throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-                statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-                code: ApiErrorCode.RESOURCE_NOT_FOUND,
-                context: { userId, classId: m.entityId },
-              });
-            }
-          }),
+        body.memberships.map(async ({ entityType, entityId }) => {
+          const exists = await verifyMembershipEntityExists(entityType, entityId);
+          if (!exists) {
+            logger.warn({ userId, entityType, entityId }, 'Membership entity not found during user create pre-flight');
+            throw new ApiError(ApiErrorMessage.INVALID_REFERENCE, {
+              statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+              code: ApiErrorCode.RESOURCE_NOT_FOUND,
+              context: { userId, entityType, entityId },
+            });
+          }
+        }),
       );
     }
 
     // ── Step 2: Pre-flight uniqueness check ───────────────────────────────────
     //
-    // Avoids creating an orphaned Firebase auth account for a user that already
-    // exists in Postgres. PID is checked too when the caller provides one.
+    // Best-effort guard that avoids creating an orphaned Firebase account for a
+    // user that already exists in Postgres. PID is checked too when provided.
+    //
+    // This check is NOT race-safe: two concurrent requests with the same email
+    // can both pass here, then one will fail at the DB unique constraint in
+    // step 4 and trigger the Firebase compensation path. The DB constraint is
+    // the true last line of defense for concurrent creates.
 
     const assessmentPid =
       body.identifiers?.pid ??
@@ -541,7 +566,7 @@ export function UserService({
           dob: body.dob ?? null,
           grade: body.grade ?? null,
           assessmentPid,
-          userType: UserType.STUDENT,
+          userType: body.userType,
           statusEll: body.demographics?.statusEll ?? null,
           statusFrl: body.demographics?.statusFrl ?? null,
           statusIep: body.demographics?.statusIep ?? null,
@@ -641,6 +666,20 @@ export function UserService({
 
     logger.info({ userId, newUserId, email: body.email }, 'Created user');
     return { id: newUserId };
+  }
+
+  /**
+   * Verifies that a membership entity exists for the given entity type and ID.
+   * @param entityType The type of the membership entity to verify.
+   * @param entityId The ID of the membership entity to verify.
+   * @returns A promise that resolves to `true` if the entity exists, `false` otherwise.
+   */
+  async function verifyMembershipEntityExists(entityType: EntityType, entityId: string): Promise<boolean> {
+    if (entityType === EntityType.DISTRICT) return (await districtRepository.getById({ id: entityId })) !== null;
+    if (entityType === EntityType.SCHOOL) return (await schoolRepository.getById({ id: entityId })) !== null;
+    if (entityType === EntityType.CLASS) return (await userRepository.findClassParentSchool(entityId)) !== null;
+    if (entityType === EntityType.GROUP) return (await groupRepository.getById({ id: entityId })) !== null;
+    return (await familyRepository.getById({ id: entityId })) !== null;
   }
 
   /**

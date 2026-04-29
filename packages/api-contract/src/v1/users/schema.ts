@@ -93,14 +93,17 @@ const CreateUserIdentifiersSchema = z.object({
  * - schoolLevel — DB-generated from grade
  * - createdAt, updatedAt — managed by DB triggers
  *
+ * userType defaults to 'student' when omitted. Pass an explicit value when
+ * creating admin or staff accounts.
+ *
  * Unknown fields in the request body will be rejected with a validation error.
  */
 export const CreateUserRequestBodySchema = z
   .object({
     email: z.string().email(),
-    // TODO: Determine password requirements (length, complexity) and enforce them here
-    password: z.string().min(8), // Assuming a password field is required for user creation
+    password: z.string().min(8),
     name: CreateUserNameSchema,
+    userType: UserTypeSchema.default('student'),
     dob: z.string().date().nullable().optional(),
     grade: UserGradeSchema.nullable().optional(),
     demographics: CreateUserDemographicsSchema.optional(),

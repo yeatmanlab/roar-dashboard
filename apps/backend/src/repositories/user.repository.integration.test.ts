@@ -178,6 +178,14 @@ describe('UserRepository', () => {
       expect(result).toBe(true);
     });
 
+    it('returns true when the assessmentPid matches an existing user', async () => {
+      const result = await repository.existsByUniqueFields({
+        assessmentPid: baseFixture.districtAdmin.assessmentPid!,
+      });
+
+      expect(result).toBe(true);
+    });
+
     it('returns false when no fields match any user', async () => {
       const result = await repository.existsByUniqueFields({
         email: 'nobody@example.com',
