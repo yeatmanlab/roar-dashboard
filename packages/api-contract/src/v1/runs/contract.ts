@@ -8,8 +8,8 @@ const c = initContract();
 /**
  * Contract for the /user/:userId/runs and /user/:userId/runs/:runId/event endpoints.
  *
- * All endpoints are user-scoped: the userId path parameter must match the authenticated user
- * OR the user must have CAN_READ_CHILD permission (e.g., parent/guardian access).
+ * Both endpoints are user-scoped via the userId path parameter.
+ * Authorization requirements differ by endpoint — see individual endpoint descriptions.
  *
  * Creates a new run session instance and returns a run_id.
  * Posts an event to a run session instance.
