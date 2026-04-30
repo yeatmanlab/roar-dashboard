@@ -1542,12 +1542,18 @@ export function AdministrationService({
       }
 
       // Get current assignees to determine effective entity assignments
-      const currentAssignees = await administrationRepository.getCurrentAssigneeIds(administrationId);
+      const currentAssignees = await administrationRepository.getAssignees(administrationId);
+      const currentAssigneeIds = {
+        districtIds: currentAssignees.districts.map((d) => d.id),
+        schoolIds: currentAssignees.schools.map((s) => s.id),
+        classIds: currentAssignees.classes.map((c) => c.id),
+        groupIds: currentAssignees.groups.map((g) => g.id),
+      };
 
       // Determine effective entity assignments
-      const effectiveOrgIds = request.orgs ?? [...currentAssignees.districtIds, ...currentAssignees.schoolIds];
-      const effectiveClassIds = request.classes ?? currentAssignees.classIds;
-      const effectiveGroupIds = request.groups ?? currentAssignees.groupIds;
+      const effectiveOrgIds = request.orgs ?? [...currentAssigneeIds.districtIds, ...currentAssigneeIds.schoolIds];
+      const effectiveClassIds = request.classes ?? currentAssigneeIds.classIds;
+      const effectiveGroupIds = request.groups ?? currentAssigneeIds.groupIds;
 
       // Validate there is at least one org, class, or group assigned after update
       if (effectiveOrgIds.length === 0 && effectiveClassIds.length === 0 && effectiveGroupIds.length === 0) {
@@ -1732,16 +1738,16 @@ export function AdministrationService({
 
       if (entityAssignmentsChanged) {
         // Determine new district and school IDs (already validated above)
-        const finalDistrictIds = request.orgs !== undefined ? newDistrictIds : currentAssignees.districtIds;
-        const finalSchoolIds = request.orgs !== undefined ? newSchoolIds : currentAssignees.schoolIds;
-        const finalClassIds = request.classes ?? currentAssignees.classIds;
-        const finalGroupIds = request.groups ?? currentAssignees.groupIds;
+        const finalDistrictIds = request.orgs !== undefined ? newDistrictIds : currentAssigneeIds.districtIds;
+        const finalSchoolIds = request.orgs !== undefined ? newSchoolIds : currentAssigneeIds.schoolIds;
+        const finalClassIds = request.classes ?? currentAssigneeIds.classIds;
+        const finalGroupIds = request.groups ?? currentAssigneeIds.groupIds;
 
         // Calculate tuples to add and remove
-        const oldDistrictSet = new Set(currentAssignees.districtIds);
-        const oldSchoolSet = new Set(currentAssignees.schoolIds);
-        const oldClassSet = new Set(currentAssignees.classIds);
-        const oldGroupSet = new Set(currentAssignees.groupIds);
+        const oldDistrictSet = new Set(currentAssigneeIds.districtIds);
+        const oldSchoolSet = new Set(currentAssigneeIds.schoolIds);
+        const oldClassSet = new Set(currentAssigneeIds.classIds);
+        const oldGroupSet = new Set(currentAssigneeIds.groupIds);
 
         const newDistrictSet = new Set(finalDistrictIds);
         const newSchoolSet = new Set(finalSchoolIds);
@@ -1766,16 +1772,16 @@ export function AdministrationService({
 
         // Tuples to remove (in old but not in new)
         const tuplesToRemove = [
-          ...currentAssignees.districtIds
+          ...currentAssigneeIds.districtIds
             .filter((id) => !newDistrictSet.has(id))
             .map((id) => administrationDistrictTuple(administrationId, id)),
-          ...currentAssignees.schoolIds
+          ...currentAssigneeIds.schoolIds
             .filter((id) => !newSchoolSet.has(id))
             .map((id) => administrationSchoolTuple(administrationId, id)),
-          ...currentAssignees.classIds
+          ...currentAssigneeIds.classIds
             .filter((id) => !newClassSet.has(id))
             .map((id) => administrationClassTuple(administrationId, id)),
-          ...currentAssignees.groupIds
+          ...currentAssigneeIds.groupIds
             .filter((id) => !newGroupSet.has(id))
             .map((id) => administrationGroupTuple(administrationId, id)),
         ];

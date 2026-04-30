@@ -1143,47 +1143,4 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       },
     });
   }
-
-  /**
-   * Get the current assignees for an administration.
-   * Used by the update service to determine what FGA tuples need to be added/removed.
-   *
-   * @param administrationId - The administration ID
-   * @returns Object with arrays of district, school, class, and group IDs
-   */
-  async getCurrentAssigneeIds(
-    administrationId: string,
-  ): Promise<{ districtIds: string[]; schoolIds: string[]; classIds: string[]; groupIds: string[] }> {
-    const [orgResults, classResults, groupResults] = await Promise.all([
-      this.db
-        .select({
-          id: orgs.id,
-          orgType: orgs.orgType,
-        })
-        .from(administrationOrgs)
-        .innerJoin(orgs, eq(orgs.id, administrationOrgs.orgId))
-        .where(eq(administrationOrgs.administrationId, administrationId)),
-      this.db
-        .select({
-          id: classes.id,
-        })
-        .from(administrationClasses)
-        .innerJoin(classes, eq(classes.id, administrationClasses.classId))
-        .where(eq(administrationClasses.administrationId, administrationId)),
-      this.db
-        .select({
-          id: groups.id,
-        })
-        .from(administrationGroups)
-        .innerJoin(groups, eq(groups.id, administrationGroups.groupId))
-        .where(eq(administrationGroups.administrationId, administrationId)),
-    ]);
-
-    return {
-      districtIds: orgResults.filter((o) => o.orgType === OrgType.DISTRICT).map((o) => o.id),
-      schoolIds: orgResults.filter((o) => o.orgType === OrgType.SCHOOL).map((o) => o.id),
-      classIds: classResults.map((c) => c.id),
-      groupIds: groupResults.map((g) => g.id),
-    };
-  }
 }
