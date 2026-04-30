@@ -159,6 +159,155 @@ describe('GET /v1/administrations', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/administrations
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/administrations', () => {
+  it('returns 401 when unauthenticated', async () => {
+    const res = await expectRoute('POST', '/v1/administrations').unauthenticated().withBody({}).toReturn(401);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+  });
+
+  it('non-super admin tiers are forbidden from creating an administration', async () => {
+    const body = {
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
+      description: 'Integration create test',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.district.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [],
+    };
+
+    await expectRoute('POST', '/v1/administrations').as(tiers.admin).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.siteAdmin).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.educator).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.student).withBody(body).toReturn(403);
+    await expectRoute('POST', '/v1/administrations').as(tiers.caregiver).withBody(body).toReturn(403);
+  });
+
+  it('superAdmin tier can create an administration and returns the new ID', async () => {
+    const agreement = await AgreementFactory.create({ name: 'Agreement Name' });
+    await AgreementVersionFactory.create({ locale: 'en-US' }, { transient: { agreementId: agreement.id } });
+
+    const body = {
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
+      description: 'Integration create test',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.district.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [agreement.id],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+    expect(res.body.data).toMatch(/[0-9a-fA-F-]{36}/);
+
+    const getRes = await expectRoute('GET', `/v1/administrations/${res.body.data}`).as(tiers.superAdmin).toReturn(200);
+
+    expect(getRes.body.data.id).toBe(res.body.data);
+  });
+
+  it('superAdmin tier can create an administration when orgs contains only a school ID', async () => {
+    const agreement = await AgreementFactory.create({ name: 'Agreement Name (School Only)' });
+    await AgreementVersionFactory.create({ locale: 'en-US' }, { transient: { agreementId: agreement.id } });
+
+    const body = {
+      name: 'Admin Name (School Only)',
+      namePublic: 'Admin Public Name (School Only)',
+      description: 'Integration create test (school-only org)',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      isOrdered: true,
+      orgs: [baseFixture.schoolA.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [agreement.id],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+    expect(res.body.data).toMatch(/[0-9a-fA-F-]{36}/);
+
+    const getRes = await expectRoute('GET', `/v1/administrations/${res.body.data}`).as(tiers.superAdmin).toReturn(200);
+
+    expect(getRes.body.data.id).toBe(res.body.data);
+  });
+
+  it('returns 422 when dateEnd is before dateStart', async () => {
+    const body = {
+      name: 'Admin Name',
+      namePublic: 'Admin Public Name',
+      dateStart: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      orgs: [baseFixture.district.id],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(422);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+  });
+
+  it('returns 422 when a referenced entity does not exist', async () => {
+    const body = {
+      name: 'New Admin Name',
+      namePublic: 'New Admin Public Name',
+      dateStart: new Date('2026-01-01T00:00:00.000Z').toISOString(),
+      dateEnd: new Date('2026-12-31T00:00:00.000Z').toISOString(),
+      orgs: ['00000000-0000-0000-0000-000000000000'],
+      classes: [],
+      groups: [],
+      taskVariants: [
+        {
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        },
+      ],
+      agreements: [],
+    };
+
+    const res = await expectRoute('POST', '/v1/administrations').as(tiers.superAdmin).withBody(body).toReturn(422);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/administrations/:id
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -549,13 +698,11 @@ describe('GET /v1/administrations/:id/agreements', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('DELETE /v1/administrations/:id', () => {
-  /**
-   * Creates a fresh administration assigned to the given org for delete tests.
-   * Each delete test needs its own administration to avoid side effects.
-   */
   let deletableCounter = 0;
-  async function createDeletableAdministration(orgId: string = baseFixture.district.id) {
+
+  async function createDeletableAdministration() {
     deletableCounter += 1;
+    const orgId = baseFixture.district.id;
     const admin = await AdministrationFactory.create({
       name: `Deletable Admin ${deletableCounter}`,
       createdBy: baseFixture.districtAdmin.id,
