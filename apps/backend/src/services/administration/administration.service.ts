@@ -1107,6 +1107,72 @@ export function AdministrationService({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Get a specific administration for a user. Both requester and target user must have access to the administration.
+   * @param authContext - The authentication context of the requester.
+   * @param userId - The ID of the user to get the administration for.
+   * @param administrationId - The ID of the administration to get.
+   * @returns The administration with the specified ID.
+   * @throws {ApiError} NOT_FOUND if target user or administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if requester lacks access to target user's administrations
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
+   */
+  async function getUserAdministration(
+    authContext: AuthContext,
+    userId: string,
+    administrationId: string,
+  ): Promise<Administration> {
+    const { userId: requesterUserId, isSuperAdmin } = authContext;
+
+    try {
+      const targetUser = await userRepository.getById({ id: userId });
+
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId },
+        });
+      }
+
+      const administration = await verifyAdministrationAccess(
+        { userId, isSuperAdmin: targetUser.isSuperAdmin },
+        administrationId,
+      );
+
+      if (isSuperAdmin || requesterUserId === userId) {
+        return administration;
+      }
+
+      // Separate log to track cross-user access attempts
+      logger.warn(
+        { requesterUserId, userId, administrationId },
+        'Requester attempting cross-user administration access',
+      );
+      await authorizationService.requirePermission(
+        requesterUserId,
+        FgaRelation.CAN_READ,
+        `${FgaType.ADMINISTRATION}:${administrationId}`,
+      );
+
+      return administration;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { requesterUserId, userId, administrationId } },
+        'Failed to get user administration',
+      );
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
       });
     }
   }
@@ -1398,5 +1464,6 @@ export function AdministrationService({
     getUserAdministrations,
     getTree,
     create,
+    getUserAdministration,
   };
 }
