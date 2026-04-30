@@ -16,6 +16,8 @@ import {
   createMockRunTrialInteractionsRepository,
 } from '../../test-support/repositories';
 import { RunFactory } from '../../test-support/factories/run.factory';
+import type { FamilyRepository } from '../../repositories/family.repository';
+import type { AuthorizationService } from '../authorization/authorization.service';
 
 /**
  * RunEventService Tests
@@ -28,6 +30,12 @@ describe('RunEventService', () => {
   let runRepository: MockRunRepository;
   let runTrialsRepository: MockRunTrialRepository;
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
+  let mockFamilyRepository: {
+    getFamilyIdsForUser: ReturnType<typeof vi.fn>;
+  };
+  let mockAuthorizationService: {
+    hasAnyPermission: ReturnType<typeof vi.fn>;
+  };
   let runEventsService: ReturnType<typeof RunEventService>;
 
   beforeEach(() => {
@@ -41,10 +49,20 @@ describe('RunEventService', () => {
 
     runTrialInteractionsRepository = createMockRunTrialInteractionsRepository();
 
+    mockFamilyRepository = {
+      getFamilyIdsForUser: vi.fn(),
+    };
+
+    mockAuthorizationService = {
+      hasAnyPermission: vi.fn(),
+    };
+
     runEventsService = RunEventService({
       runRepository: runRepository,
       runTrialsRepository: runTrialsRepository,
       runTrialInteractionsRepository: runTrialInteractionsRepository,
+      familyRepository: mockFamilyRepository as unknown as FamilyRepository,
+      authorizationService: mockAuthorizationService as unknown as ReturnType<typeof AuthorizationService>,
     });
   });
 
@@ -65,12 +83,57 @@ describe('RunEventService', () => {
       expect(runRepository.update).toHaveBeenCalled();
     });
 
-    it('should throw FORBIDDEN when requester differs from target user', async () => {
-      const requesterContext = { userId: 'parent-456', isSuperAdmin: false };
-      const targetUserId = 'child-789';
+    it('should allow parent with CAN_CREATE_RUN_FOR_CHILD permission to post events for child', async () => {
+      const parentContext = { userId: 'parent-456', isSuperAdmin: false };
+      const childUserId = 'child-789';
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: childUserId });
+
+      mockFamilyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
+      mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(parentContext, childUserId, validRunId, {
+        type: 'complete' as const,
+      });
+
+      expect(mockFamilyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(childUserId);
+      expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith('parent-456', 'can_create_run_for_child', [
+        'family:family-123',
+      ]);
+      expect(runRepository.update).toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when parent lacks CAN_CREATE_RUN_FOR_CHILD permission', async () => {
+      const parentContext = { userId: 'parent-456', isSuperAdmin: false };
+      const childUserId = 'child-789';
+
+      mockFamilyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
+      mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
 
       await expect(
-        runEventsService.completeRun(requesterContext, targetUserId, 'run-123', {
+        runEventsService.completeRun(parentContext, childUserId, 'run-123', {
+          type: 'complete' as const,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+      });
+
+      expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalled();
+    });
+
+    it('should throw FORBIDDEN when parent has no family relationship with child', async () => {
+      const parentContext = { userId: 'parent-456', isSuperAdmin: false };
+      const childUserId = 'child-789';
+
+      mockFamilyRepository.getFamilyIdsForUser.mockResolvedValue([]);
+      mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
+
+      await expect(
+        runEventsService.completeRun(parentContext, childUserId, 'run-123', {
           type: 'complete' as const,
         }),
       ).rejects.toMatchObject({
@@ -80,19 +143,23 @@ describe('RunEventService', () => {
       });
     });
 
-    it('should throw FORBIDDEN even for super admins when requester differs from target user', async () => {
+    it('should allow super admin to post events for any user', async () => {
       const superAdminContext = { userId: 'super-admin', isSuperAdmin: true };
       const targetUserId = 'child-789';
+      const validRunId = '550e8400-e29b-41d4-a716-446655440000';
+      const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
 
-      await expect(
-        runEventsService.completeRun(superAdminContext, targetUserId, 'run-123', {
-          type: 'complete' as const,
-        }),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        message: ApiErrorMessage.FORBIDDEN,
+      runRepository.getById.mockResolvedValue(mockRun);
+      runRepository.update.mockResolvedValue(undefined);
+
+      await runEventsService.completeRun(superAdminContext, targetUserId, validRunId, {
+        type: 'complete' as const,
       });
+
+      // Super admins should not need to check family or FGA permissions
+      expect(mockFamilyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
+      expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      expect(runRepository.update).toHaveBeenCalled();
     });
   });
 
