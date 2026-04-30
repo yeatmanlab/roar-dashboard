@@ -269,7 +269,7 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
       expect(res.body.data.status).toBe('ok');
     });
 
-    it('superAdmin who does not own the run is forbidden', async () => {
+    it('superAdmin can post events for any user', async () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.superAdmin);
@@ -278,8 +278,8 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
-      expect(res.status).toBe(StatusCodes.FORBIDDEN);
-      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.status).toBe('ok');
     });
 
     it('another student who does not own the run is forbidden', async () => {
