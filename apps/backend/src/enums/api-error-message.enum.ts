@@ -33,4 +33,7 @@ export enum ApiErrorMessage {
 
   /** Generic external service unavailable error - use when a downstream dependency is unavailable */
   EXTERNAL_SERVICE_UNAVAILABLE = 'An external service is currently unavailable',
+
+  /** Rate limit exceeded — use when a downstream service rejects the request due to too many requests */
+  RATE_LIMITED = 'Too many requests. Use bulk import for large batches.',
 }
