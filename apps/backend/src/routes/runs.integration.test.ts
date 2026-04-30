@@ -73,7 +73,10 @@ function buildCreateRunBody(overrides: Record<string, unknown> = {}) {
  */
 async function createRunAsStudent(): Promise<string> {
   authenticateAs(tiers.student);
-  const res = await request(app).post('/v1/runs').set('Authorization', 'Bearer token').send(buildCreateRunBody());
+  const res = await request(app)
+    .post(`/v1/user/${tiers.student.id}/runs`)
+    .set('Authorization', 'Bearer token')
+    .send(buildCreateRunBody());
 
   expect(res.status).toBe(StatusCodes.CREATED);
   return res.body.data.id;
@@ -113,29 +116,46 @@ function buildEngagementEventBody() {
 // POST /v1/runs
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('POST /v1/runs', () => {
-  const path = '/v1/runs';
+describe('POST /v1/user/:userId/runs', () => {
+  const getPath = (userId: string) => `/v1/user/${userId}/runs`;
 
   describe('authorization', () => {
-    it('student tier can create a run', async () => {
+    it('student tier can create a run for themselves', async () => {
       authenticateAs(tiers.student);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.student.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toEqual(expect.any(String));
     });
 
-    it('superAdmin tier can create a run', async () => {
+    it('superAdmin tier can create a run for any user', async () => {
       authenticateAs(tiers.superAdmin);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.student.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.CREATED);
       expect(res.body.data.id).toEqual(expect.any(String));
+
+      // Verify the run is owned by the target user, not the superAdmin
+      const runId = res.body.data.id;
+      const { RunRepository } = await import('../repositories/run.repository');
+      const { AssessmentDbClient } = await import('../test-support/db');
+      const runRepository = new RunRepository(AssessmentDbClient);
+      const run = await runRepository.getById({ id: runId });
+      expect(run?.userId).toBe(tiers.student.id);
     });
 
     it('siteAdmin tier is forbidden from creating runs', async () => {
       authenticateAs(tiers.siteAdmin);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.siteAdmin.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -143,7 +163,10 @@ describe('POST /v1/runs', () => {
 
     it('admin tier is forbidden from creating runs', async () => {
       authenticateAs(tiers.admin);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.admin.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -151,15 +174,21 @@ describe('POST /v1/runs', () => {
 
     it('educator tier is forbidden from creating runs', async () => {
       authenticateAs(tiers.educator);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.educator.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
     });
 
-    it('caregiver tier is forbidden from creating runs', async () => {
+    it('caregiver tier is forbidden from creating runs for themselves', async () => {
       authenticateAs(tiers.caregiver);
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(tiers.caregiver.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -168,15 +197,26 @@ describe('POST /v1/runs', () => {
 
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
-      const res = await expectRoute('POST', path).unauthenticated().toReturn(401);
+      const res = await request(app).post(getPath(faker.string.uuid())).send(buildCreateRunBody());
 
+      expect(res.status).toBe(StatusCodes.UNAUTHORIZED);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 400 when isAnonymous is true and administrationId is provided', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(getPath(tiers.student.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody({ isAnonymous: true }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 422 when administrationId does not exist', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(path)
+        .post(getPath(tiers.student.id))
         .set('Authorization', 'Bearer token')
         .send(buildCreateRunBody({ administrationId: faker.string.uuid() }));
 
@@ -187,7 +227,7 @@ describe('POST /v1/runs', () => {
     it('returns 422 when taskVariantId does not exist', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(path)
+        .post(getPath(tiers.student.id))
         .set('Authorization', 'Bearer token')
         .send(buildCreateRunBody({ taskVariantId: faker.string.uuid() }));
 
@@ -197,7 +237,10 @@ describe('POST /v1/runs', () => {
 
     it('returns 403 when student is in a different district', async () => {
       authenticateAs({ authId: baseFixture.districtBStudent.authId! });
-      const res = await request(app).post(path).set('Authorization', 'Bearer token').send(buildCreateRunBody());
+      const res = await request(app)
+        .post(getPath(baseFixture.districtBStudent.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateRunBody());
 
       expect(res.status).toBe(StatusCodes.FORBIDDEN);
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
@@ -209,8 +252,8 @@ describe('POST /v1/runs', () => {
 // POST /v1/runs/:runId/event
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('POST /v1/runs/:runId/event', () => {
-  const eventPath = (runId: string) => `/v1/runs/${runId}/event`;
+describe('POST /v1/user/:userId/runs/:runId/event', () => {
+  const eventPath = (userId: string, runId: string) => `/v1/user/${userId}/runs/${runId}/event`;
 
   describe('authorization — strict ownership', () => {
     it('run owner (student) can post an event', async () => {
@@ -218,7 +261,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -231,7 +274,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.superAdmin);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -244,7 +287,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs({ authId: baseFixture.districtBStudent.authId! });
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -257,7 +300,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.admin);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -272,7 +315,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildCompleteEventBody());
 
@@ -285,7 +328,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildAbortEventBody());
 
@@ -298,7 +341,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
@@ -311,7 +354,7 @@ describe('POST /v1/runs/:runId/event', () => {
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildEngagementEventBody());
 
@@ -325,11 +368,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildCompleteEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildCompleteEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildCompleteEventBody());
 
@@ -341,11 +387,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildCompleteEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildCompleteEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildAbortEventBody());
 
@@ -357,11 +406,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildAbortEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildAbortEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildCompleteEventBody());
 
@@ -373,11 +425,14 @@ describe('POST /v1/runs/:runId/event', () => {
       const runId = await createRunAsStudent();
 
       authenticateAs(tiers.student);
-      await request(app).post(eventPath(runId)).set('Authorization', 'Bearer token').send(buildAbortEventBody());
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildAbortEventBody());
 
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(runId))
+        .post(eventPath(tiers.student.id, runId))
         .set('Authorization', 'Bearer token')
         .send(buildAbortEventBody());
 
@@ -389,7 +444,7 @@ describe('POST /v1/runs/:runId/event', () => {
   describe('error cases', () => {
     it('returns 401 when unauthenticated', async () => {
       const runId = await createRunAsStudent();
-      const res = await expectRoute('POST', eventPath(runId)).unauthenticated().toReturn(401);
+      const res = await expectRoute('POST', eventPath(tiers.student.id, runId)).unauthenticated().toReturn(401);
 
       expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
     });
@@ -397,12 +452,105 @@ describe('POST /v1/runs/:runId/event', () => {
     it('returns 404 when runId does not exist', async () => {
       authenticateAs(tiers.student);
       const res = await request(app)
-        .post(eventPath(faker.string.uuid()))
+        .post(eventPath(tiers.student.id, faker.string.uuid()))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
       expect(res.status).toBe(StatusCodes.NOT_FOUND);
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAN_CREATE_RUN_FOR_CHILD — Parent/Guardian Creating Run for Child
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('CAN_CREATE_RUN_FOR_CHILD authorization — parent/guardian creating run for child', () => {
+  it('parent with CAN_CREATE_RUN_FOR_CHILD can create run for child', async () => {
+    const { UserFactory } = await import('../test-support/factories/user.factory');
+    const { UserOrgFactory } = await import('../test-support/factories/user-org.factory');
+    const { FamilyFactory } = await import('../test-support/factories/family.factory');
+    const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+    const { UserRole } = await import('../enums/user-role.enum');
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+    // Create parent and child users
+    const parentUser = await UserFactory.create({ nameFirst: 'Parent', nameLast: 'User' });
+    const childUser = await UserFactory.create({ nameFirst: 'Child', nameLast: 'User', grade: '5' });
+
+    // Enroll child as student in the district so they have CAN_CREATE_RUN on the administration
+    await UserOrgFactory.create({
+      userId: childUser.id,
+      orgId: baseFixture.district.id,
+      role: UserRole.STUDENT,
+    });
+
+    // Create family relationship
+    const family = await FamilyFactory.create();
+
+    // Add parent and child to family
+    await UserFamilyFactory.create({
+      userId: parentUser.id,
+      familyId: family.id,
+      role: 'parent',
+    });
+    await UserFamilyFactory.create({
+      userId: childUser.id,
+      familyId: family.id,
+      role: 'child',
+    });
+
+    // Sync FGA tuples from database to ensure all memberships are available for authorization
+    await syncFgaTuplesFromPostgres();
+
+    // Parent creates run for child
+    authenticateAs({ authId: parentUser.authId! });
+    const res = await request(app)
+      .post(`/v1/user/${childUser.id}/runs`)
+      .set('Authorization', 'Bearer token')
+      .send(buildCreateRunBody());
+
+    expect(res.status).toBe(StatusCodes.CREATED);
+    expect(res.body.data.id).toEqual(expect.any(String));
+
+    // Verify run is owned by child, not parent
+    const { RunRepository } = await import('../repositories/run.repository');
+    const { AssessmentDbClient } = await import('../test-support/db');
+    const runRepository = new RunRepository(AssessmentDbClient);
+    const run = await runRepository.getById({ id: res.body.data.id });
+    expect(run?.userId).toBe(childUser.id);
+  });
+
+  it('parent without CAN_CREATE_RUN_FOR_CHILD cannot create run for child', async () => {
+    const { UserFactory } = await import('../test-support/factories/user.factory');
+    const { FamilyFactory } = await import('../test-support/factories/family.factory');
+    const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+
+    // Create parent and child users in different families
+    const parentUser = await UserFactory.create({ nameFirst: 'Unrelated', nameLast: 'Parent' });
+    const childUser = await UserFactory.create({ nameFirst: 'Unrelated', nameLast: 'Child', grade: '5' });
+
+    // Create family for child only (parent not in it)
+    const family = await FamilyFactory.create();
+    await UserFamilyFactory.create({
+      userId: childUser.id,
+      familyId: family.id,
+      role: 'child',
+    });
+
+    // Sync FGA tuples from database
+    await syncFgaTuplesFromPostgres();
+
+    // Parent tries to create run for child (but has no family relationship)
+    authenticateAs({ authId: parentUser.authId! });
+    const res = await request(app)
+      .post(`/v1/user/${childUser.id}/runs`)
+      .set('Authorization', 'Bearer token')
+      .send(buildCreateRunBody());
+
+    expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
   });
 });

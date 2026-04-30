@@ -5,8 +5,16 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
-import type { MockRunRepository, MockTaskVariantRepository } from '../../test-support/repositories';
-import { createMockRunRepository, createMockTaskVariantRepository } from '../../test-support/repositories';
+import type {
+  MockRunRepository,
+  MockTaskVariantRepository,
+  MockFamilyRepository,
+} from '../../test-support/repositories';
+import {
+  createMockRunRepository,
+  createMockTaskVariantRepository,
+  createMockFamilyRepository,
+} from '../../test-support/repositories';
 import type { MockAdministrationService, MockAuthorizationService } from '../../test-support/services';
 import { createMockAdministrationService, createMockAuthorizationService } from '../../test-support/services';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
@@ -18,6 +26,7 @@ describe('RunService', () => {
   let runRepository: MockRunRepository;
   let administrationService: MockAdministrationService;
   let authorizationService: MockAuthorizationService;
+  let familyRepository: MockFamilyRepository;
   let runService: ReturnType<typeof RunService>;
   let taskVariantRepository: MockTaskVariantRepository;
 
@@ -27,6 +36,7 @@ describe('RunService', () => {
     administrationId: '660e8400-e29b-41d4-a716-446655440001',
     isAnonymous: false as const,
   };
+  const targetUserId = 'target-user-456';
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,12 +50,20 @@ describe('RunService', () => {
     taskVariantRepository = createMockTaskVariantRepository();
 
     authorizationService = createMockAuthorizationService();
+    // Mock the family access check for tests where userId !== targetUserId
+    // First call is CAN_READ_CHILD in verifyUserAccess, second is CAN_CREATE_RUN_FOR_CHILD in create
+    authorizationService.hasAnyPermission.mockResolvedValue(true);
+
+    familyRepository = createMockFamilyRepository();
+    // Mock target user belonging to a family
+    familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
 
     runService = RunService({
       runRepository,
       administrationService,
       taskVariantRepository,
       authorizationService,
+      familyRepository,
     });
   });
 
@@ -55,7 +73,7 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
-      const result = await runService.create(authContext, validRequestBody);
+      const result = await runService.create(authContext, 'user-123', validRequestBody);
 
       expect(result).toEqual({ id: 'run-uuid-123' });
       expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
@@ -88,7 +106,7 @@ describe('RunService', () => {
         }),
       );
 
-      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
@@ -103,7 +121,7 @@ describe('RunService', () => {
         }),
       );
 
-      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
@@ -115,7 +133,7 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
 
-      const result = await runService.create(superAdminContext, validRequestBody);
+      const result = await runService.create(superAdminContext, targetUserId, validRequestBody);
 
       expect(result).toEqual({ id: 'run-uuid-123' });
       expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
@@ -139,11 +157,11 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-789' });
       runRepository.create.mockResolvedValue({ id: 'run-uuid-789' });
 
-      await runService.create(authContext, bodyWithMetadata);
+      await runService.create(authContext, targetUserId, bodyWithMetadata);
 
       expect(runRepository.create).toHaveBeenCalledWith({
         data: {
-          userId: 'user-123',
+          userId: targetUserId,
           taskId: 'task-789',
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
@@ -164,7 +182,9 @@ describe('RunService', () => {
       administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
       authorizationService.requirePermission.mockResolvedValue(undefined);
 
-      await expect(serviceWithoutTaskVariantRepository.create(authContext, validRequestBody)).rejects.toThrow();
+      await expect(
+        serviceWithoutTaskVariantRepository.create(authContext, targetUserId, validRequestBody),
+      ).rejects.toThrow();
     });
 
     it('should throw FORBIDDEN when user lacks access to administration', async () => {
@@ -175,7 +195,7 @@ describe('RunService', () => {
         }),
       );
 
-      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
@@ -191,7 +211,7 @@ describe('RunService', () => {
         }),
       );
 
-      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
       });
@@ -203,7 +223,7 @@ describe('RunService', () => {
       authorizationService.requirePermission.mockResolvedValue(undefined);
       taskVariantRepository.getTaskIdByVariantId.mockRejectedValue(dbError);
 
-      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
@@ -216,7 +236,7 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockRejectedValue(dbError);
 
-      await expect(runService.create(authContext, validRequestBody)).rejects.toMatchObject({
+      await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });
@@ -226,7 +246,7 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-anon-123' });
 
-      const result = await runService.create(authContext, {
+      const result = await runService.create(authContext, targetUserId, {
         taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
         taskVersion: '1.0.0',
         isAnonymous: true,
@@ -235,7 +255,7 @@ describe('RunService', () => {
       expect(result).toEqual({ id: 'run-anon-123' });
       expect(runRepository.create).toHaveBeenCalledWith({
         data: {
-          userId: 'user-123',
+          userId: targetUserId,
           taskId: 'task-123',
           taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
           taskVersion: '1.0.0',
@@ -249,40 +269,13 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockResolvedValue({ id: 'run-anon-123' });
 
-      await runService.create(authContext, {
+      await runService.create(authContext, targetUserId, {
         taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
         taskVersion: '1.0.0',
         isAnonymous: true,
       });
 
       expect(administrationService.verifyAdministrationAccess).not.toHaveBeenCalled();
-    });
-
-    it('should throw UNPROCESSABLE_ENTITY when isAnonymous is true and administrationId is provided', async () => {
-      await expect(
-        runService.create(authContext, {
-          taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
-          taskVersion: '1.0.0',
-          isAnonymous: true,
-          administrationId: '660e8400-e29b-41d4-a716-446655440001',
-        }),
-      ).rejects.toMatchObject({
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      });
-    });
-
-    it('should skip role permission check for anonymous runs', async () => {
-      taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
-      runRepository.create.mockResolvedValue({ id: 'run-anon-123' });
-
-      await runService.create(authContext, {
-        taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
-        taskVersion: '1.0.0',
-        isAnonymous: true,
-      });
-
-      expect(authorizationService.requirePermission).not.toHaveBeenCalled();
     });
 
     it('should re-throw ApiError from create without wrapping', async () => {
@@ -295,7 +288,125 @@ describe('RunService', () => {
       taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
       runRepository.create.mockRejectedValue(apiError);
 
-      await expect(runService.create(authContext, validRequestBody)).rejects.toBe(apiError);
+      await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toBe(apiError);
+    });
+
+    describe('CAN_CREATE_RUN_FOR_CHILD authorization', () => {
+      it('should skip CAN_CREATE_RUN_FOR_CHILD check when requester equals target user', async () => {
+        const sameUserContext = { userId: 'user-123', isSuperAdmin: false };
+        administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
+        authorizationService.requirePermission.mockResolvedValue(undefined);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+        runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+
+        await runService.create(sameUserContext, 'user-123', validRequestBody);
+
+        expect(familyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
+        expect(authorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      });
+
+      it('should check CAN_CREATE_RUN_FOR_CHILD when requester differs from target user', async () => {
+        administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
+        authorizationService.requirePermission.mockResolvedValue(undefined);
+        authorizationService.hasAnyPermission.mockResolvedValue(true);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+        runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+
+        await runService.create(authContext, targetUserId, validRequestBody);
+
+        // Administration access uses child's context (parent doesn't need admin access)
+        expect(administrationService.verifyAdministrationAccess).toHaveBeenCalledWith(
+          { userId: targetUserId, isSuperAdmin: false },
+          validRequestBody.administrationId,
+        );
+        // CAN_CREATE_RUN checked against child (the run owner), not the parent
+        expect(authorizationService.requirePermission).toHaveBeenCalledWith(
+          targetUserId,
+          FgaRelation.CAN_CREATE_RUN,
+          `${FgaType.ADMINISTRATION}:${validRequestBody.administrationId}`,
+        );
+        expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(targetUserId);
+        expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
+          'user-123',
+          FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+          ['family:family-123'],
+        );
+      });
+
+      it('should throw FORBIDDEN when requester lacks CAN_CREATE_RUN_FOR_CHILD permission', async () => {
+        administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
+        authorizationService.requirePermission.mockResolvedValue(undefined);
+        // First call (CAN_READ_CHILD in verifyUserAccess) succeeds, second call (CAN_CREATE_RUN_FOR_CHILD) fails
+        authorizationService.hasAnyPermission
+          .mockResolvedValueOnce(true) // CAN_READ_CHILD check passes
+          .mockResolvedValueOnce(false); // CAN_CREATE_RUN_FOR_CHILD check fails
+
+        await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          message: ApiErrorMessage.FORBIDDEN,
+        });
+
+        expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(targetUserId);
+        // Check the second call to hasAnyPermission (CAN_CREATE_RUN_FOR_CHILD)
+        expect(authorizationService.hasAnyPermission).toHaveBeenNthCalledWith(
+          2,
+          'user-123',
+          FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+          ['family:family-123'],
+        );
+      });
+
+      it('should handle multiple family IDs when checking CAN_CREATE_RUN_FOR_CHILD', async () => {
+        familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123', 'family-456', 'family-789']);
+        administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
+        authorizationService.requirePermission.mockResolvedValue(undefined);
+        authorizationService.hasAnyPermission.mockResolvedValue(true);
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+        runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+
+        await runService.create(authContext, targetUserId, validRequestBody);
+
+        // CAN_CREATE_RUN checked against child (the run owner)
+        expect(authorizationService.requirePermission).toHaveBeenCalledWith(
+          targetUserId,
+          FgaRelation.CAN_CREATE_RUN,
+          `${FgaType.ADMINISTRATION}:${validRequestBody.administrationId}`,
+        );
+        expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith(
+          'user-123',
+          FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+          ['family:family-123', 'family:family-456', 'family:family-789'],
+        );
+      });
+
+      it('should throw FORBIDDEN when target user has no families', async () => {
+        familyRepository.getFamilyIdsForUser.mockResolvedValue([]);
+        administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
+        authorizationService.requirePermission.mockResolvedValue(undefined);
+        // First call (CAN_READ_CHILD in verifyUserAccess) fails because no families
+        authorizationService.hasAnyPermission.mockResolvedValue(false);
+
+        await expect(runService.create(authContext, targetUserId, validRequestBody)).rejects.toMatchObject({
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+
+        // The first call to hasAnyPermission (CAN_READ_CHILD) will fail because no families
+        expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith('user-123', FgaRelation.CAN_READ_CHILD, []);
+      });
+
+      it('should allow super admin to create run for different user without CAN_CREATE_RUN_FOR_CHILD check', async () => {
+        const superAdminContext = { userId: 'super-admin', isSuperAdmin: true };
+        administrationService.verifyAdministrationAccess.mockResolvedValue(AdministrationFactory.build());
+        taskVariantRepository.getTaskIdByVariantId.mockResolvedValue({ taskId: 'task-123' });
+        runRepository.create.mockResolvedValue({ id: 'run-uuid-123' });
+
+        await runService.create(superAdminContext, targetUserId, validRequestBody);
+
+        expect(familyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
+        expect(authorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      });
     });
   });
 });

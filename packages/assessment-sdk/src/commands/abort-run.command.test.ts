@@ -15,7 +15,7 @@ describe('AbortRunCommand', () => {
     vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
-    command = new AbortRunCommand(mockApi);
+    command = new AbortRunCommand(mockApi, 'participant-123');
   });
 
   it('has correct properties', () => {
@@ -38,7 +38,7 @@ describe('AbortRunCommand', () => {
 
     expect(eventMock).toHaveBeenCalledTimes(1);
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-123' },
+      params: { userId: 'participant-123', runId: 'run-123' },
       body: { type: 'abort' },
     });
     expect(result).toEqual({ status: 'ok' });
@@ -115,7 +115,7 @@ describe('AbortRunCommand', () => {
 
     expect(result).toEqual({ status: 'ok' });
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-123' },
+      params: { userId: 'participant-123', runId: 'run-123' },
       body: { type: 'abort' },
     });
   });

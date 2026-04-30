@@ -35,33 +35,55 @@ export function RunEventService({
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
 } = {}) {
   /**
+   * Verifies that the authenticated user has access to post events for the target user's run.
+   *
+   * Run events enforce strict ownership — only the run owner can post events to their own runs.
+   * Even super admins cannot post events on behalf of other users.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param targetUserId - The user ID who owns the run
+   * @throws {ApiError} FORBIDDEN if user doesn't own the run
+   */
+  async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<void> {
+    const { userId: requesterUserId } = authContext;
+
+    if (requesterUserId !== targetUserId) {
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { requesterUserId, targetUserId },
+      });
+    }
+  }
+
+  /**
    * Verifies that a run exists and is owned by the specified user.
    *
    * Ownership is strict — run events are personal session actions tied to the participant's assessment session.
    * This intentionally deviates from the standard super admin bypass pattern.
    *
    * @param runId - UUID of the run to verify
-   * @param userId - User ID to check ownership against
+   * @param targetUserId - User ID from the path parameter (the owner of the run)
    * @returns The run object if verification succeeds
    * @throws ApiError with NOT_FOUND (404) if run doesn't exist
    * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
    */
-  async function assertRunOwnedByUser(runId: string, userId: string) {
+  async function assertRunOwnedByUser(runId: string, targetUserId: string) {
     const run = await runRepository.getById({ id: runId });
 
     if (!run) {
-      throw new ApiError('Run not found', {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { runId, userId },
+        context: { runId, targetUserId },
       });
     }
 
-    if (run.userId !== userId) {
+    if (run.userId !== targetUserId) {
       throw new ApiError(ApiErrorMessage.FORBIDDEN, {
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { runId, userId },
+        context: { runId, targetUserId },
       });
     }
 
@@ -79,10 +101,12 @@ export function RunEventService({
    */
   async function updateEngagement(
     authContext: AuthContext,
+    targetUserId: string,
     runId: string,
     body: RunEngagementEventBody,
   ): Promise<void> {
-    await assertRunOwnedByUser(runId, authContext.userId);
+    await verifyUserAccess(authContext, targetUserId);
+    await assertRunOwnedByUser(runId, targetUserId);
 
     try {
       await runRepository.update({
@@ -107,7 +131,7 @@ export function RunEventService({
         'Failed to update engagement',
       );
 
-      throw new ApiError('Failed to update engagement', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },
@@ -125,8 +149,14 @@ export function RunEventService({
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database transaction fails or any unexpected error occurs
    */
-  async function writeTrial(authContext: AuthContext, runId: string, body: RunTrialEventBody): Promise<void> {
-    await assertRunOwnedByUser(runId, authContext.userId);
+  async function writeTrial(
+    authContext: AuthContext,
+    targetUserId: string,
+    runId: string,
+    body: RunTrialEventBody,
+  ): Promise<void> {
+    await verifyUserAccess(authContext, targetUserId);
+    await assertRunOwnedByUser(runId, targetUserId);
 
     try {
       await runTrialsRepository.runTransaction({
@@ -172,7 +202,7 @@ export function RunEventService({
         'Failed to write trial',
       );
 
-      throw new ApiError('Failed to write trial', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },
@@ -191,11 +221,17 @@ export function RunEventService({
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails or any unexpected error occurs
    */
-  async function abortRun(authContext: AuthContext, runId: string, body: RunAbortEventBody): Promise<void> {
-    const run = await assertRunOwnedByUser(runId, authContext.userId);
+  async function abortRun(
+    authContext: AuthContext,
+    targetUserId: string,
+    runId: string,
+    body: RunAbortEventBody,
+  ): Promise<void> {
+    await verifyUserAccess(authContext, targetUserId);
+    const run = await assertRunOwnedByUser(runId, targetUserId);
 
     if (run.completedAt || run.abortedAt) {
-      throw new ApiError('Run is already in a terminal state', {
+      throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
         context: { runId, userId: authContext.userId },
@@ -224,7 +260,7 @@ export function RunEventService({
         'Failed to abort run',
       );
 
-      throw new ApiError('Failed to abort run', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },
@@ -243,11 +279,17 @@ export function RunEventService({
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database update fails or any unexpected error occurs
    */
-  async function completeRun(authContext: AuthContext, runId: string, body: RunCompleteEventBody): Promise<void> {
-    const run = await assertRunOwnedByUser(runId, authContext.userId);
+  async function completeRun(
+    authContext: AuthContext,
+    targetUserId: string,
+    runId: string,
+    body: RunCompleteEventBody,
+  ): Promise<void> {
+    await verifyUserAccess(authContext, targetUserId);
+    const run = await assertRunOwnedByUser(runId, targetUserId);
 
     if (run.completedAt || run.abortedAt) {
-      throw new ApiError('Run is already in a terminal state', {
+      throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
         context: { runId, userId: authContext.userId },
@@ -277,7 +319,7 @@ export function RunEventService({
         'Failed to complete run',
       );
 
-      throw new ApiError('Failed to complete run', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId: authContext.userId, runId },
