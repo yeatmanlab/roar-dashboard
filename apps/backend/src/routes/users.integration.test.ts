@@ -1373,3 +1373,234 @@ describe('GET /v1/users/:userId/administrations', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/users/:userId/administrations/:administrationId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/users/:userId/administrations/:administrationId', () => {
+  describe('authorization', () => {
+    it('super admin can get any administration for any user', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+      expect(res.body.data).toHaveProperty('name');
+      expect(res.body.data).toHaveProperty('publicName');
+      expect(res.body.data).toHaveProperty('dates');
+    });
+
+    it('user can get their own administration (self-access)', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${tiers.student.id}/administrations/${baseFixture.administrationAssignedToDistrict.id}`,
+      )
+        .as(tiers.student)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToDistrict.id);
+    });
+
+    it('admin can get administration for users in their district', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.admin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .unauthenticated()
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 403 when target user does not have access to administration', async () => {
+      // Create a user with no access to any administrations
+      const userWithNoAccess = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: userWithNoAccess.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${userWithNoAccess.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when requester lacks access to administration (even if target user has access)', async () => {
+      // districtBStudent has access to administrations in district B
+      // tiers.admin only has access to district A
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.districtBStudent.id}/administrations/${baseFixture.administrationAssignedToDistrictB.id}`,
+      )
+        .as(tiers.admin)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('response structure', () => {
+    it('returns administration with all required fields', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        dates: {
+          start: expect.any(String),
+          end: expect.any(String),
+          created: expect.any(String),
+        },
+        isOrdered: expect.any(Boolean),
+      });
+    });
+
+    it('transforms Date fields to ISO datetime strings', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const { dates } = res.body.data;
+      expect(dates.start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(dates.end).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(dates.created).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    });
+
+    it('includes publicName field (may be null)', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toHaveProperty('publicName');
+    });
+  });
+
+  describe('validation', () => {
+    it('returns 404 when target user does not exist', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/00000000-0000-0000-0000-000000000000/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 when administration does not exist', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/00000000-0000-0000-0000-000000000000`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 for invalid UUID in userId parameter', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/not-a-valid-uuid/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      const messages = res.body.issues.map((issue: { message: string }) => issue.message);
+      expect(messages).toContain('Invalid uuid');
+    });
+
+    it('returns 400 for invalid UUID in administrationId parameter', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/not-a-valid-uuid`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      const messages = res.body.issues.map((issue: { message: string }) => issue.message);
+      expect(messages).toContain('Invalid uuid');
+    });
+  });
+
+  describe('self-access scenarios', () => {
+    it('allows user to access their own administration without additional permission checks', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${tiers.student.id}/administrations/${baseFixture.administrationAssignedToDistrict.id}`,
+      )
+        .as(tiers.student)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToDistrict.id);
+    });
+
+    it('returns 404 when user requests their own administration that does not exist', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${tiers.student.id}/administrations/00000000-0000-0000-0000-000000000000`,
+      )
+        .as(tiers.student)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+
+  describe('cross-user access scenarios', () => {
+    it('super admin can access administration for any user regardless of target user access', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+
+    it('non-super-admin can access administration if both target user and requester have access', async () => {
+      // Both tiers.admin and baseFixture.schoolAStudent have access to administrationAssignedToSchoolA
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.admin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+  });
+});
