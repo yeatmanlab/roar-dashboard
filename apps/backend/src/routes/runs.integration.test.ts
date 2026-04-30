@@ -12,8 +12,10 @@
  *   - student:     student → 201 (only tier with can_create_run on administration)
  *   - caregiver:   guardian → 403
  *
- * Run events enforce strict ownership — only the run owner can post events.
- * Super admins do NOT bypass ownership checks for run events.
+ * Run events allow:
+ *   - Run owner posting to their own run
+ *   - Super admins posting for any user
+ *   - Parents with CAN_CREATE_RUN_FOR_CHILD posting for their children
  *
  * Each endpoint section follows the structure:
  *   1. Authorization — one spec per tier with status + content assertions
@@ -255,7 +257,7 @@ describe('POST /v1/user/:userId/runs', () => {
 describe('POST /v1/user/:userId/runs/:runId/event', () => {
   const eventPath = (userId: string, runId: string) => `/v1/user/${userId}/runs/${runId}/event`;
 
-  describe('authorization — strict ownership', () => {
+  describe('authorization', () => {
     it('run owner (student) can post an event', async () => {
       const runId = await createRunAsStudent();
 

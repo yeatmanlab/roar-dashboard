@@ -90,14 +90,15 @@ export function RunEventService({
   /**
    * Verifies that a run exists and is owned by the specified user.
    *
-   * Ownership is strict — run events are personal session actions tied to the participant's assessment session.
-   * This intentionally deviates from the standard super admin bypass pattern.
+   * Note: Authorization is checked separately in `verifyUserAccess`. This function only verifies
+   * the run exists and belongs to the target user (not the requester). Super admins and parents
+   * with CAN_CREATE_RUN_FOR_CHILD permission can post events for other users' runs.
    *
    * @param runId - UUID of the run to verify
    * @param targetUserId - User ID from the path parameter (the owner of the run)
    * @returns The run object if verification succeeds
    * @throws ApiError with NOT_FOUND (404) if run doesn't exist
-   * @throws ApiError with FORBIDDEN (403) if user doesn't own the run
+   * @throws ApiError with FORBIDDEN (403) if run doesn't belong to target user
    */
   async function assertRunOwnedByUser(runId: string, targetUserId: string) {
     const run = await runRepository.getById({ id: runId });

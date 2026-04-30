@@ -56,11 +56,11 @@ export const RunsContract = c.router(
       summary: 'Post run event',
       description:
         'Posts an event to an existing run. ' +
-        'The userId path parameter must match the authenticated user (strict ownership — no parent/guardian bypass). ' +
+        'Super admins have unrestricted access. Users may post events to their own runs, or on behalf of a child if they hold CAN_CREATE_RUN_FOR_CHILD permission. ' +
         'Supports four event types: complete (marks run as finished), abort (marks run as aborted), ' +
         'trial (records a trial with optional interactions), and engagement (updates reliability flags). ' +
         'Returns 404 if the run does not exist. ' +
-        'Returns 403 if the authenticated user does not own the run. ' +
+        'Returns 403 if the authenticated user lacks permission to post events for the target user. ' +
         'Returns 409 if the run is already in a terminal state (completed or aborted).',
     },
   },
