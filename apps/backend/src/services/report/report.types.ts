@@ -129,11 +129,9 @@ export interface ScoreOverviewInput {
   filter: ParsedFilter[];
 }
 
-/** Support level distribution counts and percentages for a single category. */
+/** Support level distribution counts for a single category. */
 export interface ServiceSupportLevelEntry {
   count: number;
-  /** Percentage of totalAssessed (0-100), rounded to 1 decimal place */
-  percentage: number;
 }
 
 /** Per-task score overview with support level distribution. */

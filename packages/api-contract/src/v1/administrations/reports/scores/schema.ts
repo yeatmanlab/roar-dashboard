@@ -25,20 +25,10 @@ export const ScoreOverviewQuerySchema = ReportScopeQuerySchema.merge(
 export type ScoreOverviewQuery = z.infer<typeof ScoreOverviewQuerySchema>;
 
 /**
- * Support level distribution counts and percentages for a single category.
- *
- * Note: the three support-level percentages (achievedSkill, developingSkill,
- * needsExtraSupport) are not guaranteed to sum to 100%. Students with completed
- * runs whose scores can't be classified (null `getSupportLevel` return — e.g.,
- * raw-score-only tasks, unknown task slugs, or unresolvable thresholds for the
- * scoring version) are counted in `totalAssessed` but in none of the three
- * buckets, so the bucket sum can be less than `totalAssessed` and the
- * percentages can sum to less than 100%.
+ * Support level distribution counts for a single category.
  */
 export const SupportLevelEntrySchema = z.object({
   count: z.number().int(),
-  /** Percentage of totalAssessed (0-100), rounded to 1 decimal place */
-  percentage: z.number(),
 });
 
 export type SupportLevelEntry = z.infer<typeof SupportLevelEntrySchema>;

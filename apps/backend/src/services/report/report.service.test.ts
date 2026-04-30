@@ -1366,7 +1366,7 @@ describe('ReportService', () => {
       for (const task of result.tasks) {
         expect(task.totalAssessed).toBe(0);
         expect(task.totalNotAssessed).toEqual({ required: 0, optional: 0 });
-        expect(task.supportLevels.achievedSkill).toEqual({ count: 0, percentage: 0 });
+        expect(task.supportLevels.achievedSkill).toEqual({ count: 0 });
       }
       expect(result.computedAt).toBeDefined();
     });
@@ -1467,28 +1467,6 @@ describe('ReportService', () => {
       expect(swrTask!.totalAssessed).toBe(0);
       expect(swrTask!.totalNotAssessed.required).toBe(0);
       expect(swrTask!.totalNotAssessed.optional).toBe(0);
-    });
-
-    it('rounds support level percentages to 1 decimal place', async () => {
-      const students = [
-        buildOverviewStudent({ userId: 's1', grade: '3' }),
-        buildOverviewStudent({ userId: 's2', grade: '3' }),
-        buildOverviewStudent({ userId: 's3', grade: '3' }),
-      ];
-
-      // All students get high percentile → all in achievedSkill (100%)
-      const scoreRows = students.map((s) => buildScoreRow(s.userId, VARIANT_ID_1, 'percentile', '90'));
-
-      setupDefaultScoreOverviewMocks(students, scoreRows);
-
-      const service = createService();
-      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, scoreQuery);
-
-      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1);
-      expect(swrTask).toBeDefined();
-      expect(swrTask!.supportLevels.achievedSkill.percentage).toBe(100);
-      expect(swrTask!.supportLevels.developingSkill.percentage).toBe(0);
-      expect(swrTask!.supportLevels.needsExtraSupport.percentage).toBe(0);
     });
 
     // --- Multi-variant deduplication ---

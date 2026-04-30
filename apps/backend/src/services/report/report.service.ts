@@ -500,7 +500,7 @@ export function ReportService({
    * Get aggregated score overview for an administration.
    *
    * Returns per-task support level distributions (achievedSkill, developingSkill,
-   * needsExtraSupport) with counts and percentages, plus totalAssessed and
+   * needsExtraSupport) with counts, plus totalAssessed and
    * totalNotAssessed (required/optional) counts.
    *
    * Authorization (two FGA checks, in order):
@@ -943,9 +943,9 @@ function buildEmptyTaskOverview(task: ReportTaskMeta): ServiceTaskScoreOverview 
     totalAssessed: 0,
     totalNotAssessed: { required: 0, optional: 0 },
     supportLevels: {
-      achievedSkill: { count: 0, percentage: 0 },
-      developingSkill: { count: 0, percentage: 0 },
-      needsExtraSupport: { count: 0, percentage: 0 },
+      achievedSkill: { count: 0 },
+      developingSkill: { count: 0 },
+      needsExtraSupport: { count: 0 },
     },
   };
 }
@@ -1095,9 +1095,6 @@ function aggregateTaskGroup(
     }
   }
 
-  // Round percentages to 1 decimal place
-  const pct = (count: number) => (totalAssessed > 0 ? Math.round((count / totalAssessed) * 1000) / 10 : 0);
-
   return {
     taskId: representative.taskId,
     taskSlug: representative.taskSlug,
@@ -1106,9 +1103,9 @@ function aggregateTaskGroup(
     totalAssessed,
     totalNotAssessed: { required: notAssessedRequired, optional: notAssessedOptional },
     supportLevels: {
-      achievedSkill: { count: achievedCount, percentage: pct(achievedCount) },
-      developingSkill: { count: developingCount, percentage: pct(developingCount) },
-      needsExtraSupport: { count: needsSupportCount, percentage: pct(needsSupportCount) },
+      achievedSkill: { count: achievedCount },
+      developingSkill: { count: developingCount },
+      needsExtraSupport: { count: needsSupportCount },
     },
   };
 }

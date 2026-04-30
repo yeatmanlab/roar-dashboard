@@ -1647,7 +1647,6 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       expect(firstTask.supportLevels).toHaveProperty('developingSkill');
       expect(firstTask.supportLevels).toHaveProperty('needsExtraSupport');
       expect(firstTask.supportLevels.achievedSkill).toHaveProperty('count');
-      expect(firstTask.supportLevels.achievedSkill).toHaveProperty('percentage');
     });
 
     it('per-task counts are internally consistent', async () => {
@@ -1671,15 +1670,6 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
         // Total students engaged with the task cannot exceed totalStudents
         const totalEngaged = task.totalAssessed + task.totalNotAssessed.required + task.totalNotAssessed.optional;
         expect(totalEngaged).toBeLessThanOrEqual(data.totalStudents);
-
-        // Percentages are 0-100 with at most 1 decimal place
-        for (const level of ['achievedSkill', 'developingSkill', 'needsExtraSupport'] as const) {
-          const pct = task.supportLevels[level].percentage;
-          expect(pct).toBeGreaterThanOrEqual(0);
-          expect(pct).toBeLessThanOrEqual(100);
-          // Round to 1 decimal: pct * 10 should be an integer
-          expect(Math.round(pct * 10)).toBeCloseTo(pct * 10);
-        }
       }
     });
 
