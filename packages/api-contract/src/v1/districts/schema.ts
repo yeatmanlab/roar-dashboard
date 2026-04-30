@@ -127,6 +127,41 @@ export const DistrictsListResponseSchema = createPaginatedResponseSchema(Distric
 export type DistrictsListResponse = z.infer<typeof DistrictsListResponseSchema>;
 
 /**
+ * Request body for creating a district.
+ *
+ * `orgType` is fixed to 'district' server-side and is not accepted in the body.
+ * `parentOrgId` is always null for districts.
+ * `path` is computed from the generated `id` by a database trigger.
+ * `isRosteringRootOrg` is set to true server-side (a database constraint requires
+ * root orgs to have isRosteringRootOrg = true).
+ */
+export const CreateDistrictRequestSchema = z.object({
+  name: z.string().min(1),
+  abbreviation: z
+    .string()
+    .min(1)
+    .max(10)
+    .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
+  location: DistrictLocationSchema.optional(),
+  identifiers: DistrictIdentifiersSchema.optional(),
+});
+
+export type CreateDistrictRequest = z.infer<typeof CreateDistrictRequestSchema>;
+
+/**
+ * Response payload for POST /districts.
+ *
+ * Returns only the new district id, matching the existing POST /runs and
+ * POST /users/:userId/agreements convention. Clients that need the full
+ * entity follow up with GET /districts/:id.
+ */
+export const CreateDistrictResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type CreateDistrictResponse = z.infer<typeof CreateDistrictResponseSchema>;
+
+/**
  * Allowed sort fields for schools within a district.
  */
 export const DISTRICT_SCHOOL_SORT_FIELDS = ['name', 'abbreviation'] as const;

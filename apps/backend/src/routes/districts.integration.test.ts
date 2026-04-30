@@ -57,6 +57,177 @@ beforeAll(async () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/districts
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/districts', () => {
+  const buildCreateDistrictBody = (overrides: Record<string, unknown> = {}) => ({
+    name: 'Springfield USD',
+    abbreviation: 'SPRINGFIELD',
+    ...overrides,
+  });
+
+  describe('authorization', () => {
+    it('superAdmin tier can create a district and gets 201 with the new id', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateDistrictBody({ abbreviation: 'SUPER1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      expect(res.body.data.id).toEqual(expect.any(String));
+    });
+
+    it('siteAdmin tier is forbidden from creating districts', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.siteAdmin)
+        .withBody(buildCreateDistrictBody({ abbreviation: 'SITE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier is forbidden from creating districts', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.admin)
+        .withBody(buildCreateDistrictBody({ abbreviation: 'ADMIN1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from creating districts', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.educator)
+        .withBody(buildCreateDistrictBody({ abbreviation: 'EDU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from creating districts', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.student)
+        .withBody(buildCreateDistrictBody({ abbreviation: 'STU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from creating districts', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.caregiver)
+        .withBody(buildCreateDistrictBody({ abbreviation: 'CARE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('persistence', () => {
+    it('inserted row has orgType=district, parentOrgId=null, isRosteringRootOrg=true, and a valid path', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateDistrictBody({ abbreviation: 'PERSIST1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { CoreDbClient } = await import('../db/clients');
+      const { orgs } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(orgs).where(eq(orgs.id, id));
+      expect(row).toBeDefined();
+      expect(row!.orgType).toBe(OrgType.DISTRICT);
+      expect(row!.parentOrgId).toBeNull();
+      expect(row!.isRosteringRootOrg).toBe(true);
+      // Trigger computes path = `district_<uuid-with-hyphens-as-underscores>`
+      expect(row!.path).toMatch(/^district_/);
+      expect(row!.path).toContain(id.replace(/-/g, '_'));
+    });
+
+    it('forwards optional location and identifier fields to the column-shaped insert', async () => {
+      const body = buildCreateDistrictBody({
+        abbreviation: 'PERSIST2',
+        location: {
+          addressLine1: '123 Main St',
+          city: 'Springfield',
+          stateProvince: 'IL',
+          postalCode: '62701',
+          country: 'US',
+        },
+        identifiers: {
+          ncesId: 'NCES-9000',
+          stateId: 'IL-9000',
+        },
+      });
+
+      const res = await expectRoute('POST', '/v1/districts')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { CoreDbClient } = await import('../db/clients');
+      const { orgs } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(orgs).where(eq(orgs.id, id));
+      expect(row).toBeDefined();
+      expect(row!.locationAddressLine1).toBe('123 Main St');
+      expect(row!.locationCity).toBe('Springfield');
+      expect(row!.locationStateProvince).toBe('IL');
+      expect(row!.locationPostalCode).toBe('62701');
+      expect(row!.locationCountry).toBe('US');
+      expect(row!.ncesId).toBe('NCES-9000');
+      expect(row!.stateId).toBe('IL-9000');
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('POST', '/v1/districts')
+        .unauthenticated()
+        .withBody(buildCreateDistrictBody({ abbreviation: 'UNAUTH' }))
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 400 when name is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/districts')
+        .set('Authorization', 'Bearer token')
+        .send({ abbreviation: 'BAD1' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/districts')
+        .set('Authorization', 'Bearer token')
+        .send({ name: 'No Abbreviation USD' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation exceeds 10 characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/districts')
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateDistrictBody({ abbreviation: 'TOOLONGABBR1' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/districts
 // ═══════════════════════════════════════════════════════════════════════════
 

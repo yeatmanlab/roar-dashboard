@@ -1,8 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
-import type { DistrictWithEmbeds } from '../services/district/district.service';
+import type { CreateDistrictServiceInput, DistrictWithEmbeds } from '../services/district/district.service';
 import type { SchoolWithCounts } from '../repositories/school.repository';
 import { DistrictService } from '../services/district/district.service';
 import type {
+  CreateDistrictRequest,
   DistrictsListQuery,
   DistrictDetail as ApiDistrict,
   DistrictSchoolsListQuery,
@@ -87,6 +88,62 @@ function transformDistrict(district: DistrictWithEmbeds): ApiDistrict {
  * Calls DistrictService for business logic and formats responses.
  */
 export const DistrictsController = {
+  /**
+   * Create a new district.
+   *
+   * Restricted to super admins (enforced in DistrictService).
+   * Returns the new district id only — clients that need the full entity
+   * should follow up with GET /districts/:id.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param body - Request body with district fields
+   */
+  create: async (authContext: AuthContext, body: CreateDistrictRequest) => {
+    try {
+      // Map api-contract body to the service input shape:
+      //   - drop `location.coordinates` (not in scope for create; only address fields)
+      //   - field-by-field rather than spread to satisfy exactOptionalPropertyTypes
+      //     (Zod's inferred optional fields are T | undefined; the service interface
+      //     uses ?: T)
+      const serviceInput: CreateDistrictServiceInput = {
+        name: body.name,
+        abbreviation: body.abbreviation,
+        ...(body.location && {
+          location: {
+            ...(body.location.addressLine1 !== undefined && { addressLine1: body.location.addressLine1 }),
+            ...(body.location.addressLine2 !== undefined && { addressLine2: body.location.addressLine2 }),
+            ...(body.location.city !== undefined && { city: body.location.city }),
+            ...(body.location.stateProvince !== undefined && { stateProvince: body.location.stateProvince }),
+            ...(body.location.postalCode !== undefined && { postalCode: body.location.postalCode }),
+            ...(body.location.country !== undefined && { country: body.location.country }),
+          },
+        }),
+        ...(body.identifiers && {
+          identifiers: {
+            ...(body.identifiers.mdrNumber !== undefined && { mdrNumber: body.identifiers.mdrNumber }),
+            ...(body.identifiers.ncesId !== undefined && { ncesId: body.identifiers.ncesId }),
+            ...(body.identifiers.stateId !== undefined && { stateId: body.identifiers.stateId }),
+            ...(body.identifiers.schoolNumber !== undefined && { schoolNumber: body.identifiers.schoolNumber }),
+          },
+        }),
+      };
+
+      const { id } = await districtService.create(authContext, serviceInput);
+
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
   /**
    * List districts with pagination and sorting.
    *
