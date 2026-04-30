@@ -36,7 +36,7 @@ import {
 import { UserType } from '../../enums/user-type.enum';
 import { AuthProvider } from '../../enums/auth-provider.enum';
 import { isFirebaseError } from '../../types/firebase';
-import { FirebaseErrorCode } from '../../enums/firebase-error-codes.enum';
+import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 
 // Types for the unsigned TOS agreements response
 interface TosAgreementVersion {
@@ -480,7 +480,7 @@ export function UserService({
     } catch (error) {
       if (error instanceof ApiError) throw error;
       // `auth/user-not-found` is the expected case — swallow and continue
-      if (!isFirebaseError(error) || error.code !== FirebaseErrorCode.USER_NOT_FOUND) {
+      if (!isFirebaseError(error) || error.code !== FIREBASE_ERROR_CODES.AUTH.USER_NOT_FOUND) {
         logger.error(
           { err: error, context: { userId, email: body.email } },
           'Firebase getUserByEmail failed during pre-flight',
@@ -505,7 +505,7 @@ export function UserService({
       });
       firebaseUid = authRecord.uid;
     } catch (error) {
-      if (isFirebaseError(error) && error.code === FirebaseErrorCode.EMAIL_ALREADY_EXISTS) {
+      if (isFirebaseError(error) && error.code === FIREBASE_ERROR_CODES.AUTH.EMAIL_ALREADY_EXISTS) {
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
@@ -513,7 +513,7 @@ export function UserService({
         });
       }
 
-      if (isFirebaseError(error) && error.code === FirebaseErrorCode.TOO_MANY_REQUESTS) {
+      if (isFirebaseError(error) && error.code === FIREBASE_ERROR_CODES.AUTH.TOO_MANY_REQUESTS) {
         throw new ApiError(ApiErrorMessage.RATE_LIMITED, {
           statusCode: StatusCodes.TOO_MANY_REQUESTS,
           code: ApiErrorCode.RATE_LIMITED,
