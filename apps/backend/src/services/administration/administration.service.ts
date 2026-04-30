@@ -1701,7 +1701,7 @@ export function AdministrationService({
       // Build the update input
       const updateInput: UpdateAdministrationInput = {};
 
-      // Build administration field updates
+      // Build administration entity updates
       const adminUpdates: UpdateAdministrationInput['administration'] = {};
       if (request.name !== undefined) adminUpdates.name = request.name;
       if (request.namePublic !== undefined) adminUpdates.namePublic = request.namePublic;
@@ -1714,7 +1714,7 @@ export function AdministrationService({
         updateInput.administration = adminUpdates;
       }
 
-      // Add array field updates
+      // Build administration relational entity updates
       if (request.orgs !== undefined) updateInput.orgIds = request.orgs;
       if (request.classes !== undefined) updateInput.classIds = request.classes;
       if (request.groups !== undefined) updateInput.groupIds = request.groups;
@@ -1729,12 +1729,13 @@ export function AdministrationService({
         }));
       }
 
-      // Update the administration with all related entities in a single transaction
-      const updated = await administrationRepository.updateWithAssignments(administrationId, updateInput);
-
-      // Handle FGA tuple updates if entity assignments changed
+      // Handle FGA tuple updates first if entity assignments changed (Saga pattern)
+      // Update FGA first, then DB. If DB fails, compensate by reverting FGA changes.
       const entityAssignmentsChanged =
         request.orgs !== undefined || request.classes !== undefined || request.groups !== undefined;
+
+      let tuplesToAdd: ReturnType<typeof administrationDistrictTuple>[] = [];
+      let tuplesToRemove: ReturnType<typeof administrationDistrictTuple>[] = [];
 
       if (entityAssignmentsChanged) {
         // Determine new district and school IDs (already validated above)
@@ -1755,7 +1756,7 @@ export function AdministrationService({
         const newGroupSet = new Set(finalGroupIds);
 
         // Tuples to add (in new but not in old)
-        const tuplesToAdd = [
+        tuplesToAdd = [
           ...finalDistrictIds
             .filter((id) => !oldDistrictSet.has(id))
             .map((id) => administrationDistrictTuple(administrationId, id)),
@@ -1771,7 +1772,7 @@ export function AdministrationService({
         ];
 
         // Tuples to remove (in old but not in new)
-        const tuplesToRemove = [
+        tuplesToRemove = [
           ...currentAssigneeIds.districtIds
             .filter((id) => !newDistrictSet.has(id))
             .map((id) => administrationDistrictTuple(administrationId, id)),
@@ -1786,29 +1787,52 @@ export function AdministrationService({
             .map((id) => administrationGroupTuple(administrationId, id)),
         ];
 
-        // Write FGA tuple changes
-        // Note: Unlike create, we don't compensate on failure here since the DB update already succeeded.
-        // FGA inconsistency is logged for manual intervention.
-        try {
-          if (tuplesToAdd.length > 0) {
-            await authorizationService.writeTuplesOrThrow(tuplesToAdd);
-          }
-          if (tuplesToRemove.length > 0) {
-            await authorizationService.deleteTuples(tuplesToRemove);
-          }
-        } catch (fgaError) {
-          // Log for manual intervention but don't fail the request
-          // The DB update succeeded, so the administration is in a valid state
+        // Write FGA tuple changes first
+        if (tuplesToAdd.length > 0) {
+          await authorizationService.writeTuplesOrThrow(tuplesToAdd);
+        }
+        if (tuplesToRemove.length > 0) {
+          await authorizationService.deleteTuples(tuplesToRemove);
+        }
+      }
+
+      // Update the administration with all related entities in a single transaction
+      // If this fails, compensate by reverting FGA changes
+      let updated: Administration;
+      try {
+        updated = await administrationRepository.updateWithAssignments(administrationId, updateInput);
+      } catch (dbError) {
+        // DB write failed - compensate by reverting FGA changes
+        if (entityAssignmentsChanged && (tuplesToAdd.length > 0 || tuplesToRemove.length > 0)) {
           logger.error(
             {
-              err: fgaError,
+              err: dbError,
               administrationId,
               tuplesToAdd: tuplesToAdd.length,
               tuplesToRemove: tuplesToRemove.length,
             },
-            'FGA tuple update failed after administration update. Manual intervention may be required.',
+            'Database update failed, compensating by reverting FGA tuple changes',
           );
+
+          try {
+            // Reverse the FGA operations: delete what we added, re-add what we removed
+            if (tuplesToAdd.length > 0) {
+              await authorizationService.deleteTuples(tuplesToAdd);
+            }
+            if (tuplesToRemove.length > 0) {
+              await authorizationService.writeTuplesOrThrow(tuplesToRemove);
+            }
+            logger.info({ administrationId }, 'Compensation successful: FGA tuples reverted');
+          } catch (compensateError) {
+            // Compensation failed - log for manual intervention
+            logger.error(
+              { err: compensateError, administrationId },
+              'Compensation failed: FGA tuples may be in inconsistent state with database. Manual intervention required.',
+            );
+          }
         }
+
+        throw dbError;
       }
 
       logger.info({ userId, administrationId }, 'Administration updated successfully');
