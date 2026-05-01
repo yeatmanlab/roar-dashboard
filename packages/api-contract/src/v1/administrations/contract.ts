@@ -16,6 +16,7 @@ import {
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { ProgressReportsContract } from './reports/progress/index';
+import { ScoreReportsContract } from './reports/scores/index';
 
 const c = initContract();
 
@@ -196,6 +197,7 @@ export const AdministrationsContract = c.router(
     },
     // Nest report sub-routers under /administrations
     progressReports: ProgressReportsContract,
+    scoreReports: ScoreReportsContract,
   },
   { pathPrefix: '/administrations' },
 );
