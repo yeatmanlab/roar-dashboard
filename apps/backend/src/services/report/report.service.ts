@@ -26,7 +26,7 @@ import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { EntityType } from '../../types/entity-type';
-import { AdministrationRepository } from '../../repositories/administration.repository';
+import { AdministrationService } from '../administration/administration.service';
 import { ReportRepository, REPORT_CONDITION_FIELD_MAP } from '../../repositories/report.repository';
 import type {
   ReportTaskMeta,
@@ -96,96 +96,18 @@ interface TaskStatusCounter {
  * @returns ReportService methods
  */
 export function ReportService({
-  administrationRepository = new AdministrationRepository(),
+  administrationService = AdministrationService(),
   reportRepository = new ReportRepository(),
   taskService = TaskService(),
   authorizationService = AuthorizationService(),
   taskVariantParameterRepository = new TaskVariantParameterRepository(),
 }: {
-  administrationRepository?: AdministrationRepository;
+  administrationService?: ReturnType<typeof AdministrationService>;
   reportRepository?: ReportRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
   taskVariantParameterRepository?: TaskVariantParameterRepository;
 } = {}) {
-  /**
-   * Verify that an administration exists and the user has progress-read access.
-   *
-   * Combines the old 3-step check (administration access → Reports.Progress.READ
-   * permission → supervisory role) into a single FGA call. The FGA model defines
-   * `can_read_progress: supervisory_tier_group` on the administration type, which
-   * grants access only to users with admin-tier or educator-tier roles on the
-   * administration's assigned entities — exactly the same set that previously
-   * passed both the permission and supervisory role checks.
-   *
-   * Follows the 404-before-403 pattern: checks existence first so a missing
-   * administration returns 404, not a misleading 403.
-   *
-   * @param authContext - User's auth context
-   * @param administrationId - The administration ID to verify
-   * @throws {ApiError} NOT_FOUND if administration doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks can_read_progress on the administration
-   */
-  async function verifyAdministrationProgressAccess(authContext: AuthContext, administrationId: string) {
-    const { userId, isSuperAdmin } = authContext;
-
-    const administration = await administrationRepository.getById({ id: administrationId });
-    if (!administration) {
-      throw new ApiError('Administration not found', {
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { userId, administrationId },
-      });
-    }
-
-    if (isSuperAdmin) return;
-
-    await authorizationService.requirePermission(
-      userId,
-      FgaRelation.CAN_READ_PROGRESS,
-      `${FgaType.ADMINISTRATION}:${administrationId}`,
-    );
-  }
-
-  /**
-   * Verify that an administration exists and the user has score-read access.
-   *
-   * Mirrors `verifyAdministrationProgressAccess` but checks the FGA
-   * `can_read_scores` relation instead of `can_read_progress`. The FGA model
-   * defines both as `supervisory_tier_group` on the administration type, so the
-   * set of permitted users is the same shape (admin-tier or educator-tier roles
-   * on an assigned entity), but the permissions are distinct so they can diverge
-   * in the future without changing this code.
-   *
-   * Follows the 404-before-403 pattern: checks existence first so a missing
-   * administration returns 404, not a misleading 403.
-   *
-   * @param authContext - User's auth context
-   * @param administrationId - The administration ID to verify
-   * @throws {ApiError} NOT_FOUND if administration doesn't exist
-   * @throws {ApiError} FORBIDDEN if user lacks can_read_scores on the administration
-   */
-  async function verifyAdministrationScoreReadAccess(authContext: AuthContext, administrationId: string) {
-    const { userId, isSuperAdmin } = authContext;
-
-    const administration = await administrationRepository.getById({ id: administrationId });
-    if (!administration) {
-      throw new ApiError('Administration not found', {
-        statusCode: StatusCodes.NOT_FOUND,
-        code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { userId, administrationId },
-      });
-    }
-
-    if (isSuperAdmin) return;
-
-    await authorizationService.requirePermission(
-      userId,
-      FgaRelation.CAN_READ_SCORES,
-      `${FgaType.ADMINISTRATION}:${administrationId}`,
-    );
-  }
-
   /** Map report scope types to FGA object type prefixes. */
   const SCOPE_TO_FGA_TYPE: Record<ScopeType, FgaType> = {
     [EntityType.DISTRICT]: FgaType.DISTRICT,
@@ -251,7 +173,8 @@ export function ReportService({
    *
    * Authorization flow (two FGA checks, in order):
    *
-   * 1. **Administration progress access** (verifyAdministrationProgressAccess):
+   * 1. **Administration progress access** (AdministrationService.verifyAdministrationAccess
+   *    with `CAN_READ_PROGRESS`):
    *    Checks existence (404 before 403) then verifies `can_read_progress` on the
    *    administration via FGA. This replaces the old 3-step pattern (administration
    *    access → Reports.Progress.READ → hasSupervisoryRole) with a single call.
@@ -282,7 +205,11 @@ export function ReportService({
 
     try {
       // 1. Verify administration exists and user has can_read_progress
-      await verifyAdministrationProgressAccess(authContext, administrationId);
+      await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_PROGRESS,
+      );
 
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
@@ -388,7 +315,11 @@ export function ReportService({
 
     try {
       // 1. Verify administration exists and user has can_read_progress
-      await verifyAdministrationProgressAccess(authContext, administrationId);
+      await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_PROGRESS,
+      );
 
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
@@ -505,7 +436,8 @@ export function ReportService({
    *
    * Authorization (two FGA checks, in order):
    *
-   * 1. **Administration score-read access** (verifyAdministrationScoreReadAccess):
+   * 1. **Administration score-read access** (AdministrationService.verifyAdministrationAccess
+   *    with `CAN_READ_SCORES`):
    *    Checks existence (404 before 403) then verifies `can_read_scores` on the
    *    administration via FGA. The FGA model grants this only to admin-tier and
    *    educator-tier roles, denying students and caregivers.
@@ -540,7 +472,11 @@ export function ReportService({
 
     try {
       // 1. Verify administration exists and user has can_read_scores
-      await verifyAdministrationScoreReadAccess(authContext, administrationId);
+      await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
 
       // 2. Validate scope and authorize can_read_scores on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
