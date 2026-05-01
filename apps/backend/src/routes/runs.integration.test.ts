@@ -34,7 +34,7 @@ import { UserFactory } from '../test-support/factories/user.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { RunFactory } from '../test-support/factories/run.factory';
-import { writeFgaFamilyMembership } from '../test-support/fga/fga-test-tuples.helper';
+import { syncFgaTuplesFromPostgres } from '../test-support/fga';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -323,9 +323,8 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
       await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
       await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
 
-      // Write FGA tuples for family relationships
-      await writeFgaFamilyMembership(parent.id, family.id, 'parent', null, null);
-      await writeFgaFamilyMembership(child.id, family.id, 'child', null, null);
+      // Sync FGA tuples so the parent↔child family relationship is visible to FGA
+      await syncFgaTuplesFromPostgres();
 
       // Create run for child
       const run = await RunFactory.create({ userId: child.id });
@@ -386,11 +385,12 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
 
       // Parent in family A
       await UserFamilyFactory.create({ userId: parent.id, familyId: familyA.id, role: 'parent' });
-      await writeFgaFamilyMembership(parent.id, familyA.id, 'parent', null, null);
 
       // Child in family B
       await UserFamilyFactory.create({ userId: child.id, familyId: familyB.id, role: 'child' });
-      await writeFgaFamilyMembership(child.id, familyB.id, 'child', null, null);
+
+      // Sync FGA tuples so the family relationships are visible to FGA
+      await syncFgaTuplesFromPostgres();
 
       // Create run for child
       const run = await RunFactory.create({ userId: child.id });
