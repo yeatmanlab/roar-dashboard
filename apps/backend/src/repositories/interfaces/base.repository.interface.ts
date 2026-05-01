@@ -194,6 +194,9 @@ export interface IBaseRepository<TEntity, TInsert = TEntity> {
   /** Retrieves an entity by its ID. Returns null if not found. */
   getById(params: BaseGetByIdParams): Promise<TEntity | null>;
 
+  /** Retrieves an active (non-rostered-out) entity by its ID. Returns null if not found or rostered out. */
+  getActiveById(params: BaseGetByIdParams): Promise<TEntity | null>;
+
   /** Retrieves an entity by its ID. */
   get(params: BaseGetParams & { id: string }): Promise<TEntity | null>;
 

@@ -1,4 +1,4 @@
-import { eq, inArray, and, count as drizzleCount, asc, desc } from 'drizzle-orm';
+import { eq, inArray, and, isNull, count as drizzleCount, asc, desc } from 'drizzle-orm';
 import type { SQL, InferInsertModel } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
@@ -80,6 +80,23 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
   async getById(params: BaseGetByIdParams): Promise<TEntity | null> {
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
     const [entity] = await this.db.select().from(this.typedTable).where(eq(idColumn, params.id)).limit(1);
+    return (entity as TEntity) ?? null;
+  }
+
+  /**
+   * Retrieves an active (non-rostered-out) entity by its primary key.
+   * Returns null if the entity does not exist or has a non-null rosteringEnded timestamp.
+   *
+   * Only valid for tables that have a `rosteringEnded` column (orgs, classes, groups, families).
+   */
+  async getActiveById(params: BaseGetByIdParams): Promise<TEntity | null> {
+    const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
+    const rosteringEndedColumn = this.typedTable.rosteringEnded as Parameters<typeof isNull>[0];
+    const [entity] = await this.db
+      .select()
+      .from(this.typedTable)
+      .where(and(eq(idColumn, params.id), isNull(rosteringEndedColumn)))
+      .limit(1);
     return (entity as TEntity) ?? null;
   }
 

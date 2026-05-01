@@ -1,4 +1,4 @@
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFamily } from '../db/schema';
 import { EntityType } from '../types/entity-type';
@@ -102,19 +102,25 @@ export class UserRepository extends BaseRepository<User, typeof users> {
   }
 
   /**
-   * Resolve the parent school ID for a class.
+   * Resolve the parent school ID for an active class.
    *
-   * The service layer checks `can_create_users` on the parent school (not the class itself),
-   * because the FGA model does not define `can_create_users` on the `class` type.
+   * Returns null if the class doesn't exist, the class is rostered out, or the parent
+   * school is rostered out. All three are treated identically — callers should return
+   * 422 without distinguishing between them.
+   *
+   * The service layer also uses the returned school ID to check `can_create_users` on
+   * the parent school (not the class itself), because the FGA model does not define
+   * `can_create_users` on the `class` type.
    *
    * @param classId - UUID of the class
-   * @returns The parent school's org ID, or null if the class doesn't exist
+   * @returns The parent school's org ID, or null if the class or school is unavailable
    */
   async findClassParentSchool(classId: string): Promise<string | null> {
     const [row] = await this.db
       .select({ schoolId: classes.schoolId })
       .from(classes)
-      .where(eq(classes.id, classId))
+      .innerJoin(orgs, and(eq(orgs.id, classes.schoolId), isNull(orgs.rosteringEnded)))
+      .where(and(eq(classes.id, classId), isNull(classes.rosteringEnded)))
       .limit(1);
     return row?.schoolId ?? null;
   }

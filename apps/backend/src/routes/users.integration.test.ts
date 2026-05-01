@@ -56,6 +56,9 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
+import { OrgType } from '../enums/org-type.enum';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
@@ -1829,6 +1832,121 @@ describe('POST /v1/users', () => {
         .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
 
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    describe('rostered-out entity rejection', () => {
+      const rosteringEnded = new Date(Date.now() - 1000);
+      let rosteringEndedDistrict: { id: string };
+      let rosteringEndedSchool: { id: string };
+      let rosteringEndedClass: { id: string };
+      let activeClassInRosteredOutSchool: { id: string };
+      let rosteringEndedGroup: { id: string };
+      let rosteringEndedFamily: { id: string };
+
+      beforeAll(async () => {
+        const { GroupFactory } = await import('../test-support/factories/group.factory');
+        const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+        rosteringEndedDistrict = await OrgFactory.create({ orgType: OrgType.DISTRICT, rosteringEnded });
+
+        rosteringEndedSchool = await OrgFactory.create({
+          orgType: OrgType.SCHOOL,
+          parentOrgId: baseFixture.district.id,
+          rosteringEnded,
+        });
+
+        rosteringEndedClass = await ClassFactory.create({
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+          rosteringEnded,
+        });
+
+        // Active class whose parent school is rostered out
+        const rosteredOutSchoolForClass = await OrgFactory.create({
+          orgType: OrgType.SCHOOL,
+          parentOrgId: baseFixture.district.id,
+          rosteringEnded,
+        });
+        activeClassInRosteredOutSchool = await ClassFactory.create({
+          schoolId: rosteredOutSchoolForClass.id,
+          districtId: baseFixture.district.id,
+        });
+
+        rosteringEndedGroup = await GroupFactory.create({ rosteringEnded });
+        rosteringEndedFamily = await FamilyFactory.create({ rosteringEnded });
+      });
+
+      it('returns 422 when district is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-district'),
+          memberships: [{ entityType: 'district', entityId: rosteringEndedDistrict.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when school is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-school'),
+          memberships: [{ entityType: 'school', entityId: rosteringEndedSchool.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when class is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-class'),
+          memberships: [{ entityType: 'class', entityId: rosteringEndedClass.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it("returns 422 when class's parent school is rostered out", async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-school-via-class'),
+          memberships: [{ entityType: 'class', entityId: activeClassInRosteredOutSchool.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when group is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-group'),
+          memberships: [{ entityType: 'group', entityId: rosteringEndedGroup.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when family is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-family'),
+          memberships: [{ entityType: 'family', entityId: rosteringEndedFamily.id, role: 'parent' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
     });
   });
 

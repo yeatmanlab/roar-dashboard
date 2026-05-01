@@ -398,7 +398,7 @@ export function UserService({
             if (!schoolId) {
               logger.warn(
                 { userId, classId: membership.entityId, totalMemberships: body.memberships.length },
-                'Class not found during user create pre-flight',
+                'Class not found or rostered out during user create pre-flight',
               );
               throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
                 statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -412,19 +412,45 @@ export function UserService({
               `${FgaType.SCHOOL}:${schoolId}`,
             );
           } else if (membership.entityType !== EntityType.FAMILY) {
+            // Defense-in-depth: verify entity exists and is active regardless of FGA tuple state.
+            // FGA enforces this transitively only if the rostering-end flow deletes the relevant tuples.
+            const exists = await verifyMembershipEntityExists(membership.entityType, membership.entityId);
+            if (!exists) {
+              logger.warn(
+                { userId, entityType: membership.entityType, entityId: membership.entityId },
+                'Membership entity not found or rostered out during user create pre-flight',
+              );
+              throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+                statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+                code: ApiErrorCode.RESOURCE_NOT_FOUND,
+                context: { userId, entityType: membership.entityType, entityId: membership.entityId },
+              });
+            }
             await authorizationService.requirePermission(
               userId,
               FgaRelation.CAN_CREATE_USERS,
               `${ENTITY_TYPE_TO_FGA_TYPE[membership.entityType]}:${membership.entityId}`,
             );
+          } else {
+            // FAMILY: verify the family exists and is active before attempting the DB insert.
+            // Fixes the existence gap from issue #1774 — an invalid or rostered-out familyId would
+            // otherwise only fail at the FK constraint after Firebase account creation.
+            const exists = await verifyMembershipEntityExists(EntityType.FAMILY, membership.entityId);
+            if (!exists) {
+              logger.warn(
+                { userId, familyId: membership.entityId },
+                'Family not found or rostered out during user create pre-flight',
+              );
+              throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+                statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+                code: ApiErrorCode.RESOURCE_NOT_FOUND,
+                context: { userId, familyId: membership.entityId },
+              });
+            }
+            // TODO: Authorization gap still outstanding (issue #1774):
+            // call authorizationService.requirePermission(userId, CAN_CREATE_CHILD, `family:${membership.entityId}`).
+            // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1774
           }
-          // TODO: Two family gaps to fix in follow-up PR (see issue #1774):
-          // 1. Authorization: no can_create_child check — any authenticated user can add members to any family.
-          //    Fix: call authorizationService.requirePermission(userId, CAN_CREATE_CHILD, family:entityId).
-          // 2. Existence: no pre-flight existence check for family entityIds — an invalid familyId won't be caught
-          //    until the DB FK constraint fires after Firebase account creation, triggering compensation deletion.
-          //    Fix: call familyRepository.getById(entityId) before the FGA check, same as the super-admin path.
-          // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1774
         }),
       );
     } else {
@@ -703,17 +729,19 @@ export function UserService({
   }
 
   /**
-   * Verifies that a membership entity exists for the given entity type and ID.
+   * Verifies that a membership entity exists and is active (not rostered out).
+   *
    * @param entityType The type of the membership entity to verify.
    * @param entityId The ID of the membership entity to verify.
-   * @returns A promise that resolves to `true` if the entity exists, `false` otherwise.
+   * @returns A promise that resolves to `true` if the entity exists and is active, `false` otherwise.
    */
   async function verifyMembershipEntityExists(entityType: EntityType, entityId: string): Promise<boolean> {
-    if (entityType === EntityType.DISTRICT) return (await districtRepository.getById({ id: entityId })) !== null;
-    if (entityType === EntityType.SCHOOL) return (await schoolRepository.getById({ id: entityId })) !== null;
+    if (entityType === EntityType.DISTRICT) return (await districtRepository.getActiveById({ id: entityId })) !== null;
+    if (entityType === EntityType.SCHOOL) return (await schoolRepository.getActiveById({ id: entityId })) !== null;
+    // findClassParentSchool returns null if the class or its parent school is rostered out
     if (entityType === EntityType.CLASS) return (await userRepository.findClassParentSchool(entityId)) !== null;
-    if (entityType === EntityType.GROUP) return (await groupRepository.getById({ id: entityId })) !== null;
-    return (await familyRepository.getById({ id: entityId })) !== null;
+    if (entityType === EntityType.GROUP) return (await groupRepository.getActiveById({ id: entityId })) !== null;
+    return (await familyRepository.getActiveById({ id: entityId })) !== null;
   }
 
   /**
