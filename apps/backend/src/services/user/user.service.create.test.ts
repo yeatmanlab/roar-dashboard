@@ -33,7 +33,6 @@ import { OrgFactory } from '../../test-support/factories/org.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
 import { FamilyFactory } from '../../test-support/factories/family.factory';
 import { createMockAuthorizationService } from '../../test-support/services/authorization.service';
-import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { EntityType } from '../../types/entity-type';
 import { UserRole } from '../../enums/user-role.enum';
@@ -77,6 +76,14 @@ const validBody = {
   email: 'student@example.com',
   password: 'password123',
   name: { first: 'Test', last: 'Student' },
+  userType: UserType.ADMIN,
+  memberships: [{ entityType: EntityType.DISTRICT, entityId: districtId, role: UserRole.STUDENT }],
+};
+
+const platformAdminBody = {
+  email: 'platform_admin@example.com',
+  password: 'password123',
+  name: { first: 'Test', last: 'Platform Admin' },
   userType: UserType.ADMIN,
   memberships: [{ entityType: EntityType.DISTRICT, entityId: districtId, role: UserRole.PLATFORM_ADMIN }],
 };
@@ -147,6 +154,16 @@ describe('UserService.create', () => {
       expect(mockAuth.createUser).toHaveBeenCalledOnce();
     });
 
+    it('super admin can create a new platform admin account → success', async () => {
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+
+      const result = await service.create(authContext, platformAdminBody);
+
+      expect(result).toEqual({ id: newUserId });
+      expect(mockAuthzService.requirePermission).not.toHaveBeenCalled();
+      expect(mockAuth.createUser).toHaveBeenCalledOnce();
+    });
+
     it('non-super-admin with can_create_users on district → success', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
       mockAuthzService.requirePermission.mockResolvedValue(undefined);
@@ -161,13 +178,10 @@ describe('UserService.create', () => {
       );
     });
 
-    it('non-super-admin missing can_create_users on one membership target → 403', async () => {
+    it('non-super admin with can_create_users on district cannot create a platform admin account → 403', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: false });
-      mockAuthzService.requirePermission.mockRejectedValue(
-        new ApiError('Forbidden', { statusCode: StatusCodes.FORBIDDEN, code: ApiErrorCode.AUTH_FORBIDDEN }),
-      );
 
-      await expect(service.create(authContext, validBody)).rejects.toMatchObject({
+      await expect(service.create(authContext, platformAdminBody)).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
       });
       expect(mockAuth.createUser).not.toHaveBeenCalled();

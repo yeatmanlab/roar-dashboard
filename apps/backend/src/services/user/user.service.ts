@@ -380,6 +380,17 @@ export function UserService({
     // Firebase has already created an account that then needs compensating deletion.
 
     if (!isSuperAdmin) {
+      // Guard against a current platform admin creating a new platform admin account
+      for (const m of body.memberships) {
+        if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN)
+          throw new ApiError('Platform admin cannot create a new platform admin account', {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId },
+          });
+      }
+
+      // Verify that all membership entities exist before proceeding
       await Promise.all(
         body.memberships.map(async (membership) => {
           if (membership.entityType === EntityType.CLASS) {

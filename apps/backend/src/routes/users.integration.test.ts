@@ -1810,6 +1810,16 @@ describe('POST /v1/users', () => {
         .toReturn(StatusCodes.BAD_REQUEST);
     });
 
+    it('rejects request body with isSuperAdmin field', async () => {
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          ...validBodyForDistrict,
+          isSuperAdmin: true, // must not be settable via the API
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
     it('returns 400 when memberships array is empty', async () => {
       await expectRoute('POST', '/v1/users')
         .as(tiers.superAdmin)
