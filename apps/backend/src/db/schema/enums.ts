@@ -206,6 +206,12 @@ export const userFamilyRoleEnum = db.enum('user_family_role', ['parent', 'child'
  * OneRoster v1.1 roles: administrator, aide, guardian, parent, proctor, relative, student, teacher
  * OneRoster v1.2 roles: aide, counselor, districtAdministrator, guardian, parent, principal,
  *                       proctor, relative, siteAdministrator, student, systemAdministrator, teacher
+ *
+ * `platform_admin` is a ROAR-specific role, not part of the OneRoster standard.
+ * Granted exclusively to CSV/dashboard-created users (research partners and users
+ * requiring direct platform control). External rostering providers naturally overwrite
+ * this role during sync — transitioning to an external provider intentionally
+ * surrenders platform management.
  */
 export const userRoleEnum = db.enum('user_role', [
   'administrator',
@@ -214,6 +220,7 @@ export const userRoleEnum = db.enum('user_role', [
   'district_administrator',
   'guardian',
   'parent',
+  'platform_admin',
   'principal',
   'proctor',
   'relative',

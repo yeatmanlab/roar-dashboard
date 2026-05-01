@@ -2,6 +2,7 @@ import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
 import type {
   UserResponse,
+  CreateUserRequestBody,
   UpdateUserRequestBody,
   RecordUserAgreementRequestBody,
   AdministrationsListQuery,
@@ -11,7 +12,7 @@ import { UserService } from '../services/user';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
-import { transformAdministration } from './utils/administration.transform';
+import { transformAdministration, transformAdministrationBase } from './utils/administration.transform';
 
 const userService = UserService();
 const administrationService = AdministrationService();
@@ -95,6 +96,38 @@ export const UsersController = {
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new user.
+   * This endpoint should be used when creating a single user with specific profile information and memberships.
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param body - User creation request body.
+   */
+  create: async (authContext: AuthContext, body: CreateUserRequestBody) => {
+    try {
+      const { id } = await userService.create(authContext, body);
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          StatusCodes.TOO_MANY_REQUESTS,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
@@ -210,6 +243,37 @@ export const UsersController = {
               totalPages,
             },
           },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.NOT_FOUND,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a specific administration for a user.
+   * Transforms database entities to the API response format.
+   *
+   * @param authContext - User's authentication context
+   * @param userId - UUID of the user
+   * @param administrationId - UUID of the administration
+   * @returns Administration data
+   */
+  getUserAdministration: async (authContext: AuthContext, userId: string, administrationId: string) => {
+    try {
+      const administration = await administrationService.getUserAdministration(authContext, userId, administrationId);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: transformAdministrationBase(administration),
         },
       };
     } catch (error) {

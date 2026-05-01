@@ -73,6 +73,7 @@ export interface TierUser {
  */
 export interface TierUsers {
   superAdmin: TierUser;
+  platformAdmin: TierUser;
   siteAdmin: TierUser;
   admin: TierUser;
   educator: TierUser;
@@ -141,17 +142,20 @@ export function authenticateAs(user: { authId: string | null }) {
  * @returns TierUsers with one representative per permission tier
  */
 export async function createTierUsers(orgId: string): Promise<TierUsers> {
-  const [superAdminUser, siteAdminUser, adminUser, educatorUser, studentUser, caregiverUser] = await Promise.all([
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SuperAdmin', isSuperAdmin: true }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SiteAdmin' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Admin' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Educator' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Student' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Caregiver' }),
-  ]);
+  const [superAdminUser, platformAdminUser, siteAdminUser, adminUser, educatorUser, studentUser, caregiverUser] =
+    await Promise.all([
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'SuperAdmin', isSuperAdmin: true }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'PlatformAdmin' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'SiteAdmin' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Admin' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Educator' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Student' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Caregiver' }),
+    ]);
 
   await Promise.all([
     UserOrgFactory.create({ userId: superAdminUser.id, orgId, role: UserRole.ADMINISTRATOR }),
+    UserOrgFactory.create({ userId: platformAdminUser.id, orgId, role: UserRole.PLATFORM_ADMIN }),
     UserOrgFactory.create({ userId: siteAdminUser.id, orgId, role: UserRole.SITE_ADMINISTRATOR }),
     UserOrgFactory.create({ userId: adminUser.id, orgId, role: UserRole.ADMINISTRATOR }),
     UserOrgFactory.create({ userId: educatorUser.id, orgId, role: UserRole.TEACHER }),
@@ -161,6 +165,7 @@ export async function createTierUsers(orgId: string): Promise<TierUsers> {
 
   return {
     superAdmin: { id: superAdminUser.id, authId: superAdminUser.authId! },
+    platformAdmin: { id: platformAdminUser.id, authId: platformAdminUser.authId! },
     siteAdmin: { id: siteAdminUser.id, authId: siteAdminUser.authId! },
     admin: { id: adminUser.id, authId: adminUser.authId! },
     educator: { id: educatorUser.id, authId: educatorUser.authId! },
@@ -179,17 +184,20 @@ export async function createTierUsers(orgId: string): Promise<TierUsers> {
  * @returns TierUsers with one representative per permission tier
  */
 export async function createGroupTierUsers(groupId: string): Promise<TierUsers> {
-  const [superAdminUser, siteAdminUser, adminUser, educatorUser, studentUser, caregiverUser] = await Promise.all([
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SuperAdmin', isSuperAdmin: true }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'SiteAdmin' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Admin' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Educator' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Student' }),
-    UserFactory.create({ nameFirst: 'Tier', nameLast: 'Caregiver' }),
-  ]);
+  const [superAdminUser, platformAdminUser, siteAdminUser, adminUser, educatorUser, studentUser, caregiverUser] =
+    await Promise.all([
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'SuperAdmin', isSuperAdmin: true }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'PlatformAdmin' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'SiteAdmin' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Admin' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Educator' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Student' }),
+      UserFactory.create({ nameFirst: 'Tier', nameLast: 'Caregiver' }),
+    ]);
 
   await Promise.all([
     UserGroupFactory.create({ userId: superAdminUser.id, groupId, role: UserRole.ADMINISTRATOR }),
+    UserGroupFactory.create({ userId: platformAdminUser.id, groupId, role: UserRole.PLATFORM_ADMIN }),
     UserGroupFactory.create({ userId: siteAdminUser.id, groupId, role: UserRole.SITE_ADMINISTRATOR }),
     UserGroupFactory.create({ userId: adminUser.id, groupId, role: UserRole.ADMINISTRATOR }),
     UserGroupFactory.create({ userId: educatorUser.id, groupId, role: UserRole.TEACHER }),
@@ -199,6 +207,7 @@ export async function createGroupTierUsers(groupId: string): Promise<TierUsers> 
 
   return {
     superAdmin: { id: superAdminUser.id, authId: superAdminUser.authId! },
+    platformAdmin: { id: platformAdminUser.id, authId: platformAdminUser.authId! },
     siteAdmin: { id: siteAdminUser.id, authId: siteAdminUser.authId! },
     admin: { id: adminUser.id, authId: adminUser.authId! },
     educator: { id: educatorUser.id, authId: educatorUser.authId! },

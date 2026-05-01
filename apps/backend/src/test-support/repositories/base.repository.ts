@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 export function createMockBaseRepositoryMethods() {
   return {
     getById: vi.fn(),
+    getActiveById: vi.fn(),
     get: vi.fn(),
     getAll: vi.fn(),
     getByIds: vi.fn(),

@@ -98,6 +98,8 @@ jobs:
 
       - name: Run all tests
         run: npm run test
+        env:
+          RUN_INTEGRATION_TESTS: 'true'
 
       - name: Report dashboard coverage
         if: success()

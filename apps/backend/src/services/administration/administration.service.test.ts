@@ -4027,4 +4027,298 @@ describe('AdministrationService', () => {
       });
     });
   });
+
+  describe('getUserAdministration', () => {
+    it('should only call requirePermission once when user requests their own administration (self-access)', async () => {
+      const mockUser = UserFactory.build({ id: 'user-123', isSuperAdmin: false });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministration(
+        { userId: 'user-123', isSuperAdmin: false },
+        'user-123',
+        'admin-123',
+      );
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'user-123' });
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result).toEqual(mockAdmin);
+    });
+
+    it("should return administration when super admin requests another user's administration", async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministration(
+        { userId: 'super-admin', isSuperAdmin: true },
+        'target-user-123',
+        'admin-123',
+      );
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'target-user-123' });
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result).toEqual(mockAdmin);
+    });
+
+    it('should return administration when target user is super admin and non-super admin requester has access', async () => {
+      const mockSuperAdminUser = UserFactory.build({ id: 'target-super-admin', isSuperAdmin: true });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockSuperAdminUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministration(
+        { userId: 'requester-user-456', isSuperAdmin: false },
+        'target-super-admin',
+        'admin-123',
+      );
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'target-super-admin' });
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'requester-user-456',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result).toEqual(mockAdmin);
+    });
+
+    it("should return administration when non-super-admin requests another user's administration and has access", async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.getUserAdministration(
+        { userId: 'requester-user-456', isSuperAdmin: false },
+        'target-user-123',
+        'admin-123',
+      );
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'target-user-123' });
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(2);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'requester-user-456',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(result).toEqual(mockAdmin);
+    });
+
+    it('should throw not-found error when target user does not exist', async () => {
+      mockUserRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministration(
+          { userId: 'requester-user-456', isSuperAdmin: false },
+          'non-existent-user',
+          'admin-123',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'non-existent-user' });
+      expect(mockAdministrationRepository.getById).not.toHaveBeenCalled();
+    });
+
+    it('should throw not-found error when administration does not exist', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministration(
+          { userId: 'requester-user-456', isSuperAdmin: false },
+          'target-user-123',
+          'non-existent-admin',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'target-user-123' });
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'non-existent-admin' });
+    });
+
+    it('should throw forbidden error when target user lacks access to administration', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'target-user-123', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministration(
+          { userId: 'requester-user-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockUserRepository.getById).toHaveBeenCalledWith({ id: 'target-user-123' });
+      expect(mockAdministrationRepository.getById).toHaveBeenCalledWith({ id: 'admin-123' });
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+    });
+
+    it('should throw forbidden error when requester lacks access to administration (target user has access)', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+      const mockAdmin = AdministrationFactory.build({ id: 'admin-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAuthorizationService.requirePermission.mockResolvedValueOnce(undefined).mockRejectedValueOnce(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId: 'requester-user-456', relation: 'can_read', object: 'administration:admin-123' },
+        }),
+      );
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministration(
+          { userId: 'requester-user-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledTimes(2);
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'target-user-123',
+        'can_read',
+        'administration:admin-123',
+      );
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        'requester-user-456',
+        'can_read',
+        'administration:admin-123',
+      );
+    });
+
+    it('should throw internal error when database query fails', async () => {
+      const mockUser = UserFactory.build({ id: 'target-user-123' });
+
+      mockUserRepository.getById.mockResolvedValue(mockUser);
+      mockAdministrationRepository.getById.mockRejectedValue(new Error('Database connection lost'));
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministration(
+          { userId: 'requester-user-456', isSuperAdmin: false },
+          'target-user-123',
+          'admin-123',
+        ),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
 });

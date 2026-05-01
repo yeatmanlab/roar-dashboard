@@ -24,14 +24,28 @@
  * - Duplicate consent detection (same user+version → 409)
  * - Error cases (400, 401, 403, 404, 409)
  *
+ * POST /v1/users
+ * - Authorization (super admin and platform_admin only; other tiers → 403)
+ * - Conflict detection (email already in DB or Firebase → 409)
+ * - Entity validation (non-existent entityId → 422)
+ * - Request validation (missing fields, empty memberships, short password)
+ * - Error cases (401, 403, 409, 422)
+ *
  * GET /v1/users/:userId/administrations
  * - Authorization (who can list administrations for which users)
  * - Pagination and sorting
  * - Embed options (stats, tasks)
  * - Field transformations (Date → ISO string)
  * - Error cases (401)
+ *
+ * GET /v1/users/:userId/administrations/:administrationId
+ * - Authorization (super admin, self-access, admin for their district)
+ * - Two-party access check (both requester and target user must have access)
+ * - Response structure (required fields, Date → ISO string)
+ * - Validation (non-existent user/administration → 404, invalid UUID → 400)
+ * - Error cases (401, 403, 404)
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import type express from 'express';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '@roar-dashboard/api-contract';
@@ -42,9 +56,13 @@ import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
+import { OrgType } from '../enums/org-type.enum';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
+import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -1370,6 +1388,834 @@ describe('GET /v1/users/:userId/administrations', () => {
       await expectRoute('GET', `/v1/users/${baseFixture.schoolAStudent.id}/administrations?sortOrder=invalid`)
         .as(tiers.superAdmin)
         .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/users
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/users', () => {
+  let platformAdmin: { id: string; authId: string };
+  let schoolAPlatformAdmin: { id: string; authId: string };
+  let groupPlatformAdmin: { id: string; authId: string };
+  let otherGroup: { id: string };
+
+  // Cast to access vi.fn() mock methods — these are vi.fn() at runtime because
+  // firebase-admin/auth is mocked globally in vitest.setup.ts
+  const mockAuth = FirebaseAuthClient as unknown as {
+    createUser: ReturnType<typeof vi.fn>;
+    getUserByEmail: ReturnType<typeof vi.fn>;
+    deleteUser: ReturnType<typeof vi.fn>;
+  };
+
+  // Monotonic counter for unique test emails — avoids Date.now() collisions
+  let emailSeq = 0;
+  const makeEmail = (suffix: string) => `post-users-${++emailSeq}-${suffix}@test.example.com`;
+
+  const validBodyForDistrict = (suffix: string) => ({
+    email: makeEmail(suffix),
+    password: 'Password123!',
+    name: { first: 'Test', last: 'User' },
+    memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+  });
+
+  const validBodyForSchoolInDistrict = (suffix: string) => ({
+    email: makeEmail(suffix),
+    password: 'Password123!',
+    name: { first: 'Test', last: 'User' },
+    memberships: [
+      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+      { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+    ],
+  });
+
+  const validBodyForClassInSchoolInDistrict = (suffix: string) => ({
+    email: makeEmail(suffix),
+    password: 'Password123!',
+    name: { first: 'Test', last: 'User' },
+    memberships: [
+      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+      { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+      { entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' },
+    ],
+  });
+
+  const validBodyForGroupInDistrict = (suffix: string) => ({
+    email: makeEmail(suffix),
+    password: 'Password123!',
+    name: { first: 'Test', last: 'User' },
+    memberships: [
+      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+      { entityType: 'group', entityId: baseFixture.group.id, role: 'student' },
+    ],
+  });
+
+  let sharedFamily: { id: string };
+
+  const validBodyForFamilyInDistrict = (suffix: string) => ({
+    email: makeEmail(suffix),
+    password: 'Password123!',
+    name: { first: 'Test', last: 'User' },
+    memberships: [
+      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+      { entityType: 'family', entityId: sharedFamily.id, role: 'parent' },
+    ],
+  });
+
+  beforeAll(async () => {
+    const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
+    const { FamilyFactory } = await import('../test-support/factories/family.factory');
+    const { UserGroupFactory } = await import('../test-support/factories/user-group.factory');
+    const { GroupFactory } = await import('../test-support/factories/group.factory');
+
+    const platformAdminUser = await UserFactory.create({ nameFirst: 'Platform', nameLast: 'Admin' });
+    await UserOrgFactory.create({
+      userId: platformAdminUser.id,
+      orgId: baseFixture.district.id,
+      role: UserRole.PLATFORM_ADMIN,
+    });
+    platformAdmin = { id: platformAdminUser.id, authId: platformAdminUser.authId! };
+
+    const schoolAPlatformAdminUser = await UserFactory.create({ nameFirst: 'SchoolA Platform', nameLast: 'Admin' });
+    await UserOrgFactory.create({
+      userId: schoolAPlatformAdminUser.id,
+      orgId: baseFixture.schoolA.id,
+      role: UserRole.PLATFORM_ADMIN,
+    });
+    schoolAPlatformAdmin = { id: schoolAPlatformAdminUser.id, authId: schoolAPlatformAdminUser.authId! };
+
+    const groupPlatformAdminUser = await UserFactory.create({ nameFirst: 'Group Platform', nameLast: 'Admin' });
+    await UserGroupFactory.create({
+      userId: groupPlatformAdminUser.id,
+      groupId: baseFixture.group.id,
+      role: UserRole.PLATFORM_ADMIN,
+    });
+    groupPlatformAdmin = { id: groupPlatformAdminUser.id, authId: groupPlatformAdminUser.authId! };
+
+    sharedFamily = await FamilyFactory.create();
+    otherGroup = await GroupFactory.create();
+
+    // Re-sync FGA tuples to pick up all new memberships
+    await syncFgaTuplesFromPostgres();
+  });
+
+  beforeEach(() => {
+    // Global vitest.setup.ts beforeEach already calls vi.clearAllMocks() (clears call history
+    // only, not implementations). Set default Firebase behavior: user doesn't exist,
+    // creation succeeds. Individual tests can override these before calling expectRoute.
+    mockAuth.getUserByEmail.mockRejectedValue(Object.assign(new Error('Not found'), { code: 'auth/user-not-found' }));
+    mockAuth.createUser.mockResolvedValue({ uid: `test-firebase-uid-${emailSeq}` });
+    mockAuth.deleteUser.mockResolvedValue(undefined);
+  });
+
+  describe('authorization', () => {
+    it('super admin can create a user', async () => {
+      const body = validBodyForDistrict('superadmin');
+      const res = await expectRoute('POST', '/v1/users').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const created = await userRepository.getById({ id: res.body.data.id });
+      expect(created).not.toBeNull();
+      expect(created!.email).toBe(body.email);
+    });
+
+    it('platform_admin can create a user at their district', async () => {
+      const body = validBodyForDistrict('platform-admin');
+      const res = await expectRoute('POST', '/v1/users').as(platformAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      const districtMembership = memberships.find((m) => m.entityId === baseFixture.district.id);
+      expect(districtMembership).toBeDefined();
+    });
+
+    it('platform_admin can create a user at a school in their district', async () => {
+      const body = validBodyForSchoolInDistrict('platform-admin');
+      const res = await expectRoute('POST', '/v1/users').as(platformAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      const districtMembership = memberships.find((m) => m.entityId === baseFixture.district.id);
+      const schoolMembership = memberships.find((m) => m.entityId === baseFixture.schoolA.id);
+      expect(districtMembership).toBeDefined();
+      expect(schoolMembership).toBeDefined();
+    });
+
+    it('platform_admin can create a user at a class in their district', async () => {
+      const body = validBodyForClassInSchoolInDistrict('platform-admin');
+      const res = await expectRoute('POST', '/v1/users').as(platformAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      const districtMembership = memberships.find((m) => m.entityId === baseFixture.district.id);
+      const schoolMembership = memberships.find((m) => m.entityId === baseFixture.schoolA.id);
+      const classMembership = memberships.find((m) => m.entityId === baseFixture.classInSchoolA.id);
+      expect(districtMembership).toBeDefined();
+      expect(schoolMembership).toBeDefined();
+      expect(classMembership).toBeDefined();
+    });
+
+    it('platform_admin on a group can create a user in that group', async () => {
+      // groupPlatformAdmin has platform_admin role directly on the group — FGA grants
+      // can_create_users on that group specifically, not via district inheritance.
+      // The body contains only the group membership; the service checks can_create_users
+      // per membership target so adding a district would require district access too.
+      const body = {
+        email: makeEmail('group-platform-admin'),
+        password: 'Password123!',
+        name: { first: 'Test', last: 'User' },
+        memberships: [{ entityType: 'group', entityId: baseFixture.group.id, role: 'student' }],
+      };
+      const res = await expectRoute('POST', '/v1/users').as(groupPlatformAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      const groupMembership = memberships.find((m) => m.entityId === baseFixture.group.id);
+      expect(groupMembership).toBeDefined();
+    });
+
+    it('platform_admin on group A cannot create a user in group B', async () => {
+      // groupPlatformAdmin has can_create_users on baseFixture.group only —
+      // group memberships have no hierarchy so there is no lateral inheritance.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(groupPlatformAdmin)
+        .withBody({
+          email: makeEmail('group-platform-admin-cross-group'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'group', entityId: otherGroup.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('super admin can create a user in a group', async () => {
+      const body = validBodyForGroupInDistrict('superadmin-group');
+      const res = await expectRoute('POST', '/v1/users').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      const districtMembership = memberships.find((m) => m.entityId === baseFixture.district.id);
+      const groupMembership = memberships.find((m) => m.entityId === baseFixture.group.id);
+      expect(districtMembership).toBeDefined();
+      expect(groupMembership).toBeDefined();
+    });
+
+    it('super admin can create a user in a family', async () => {
+      const body = validBodyForFamilyInDistrict('superadmin-family');
+      const res = await expectRoute('POST', '/v1/users').as(tiers.superAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      const districtMembership = memberships.find((m) => m.entityId === baseFixture.district.id);
+      const familyMembership = memberships.find((m) => m.entityId === sharedFamily.id);
+      expect(districtMembership).toBeDefined();
+      expect(familyMembership).toBeDefined();
+    });
+
+    it('platform_admin cannot create a user in another district', async () => {
+      // platformAdmin has can_create_users on baseFixture.district, not districtB
+      const body = {
+        ...validBodyForDistrict('platform-admin-cross-district'),
+        memberships: [{ entityType: 'district', entityId: baseFixture.districtB.id, role: 'student' }],
+      };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(platformAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('platform_admin cannot create a user at a school in another district', async () => {
+      // platformAdmin has no can_create_users on districtB or any of its children
+      const body = {
+        ...validBodyForDistrict('platform-admin-cross-school'),
+        memberships: [
+          { entityType: 'district', entityId: baseFixture.districtB.id, role: 'student' },
+          { entityType: 'school', entityId: baseFixture.schoolInDistrictB.id, role: 'student' },
+        ],
+      };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(platformAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('platform_admin cannot create a user at a class in a school in another district', async () => {
+      const body = {
+        ...validBodyForDistrict('platform-admin-cross-class'),
+        memberships: [
+          { entityType: 'district', entityId: baseFixture.districtB.id, role: 'student' },
+          { entityType: 'school', entityId: baseFixture.schoolInDistrictB.id, role: 'student' },
+          { entityType: 'class', entityId: baseFixture.classInDistrictB.id, role: 'student' },
+        ],
+      };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(platformAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('district platform_admin cannot create a user in a group without explicit group platform_admin', async () => {
+      // platformAdmin has can_create_users on baseFixture.district via the org hierarchy.
+      // Groups have no hierarchy — district platform_admin does NOT inherit to groups.
+      // can_create_users on a group requires explicit platform_admin on that specific group.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(platformAdmin)
+        .withBody({
+          email: makeEmail('district-admin-cross-group'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'group', entityId: baseFixture.group.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('school platform_admin cannot create a user in a class in a sibling school', async () => {
+      // schoolAPlatformAdmin has can_create_users on schoolA only.
+      // The class→parent-school FGA check resolves classInSchoolB to schoolB —
+      // schoolAPlatformAdmin has no can_create_users on schoolB.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(schoolAPlatformAdmin)
+        .withBody({
+          email: makeEmail('school-admin-sibling-class'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'class', entityId: baseFixture.classInSchoolB.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('platform_admin can create a user with both district and family memberships', async () => {
+      // Family is explicitly excluded from FGA can_create_users checks — the district
+      // membership passes authorization and the family membership is written without an
+      // additional FGA check (known gap, tracked separately).
+      const body = validBodyForFamilyInDistrict('platform-admin-family');
+      const res = await expectRoute('POST', '/v1/users').as(platformAdmin).withBody(body).toReturn(201);
+
+      expect(res.body.data.id).toBeDefined();
+
+      const memberships = await userRepository.getUserEntityMemberships(res.body.data.id);
+      expect(memberships.find((m) => m.entityId === baseFixture.district.id)).toBeDefined();
+      expect(memberships.find((m) => m.entityId === sharedFamily.id)).toBeDefined();
+    });
+
+    it('admin tier (administrator role) cannot create users — no can_create_users in FGA', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.admin)
+        .withBody(validBodyForDistrict('admin-forbidden'))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier cannot create users', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.educator)
+        .withBody(validBodyForDistrict('educator-forbidden'))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .unauthenticated()
+        .withBody(validBodyForDistrict('unauth'))
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+  });
+
+  describe('conflict detection', () => {
+    it('returns 409 when email already exists in the database', async () => {
+      // existsByUniqueFields catches this before Firebase is called
+      const body = { ...validBodyForDistrict('db-conflict'), email: baseFixture.districtAdmin.email! };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CONFLICT);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('returns 409 when email belongs to a rostered-out user (expired enrollment)', async () => {
+      // existsByUniqueFields queries users directly — enrollment status is irrelevant.
+      // A rostered-out user still owns their identifiers and must block re-registration.
+      const body = {
+        ...validBodyForDistrict('rostered-out-conflict'),
+        email: baseFixture.expiredEnrollmentStudent.email!,
+      };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CONFLICT);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('returns 409 when identifiers.pid matches an existing user assessmentPid', async () => {
+      // Caller-supplied pid takes precedence over auto-generation; existsByUniqueFields
+      // checks it against the assessmentPid column and must block the create.
+      const body = {
+        ...validBodyForDistrict('pid-conflict'),
+        identifiers: { pid: baseFixture.districtAdmin.assessmentPid! },
+      };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CONFLICT);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('returns 409 when email already exists in Firebase Auth', async () => {
+      // Override: Firebase reports the email is already taken (exists in Auth but not in DB)
+      mockAuth.getUserByEmail.mockResolvedValue({ uid: 'existing-firebase-uid' });
+
+      const body = validBodyForDistrict('firebase-conflict');
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CONFLICT);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+  });
+
+  describe('entity validation', () => {
+    it('returns 422 when super admin provides a non-existent district entityId', async () => {
+      // Super admin skips FGA; entity existence is checked pre-flight via districtRepository.getById
+      const body = {
+        ...validBodyForDistrict('bad-district'),
+        memberships: [{ entityType: 'district', entityId: '00000000-0000-0000-0000-000000000000', role: 'student' }],
+      };
+
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 422 when super admin provides a non-existent class entityId', async () => {
+      // Super admin verifies class parent exists — non-existent class throws 422 before Firebase
+      const body = {
+        ...validBodyForDistrict('bad-class'),
+        memberships: [{ entityType: 'class', entityId: '00000000-0000-0000-0000-000000000000', role: 'student' }],
+      };
+
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    describe('rostered-out entity rejection', () => {
+      const rosteringEnded = new Date(Date.now() - 1000);
+      let rosteringEndedDistrict: { id: string };
+      let rosteringEndedSchool: { id: string };
+      let rosteringEndedClass: { id: string };
+      let activeClassInRosteredOutSchool: { id: string };
+      let rosteringEndedGroup: { id: string };
+      let rosteringEndedFamily: { id: string };
+
+      beforeAll(async () => {
+        const { GroupFactory } = await import('../test-support/factories/group.factory');
+        const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+        rosteringEndedDistrict = await OrgFactory.create({ orgType: OrgType.DISTRICT, rosteringEnded });
+
+        rosteringEndedSchool = await OrgFactory.create({
+          orgType: OrgType.SCHOOL,
+          parentOrgId: baseFixture.district.id,
+          rosteringEnded,
+        });
+
+        rosteringEndedClass = await ClassFactory.create({
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+          rosteringEnded,
+        });
+
+        // Active class whose parent school is rostered out
+        const rosteredOutSchoolForClass = await OrgFactory.create({
+          orgType: OrgType.SCHOOL,
+          parentOrgId: baseFixture.district.id,
+          rosteringEnded,
+        });
+        activeClassInRosteredOutSchool = await ClassFactory.create({
+          schoolId: rosteredOutSchoolForClass.id,
+          districtId: baseFixture.district.id,
+        });
+
+        rosteringEndedGroup = await GroupFactory.create({ rosteringEnded });
+        rosteringEndedFamily = await FamilyFactory.create({ rosteringEnded });
+      });
+
+      it('returns 422 when district is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-district'),
+          memberships: [{ entityType: 'district', entityId: rosteringEndedDistrict.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when school is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-school'),
+          memberships: [{ entityType: 'school', entityId: rosteringEndedSchool.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when class is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-class'),
+          memberships: [{ entityType: 'class', entityId: rosteringEndedClass.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it("returns 422 when class's parent school is rostered out", async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-school-via-class'),
+          memberships: [{ entityType: 'class', entityId: activeClassInRosteredOutSchool.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when group is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-group'),
+          memberships: [{ entityType: 'group', entityId: rosteringEndedGroup.id, role: 'student' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+
+      it('returns 422 when family is rostered out', async () => {
+        const body = {
+          ...validBodyForDistrict('rostered-family'),
+          memberships: [{ entityType: 'family', entityId: rosteringEndedFamily.id, role: 'parent' }],
+        };
+        const res = await expectRoute('POST', '/v1/users')
+          .as(tiers.superAdmin)
+          .withBody(body)
+          .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+        expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      });
+    });
+  });
+
+  describe('request validation', () => {
+    it('returns 400 when required fields are missing', async () => {
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({ email: 'missing-fields@test.example.com' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('rejects request body with isSuperAdmin field', async () => {
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.platformAdmin)
+        .withBody({
+          ...validBodyForDistrict,
+          isSuperAdmin: true, // must not be settable via the API
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when memberships array is empty', async () => {
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('empty-memberships'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [],
+        })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when password is too short', async () => {
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({ ...validBodyForDistrict('short-pass'), password: '1234567' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/users/:userId/administrations/:administrationId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/users/:userId/administrations/:administrationId', () => {
+  describe('authorization', () => {
+    it('super admin can get any administration for any user', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+      expect(res.body.data).toHaveProperty('name');
+      expect(res.body.data).toHaveProperty('publicName');
+      expect(res.body.data).toHaveProperty('dates');
+    });
+
+    it('user can get their own administration (self-access)', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${tiers.student.id}/administrations/${baseFixture.administrationAssignedToDistrict.id}`,
+      )
+        .as(tiers.student)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToDistrict.id);
+    });
+
+    it('admin can get administration for users in their district', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.admin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .unauthenticated()
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 403 when target user does not have access to administration', async () => {
+      // Create a user with no access to any administrations
+      const userWithNoAccess = await UserFactory.create();
+      await UserOrgFactory.create({
+        userId: userWithNoAccess.id,
+        orgId: baseFixture.district.id,
+        role: UserRole.STUDENT,
+      });
+
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${userWithNoAccess.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 when requester lacks access to administration (even if target user has access)', async () => {
+      // districtBStudent has access to administrations in district B
+      // tiers.admin only has access to district A
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.districtBStudent.id}/administrations/${baseFixture.administrationAssignedToDistrictB.id}`,
+      )
+        .as(tiers.admin)
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('response structure', () => {
+    it('returns administration with all required fields', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        dates: {
+          start: expect.any(String),
+          end: expect.any(String),
+          created: expect.any(String),
+        },
+        isOrdered: expect.any(Boolean),
+      });
+    });
+
+    it('transforms Date fields to ISO datetime strings', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      const { dates } = res.body.data;
+      expect(dates.start).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(dates.end).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(dates.created).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    });
+
+    it('includes publicName field (may be null)', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data).toHaveProperty('publicName');
+    });
+  });
+
+  describe('validation', () => {
+    it('returns 404 when target user does not exist', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/00000000-0000-0000-0000-000000000000/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 when administration does not exist', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/00000000-0000-0000-0000-000000000000`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 for invalid UUID in userId parameter', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/not-a-valid-uuid/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      const messages = res.body.issues.map((issue: { message: string }) => issue.message);
+      expect(messages).toContain('Invalid uuid');
+    });
+
+    it('returns 400 for invalid UUID in administrationId parameter', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/not-a-valid-uuid`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.BAD_REQUEST);
+
+      const messages = res.body.issues.map((issue: { message: string }) => issue.message);
+      expect(messages).toContain('Invalid uuid');
+    });
+  });
+
+  describe('self-access scenarios', () => {
+    it('allows user to access their own administration without additional permission checks', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${tiers.student.id}/administrations/${baseFixture.administrationAssignedToDistrict.id}`,
+      )
+        .as(tiers.student)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToDistrict.id);
+    });
+
+    it('returns 404 when user requests their own administration that does not exist', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${tiers.student.id}/administrations/00000000-0000-0000-0000-000000000000`,
+      )
+        .as(tiers.student)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+  });
+
+  describe('cross-user access scenarios', () => {
+    it('super admin can access administration for any user regardless of target user access', async () => {
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+
+    it('non-super-admin can access administration if both target user and requester have access', async () => {
+      // Both tiers.admin and baseFixture.schoolAStudent have access to administrationAssignedToSchoolA
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${baseFixture.schoolAStudent.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.admin)
+        .toReturn(StatusCodes.OK);
+
+      expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
     });
   });
 });

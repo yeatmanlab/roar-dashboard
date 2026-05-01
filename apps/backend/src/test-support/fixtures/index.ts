@@ -26,8 +26,17 @@ export let baseFixture: BaseFixture;
 /**
  * Seeds the base fixture and stores it for access by tests.
  *
- * Called by vitest.setup.ts during the global `beforeAll` hook.
+ * Creates a realistic test data hierarchy in the database including:
+ * - Organizations (districts, schools, classes, groups)
+ * - Users with various roles (students, teachers, admins)
+ * - Administrations assigned to org units
+ * - Task variants and related test data
+ *
+ * The seeded data is stored in the exported `baseFixture` variable for access by tests.
+ * This function is called during test setup (e.g., vitest.setup.ts beforeAll hook or server-test.ts startup).
  * Tests should NOT call this directly - use the exported `baseFixture` instead.
+ *
+ * @returns The seeded BaseFixture instance
  */
 export async function seedBaseFixture(): Promise<BaseFixture> {
   baseFixture = await _seedBaseFixture();
