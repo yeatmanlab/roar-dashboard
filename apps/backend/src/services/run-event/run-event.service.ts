@@ -9,7 +9,8 @@ import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
 import { FamilyRepository } from '../../repositories/family.repository';
 import { AuthorizationService } from '../authorization/authorization.service';
-import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { FgaRelation } from '../authorization/fga-constants';
+import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
 import type { AuthContext } from '../../types/auth-context';
 
 type RunCompleteEventBody = Extract<RunEventBody, { type: 'complete' }>;
@@ -56,35 +57,13 @@ export function RunEventService({
    * @throws {ApiError} FORBIDDEN if user lacks permission
    */
   async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<void> {
-    const { userId: requesterUserId, isSuperAdmin } = authContext;
-
-    // Super admins have unrestricted access
-    if (isSuperAdmin) {
-      return;
-    }
-
-    // User can post events to their own runs
-    if (requesterUserId === targetUserId) {
-      return;
-    }
-
-    // Requester is posting an event for a different user (e.g., parent posting for child).
-    // Check if requester has can_create_run_for_child permission on any family containing the target user.
-    const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
-    const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
-    const hasAccess = await authorizationService.hasAnyPermission(
-      requesterUserId,
+    await verifyTargetUserAccess(
+      authContext,
+      targetUserId,
       FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
-      familyObjects,
+      familyRepository,
+      authorizationService,
     );
-
-    if (!hasAccess) {
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { requesterUserId, targetUserId },
-      });
-    }
   }
 
   /**
