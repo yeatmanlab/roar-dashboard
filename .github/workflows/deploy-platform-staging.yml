@@ -76,11 +76,34 @@ jobs:
           database: assessment
 
   # ––––––––––––––––––––––––––––––––––––– #
+  # Deploy FGA authorization model
+  # ––––––––––––––––––––––––––––––––––––– #
+  deploy-fga-model:
+    name: Deploy FGA authorization model
+    needs: [build-backend, migrate-db]
+    runs-on: ubuntu-latest
+    environment: platform:staging
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Deploy FGA model
+        uses: ./.github/actions/deploy-fga-model
+        with:
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_BACKEND_SERVICE_ACCOUNT }}
+          fga-api-url: ${{ secrets.FGA_API_URL }}
+          fga-store-id: ${{ secrets.FGA_STORE_ID }}
+          fga-oidc-audience: ${{ secrets.FGA_OIDC_AUDIENCE }}
+          project-id: ${{ secrets.GCP_PROJECT_ID }}
+
+  # ––––––––––––––––––––––––––––––––––––– #
   # Deploy Backend
   # ––––––––––––––––––––––––––––––––––––– #
   deploy-backend:
     name: Deploy backend
-    needs: [build-backend, migrate-db]
+    needs: [build-backend, migrate-db, deploy-fga-model]
     runs-on: ubuntu-latest
     environment: platform:staging
     timeout-minutes: 10
