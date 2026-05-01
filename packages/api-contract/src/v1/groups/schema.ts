@@ -51,16 +51,18 @@ export type GroupLocation = z.infer<typeof GroupLocationSchema>;
  * and no parent verification at the service layer — just a super-admin gate
  * and a direct insert.
  */
-export const CreateGroupRequestSchema = z.object({
-  name: z.string().min(1),
-  abbreviation: z
-    .string()
-    .min(1)
-    .max(10)
-    .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
-  groupType: GroupTypeSchema,
-  location: GroupLocationSchema.optional(),
-});
+export const CreateGroupRequestSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    abbreviation: z
+      .string()
+      .min(1)
+      .max(10)
+      .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
+    groupType: GroupTypeSchema,
+    location: GroupLocationSchema.optional(),
+  })
+  .strict();
 
 export type CreateGroupRequest = z.infer<typeof CreateGroupRequestSchema>;
 

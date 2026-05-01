@@ -52,23 +52,11 @@ export const GroupsController = {
    */
   create: async (authContext: AuthContext, body: CreateGroupRequest) => {
     try {
-      // Map api-contract body to the service input shape field-by-field rather
-      // than via spread to satisfy exactOptionalPropertyTypes — Zod's inferred
-      // optional fields are T | undefined while the service interface uses ?: T.
       const serviceInput: CreateGroupServiceInput = {
         name: body.name,
         abbreviation: body.abbreviation,
         groupType: body.groupType,
-        ...(body.location && {
-          location: {
-            ...(body.location.addressLine1 !== undefined && { addressLine1: body.location.addressLine1 }),
-            ...(body.location.addressLine2 !== undefined && { addressLine2: body.location.addressLine2 }),
-            ...(body.location.city !== undefined && { city: body.location.city }),
-            ...(body.location.stateProvince !== undefined && { stateProvince: body.location.stateProvince }),
-            ...(body.location.postalCode !== undefined && { postalCode: body.location.postalCode }),
-            ...(body.location.country !== undefined && { country: body.location.country }),
-          },
-        }),
+        location: body.location,
       };
 
       const { id } = await groupService.create(authContext, serviceInput);

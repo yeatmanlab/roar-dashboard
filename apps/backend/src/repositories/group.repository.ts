@@ -26,12 +26,12 @@ export interface CreateGroupInput {
   name: string;
   abbreviation: string;
   groupType: GroupType;
-  locationAddressLine1?: string | null;
-  locationAddressLine2?: string | null;
-  locationCity?: string | null;
-  locationStateProvince?: string | null;
-  locationPostalCode?: string | null;
-  locationCountry?: string | null;
+  locationAddressLine1?: string | undefined;
+  locationAddressLine2?: string | undefined;
+  locationCity?: string | undefined;
+  locationStateProvince?: string | undefined;
+  locationPostalCode?: string | undefined;
+  locationCountry?: string | undefined;
 }
 
 export class GroupRepository extends BaseRepository<Group, typeof groups> {

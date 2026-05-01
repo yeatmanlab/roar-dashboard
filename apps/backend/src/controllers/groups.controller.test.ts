@@ -371,7 +371,7 @@ describe('GroupsController', () => {
     });
 
     it('should map ApiError 500 to an Internal Server Error response', async () => {
-      const error = new ApiError('Failed to create group', {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
       });

@@ -25,14 +25,16 @@ export interface CreateGroupServiceInput {
   name: string;
   abbreviation: string;
   groupType: GroupType;
-  location?: {
-    addressLine1?: string;
-    addressLine2?: string;
-    city?: string;
-    stateProvince?: string;
-    postalCode?: string;
-    country?: string;
-  };
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
 }
 
 export function GroupService({
@@ -174,7 +176,7 @@ export function GroupService({
 
       logger.error({ err: error, context: { userId } }, 'Failed to create group');
 
-      throw new ApiError('Failed to create group', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },
