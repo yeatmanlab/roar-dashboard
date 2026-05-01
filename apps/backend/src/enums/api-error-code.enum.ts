@@ -35,6 +35,9 @@ export enum ApiErrorCode {
   // External service errors
   EXTERNAL_SERVICE_FAILED = 'external/service-failed',
 
+  // Rate limiting
+  RATE_LIMITED = 'rate/limited',
+
   // Internal errors
   INTERNAL = 'internal/error',
 }
