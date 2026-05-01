@@ -28,6 +28,14 @@ export enum ApiErrorMessage {
   /** Generic unauthorized error - use for authentication failures */
   UNAUTHORIZED = 'Authentication required',
 
+  /**
+   * Generic unprocessable-entity error — use when a body-referenced entity
+   * (e.g., a parent id supplied in the request body) does not resolve.
+   * 404 is reserved for missing URL targets; 422 fits "the request was
+   * understood but could not be processed".
+   */
+  UNPROCESSABLE_ENTITY = 'The request could not be processed',
+
   /** Generic internal server error - use for unexpected errors */
   INTERNAL_SERVER_ERROR = 'An internal server error occurred',
 

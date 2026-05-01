@@ -35,6 +35,7 @@ function expectErrorResponse(
 }
 
 describe('ClassesController', () => {
+  const mockCreate = vi.fn();
   const mockListUsers = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
@@ -43,6 +44,7 @@ describe('ClassesController', () => {
 
     // Setup the mock service
     vi.mocked(ClassService).mockReturnValue({
+      create: mockCreate,
       listUsers: mockListUsers,
     });
   });
@@ -198,6 +200,108 @@ describe('ClassesController', () => {
           sortOrder: SortOrder.ASC,
         }),
       ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('create', () => {
+    const validBody = {
+      schoolId: '22222222-2222-4222-8222-222222222222',
+      name: 'Reading 101',
+      classType: 'homeroom' as const,
+    };
+
+    it('should return 201 with the new class id on success', async () => {
+      mockCreate.mockResolvedValue({ id: 'class-new-1' });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      expect(result.status).toBe(StatusCodes.CREATED);
+      expect(result.body).toHaveProperty('data');
+      const data = (result.body as { data: { id: string } }).data;
+      expect(data).toEqual({ id: 'class-new-1' });
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, expect.objectContaining(validBody));
+    });
+
+    it('should map the request body to the service input field-by-field, omitting absent optionals', async () => {
+      mockCreate.mockResolvedValue({ id: 'class-new-2' });
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await Controller.create(mockAuthContext, {
+        ...validBody,
+        number: '101A',
+        period: '3',
+        subjects: ['Reading'],
+        grades: ['3', '4'],
+        location: 'Room 12',
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, {
+        schoolId: validBody.schoolId,
+        name: validBody.name,
+        classType: validBody.classType,
+        number: '101A',
+        period: '3',
+        subjects: ['Reading'],
+        grades: ['3', '4'],
+        location: 'Room 12',
+      });
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 422 to an Unprocessable Entity error response', async () => {
+      const error = new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.UNPROCESSABLE_ENTITY);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError('Failed to create class', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      const result = await Controller.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw a non-ApiError unchanged so the global error handler catches it', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockCreate.mockRejectedValue(unexpected);
+
+      const { ClassesController: Controller } = await import('./classes.controller');
+
+      await expect(Controller.create(mockAuthContext, validBody)).rejects.toBe(unexpected);
     });
   });
 });

@@ -28,6 +28,7 @@ export enum ApiErrorCode {
   // Resource errors
   RESOURCE_NOT_FOUND = 'resource/not-found',
   RESOURCE_CONFLICT = 'resource/conflict',
+  RESOURCE_UNPROCESSABLE = 'resource/unprocessable',
 
   // Database errors
   DATABASE_QUERY_FAILED = 'database/query-failed',
