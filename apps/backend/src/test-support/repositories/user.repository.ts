@@ -13,6 +13,9 @@ export function createMockUserRepository(): MockedObject<UserRepository> {
     ...createMockBaseRepositoryMethods(),
     findByAuthId: vi.fn(),
     getUserEntityMemberships: vi.fn(),
+    findClassParentSchool: vi.fn(),
+    createWithMemberships: vi.fn(),
+    existsByUniqueFields: vi.fn(),
   } as MockedObject<UserRepository>;
 }
 
