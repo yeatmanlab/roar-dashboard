@@ -26,7 +26,7 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 export async function verifyTargetUserAccess(
   authContext: AuthContext,
   targetUserId: string,
-  requiredPermission: string,
+  requiredPermission: FgaRelation,
   familyRepository: FamilyRepository,
   authorizationService: ReturnType<typeof AuthorizationService>,
 ): Promise<string[]> {
@@ -45,11 +45,7 @@ export async function verifyTargetUserAccess(
   // Check if user has required permission on any family containing the target user
   const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
   const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
-  const hasAccess = await authorizationService.hasAnyPermission(
-    userId,
-    requiredPermission as FgaRelation,
-    familyObjects,
-  );
+  const hasAccess = await authorizationService.hasAnyPermission(userId, requiredPermission, familyObjects);
 
   if (!hasAccess) {
     throw new ApiError(ApiErrorMessage.FORBIDDEN, {

@@ -13,6 +13,7 @@ import type { NewRun } from '../../db/schema';
 import type { AuthContext } from '../../types/auth-context';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 
 /**
@@ -59,35 +60,13 @@ export function RunService({
    * @throws {ApiError} FORBIDDEN if user lacks access
    */
   async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<string[]> {
-    const { userId, isSuperAdmin } = authContext;
-
-    // Super admins have unrestricted access
-    if (isSuperAdmin) {
-      return [];
-    }
-
-    // User can access their own runs
-    if (userId === targetUserId) {
-      return [];
-    }
-
-    // Check if user has permission to act on behalf of target user (e.g., parent/guardian)
-    // 1. Look up families the target user belongs to
-    // 2. Check if the authenticated user has CAN_READ_CHILD on any of those families
-    const targetFamilyIds = await familyRepository.getFamilyIdsForUser(targetUserId);
-    const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
-    const hasAccess = await authorizationService.hasAnyPermission(userId, FgaRelation.CAN_READ_CHILD, familyObjects);
-
-    if (!hasAccess) {
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, targetUserId },
-      });
-    }
-
-    // Return family IDs so caller can reuse them for CAN_CREATE_RUN_FOR_CHILD check
-    return targetFamilyIds;
+    return verifyTargetUserAccess(
+      authContext,
+      targetUserId,
+      FgaRelation.CAN_READ_CHILD,
+      familyRepository,
+      authorizationService,
+    );
   }
 
   /**
