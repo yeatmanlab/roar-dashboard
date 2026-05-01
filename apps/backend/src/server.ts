@@ -3,6 +3,7 @@ import fs from 'fs';
 import http from 'http';
 import https from 'https';
 import type { Express } from 'express';
+import { FgaClient } from './clients/fga.client';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { logger } from './logger';
 
@@ -54,6 +55,9 @@ async function startServer(): Promise<void> {
   // This ensures CoreDbClient and AssessmentDbClient are defined
   // before any module-level service instantiation occurs.
   await initializeDatabasePools();
+
+  // Attaches OIDC auth to the FGA client when FGA_OIDC_AUDIENCE is set, no-op otherwise.
+  await FgaClient.initialize();
 
   // Dynamic import AFTER database is ready.
   // This fixes the initialization order issue where repositories would
