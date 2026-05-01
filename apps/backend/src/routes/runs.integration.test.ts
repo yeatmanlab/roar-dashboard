@@ -326,32 +326,37 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
       // Sync FGA tuples so the parent↔child family relationship is visible to FGA
       await syncFgaTuplesFromPostgres();
 
-      // Create run for child
-      const run = await RunFactory.create({ userId: child.id });
-
-      // Parent posts all four event types for child
+      // Parent posts all four event types for child (using separate runs for each event type)
       authenticateAs({ authId: parent.authId! });
 
+      // Trial event
+      const trialRun = await RunFactory.create({ userId: child.id });
       const trialRes = await request(app)
-        .post(eventPath(child.id, run.id))
+        .post(eventPath(child.id, trialRun.id))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
       expect(trialRes.status).toBe(StatusCodes.OK);
 
+      // Complete event
+      const completeRun = await RunFactory.create({ userId: child.id });
       const completeRes = await request(app)
-        .post(eventPath(child.id, run.id))
+        .post(eventPath(child.id, completeRun.id))
         .set('Authorization', 'Bearer token')
         .send(buildCompleteEventBody());
       expect(completeRes.status).toBe(StatusCodes.OK);
 
+      // Abort event
+      const abortRun = await RunFactory.create({ userId: child.id });
       const abortRes = await request(app)
-        .post(eventPath(child.id, run.id))
+        .post(eventPath(child.id, abortRun.id))
         .set('Authorization', 'Bearer token')
         .send(buildAbortEventBody());
       expect(abortRes.status).toBe(StatusCodes.OK);
 
+      // Engagement event
+      const engagementRun = await RunFactory.create({ userId: child.id });
       const engagementRes = await request(app)
-        .post(eventPath(child.id, run.id))
+        .post(eventPath(child.id, engagementRun.id))
         .set('Authorization', 'Bearer token')
         .send(buildEngagementEventBody());
       expect(engagementRes.status).toBe(StatusCodes.OK);
