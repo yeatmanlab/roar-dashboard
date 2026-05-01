@@ -24,5 +24,6 @@ vi.mock('../../clients/fga.client', () => ({
       listObjects: vi.fn().mockResolvedValue({ objects: [] }),
     })),
     clearCache: vi.fn(),
+    initialize: vi.fn().mockResolvedValue(undefined),
   },
 }));
