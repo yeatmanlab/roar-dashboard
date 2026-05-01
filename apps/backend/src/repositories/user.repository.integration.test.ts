@@ -1,7 +1,6 @@
 /**
- * Integration tests for UserRepository.
- *
- * Tests the custom `findByAuthId` and `getUserEntityMemberships` methods,
+ * Tests the custom `findByAuthId`, `getUserEntityMemberships`,
+ * `createWithMemberships`, `findClassParentSchool`, and `existsByUniqueFields` methods,
  * plus light coverage of inherited BaseRepository methods against the real `users` table.
  *
  * Thorough BaseRepository CRUD coverage is in base.repository.integration.test.ts.
@@ -11,9 +10,12 @@ import { baseFixture } from '../test-support/fixtures';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
 import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { GroupFactory } from '../test-support/factories/group.factory';
 import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { UserRole } from '../enums/user-role.enum';
+import { UserType } from '../enums/user-type.enum';
+import { AuthProvider } from '../enums/auth-provider.enum';
 import { UserRepository } from './user.repository';
 
 describe('UserRepository', () => {
@@ -150,6 +152,197 @@ describe('UserRepository', () => {
       // Future enrollment student's enrollments haven't started yet — should be excluded
       const districtMembership = result.find((m) => m.entityId === baseFixture.district.id);
       expect(districtMembership).toBeUndefined();
+    });
+  });
+
+  describe('findClassParentSchool', () => {
+    it('returns the parent school id for a class that exists', async () => {
+      const result = await repository.findClassParentSchool(baseFixture.classInSchoolA.id);
+
+      expect(result).toBe(baseFixture.schoolA.id);
+    });
+
+    it('returns null for a non-existent class id', async () => {
+      const result = await repository.findClassParentSchool('00000000-0000-0000-0000-000000000000');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('existsByUniqueFields', () => {
+    it('returns true when email matches an existing user', async () => {
+      const result = await repository.existsByUniqueFields({
+        email: baseFixture.districtAdmin.email!,
+      });
+
+      expect(result).toBe(true);
+    });
+
+    it('returns true when the assessmentPid matches an existing user', async () => {
+      const result = await repository.existsByUniqueFields({
+        assessmentPid: baseFixture.districtAdmin.assessmentPid!,
+      });
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false when no fields match any user', async () => {
+      const result = await repository.existsByUniqueFields({
+        email: 'nobody@example.com',
+        assessmentPid: 'nonexistent-pid',
+      });
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when called with no fields', async () => {
+      const result = await repository.existsByUniqueFields({});
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('createWithMemberships', () => {
+    const enrollmentStart = new Date('2025-01-01T00:00:00Z');
+
+    it('creates user row and org memberships atomically', async () => {
+      const email = `create-with-orgs-${Date.now()}@example.com`;
+
+      const result = await repository.createWithMemberships(
+        {
+          email,
+          assessmentPid: `pid-${email}`,
+          authId: `firebase-uid-${email}`,
+          authProvider: [AuthProvider.PASSWORD],
+          nameFirst: 'Test',
+          nameLast: 'User',
+          userType: UserType.STUDENT,
+        },
+        [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+        [],
+        [],
+        [],
+      );
+
+      expect(result.id).toBeDefined();
+
+      const created = await repository.getById({ id: result.id });
+      expect(created).not.toBeNull();
+      expect(created!.email).toBe(email);
+
+      const memberships = await repository.getUserEntityMemberships(result.id);
+      const districtMembership = memberships.find((m) => m.entityId === baseFixture.district.id);
+      expect(districtMembership).toBeDefined();
+    });
+
+    it('creates user row and class, group memberships', async () => {
+      const email = `create-multi-${Date.now()}@example.com`;
+      const group = await GroupFactory.create();
+
+      const result = await repository.createWithMemberships(
+        {
+          email,
+          assessmentPid: `pid-${email}`,
+          authProvider: [AuthProvider.PASSWORD],
+          nameFirst: 'Multi',
+          nameLast: 'Member',
+          userType: UserType.STUDENT,
+        },
+        [],
+        [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+        [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+        [],
+      );
+
+      expect(result.id).toBeDefined();
+
+      const memberships = await repository.getUserEntityMemberships(result.id);
+      const classMembership = memberships.find((m) => m.entityId === baseFixture.classInSchoolA.id);
+      const groupMembership = memberships.find((m) => m.entityId === group.id);
+
+      expect(classMembership).toBeDefined();
+      expect(groupMembership).toBeDefined();
+    });
+
+    it('creates user row with org, class, group, and family memberships atomically', async () => {
+      const email = `create-all-types-${Date.now()}@example.com`;
+      const group = await GroupFactory.create();
+      const family = await FamilyFactory.create();
+
+      const result = await repository.createWithMemberships(
+        {
+          email,
+          assessmentPid: `pid-${email}`,
+          authProvider: [AuthProvider.PASSWORD],
+          nameFirst: 'All',
+          nameLast: 'Types',
+          userType: UserType.STUDENT,
+        },
+        [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+        [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+        [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+        [{ familyId: family.id, role: 'child', joinedOn: enrollmentStart, leftOn: null }],
+      );
+
+      expect(result.id).toBeDefined();
+
+      const memberships = await repository.getUserEntityMemberships(result.id);
+      const entityTypes = new Set(memberships.map((m) => m.entityType));
+      expect(entityTypes.has('district')).toBe(true);
+      expect(entityTypes.has('class')).toBe(true);
+      expect(entityTypes.has('group')).toBe(true);
+      expect(entityTypes.has('family')).toBe(true);
+    });
+
+    it('rolls back the entire transaction when a membership entityId is invalid', async () => {
+      const email = `rollback-test-${Date.now()}@example.com`;
+
+      await expect(
+        repository.createWithMemberships(
+          {
+            email,
+            assessmentPid: `pid-${email}`,
+            authProvider: [AuthProvider.PASSWORD],
+            nameFirst: 'Rollback',
+            nameLast: 'Test',
+            userType: UserType.STUDENT,
+          },
+          [{ orgId: '00000000-0000-0000-0000-000000000099', role: UserRole.STUDENT as UserRole, enrollmentStart }],
+          [],
+          [],
+          [],
+        ),
+      ).rejects.toThrow();
+
+      // The user row must NOT exist — transaction rolled back
+      const [row] = await (
+        await import('../db/clients')
+      ).CoreDbClient.select()
+        .from((await import('../db/schema')).users)
+        .where((await import('drizzle-orm')).eq((await import('../db/schema')).users.email, email));
+
+      expect(row).toBeUndefined();
+    });
+
+    it('throws on duplicate email (unique constraint)', async () => {
+      const email = baseFixture.districtAdmin.email!;
+
+      await expect(
+        repository.createWithMemberships(
+          {
+            email,
+            assessmentPid: `pid-unique-${Date.now()}`,
+            authProvider: [AuthProvider.PASSWORD],
+            nameFirst: 'Dup',
+            nameLast: 'Email',
+            userType: UserType.STUDENT,
+          },
+          [],
+          [],
+          [],
+          [],
+        ),
+      ).rejects.toThrow();
     });
   });
 });

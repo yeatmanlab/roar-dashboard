@@ -2,10 +2,13 @@ import { z } from 'zod';
 import {
   UserTypeSchema,
   UserGradeSchema,
+  UserRoleSchema,
   SchoolLevelSchema,
   AuthProviderSchema,
   FreeReducedLunchStatusSchema,
 } from '../common/user';
+import { UserFamilyRoleSchema } from '../families/schema';
+import { IDENTIFIER_WITH_SPACES } from '../common/regex';
 
 /**
  * Response schema for GET /users/:userId
@@ -48,6 +51,95 @@ export const UserResponseSchema = z.object({
 });
 
 export type UserResponse = z.infer<typeof UserResponseSchema>;
+
+const membershipBase = {
+  entityId: z.string().uuid(),
+  enrollmentStart: z.string().datetime().optional(),
+  enrollmentEnd: z.string().datetime().optional(),
+};
+
+/**
+ * Membership schema for org/class/group entities.
+ * Uses the full OneRoster user role set — 'child' is not a valid org role.
+ */
+const OrgMembershipSchema = z.object({
+  ...membershipBase,
+  entityType: z.enum(['district', 'school', 'class', 'group']),
+  role: UserRoleSchema,
+});
+
+/**
+ * Membership schema for family entities.
+ * Only 'parent' and 'child' are valid family roles.
+ */
+const FamilyMembershipSchema = z.object({
+  ...membershipBase,
+  entityType: z.literal('family'),
+  role: UserFamilyRoleSchema,
+});
+
+export const UserMembershipSchema = z.union([OrgMembershipSchema, FamilyMembershipSchema]);
+export type UserMembership = z.infer<typeof UserMembershipSchema>;
+
+const CreateUserNameSchema = z.object({
+  first: z.string().regex(IDENTIFIER_WITH_SPACES),
+  middle: z.string().regex(IDENTIFIER_WITH_SPACES).optional(),
+  last: z.string().regex(IDENTIFIER_WITH_SPACES),
+});
+
+const CreateUserDemographicsSchema = z.object({
+  gender: z.string().nullable().optional(),
+  race: z.string().nullable().optional(),
+  statusEll: z.string().nullable().optional(),
+  statusFrl: FreeReducedLunchStatusSchema.nullable().optional(),
+  statusIep: z.string().nullable().optional(),
+  hispanicEthnicity: z.boolean().nullable().optional(),
+  homeLanguage: z.string().nullable().optional(),
+});
+
+const CreateUserIdentifiersSchema = z.object({
+  stateId: z.string().optional(),
+  pid: z.string().optional(),
+});
+
+/**
+ * Request body schema for POST /users
+ *
+ * This endpoint should be used when creating a single user with specific profile information and memberships.
+ * For bulk user creation, consider implementing a separate bulk endpoint (e.g., POST /users/bulk) that accepts an array of user objects.
+ *
+ * Excluded from this schema (system-managed, not settable via API):
+ * - id, assessmentPid, authId, authProvider — identity/rostering fields
+ * - isSuperAdmin — security-sensitive, not user-updatable
+ * - schoolLevel — DB-generated from grade
+ * - createdAt, updatedAt — managed by DB triggers
+ *
+ * userType defaults to 'student' when omitted. Pass an explicit value when
+ * creating admin or staff accounts.
+ *
+ * Unknown fields in the request body will be rejected with a validation error.
+ */
+export const CreateUserRequestBodySchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(8),
+    name: CreateUserNameSchema,
+    userType: UserTypeSchema.default('student'),
+    dob: z.string().date().nullable().optional(),
+    grade: UserGradeSchema.nullable().optional(),
+    demographics: CreateUserDemographicsSchema.optional(),
+    identifiers: CreateUserIdentifiersSchema.optional(),
+    memberships: z.array(UserMembershipSchema).min(1),
+  })
+  .strict();
+
+export type CreateUserRequestBody = z.infer<typeof CreateUserRequestBodySchema>;
+
+export const CreateUserResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
 
 /**
  * Request body schema for PATCH /users/:id

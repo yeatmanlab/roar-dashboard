@@ -2,6 +2,7 @@ import type { AuthContext } from '../types/auth-context';
 import type { User } from '../db/schema';
 import type {
   UserResponse,
+  CreateUserRequestBody,
   UpdateUserRequestBody,
   RecordUserAgreementRequestBody,
   AdministrationsListQuery,
@@ -95,6 +96,38 @@ export const UsersController = {
           StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new user.
+   * This endpoint should be used when creating a single user with specific profile information and memberships.
+   *
+   * @param authContext - Requesting user's authentication context.
+   * @param body - User creation request body.
+   */
+  create: async (authContext: AuthContext, body: CreateUserRequestBody) => {
+    try {
+      const { id } = await userService.create(authContext, body);
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.UNAUTHORIZED,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          StatusCodes.TOO_MANY_REQUESTS,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
