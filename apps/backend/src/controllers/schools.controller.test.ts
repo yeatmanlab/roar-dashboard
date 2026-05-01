@@ -40,6 +40,7 @@ function expectErrorResponse(
 }
 
 describe('SchoolsController', () => {
+  const mockCreate = vi.fn();
   const mockList = vi.fn();
   const mockGetById = vi.fn();
   const mockListSchoolClasses = vi.fn();
@@ -51,6 +52,7 @@ describe('SchoolsController', () => {
 
     // Setup the mock service
     vi.mocked(SchoolService).mockReturnValue({
+      create: mockCreate,
       list: mockList,
       getById: mockGetById,
       listSchoolClasses: mockListSchoolClasses,

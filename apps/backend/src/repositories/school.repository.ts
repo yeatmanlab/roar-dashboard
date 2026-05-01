@@ -40,6 +40,34 @@ export interface SchoolWithCounts extends School {
 }
 
 /**
+ * Input for creating a school at the repository layer.
+ *
+ * Server-managed columns (`orgType`, `path`, `isRosteringRootOrg`) are NOT
+ * part of this interface — the repository sets them itself based on the
+ * school invariants:
+ * - `orgType` is fixed to 'school'
+ * - `path` is computed by the `trg_orgs_compute_path_insert` BEFORE INSERT
+ *   trigger, which appends the school label to the parent district's path
+ * - `isRosteringRootOrg` is false (enforced by `validate_org_hierarchy_fn`:
+ *   non-root orgs must have isRosteringRootOrg = false)
+ */
+export interface CreateSchoolInput {
+  parentOrgId: string;
+  name: string;
+  abbreviation: string;
+  locationAddressLine1?: string | null;
+  locationAddressLine2?: string | null;
+  locationCity?: string | null;
+  locationStateProvince?: string | null;
+  locationPostalCode?: string | null;
+  locationCountry?: string | null;
+  mdrNumber?: string | null;
+  ncesId?: string | null;
+  stateId?: string | null;
+  schoolNumber?: string | null;
+}
+
+/**
  * Options for listing schools with authorization
  */
 export interface ListAuthorizedOptions {
@@ -274,6 +302,51 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
     }
 
     return result;
+  }
+
+  /**
+   * Create a new school under a parent district.
+   *
+   * Sets server-managed columns according to school invariants:
+   * - `orgType` = 'school'
+   * - `isRosteringRootOrg` = false (the validate_org_hierarchy_fn trigger
+   *   requires non-root orgs to have isRosteringRootOrg = false)
+   * - `path` is initially set to a placeholder ltree value to satisfy the
+   *   NOT NULL column constraint at the Drizzle insert layer; the
+   *   `trg_orgs_compute_path_insert` BEFORE INSERT trigger overwrites it
+   *   with the parent district's path appended with the school label.
+   *
+   * The repository does NOT verify that `parentOrgId` resolves to a district
+   * — that's the service's responsibility, so the service can return a 422
+   * with a useful context object before the DB attempt. If the parent does
+   * not exist, the trigger will RAISE; the service should ensure that
+   * doesn't happen.
+   *
+   * @param input - School-specific fields the caller is allowed to set,
+   *   plus the resolved parentOrgId
+   * @returns The new school id
+   */
+  async createSchool(input: CreateSchoolInput): Promise<{ id: string }> {
+    return this.create({
+      data: {
+        name: input.name,
+        abbreviation: input.abbreviation,
+        orgType: OrgType.SCHOOL,
+        parentOrgId: input.parentOrgId,
+        path: 'placeholder',
+        isRosteringRootOrg: false,
+        ...(input.locationAddressLine1 !== undefined && { locationAddressLine1: input.locationAddressLine1 }),
+        ...(input.locationAddressLine2 !== undefined && { locationAddressLine2: input.locationAddressLine2 }),
+        ...(input.locationCity !== undefined && { locationCity: input.locationCity }),
+        ...(input.locationStateProvince !== undefined && { locationStateProvince: input.locationStateProvince }),
+        ...(input.locationPostalCode !== undefined && { locationPostalCode: input.locationPostalCode }),
+        ...(input.locationCountry !== undefined && { locationCountry: input.locationCountry }),
+        ...(input.mdrNumber !== undefined && { mdrNumber: input.mdrNumber }),
+        ...(input.ncesId !== undefined && { ncesId: input.ncesId }),
+        ...(input.stateId !== undefined && { stateId: input.stateId }),
+        ...(input.schoolNumber !== undefined && { schoolNumber: input.schoolNumber }),
+      },
+    });
   }
 
   /**

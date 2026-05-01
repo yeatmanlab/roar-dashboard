@@ -59,6 +59,257 @@ beforeAll(async () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/schools
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/schools', () => {
+  const buildCreateSchoolBody = (overrides: Record<string, unknown> = {}) => ({
+    districtId: baseFixture.district.id,
+    name: 'Springfield Elementary',
+    abbreviation: 'SPFD',
+    ...overrides,
+  });
+
+  describe('authorization', () => {
+    it('superAdmin tier can create a school under an active district and gets 201 with the new id', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'SUPER1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      expect(res.body.data.id).toEqual(expect.any(String));
+    });
+
+    it('siteAdmin tier is forbidden from creating schools', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.siteAdmin)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'SITE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier is forbidden from creating schools', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.admin)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'ADMIN1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from creating schools', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.educator)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'EDU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from creating schools', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.student)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'STU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from creating schools', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.caregiver)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'CARE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('persistence', () => {
+    it('inserted row has orgType=school, parentOrgId=districtId, isRosteringRootOrg=false, and a path that extends the parent district path', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'PERSIST1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { CoreDbClient } = await import('../db/clients');
+      const { orgs } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(orgs).where(eq(orgs.id, id));
+      expect(row).toBeDefined();
+      expect(row!.orgType).toBe(OrgType.SCHOOL);
+      expect(row!.parentOrgId).toBe(baseFixture.district.id);
+      expect(row!.isRosteringRootOrg).toBe(false);
+      // Trigger appends `school_<id-with-hyphens-as-underscores>` to the
+      // parent district's path.
+      expect(row!.path).toBe(`${baseFixture.district.path}.school_${id.replace(/-/g, '_')}`);
+    });
+
+    it('forwards optional location and identifier fields to the column-shaped insert', async () => {
+      const body = buildCreateSchoolBody({
+        abbreviation: 'PERSIST2',
+        location: {
+          addressLine1: '742 Evergreen Terrace',
+          city: 'Springfield',
+          stateProvince: 'IL',
+          postalCode: '62701',
+          country: 'US',
+        },
+        identifiers: {
+          ncesId: 'NCES-S-9001',
+          stateId: 'IL-S-9001',
+          schoolNumber: 'SCH-001',
+        },
+      });
+
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { CoreDbClient } = await import('../db/clients');
+      const { orgs } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(orgs).where(eq(orgs.id, id));
+      expect(row).toBeDefined();
+      expect(row!.locationAddressLine1).toBe('742 Evergreen Terrace');
+      expect(row!.locationCity).toBe('Springfield');
+      expect(row!.locationStateProvince).toBe('IL');
+      expect(row!.locationPostalCode).toBe('62701');
+      expect(row!.locationCountry).toBe('US');
+      expect(row!.ncesId).toBe('NCES-S-9001');
+      expect(row!.stateId).toBe('IL-S-9001');
+      expect(row!.schoolNumber).toBe('SCH-001');
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .unauthenticated()
+        .withBody(buildCreateSchoolBody({ abbreviation: 'UNAUTH' }))
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 422 when districtId does not resolve to any row', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(
+          buildCreateSchoolBody({
+            abbreviation: 'NOPARENT',
+            districtId: '00000000-0000-4000-8000-000000000000',
+          }),
+        )
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    });
+
+    it('returns 422 when districtId points at a school instead of a district', async () => {
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(
+          buildCreateSchoolBody({
+            abbreviation: 'WRONGTYPE',
+            districtId: baseFixture.schoolA.id,
+          }),
+        )
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    });
+
+    it('returns 422 when districtId points at a district whose rostering ended in the past', async () => {
+      const endedDistrict = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        rosteringEnded: new Date('2020-01-01T00:00:00.000Z'),
+      });
+
+      const res = await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(
+          buildCreateSchoolBody({
+            abbreviation: 'ENDED',
+            districtId: endedDistrict.id,
+          }),
+        )
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    });
+
+    it('returns 400 when districtId is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/schools')
+        .set('Authorization', 'Bearer token')
+        .send({ name: 'No District USD', abbreviation: 'NODIST' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when districtId is not a UUID', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/schools')
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateSchoolBody({ abbreviation: 'BADID', districtId: 'not-a-uuid' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when name is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/schools')
+        .set('Authorization', 'Bearer token')
+        .send({ districtId: baseFixture.district.id, abbreviation: 'BAD1' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/schools')
+        .set('Authorization', 'Bearer token')
+        .send({ districtId: baseFixture.district.id, name: 'No Abbreviation Elementary' });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation exceeds 10 characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/schools')
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateSchoolBody({ abbreviation: 'TOOLONGABBR1' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation contains non-alphanumeric characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/schools')
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateSchoolBody({ abbreviation: 'SCH-001' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/schools
 // ═══════════════════════════════════════════════════════════════════════════
 
