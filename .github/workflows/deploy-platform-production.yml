@@ -2,14 +2,17 @@ name: Deploy Platform to Production
 
 on:
   push:
-    branches:
-      # TODO: Remove once backend refactor is complete
-      - project/backend-refactor
-    # TODO: Re-enable once backend refactor is complete
-    # tags:
-    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+"
-    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+    tags:
+      # Platform releases (backend, dashboard, api-contract)
+      - "backend-v[0-9]+.[0-9]+.[0-9]+"
+      - "backend-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "backend-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      - "dashboard-v[0-9]+.[0-9]+.[0-9]+"
+      - "dashboard-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "dashboard-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      - "api-contract-v[0-9]+.[0-9]+.[0-9]+"
+      - "api-contract-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "api-contract-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -49,13 +52,13 @@ jobs:
           echo "Tag ${{ github.ref_name }} is on main."
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Product owner review
+  # Production deployment approval
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  product-owner-review:
-    name: Request product owner review
+  approval:
+    name: Request production deployment approval
     needs: [verify-tag]
     runs-on: ubuntu-latest
-    environment: roar-platform:production:release-approval
+    environment: platform:production
     timeout-minutes: 15
     steps:
       - name: Approval granted
@@ -66,7 +69,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––– #
   build-backend:
     name: Build backend Docker image
-    needs: [product-owner-review]
+    needs: [approval]
     runs-on: ubuntu-latest
     environment: platform:production
     timeout-minutes: 10
