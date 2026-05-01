@@ -30,6 +30,11 @@ import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } fro
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { FamilyFactory } from '../test-support/factories/family.factory';
+import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
+import { RunFactory } from '../test-support/factories/run.factory';
+import { writeFgaFamilyMembership } from '../test-support/fga/fga-test-tuples.helper';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -303,6 +308,97 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
       authenticateAs(tiers.admin);
       const res = await request(app)
         .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildTrialEventBody());
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('parent with CAN_CREATE_RUN_FOR_CHILD can post events for their child', async () => {
+      // Create parent and child users in same family
+      const parent = await UserFactory.create();
+      const child = await UserFactory.create();
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: parent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      // Write FGA tuples for family relationships
+      await writeFgaFamilyMembership(parent.id, family.id, 'parent', null, null);
+      await writeFgaFamilyMembership(child.id, family.id, 'child', null, null);
+
+      // Create run for child
+      const run = await RunFactory.create({ userId: child.id });
+
+      // Parent posts all four event types for child
+      authenticateAs({ authId: parent.authId! });
+
+      const trialRes = await request(app)
+        .post(eventPath(child.id, run.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildTrialEventBody());
+      expect(trialRes.status).toBe(StatusCodes.OK);
+
+      const completeRes = await request(app)
+        .post(eventPath(child.id, run.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildCompleteEventBody());
+      expect(completeRes.status).toBe(StatusCodes.OK);
+
+      const abortRes = await request(app)
+        .post(eventPath(child.id, run.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildAbortEventBody());
+      expect(abortRes.status).toBe(StatusCodes.OK);
+
+      const engagementRes = await request(app)
+        .post(eventPath(child.id, run.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildEngagementEventBody());
+      expect(engagementRes.status).toBe(StatusCodes.OK);
+    });
+
+    it('parent without CAN_CREATE_RUN_FOR_CHILD cannot post events for child', async () => {
+      // Create parent and child with no family relationship
+      const parent = await UserFactory.create();
+      const child = await UserFactory.create();
+
+      // Create run for child
+      const run = await RunFactory.create({ userId: child.id });
+
+      // Parent tries to post event for child
+      authenticateAs({ authId: parent.authId! });
+      const res = await request(app)
+        .post(eventPath(child.id, run.id))
+        .set('Authorization', 'Bearer token')
+        .send(buildTrialEventBody());
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('parent on family A cannot post events for child in family B', async () => {
+      // Create parent and child in different families
+      const parent = await UserFactory.create();
+      const child = await UserFactory.create();
+      const familyA = await FamilyFactory.create();
+      const familyB = await FamilyFactory.create();
+
+      // Parent in family A
+      await UserFamilyFactory.create({ userId: parent.id, familyId: familyA.id, role: 'parent' });
+      await writeFgaFamilyMembership(parent.id, familyA.id, 'parent', null, null);
+
+      // Child in family B
+      await UserFamilyFactory.create({ userId: child.id, familyId: familyB.id, role: 'child' });
+      await writeFgaFamilyMembership(child.id, familyB.id, 'child', null, null);
+
+      // Create run for child
+      const run = await RunFactory.create({ userId: child.id });
+
+      // Parent tries to post event for child in different family
+      authenticateAs({ authId: parent.authId! });
+      const res = await request(app)
+        .post(eventPath(child.id, run.id))
         .set('Authorization', 'Bearer token')
         .send(buildTrialEventBody());
 
