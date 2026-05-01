@@ -138,17 +138,19 @@ export type SchoolsListResponse = z.infer<typeof SchoolsListResponseSchema>;
  * `location.coordinates` is omitted from the request shape — lat/long isn't
  * accepted on create.
  */
-export const CreateSchoolRequestSchema = z.object({
-  districtId: z.string().uuid(),
-  name: z.string().min(1),
-  abbreviation: z
-    .string()
-    .min(1)
-    .max(10)
-    .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
-  location: SchoolLocationSchema.omit({ coordinates: true }).optional(),
-  identifiers: SchoolIdentifiersSchema.optional(),
-});
+export const CreateSchoolRequestSchema = z
+  .object({
+    districtId: z.string().uuid(),
+    name: z.string().min(1).max(255),
+    abbreviation: z
+      .string()
+      .min(1)
+      .max(10)
+      .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
+    location: SchoolLocationSchema.omit({ coordinates: true }).optional(),
+    identifiers: SchoolIdentifiersSchema.optional(),
+  })
+  .strict();
 
 export type CreateSchoolRequest = z.infer<typeof CreateSchoolRequestSchema>;
 

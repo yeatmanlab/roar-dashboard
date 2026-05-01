@@ -55,16 +55,16 @@ export interface CreateSchoolInput {
   parentOrgId: string;
   name: string;
   abbreviation: string;
-  locationAddressLine1?: string | null;
-  locationAddressLine2?: string | null;
-  locationCity?: string | null;
-  locationStateProvince?: string | null;
-  locationPostalCode?: string | null;
-  locationCountry?: string | null;
-  mdrNumber?: string | null;
-  ncesId?: string | null;
-  stateId?: string | null;
-  schoolNumber?: string | null;
+  locationAddressLine1?: string | undefined;
+  locationAddressLine2?: string | undefined;
+  locationCity?: string | undefined;
+  locationStateProvince?: string | undefined;
+  locationPostalCode?: string | undefined;
+  locationCountry?: string | undefined;
+  mdrNumber?: string | undefined;
+  ncesId?: string | undefined;
+  stateId?: string | undefined;
+  schoolNumber?: string | undefined;
 }
 
 /**

@@ -50,20 +50,24 @@ export interface CreateSchoolServiceInput {
   districtId: string;
   name: string;
   abbreviation: string;
-  location?: {
-    addressLine1?: string;
-    addressLine2?: string;
-    city?: string;
-    stateProvince?: string;
-    postalCode?: string;
-    country?: string;
-  };
-  identifiers?: {
-    mdrNumber?: string;
-    ncesId?: string;
-    stateId?: string;
-    schoolNumber?: string;
-  };
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+        schoolNumber?: string | undefined;
+      }
+    | undefined;
 }
 
 /**
@@ -472,7 +476,7 @@ export function SchoolService({
 
       logger.error({ err: error, context: { userId, districtId: input.districtId } }, 'Failed to create school');
 
-      throw new ApiError('Failed to create school', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, districtId: input.districtId },
