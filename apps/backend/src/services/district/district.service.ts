@@ -61,7 +61,6 @@ export interface CreateDistrictServiceInput {
     mdrNumber?: string;
     ncesId?: string;
     stateId?: string;
-    schoolNumber?: string;
   };
 }
 
@@ -397,7 +396,6 @@ export function DistrictService({
         ...(input.identifiers?.mdrNumber !== undefined && { mdrNumber: input.identifiers.mdrNumber }),
         ...(input.identifiers?.ncesId !== undefined && { ncesId: input.identifiers.ncesId }),
         ...(input.identifiers?.stateId !== undefined && { stateId: input.identifiers.stateId }),
-        ...(input.identifiers?.schoolNumber !== undefined && { schoolNumber: input.identifiers.schoolNumber }),
       };
 
       return await districtRepository.createDistrict(repoInput);

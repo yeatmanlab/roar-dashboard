@@ -134,6 +134,13 @@ export type DistrictsListResponse = z.infer<typeof DistrictsListResponseSchema>;
  * `path` is computed from the generated `id` by a database trigger.
  * `isRosteringRootOrg` is set to true server-side (a database constraint requires
  * root orgs to have isRosteringRootOrg = true).
+ *
+ * `location.coordinates` is omitted from the request shape — lat/long isn't
+ * accepted on create.
+ *
+ * `identifiers.schoolNumber` is omitted from the request shape — it's a
+ * school-level identifier, not a district-level one. The column exists on the
+ * shared `orgs` table for schools but is not meaningful for districts.
  */
 export const CreateDistrictRequestSchema = z.object({
   name: z.string().min(1),
@@ -142,8 +149,8 @@ export const CreateDistrictRequestSchema = z.object({
     .min(1)
     .max(10)
     .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
-  location: DistrictLocationSchema.optional(),
-  identifiers: DistrictIdentifiersSchema.optional(),
+  location: DistrictLocationSchema.omit({ coordinates: true }).optional(),
+  identifiers: DistrictIdentifiersSchema.omit({ schoolNumber: true }).optional(),
 });
 
 export type CreateDistrictRequest = z.infer<typeof CreateDistrictRequestSchema>;

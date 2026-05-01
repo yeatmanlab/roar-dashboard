@@ -100,11 +100,9 @@ export const DistrictsController = {
    */
   create: async (authContext: AuthContext, body: CreateDistrictRequest) => {
     try {
-      // Map api-contract body to the service input shape:
-      //   - drop `location.coordinates` (not in scope for create; only address fields)
-      //   - field-by-field rather than spread to satisfy exactOptionalPropertyTypes
-      //     (Zod's inferred optional fields are T | undefined; the service interface
-      //     uses ?: T)
+      // Map api-contract body to the service input shape field-by-field rather
+      // than via spread to satisfy exactOptionalPropertyTypes — Zod's inferred
+      // optional fields are T | undefined while the service interface uses ?: T.
       const serviceInput: CreateDistrictServiceInput = {
         name: body.name,
         abbreviation: body.abbreviation,
@@ -123,7 +121,6 @@ export const DistrictsController = {
             ...(body.identifiers.mdrNumber !== undefined && { mdrNumber: body.identifiers.mdrNumber }),
             ...(body.identifiers.ncesId !== undefined && { ncesId: body.identifiers.ncesId }),
             ...(body.identifiers.stateId !== undefined && { stateId: body.identifiers.stateId }),
-            ...(body.identifiers.schoolNumber !== undefined && { schoolNumber: body.identifiers.schoolNumber }),
           },
         }),
       };

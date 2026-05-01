@@ -1022,7 +1022,7 @@ describe('DistrictService', () => {
   describe('create', () => {
     const validInput = {
       name: 'Springfield USD',
-      abbreviation: 'SPRINGFIELD',
+      abbreviation: 'SPFD',
     };
 
     it('should create a district for super admins and return the new id', async () => {
@@ -1038,7 +1038,7 @@ describe('DistrictService', () => {
       expect(result).toEqual({ id: 'district-new-1' });
       expect(mockDistrictRepository.createDistrict).toHaveBeenCalledWith({
         name: 'Springfield USD',
-        abbreviation: 'SPRINGFIELD',
+        abbreviation: 'SPFD',
       });
     });
 
@@ -1052,7 +1052,7 @@ describe('DistrictService', () => {
 
       await service.create(mockSuperAdminContext, {
         name: 'Springfield USD',
-        abbreviation: 'SPRINGFIELD',
+        abbreviation: 'SPFD',
         location: {
           addressLine1: '123 Main St',
           city: 'Springfield',
@@ -1068,7 +1068,7 @@ describe('DistrictService', () => {
 
       expect(mockDistrictRepository.createDistrict).toHaveBeenCalledWith({
         name: 'Springfield USD',
-        abbreviation: 'SPRINGFIELD',
+        abbreviation: 'SPFD',
         locationAddressLine1: '123 Main St',
         locationCity: 'Springfield',
         locationStateProvince: 'IL',

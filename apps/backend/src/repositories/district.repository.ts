@@ -64,7 +64,8 @@ export interface CreateDistrictInput {
   mdrNumber?: string | null;
   ncesId?: string | null;
   stateId?: string | null;
-  schoolNumber?: string | null;
+  // schoolNumber is a school-level identifier and is intentionally not part of
+  // the district create input.
 }
 
 /**
@@ -311,7 +312,6 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
         ...(input.mdrNumber !== undefined && { mdrNumber: input.mdrNumber }),
         ...(input.ncesId !== undefined && { ncesId: input.ncesId }),
         ...(input.stateId !== undefined && { stateId: input.stateId }),
-        ...(input.schoolNumber !== undefined && { schoolNumber: input.schoolNumber }),
       },
     });
   }

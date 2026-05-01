@@ -63,7 +63,7 @@ beforeAll(async () => {
 describe('POST /v1/districts', () => {
   const buildCreateDistrictBody = (overrides: Record<string, unknown> = {}) => ({
     name: 'Springfield USD',
-    abbreviation: 'SPRINGFIELD',
+    abbreviation: 'SPFD',
     ...overrides,
   });
 
@@ -221,6 +221,16 @@ describe('POST /v1/districts', () => {
         .post('/v1/districts')
         .set('Authorization', 'Bearer token')
         .send(buildCreateDistrictBody({ abbreviation: 'TOOLONGABBR1' }));
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation contains non-alphanumeric characters', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .post('/v1/districts')
+        .set('Authorization', 'Bearer token')
+        .send(buildCreateDistrictBody({ abbreviation: 'USD-2026' }));
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
     });
