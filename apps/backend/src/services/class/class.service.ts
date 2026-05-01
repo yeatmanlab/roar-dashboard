@@ -169,11 +169,18 @@ export function ClassService({
     try {
       const parent = await schoolRepository.getUnrestrictedById(input.schoolId);
 
-      // 422 covers three failure modes for the body-referenced parent: the
-      // row doesn't exist; the row exists but isn't a school; the row exists
-      // and is a school but its rostering ended in the past (treated as
-      // nonexistent for create purposes — we don't want to attach new
-      // classes to retired schools).
+      // 422 covers three failure modes for the body-referenced parent. The
+      // first two checks are defense-in-depth (the repository's
+      // getUnrestrictedById already filters by orgType='school' and would
+      // return null if the row is a district), but the rosteringEnded check
+      // is *primary enforcement at the service layer* — the repository does
+      // not filter by rosteringEnded on the parent lookup, so this is the
+      // only place that bars new classes from being attached to retired
+      // schools:
+      //   1. row doesn't exist                                  → 422
+      //   2. row exists but isn't a school (defense-in-depth)   → 422
+      //   3. row exists and is a school but rostering ended     → 422
+      //      (treated as nonexistent for create purposes — primary check)
       const schoolIsActive =
         parent !== null &&
         parent.orgType === OrgType.SCHOOL &&
