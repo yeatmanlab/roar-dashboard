@@ -248,63 +248,45 @@ describe('POST /v1/schools', () => {
     });
 
     it('returns 400 when districtId is missing', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .post('/v1/schools')
-        .set('Authorization', 'Bearer token')
-        .send({ name: 'No District USD', abbreviation: 'NODIST' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'No District USD', abbreviation: 'NODIST' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 when districtId is not a UUID', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .post('/v1/schools')
-        .set('Authorization', 'Bearer token')
-        .send(buildCreateSchoolBody({ abbreviation: 'BADID', districtId: 'not-a-uuid' }));
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'BADID', districtId: 'not-a-uuid' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 when name is missing', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .post('/v1/schools')
-        .set('Authorization', 'Bearer token')
-        .send({ districtId: baseFixture.district.id, abbreviation: 'BAD1' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody({ districtId: baseFixture.district.id, abbreviation: 'BAD1' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 when abbreviation is missing', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .post('/v1/schools')
-        .set('Authorization', 'Bearer token')
-        .send({ districtId: baseFixture.district.id, name: 'No Abbreviation Elementary' });
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody({ districtId: baseFixture.district.id, name: 'No Abbreviation Elementary' })
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 when abbreviation exceeds 10 characters', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .post('/v1/schools')
-        .set('Authorization', 'Bearer token')
-        .send(buildCreateSchoolBody({ abbreviation: 'TOOLONGABBR1' }));
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'TOOLONGABBR1' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
 
     it('returns 400 when abbreviation contains non-alphanumeric characters', async () => {
-      authenticateAs(tiers.superAdmin);
-      const res = await request(app)
-        .post('/v1/schools')
-        .set('Authorization', 'Bearer token')
-        .send(buildCreateSchoolBody({ abbreviation: 'SCH-001' }));
-
-      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      await expectRoute('POST', '/v1/schools')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateSchoolBody({ abbreviation: 'SCH-001' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
     });
   });
 });
