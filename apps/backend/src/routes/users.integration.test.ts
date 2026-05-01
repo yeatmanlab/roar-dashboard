@@ -1812,7 +1812,7 @@ describe('POST /v1/users', () => {
 
     it('rejects request body with isSuperAdmin field', async () => {
       await expectRoute('POST', '/v1/users')
-        .as(tiers.superAdmin)
+        .as(tiers.platformAdmin)
         .withBody({
           ...validBodyForDistrict,
           isSuperAdmin: true, // must not be settable via the API
