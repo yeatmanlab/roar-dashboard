@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { ReportService, buildProgressMap, groupVariantsByTaskId } from './report.service';
+import { AdministrationService } from '../administration/administration.service';
 import { AdministrationFactory } from '../../test-support/factories/administration.factory';
 import {
   createMockAdministrationRepository,
@@ -106,8 +107,18 @@ describe('ReportService', () => {
   ];
 
   function createService() {
-    return ReportService({
+    // Inject a real AdministrationService backed by the same mocks the
+    // ReportService used to consume directly. This preserves test assertions
+    // on `mockAdministrationRepository.getById` and
+    // `mockAuthorizationService.requirePermission` while routing access
+    // checks through the canonical helper.
+    const administrationService = AdministrationService({
       administrationRepository: mockAdministrationRepository,
+      authorizationService: mockAuthorizationService,
+    });
+
+    return ReportService({
+      administrationService,
       reportRepository: mockReportRepository,
       taskService: mockTaskService,
       authorizationService: mockAuthorizationService,
@@ -1660,7 +1671,7 @@ describe('ReportService', () => {
     });
 
     it('re-throws ApiError without wrapping', async () => {
-      // The 404 from verifyAdministrationScoreReadAccess should propagate as-is
+      // The 404 from AdministrationService.verifyAdministrationAccess should propagate as-is
       mockAdministrationRepository.getById.mockResolvedValue(null);
 
       const service = createService();

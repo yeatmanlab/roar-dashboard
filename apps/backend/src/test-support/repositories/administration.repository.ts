@@ -20,6 +20,8 @@ export function createMockAdministrationRepository(): MockedObject<Administratio
     getRootTreeNodes: vi.fn(),
     getDistrictChildTreeNodes: vi.fn(),
     getSchoolChildTreeNodes: vi.fn(),
+    createWithAssignments: vi.fn(),
+    existsByName: vi.fn(),
   } as unknown as MockedObject<AdministrationRepository>;
 }
 

@@ -1,5 +1,5 @@
 import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray } from 'drizzle-orm';
-import type { SQL, Column } from 'drizzle-orm';
+import type { SQL, Column, InferInsertModel } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -183,6 +183,23 @@ export interface AssignmentWithOptional
 export interface AgreementWithVersion {
   agreement: Agreement;
   currentVersion: AgreementVersion | null;
+}
+
+/**
+ * Input for creating an administration with all related junction table entries.
+ */
+export interface CreateAdministrationInput {
+  administration: InferInsertModel<typeof administrations>;
+  orgIds: string[];
+  classIds: string[];
+  groupIds: string[];
+  taskVariants: Array<{
+    taskVariantId: string;
+    orderIndex: number;
+    conditionsAssignment?: unknown;
+    conditionsRequirements?: unknown;
+  }>;
+  agreementIds: string[];
 }
 
 /**
@@ -881,5 +898,103 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
 
     // Shouldn't reach here if query validation is correct
     return { items: [], totalItems: 0 };
+  }
+
+  /**
+   * Creates an administration with all related junction table entries in a single transaction.
+   *
+   * Inserts into:
+   * - administrations (main record)
+   * - administration_orgs (org assignments)
+   * - administration_classes (class assignments)
+   * - administration_groups (group assignments)
+   * - administration_task_variants (task variant assignments with conditions)
+   * - administration_agreements (agreement requirements)
+   *
+   * @param input - The administration data and all related entity IDs
+   * @returns The created administration record
+   * @throws If any insert fails, the entire transaction is rolled back
+   */
+  async createWithAssignments(input: CreateAdministrationInput): Promise<Administration> {
+    return this.runTransaction({
+      fn: async (tx) => {
+        // Insert the main administration record
+        const [created] = await tx.insert(administrations).values(input.administration).returning();
+
+        const administrationId = created!.id;
+
+        // Insert org assignments
+        if (input.orgIds.length > 0) {
+          await tx.insert(administrationOrgs).values(
+            input.orgIds.map((orgId) => ({
+              administrationId,
+              orgId,
+            })),
+          );
+        }
+
+        // Insert class assignments
+        if (input.classIds.length > 0) {
+          await tx.insert(administrationClasses).values(
+            input.classIds.map((classId) => ({
+              administrationId,
+              classId,
+            })),
+          );
+        }
+
+        // Insert group assignments
+        if (input.groupIds.length > 0) {
+          await tx.insert(administrationGroups).values(
+            input.groupIds.map((groupId) => ({
+              administrationId,
+              groupId,
+            })),
+          );
+        }
+
+        // Insert task variant assignments
+        if (input.taskVariants.length > 0) {
+          await tx.insert(administrationTaskVariants).values(
+            input.taskVariants.map((tv) => ({
+              administrationId,
+              taskVariantId: tv.taskVariantId,
+              orderIndex: tv.orderIndex,
+              conditionsAssignment: tv.conditionsAssignment,
+              conditionsRequirements: tv.conditionsRequirements,
+            })),
+          );
+        }
+
+        // Insert agreement requirements
+        if (input.agreementIds.length > 0) {
+          await tx.insert(administrationAgreements).values(
+            input.agreementIds.map((agreementId) => ({
+              administrationId,
+              agreementId,
+            })),
+          );
+        }
+
+        return created!;
+      },
+    });
+  }
+
+  /**
+   * Check if an administration with the given name already exists.
+   * Uses case-insensitive comparison to match the database unique constraint.
+   *
+   * @param name - The name to check
+   * @returns true if an administration with this name exists, false otherwise
+   */
+  async existsByName(name: string): Promise<boolean> {
+    const result = await this.db
+      .select({ id: administrations.id })
+      .from(administrations)
+      .where(sql`lower(${administrations.name}) = lower(${name})`)
+      .limit(1);
+
+    return result.length > 0;
   }
 }
