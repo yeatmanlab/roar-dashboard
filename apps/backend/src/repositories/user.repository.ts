@@ -171,6 +171,7 @@ export class UserRepository extends BaseRepository<User, typeof users> {
 
   /**
    * Check whether a user with the given email, username, or assessmentPid already exists.
+   * Note that this method does not filter by a user's rostering status, so it will return true for users who are inactive.
    *
    * Used for pre-flight uniqueness checks before writing to Firebase Auth or the DB,
    * to surface 409 Conflict early without initiating any external writes.

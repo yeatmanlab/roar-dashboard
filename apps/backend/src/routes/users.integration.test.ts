@@ -1756,6 +1756,36 @@ describe('POST /v1/users', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
     });
 
+    it('returns 409 when email belongs to a rostered-out user (expired enrollment)', async () => {
+      // existsByUniqueFields queries users directly — enrollment status is irrelevant.
+      // A rostered-out user still owns their identifiers and must block re-registration.
+      const body = {
+        ...validBodyForDistrict('rostered-out-conflict'),
+        email: baseFixture.expiredEnrollmentStudent.email!,
+      };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CONFLICT);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
+    it('returns 409 when identifiers.pid matches an existing user assessmentPid', async () => {
+      // Caller-supplied pid takes precedence over auto-generation; existsByUniqueFields
+      // checks it against the assessmentPid column and must block the create.
+      const body = {
+        ...validBodyForDistrict('pid-conflict'),
+        identifiers: { pid: baseFixture.districtAdmin.assessmentPid! },
+      };
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CONFLICT);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_CONFLICT);
+    });
+
     it('returns 409 when email already exists in Firebase Auth', async () => {
       // Override: Firebase reports the email is already taken (exists in Auth but not in DB)
       mockAuth.getUserByEmail.mockResolvedValue({ uid: 'existing-firebase-uid' });

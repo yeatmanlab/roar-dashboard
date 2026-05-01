@@ -65,11 +65,12 @@ export const UsersContract = c.router(
       summary: 'Create a new user',
       description:
         'Creates a new user with the provided information. ' +
+        'Treats rostered-out users as still occupying their unique fields; a re-register attempt with the same email or PID returns a conflict. ' +
         'Returns a 201 Created with the new user ID on success. ' +
         'Returns a 400 if the request body is missing or contains invalid field values. ' +
         'Returns a 401 if the requesting user is not authenticated. ' +
         'Returns a 403 if the requesting user is not authorized to create users. ' +
-        'Returns a 409 if a unique field (email or username) conflicts with an existing user. ' +
+        'Returns a 409 if a unique field (email or username) conflicts with any user (including rostered-out users). ' +
         'Returns a 422 if the request body is well-formed but contains semantically invalid data (e.g., invalid grade level). ' +
         'Returns a 429 if the user creation rate limit has been exceeded. ' +
         'Returns a 500 if an internal server error occurs.',
