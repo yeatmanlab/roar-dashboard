@@ -125,10 +125,10 @@ describe('UserService.create', () => {
     // Happy-path defaults — individual tests override as needed
     mockUserRepo.findClassParentSchool.mockResolvedValue(schoolId);
     mockUserRepo.existsByUniqueFields.mockResolvedValue(false);
-    mockDistrictRepo.getById.mockResolvedValue(OrgFactory.build());
-    mockSchoolRepo.getById.mockResolvedValue(OrgFactory.build());
-    mockGroupRepo.getById.mockResolvedValue(GroupFactory.build());
-    mockFamilyRepo.getById.mockResolvedValue(FamilyFactory.build());
+    mockDistrictRepo.getActiveById.mockResolvedValue(OrgFactory.build());
+    mockSchoolRepo.getActiveById.mockResolvedValue(OrgFactory.build());
+    mockGroupRepo.getActiveById.mockResolvedValue(GroupFactory.build());
+    mockFamilyRepo.getActiveById.mockResolvedValue(FamilyFactory.build());
     mockUserRepo.createWithMemberships.mockResolvedValue({ id: newUserId });
     mockUserRepo.delete.mockResolvedValue(undefined);
 
@@ -250,7 +250,7 @@ describe('UserService.create', () => {
 
     it('super admin: non-existent district entityId → 422 before Firebase call', async () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
-      mockDistrictRepo.getById.mockResolvedValue(null);
+      mockDistrictRepo.getActiveById.mockResolvedValue(null);
 
       await expect(service.create(authContext, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -264,7 +264,7 @@ describe('UserService.create', () => {
         ...validBody,
         memberships: [{ entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT }],
       };
-      mockGroupRepo.getById.mockResolvedValue(null);
+      mockGroupRepo.getActiveById.mockResolvedValue(null);
 
       await expect(service.create(authContext, body)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -278,7 +278,7 @@ describe('UserService.create', () => {
         ...validBody,
         memberships: [{ entityType: EntityType.SCHOOL, entityId: schoolId, role: UserRole.STUDENT }],
       };
-      mockSchoolRepo.getById.mockResolvedValue(null);
+      mockSchoolRepo.getActiveById.mockResolvedValue(null);
 
       await expect(service.create(authContext, body)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -293,7 +293,7 @@ describe('UserService.create', () => {
         ...validBody,
         memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserFamilyRole.CHILD }],
       };
-      mockFamilyRepo.getById.mockResolvedValue(null);
+      mockFamilyRepo.getActiveById.mockResolvedValue(null);
 
       await expect(service.create(authContext, body)).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
