@@ -28,13 +28,13 @@ export interface CreateClassServiceInput {
   schoolId: string;
   name: string;
   classType: ClassType;
-  number?: string;
-  period?: string;
-  termId?: string;
-  courseId?: string;
-  subjects?: string[];
-  grades?: Grade[];
-  location?: string;
+  number?: string | undefined;
+  period?: string | undefined;
+  termId?: string | undefined;
+  courseId?: string | undefined;
+  subjects?: string[] | undefined;
+  grades?: Grade[] | undefined;
+  location?: string | undefined;
 }
 
 export function ClassService({
@@ -215,7 +215,7 @@ export function ClassService({
           { userId, schoolId: input.schoolId },
           'Class create: parent school has null parentOrgId — org hierarchy invariant violated',
         );
-        throw new ApiError('Failed to create class', {
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
           context: { userId, schoolId: input.schoolId },
@@ -242,7 +242,7 @@ export function ClassService({
 
       logger.error({ err: error, context: { userId, schoolId: input.schoolId } }, 'Failed to create class');
 
-      throw new ApiError('Failed to create class', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, schoolId: input.schoolId },

@@ -21,20 +21,17 @@ export const ClassesController = {
    */
   create: async (authContext: AuthContext, body: CreateClassRequest) => {
     try {
-      // Map api-contract body to the service input shape field-by-field rather
-      // than via spread to satisfy exactOptionalPropertyTypes — Zod's inferred
-      // optional fields are T | undefined while the service interface uses ?: T.
       const serviceInput: CreateClassServiceInput = {
         schoolId: body.schoolId,
         name: body.name,
         classType: body.classType,
-        ...(body.number !== undefined && { number: body.number }),
-        ...(body.period !== undefined && { period: body.period }),
-        ...(body.termId !== undefined && { termId: body.termId }),
-        ...(body.courseId !== undefined && { courseId: body.courseId }),
-        ...(body.subjects !== undefined && { subjects: body.subjects }),
-        ...(body.grades !== undefined && { grades: body.grades }),
-        ...(body.location !== undefined && { location: body.location }),
+        number: body.number,
+        period: body.period,
+        termId: body.termId,
+        courseId: body.courseId,
+        subjects: body.subjects,
+        grades: body.grades,
+        location: body.location,
       };
 
       const { id } = await classService.create(authContext, serviceInput);

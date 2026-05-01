@@ -42,13 +42,13 @@ export interface CreateClassInput {
   districtId: string;
   name: string;
   classType: ClassType;
-  number?: string | null;
-  period?: string | null;
-  termId?: string | null;
-  courseId?: string | null;
-  subjects?: string[] | null;
-  grades?: Grade[] | null;
-  location?: string | null;
+  number?: string | undefined;
+  period?: string | undefined;
+  termId?: string | undefined;
+  courseId?: string | undefined;
+  subjects?: string[] | undefined;
+  grades?: Grade[] | undefined;
+  location?: string | undefined;
 }
 
 export class ClassRepository extends BaseRepository<Class, typeof classes> {

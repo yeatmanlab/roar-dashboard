@@ -12,18 +12,20 @@ import { ClassTypeSchema, UserGradeSchema } from '../common/user';
  *   column from the supplied `grades`; the client never sets it.
  * - `districtId` and `orgPath` are NOT accepted in the body.
  */
-export const CreateClassRequestSchema = z.object({
-  schoolId: z.string().uuid(),
-  name: z.string().min(1),
-  classType: ClassTypeSchema,
-  number: z.string().optional(),
-  period: z.string().optional(),
-  termId: z.string().uuid().optional(),
-  courseId: z.string().uuid().optional(),
-  subjects: z.array(z.string()).optional(),
-  grades: z.array(UserGradeSchema).optional(),
-  location: z.string().optional(),
-});
+export const CreateClassRequestSchema = z
+  .object({
+    schoolId: z.string().uuid(),
+    name: z.string().min(1).max(255),
+    classType: ClassTypeSchema,
+    number: z.string().optional(),
+    period: z.string().optional(),
+    termId: z.string().uuid().optional(),
+    courseId: z.string().uuid().optional(),
+    subjects: z.array(z.string()).optional(),
+    grades: z.array(UserGradeSchema).optional(),
+    location: z.string().optional(),
+  })
+  .strict();
 
 export type CreateClassRequest = z.infer<typeof CreateClassRequestSchema>;
 
