@@ -1,7 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import { InvitationCodeService } from '../services/invitation-code/invitation-code.service';
-import type { InvitationCode as ApiInvitationCode, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
+import type {
+  CreateGroupRequest,
+  InvitationCode as ApiInvitationCode,
+  EnrolledUsersQuery,
+} from '@roar-dashboard/api-contract';
 import type { InvitationCode } from '../db/schema';
+import type { CreateGroupServiceInput } from '../services/group/group.service';
 import { GroupService } from '../services/group/group.service';
 import type { AuthContext } from '../types/auth-context';
 import { ApiError } from '../errors/api-error';
@@ -36,6 +41,52 @@ function transformInvitationCode(invitationCode: InvitationCode): ApiInvitationC
  * Calls services for business logic and formats responses.
  */
 export const GroupsController = {
+  /**
+   * Create a new group.
+   *
+   * Restricted to super admins (enforced in GroupService). Returns the new
+   * group id only.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param body - Request body with group fields
+   */
+  create: async (authContext: AuthContext, body: CreateGroupRequest) => {
+    try {
+      // Map api-contract body to the service input shape field-by-field rather
+      // than via spread to satisfy exactOptionalPropertyTypes — Zod's inferred
+      // optional fields are T | undefined while the service interface uses ?: T.
+      const serviceInput: CreateGroupServiceInput = {
+        name: body.name,
+        abbreviation: body.abbreviation,
+        groupType: body.groupType,
+        ...(body.location && {
+          location: {
+            ...(body.location.addressLine1 !== undefined && { addressLine1: body.location.addressLine1 }),
+            ...(body.location.addressLine2 !== undefined && { addressLine2: body.location.addressLine2 }),
+            ...(body.location.city !== undefined && { city: body.location.city }),
+            ...(body.location.stateProvince !== undefined && { stateProvince: body.location.stateProvince }),
+            ...(body.location.postalCode !== undefined && { postalCode: body.location.postalCode }),
+            ...(body.location.country !== undefined && { country: body.location.country }),
+          },
+        }),
+      };
+
+      const { id } = await groupService.create(authContext, serviceInput);
+
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.FORBIDDEN, StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
   /**
    * Get the latest valid invitation code for a group.
    *

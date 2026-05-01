@@ -4,11 +4,36 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
+import type { CreateGroupInput } from '../../repositories/group.repository';
 import { GroupRepository } from '../../repositories/group.repository';
 import type { AuthContext } from '../../types/auth-context';
 import type { EnrolledUserEntity, EnrolledUsersQuery, ListEnrolledUsersOptions } from '../../types/user';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import type { GroupType } from '@roar-dashboard/api-contract';
+
+/**
+ * Service-layer input for creating a group.
+ *
+ * Mirrors the API contract's CreateGroupRequest shape (nested location). The
+ * service flattens this into the repository's column-shaped CreateGroupInput.
+ * Defined here rather than imported from the api-contract so the service stays
+ * decoupled from transport concerns (see backend-service-pattern.md
+ * "Service Type Independence").
+ */
+export interface CreateGroupServiceInput {
+  name: string;
+  abbreviation: string;
+  groupType: GroupType;
+  location?: {
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    stateProvince?: string;
+    postalCode?: string;
+    country?: string;
+  };
+}
 
 export function GroupService({
   groupRepository = new GroupRepository(),
@@ -101,7 +126,65 @@ export function GroupService({
     }
   }
 
+  /**
+   * Create a new group.
+   *
+   * Restricted to super admins. Groups are flat — no parent verification, no
+   * derived columns, no path computation. The service runs the super-admin
+   * gate, flattens the nested service input, and delegates to the repository.
+   *
+   * No FGA tuples are written by this endpoint. FGA tuples are user-to-group
+   * relationships and are written when users are assigned to the group via
+   * memberships.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param input - Group fields the caller is allowed to set
+   * @returns The new group id
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 500 if the database insert fails
+   */
+  async function create(authContext: AuthContext, input: CreateGroupServiceInput): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      logger.warn({ userId }, 'Non-super admin attempted to create a group');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId },
+      });
+    }
+
+    try {
+      const repoInput: CreateGroupInput = {
+        name: input.name,
+        abbreviation: input.abbreviation,
+        groupType: input.groupType,
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+      };
+
+      return await groupRepository.createGroup(repoInput);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to create group');
+
+      throw new ApiError('Failed to create group', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
+    create,
     listUsers,
   };
 }
