@@ -49,19 +49,23 @@ export interface ListDistrictSchoolsOptions {
 export interface CreateDistrictServiceInput {
   name: string;
   abbreviation: string;
-  location?: {
-    addressLine1?: string;
-    addressLine2?: string;
-    city?: string;
-    stateProvince?: string;
-    postalCode?: string;
-    country?: string;
-  };
-  identifiers?: {
-    mdrNumber?: string;
-    ncesId?: string;
-    stateId?: string;
-  };
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+      }
+    | undefined;
 }
 
 /**
@@ -404,7 +408,7 @@ export function DistrictService({
 
       logger.error({ err: error, context: { userId } }, 'Failed to create district');
 
-      throw new ApiError('Failed to create district', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId },

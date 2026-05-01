@@ -142,16 +142,18 @@ export type DistrictsListResponse = z.infer<typeof DistrictsListResponseSchema>;
  * school-level identifier, not a district-level one. The column exists on the
  * shared `orgs` table for schools but is not meaningful for districts.
  */
-export const CreateDistrictRequestSchema = z.object({
-  name: z.string().min(1),
-  abbreviation: z
-    .string()
-    .min(1)
-    .max(10)
-    .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
-  location: DistrictLocationSchema.omit({ coordinates: true }).optional(),
-  identifiers: DistrictIdentifiersSchema.omit({ schoolNumber: true }).optional(),
-});
+export const CreateDistrictRequestSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    abbreviation: z
+      .string()
+      .min(1)
+      .max(10)
+      .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
+    location: DistrictLocationSchema.omit({ coordinates: true }).optional(),
+    identifiers: DistrictIdentifiersSchema.omit({ schoolNumber: true }).optional(),
+  })
+  .strict();
 
 export type CreateDistrictRequest = z.infer<typeof CreateDistrictRequestSchema>;
 

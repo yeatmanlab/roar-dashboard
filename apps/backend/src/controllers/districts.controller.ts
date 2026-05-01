@@ -100,29 +100,11 @@ export const DistrictsController = {
    */
   create: async (authContext: AuthContext, body: CreateDistrictRequest) => {
     try {
-      // Map api-contract body to the service input shape field-by-field rather
-      // than via spread to satisfy exactOptionalPropertyTypes — Zod's inferred
-      // optional fields are T | undefined while the service interface uses ?: T.
       const serviceInput: CreateDistrictServiceInput = {
         name: body.name,
         abbreviation: body.abbreviation,
-        ...(body.location && {
-          location: {
-            ...(body.location.addressLine1 !== undefined && { addressLine1: body.location.addressLine1 }),
-            ...(body.location.addressLine2 !== undefined && { addressLine2: body.location.addressLine2 }),
-            ...(body.location.city !== undefined && { city: body.location.city }),
-            ...(body.location.stateProvince !== undefined && { stateProvince: body.location.stateProvince }),
-            ...(body.location.postalCode !== undefined && { postalCode: body.location.postalCode }),
-            ...(body.location.country !== undefined && { country: body.location.country }),
-          },
-        }),
-        ...(body.identifiers && {
-          identifiers: {
-            ...(body.identifiers.mdrNumber !== undefined && { mdrNumber: body.identifiers.mdrNumber }),
-            ...(body.identifiers.ncesId !== undefined && { ncesId: body.identifiers.ncesId }),
-            ...(body.identifiers.stateId !== undefined && { stateId: body.identifiers.stateId }),
-          },
-        }),
+        location: body.location,
+        identifiers: body.identifiers,
       };
 
       const { id } = await districtService.create(authContext, serviceInput);
