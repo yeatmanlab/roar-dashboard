@@ -1911,9 +1911,9 @@ describe('AdministrationsController', () => {
           totalAssessed: 80,
           totalNotAssessed: { required: 15, optional: 5 },
           supportLevels: {
-            achievedSkill: { count: 40, percentage: 50.0 },
-            developingSkill: { count: 25, percentage: 31.3 },
-            needsExtraSupport: { count: 15, percentage: 18.8 },
+            achievedSkill: { count: 40 },
+            developingSkill: { count: 25 },
+            needsExtraSupport: { count: 15 },
           },
         },
       ],
