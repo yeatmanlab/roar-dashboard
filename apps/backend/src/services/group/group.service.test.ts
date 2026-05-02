@@ -192,4 +192,105 @@ describe('GroupService', () => {
       });
     });
   });
+
+  describe('create', () => {
+    const validInput = {
+      name: 'Pilot Cohort',
+      abbreviation: 'PC1',
+      groupType: 'cohort' as const,
+    };
+    const superAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+    const userContext = { userId: 'user-123', isSuperAdmin: false };
+
+    it('should create a group for super admins and return the new id', async () => {
+      mockGroupRepository.createGroup.mockResolvedValue({ id: 'group-new-1' });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.create(superAdminContext, validInput);
+
+      expect(result).toEqual({ id: 'group-new-1' });
+      expect(mockGroupRepository.createGroup).toHaveBeenCalledWith({
+        name: 'Pilot Cohort',
+        abbreviation: 'PC1',
+        groupType: 'cohort',
+      });
+    });
+
+    it('should flatten nested location into the repository input', async () => {
+      mockGroupRepository.createGroup.mockResolvedValue({ id: 'group-new-2' });
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.create(superAdminContext, {
+        ...validInput,
+        location: {
+          addressLine1: '1 Research Way',
+          city: 'Palo Alto',
+          stateProvince: 'CA',
+          postalCode: '94305',
+          country: 'US',
+        },
+      });
+
+      expect(mockGroupRepository.createGroup).toHaveBeenCalledWith({
+        name: 'Pilot Cohort',
+        abbreviation: 'PC1',
+        groupType: 'cohort',
+        locationAddressLine1: '1 Research Way',
+        locationCity: 'Palo Alto',
+        locationStateProvince: 'CA',
+        locationPostalCode: '94305',
+        locationCountry: 'US',
+      });
+    });
+
+    it('should throw 403 when caller is not a super admin and never call the repo', async () => {
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(userContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      expect(mockGroupRepository.createGroup).not.toHaveBeenCalled();
+    });
+
+    it('should re-throw an ApiError thrown by the repository unchanged', async () => {
+      const repoError = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockGroupRepository.createGroup.mockRejectedValue(repoError);
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(superAdminContext, validInput)).rejects.toBe(repoError);
+    });
+
+    it('should wrap unexpected DB errors as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      mockGroupRepository.createGroup.mockRejectedValue(new Error('connection lost'));
+
+      const service = GroupService({
+        groupRepository: mockGroupRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(superAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
 });
