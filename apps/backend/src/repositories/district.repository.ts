@@ -41,6 +41,34 @@ export interface DistrictWithCounts extends District {
 }
 
 /**
+ * Input for creating a district at the repository layer.
+ *
+ * Server-managed columns (`orgType`, `parentOrgId`, `path`, `isRosteringRootOrg`)
+ * are NOT part of this interface — the repository sets them itself based on the
+ * district invariants:
+ * - `orgType` is fixed to 'district'
+ * - `parentOrgId` is null (districts are root)
+ * - `path` is computed by the `trg_orgs_compute_path_insert` BEFORE INSERT trigger
+ * - `isRosteringRootOrg` is true (enforced by `validate_org_hierarchy_fn`: root
+ *   orgs must have isRosteringRootOrg = true)
+ */
+export interface CreateDistrictInput {
+  name: string;
+  abbreviation: string;
+  locationAddressLine1?: string | undefined;
+  locationAddressLine2?: string | undefined;
+  locationCity?: string | undefined;
+  locationStateProvince?: string | undefined;
+  locationPostalCode?: string | undefined;
+  locationCountry?: string | undefined;
+  mdrNumber?: string | undefined;
+  ncesId?: string | undefined;
+  stateId?: string | undefined;
+  // schoolNumber is a school-level identifier and is intentionally not part of
+  // the district create input.
+}
+
+/**
  * Options for listing districts
  */
 export interface ListDistrictOptions {
@@ -248,6 +276,44 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     }
 
     return countsMap;
+  }
+
+  /**
+   * Create a new district.
+   *
+   * Sets server-managed columns according to district invariants:
+   * - `orgType` = 'district'
+   * - `parentOrgId` = null (districts are root)
+   * - `isRosteringRootOrg` = true (the validate_org_hierarchy_fn trigger
+   *   requires root orgs to have isRosteringRootOrg = true)
+   * - `path` is initially set to a placeholder ltree value to satisfy the
+   *   NOT NULL column constraint at the Drizzle insert layer; the
+   *   `trg_orgs_compute_path_insert` BEFORE INSERT trigger overwrites it
+   *   with the trigger-computed value (`district_<id>`) before the row lands.
+   *
+   * @param input - District-specific fields the caller is allowed to set
+   * @returns The new district id
+   */
+  async createDistrict(input: CreateDistrictInput): Promise<{ id: string }> {
+    return this.create({
+      data: {
+        name: input.name,
+        abbreviation: input.abbreviation,
+        orgType: OrgType.DISTRICT,
+        parentOrgId: null,
+        path: 'placeholder',
+        isRosteringRootOrg: true,
+        ...(input.locationAddressLine1 !== undefined && { locationAddressLine1: input.locationAddressLine1 }),
+        ...(input.locationAddressLine2 !== undefined && { locationAddressLine2: input.locationAddressLine2 }),
+        ...(input.locationCity !== undefined && { locationCity: input.locationCity }),
+        ...(input.locationStateProvince !== undefined && { locationStateProvince: input.locationStateProvince }),
+        ...(input.locationPostalCode !== undefined && { locationPostalCode: input.locationPostalCode }),
+        ...(input.locationCountry !== undefined && { locationCountry: input.locationCountry }),
+        ...(input.mdrNumber !== undefined && { mdrNumber: input.mdrNumber }),
+        ...(input.ncesId !== undefined && { ncesId: input.ncesId }),
+        ...(input.stateId !== undefined && { stateId: input.stateId }),
+      },
+    });
   }
 
   /**
