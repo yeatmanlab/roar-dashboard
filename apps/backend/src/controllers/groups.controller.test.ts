@@ -38,6 +38,7 @@ vi.mock('../services/invitation-code/invitation-code.service', () => ({
   })),
 }));
 
+const mockCreate = vi.fn();
 const mockListUsers = vi.fn();
 vi.mock('../services/group/group.service', () => ({
   GroupService: vi.fn(),
@@ -65,6 +66,7 @@ describe('GroupsController', () => {
     vi.clearAllMocks();
 
     vi.mocked(GroupService).mockReturnValue({
+      create: mockCreate,
       listUsers: mockListUsers,
     });
   });
@@ -298,6 +300,94 @@ describe('GroupsController', () => {
           sortOrder: SortOrder.ASC,
         }),
       ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('create', () => {
+    let GroupsController: (typeof import('./groups.controller'))['GroupsController'];
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      const { GroupsController: controller } = await import('./groups.controller');
+      GroupsController = controller;
+    });
+
+    const validBody = {
+      name: 'Pilot Cohort',
+      abbreviation: 'PC1',
+      groupType: 'cohort' as const,
+    };
+
+    it('should return 201 with the new group id on success', async () => {
+      mockCreate.mockResolvedValue({ id: 'group-new-1' });
+
+      const result = await GroupsController.create(mockAuthContext, validBody);
+
+      expect(result.status).toBe(StatusCodes.CREATED);
+      expect(result.body).toHaveProperty('data');
+      const data = (result.body as { data: { id: string } }).data;
+      expect(data).toEqual({ id: 'group-new-1' });
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, expect.objectContaining(validBody));
+    });
+
+    it('should map the request body to the service input field-by-field, omitting absent location', async () => {
+      mockCreate.mockResolvedValue({ id: 'group-new-2' });
+
+      await GroupsController.create(mockAuthContext, {
+        ...validBody,
+        location: {
+          addressLine1: '1 Research Way',
+          city: 'Palo Alto',
+          stateProvince: 'CA',
+          postalCode: '94305',
+          country: 'US',
+        },
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(mockAuthContext, {
+        name: validBody.name,
+        abbreviation: validBody.abbreviation,
+        groupType: validBody.groupType,
+        location: {
+          addressLine1: '1 Research Way',
+          city: 'Palo Alto',
+          stateProvince: 'CA',
+          postalCode: '94305',
+          country: 'US',
+        },
+      });
+    });
+
+    it('should map ApiError 403 to a Forbidden error response', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const result = await GroupsController.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.FORBIDDEN);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should map ApiError 500 to an Internal Server Error response', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockCreate.mockRejectedValue(error);
+
+      const result = await GroupsController.create(mockAuthContext, validBody);
+
+      const errorBody = expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(errorBody).toBeDefined();
+    });
+
+    it('should re-throw a non-ApiError unchanged so the global error handler catches it', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockCreate.mockRejectedValue(unexpected);
+
+      await expect(GroupsController.create(mockAuthContext, validBody)).rejects.toBe(unexpected);
     });
   });
 });
