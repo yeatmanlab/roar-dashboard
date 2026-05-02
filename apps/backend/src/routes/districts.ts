@@ -14,6 +14,11 @@ const s = initServer();
  */
 export function registerDistrictsRoutes(routerInstance: Router) {
   const DistrictsRoutes = s.router(DistrictsContract, {
+    create: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, body }) => DistrictsController.create(user!, body),
+    },
     list: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],

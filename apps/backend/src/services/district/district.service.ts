@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { District, DistrictWithCounts } from '../../repositories/district.repository';
+import type { CreateDistrictInput, District, DistrictWithCounts } from '../../repositories/district.repository';
 import { DistrictRepository } from '../../repositories/district.repository';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
@@ -35,6 +35,37 @@ export interface ListDistrictSchoolsOptions {
   sortOrder: 'asc' | 'desc';
   includeEnded?: boolean;
   embedCounts?: boolean;
+}
+
+/**
+ * Service-layer input for creating a district.
+ *
+ * Mirrors the API contract's CreateDistrictRequest shape (nested location and
+ * identifiers). The service flattens this into the repository's column-shaped
+ * CreateDistrictInput. Defined here rather than imported from the api-contract
+ * so the service stays decoupled from transport concerns
+ * (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface CreateDistrictServiceInput {
+  name: string;
+  abbreviation: string;
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+      }
+    | undefined;
 }
 
 /**
@@ -325,7 +356,69 @@ export function DistrictService({
     }
   }
 
+  /**
+   * Create a new district.
+   *
+   * Restricted to super admins. Districts are roots of the org hierarchy:
+   * `parentOrgId` is null, `path` is computed by a database trigger from the
+   * generated id, and `isRosteringRootOrg` is true (enforced server-side
+   * because the validate_org_hierarchy_fn trigger requires root orgs to have
+   * isRosteringRootOrg = true).
+   *
+   * No FGA tuples are written by this endpoint. FGA tuples are user-to-org
+   * relationships and are written when users are assigned to the district
+   * via memberships. See `packages/authz/README.md` for the FGA model.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param input - District fields the caller is allowed to set
+   * @returns The new district id
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 500 if the database insert fails
+   */
+  async function create(authContext: AuthContext, input: CreateDistrictServiceInput): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      logger.warn({ userId }, 'Non-super admin attempted to create a district');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId },
+      });
+    }
+
+    try {
+      const repoInput: CreateDistrictInput = {
+        name: input.name,
+        abbreviation: input.abbreviation,
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+        ...(input.identifiers?.mdrNumber !== undefined && { mdrNumber: input.identifiers.mdrNumber }),
+        ...(input.identifiers?.ncesId !== undefined && { ncesId: input.identifiers.ncesId }),
+        ...(input.identifiers?.stateId !== undefined && { stateId: input.identifiers.stateId }),
+      };
+
+      return await districtRepository.createDistrict(repoInput);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId } }, 'Failed to create district');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId },
+        cause: error,
+      });
+    }
+  }
+
   return {
+    create,
     list,
     listUsers,
     getById,
