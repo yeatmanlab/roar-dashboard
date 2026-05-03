@@ -35,10 +35,12 @@
     "@openfga/sdk": "^0.9.3",
     "@roar-dashboard/api-contract": "*",
     "axios": "^1.15.2",
+    "crc-32": "^1.2.2",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
     "dotenv": "^17.2.1",
     "drizzle-orm": "^0.44.4",
+    "express": "^5.2.1",
     "firebase-admin": "^13.5.0",
     "google-auth-library": "^10.6.2",
     "http-errors": "^2.0.0",
@@ -69,6 +71,7 @@
     "rollup-plugin-node-externals": "^8.0.1",
     "supertest": "^7.1.4",
     "tsx": "^4.20.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "yaml": "^2.8.3"
   }
 }
