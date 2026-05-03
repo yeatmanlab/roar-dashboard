@@ -40,8 +40,9 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "@roar-dashboard/api-contract": "*",
     "@ts-rest/core": "^3.52.1",
-    "@roar-dashboard/api-contract": "*"
+    "http-status-codes": "^2.3.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
