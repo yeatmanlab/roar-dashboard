@@ -1,6 +1,8 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import {
+  CreateDistrictRequestSchema,
+  CreateDistrictResponseSchema,
   DistrictsListQuerySchema,
   DistrictsListResponseSchema,
   DistrictDetailSchema,
@@ -18,6 +20,29 @@ const c = initContract();
  */
 export const DistrictsContract = c.router(
   {
+    create: {
+      method: 'POST',
+      path: '/',
+      body: CreateDistrictRequestSchema,
+      responses: {
+        201: SuccessEnvelopeSchema(CreateDistrictResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Create a district',
+      description:
+        'Creates a new district (top-level org). ' +
+        'Districts are the root of the org hierarchy — they have no parent and their `path` ltree is computed from the new district id by a database trigger. ' +
+        'Restricted to super admins. ' +
+        'Returns 201 with the new district id. ' +
+        'Returns 400 if the request body is missing or contains invalid field values. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user is not a super admin. ' +
+        'Returns 500 if an internal server error occurs.',
+    },
     list: {
       method: 'GET',
       path: '/',

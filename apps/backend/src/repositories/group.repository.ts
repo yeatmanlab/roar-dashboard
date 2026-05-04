@@ -1,4 +1,5 @@
 import { SortOrder } from '@roar-dashboard/api-contract';
+import type { GroupType } from '@roar-dashboard/api-contract';
 import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../db/clients';
@@ -15,9 +16,53 @@ import {
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 
+/**
+ * Input for creating a group at the repository layer.
+ *
+ * Groups are flat (no parent, no ltree path), so the repository sets only the
+ * caller-supplied fields. There are no server-managed columns to derive.
+ */
+export interface CreateGroupInput {
+  name: string;
+  abbreviation: string;
+  groupType: GroupType;
+  locationAddressLine1?: string | undefined;
+  locationAddressLine2?: string | undefined;
+  locationCity?: string | undefined;
+  locationStateProvince?: string | undefined;
+  locationPostalCode?: string | undefined;
+  locationCountry?: string | undefined;
+}
+
 export class GroupRepository extends BaseRepository<Group, typeof groups> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, groups);
+  }
+
+  /**
+   * Create a new group.
+   *
+   * Groups are flat — no parent verification, no path computation. The
+   * repository forwards the supplied fields to a `BaseRepository.create()`
+   * insert and returns the new id.
+   *
+   * @param input - Group fields the caller is allowed to set
+   * @returns The new group id
+   */
+  async createGroup(input: CreateGroupInput): Promise<{ id: string }> {
+    return this.create({
+      data: {
+        name: input.name,
+        abbreviation: input.abbreviation,
+        groupType: input.groupType,
+        ...(input.locationAddressLine1 !== undefined && { locationAddressLine1: input.locationAddressLine1 }),
+        ...(input.locationAddressLine2 !== undefined && { locationAddressLine2: input.locationAddressLine2 }),
+        ...(input.locationCity !== undefined && { locationCity: input.locationCity }),
+        ...(input.locationStateProvince !== undefined && { locationStateProvince: input.locationStateProvince }),
+        ...(input.locationPostalCode !== undefined && { locationPostalCode: input.locationPostalCode }),
+        ...(input.locationCountry !== undefined && { locationCountry: input.locationCountry }),
+      },
+    });
   }
 
   /**

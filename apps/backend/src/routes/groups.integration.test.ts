@@ -20,6 +20,7 @@
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import type express from 'express';
+import { StatusCodes } from 'http-status-codes';
 import { CoreDbClient } from '../db/clients';
 import { invitationCodes } from '../db/schema';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -77,6 +78,180 @@ beforeAll(async () => {
   // Re-sync FGA tuples to pick up tier users and group memberships created above
   const { syncFgaTuplesFromPostgres } = await import('../test-support/fga');
   await syncFgaTuplesFromPostgres();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/groups
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/groups', () => {
+  const buildCreateGroupBody = (overrides: Record<string, unknown> = {}) => ({
+    name: 'Pilot Cohort',
+    abbreviation: 'PC1',
+    groupType: 'cohort',
+    ...overrides,
+  });
+
+  describe('authorization', () => {
+    it('superAdmin tier can create a group and gets 201 with the new id', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'SUPER1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      expect(res.body.data.id).toEqual(expect.any(String));
+    });
+
+    it('siteAdmin tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.siteAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'SITE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.admin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'ADMIN1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.educator)
+        .withBody(buildCreateGroupBody({ abbreviation: 'EDU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.student)
+        .withBody(buildCreateGroupBody({ abbreviation: 'STU1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from creating groups', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.caregiver)
+        .withBody(buildCreateGroupBody({ abbreviation: 'CARE1' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('persistence', () => {
+    it('inserted row contains the supplied fields', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ name: 'Persist 1', abbreviation: 'PERSIST1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { groups } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(groups).where(eq(groups.id, id));
+      expect(row).toBeDefined();
+      expect(row!.name).toBe('Persist 1');
+      expect(row!.abbreviation).toBe('PERSIST1');
+      expect(row!.groupType).toBe('cohort');
+    });
+
+    it('forwards optional location fields to the column-shaped insert', async () => {
+      const body = buildCreateGroupBody({
+        name: 'Persist 2',
+        abbreviation: 'PERSIST2',
+        location: {
+          addressLine1: '1 Research Way',
+          city: 'Palo Alto',
+          stateProvince: 'CA',
+          postalCode: '94305',
+          country: 'US',
+        },
+      });
+
+      const res = await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { groups } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(groups).where(eq(groups.id, id));
+      expect(row).toBeDefined();
+      expect(row!.locationAddressLine1).toBe('1 Research Way');
+      expect(row!.locationCity).toBe('Palo Alto');
+      expect(row!.locationStateProvince).toBe('CA');
+      expect(row!.locationPostalCode).toBe('94305');
+      expect(row!.locationCountry).toBe('US');
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('POST', '/v1/groups')
+        .unauthenticated()
+        .withBody(buildCreateGroupBody({ abbreviation: 'UNAUTH' }))
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 400 when name is missing', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody({ abbreviation: 'NONAME', groupType: 'cohort' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation is missing', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'No Abbreviation Group', groupType: 'cohort' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when groupType is missing', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'No Type Group', abbreviation: 'NOTYPE' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when groupType is not in the enum', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'BADTYPE', groupType: 'not-a-type' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation exceeds 10 characters', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'TOOLONGABBR1' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when abbreviation contains non-alphanumeric characters', async () => {
+      await expectRoute('POST', '/v1/groups')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateGroupBody({ abbreviation: 'GRP-001' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
