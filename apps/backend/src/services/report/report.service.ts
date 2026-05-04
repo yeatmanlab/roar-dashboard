@@ -18,6 +18,7 @@ import type {
   ServiceTaskScoreOverview,
   StudentScoresInput,
   StudentScoresSortField,
+  StudentScoresFilterField,
   StudentScoresResult,
   ServiceStudentScoreRow,
   ServiceStudentScoreEntry,
@@ -112,7 +113,7 @@ const STUDENT_SCORES_SORT_COLUMNS: Record<Exclude<StudentScoresSortField, 'user.
  * Currently we only support exact-match user-level filters in SQL; schoolName
  * filtering is delegated to the repository's own correlated subquery.
  */
-const STUDENT_SCORES_USER_FILTER_FIELDS: Record<string, PgColumn> = {
+const STUDENT_SCORES_USER_FILTER_FIELDS: Record<Exclude<StudentScoresFilterField, 'user.schoolName'>, PgColumn> = {
   'user.grade': users.grade,
   'user.firstName': users.nameFirst,
   'user.lastName': users.nameLast,
