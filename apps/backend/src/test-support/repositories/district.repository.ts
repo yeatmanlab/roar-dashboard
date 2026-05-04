@@ -15,6 +15,7 @@ export function createMockDistrictRepository(): MockedObject<DistrictRepository>
     listByIds: vi.fn(),
     getUnrestrictedById: vi.fn(),
     getUsersByDistrictPath: vi.fn(),
+    createDistrict: vi.fn(),
   } as unknown as MockedObject<DistrictRepository>;
 }
 
