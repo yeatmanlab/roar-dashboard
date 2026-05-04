@@ -706,7 +706,7 @@ export function ReportService({
       }
 
       // 7. Resolve dynamic sort field (against primary variants)
-      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId, scoringVersionByVariant, taskMetas);
+      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId, scoringVersionByVariant);
 
       // 8. Resolve dynamic score-field filters (against primary variants)
       const userLevelFilters: ParsedFilter[] = [];
@@ -714,7 +714,7 @@ export function ReportService({
       for (const f of filter) {
         if (f.field === 'taskId') continue;
         if (SCORE_TASK_FIELD_PATTERN.test(f.field)) {
-          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId, scoringVersionByVariant, taskMetas);
+          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId, scoringVersionByVariant);
           if (filterRef) scoreFieldFilters.push(filterRef);
           continue;
         }
@@ -1430,25 +1430,18 @@ function resolveDynamicSortField(
   sortBy: string,
   primaryVariantByTaskId: Map<string, ReportTaskMeta>,
   scoringVersionByVariant: Map<string, number>,
-  taskMetas: ReportTaskMeta[],
 ): StudentScoresFieldRef | null {
   const parsed = parseScoreFieldString(sortBy);
   if (!parsed) return null;
 
   const variant = primaryVariantByTaskId.get(parsed.taskId);
-  if (!variant) {
-    throw new ApiError('Invalid task ID in sort field', {
-      statusCode: StatusCodes.BAD_REQUEST,
-      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      context: { sortBy, availableTaskIds: taskMetas.map((t) => t.taskId) },
-    });
-  }
 
+  // Guaranteed to exist with validation from validateDynamicFieldTaskIds (line 683)
   return {
-    taskVariantId: variant.taskVariantId,
-    taskSlug: variant.taskSlug,
+    taskVariantId: variant!.taskVariantId,
+    taskSlug: variant!.taskSlug,
     fieldType: parsed.fieldType,
-    scoringVersion: scoringVersionByVariant.get(variant.taskVariantId) ?? null,
+    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
   };
 }
 
@@ -1478,19 +1471,11 @@ function resolveDynamicFilter(
   filter: ParsedFilter,
   primaryVariantByTaskId: Map<string, ReportTaskMeta>,
   scoringVersionByVariant: Map<string, number>,
-  taskMetas: ReportTaskMeta[],
 ): StudentScoresFieldFilter | null {
   const parsed = parseScoreFieldString(filter.field);
   if (!parsed) return null;
 
   const variant = primaryVariantByTaskId.get(parsed.taskId);
-  if (!variant) {
-    throw new ApiError('Invalid task ID in filter field', {
-      statusCode: StatusCodes.BAD_REQUEST,
-      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-      context: { field: filter.field, availableTaskIds: taskMetas.map((t) => t.taskId) },
-    });
-  }
 
   // Translate values: numeric fields use raw strings (cast in SQL); supportLevel
   // names map to priorities (3/2/1). 'optional' has no SQL representation — drop
@@ -1507,11 +1492,12 @@ function resolveDynamicFilter(
     values = filter.operator === 'in' ? filter.value.split(',').map((v) => v.trim()) : [filter.value];
   }
 
+  // Guaranteed to exist with validation from validateDynamicFieldTaskIds (line 683)
   return {
-    taskVariantId: variant.taskVariantId,
-    taskSlug: variant.taskSlug,
+    taskVariantId: variant!.taskVariantId,
+    taskSlug: variant!.taskSlug,
     fieldType: parsed.fieldType,
-    scoringVersion: scoringVersionByVariant.get(variant.taskVariantId) ?? null,
+    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
     operator: filter.operator as StudentScoresFilterOperator,
     values,
   };
