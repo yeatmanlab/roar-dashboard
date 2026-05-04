@@ -653,6 +653,10 @@ export type UpdateAdministrationRequest = z.infer<typeof UpdateAdministrationReq
 
 /**
  * Response schema for update administration endpoint.
- * Returns the updated administration's base representation.
+ * Returns only the ID of the updated administration.
  */
-export const UpdateAdministrationResponseSchema = AdministrationBaseSchema;
+export const UpdateAdministrationResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateAdministrationResponse = z.infer<typeof UpdateAdministrationResponseSchema>;

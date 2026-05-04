@@ -645,7 +645,7 @@ export const AdministrationsController = {
    * Update an existing administration.
    *
    * Delegates to AdministrationService for validation and update.
-   * Returns 200 OK with the updated administration on success.
+   * Returns 200 OK with the administration ID on success.
    *
    * @param authContext - User's authentication context
    * @param administrationId - UUID of the administration to update
@@ -653,12 +653,12 @@ export const AdministrationsController = {
    */
   update: async (authContext: AuthContext, administrationId: string, body: UpdateAdministrationRequest) => {
     try {
-      const administration = await administrationService.update(authContext, administrationId, body);
+      const result = await administrationService.update(authContext, administrationId, body);
 
       return {
         status: StatusCodes.OK as const,
         body: {
-          data: transformAdministrationBase(administration),
+          data: result,
         },
       };
     } catch (error) {

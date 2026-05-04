@@ -1053,10 +1053,10 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
    *
    * @param administrationId - The ID of the administration to update
    * @param input - The update data (all fields optional)
-   * @returns The updated administration record
+   * @returns The ID of the updated administration
    * @throws If any operation fails, the entire transaction is rolled back
    */
-  async updateWithAssignments(administrationId: string, input: UpdateAdministrationInput): Promise<Administration> {
+  async updateWithAssignments(administrationId: string, input: UpdateAdministrationInput): Promise<{ id: string }> {
     return this.runTransaction({
       fn: async (tx) => {
         // Update the main administration record if any fields are provided
@@ -1157,10 +1157,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
           });
         }
 
-        // Fetch and return the updated administration
-        const [updated] = await tx.select().from(administrations).where(eq(administrations.id, administrationId));
-
-        return updated!;
+        return { id: administrationId };
       },
     });
   }

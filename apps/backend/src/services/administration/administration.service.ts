@@ -1487,7 +1487,7 @@ export function AdministrationService({
     authContext: AuthContext,
     administrationId: string,
     request: UpdateAdministrationRequest,
-  ): Promise<Administration> {
+  ): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
 
     if (!isSuperAdmin) {
@@ -1798,9 +1798,8 @@ export function AdministrationService({
 
       // Update the administration with all related entities in a single transaction
       // If this fails, compensate by reverting FGA changes
-      let updated: Administration;
       try {
-        updated = await administrationRepository.updateWithAssignments(administrationId, updateInput);
+        await administrationRepository.updateWithAssignments(administrationId, updateInput);
       } catch (dbError) {
         // DB write failed - compensate by reverting FGA changes
         if (entityAssignmentsChanged && (tuplesToAdd.length > 0 || tuplesToRemove.length > 0)) {
@@ -1837,7 +1836,7 @@ export function AdministrationService({
 
       logger.info({ userId, administrationId }, 'Administration updated successfully');
 
-      return updated;
+      return { id: administrationId };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
