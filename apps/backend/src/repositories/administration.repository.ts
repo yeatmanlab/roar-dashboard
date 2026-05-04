@@ -1185,12 +1185,9 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
   ): Promise<void> {
     const { table, administrationIdColumn, entityIdColumn, administrationId, entityIds, buildValues } = options;
 
-    // Upsert entities
+    // Upsert entities (no-op on conflict for junction tables with composite PKs)
     if (entityIds.length > 0) {
-      await tx.insert(table).values(entityIds.map(buildValues)).onConflictDoUpdate({
-        target: [],
-        set: buildValues,
-      });
+      await tx.insert(table).values(entityIds.map(buildValues)).onConflictDoNothing();
     }
 
     // Prune entities no longer in the list
