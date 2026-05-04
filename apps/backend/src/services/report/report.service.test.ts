@@ -3123,7 +3123,7 @@ describe('ReportService', () => {
       // Legacy assessment runs only emit the per-subtask `correct` count — no
       // `attempted` and no `percentCorrect`. With both inputs to the percent
       // computation missing, the helper returns `percentCorrect: null` for each
-      // subscore, and `computeSkillsToWorkOn` falls through to the legacy
+      // subscore, and `computePaSkillsToWorkOn` falls through to the legacy
       // `correct < PA_SKILL_LEGACY_THRESHOLD (15)` branch.
       //   FSM correct=10 (< 15) → in skillsToWorkOn
       //   LSM correct=18 (>= 15) → NOT in skillsToWorkOn

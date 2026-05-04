@@ -2037,7 +2037,7 @@ export function extractSubscoresFromScoreMap(
  *
  * Reused by #1685 alongside `extractSubscoresFromScoreMap`.
  */
-export function computeSkillsToWorkOn(
+export function computePaSkillsToWorkOn(
   taskSlug: string,
   subscores: Record<string, ServiceSubscoreEntry> | null,
 ): string[] | null {
@@ -2173,7 +2173,7 @@ function buildAssessedTaskEntry(
   const engagementFlags = runMeta?.engagementFlags ?? [];
 
   const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug);
-  const skillsToWorkOn = computeSkillsToWorkOn(scoredVariant.taskSlug, subscores);
+  const skillsToWorkOn = computePaSkillsToWorkOn(scoredVariant.taskSlug, subscores);
 
   // Historical entries are resolved with the current variant's slug. Runs for
   // the same task across administrations share a slug, so we don't need a
