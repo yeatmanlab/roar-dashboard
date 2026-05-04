@@ -2915,6 +2915,80 @@ describe('ReportService', () => {
       }
     });
 
+    it('dedups historicalScores by administrationId across multi-variant tasks', async () => {
+      // When a task has multiple variants and the student completed more than
+      // one in the same prior administration, the response should still emit
+      // a single historicalScores entry per administration — keeping the
+      // earliest-completed run as the representative.
+      setupDefaults();
+      const completedScoreRow: RunScoreRow = {
+        userId: targetUserId,
+        taskVariantId: VARIANT_ID_1,
+        scoreName: 'percentile',
+        scoreValue: '60',
+      };
+      mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
+      mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
+        {
+          runId: 'current-run',
+          taskVariantId: VARIANT_ID_1,
+          reliable: true,
+          engagementFlags: [],
+          completedAt: new Date('2025-09-01'),
+        },
+      ]);
+
+      const altVariantId = 'tv-uuid-1111-1111-1111-aaaaaaaaaaaa';
+      // Two prior runs: same taskId, same administrationId, different variants.
+      // run-late completed later than run-early — earliest should win after dedup.
+      const historicalRuns: HistoricalRunRow[] = [
+        {
+          runId: 'run-late',
+          userId: targetUserId,
+          taskId: TASK_ID_1,
+          taskVariantId: altVariantId,
+          administrationId: 'admin-shared',
+          administrationName: 'Fall 2024',
+          administrationDateStart: new Date('2024-09-01T00:00:00Z'),
+          completedAt: new Date('2024-09-30T00:00:00Z'),
+          reliableRun: true,
+          engagementFlags: [],
+        },
+        {
+          runId: 'run-early',
+          userId: targetUserId,
+          taskId: TASK_ID_1,
+          taskVariantId: VARIANT_ID_1,
+          administrationId: 'admin-shared',
+          administrationName: 'Fall 2024',
+          administrationDateStart: new Date('2024-09-01T00:00:00Z'),
+          completedAt: new Date('2024-09-15T00:00:00Z'),
+          reliableRun: true,
+          engagementFlags: [],
+        },
+      ];
+      mockReportRepository.getHistoricalRunsForUser.mockResolvedValue(historicalRuns);
+      mockReportRepository.getScoresForRunIds.mockResolvedValue([
+        { runId: 'run-early', scoreName: 'percentile', scoreValue: '40' },
+        { runId: 'run-late', scoreName: 'percentile', scoreValue: '55' },
+      ]);
+
+      const service = createService();
+      const result = await service.getIndividualStudentReport(
+        superAdminAuth,
+        testAdministrationId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.historicalScores).toHaveLength(1);
+      expect(swrTask.historicalScores[0]!.administrationId).toBe('admin-shared');
+      // Earliest-completed run wins — its score (40), its date.
+      expect(swrTask.historicalScores[0]!.scores.percentile).toBe(40);
+      expect(swrTask.historicalScores[0]!.date).toBe(new Date('2024-09-15T00:00:00Z').toISOString());
+    });
+
     // --- Counts ---
 
     it('returns completedTaskCount and totalTaskCount', async () => {

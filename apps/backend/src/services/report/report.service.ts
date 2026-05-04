@@ -36,6 +36,7 @@ import { PROGRESS_TASK_STATUS_PATTERN, SCORE_TASK_FIELD_PATTERN } from '@roar-da
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
@@ -873,8 +874,9 @@ export function ReportService({
     const { scopeType, scopeId } = query;
 
     try {
-      // 1. Administration-level authorization
-      await verifyAdministrationScoreReadAccess(authContext, administrationId);
+      // 1. Administration-level authorization (also returns the loaded
+      // administration record, avoiding a redundant getById in step 4)
+      const administration = await verifyAdministrationScoreReadAccess(authContext, administrationId);
 
       // 2. Scope-level authorization
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
@@ -882,32 +884,24 @@ export function ReportService({
       // 3. Student-in-scope check (also enforces user.rosteringEnded IS NULL)
       const studentInScope = await reportRepository.verifyStudentInScope({ scopeType, scopeId }, targetUserId);
       if (!studentInScope) {
-        throw new ApiError('Student not found in this scope', {
+        // Use the generic NOT_FOUND message — distinguishing "student doesn't
+        // exist" from "student isn't in this scope" would leak scope membership.
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId, administrationId, targetUserId, scopeType, scopeId },
         });
       }
 
-      // 4. Fetch supporting data in parallel: admin metadata, target user, task metadata
-      const [administration, targetUser, taskMetas] = await Promise.all([
-        administrationRepository.getById({ id: administrationId }),
+      // 4. Fetch supporting data in parallel: target user, task metadata
+      const [targetUser, taskMetas] = await Promise.all([
         userRepository.getById({ id: targetUserId }),
         reportRepository.getTaskMetadata(administrationId),
       ]);
 
-      // verifyAdministrationScoreReadAccess already checked existence — admin
-      // shouldn't be null here, but the type system doesn't know that.
-      if (!administration) {
-        throw new ApiError('Administration not found', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, administrationId },
-        });
-      }
       // verifyStudentInScope already ensured the user exists and isn't roster-ended.
       if (!targetUser) {
-        throw new ApiError('Student not found', {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId, targetUserId },
@@ -1015,20 +1009,11 @@ export function ReportService({
             eligibility.isOptional,
             historicalRuns,
             historicalScoresByRun,
-            scoringVersionByVariant,
             runMeta,
           );
           tasks.push(taskEntry);
         } else {
-          tasks.push(
-            buildUnassessedTaskEntry(
-              taskMeta,
-              eligibility.isOptional,
-              historicalRuns,
-              historicalScoresByRun,
-              scoringVersionByVariant,
-            ),
-          );
+          tasks.push(buildUnassessedTaskEntry(taskMeta, eligibility.isOptional, historicalRuns, historicalScoresByRun));
         }
       }
 
@@ -2103,11 +2088,34 @@ function buildHistoricalScoresForTask(
   historicalRuns: HistoricalRunRow[],
   historicalScoresByRun: Map<string, Map<string, string>>,
 ): ServiceHistoricalScore[] {
+  // `getHistoricalRunsForUser` returns one row per (administration, taskVariant)
+  // for completed runs. When a task has multiple variants and the student
+  // completed more than one in the same prior administration, we'd otherwise
+  // emit duplicate `historicalScores` entries with the same administrationId —
+  // a trend chart expects one point per administration per task.
+  //
+  // Sort by administrationDateStart, then by completedAt and taskVariantId as
+  // deterministic tie-breakers within an administration. Dedup by
+  // administrationId after sorting, keeping the earliest-completed run for
+  // that administration (a stable, defensible "first attempt" choice).
   const matching = historicalRuns
     .filter((r) => r.taskId === taskId)
-    .sort((a, b) => a.administrationDateStart.getTime() - b.administrationDateStart.getTime());
+    .sort((a, b) => {
+      const dateDiff = a.administrationDateStart.getTime() - b.administrationDateStart.getTime();
+      if (dateDiff !== 0) return dateDiff;
+      const completedDiff = a.completedAt.getTime() - b.completedAt.getTime();
+      if (completedDiff !== 0) return completedDiff;
+      return a.taskVariantId.localeCompare(b.taskVariantId);
+    });
 
-  return matching.map((run) => {
+  const seenAdmins = new Set<string>();
+  const deduped = matching.filter((run) => {
+    if (seenAdmins.has(run.administrationId)) return false;
+    seenAdmins.add(run.administrationId);
+    return true;
+  });
+
+  return deduped.map((run) => {
     const scoreMap = historicalScoresByRun.get(run.runId) ?? new Map();
     return {
       administrationId: run.administrationId,
@@ -2135,7 +2143,6 @@ function buildAssessedTaskEntry(
   optional: boolean,
   historicalRuns: HistoricalRunRow[],
   historicalScoresByRun: Map<string, Map<string, string>>,
-  scoringVersionByVariant: Map<string, number>,
   runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
 ): ServiceIndividualStudentReportTask {
   const gradeLevel = getGradeAsNumber(grade);
@@ -2168,6 +2175,11 @@ function buildAssessedTaskEntry(
   const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug);
   const skillsToWorkOn = computeSkillsToWorkOn(scoredVariant.taskSlug, subscores);
 
+  // Historical entries are resolved with the current variant's slug. Runs for
+  // the same task across administrations share a slug, so we don't need a
+  // per-historical-run scoring-version lookup at this layer; if we ever need
+  // per-run version resolution, the variant→version map can be threaded back
+  // in alongside `historicalScoresByRun`.
   const historicalScores = buildHistoricalScoresForTask(
     taskMeta.taskId,
     scoredVariant.taskSlug,
@@ -2175,11 +2187,6 @@ function buildAssessedTaskEntry(
     historicalRuns,
     historicalScoresByRun,
   );
-  // historical entries should use the variant's slug for resolution, but the
-  // historical run row tracks taskId (and thus taskSlug indirectly via the
-  // variants in our task metadata). We use the current variant's slug — runs
-  // for the same task across administrations share a slug.
-  void scoringVersionByVariant; // kept for parity with the per-row structure; reserved for future per-historical-run version resolution
 
   const entry: ServiceIndividualStudentReportTask = {
     ...taskMeta,
@@ -2203,8 +2210,6 @@ function buildUnassessedTaskEntry(
   optional: boolean,
   historicalRuns: HistoricalRunRow[],
   historicalScoresByRun: Map<string, Map<string, string>>,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- reserved for parity with the assessed entry
-  scoringVersionByVariant: Map<string, number>,
 ): ServiceIndividualStudentReportTask {
   // Historical scores are still meaningful for a not-completed task — earlier
   // administrations may have results. Use the representative variant's slug
