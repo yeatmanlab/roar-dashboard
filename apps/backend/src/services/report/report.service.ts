@@ -219,7 +219,7 @@ export function ReportService({
       scopeId,
     });
     if (!isAssigned) {
-      throw new ApiError('Scope entity is not assigned to this administration', {
+      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         context: { userId, administrationId, scopeType, scopeId },
