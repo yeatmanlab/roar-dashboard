@@ -17,7 +17,8 @@
         "GOOGLE_CLOUD_PROJECT",
         "FGA_API_URL",
         "FGA_STORE_ID",
-        "FGA_MODEL_ID"
+        "FGA_MODEL_ID",
+        "FGA_OIDC_AUDIENCE"
       ]
     },
     "lint": {

@@ -1018,4 +1018,107 @@ describe('DistrictService', () => {
       });
     });
   });
+
+  describe('create', () => {
+    const validInput = {
+      name: 'Springfield USD',
+      abbreviation: 'SPFD',
+    };
+
+    it('should create a district for super admins and return the new id', async () => {
+      mockDistrictRepository.createDistrict.mockResolvedValue({ id: 'district-new-1' });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.create(mockSuperAdminContext, validInput);
+
+      expect(result).toEqual({ id: 'district-new-1' });
+      expect(mockDistrictRepository.createDistrict).toHaveBeenCalledWith({
+        name: 'Springfield USD',
+        abbreviation: 'SPFD',
+      });
+    });
+
+    it('should flatten nested location and identifiers into the repository input', async () => {
+      mockDistrictRepository.createDistrict.mockResolvedValue({ id: 'district-new-2' });
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await service.create(mockSuperAdminContext, {
+        name: 'Springfield USD',
+        abbreviation: 'SPFD',
+        location: {
+          addressLine1: '123 Main St',
+          city: 'Springfield',
+          stateProvince: 'IL',
+          postalCode: '62701',
+          country: 'US',
+        },
+        identifiers: {
+          ncesId: 'NCES-1',
+          stateId: 'IL-DIST-1',
+        },
+      });
+
+      expect(mockDistrictRepository.createDistrict).toHaveBeenCalledWith({
+        name: 'Springfield USD',
+        abbreviation: 'SPFD',
+        locationAddressLine1: '123 Main St',
+        locationCity: 'Springfield',
+        locationStateProvince: 'IL',
+        locationPostalCode: '62701',
+        locationCountry: 'US',
+        ncesId: 'NCES-1',
+        stateId: 'IL-DIST-1',
+      });
+    });
+
+    it('should throw 403 ApiError when caller is not a super admin', async () => {
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(mockAuthContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      expect(mockDistrictRepository.createDistrict).not.toHaveBeenCalled();
+    });
+
+    it('should re-throw ApiError thrown by the repository', async () => {
+      const repoError = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockDistrictRepository.createDistrict.mockRejectedValue(repoError);
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(mockSuperAdminContext, validInput)).rejects.toBe(repoError);
+    });
+
+    it('should wrap unexpected DB errors as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      mockDistrictRepository.createDistrict.mockRejectedValue(new Error('connection lost'));
+
+      const service = DistrictService({
+        districtRepository: mockDistrictRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(service.create(mockSuperAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+  });
 });

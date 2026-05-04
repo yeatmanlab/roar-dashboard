@@ -28,12 +28,16 @@ export enum ApiErrorCode {
   // Resource errors
   RESOURCE_NOT_FOUND = 'resource/not-found',
   RESOURCE_CONFLICT = 'resource/conflict',
+  RESOURCE_UNPROCESSABLE = 'resource/unprocessable',
 
   // Database errors
   DATABASE_QUERY_FAILED = 'database/query-failed',
 
   // External service errors
   EXTERNAL_SERVICE_FAILED = 'external/service-failed',
+
+  // Rate limiting
+  RATE_LIMITED = 'rate/limited',
 
   // Internal errors
   INTERNAL = 'internal/error',

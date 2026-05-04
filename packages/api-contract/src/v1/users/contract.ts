@@ -3,11 +3,17 @@ import { z } from 'zod';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import {
   UserResponseSchema,
+  CreateUserRequestBodySchema,
+  CreateUserResponseSchema,
   UpdateUserRequestBodySchema,
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
-import { AdministrationsListQuerySchema, AdministrationsListResponseSchema } from '../administrations/schema';
+import {
+  AdministrationsListQuerySchema,
+  AdministrationsListResponseSchema,
+  AdministrationBaseSchema,
+} from '../administrations/schema';
 
 const c = initContract();
 
@@ -39,6 +45,35 @@ export const UsersContract = c.router(
         ' Returns a 403 if the requesting user is not authorized to view the requested user. ' +
         ' Returns a 404 if the requested user is not found. ' +
         ' Returns a 500 if an internal server error occurs.',
+    },
+    create: {
+      method: 'POST',
+      path: '/',
+      contentType: 'application/json',
+      body: CreateUserRequestBodySchema,
+      responses: {
+        201: SuccessEnvelopeSchema(CreateUserResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
+        429: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Create a new user',
+      description:
+        'Creates a new user with the provided information. ' +
+        'Treats rostered-out users as still occupying their unique fields; a re-register attempt with the same email or PID returns a conflict. ' +
+        'Returns a 201 Created with the new user ID on success. ' +
+        'Returns a 400 if the request body is missing or contains invalid field values. ' +
+        'Returns a 401 if the requesting user is not authenticated. ' +
+        'Returns a 403 if the requesting user is not authorized to create users. ' +
+        'Returns a 409 if a unique field (email or username) conflicts with any user (including rostered-out users). ' +
+        'Returns a 422 if the request body is well-formed but contains semantically invalid data (e.g., invalid grade level). ' +
+        'Returns a 429 if the user creation rate limit has been exceeded. ' +
+        'Returns a 500 if an internal server error occurs.',
     },
     update: {
       method: 'PATCH',
@@ -120,6 +155,27 @@ export const UsersContract = c.router(
         'Use ?embed=stats to include assignment stats. Use ?embed=tasks to include task variants. ' +
         'Returns 403 if the requester does not have access to any administrations for the specified user. ' +
         'Returns 404 if the specified user does not exist.',
+    },
+    getUserAdministration: {
+      method: 'GET',
+      path: '/:userId/administrations/:administrationId',
+      pathParams: z.object({
+        userId: z.string().uuid(),
+        administrationId: z.string().uuid(),
+      }),
+      responses: {
+        200: SuccessEnvelopeSchema(AdministrationBaseSchema),
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Get a specific administration for a user',
+      description:
+        'Returns a specific administration for the specified user. ' +
+        'Returns 403 if the requester does not have access to the administration for the specified user. ' +
+        'Returns 404 if the specified user or administration does not exist.',
     },
   },
   { pathPrefix: '/users' },

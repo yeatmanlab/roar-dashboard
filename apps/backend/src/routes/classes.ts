@@ -14,6 +14,11 @@ const s = initServer();
  */
 export function registerClassesRoutes(routerInstance: Router) {
   const ClassesRoutes = s.router(ClassesContract, {
+    create: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, body }) => ClassesController.create(user!, body),
+    },
     listUsers: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],

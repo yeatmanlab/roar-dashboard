@@ -8,6 +8,7 @@ import type { Class } from '../db/schema';
 import { classes, userClasses, users } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { ClassType } from '../enums/class-type.enum';
+import type { Grade } from '../enums/grade.enum';
 import type { ParsedFilter } from '../types/filter';
 import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import type { PaginatedResult } from './base.repository';
@@ -19,9 +20,80 @@ import {
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
 
+/**
+ * Input for creating a class at the repository layer.
+ *
+ * Server-managed columns are NOT part of this interface — the repository sets
+ * them itself based on class invariants:
+ * - `orgPath` is computed by the `trg_classes_compute_org_path_insert` BEFORE
+ *   INSERT trigger, which copies the parent school's path. The repository
+ *   passes a placeholder ltree to satisfy the NOT NULL column constraint.
+ * - `schoolLevels` is a generated column (`generatedAlwaysAs`) — it cannot be
+ *   set by INSERT. PostgreSQL computes it from `grades` via the
+ *   `app.get_school_levels_from_grades_array` SQL function.
+ *
+ * The caller is responsible for supplying both `schoolId` and `districtId`;
+ * the database-level `validate_class_org_refs` trigger enforces consistency
+ * (school must be a child of the supplied district, and the orgType of each
+ * must match the column).
+ */
+export interface CreateClassInput {
+  schoolId: string;
+  districtId: string;
+  name: string;
+  classType: ClassType;
+  number?: string | undefined;
+  period?: string | undefined;
+  termId?: string | undefined;
+  courseId?: string | undefined;
+  subjects?: string[] | undefined;
+  grades?: Grade[] | undefined;
+  location?: string | undefined;
+}
+
 export class ClassRepository extends BaseRepository<Class, typeof classes> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
     super(db, classes);
+  }
+
+  /**
+   * Create a new class under a school.
+   *
+   * Sets server-managed columns according to class invariants:
+   * - `orgPath` is initially set to a placeholder ltree value to satisfy the
+   *   NOT NULL column constraint at the Drizzle insert layer; the
+   *   `trg_classes_compute_org_path_insert` BEFORE INSERT trigger overwrites
+   *   it by copying the parent school's `path` (which is itself
+   *   `district_<id>.school_<id>`).
+   * - `schoolLevels` is intentionally omitted from the insert payload — it's
+   *   a generated column computed by PostgreSQL from `grades`.
+   *
+   * The repository does NOT verify that `schoolId` resolves to an active
+   * school — that's the service's responsibility, so the service can return
+   * a 422 with a useful context object before the DB attempt. If the parent
+   * school does not exist, the path trigger will RAISE; the service should
+   * ensure that doesn't happen.
+   *
+   * @param input - Class fields plus the resolved schoolId and derived districtId
+   * @returns The new class id
+   */
+  async createClass(input: CreateClassInput): Promise<{ id: string }> {
+    return this.create({
+      data: {
+        name: input.name,
+        schoolId: input.schoolId,
+        districtId: input.districtId,
+        classType: input.classType,
+        orgPath: 'placeholder',
+        ...(input.number !== undefined && { number: input.number }),
+        ...(input.period !== undefined && { period: input.period }),
+        ...(input.termId !== undefined && { termId: input.termId }),
+        ...(input.courseId !== undefined && { courseId: input.courseId }),
+        ...(input.subjects !== undefined && { subjects: input.subjects }),
+        ...(input.grades !== undefined && { grades: input.grades }),
+        ...(input.location !== undefined && { location: input.location }),
+      },
+    });
   }
 
   /**
