@@ -831,10 +831,10 @@ export function ReportService({
   }
 
   /**
-   * Get a single student's detailed score report for an administration.
+   * Get a single student's detailed individual score report for an administration.
    *
    * Authorization (three checks, in order — 404-before-403 throughout):
-   * 1. `verifyAdministrationScoreReadAccess` — administration exists and the
+   * 1. `verifyAdministrationAccess` — administration exists and the
    *    user has FGA `can_read_scores` on it.
    * 2. `authorizeScopeAccess(...CAN_READ_SCORES)` — scope is assigned to the
    *    administration and the user has FGA `can_read_scores` on the scope.
@@ -876,7 +876,11 @@ export function ReportService({
     try {
       // 1. Administration-level authorization (also returns the loaded
       // administration record, avoiding a redundant getById in step 4)
-      const administration = await verifyAdministrationScoreReadAccess(authContext, administrationId);
+      const administration = await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
 
       // 2. Scope-level authorization
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);

@@ -123,7 +123,8 @@ const ClassificationSchema = z.discriminatedUnion('type', [
 
 /**
  * Per-subscore field-name conventions for tasks that emit sub-skill breakdowns
- * (PA: FSM/LSM/DEL; phonics: cvc/digraph/initial_blend/...).
+ * (PA: FSM/LSM/DEL; phonics: cvc/digraph/initial_blend/...) for individual
+ * score report.
  *
  * Each entry declares the `name` value used in `app_assessment_fdw.run_scores`
  * for that subscore and the kind of data we expect:
