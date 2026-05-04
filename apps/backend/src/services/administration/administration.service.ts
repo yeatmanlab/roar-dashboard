@@ -1490,21 +1490,23 @@ export function AdministrationService({
   ): Promise<{ id: string }> {
     const { userId, isSuperAdmin } = authContext;
 
-    if (!isSuperAdmin) {
-      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-        statusCode: StatusCodes.FORBIDDEN,
-        code: ApiErrorCode.AUTH_FORBIDDEN,
-        context: { userId, isSuperAdmin },
-      });
-    }
-
     try {
-      // Verify administration exists (404 before any other checks)
+      // Verify administration exists first (404 before 403)
       const existing = await administrationRepository.getById({ id: administrationId });
       if (!existing) {
         throw new ApiError(ApiErrorMessage.NOT_FOUND, {
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Check authorization (super admin only for updates)
+      if (!isSuperAdmin) {
+        logger.warn({ userId, administrationId }, 'Non-super-admin attempted to update administration');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
           context: { userId, administrationId },
         });
       }

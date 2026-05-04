@@ -4343,6 +4343,9 @@ describe('AdministrationService', () => {
     };
 
     it('should throw forbidden error when non-super admin attempts to update', async () => {
+      // Must return existing admin first (404 before 403 pattern)
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
       });
@@ -4356,7 +4359,7 @@ describe('AdministrationService', () => {
       expect(mockAdministrationRepository.updateWithAssignments).not.toHaveBeenCalled();
     });
 
-    it('should throw not found error when administration does not exist', async () => {
+    it('should throw not found error when administration does not exist (super admin)', async () => {
       mockAdministrationRepository.getById.mockResolvedValue(null);
 
       const service = AdministrationService({
@@ -4368,6 +4371,23 @@ describe('AdministrationService', () => {
         message: ApiErrorMessage.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
       });
+    });
+
+    it('should throw not found error when administration does not exist (non-super admin, 404 before 403)', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      // Even for non-super-admin, 404 should be returned before 403
+      await expect(service.update(regularUserAuthContext, 'non-existent-id', validUpdateRequest)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.NOT_FOUND,
+          message: ApiErrorMessage.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        },
+      );
     });
 
     it('should update administration successfully with valid data', async () => {
