@@ -55,6 +55,260 @@ beforeAll(async () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/classes
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/classes', () => {
+  const buildCreateClassBody = (overrides: Record<string, unknown> = {}) => ({
+    schoolId: baseFixture.schoolA.id,
+    name: 'Reading 101',
+    classType: 'homeroom',
+    ...overrides,
+  });
+
+  describe('authorization', () => {
+    it('superAdmin tier can create a class under an active school and gets 201 with the new id', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateClassBody({ name: 'SuperAdmin Class' }))
+        .toReturn(StatusCodes.CREATED);
+
+      expect(res.body.data.id).toEqual(expect.any(String));
+    });
+
+    it('siteAdmin tier is forbidden from creating classes', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.siteAdmin)
+        .withBody(buildCreateClassBody({ name: 'SiteAdmin Class' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('admin tier is forbidden from creating classes', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.admin)
+        .withBody(buildCreateClassBody({ name: 'Admin Class' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('educator tier is forbidden from creating classes', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.educator)
+        .withBody(buildCreateClassBody({ name: 'Educator Class' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student tier is forbidden from creating classes', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.student)
+        .withBody(buildCreateClassBody({ name: 'Student Class' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier is forbidden from creating classes', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.caregiver)
+        .withBody(buildCreateClassBody({ name: 'Caregiver Class' }))
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('persistence', () => {
+    it('inserted row has schoolId, derived districtId, and orgPath copied from the parent school', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateClassBody({ name: 'Persist 1' }))
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { CoreDbClient } = await import('../db/clients');
+      const { classes, orgs } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [classRow] = await CoreDbClient.select().from(classes).where(eq(classes.id, id));
+      expect(classRow).toBeDefined();
+      expect(classRow!.schoolId).toBe(baseFixture.schoolA.id);
+      // districtId is derived server-side from the school's parent
+      expect(classRow!.districtId).toBe(baseFixture.district.id);
+
+      // orgPath is copied verbatim from the parent school's path by the trigger
+      const [schoolRow] = await CoreDbClient.select().from(orgs).where(eq(orgs.id, baseFixture.schoolA.id));
+      expect(classRow!.orgPath).toBe(schoolRow!.path);
+    });
+
+    it('schoolLevels is computed by the generated column from grades', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(
+          buildCreateClassBody({
+            name: 'Persist 2',
+            // grades 3 and 4 should yield schoolLevels containing 'elementary'
+            grades: ['3', '4'],
+          }),
+        )
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { CoreDbClient } = await import('../db/clients');
+      const { classes } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(classes).where(eq(classes.id, id));
+      expect(row).toBeDefined();
+      expect(row!.grades).toEqual(expect.arrayContaining(['3', '4']));
+      // The exact mapping is implemented by app.get_school_levels_from_grades_array;
+      // we just assert the column was populated, since the SQL function owns the rules.
+      expect(row!.schoolLevels).toBeDefined();
+      expect(Array.isArray(row!.schoolLevels)).toBe(true);
+      expect((row!.schoolLevels ?? []).length).toBeGreaterThan(0);
+    });
+
+    it('forwards optional fields (number, period, subjects, location) to the insert', async () => {
+      const body = buildCreateClassBody({
+        name: 'Persist 3',
+        number: '101A',
+        period: '3',
+        subjects: ['Reading', 'Phonics'],
+        location: 'Room 12',
+      });
+
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(body)
+        .toReturn(StatusCodes.CREATED);
+
+      const id = res.body.data.id as string;
+
+      const { CoreDbClient } = await import('../db/clients');
+      const { classes } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const [row] = await CoreDbClient.select().from(classes).where(eq(classes.id, id));
+      expect(row).toBeDefined();
+      expect(row!.number).toBe('101A');
+      expect(row!.period).toBe('3');
+      expect(row!.subjects).toEqual(['Reading', 'Phonics']);
+      expect(row!.location).toBe('Room 12');
+    });
+  });
+
+  describe('error cases', () => {
+    it('returns 401 when unauthenticated', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .unauthenticated()
+        .withBody(buildCreateClassBody({ name: 'Unauth' }))
+        .toReturn(StatusCodes.UNAUTHORIZED);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('returns 422 when schoolId does not resolve to any row', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(
+          buildCreateClassBody({
+            name: 'NoParent',
+            schoolId: '00000000-0000-4000-8000-000000000000',
+          }),
+        )
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    });
+
+    it('returns 422 when schoolId points at a district instead of a school', async () => {
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(
+          buildCreateClassBody({
+            name: 'WrongType',
+            schoolId: baseFixture.district.id,
+          }),
+        )
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    });
+
+    it('returns 422 when schoolId points at a school whose rostering ended in the past', async () => {
+      const { OrgFactory } = await import('../test-support/factories/org.factory');
+      const { OrgType } = await import('../enums/org-type.enum');
+
+      const endedSchool = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        parentOrgId: baseFixture.district.id,
+        rosteringEnded: new Date('2020-01-01T00:00:00.000Z'),
+      });
+
+      const res = await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(
+          buildCreateClassBody({
+            name: 'EndedParent',
+            schoolId: endedSchool.id,
+          }),
+        )
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_UNPROCESSABLE);
+    });
+
+    it('returns 400 when schoolId is missing', async () => {
+      await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody({ name: 'No School', classType: 'homeroom' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when schoolId is not a UUID', async () => {
+      await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateClassBody({ name: 'Bad UUID', schoolId: 'not-a-uuid' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when name is missing', async () => {
+      await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody({ schoolId: baseFixture.schoolA.id, classType: 'homeroom' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when classType is missing', async () => {
+      await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody({ schoolId: baseFixture.schoolA.id, name: 'No ClassType' })
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when classType is not in the enum', async () => {
+      await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateClassBody({ name: 'Bad ClassType', classType: 'not-a-type' }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when grades contains a value outside the gradeEnum', async () => {
+      await expectRoute('POST', '/v1/classes')
+        .as(tiers.superAdmin)
+        .withBody(buildCreateClassBody({ name: 'Bad Grade', grades: ['nope'] }))
+        .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/classes/:classId/users
 // ═══════════════════════════════════════════════════════════════════════════
 
