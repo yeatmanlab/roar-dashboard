@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { verifyTargetUserAccess } from './verify-target-user-access';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -15,6 +15,8 @@ describe('verifyTargetUserAccess', () => {
   let authorizationService: MockAuthorizationService;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
     familyRepository = createMockFamilyRepository();
     authorizationService = createMockAuthorizationService();
   });
