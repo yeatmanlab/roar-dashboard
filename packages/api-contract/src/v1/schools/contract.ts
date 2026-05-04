@@ -1,6 +1,8 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
 import {
+  CreateSchoolRequestSchema,
+  CreateSchoolResponseSchema,
   SchoolsListQuerySchema,
   SchoolsListResponseSchema,
   SchoolDetailSchema,
@@ -18,6 +20,32 @@ const c = initContract();
  */
 export const SchoolsContract = c.router(
   {
+    create: {
+      method: 'POST',
+      path: '/',
+      body: CreateSchoolRequestSchema,
+      responses: {
+        201: SuccessEnvelopeSchema(CreateSchoolResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Create a school',
+      description:
+        'Creates a new school under an existing district. ' +
+        'The parent districtId lives in the request body, not the URL — every canonical resource on this API sits at the top level. ' +
+        "The school's ltree path is computed from the parent district's path by a database trigger. " +
+        'Restricted to super admins. ' +
+        'Returns 201 with the new school id. ' +
+        'Returns 400 if the request body is missing or contains invalid field values. ' +
+        'Returns 401 if the user is not authenticated. ' +
+        'Returns 403 if the user is not a super admin. ' +
+        'Returns 422 if districtId is well-formed but does not resolve to an active district (no row, wrong orgType, or rosteringEnded set in the past). ' +
+        'Returns 500 if an internal server error occurs.',
+    },
     list: {
       method: 'GET',
       path: '/',

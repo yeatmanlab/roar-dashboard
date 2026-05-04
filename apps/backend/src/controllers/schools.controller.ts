@@ -1,7 +1,8 @@
 import { StatusCodes } from 'http-status-codes';
-import type { SchoolWithEmbeds } from '../services/school/school.service';
+import type { CreateSchoolServiceInput, SchoolWithEmbeds } from '../services/school/school.service';
 import { SchoolService } from '../services/school/school.service';
 import type {
+  CreateSchoolRequest,
   SchoolsListQuery,
   SchoolDetail as ApiSchool,
   SchoolClassesListQuery,
@@ -109,6 +110,46 @@ function transformSchool(school: SchoolWithEmbeds): ApiSchool {
  * Calls SchoolService for business logic and formats responses.
  */
 export const SchoolsController = {
+  /**
+   * Create a new school under an existing district.
+   *
+   * Restricted to super admins (enforced in SchoolService). Returns the new
+   * school id only — clients that need the full entity should follow up with
+   * GET /schools/:schoolId.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param body - Request body with districtId and school fields
+   */
+  create: async (authContext: AuthContext, body: CreateSchoolRequest) => {
+    try {
+      const serviceInput: CreateSchoolServiceInput = {
+        districtId: body.districtId,
+        name: body.name,
+        abbreviation: body.abbreviation,
+        location: body.location,
+        identifiers: body.identifiers,
+      };
+
+      const { id } = await schoolService.create(authContext, serviceInput);
+
+      return {
+        status: StatusCodes.CREATED as const,
+        body: {
+          data: { id },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.FORBIDDEN,
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
   /**
    * List schools with pagination and sorting.
    *
