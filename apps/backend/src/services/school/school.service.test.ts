@@ -6,8 +6,12 @@ import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 import { OrgType } from '../../enums/org-type.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { SortOrder, SchoolDetailSortField } from '@roar-dashboard/api-contract';
-import { createMockSchoolRepository, createMockClassRepository } from '../../test-support/repositories';
-import type { MockSchoolRepository } from '../../test-support/repositories';
+import {
+  createMockSchoolRepository,
+  createMockClassRepository,
+  createMockDistrictRepository,
+} from '../../test-support/repositories';
+import type { MockSchoolRepository, MockDistrictRepository } from '../../test-support/repositories';
 import { createMockAuthorizationService } from '../../test-support/services';
 import type { MockAuthorizationService } from '../../test-support/services';
 import { ApiError } from '../../errors/api-error';
@@ -20,12 +24,14 @@ describe('SchoolService', () => {
   let mockSchoolRepository: MockSchoolRepository;
   let mockClassRepository: ReturnType<typeof createMockClassRepository>;
   let mockAuthorizationService: MockAuthorizationService;
+  let mockDistrictRepository: MockDistrictRepository;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockSchoolRepository = createMockSchoolRepository();
     mockClassRepository = createMockClassRepository();
     mockAuthorizationService = createMockAuthorizationService();
+    mockDistrictRepository = createMockDistrictRepository();
   });
 
   describe('list', () => {
@@ -993,6 +999,215 @@ describe('SchoolService', () => {
       await expect(
         service.listUsers({ userId: 'user-123', isSuperAdmin: false }, 'school-123', defaultOptions),
       ).rejects.toThrow(apiError);
+    });
+  });
+
+  describe('create', () => {
+    const validInput = {
+      districtId: '11111111-1111-4111-8111-111111111111',
+      name: 'Springfield Elementary',
+      abbreviation: 'SPFD',
+    };
+    const superAdminContext = { userId: 'admin-123', isSuperAdmin: true };
+    const userContext = { userId: 'user-123', isSuperAdmin: false };
+
+    it('should create a school for super admins when the parent district is active', async () => {
+      const parentDistrict = OrgFactory.build({
+        id: validInput.districtId,
+        orgType: OrgType.DISTRICT,
+        rosteringEnded: null,
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(parentDistrict);
+      mockSchoolRepository.createSchool.mockResolvedValue({ id: 'school-new-1' });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      const result = await service.create(superAdminContext, validInput);
+
+      expect(result).toEqual({ id: 'school-new-1' });
+      expect(mockDistrictRepository.getUnrestrictedById).toHaveBeenCalledWith(validInput.districtId);
+      expect(mockSchoolRepository.createSchool).toHaveBeenCalledWith({
+        parentOrgId: validInput.districtId,
+        name: 'Springfield Elementary',
+        abbreviation: 'SPFD',
+      });
+    });
+
+    it('should flatten nested location and identifiers into the repository input', async () => {
+      const parentDistrict = OrgFactory.build({
+        id: validInput.districtId,
+        orgType: OrgType.DISTRICT,
+        rosteringEnded: null,
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(parentDistrict);
+      mockSchoolRepository.createSchool.mockResolvedValue({ id: 'school-new-2' });
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      await service.create(superAdminContext, {
+        ...validInput,
+        location: {
+          addressLine1: '742 Evergreen Terrace',
+          city: 'Springfield',
+          stateProvince: 'IL',
+          postalCode: '62701',
+          country: 'US',
+        },
+        identifiers: {
+          ncesId: 'NCES-9001',
+          schoolNumber: 'SCH-001',
+        },
+      });
+
+      expect(mockSchoolRepository.createSchool).toHaveBeenCalledWith({
+        parentOrgId: validInput.districtId,
+        name: 'Springfield Elementary',
+        abbreviation: 'SPFD',
+        locationAddressLine1: '742 Evergreen Terrace',
+        locationCity: 'Springfield',
+        locationStateProvince: 'IL',
+        locationPostalCode: '62701',
+        locationCountry: 'US',
+        ncesId: 'NCES-9001',
+        schoolNumber: 'SCH-001',
+      });
+    });
+
+    it('should throw 403 when caller is not a super admin and never call the repos', async () => {
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.create(userContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      expect(mockDistrictRepository.getUnrestrictedById).not.toHaveBeenCalled();
+      expect(mockSchoolRepository.createSchool).not.toHaveBeenCalled();
+    });
+
+    it('should throw 422 when districtId does not resolve to any row', async () => {
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(null);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.create(superAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      });
+      expect(mockSchoolRepository.createSchool).not.toHaveBeenCalled();
+    });
+
+    it('should throw 422 when the parent has the wrong orgType', async () => {
+      // getUnrestrictedById on the DistrictRepository filters by orgType=district
+      // and returns null when the row is a school. Belt-and-suspenders: if a
+      // future change to that filter ever returned the wrong row type, the
+      // service still rejects with 422 here.
+      const wrongTypeRow = OrgFactory.build({
+        id: validInput.districtId,
+        orgType: OrgType.SCHOOL,
+        rosteringEnded: null,
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(wrongTypeRow);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.create(superAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      });
+      expect(mockSchoolRepository.createSchool).not.toHaveBeenCalled();
+    });
+
+    it('should throw 422 when the parent district has rosteringEnded in the past', async () => {
+      const endedDistrict = OrgFactory.build({
+        id: validInput.districtId,
+        orgType: OrgType.DISTRICT,
+        rosteringEnded: new Date('2020-01-01T00:00:00.000Z'),
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(endedDistrict);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.create(superAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+      });
+      expect(mockSchoolRepository.createSchool).not.toHaveBeenCalled();
+    });
+
+    it('should re-throw an ApiError thrown by the repository unchanged', async () => {
+      const parentDistrict = OrgFactory.build({
+        id: validInput.districtId,
+        orgType: OrgType.DISTRICT,
+        rosteringEnded: null,
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(parentDistrict);
+
+      const repoError = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+      mockSchoolRepository.createSchool.mockRejectedValue(repoError);
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.create(superAdminContext, validInput)).rejects.toBe(repoError);
+    });
+
+    it('should wrap unexpected DB errors as ApiError 500 with DATABASE_QUERY_FAILED', async () => {
+      const parentDistrict = OrgFactory.build({
+        id: validInput.districtId,
+        orgType: OrgType.DISTRICT,
+        rosteringEnded: null,
+      });
+      mockDistrictRepository.getUnrestrictedById.mockResolvedValue(parentDistrict);
+      mockSchoolRepository.createSchool.mockRejectedValue(new Error('connection lost'));
+
+      const service = SchoolService({
+        schoolRepository: mockSchoolRepository,
+        classRepository: mockClassRepository,
+        authorizationService: mockAuthorizationService,
+        districtRepository: mockDistrictRepository,
+      });
+
+      await expect(service.create(superAdminContext, validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
     });
   });
 });

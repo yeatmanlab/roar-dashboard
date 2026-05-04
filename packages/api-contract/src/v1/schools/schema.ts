@@ -126,6 +126,47 @@ export const SchoolsListResponseSchema = createPaginatedResponseSchema(SchoolDet
 
 export type SchoolsListResponse = z.infer<typeof SchoolsListResponseSchema>;
 
+/**
+ * Request body for creating a school.
+ *
+ * `orgType` is fixed to 'school' server-side and is not accepted in the body.
+ * `parentOrgId` is set to the supplied `districtId`.
+ * `path` is computed from the parent district's `path` by a database trigger.
+ * `isRosteringRootOrg` is set to false server-side (the validate_org_hierarchy_fn
+ * trigger requires non-root orgs to have isRosteringRootOrg = false).
+ *
+ * `location.coordinates` is omitted from the request shape — lat/long isn't
+ * accepted on create.
+ */
+export const CreateSchoolRequestSchema = z
+  .object({
+    districtId: z.string().uuid(),
+    name: z.string().min(1).max(255),
+    abbreviation: z
+      .string()
+      .min(1)
+      .max(10)
+      .regex(/^[A-Za-z0-9]+$/, 'abbreviation must contain only letters and digits'),
+    location: SchoolLocationSchema.omit({ coordinates: true }).optional(),
+    identifiers: SchoolIdentifiersSchema.optional(),
+  })
+  .strict();
+
+export type CreateSchoolRequest = z.infer<typeof CreateSchoolRequestSchema>;
+
+/**
+ * Response payload for POST /schools.
+ *
+ * Returns only the new school id, matching the existing POST /runs and
+ * POST /users/:userId/agreements convention. Clients that need the full
+ * entity follow up with GET /schools/:schoolId.
+ */
+export const CreateSchoolResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type CreateSchoolResponse = z.infer<typeof CreateSchoolResponseSchema>;
+
 // ─────────────────────────────────────────────────────────────────────────–––––
 // School Classes (sub-resource: GET /schools/:schoolId/classes)
 // ─────────────────────────────────────────────────────────────────────────–––––
