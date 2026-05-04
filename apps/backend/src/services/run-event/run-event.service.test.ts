@@ -9,15 +9,17 @@ import type {
   MockRunRepository,
   MockRunTrialRepository,
   MockRunTrialInteractionsRepository,
+  MockFamilyRepository,
 } from '../../test-support/repositories';
 import {
   createMockRunRepository,
   createMockRunTrialRepository,
   createMockRunTrialInteractionsRepository,
+  createMockFamilyRepository,
 } from '../../test-support/repositories';
+import type { MockAuthorizationService } from '../../test-support/services';
+import { createMockAuthorizationService } from '../../test-support/services';
 import { RunFactory } from '../../test-support/factories/run.factory';
-import type { FamilyRepository } from '../../repositories/family.repository';
-import type { AuthorizationService } from '../authorization/authorization.service';
 
 /**
  * RunEventService Tests
@@ -30,12 +32,8 @@ describe('RunEventService', () => {
   let runRepository: MockRunRepository;
   let runTrialsRepository: MockRunTrialRepository;
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
-  let mockFamilyRepository: {
-    getFamilyIdsForUser: ReturnType<typeof vi.fn>;
-  };
-  let mockAuthorizationService: {
-    hasAnyPermission: ReturnType<typeof vi.fn>;
-  };
+  let familyRepository: MockFamilyRepository;
+  let authorizationService: MockAuthorizationService;
   let runEventsService: ReturnType<typeof RunEventService>;
 
   beforeEach(() => {
@@ -49,20 +47,16 @@ describe('RunEventService', () => {
 
     runTrialInteractionsRepository = createMockRunTrialInteractionsRepository();
 
-    mockFamilyRepository = {
-      getFamilyIdsForUser: vi.fn(),
-    };
+    familyRepository = createMockFamilyRepository();
 
-    mockAuthorizationService = {
-      hasAnyPermission: vi.fn(),
-    };
+    authorizationService = createMockAuthorizationService();
 
     runEventsService = RunEventService({
-      runRepository: runRepository,
-      runTrialsRepository: runTrialsRepository,
-      runTrialInteractionsRepository: runTrialInteractionsRepository,
-      familyRepository: mockFamilyRepository as unknown as FamilyRepository,
-      authorizationService: mockAuthorizationService as unknown as ReturnType<typeof AuthorizationService>,
+      runRepository,
+      runTrialsRepository,
+      runTrialInteractionsRepository,
+      familyRepository,
+      authorizationService,
     });
   });
 
@@ -89,8 +83,8 @@ describe('RunEventService', () => {
       const validRunId = '550e8400-e29b-41d4-a716-446655440000';
       const mockRun = RunFactory.build({ id: validRunId, userId: childUserId });
 
-      mockFamilyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
-      mockAuthorizationService.hasAnyPermission.mockResolvedValue(true);
+      familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
+      authorizationService.hasAnyPermission.mockResolvedValue(true);
       runRepository.getById.mockResolvedValue(mockRun);
       runRepository.update.mockResolvedValue(undefined);
 
@@ -98,8 +92,8 @@ describe('RunEventService', () => {
         type: 'complete' as const,
       });
 
-      expect(mockFamilyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(childUserId);
-      expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalledWith('parent-456', 'can_create_run_for_child', [
+      expect(familyRepository.getFamilyIdsForUser).toHaveBeenCalledWith(childUserId);
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalledWith('parent-456', 'can_create_run_for_child', [
         'family:family-123',
       ]);
       expect(runRepository.update).toHaveBeenCalled();
@@ -109,8 +103,8 @@ describe('RunEventService', () => {
       const parentContext = { userId: 'parent-456', isSuperAdmin: false };
       const childUserId = 'child-789';
 
-      mockFamilyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
-      mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
+      familyRepository.getFamilyIdsForUser.mockResolvedValue(['family-123']);
+      authorizationService.hasAnyPermission.mockResolvedValue(false);
 
       await expect(
         runEventsService.completeRun(parentContext, childUserId, 'run-123', {
@@ -122,15 +116,15 @@ describe('RunEventService', () => {
         message: ApiErrorMessage.FORBIDDEN,
       });
 
-      expect(mockAuthorizationService.hasAnyPermission).toHaveBeenCalled();
+      expect(authorizationService.hasAnyPermission).toHaveBeenCalled();
     });
 
     it('should throw FORBIDDEN when parent has no family relationship with child', async () => {
       const parentContext = { userId: 'parent-456', isSuperAdmin: false };
       const childUserId = 'child-789';
 
-      mockFamilyRepository.getFamilyIdsForUser.mockResolvedValue([]);
-      mockAuthorizationService.hasAnyPermission.mockResolvedValue(false);
+      familyRepository.getFamilyIdsForUser.mockResolvedValue([]);
+      authorizationService.hasAnyPermission.mockResolvedValue(false);
 
       await expect(
         runEventsService.completeRun(parentContext, childUserId, 'run-123', {
@@ -157,8 +151,8 @@ describe('RunEventService', () => {
       });
 
       // Super admins should not need to check family or FGA permissions
-      expect(mockFamilyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
-      expect(mockAuthorizationService.hasAnyPermission).not.toHaveBeenCalled();
+      expect(familyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
+      expect(authorizationService.hasAnyPermission).not.toHaveBeenCalled();
       expect(runRepository.update).toHaveBeenCalled();
     });
   });
