@@ -3,16 +3,14 @@ name: Deploy Platform to Production
 on:
   push:
     tags:
-      # Platform releases (backend, dashboard, api-contract)
+      # Platform releases: trigger on backend tag only.
+      # Release Please creates all three tags (backend, dashboard, api-contract) simultaneously,
+      # but only backend needs infrastructure deployment. api-contract is a TypeScript package
+      # published to npm, not deployed to Cloud Run. Dashboard is deployed as part of the
+      # backend release. Triggering on backend-v* only prevents triple deployments.
       - "backend-v[0-9]+.[0-9]+.[0-9]+"
       - "backend-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
       - "backend-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
-      - "dashboard-v[0-9]+.[0-9]+.[0-9]+"
-      - "dashboard-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "dashboard-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
-      - "api-contract-v[0-9]+.[0-9]+.[0-9]+"
-      - "api-contract-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "api-contract-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -147,7 +145,7 @@ jobs:
   # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   deploy-frontend:
-    # TODO: Re-enable after frontend deployment testing is complete (see GitHub issue #XXXX)
+    # TODO: Re-enable after frontend deployment testing is complete
     if: false
     name: Deploy frontend
     needs: [deploy-backend]
