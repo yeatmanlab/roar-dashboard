@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { GetTreeOptions } from '../services/administration/administration.service';
+import type { GetTreeOptions, TreeNodeStats } from '../services/administration/administration.service';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ReportService } from '../services/report/report.service';
 import type {
@@ -10,6 +10,7 @@ import type {
   AdministrationTreeQuery,
   AdministrationsListQuery,
   Condition,
+  CreateAdministrationRequest,
   OrganizationTreeNode,
   ProgressOverviewQuery,
   ProgressStudent,

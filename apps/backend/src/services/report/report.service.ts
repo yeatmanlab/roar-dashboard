@@ -629,7 +629,7 @@ export function ReportService({
    * List paginated per-student scores for an administration.
    *
    * Authorization (two FGA checks):
-   * 1. `verifyAdministrationScoreReadAccess` — administration-level can_read_scores
+   * 1. `verifyAdministrationAccess` — administration-level can_read_scores
    * 2. `authorizeScopeAccess` with CAN_READ_SCORES — scope-level
    *
    * Sort and filter accept dynamic `scores.<taskId>.<field>` fields where
@@ -659,7 +659,11 @@ export function ReportService({
 
     try {
       // 1. Authorization
-      await verifyAdministrationScoreReadAccess(authContext, administrationId);
+      await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
       // 2. Get task metadata and apply taskId filter (merge multiple entries)
