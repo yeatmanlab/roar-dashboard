@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
-import type { SchoolWithCounts } from '../../repositories/school.repository';
+import type { CreateSchoolInput, SchoolWithCounts } from '../../repositories/school.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
+import { DistrictRepository } from '../../repositories/district.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -14,6 +15,7 @@ import type { ParsedFilter, FilterOperator } from '../../types/filter';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
+import { OrgType } from '../../enums/org-type.enum';
 
 /** Type safe constant for 'eq' filter operator */
 const EQ_OPERATOR: FilterOperator = 'eq';
@@ -36,6 +38,39 @@ export interface ListOptions {
 export type SchoolWithEmbeds = SchoolWithCounts;
 
 /**
+ * Service-layer input for creating a school.
+ *
+ * Mirrors the API contract's CreateSchoolRequest shape (nested location and
+ * identifiers). The service flattens this into the repository's column-shaped
+ * CreateSchoolInput. Defined here rather than imported from the api-contract
+ * so the service stays decoupled from transport concerns
+ * (see backend-service-pattern.md "Service Type Independence").
+ */
+export interface CreateSchoolServiceInput {
+  districtId: string;
+  name: string;
+  abbreviation: string;
+  location?:
+    | {
+        addressLine1?: string | undefined;
+        addressLine2?: string | undefined;
+        city?: string | undefined;
+        stateProvince?: string | undefined;
+        postalCode?: string | undefined;
+        country?: string | undefined;
+      }
+    | undefined;
+  identifiers?:
+    | {
+        mdrNumber?: string | undefined;
+        ncesId?: string | undefined;
+        stateId?: string | undefined;
+        schoolNumber?: string | undefined;
+      }
+    | undefined;
+}
+
+/**
  * Options for listing school classes
  */
 export interface ListSchoolClassesOptions {
@@ -56,10 +91,12 @@ export function SchoolService({
   schoolRepository = new SchoolRepository(),
   classRepository = new ClassRepository(),
   authorizationService = AuthorizationService(),
+  districtRepository = new DistrictRepository(),
 }: {
   schoolRepository?: SchoolRepository;
   classRepository?: ClassRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
+  districtRepository?: DistrictRepository;
 } = {}) {
   /**
    * List schools accessible to a user with pagination and sorting.
@@ -352,7 +389,104 @@ export function SchoolService({
     }
   }
 
+  /**
+   * Create a new school under an existing district.
+   *
+   * Restricted to super admins. Verifies the parent district exists, has
+   * `orgType='district'`, and is not rostered-ended; otherwise returns 422.
+   *
+   * The school's ltree `path` is computed by the BEFORE INSERT trigger from
+   * the parent district's `path`. `isRosteringRootOrg` is set to false
+   * (validate_org_hierarchy_fn requires non-root orgs to have it false).
+   *
+   * No FGA tuples are written by this endpoint. FGA tuples are user-to-org
+   * relationships and are written when users are assigned to the school
+   * via memberships.
+   *
+   * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param input - School fields the caller is allowed to set, including the
+   *   parent districtId
+   * @returns The new school id
+   * @throws {ApiError} 403 if the caller is not a super admin
+   * @throws {ApiError} 422 if districtId does not resolve to an active district
+   * @throws {ApiError} 500 if the database insert fails
+   */
+  async function create(authContext: AuthContext, input: CreateSchoolServiceInput): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    if (!isSuperAdmin) {
+      logger.warn({ userId }, 'Non-super admin attempted to create a school');
+      throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId },
+      });
+    }
+
+    try {
+      const parent = await districtRepository.getUnrestrictedById(input.districtId);
+
+      // 422 covers three failure modes for a body-referenced parent that the
+      // request couldn't be processed against: the row doesn't exist; the row
+      // exists but isn't a district; the row exists and is a district but its
+      // rostering ended in the past (treated as nonexistent for create
+      // purposes — we don't want to attach new schools to retired districts).
+      const districtIsActive =
+        parent !== null &&
+        parent.orgType === OrgType.DISTRICT &&
+        (parent.rosteringEnded === null || parent.rosteringEnded > new Date());
+
+      if (!districtIsActive) {
+        logger.warn(
+          {
+            userId,
+            districtId: input.districtId,
+            parentExists: parent !== null,
+            parentOrgType: parent?.orgType ?? null,
+            rosteringEnded: parent?.rosteringEnded ?? null,
+          },
+          'School create rejected: parent district did not resolve to an active district',
+        );
+        throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          context: { userId, districtId: input.districtId },
+        });
+      }
+
+      const repoInput: CreateSchoolInput = {
+        parentOrgId: input.districtId,
+        name: input.name,
+        abbreviation: input.abbreviation,
+        ...(input.location?.addressLine1 !== undefined && { locationAddressLine1: input.location.addressLine1 }),
+        ...(input.location?.addressLine2 !== undefined && { locationAddressLine2: input.location.addressLine2 }),
+        ...(input.location?.city !== undefined && { locationCity: input.location.city }),
+        ...(input.location?.stateProvince !== undefined && { locationStateProvince: input.location.stateProvince }),
+        ...(input.location?.postalCode !== undefined && { locationPostalCode: input.location.postalCode }),
+        ...(input.location?.country !== undefined && { locationCountry: input.location.country }),
+        ...(input.identifiers?.mdrNumber !== undefined && { mdrNumber: input.identifiers.mdrNumber }),
+        ...(input.identifiers?.ncesId !== undefined && { ncesId: input.identifiers.ncesId }),
+        ...(input.identifiers?.stateId !== undefined && { stateId: input.identifiers.stateId }),
+        ...(input.identifiers?.schoolNumber !== undefined && { schoolNumber: input.identifiers.schoolNumber }),
+      };
+
+      return await schoolRepository.createSchool(repoInput);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, districtId: input.districtId } }, 'Failed to create school');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, districtId: input.districtId },
+        cause: error,
+      });
+    }
+  }
+
   return {
+    create,
     list,
     getById,
     listSchoolClasses,
