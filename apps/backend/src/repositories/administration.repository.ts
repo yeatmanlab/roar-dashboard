@@ -1,4 +1,4 @@
-import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray, notInArray } from 'drizzle-orm';
+import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray, notInArray, ne } from 'drizzle-orm';
 import type { SQL, Column, InferInsertModel } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { PgColumn } from 'drizzle-orm/pg-core';
@@ -1036,7 +1036,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const result = await this.db
       .select({ id: administrations.id })
       .from(administrations)
-      .where(and(sql`lower(${administrations.name}) = lower(${name})`, sql`${administrations.id} != ${excludeId}`))
+      .where(and(sql`lower(${administrations.name}) = lower(${name})`, ne(administrations.id, excludeId)))
       .limit(1);
 
     return result.length > 0;

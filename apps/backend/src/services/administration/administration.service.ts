@@ -1523,20 +1523,32 @@ export function AdministrationService({
         });
       }
 
-      // Validate unique orderIndex values when isOrdered is true and taskVariants are being updated
-      if (effectiveIsOrdered && request.taskVariants !== undefined) {
-        const orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
-        const uniqueIndices = new Set(orderIndices);
-        if (uniqueIndices.size !== orderIndices.length) {
+      // Validate taskVariant ids are unique in the request
+      if (request.taskVariants !== undefined) {
+        const taskVariantIdSet = new Set(request.taskVariants.map((tv) => tv.taskVariantId));
+        if (taskVariantIdSet.size !== request.taskVariants.length) {
           throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
             statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
             code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: {
-              userId,
-              administrationId,
-              reason: 'Task variant orderIndex values must be unique when isOrdered is true',
-            },
+            context: { userId, administrationId, reason: 'Duplicate taskVariantId values in request' },
           });
+        }
+
+        // Validate unique orderIndex values when isOrdered is true and taskVariants are being updated
+        if (effectiveIsOrdered) {
+          const orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
+          const uniqueIndices = new Set(orderIndices);
+          if (uniqueIndices.size !== orderIndices.length) {
+            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+              statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+              context: {
+                userId,
+                administrationId,
+                reason: 'Task variant orderIndex values must be unique when isOrdered is true',
+              },
+            });
+          }
         }
       }
 
@@ -1791,6 +1803,9 @@ export function AdministrationService({
           await authorizationService.writeTuplesOrThrow(tuplesToAdd);
         }
         if (tuplesToRemove.length > 0) {
+          // Tuple deletion is fire-and-forget, consistent with service function definition.
+          // This is acceptable because the Postgres write is the source of truth
+          // and the backfill endpoint reconciles stale tuples.
           await authorizationService.deleteTuples(tuplesToRemove);
         }
       }
