@@ -39,8 +39,8 @@ docs(sdk): update integration guide
 **Types**:
 - `feat` → Features (triggers minor version bump)
 - `fix` → Bug Fixes (triggers patch version bump)
-- `refactor` → Refactoring (triggers patch version bump)
-- `perf` → Performance improvements (triggers patch version bump)
+- `refactor` → Refactoring (included in changelog, no version bump)
+- `perf` → Performance improvements (included in changelog, no version bump)
 - `docs` → Documentation (no version bump)
 - `chore` → Miscellaneous (no version bump)
 
@@ -228,19 +228,21 @@ Release Please generates per-package changelogs:
 
 ### Example 4: Multi-Package Release
 
-**Scenario**: You update the API contract and both backend and dashboard to use it.
+**Scenario**: You update the API contract AND create separate PRs for backend and dashboard to use it.
 
-1. Create PR with title: `feat(api-contract): add new user fields`
-2. Merge to `main` using squash merge
-3. Release Please detects the `feat` commit
-4. Release Please creates Release PR:
-   - Backend version: `3.26.0` → `3.27.0` (minor bump, depends on api-contract)
-   - Dashboard version: `3.26.0` → `3.27.0` (minor bump, depends on api-contract)
-   - API contract version: `3.26.0` → `3.27.0` (minor bump, direct change)
+1. Create PR #1 with title: `feat(api-contract): add new user fields` → merge
+2. Create PR #2 with title: `feat(backend): use new user fields` → merge
+3. Create PR #3 with title: `feat(dashboard): use new user fields` → merge
+4. Release Please creates Release PR with:
+   - Backend version: `3.26.0` → `3.27.0` (minor bump, has feat commit)
+   - Dashboard version: `3.26.0` → `3.27.0` (minor bump, has feat commit)
+   - API contract version: `3.26.0` → `3.27.0` (minor bump, has feat commit)
    - SDK version: unchanged
 5. Review and merge Release PR
 6. Tags created: `backend-v3.27.0`, `dashboard-v3.27.0`, `api-contract-v3.27.0`
 7. Production deployment triggered (requires approval)
+
+**Note**: Release Please does NOT track dependencies between packages. Each package is bumped independently based on its own conventional commits. If only the API contract changes (no backend/dashboard commits), only the API contract version is bumped.
 
 ## Troubleshooting
 
@@ -358,6 +360,22 @@ Tags are created automatically when Release PR is merged:
 - `api-contract-v3.27.0` - API contract release
 - `assessment-sdk-v0.2.0` - SDK release (independent version)
 
+### Bootstrap Configuration
+
+Release Please uses two bootstrap fields in `.release-please.json`:
+
+**`bootstrap-sha`** (commit SHA):
+- Tells Release Please where to start scanning for conventional commits on the first run
+- Set to `"3a7a1a157"` (the commit before this release strategy was introduced)
+- Prevents Release Please from scanning the entire repo history
+- **Should be removed after the first release** — otherwise it will override Release Please's version calculations on every subsequent run
+- Safe to keep during development/testing; remove it once you've completed your first real release
+
+**`release-as`** (version numbers):
+- Specifies the initial versions for each package
+- Used only on the first run to bootstrap the `.release-please-manifest.json` file
+- **Should be removed after the first release** — the manifest will track versions from that point forward
+
 ### Testing the Setup
 
 1. **Create a test branch** with a conventional commit title
@@ -366,6 +384,7 @@ Tags are created automatically when Release PR is merged:
 4. **Review and merge Release PR**
 5. **Verify tags** are created and GitHub Releases are published
 6. **Verify production deployment** workflow is triggered
+7. **After first release**: Remove both `bootstrap-sha` and `release-as` fields from `.release-please.json`
 
 ## Quick Reference Checklist
 

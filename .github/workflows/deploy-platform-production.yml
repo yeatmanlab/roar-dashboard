@@ -34,15 +34,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout repository
-        # TODO: Remove once branch triggers are removed and only tags remain
-        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Verify tag commit is on main
-        # TODO: Remove once branch triggers are removed and only tags remain
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG_SHA="${{ github.sha }}"
           if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
@@ -150,8 +146,8 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # TODO: Re-enable after testing is complete
   deploy-frontend:
+    # TODO: Re-enable after frontend deployment testing is complete (see GitHub issue #XXXX)
     if: false
     name: Deploy frontend
     needs: [deploy-backend]
