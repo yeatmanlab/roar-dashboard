@@ -4321,4 +4321,447 @@ describe('AdministrationService', () => {
       });
     });
   });
+
+  describe('update', () => {
+    const superAdminAuthContext = { userId: 'super-admin-123', isSuperAdmin: true };
+    const regularUserAuthContext = { userId: 'user-123', isSuperAdmin: false };
+    const testAdminId = 'admin-123';
+
+    const existingAdmin = AdministrationFactory.build({
+      id: testAdminId,
+      name: 'Original Name',
+      namePublic: 'Original Public Name',
+      description: 'Original description',
+      dateStart: new Date('2024-01-01'),
+      dateEnd: new Date('2024-12-31'),
+      isOrdered: false,
+    });
+
+    const validUpdateRequest = {
+      name: 'Updated Name',
+      description: 'Updated description',
+    };
+
+    it('should throw forbidden error when non-super admin attempts to update', async () => {
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.update(regularUserAuthContext, testAdminId, validUpdateRequest)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        message: ApiErrorMessage.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockAdministrationRepository.updateWithAssignments).not.toHaveBeenCalled();
+    });
+
+    it('should throw not found error when administration does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(service.update(superAdminAuthContext, 'non-existent-id', validUpdateRequest)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        message: ApiErrorMessage.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('should update administration successfully with valid data', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+      mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.update(superAdminAuthContext, testAdminId, validUpdateRequest);
+
+      expect(result).toEqual({ id: testAdminId });
+      expect(mockAdministrationRepository.updateWithAssignments).toHaveBeenCalledWith(
+        testAdminId,
+        expect.objectContaining({
+          administration: expect.objectContaining({
+            name: 'Updated Name',
+            description: 'Updated description',
+          }),
+        }),
+      );
+    });
+
+    it('should throw conflict error when name already exists', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(true);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, { name: 'Duplicate Name' }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.CONFLICT,
+        message: ApiErrorMessage.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+    });
+
+    it('should throw validation error when dateEnd is before dateStart', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          dateStart: '2024-12-31T00:00:00Z',
+          dateEnd: '2024-01-01T00:00:00Z',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw validation error when new dateEnd is before existing dateStart', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          dateEnd: '2023-01-01T00:00:00Z',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw validation error when orderIndex values are not unique for ordered administration', async () => {
+      const orderedAdmin = AdministrationFactory.build({
+        ...existingAdmin,
+        isOrdered: true,
+      });
+      mockAdministrationRepository.getById.mockResolvedValue(orderedAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          taskVariants: [
+            { taskVariantId: 'tv-1', orderIndex: 0 },
+            { taskVariantId: 'tv-2', orderIndex: 0 },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw validation error when no orgs, classes, or groups remain after update', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          orgs: [],
+          classes: [],
+          groups: [],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw validation error when task variants array is empty', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          taskVariants: [],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw validation error when referenced org does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const mockDistrictRepo = createMockDistrictRepository();
+      const mockSchoolRepo = createMockSchoolRepository();
+      mockDistrictRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+      mockSchoolRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        districtRepository: mockDistrictRepo,
+        schoolRepository: mockSchoolRepo,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          orgs: ['non-existent-org'],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw validation error when referenced task variant does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        taskVariantRepository: mockTaskVariantRepo,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          taskVariants: [{ taskVariantId: 'non-existent-tv', orderIndex: 0 }],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should throw validation error when task variant is not published', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+
+      const unpublishedVariant = TaskVariantFactory.build({
+        id: 'tv-1',
+        status: TaskVariantStatus.DRAFT,
+      });
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [unpublishedVariant], totalItems: 1 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        taskVariantRepository: mockTaskVariantRepo,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          taskVariants: [{ taskVariantId: 'tv-1', orderIndex: 0 }],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    describe('FGA tuple management', () => {
+      it('should add FGA tuples when new orgs are assigned', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const existingDistrict = OrgFactory.build({ id: 'district-1', orgType: 'district' });
+        const newDistrict = OrgFactory.build({ id: 'district-2', orgType: 'district' });
+        mockDistrictRepo.listByIds.mockResolvedValue({ items: [existingDistrict, newDistrict], totalItems: 2 });
+        mockSchoolRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.update(superAdminAuthContext, testAdminId, {
+          orgs: ['district-1', 'district-2'],
+        });
+
+        expect(mockAuthorizationService.writeTuplesOrThrow).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              user: 'district:district-2',
+              relation: 'assigned_district',
+              object: `administration:${testAdminId}`,
+            }),
+          ]),
+        );
+      });
+
+      it('should remove FGA tuples when orgs are unassigned', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [
+            { id: 'district-1', name: 'District 1' },
+            { id: 'district-2', name: 'District 2' },
+          ],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const district1 = OrgFactory.build({ id: 'district-1', orgType: 'district' });
+        mockDistrictRepo.listByIds.mockResolvedValue({ items: [district1], totalItems: 1 });
+        mockSchoolRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.update(superAdminAuthContext, testAdminId, {
+          orgs: ['district-1'],
+        });
+
+        expect(mockAuthorizationService.deleteTuples).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              user: 'district:district-2',
+              relation: 'assigned_district',
+              object: `administration:${testAdminId}`,
+            }),
+          ]),
+        );
+      });
+
+      it('should compensate FGA changes when database update fails', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockRejectedValue(new Error('Database error'));
+
+        const mockDistrictRepo = createMockDistrictRepository();
+        const mockSchoolRepo = createMockSchoolRepository();
+        const existingDistrict = OrgFactory.build({ id: 'district-1', orgType: 'district' });
+        const newDistrict = OrgFactory.build({ id: 'district-2', orgType: 'district' });
+        mockDistrictRepo.listByIds.mockResolvedValue({ items: [existingDistrict, newDistrict], totalItems: 2 });
+        mockSchoolRepo.listByIds.mockResolvedValue({ items: [], totalItems: 0 });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          districtRepository: mockDistrictRepo,
+          schoolRepository: mockSchoolRepo,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await expect(
+          service.update(superAdminAuthContext, testAdminId, {
+            orgs: ['district-1', 'district-2'],
+          }),
+        ).rejects.toThrow();
+
+        expect(mockAuthorizationService.writeTuplesOrThrow).toHaveBeenCalled();
+
+        expect(mockAuthorizationService.deleteTuples).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              user: 'district:district-2',
+              relation: 'assigned_district',
+              object: `administration:${testAdminId}`,
+            }),
+          ]),
+        );
+      });
+    });
+  });
 });

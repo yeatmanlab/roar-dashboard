@@ -1990,7 +1990,6 @@ describe('AdministrationsController', () => {
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
       const result = await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
-
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
@@ -2133,7 +2132,6 @@ describe('AdministrationsController', () => {
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
       const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
-
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
@@ -2154,6 +2152,138 @@ describe('AdministrationsController', () => {
       await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
 
       expect(mockListStudentScores).toHaveBeenCalledWith(mockAuthContext, testAdminId, studentScoresQuery);
+    });
+  });
+
+  describe('update', () => {
+    const validUpdateBody = {
+      name: 'Updated Administration Name',
+      description: 'Updated description',
+    };
+
+    it('should return 200 with administration ID on successful update', async () => {
+      const mockResult = { id: 'admin-123' };
+      mockUpdate.mockResolvedValue(mockResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toEqual({ data: { id: 'admin-123' } });
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'admin-123', validUpdateBody);
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { administrationId: 'non-existent-id' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'non-existent-id', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+      }
+    });
+
+    it('should return 403 when user is not a super admin', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId: 'user-123' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      }
+    });
+
+    it('should return 422 when validation fails', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { reason: 'dateEnd must be after dateStart' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', {
+        dateStart: '2024-12-31T00:00:00Z',
+        dateEnd: '2024-01-01T00:00:00Z',
+      });
+
+      expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      }
+    });
+
+    it('should return 409 when name conflicts with existing administration', async () => {
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { name: 'Duplicate Name' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', { name: 'Duplicate Name' });
+
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+      }
+    });
+
+    it('should return 500 when internal server error occurs', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('should throw when service throws unexpected error', async () => {
+      const error = new Error('Unexpected error');
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.update(mockAuthContext, 'admin-123', validUpdateBody)).rejects.toThrow(
+        'Unexpected error',
+      );
     });
   });
 });

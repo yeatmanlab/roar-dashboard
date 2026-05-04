@@ -1524,7 +1524,6 @@ export function AdministrationService({
       }
 
       // Validate unique orderIndex values when isOrdered is true and taskVariants are being updated
-      // TODO: if effectiveIsOrdered is true, validate that all taskVariants have orderIndex values regardless of whether they are being updated
       if (effectiveIsOrdered && request.taskVariants !== undefined) {
         const orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
         const uniqueIndices = new Set(orderIndices);
