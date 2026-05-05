@@ -1,6 +1,6 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { ScoreOverviewQuerySchema, ScoreOverviewResponseSchema } from './schema';
+import { ScoreOverviewQuerySchema, ScoreOverviewResponseSchema, ScoreDistributionResponseSchema } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../../../response';
 
 const c = initContract();
@@ -43,7 +43,7 @@ export const ScoreReportsContract = c.router({
     pathParams: z.object({ id: z.string().uuid() }),
     query: ScoreOverviewQuerySchema,
     responses: {
-      200: SuccessEnvelopeSchema(ScoreOverviewResponseSchema),
+      200: SuccessEnvelopeSchema(ScoreDistributionResponseSchema),
       400: ErrorEnvelopeSchema,
       401: ErrorEnvelopeSchema,
       403: ErrorEnvelopeSchema,
