@@ -320,6 +320,7 @@ describe('AdministrationRepository', () => {
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
       expect(mockTx.insert).toHaveBeenCalled();
       expect(mockTx.delete).toHaveBeenCalled();
+      expect(mockTx.onConflictDoNothing).toHaveBeenCalled();
       expect(result).toEqual({ id: administrationId });
     });
 

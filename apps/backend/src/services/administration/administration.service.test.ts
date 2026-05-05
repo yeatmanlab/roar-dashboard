@@ -4520,6 +4520,102 @@ describe('AdministrationService', () => {
       });
     });
 
+    it('should throw validation error when setting isOrdered=true and existing task variants have duplicate orderIndex', async () => {
+      // Existing admin is not ordered
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      // Existing task variants have duplicate orderIndex values
+      // Only assignment.orderIndex is accessed by the service
+      mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
+        items: [{ assignment: { orderIndex: 0 } }, { assignment: { orderIndex: 0 } }] as never,
+        totalItems: 2,
+      });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      // Setting isOrdered=true without providing taskVariants should validate existing task variants
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          isOrdered: true,
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('should allow setting isOrdered=true when existing task variants have unique orderIndex', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+      // Only assignment.orderIndex is accessed by the service
+      mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
+        items: [{ assignment: { orderIndex: 0 } }, { assignment: { orderIndex: 1 } }] as never,
+        totalItems: 2,
+      });
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+      mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+      mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      const result = await service.update(superAdminAuthContext, testAdminId, {
+        isOrdered: true,
+      });
+
+      expect(result).toEqual({ id: testAdminId });
+      expect(mockAdministrationRepository.getTaskVariantsByAdministrationId).toHaveBeenCalledWith(testAdminId, false, {
+        page: 1,
+        perPage: 1000,
+      });
+    });
+
+    it('should skip existing task variant validation when taskVariants are provided in request', async () => {
+      const orderedAdmin = AdministrationFactory.build({
+        ...existingAdmin,
+        isOrdered: true,
+      });
+      mockAdministrationRepository.getById.mockResolvedValue(orderedAdmin);
+      mockAdministrationRepository.getAssignees.mockResolvedValue({
+        districts: [{ id: 'district-1', name: 'District 1' }],
+        schools: [],
+        classes: [],
+        groups: [],
+      });
+      mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+      mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+      const mockTaskVariantRepo = createMockTaskVariantRepository();
+      const publishedVariant1 = TaskVariantFactory.build({ id: 'tv-1', status: TaskVariantStatus.PUBLISHED });
+      const publishedVariant2 = TaskVariantFactory.build({ id: 'tv-2', status: TaskVariantStatus.PUBLISHED });
+      mockTaskVariantRepo.getByIds.mockResolvedValue({ items: [publishedVariant1, publishedVariant2], totalItems: 2 });
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        taskVariantRepository: mockTaskVariantRepo,
+        authorizationService: mockAuthorizationService,
+      });
+
+      // Providing taskVariants in request should use those for validation, not fetch existing
+      const result = await service.update(superAdminAuthContext, testAdminId, {
+        taskVariants: [
+          { taskVariantId: 'tv-1', orderIndex: 0 },
+          { taskVariantId: 'tv-2', orderIndex: 1 },
+        ],
+      });
+
+      expect(result).toEqual({ id: testAdminId });
+      // Should NOT call getTaskVariantsByAdministrationId when taskVariants are provided
+      expect(mockAdministrationRepository.getTaskVariantsByAdministrationId).not.toHaveBeenCalled();
+    });
+
     it('should throw validation error when no orgs, classes, or groups remain after update', async () => {
       mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
       mockAdministrationRepository.getAssignees.mockResolvedValue({

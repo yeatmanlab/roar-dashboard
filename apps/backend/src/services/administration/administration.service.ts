@@ -1535,22 +1535,36 @@ export function AdministrationService({
             context: { userId, administrationId, reason: 'Duplicate taskVariantId values in request' },
           });
         }
+      }
 
-        // Validate unique orderIndex values when isOrdered is true and taskVariants are being updated
-        if (effectiveIsOrdered) {
-          const orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
-          const uniqueIndices = new Set(orderIndices);
-          if (uniqueIndices.size !== orderIndices.length) {
-            throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-              statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-              code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-              context: {
-                userId,
-                administrationId,
-                reason: 'Task variant orderIndex values must be unique when isOrdered is true',
-              },
-            });
-          }
+      // Validate unique orderIndex values when isOrdered is true
+      if (effectiveIsOrdered) {
+        let orderIndices: number[];
+
+        if (request.taskVariants !== undefined) {
+          // Validate orderIndex uniqueness in the request
+          orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
+        } else {
+          // Validate existing task variants have unique orderIndex values
+          const existingTaskVariants = await administrationRepository.getTaskVariantsByAdministrationId(
+            administrationId,
+            false,
+            { page: 1, perPage: 1000 },
+          );
+          orderIndices = existingTaskVariants.items.map((tv) => tv.assignment.orderIndex);
+        }
+
+        const uniqueIndices = new Set(orderIndices);
+        if (uniqueIndices.size !== orderIndices.length) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: {
+              userId,
+              administrationId,
+              reason: 'Task variant orderIndex values must be unique when isOrdered is true',
+            },
+          });
         }
       }
 

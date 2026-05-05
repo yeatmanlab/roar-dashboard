@@ -1175,7 +1175,7 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     tx: NodePgDatabase<typeof CoreDbSchema>,
     options: {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      table: any;
+      table: any; // Drizzle junction table types are complex generics; typed via administrationIdColumn and entityIdColumn
       administrationIdColumn: PgColumn;
       entityIdColumn: PgColumn;
       administrationId: string;
