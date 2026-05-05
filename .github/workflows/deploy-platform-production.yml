@@ -51,16 +51,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify tag commit is on main
+      - name: Verify tags exist on main
         run: |
-          TAG_SHA="${{ github.sha }}"
-          # When triggered via workflow_call, github.ref_name is not set; use inputs.version instead
-          TAG_NAME="${{ github.ref_name || format('backend-v{0}', inputs.version) }}"
-          if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
-            echo "::error::Tag ${TAG_NAME} (${TAG_SHA}) is not on the main branch. Aborting."
-            exit 1
-          fi
-          echo "Tag ${TAG_NAME} is on main."
+          # Determine version: use inputs.version for workflow_call, github.ref_name for push trigger
+          VERSION="${{ inputs.version || github.ref_name }}"
+          
+          # Remove tag prefix if present (e.g., "backend-v3.27.0" -> "3.27.0")
+          VERSION="${VERSION#backend-v}"
+          
+          # Verify all three platform tags exist and are on main
+          for PREFIX in backend dashboard api-contract; do
+            TAG="${PREFIX}-v${VERSION}"
+            TAG_SHA=$(git rev-list -n1 "refs/tags/${TAG}" 2>/dev/null || true)
+            
+            if [ -z "$TAG_SHA" ]; then
+              echo "::error::Tag ${TAG} not found."
+              exit 1
+            fi
+            
+            if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
+              echo "::error::Tag ${TAG} (${TAG_SHA}) is not on the main branch. Aborting."
+              exit 1
+            fi
+            
+            echo "✓ Tag ${TAG} verified on main"
+          done
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Production deployment approval
@@ -199,4 +214,4 @@ jobs:
         with:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
-          version: ${{ github.ref_name || inputs.version }}
+          version: ${{ inputs.version || github.ref_name }}
