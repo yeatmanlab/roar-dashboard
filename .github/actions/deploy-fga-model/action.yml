@@ -1,0 +1,65 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/deploy-fga-model
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Deploy FGA Authorization Model
+description: Deploys the OpenFGA authorization model and updates the FGA_MODEL_ID secret in Secret Manager.
+
+inputs:
+  gcp-workload-identity-provider:
+    description: "The GCP workload identity provider for authentication."
+    required: true
+  gcp-service-account:
+    description: "The GCP service account email."
+    required: true
+  fga-api-url:
+    description: "The OpenFGA server URL."
+    required: true
+  fga-store-id:
+    description: "The OpenFGA store ID."
+    required: true
+  fga-oidc-audience:
+    description: "The OIDC audience for the FGA service."
+    required: true
+  project-id:
+    description: "The GCP project ID."
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Authenticate with GCP (identity token)
+      id: auth-fga
+      uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+        service_account: ${{ inputs.gcp-service-account }}
+        token_format: id_token
+        id_token_audience: ${{ inputs.fga-oidc-audience }}
+        id_token_include_email: true
+
+    - name: Authenticate with GCP (access token)
+      id: auth-gcp
+      uses: google-github-actions/auth@v3
+      with:
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+        service_account: ${{ inputs.gcp-service-account }}
+
+    - name: Deploy FGA authorization model
+      id: deploy-model
+      uses: openfga/action-openfga-deploy@v0.3.1
+      with:
+        api-url: ${{ inputs.fga-api-url }}
+        store-id: ${{ inputs.fga-store-id }}
+        model-file-path: packages/authz/authorization-model.fga
+        api-token: ${{ steps.auth-fga.outputs.id_token }}
+
+    - name: Update FGA_MODEL_ID in Secret Manager
+      shell: bash
+      env:
+        MODEL_ID: ${{ steps.deploy-model.outputs.authorization_model_id }}
+        PROJECT_ID: ${{ inputs.project-id }}
+      run: |
+        echo "Deployed FGA model: ${MODEL_ID}"
+        echo -n "${MODEL_ID}" | gcloud secrets versions add FGA_MODEL_ID \
+          --project="${PROJECT_ID}" --data-file=-
