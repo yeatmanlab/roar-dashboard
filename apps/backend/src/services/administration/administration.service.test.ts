@@ -4772,6 +4772,229 @@ describe('AdministrationService', () => {
       });
     });
 
+    describe('partial updates', () => {
+      it('should update only name when only name is provided', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.update(superAdminAuthContext, testAdminId, { name: 'New Name Only' });
+
+        expect(mockAdministrationRepository.updateWithAssignments).toHaveBeenCalledWith(
+          testAdminId,
+          expect.objectContaining({
+            administration: expect.objectContaining({
+              name: 'New Name Only',
+            }),
+          }),
+        );
+        // Should not include other fields that weren't provided
+        const callArgs = mockAdministrationRepository.updateWithAssignments.mock.calls[0]?.[1];
+        expect(callArgs?.administration?.description).toBeUndefined();
+        expect(callArgs?.administration?.namePublic).toBeUndefined();
+      });
+
+      it('should update only description when only description is provided', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.update(superAdminAuthContext, testAdminId, { description: 'New description only' });
+
+        expect(mockAdministrationRepository.updateWithAssignments).toHaveBeenCalledWith(
+          testAdminId,
+          expect.objectContaining({
+            administration: expect.objectContaining({
+              description: 'New description only',
+            }),
+          }),
+        );
+        // Should not check name uniqueness when name is not being updated
+        expect(mockAdministrationRepository.existsByNameExcludingId).not.toHaveBeenCalled();
+      });
+
+      it('should update only dates when only dateStart and dateEnd are provided', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.update(superAdminAuthContext, testAdminId, {
+          dateStart: '2025-01-01T00:00:00Z',
+          dateEnd: '2025-12-31T00:00:00Z',
+        });
+
+        expect(mockAdministrationRepository.updateWithAssignments).toHaveBeenCalledWith(
+          testAdminId,
+          expect.objectContaining({
+            administration: expect.objectContaining({
+              dateStart: new Date('2025-01-01T00:00:00Z'),
+              dateEnd: new Date('2025-12-31T00:00:00Z'),
+            }),
+          }),
+        );
+      });
+
+      it('should update only isOrdered when only isOrdered is provided', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.getTaskVariantsByAdministrationId.mockResolvedValue({
+          items: [{ assignment: { orderIndex: 0 } }, { assignment: { orderIndex: 1 } }] as never,
+          totalItems: 2,
+        });
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.update(superAdminAuthContext, testAdminId, { isOrdered: true });
+
+        expect(mockAdministrationRepository.updateWithAssignments).toHaveBeenCalledWith(
+          testAdminId,
+          expect.objectContaining({
+            administration: expect.objectContaining({
+              isOrdered: true,
+            }),
+          }),
+        );
+      });
+
+      it('should preserve existing entity assignments when not provided in request', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [{ id: 'school-1', name: 'School 1', parentOrgId: 'district-1' }],
+          classes: [{ id: 'class-1', name: 'Class 1', schoolId: 'school-1', districtId: 'district-1' }],
+          groups: [{ id: 'group-1', name: 'Group 1' }],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        // Only update name, should not touch entity assignments
+        await service.update(superAdminAuthContext, testAdminId, { name: 'Updated Name' });
+
+        const callArgs = mockAdministrationRepository.updateWithAssignments.mock.calls[0]?.[1];
+        // Entity arrays should be undefined (not updated) when not provided
+        expect(callArgs?.orgIds).toBeUndefined();
+        expect(callArgs?.classIds).toBeUndefined();
+        expect(callArgs?.groupIds).toBeUndefined();
+      });
+
+      it('should validate dateEnd against existing dateStart when only dateEnd is provided', async () => {
+        // existingAdmin has dateStart: 2024-01-01
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        // Try to set dateEnd before existing dateStart
+        await expect(
+          service.update(superAdminAuthContext, testAdminId, {
+            dateEnd: '2023-06-01T00:00:00Z',
+          }),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      });
+
+      it('should validate dateStart against existing dateEnd when only dateStart is provided', async () => {
+        // existingAdmin has dateEnd: 2024-12-31
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+        });
+
+        // Try to set dateStart after existing dateEnd
+        await expect(
+          service.update(superAdminAuthContext, testAdminId, {
+            dateStart: '2025-06-01T00:00:00Z',
+          }),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      });
+
+      it('should allow updating multiple fields at once', async () => {
+        mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+        mockAdministrationRepository.existsByNameExcludingId.mockResolvedValue(false);
+        mockAdministrationRepository.getAssignees.mockResolvedValue({
+          districts: [{ id: 'district-1', name: 'District 1' }],
+          schools: [],
+          classes: [],
+          groups: [],
+        });
+        mockAdministrationRepository.updateWithAssignments.mockResolvedValue({ id: testAdminId });
+
+        const service = AdministrationService({
+          administrationRepository: mockAdministrationRepository,
+          authorizationService: mockAuthorizationService,
+        });
+
+        await service.update(superAdminAuthContext, testAdminId, {
+          name: 'Updated Name',
+          description: 'Updated description',
+          namePublic: 'Updated Public Name',
+        });
+
+        expect(mockAdministrationRepository.updateWithAssignments).toHaveBeenCalledWith(
+          testAdminId,
+          expect.objectContaining({
+            administration: expect.objectContaining({
+              name: 'Updated Name',
+              description: 'Updated description',
+              namePublic: 'Updated Public Name',
+            }),
+          }),
+        );
+      });
+    });
+
     describe('FGA tuple management', () => {
       it('should add FGA tuples when new orgs are assigned', async () => {
         mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
