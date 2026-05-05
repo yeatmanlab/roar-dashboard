@@ -55,6 +55,7 @@ import { TaskVariantRepository } from '../../repositories/task-variant.repositor
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { Condition } from '../../types/condition';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
+import { verifyEntitiesExist } from '../../repositories/utils/validations.utils';
 
 /**
  * Administration with optional embedded data.
@@ -1633,15 +1634,7 @@ export function AdministrationService({
         });
         existingDistrictIds = existingDistricts.map((d) => d.id);
         existingSchoolIds = existingSchools.map((s) => s.id);
-        const existingOrgsIdSet = new Set([...existingDistrictIds, ...existingSchoolIds]);
-        const missingOrgs = request.orgs.filter((orgId) => !existingOrgsIdSet.has(orgId));
-        if (missingOrgs.length > 0) {
-          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { userId, administrationId, missingOrgs },
-          });
-        }
+        verifyEntitiesExist([...existingDistricts, ...existingSchools], request.orgs);
       }
 
       // Verify classes exist if being updated
@@ -1650,15 +1643,7 @@ export function AdministrationService({
           page: 1,
           perPage: request.classes.length,
         });
-        const existingClassIdSet = new Set(existingClasses.map((c) => c.id));
-        const missingClasses = request.classes.filter((id) => !existingClassIdSet.has(id));
-        if (missingClasses.length > 0) {
-          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { userId, administrationId, missingClasses },
-          });
-        }
+        verifyEntitiesExist(existingClasses, request.classes);
       }
 
       // Verify groups exist if being updated
@@ -1667,15 +1652,7 @@ export function AdministrationService({
           page: 1,
           perPage: request.groups.length,
         });
-        const existingGroupIdSet = new Set(existingGroups.map((g) => g.id));
-        const missingGroups = request.groups.filter((id) => !existingGroupIdSet.has(id));
-        if (missingGroups.length > 0) {
-          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { userId, administrationId, missingGroups },
-          });
-        }
+        verifyEntitiesExist(existingGroups, request.groups);
       }
 
       // Verify task variants exist and are published if being updated
@@ -1685,15 +1662,7 @@ export function AdministrationService({
           page: 1,
           perPage: taskVariantIds.length,
         });
-        const existingTaskVariantIdSet = new Set(existingTaskVariants.map((tv) => tv.id));
-        const missingTaskVariants = taskVariantIds.filter((id) => !existingTaskVariantIdSet.has(id));
-        if (missingTaskVariants.length > 0) {
-          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { userId, administrationId, missingTaskVariants },
-          });
-        }
+        verifyEntitiesExist(existingTaskVariants, taskVariantIds);
 
         // Verify all task variants are published
         const unpublishedTaskVariants = existingTaskVariants
@@ -1714,15 +1683,7 @@ export function AdministrationService({
           page: 1,
           perPage: request.agreements.length,
         });
-        const existingAgreementIdSet = new Set(existingAgreements.map((a) => a.id));
-        const missingAgreements = request.agreements.filter((id) => !existingAgreementIdSet.has(id));
-        if (missingAgreements.length > 0) {
-          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
-            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-            context: { userId, administrationId, missingAgreements },
-          });
-        }
+        verifyEntitiesExist(existingAgreements, request.agreements);
       }
 
       // Build the update input
@@ -1766,8 +1727,8 @@ export function AdministrationService({
 
       if (entityAssignmentsChanged) {
         // Determine new district and school IDs (already validated above)
-        const finalDistrictIds = request.orgs !== undefined ? newDistrictIds : currentAssigneeIds.districtIds;
-        const finalSchoolIds = request.orgs !== undefined ? newSchoolIds : currentAssigneeIds.schoolIds;
+        const finalDistrictIds = request.orgs !== undefined ? existingDistrictIds : currentAssigneeIds.districtIds;
+        const finalSchoolIds = request.orgs !== undefined ? existingSchoolIds : currentAssigneeIds.schoolIds;
         const finalClassIds = request.classes ?? currentAssigneeIds.classIds;
         const finalGroupIds = request.groups ?? currentAssigneeIds.groupIds;
 
