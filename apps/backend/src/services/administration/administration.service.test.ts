@@ -4520,6 +4520,26 @@ describe('AdministrationService', () => {
       });
     });
 
+    it('should throw validation error when taskVariants contain duplicate taskVariantIds', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+      });
+
+      await expect(
+        service.update(superAdminAuthContext, testAdminId, {
+          taskVariants: [
+            { taskVariantId: 'tv-1', orderIndex: 0 },
+            { taskVariantId: 'tv-1', orderIndex: 1 },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
     it('should throw validation error when setting isOrdered=true and existing task variants have duplicate orderIndex', async () => {
       // Existing admin is not ordered
       mockAdministrationRepository.getById.mockResolvedValue(existingAdmin);
