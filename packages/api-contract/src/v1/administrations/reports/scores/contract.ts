@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   ScoreOverviewQuerySchema,
   ScoreOverviewResponseSchema,
+  ScoreDistributionResponseSchema,
   StudentScoresQuerySchema,
   StudentScoresResponseSchema,
   IndividualStudentReportQuerySchema,
@@ -126,7 +127,7 @@ export const ScoreReportsContract = c.router({
     pathParams: z.object({ id: z.string().uuid() }),
     query: ScoreOverviewQuerySchema,
     responses: {
-      200: SuccessEnvelopeSchema(ScoreOverviewResponseSchema),
+      200: SuccessEnvelopeSchema(ScoreDistributionResponseSchema),
       400: ErrorEnvelopeSchema,
       401: ErrorEnvelopeSchema,
       403: ErrorEnvelopeSchema,
