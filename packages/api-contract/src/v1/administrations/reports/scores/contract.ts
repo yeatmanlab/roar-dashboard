@@ -37,4 +37,31 @@ export const ScoreReportsContract = c.router({
       '- 404: Administration not found\n' +
       '- 500: Internal server error',
   },
+  getScoreDistributions: {
+    method: 'GET',
+    path: '/:id/reports/scores/facets',
+    pathParams: z.object({ id: z.string().uuid() }),
+    query: ScoreOverviewQuerySchema,
+    responses: {
+      200: SuccessEnvelopeSchema(ScoreOverviewResponseSchema),
+      400: ErrorEnvelopeSchema,
+      401: ErrorEnvelopeSchema,
+      403: ErrorEnvelopeSchema,
+      404: ErrorEnvelopeSchema,
+      500: ErrorEnvelopeSchema,
+    },
+    strictStatusCodes: true,
+    summary: 'Get score distribution facets for an administration',
+    description:
+      'Returns aggregated support level distributions per task for all students in scope. ' +
+      'Not paginated — aggregates across the full population. ' +
+      'Scoped to a specific org, class, or group via scopeType/scopeId.\n\n' +
+      'Status codes:\n' +
+      '- 200: Aggregated statistics returned successfully\n' +
+      '- 400: Invalid scope (scopeId not assigned to this administration)\n' +
+      '- 401: Missing or invalid authentication token\n' +
+      '- 403: User lacks can_read_scores at the requested administration or scope level\n' +
+      '- 404: Administration not found\n' +
+      '- 500: Internal server error',
+  },
 });

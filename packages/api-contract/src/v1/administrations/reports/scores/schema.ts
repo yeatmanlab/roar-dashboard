@@ -33,6 +33,12 @@ export const SupportLevelEntrySchema = z.object({
 
 export type SupportLevelEntry = z.infer<typeof SupportLevelEntrySchema>;
 
+const SupportLevelSchema = z.object({
+  achievedSkill: SupportLevelEntrySchema,
+  developingSkill: SupportLevelEntrySchema,
+  needsExtraSupport: SupportLevelEntrySchema,
+});
+
 /**
  * Per-task score overview with support level distribution.
  */
@@ -45,11 +51,7 @@ export const TaskScoreOverviewSchema = ReportTaskMetadataSchema.extend({
     optional: z.number().int(),
   }),
   /** Support level distribution (only for assessed students) */
-  supportLevels: z.object({
-    achievedSkill: SupportLevelEntrySchema,
-    developingSkill: SupportLevelEntrySchema,
-    needsExtraSupport: SupportLevelEntrySchema,
-  }),
+  supportLevels: SupportLevelSchema,
 });
 
 export type TaskScoreOverview = z.infer<typeof TaskScoreOverviewSchema>;
@@ -65,3 +67,54 @@ export const ScoreOverviewResponseSchema = z.object({
 });
 
 export type ScoreOverviewResponse = z.infer<typeof ScoreOverviewResponseSchema>;
+
+/**
+ * Schemas part of the score distribution response
+ */
+const SupportLevelByGradeSchema = SupportLevelSchema.extend({
+  grade: z.string(),
+  totalAssessed: z.number().int(),
+});
+
+// AMY TODO: Why is it optional for schoolName?
+const SupportLevelBySchoolSchema = SupportLevelSchema.extend({
+  schoolId: z.string().uuid(),
+  schoolName: z.string().nullable().optional(),
+  totalAssessed: z.number().int(),
+});
+
+const ScoreBinSchema = z.object({
+  binStart: z.number(),
+  binEnd: z.number(),
+  count: z.number().int(),
+});
+
+const ScoreBinsByGradeSchema = z.object({
+  grade: z.string(),
+  rawScore: z.array(ScoreBinSchema),
+  percentile: z.array(ScoreBinSchema),
+});
+
+const ScoreBinsBySchoolSchema = z.object({
+  schoolId: z.string().uuid(),
+  schoolName: z.string().nullable().optional(),
+  rawScore: z.array(ScoreBinSchema),
+  percentile: z.array(ScoreBinSchema),
+});
+
+const TaskScoreDistributionSchema = ReportTaskMetadataSchema.extend({
+  supportLevelByGrade: z.array(SupportLevelByGradeSchema),
+  supportLevelBySchool: z.array(SupportLevelBySchoolSchema),
+  scoreBinsByGrade: z.array(ScoreBinsByGradeSchema),
+  scoreBinsBySchool: z.array(ScoreBinsBySchoolSchema),
+});
+
+/**
+ * Response schema for score distribution facets endpoint
+ */
+export const ScoreDistributionResponseSchema = z.object({
+  totalStudents: z.number().int(),
+  tasks: z.array(TaskScoreDistributionSchema),
+  /** Server timestamp when the aggregation was computed (ISO 8601) */
+  computedAt: z.string().datetime(),
+});
