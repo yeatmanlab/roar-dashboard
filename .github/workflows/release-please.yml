@@ -23,6 +23,9 @@ jobs:
       dashboard_tag_name: ${{ steps.release.outputs.dashboard--tag_name }}
       api_contract_tag_name: ${{ steps.release.outputs.api-contract--tag_name }}
       assessment_sdk_tag_name: ${{ steps.release.outputs.assessment-sdk--tag_name }}
+      backend_version: ${{ steps.release.outputs.backend--version }}
+      dashboard_version: ${{ steps.release.outputs.dashboard--version }}
+      api_contract_version: ${{ steps.release.outputs.api-contract--version }}
     steps:
       - name: Run Release Please
         id: release
@@ -32,3 +35,19 @@ jobs:
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.GITHUB_TOKEN }}
           target-branch: main
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Trigger platform deployment on release
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  trigger-platform-deployment:
+    name: Trigger Platform Deployment
+    needs: release-please
+    if: |
+      needs.release-please.outputs.releases_created == 'true' &&
+      needs.release-please.outputs.backend_release_created == 'true'
+    uses: ./.github/workflows/deploy-platform-production.yml
+    with:
+      version: ${{ needs.release-please.outputs.backend_version }}
+      backend_release_created: ${{ needs.release-please.outputs.backend_release_created == 'true' }}
+      dashboard_release_created: ${{ needs.release-please.outputs.dashboard_release_created == 'true' }}
+      api_contract_release_created: ${{ needs.release-please.outputs.api_contract_release_created == 'true' }}

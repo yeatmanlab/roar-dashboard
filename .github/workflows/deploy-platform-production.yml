@@ -1,13 +1,28 @@
 name: Deploy Platform to Production
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Release version (e.g., 3.27.0)"
+        type: string
+        required: true
+      backend_release_created:
+        description: "Whether backend was released"
+        type: boolean
+        required: true
+      dashboard_release_created:
+        description: "Whether dashboard was released"
+        type: boolean
+        required: true
+      api_contract_release_created:
+        description: "Whether api-contract was released"
+        type: boolean
+        required: true
   push:
     tags:
-      # Platform releases: trigger on backend tag only.
-      # Release Please creates all three tags (backend, dashboard, api-contract) simultaneously,
-      # but only backend needs infrastructure deployment. api-contract is a TypeScript package
-      # published to npm, not deployed to Cloud Run. Dashboard is deployed as part of the
-      # backend release. Triggering on backend-v* only prevents triple deployments.
+      # Fallback: trigger on backend tag for manual releases or if release-please.yml is not updated.
+      # Normally, release-please.yml calls this workflow via workflow_call with version inputs.
       - "backend-v[0-9]+.[0-9]+.[0-9]+"
       - "backend-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
       - "backend-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
@@ -39,11 +54,13 @@ jobs:
       - name: Verify tag commit is on main
         run: |
           TAG_SHA="${{ github.sha }}"
+          # When triggered via workflow_call, github.ref_name is not set; use inputs.version instead
+          TAG_NAME="${{ github.ref_name || format('backend-v{0}', inputs.version) }}"
           if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
-            echo "::error::Tag ${{ github.ref_name }} (${TAG_SHA}) is not on the main branch. Aborting."
+            echo "::error::Tag ${TAG_NAME} (${TAG_SHA}) is not on the main branch. Aborting."
             exit 1
           fi
-          echo "Tag ${{ github.ref_name }} is on main."
+          echo "Tag ${TAG_NAME} is on main."
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Production deployment approval
@@ -182,4 +199,4 @@ jobs:
         with:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
-          version: ${{ github.ref_name }}
+          version: ${{ github.ref_name || inputs.version }}
