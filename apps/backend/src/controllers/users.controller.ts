@@ -292,7 +292,6 @@ export const UsersController = {
     }
   },
 
-
   /**
    * Get a longitudinal student score report for a guardian or supervisory caller.
    *
@@ -320,7 +319,6 @@ export const UsersController = {
         // validation failures, which surface before this handler runs — so
         // BAD_REQUEST is intentionally absent from the ApiError mapping list.
         return toErrorResponse(error, [
-          StatusCodes.UNAUTHORIZED,
           StatusCodes.FORBIDDEN,
           StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
