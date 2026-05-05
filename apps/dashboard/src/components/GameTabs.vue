@@ -184,7 +184,7 @@
             </div>
             <div class="roar-game-image">
               <div
-                v-if="game.taskData?.tutorialVideo && userData?.studentData?.grade <= 3"
+                v-if="game.taskData?.tutorialVideo && getGrade(userData?.studentData?.grade) <= 3"
                 class="video-player-wrapper"
               >
                 <VideoPlayer
@@ -213,25 +213,25 @@
   </div>
 </template>
 <script setup>
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import _get from 'lodash/get';
-import _find from 'lodash/find';
-import _findIndex from 'lodash/findIndex';
-import { camelize, getAgeData } from '@bdelab/roar-utils';
-import PvTabPanel from 'primevue/tabpanel';
-import PvTabs from 'primevue/tabs';
-import PvTabList from 'primevue/tablist';
-import PvTab from 'primevue/tab';
-import PvTabPanels from 'primevue/tabpanels';
-import PvTag from 'primevue/tag';
-import { useAuthStore } from '@/store/auth';
-import { useGameStore } from '@/store/game';
 import VideoPlayer from '@/components/VideoPlayer.vue';
-import PvMessage from 'primevue/message';
 import { LEVANTE_TASKS } from '@/constants/levanteTasks';
 import { TASKS_EXCLUDED_FROM_RETAKE } from '@/constants/tasksExcludedFromRetake';
+import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
+import { camelize, getAgeData, getGrade } from '@bdelab/roar-utils';
+import _find from 'lodash/find';
+import _findIndex from 'lodash/findIndex';
+import _get from 'lodash/get';
+import { storeToRefs } from 'pinia';
+import PvMessage from 'primevue/message';
+import PvTab from 'primevue/tab';
+import PvTabList from 'primevue/tablist';
+import PvTabPanel from 'primevue/tabpanel';
+import PvTabPanels from 'primevue/tabpanels';
+import PvTabs from 'primevue/tabs';
+import PvTag from 'primevue/tag';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
   games: { type: Array, required: true },
