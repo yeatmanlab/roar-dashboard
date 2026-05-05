@@ -1,4 +1,4 @@
-name: Release Please
+name: Release
 
 on:
   push:
@@ -52,6 +52,3 @@ jobs:
     secrets: inherit
     with:
       version: ${{ needs.release-please.outputs.backend_version }}
-      backend_release_created: ${{ needs.release-please.outputs.backend_release_created == 'true' }}
-      dashboard_release_created: ${{ needs.release-please.outputs.dashboard_release_created == 'true' }}
-      api_contract_release_created: ${{ needs.release-please.outputs.api_contract_release_created == 'true' }}

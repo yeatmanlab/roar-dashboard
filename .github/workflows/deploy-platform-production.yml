@@ -21,11 +21,6 @@ on:
         required: true
   push:
     tags:
-      # Fallback: trigger on backend tag for manual releases or if release-please.yml is not updated.
-      # Normally, release-please.yml calls this workflow via workflow_call with version inputs.
-      - "backend-v[0-9]+.[0-9]+.[0-9]+"
-      - "backend-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "backend-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -53,10 +48,8 @@ jobs:
 
       - name: Verify tags exist on main
         run: |
-          # Determine version: use inputs.version for workflow_call, github.ref_name for push trigger
-          VERSION="${{ inputs.version || github.ref_name }}"
-          
-          # Remove tag prefix if present (e.g., "backend-v3.27.0" -> "3.27.0")
+          # Determine version
+          VERSION="${{ inputs.version }}"
           VERSION="${VERSION#backend-v}"
           
           # Verify all three platform tags exist and are on main
@@ -222,4 +215,4 @@ jobs:
         with:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
-          version: ${{ inputs.version || github.ref_name }}
+          version: ${{ inputs.version }}
