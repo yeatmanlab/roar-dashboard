@@ -2220,7 +2220,6 @@ describe('GET /v1/users/:userId/administrations/:administrationId', () => {
   });
 });
 
-
 // ═══════════════════════════════════════════════════════════════════════════
 // GET /v1/users/:userId/reports/scores  (#1687 Guardian Student Report)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2250,12 +2249,9 @@ describe('GET /v1/users/:userId/reports/scores', () => {
     });
 
     it('educator tier with class overlap can access a student in their class', async () => {
-      // tiers.educator has TWO active enrollments here: a district-level
-      // TEACHER role from createTierUsers(districtA.id), plus a class-level
-      // TEACHER attached to classInSchoolA in this file's beforeAll. Either
-      // one alone would give them access to classAStudent — the district
-      // path covers descendant classes via ltree, and the class membership
-      // covers the student directly. The test exercises the cross of both.
+      // tiers.educator is assigned to classInSchoolA at class level
+      // in the file's beforeAll. District and school-level educators can only
+      // access students in classes they are explicitly assigned to.
       const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).as(tiers.educator).toReturn(200);
 
       expect(res.body.data.student.userId).toBe(baseFixture.classAStudent.id);

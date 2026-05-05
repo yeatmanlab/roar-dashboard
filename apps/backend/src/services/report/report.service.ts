@@ -1325,7 +1325,7 @@ export function ReportService({
 
       logger.error({ err: error, context: { userId, targetUserId } }, 'Failed to retrieve guardian student report');
 
-      throw new ApiError('Failed to retrieve guardian student report', {
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, targetUserId },
