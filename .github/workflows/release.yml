@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 jobs:
   release-please:
@@ -48,6 +49,7 @@ jobs:
       needs.release-please.outputs.dashboard_release_created == 'true' &&
       needs.release-please.outputs.api_contract_release_created == 'true'
     uses: ./.github/workflows/deploy-platform-production.yml
+    secrets: inherit
     with:
       version: ${{ needs.release-please.outputs.backend_version }}
       backend_release_created: ${{ needs.release-please.outputs.backend_release_created == 'true' }}
