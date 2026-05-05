@@ -13,6 +13,19 @@ export {
 export type { PaSubtaskKey } from './scoring.service';
 export { getScoringConfig, getRegisteredSlugs } from './scoring.config-registry';
 export { ScoringConfigSchema, SCORE_FIELD_TYPES } from './scoring.config-schema';
+export {
+  getTaskSubscoreColumns,
+  getPublicSubscoreColumns,
+  getNumericFieldNameForSubscore,
+  formatTaskSubscoreColumnValue,
+} from './subscore-table.registry';
+export type {
+  TaskSubscoreColumnDef,
+  ItemLevelColumn,
+  NumberColumn,
+  StringPassthroughColumn,
+  PaSkillsToWorkOnColumn,
+} from './subscore-table.registry';
 export type {
   ScoringConfig,
   ScoreFieldType,

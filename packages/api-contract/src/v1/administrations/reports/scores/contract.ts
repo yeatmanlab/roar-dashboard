@@ -7,6 +7,8 @@ import {
   StudentScoresResponseSchema,
   IndividualStudentReportQuerySchema,
   IndividualStudentReportResponseSchema,
+  TaskSubscoresQuerySchema,
+  TaskSubscoresResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../../../response';
 
@@ -118,6 +120,48 @@ export const ScoreReportsContract = c.router({
       '- 401: Missing or invalid authentication token\n' +
       '- 403: User lacks can_read_scores at the requested administration or scope level\n' +
       '- 404: Administration not found, or student not in scope (or rostering-ended)\n' +
+      '- 500: Internal server error',
+  },
+  listTaskSubscores: {
+    method: 'GET',
+    path: '/:id/reports/scores/tasks/:taskId',
+    pathParams: z.object({
+      id: z.string().uuid(),
+      taskId: z.string().uuid(),
+    }),
+    query: TaskSubscoresQuerySchema,
+    responses: {
+      200: SuccessEnvelopeSchema(TaskSubscoresResponseSchema),
+      400: ErrorEnvelopeSchema,
+      401: ErrorEnvelopeSchema,
+      403: ErrorEnvelopeSchema,
+      404: ErrorEnvelopeSchema,
+      500: ErrorEnvelopeSchema,
+    },
+    strictStatusCodes: true,
+    summary: 'List per-student subscore breakdown for a task in an administration',
+    description:
+      'Returns paginated per-student subscore data for a single task in one ' +
+      'administration, scoped to a district/school/class/group. Each row includes ' +
+      "student demographics plus the task's subscore columns — the column set is " +
+      'task-specific and is declared by `subscoreColumns` so the frontend can ' +
+      'render headers without per-task hard-coding.\n\n' +
+      'Subscore values are one of three shapes:\n' +
+      '- Item-level scores ⇒ `"correct/attempted"` strings (e.g., `"15/19"`)\n' +
+      '- Percent / total / raw scores ⇒ numbers\n' +
+      '- Computed lists (skills/letters/sounds to work on) ⇒ comma-separated strings\n\n' +
+      'Sorting and filtering accept dynamic `subscores.<key>` fields in addition to ' +
+      "static user fields. Numeric subscore filters compile against the column's " +
+      'percent-correct value where one is defined; columns without a numeric form ' +
+      'reject numeric operators.\n\n' +
+      'Tasks with no registered subscore schema (e.g., SWR, SRE) return 400 from ' +
+      'this endpoint — the score-overview / student-scores endpoints cover those.\n\n' +
+      'Status codes:\n' +
+      '- 200: Paginated subscore rows returned\n' +
+      '- 400: Invalid scope, task without subscores, or unknown subscore key in sort/filter\n' +
+      '- 401: Missing or invalid authentication token\n' +
+      '- 403: User lacks can_read_scores at the requested administration or scope level\n' +
+      '- 404: Administration or task not found, or task not part of this administration\n' +
       '- 500: Internal server error',
   },
 });
