@@ -7,18 +7,6 @@ on:
         description: "Release version (e.g., 3.27.0)"
         type: string
         required: true
-      backend_release_created:
-        description: "Whether backend was released"
-        type: boolean
-        required: true
-      dashboard_release_created:
-        description: "Whether dashboard was released"
-        type: boolean
-        required: true
-      api_contract_release_created:
-        description: "Whether api-contract was released"
-        type: boolean
-        required: true
   push:
     tags:
 
@@ -50,6 +38,8 @@ jobs:
         run: |
           # Determine version
           VERSION="${{ inputs.version }}"
+          
+          # Remove tag prefix if present (e.g., "backend-v3.27.0" -> "3.27.0")
           VERSION="${VERSION#backend-v}"
           
           # Verify all three platform tags exist and are on main
