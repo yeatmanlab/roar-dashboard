@@ -184,7 +184,7 @@
             </div>
             <div class="roar-game-image">
               <div
-                v-if="game.taskData?.tutorialVideo && userData?.studentData?.grade <= 3"
+                v-if="game.taskData?.tutorialVideo && getGrade(userData?.studentData?.grade) <= 3"
                 class="video-player-wrapper"
               >
                 <VideoPlayer
@@ -219,7 +219,7 @@ import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
-import { camelize, getAgeData } from '@bdelab/roar-utils';
+import { camelize, getAgeData , getGrade } from '@bdelab/roar-utils';
 import PvTabPanel from 'primevue/tabpanel';
 import PvTabs from 'primevue/tabs';
 import PvTabList from 'primevue/tablist';
