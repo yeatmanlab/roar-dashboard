@@ -23,7 +23,7 @@
  * - **`paSkillsToWorkOn`** — special PA-only computed column. Aggregates
  *   the FSM/LSM/DEL subscores against `PA_SKILL_THRESHOLD` (or the legacy
  *   `roarScore` fallback) and emits a comma-separated list of subtasks
- *   the student should work on. Computed by `computeSkillsToWorkOn`.
+ *   the student should work on. Computed by `computePaSkillsToWorkOn`.
  *
  * ### Naming conventions
  *
@@ -346,7 +346,7 @@ export function formatTaskSubscoreColumnValue(args: {
   paSubscores?: Record<string, { correct: number | null; attempted: number | null; percentCorrect: number | null }>;
   /** PA-only: legacy roarScore numeric fallback. */
   paLegacyRoarScore?: number | null;
-  /** PA-only: precomputed skills-to-work-on list (caller already ran computeSkillsToWorkOn). */
+  /** PA-only: precomputed skills-to-work-on list (caller already ran computePaSkillsToWorkOn). */
   paSkillsToWorkOn?: string[] | null;
 }): string | number | null {
   const { column, scoreMap, paSkillsToWorkOn } = args;

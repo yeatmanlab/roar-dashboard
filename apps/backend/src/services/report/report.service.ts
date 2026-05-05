@@ -1388,7 +1388,11 @@ export function ReportService({
 
     try {
       // 1. Authorization (admin + scope FGA)
-      await verifyAdministrationScoreReadAccess(authContext, administrationId);
+      await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
       // 2. Resolve task + variants in this administration. 404 if the task
@@ -1564,7 +1568,7 @@ export function ReportService({
         let paSkillsToWorkOn: string[] | null = null;
         if (taskSlug === 'pa') {
           const paSubscores = extractSubscoresFromScoreMap(scoreMap, taskSlug);
-          paSkillsToWorkOn = computeSkillsToWorkOn(taskSlug, paSubscores);
+          paSkillsToWorkOn = computePaSkillsToWorkOn(taskSlug, paSubscores);
         }
 
         const subscores: Record<string, ServiceTaskSubscoreValue> = {};
