@@ -1618,8 +1618,8 @@ export function AdministrationService({
       }
 
       // Validate that all referenced entities exist
-      let newDistrictIds: string[] = [];
-      let newSchoolIds: string[] = [];
+      let existingDistrictIds: string[] = [];
+      let existingSchoolIds: string[] = [];
 
       // Verify orgs exist (districts and schools) if being updated
       if (request.orgs !== undefined && request.orgs.length > 0) {
@@ -1631,9 +1631,9 @@ export function AdministrationService({
           page: 1,
           perPage: request.orgs.length,
         });
-        newDistrictIds = existingDistricts.map((d) => d.id);
-        newSchoolIds = existingSchools.map((s) => s.id);
-        const existingOrgsIdSet = new Set([...newDistrictIds, ...newSchoolIds]);
+        existingDistrictIds = existingDistricts.map((d) => d.id);
+        existingSchoolIds = existingSchools.map((s) => s.id);
+        const existingOrgsIdSet = new Set([...existingDistrictIds, ...existingSchoolIds]);
         const missingOrgs = request.orgs.filter((orgId) => !existingOrgsIdSet.has(orgId));
         if (missingOrgs.length > 0) {
           throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
