@@ -97,16 +97,16 @@ const ScoreBinsByGradeSchema = z.object({
 
 const ScoreBinsBySchoolSchema = z.object({
   schoolId: z.string().uuid(),
-  schoolName: z.string().nullable().optional(),
+  schoolName: z.string(),
   rawScore: z.array(ScoreBinSchema),
   percentile: z.array(ScoreBinSchema),
 });
 
 const TaskScoreFacetSchema = ReportTaskMetadataSchema.extend({
   supportLevelByGrade: z.array(SupportLevelByGradeSchema),
-  supportLevelBySchool: z.array(SupportLevelBySchoolSchema),
+  supportLevelBySchool: z.array(SupportLevelBySchoolSchema).nullable(),
   scoreBinsByGrade: z.array(ScoreBinsByGradeSchema),
-  scoreBinsBySchool: z.array(ScoreBinsBySchoolSchema),
+  scoreBinsBySchool: z.array(ScoreBinsBySchoolSchema).nullable(),
 });
 
 /**

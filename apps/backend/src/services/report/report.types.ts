@@ -129,9 +129,21 @@ export interface ScoreOverviewInput {
   filter: ParsedFilter[];
 }
 
+/** Query input for getScoreFacets. */
+export interface ScoreFacetsInput {
+  scopeType: ScopeType;
+  scopeId: string;
+}
+
 /** Support level distribution counts for a single category. */
 export interface ServiceSupportLevelEntry {
   count: number;
+}
+
+interface ServiceSupportLevelDistribution {
+  achievedSkill: ServiceSupportLevelEntry;
+  developingSkill: ServiceSupportLevelEntry;
+  needsExtraSupport: ServiceSupportLevelEntry;
 }
 
 /** Per-task score overview with support level distribution. */
@@ -148,17 +160,47 @@ export interface ServiceTaskScoreOverview {
     optional: number;
   };
   /** Support level distribution (only for assessed students) */
-  supportLevels: {
-    achievedSkill: ServiceSupportLevelEntry;
-    developingSkill: ServiceSupportLevelEntry;
-    needsExtraSupport: ServiceSupportLevelEntry;
-  };
+  supportLevels: ServiceSupportLevelDistribution;
 }
 
-/** Return type for getScoreOverview. */
-export interface ScoreOverviewResult {
+interface ScoreReportResult<T> {
   totalStudents: number;
-  tasks: ServiceTaskScoreOverview[];
+  tasks: T[];
   /** ISO 8601 timestamp when the aggregation was computed */
   computedAt: string;
 }
+/** Return type for getScoreOverview. */
+export type ScoreOverviewResult = ScoreReportResult<ServiceTaskScoreOverview>;
+
+interface ServiceScoreBin {
+  binStart: number;
+  binEnd: number;
+  count: number;
+}
+
+export interface ServiceTaskScoreFacet {
+  taskId: string;
+  taskSlug: string;
+  taskName: string;
+  orderIndex: number;
+  supportLevelByGrade: ServiceSupportLevelDistribution & { grade: string; totalAssessed: number };
+  supportLevelBySchool:
+    | (ServiceSupportLevelDistribution & { schoolId: string; schoolName: string | undefined; totalAssessed: number })
+    | null;
+  scoreBinsByGrade: {
+    grade: string;
+    rawScore: ServiceScoreBin[];
+    percentile: ServiceScoreBin[];
+  }[];
+  scoreBinsBySchool:
+    | {
+        schoolId: string;
+        schoolName: string | undefined;
+        rawScore: ServiceScoreBin[];
+        percentile: ServiceScoreBin[];
+      }[]
+    | null;
+}
+
+/** Return type for getScoreFacets. */
+export type ScoreFacetsResult = ScoreReportResult<ServiceTaskScoreFacet>;
