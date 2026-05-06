@@ -14,6 +14,7 @@ export function createMockClassRepository(): MockedObject<ClassRepository> {
     getUsersByClassId: vi.fn(),
     listBySchoolId: vi.fn(),
     createClass: vi.fn(),
+    getDistinctRootIds: vi.fn(),
   } as unknown as MockedObject<ClassRepository>;
 }
 
