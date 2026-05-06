@@ -1,9 +1,10 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
+import { ReportScopeQuerySchema } from '../common';
 import {
   ScoreOverviewQuerySchema,
   ScoreOverviewResponseSchema,
-  ScoreDistributionResponseSchema,
+  ScoreFacetsResponseSchema,
   StudentScoresQuerySchema,
   StudentScoresResponseSchema,
   IndividualStudentReportQuerySchema,
@@ -121,13 +122,13 @@ export const ScoreReportsContract = c.router({
       '- 404: Administration not found, or student not in scope (or rostering-ended)\n' +
       '- 500: Internal server error',
   },
-  getScoreDistributions: {
+  getScoreFacets: {
     method: 'GET',
     path: '/:id/reports/scores/facets',
     pathParams: z.object({ id: z.string().uuid() }),
-    query: ScoreOverviewQuerySchema,
+    query: ReportScopeQuerySchema,
     responses: {
-      200: SuccessEnvelopeSchema(ScoreDistributionResponseSchema),
+      200: SuccessEnvelopeSchema(ScoreFacetsResponseSchema),
       400: ErrorEnvelopeSchema,
       401: ErrorEnvelopeSchema,
       403: ErrorEnvelopeSchema,
@@ -137,7 +138,8 @@ export const ScoreReportsContract = c.router({
     strictStatusCodes: true,
     summary: 'Get score distribution facets for an administration',
     description:
-      'Returns aggregated support level distributions per task for all students in scope. ' +
+      'Returns aggregated support level, raw score, and percentile distributions per task for all students in scope. ' +
+      'Includes grade-level and school-level aggregations. ' +
       'Not paginated — aggregates across the full population. ' +
       'Scoped to a specific org, class, or group via scopeType/scopeId.\n\n' +
       'Status codes:\n' +
