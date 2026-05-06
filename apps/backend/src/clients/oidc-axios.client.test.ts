@@ -2,10 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { logger } from '../logger';
 
 const { mockGetRequestHeaders, mockGetIdTokenClient, mockRequestInterceptorUse, mockAxiosCreate } = vi.hoisted(() => {
-  // google-auth-library's `Headers` type is `{ [index: string]: string }` — a plain
-  // object with an index signature, NOT the DOM `Headers` class. Mocks must match
-  // that shape so the production code's `headers.Authorization` access works.
-  const mockGetRequestHeaders = vi.fn().mockResolvedValue({ Authorization: 'Bearer mock-id-token' });
+  const mockGetRequestHeaders = vi.fn().mockResolvedValue(new Headers({ Authorization: 'Bearer mock-id-token' }));
 
   const mockGetIdTokenClient = vi.fn().mockResolvedValue({
     getRequestHeaders: mockGetRequestHeaders,
@@ -89,7 +86,7 @@ describe('createOidcAxiosInstance', () => {
   it('logs a warning and skips header when Authorization token is missing in non-production', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'development';
-    mockGetRequestHeaders.mockResolvedValueOnce({});
+    mockGetRequestHeaders.mockResolvedValueOnce(new Headers());
 
     await createOidcAxiosInstance(TEST_AUDIENCE);
     const interceptorFn = getRegisteredInterceptor();
@@ -110,7 +107,7 @@ describe('createOidcAxiosInstance', () => {
   it('throws when Authorization token is missing in production', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
-    mockGetRequestHeaders.mockResolvedValueOnce({});
+    mockGetRequestHeaders.mockResolvedValueOnce(new Headers());
 
     await createOidcAxiosInstance(TEST_AUDIENCE);
     const interceptorFn = getRegisteredInterceptor();

@@ -19,13 +19,11 @@ export async function createOidcAxiosInstance(audience: string): Promise<AxiosIn
   const instance = axios.create();
 
   instance.interceptors.request.use(async (config) => {
-    // getRequestHeaders() returns google-auth-library's own `Headers` interface
-    // (`{ [index: string]: string }`), not the global DOM `Headers`. Property access
-    // is the correct API; `.get()` is a string lookup against the key 'get' under
-    // `noUncheckedIndexedAccess`, not a method call. Authorization is `string | undefined`
-    // and the !authorization branch handles the missing-token case.
+    // getRequestHeaders() returns the global `Headers` class (undici, exposed by
+    // @types/node) in google-auth-library v10+. Use the standard `.get()` method.
+    // Returns `string | null` when the header is absent.
     const headers = await idTokenClient.getRequestHeaders();
-    const authorization = headers.Authorization;
+    const authorization = headers.get('Authorization');
     if (!authorization) {
       // In production, a missing token indicates a misconfigured environment — fail fast.
       // In non-production, warn and let FGA reject the request with a 401.
