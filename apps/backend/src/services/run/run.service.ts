@@ -109,10 +109,8 @@ export function RunService({
       // access to the administration and CAN_CREATE_RUN permission — not the parent.
       // The parent's authorization is verified separately via CAN_CREATE_RUN_FOR_CHILD.
       // Super admins always use their own context (they bypass FGA checks anyway).
-      const isParentForChildRun = requesterUserId !== targetUserId && !isSuperAdmin;
-      const administrationAuthContext: AuthContext = isParentForChildRun
-        ? { userId: targetUserId, isSuperAdmin: false }
-        : authContext;
+      const administrationAuthContext: AuthContext =
+        requesterUserId !== targetUserId && !isSuperAdmin ? { userId: targetUserId, isSuperAdmin: false } : authContext;
 
       try {
         await administrationService.verifyAdministrationAccess(administrationAuthContext, body.administrationId!);
@@ -142,6 +140,7 @@ export function RunService({
       if (!isSuperAdmin) {
         // FGA checks if the run owner has can_create_run on this administration.
         // For self-runs, this is the requester. For parent-for-child runs, this is the child.
+        const isParentForChildRun = requesterUserId !== targetUserId;
         await authorizationService.requirePermission(
           isParentForChildRun ? targetUserId : requesterUserId,
           FgaRelation.CAN_CREATE_RUN,
@@ -149,10 +148,10 @@ export function RunService({
         );
       }
 
-      if (isParentForChildRun) {
+      // Check CAN_CREATE_RUN_FOR_CHILD only when creating a run for a different user
+      if (requesterUserId !== targetUserId && !isSuperAdmin) {
         // Requester is creating a run for a different user (e.g., parent creating for child).
         // Check if requester has can_create_run_for_child permission on any family containing the target user.
-        // Super admins bypass this check.
         // Reuse targetFamilyIds from verifyUserAccess to avoid redundant database query.
         const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
         const hasAccess = await authorizationService.hasAnyPermission(
