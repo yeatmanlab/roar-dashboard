@@ -102,7 +102,7 @@ const ScoreBinsBySchoolSchema = z.object({
   percentile: z.array(ScoreBinSchema),
 });
 
-const TaskScoreDistributionSchema = ReportTaskMetadataSchema.extend({
+const TaskScoreFacetSchema = ReportTaskMetadataSchema.extend({
   supportLevelByGrade: z.array(SupportLevelByGradeSchema),
   supportLevelBySchool: z.array(SupportLevelBySchoolSchema),
   scoreBinsByGrade: z.array(ScoreBinsByGradeSchema),
@@ -112,9 +112,9 @@ const TaskScoreDistributionSchema = ReportTaskMetadataSchema.extend({
 /**
  * Response schema for score distribution facets endpoint
  */
-export const ScoreDistributionResponseSchema = z.object({
+export const ScoreFacetsResponseSchema = z.object({
   totalStudents: z.number().int(),
-  tasks: z.array(TaskScoreDistributionSchema),
+  tasks: z.array(TaskScoreFacetSchema),
   /** Server timestamp when the aggregation was computed (ISO 8601) */
   computedAt: z.string().datetime(),
 });
