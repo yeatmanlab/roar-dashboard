@@ -29,6 +29,8 @@ import { createMockDistrictRepository } from '../../test-support/repositories/di
 import { createMockSchoolRepository } from '../../test-support/repositories/school.repository';
 import { createMockGroupRepository } from '../../test-support/repositories/group.repository';
 import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
+import { createMockClassRepository } from '../../test-support/repositories/class.repository';
+import { createMockRosterProviderIdRepository } from '../../test-support/repositories/roster-provider-id.repository';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
 import { FamilyFactory } from '../../test-support/factories/family.factory';
@@ -98,7 +100,9 @@ describe('UserService.create', () => {
   let mockDistrictRepo: ReturnType<typeof createMockDistrictRepository>;
   let mockSchoolRepo: ReturnType<typeof createMockSchoolRepository>;
   let mockGroupRepo: ReturnType<typeof createMockGroupRepository>;
+  let mockClassRepo: ReturnType<typeof createMockClassRepository>;
   let mockFamilyRepo: ReturnType<typeof createMockFamilyRepository>;
+  let mockRosterProviderRepo: ReturnType<typeof createMockRosterProviderIdRepository>;
   let mockAuthzService: ReturnType<typeof createMockAuthorizationService>;
   let service: ReturnType<typeof UserService>;
 
@@ -107,7 +111,9 @@ describe('UserService.create', () => {
     mockDistrictRepo = createMockDistrictRepository();
     mockSchoolRepo = createMockSchoolRepository();
     mockGroupRepo = createMockGroupRepository();
+    mockClassRepo = createMockClassRepository();
     mockFamilyRepo = createMockFamilyRepository();
+    mockRosterProviderRepo = createMockRosterProviderIdRepository();
     mockAuthzService = createMockAuthorizationService();
 
     service = UserService({
@@ -117,8 +123,10 @@ describe('UserService.create', () => {
       agreementRepository: createMockAgreementRepository(),
       districtRepository: mockDistrictRepo,
       schoolRepository: mockSchoolRepo,
+      classRepository: mockClassRepo,
       groupRepository: mockGroupRepo,
       familyRepository: mockFamilyRepo,
+      rosterProviderIdRepository: mockRosterProviderRepo,
       authorizationService: mockAuthzService,
     });
 
@@ -127,10 +135,13 @@ describe('UserService.create', () => {
     mockUserRepo.existsByUniqueFields.mockResolvedValue(false);
     mockDistrictRepo.getActiveById.mockResolvedValue(OrgFactory.build());
     mockSchoolRepo.getActiveById.mockResolvedValue(OrgFactory.build());
+    mockClassRepo.getDistinctRootIds.mockResolvedValue([{ id: districtId }]);
+    mockSchoolRepo.getDistinctRootIds.mockResolvedValue([{ id: districtId }]);
     mockGroupRepo.getActiveById.mockResolvedValue(GroupFactory.build());
     mockFamilyRepo.getActiveById.mockResolvedValue(FamilyFactory.build());
     mockUserRepo.createWithMemberships.mockResolvedValue({ id: newUserId });
     mockUserRepo.delete.mockResolvedValue(undefined);
+    mockRosterProviderRepo.create.mockResolvedValue({ id: newUserId });
 
     mockAuth.getUserByEmail.mockRejectedValue(makeFirebaseError('auth/user-not-found'));
     mockAuth.createUser.mockResolvedValue({ uid: firebaseUid });
@@ -380,6 +391,8 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.CONFLICT,
       });
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+      // createWithMemberships threw, so newUserId was never set — DB row delete must not be attempted
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
       expect(mockAuthzService.writeTuplesOrThrow).not.toHaveBeenCalled();
     });
 
@@ -391,6 +404,7 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       });
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
     });
 
     it('DB generic error → calls deleteUser compensation → 500', async () => {
@@ -401,6 +415,7 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       });
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
     });
 
     it('DB failure + deleteUser compensation failure → returns 500 and logs with full context', async () => {
@@ -451,6 +466,8 @@ describe('UserService.create', () => {
       );
     });
   });
+
+  // ──  ─────────────────────────────────────────────────
 
   // ── Happy path end-to-end ─────────────────────────────────────────────────
 
