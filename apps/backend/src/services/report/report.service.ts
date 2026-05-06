@@ -26,10 +26,14 @@ import type {
   IndividualStudentReportInput,
   IndividualStudentReportResult,
   ServiceIndividualStudentReportTask,
+  ServiceStudentReportTaskBase,
   ServiceTaskScores,
   ServiceSubscoreEntry,
   ServiceHistoricalScore,
   ServiceTaskTag,
+  GuardianStudentReportResult,
+  ServiceGuardianAdministrationEntry,
+  ServiceGuardianTaskEntry,
   ParsedFilter,
 } from './report.types';
 import { PROGRESS_TASK_STATUS_PATTERN, SCORE_TASK_FIELD_PATTERN } from '@roar-dashboard/api-contract';
@@ -73,6 +77,9 @@ import {
   PA_SUBTASK_KEYS,
 } from '../scoring';
 import { UserRepository } from '../../repositories/user.repository';
+import { Permissions } from '../../constants/permissions';
+import { rolesForPermission } from '../../constants/role-permissions';
+import { filterSupervisoryRoles } from '../../repositories/utils/supervisory-roles.utils';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
@@ -1056,12 +1063,284 @@ export function ReportService({
     }
   }
 
+  /**
+   * Get a longitudinal score report for a single student across every
+   * administration they are connected to.
+   *
+   * Authorization (in order, super-admin bypasses all):
+   * 1. Target student must exist and not have `rosteringEnded` set (404
+   *    otherwise — the message is generic to avoid leaking student
+   *    membership status to a hostile caller).
+   * 2. Self-access is denied — students cannot view their own report (403).
+   * 3. Guardian access: the caller must be linked to the student via
+   *    `user_families` (parent → child, both currently active).
+   * 4. Supervisory access: when the caller is not a guardian, they must
+   *    hold one of the roles allowed by `Reports.Score.READ` AND share an
+   *    org/class/group scope with the student (the org-overlap guard).
+   *
+   * The response includes the student header (with school name), one
+   * entry per administration the student is in (chronological), and a
+   * top-level `longitudinalScores` map keyed by task slug.
+   *
+   * @param authContext - User's auth context
+   * @param targetUserId - The student whose report is being fetched
+   * @returns Guardian / longitudinal student report
+   * @throws {ApiError} NOT_FOUND if student doesn't exist or is rostering-ended
+   * @throws {ApiError} FORBIDDEN if access denied per the rules above
+   * @throws {ApiError} INTERNAL_SERVER_ERROR for unexpected failures
+   */
+  async function getGuardianStudentReport(
+    authContext: AuthContext,
+    targetUserId: string,
+  ): Promise<GuardianStudentReportResult> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Existence + rostering-ended check (404 returned via generic message)
+      const targetUser = await userRepository.getById({ id: targetUserId });
+      if (!targetUser || targetUser.rosteringEnded) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, targetUserId },
+        });
+      }
+
+      // 2. Authorization
+      if (!isSuperAdmin) {
+        // Self-access denied
+        if (userId === targetUserId) {
+          logger.warn({ userId, targetUserId }, 'User attempted to view their own guardian report');
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, targetUserId },
+          });
+        }
+
+        // Guardian linkage first (cheaper, single query). If the caller
+        // isn't a guardian, fall through to the supervisory + org-overlap
+        // guard. The overlap check itself enforces the role gate — it only
+        // matches the supervisor side against the allow-listed supervisory
+        // roles, so a supervised caller (e.g., a student) drops out there.
+        const isLinkedGuardian = await reportRepository.verifyGuardianStudentLink(userId, targetUserId);
+
+        if (!isLinkedGuardian) {
+          const allowedRoles = rolesForPermission(Permissions.Reports.Score.READ);
+          const supervisoryRoles = filterSupervisoryRoles(allowedRoles);
+
+          const hasOverlap = await reportRepository.verifyUserOrgOverlap(userId, targetUserId, supervisoryRoles);
+          if (!hasOverlap) {
+            logger.warn(
+              { userId, targetUserId, supervisoryRoles },
+              'Supervisory caller lacks org/class/group overlap with target student',
+            );
+            throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId, targetUserId },
+            });
+          }
+        }
+      }
+
+      // 3. Resolve the student's set of administrations and school name in parallel
+      const [adminMetas, schoolNamesMap] = await Promise.all([
+        reportRepository.getStudentAdministrations(targetUserId),
+        reportRepository.getSchoolNamesForUsers([targetUserId]),
+      ]);
+      const schoolName = schoolNamesMap.get(targetUserId) ?? null;
+
+      // Early-exit when the student has no administrations — still return a
+      // valid empty payload so the frontend can render a "no data" state
+      // without an error.
+      if (adminMetas.length === 0) {
+        return {
+          student: {
+            userId: targetUser.id,
+            firstName: targetUser.nameFirst,
+            lastName: targetUser.nameLast,
+            username: targetUser.username,
+            grade: targetUser.grade,
+            schoolName,
+          },
+          administrations: [],
+          longitudinalScores: {},
+        };
+      }
+
+      // 4. Fetch task metadata per admin in parallel
+      const taskMetadataResults = await Promise.all(
+        adminMetas.map(async (admin) => {
+          const metas = await reportRepository.getTaskMetadata(admin.id);
+          return [admin.id, metas] as const;
+        }),
+      );
+      const taskMetadataByAdmin = new Map<string, ReportTaskMeta[]>(taskMetadataResults);
+
+      // 5. Bulk-fetch scoring versions across the union of all variants
+      const allVariantIds = Array.from(
+        new Set(taskMetadataResults.flatMap(([, metas]) => metas.map((m) => m.taskVariantId))),
+      );
+      const allParams =
+        allVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(allVariantIds) : [];
+      const scoringVersionByVariant = new Map<string, number>();
+      for (const param of allParams) {
+        if (param.name === 'scoringVersion') {
+          const version = typeof param.value === 'number' ? param.value : Number(param.value);
+          if (!isNaN(version)) {
+            scoringVersionByVariant.set(param.taskVariantId, version);
+          }
+        }
+      }
+
+      // 6. Fetch scores + run metadata per admin in parallel.
+      // Each admin only fetches its own variants; pinning queries to a single
+      // (admin, user) pair keeps the FDW-side filters narrow.
+      const perAdminFetches = await Promise.all(
+        adminMetas.map(async (admin) => {
+          const variants = taskMetadataByAdmin.get(admin.id) ?? [];
+          const variantIds = variants.map((v) => v.taskVariantId);
+          if (variantIds.length === 0) {
+            return { admin, scoresByVariant: new Map<string, Map<string, string>>(), runMetaByVariant: new Map() };
+          }
+          const [scoreRows, runRows] = await Promise.all([
+            reportRepository.getCompletedRunScores(admin.id, [targetUserId], variantIds),
+            reportRepository.getCompletedRunsForUser(admin.id, targetUserId, variantIds),
+          ]);
+          const scoresByVariant = buildVariantScoreLookup(scoreRows);
+          // Pick the most-recent completed run per variant — defensive against
+          // the rare multi-run case (matches the pattern in
+          // getIndividualStudentReport).
+          const runMetaByVariant = new Map<string, { reliable: boolean | null; engagementFlags: string[] }>();
+          const seenCompletedAt = new Map<string, Date>();
+          for (const r of runRows) {
+            const existing = seenCompletedAt.get(r.taskVariantId);
+            if (!existing || r.completedAt > existing) {
+              runMetaByVariant.set(r.taskVariantId, {
+                reliable: r.reliable,
+                engagementFlags: r.engagementFlags,
+              });
+              seenCompletedAt.set(r.taskVariantId, r.completedAt);
+            }
+          }
+          return { admin, scoresByVariant, runMetaByVariant };
+        }),
+      );
+
+      // 7. Assemble per-admin entries + longitudinalScores
+      const administrations: ServiceGuardianAdministrationEntry[] = [];
+      const longitudinalScores: Record<string, ServiceHistoricalScore[]> = {};
+
+      for (const { admin, scoresByVariant, runMetaByVariant } of perAdminFetches) {
+        const taskMetas = taskMetadataByAdmin.get(admin.id) ?? [];
+        const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
+        const tasks: ServiceGuardianTaskEntry[] = [];
+
+        for (const taskId of taskOrder) {
+          const variants = variantsByTaskId.get(taskId)!;
+          const eligibility = evaluateAcrossVariants(targetUser, variants, taskService.evaluateTaskVariantEligibility);
+          if (!eligibility.isAssigned) continue;
+
+          // Multi-variant dedup: first variant with a completed run + scores
+          let scoredVariant: ReportTaskMeta | null = null;
+          let scoredScoreMap: Map<string, string> | null = null;
+          for (const v of variants) {
+            const map = scoresByVariant.get(v.taskVariantId);
+            if (map && map.size > 0) {
+              scoredVariant = v;
+              scoredScoreMap = map;
+              break;
+            }
+          }
+
+          const representative = variants[0]!;
+          const taskMeta: ServiceTaskMetadata = {
+            taskId: representative.taskId,
+            taskSlug: representative.taskSlug,
+            taskName: representative.taskName,
+            orderIndex: representative.orderIndex,
+          };
+
+          if (scoredVariant && scoredScoreMap) {
+            const runMeta = runMetaByVariant.get(scoredVariant.taskVariantId) ?? null;
+            const { entry } = buildBaseAssessedTaskEntry(
+              taskMeta,
+              scoredVariant,
+              scoredScoreMap,
+              scoringVersionByVariant.get(scoredVariant.taskVariantId) ?? null,
+              targetUser.grade,
+              eligibility.isOptional,
+              runMeta,
+            );
+            tasks.push(entry);
+
+            // Surface this admin's scores into the longitudinal series for
+            // the task slug. Score points use `dateEnd` so the chart x-axis
+            // anchors to the close of the assessment window — matching the
+            // ticket sample.
+            const point: ServiceHistoricalScore = {
+              administrationId: admin.id,
+              administrationName: admin.name,
+              date: admin.dateEnd.toISOString(),
+              scores: entry.scores,
+            };
+            const slug = representative.taskSlug;
+            if (!longitudinalScores[slug]) {
+              longitudinalScores[slug] = [];
+            }
+            longitudinalScores[slug].push(point);
+          } else {
+            tasks.push(buildBaseUnassessedTaskEntry(taskMeta, eligibility.isOptional));
+          }
+        }
+
+        administrations.push({
+          administrationId: admin.id,
+          name: admin.name,
+          dateStart: admin.dateStart.toISOString(),
+          dateEnd: admin.dateEnd.toISOString(),
+          tasks,
+        });
+      }
+
+      // `adminMetas` is already sorted by dateStart ascending (repository
+      // contract) so the populated longitudinalScores arrays inherit the
+      // chronological ordering without an extra sort.
+
+      return {
+        student: {
+          userId: targetUser.id,
+          firstName: targetUser.nameFirst,
+          lastName: targetUser.nameLast,
+          username: targetUser.username,
+          grade: targetUser.grade,
+          schoolName,
+        },
+        administrations,
+        longitudinalScores,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, targetUserId } }, 'Failed to retrieve guardian student report');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, targetUserId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     listProgressStudents,
     getProgressOverview,
     getScoreOverview,
     listStudentScores,
     getIndividualStudentReport,
+    getGuardianStudentReport,
   };
 }
 
@@ -2138,17 +2417,28 @@ function buildHistoricalScoresForTask(
  * config declares them) and skillsToWorkOn (PA only), and historical scores
  * across prior administrations (and the current one).
  */
-function buildAssessedTaskEntry(
+/**
+ * Per-task entry assembly for a task the student has completed — without
+ * historical scores. Shared by both the admin-scoped individual student
+ * report and the guardian / longitudinal student report.
+ *
+ * The admin-scoped builder wraps this and appends `historicalScores`; the
+ * guardian builder uses the base shape directly because longitudinal data
+ * is rendered at the response root.
+ *
+ * Returning `gradeLevel` alongside the entry lets the admin-scoped wrapper
+ * resolve historical scores with the same numeric grade used for the
+ * current entry, without re-deriving it.
+ */
+function buildBaseAssessedTaskEntry(
   taskMeta: ServiceTaskMetadata,
   scoredVariant: ReportTaskMeta,
   scoreMap: Map<string, string>,
   scoringVersion: number | null,
   grade: string | null,
   optional: boolean,
-  historicalRuns: HistoricalRunRow[],
-  historicalScoresByRun: Map<string, Map<string, string>>,
   runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
-): ServiceIndividualStudentReportTask {
+): { entry: ServiceStudentReportTaskBase; gradeLevel: number | null } {
   const gradeLevel = getGradeAsNumber(grade);
   const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel);
 
@@ -2179,6 +2469,47 @@ function buildAssessedTaskEntry(
   const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug);
   const skillsToWorkOn = computePaSkillsToWorkOn(scoredVariant.taskSlug, subscores);
 
+  const entry: ServiceStudentReportTaskBase = {
+    ...taskMeta,
+    scores,
+    supportLevel,
+    reliable,
+    optional,
+    completed: true,
+    engagementFlags,
+    tags: buildTaskTags({ optional, completed: true, reliable }),
+  };
+  if (subscores) entry.subscores = subscores;
+  if (skillsToWorkOn) entry.skillsToWorkOn = skillsToWorkOn;
+
+  return { entry, gradeLevel };
+}
+
+/**
+ * Assemble a per-task entry for a task the student has completed in this
+ * administration, with historical scores attached.
+ */
+function buildAssessedTaskEntry(
+  taskMeta: ServiceTaskMetadata,
+  scoredVariant: ReportTaskMeta,
+  scoreMap: Map<string, string>,
+  scoringVersion: number | null,
+  grade: string | null,
+  optional: boolean,
+  historicalRuns: HistoricalRunRow[],
+  historicalScoresByRun: Map<string, Map<string, string>>,
+  runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
+): ServiceIndividualStudentReportTask {
+  const { entry, gradeLevel } = buildBaseAssessedTaskEntry(
+    taskMeta,
+    scoredVariant,
+    scoreMap,
+    scoringVersion,
+    grade,
+    optional,
+    runMeta,
+  );
+
   // Historical entries are resolved with the current variant's slug. Runs for
   // the same task across administrations share a slug, so we don't need a
   // per-historical-run scoring-version lookup at this layer; if we ever need
@@ -2192,20 +2523,25 @@ function buildAssessedTaskEntry(
     historicalScoresByRun,
   );
 
-  const entry: ServiceIndividualStudentReportTask = {
+  return { ...entry, historicalScores };
+}
+
+/**
+ * Per-task entry assembly for a task the student has not completed —
+ * without historical scores. Shared between admin-scoped and guardian
+ * report builders.
+ */
+function buildBaseUnassessedTaskEntry(taskMeta: ServiceTaskMetadata, optional: boolean): ServiceStudentReportTaskBase {
+  return {
     ...taskMeta,
-    scores,
-    supportLevel,
-    reliable,
+    scores: { rawScore: null, percentile: null, standardScore: null },
+    supportLevel: optional ? 'optional' : null,
+    reliable: null,
     optional,
-    completed: true,
-    engagementFlags,
-    tags: buildTaskTags({ optional, completed: true, reliable }),
-    historicalScores,
+    completed: false,
+    engagementFlags: [],
+    tags: buildTaskTags({ optional, completed: false, reliable: null }),
   };
-  if (subscores) entry.subscores = subscores;
-  if (skillsToWorkOn) entry.skillsToWorkOn = skillsToWorkOn;
-  return entry;
 }
 
 /** Assemble a per-task entry for a task the student has not completed. */
@@ -2226,15 +2562,5 @@ function buildUnassessedTaskEntry(
     historicalScoresByRun,
   );
 
-  return {
-    ...taskMeta,
-    scores: { rawScore: null, percentile: null, standardScore: null },
-    supportLevel: optional ? 'optional' : null,
-    reliable: null,
-    optional,
-    completed: false,
-    engagementFlags: [],
-    tags: buildTaskTags({ optional, completed: false, reliable: null }),
-    historicalScores,
-  };
+  return { ...buildBaseUnassessedTaskEntry(taskMeta, optional), historicalScores };
 }
