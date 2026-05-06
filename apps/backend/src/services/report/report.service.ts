@@ -16,9 +16,16 @@ import type {
   ScoreOverviewInput,
   ScoreOverviewResult,
   ServiceTaskScoreOverview,
+  StudentScoresInput,
+  StudentScoresSortField,
+  StudentScoresFilterField,
+  StudentScoresResult,
+  ServiceStudentScoreRow,
+  ServiceStudentScoreEntry,
+  ServiceSupportLevelValue,
   ParsedFilter,
 } from './report.types';
-import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
+import { PROGRESS_TASK_STATUS_PATTERN, SCORE_TASK_FIELD_PATTERN } from '@roar-dashboard/api-contract';
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -35,12 +42,18 @@ import type {
   RunScoreRow,
   ProgressStatusSortParam,
   ProgressStatusFilterParam,
+  StudentScoresFieldRef,
+  StudentScoresFieldFilter,
+  StudentScoresFilterOperator,
+  StudentScoresFieldType,
+  StudentScoreQueryRow,
+  ResolvedScoringRules,
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
-import { getSupportLevel, parseScoreValue, resolveScoreFieldNames } from '../scoring';
+import { getScoringConfig, getSupportLevel, parseScoreValue, resolveScoreFieldNames } from '../scoring';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
@@ -74,6 +87,38 @@ const GRADE_AWARE_FIELDS: ReadonlySet<string> = new Set(['user.grade']);
  */
 const SCORE_OVERVIEW_USER_FILTER_FIELDS: Record<string, PgColumn> = {
   'user.grade': users.grade,
+};
+
+/**
+ * Map sortBy field strings to Drizzle column references for student scores.
+ *
+ * `user.schoolName` is intentionally excluded — it has no direct column to
+ * point at (the value is a correlated subquery built inside the repository).
+ * The service routes that case explicitly before consulting this map, and the
+ * type omits it so any accidental lookup fails at compile time rather than
+ * silently falling back to a wrong column.
+ */
+const STUDENT_SCORES_SORT_COLUMNS: Record<Exclude<StudentScoresSortField, 'user.schoolName'>, Column> = {
+  'user.lastName': users.nameLast,
+  'user.firstName': users.nameFirst,
+  'user.username': users.username,
+  'user.grade': users.grade,
+};
+
+/**
+ * Map static filter field strings to Drizzle column references for student scores.
+ * `user.schoolName` is filterable via ILIKE in district scope; the column reference
+ * is `orgs.name` joined indirectly via user_orgs — represented as a sentinel here
+ * because buildFilterConditions can't directly express a correlated lookup.
+ * Currently we only support exact-match user-level filters in SQL; schoolName
+ * filtering is delegated to the repository's own correlated subquery.
+ */
+const STUDENT_SCORES_USER_FILTER_FIELDS: Record<Exclude<StudentScoresFilterField, 'user.schoolName'>, PgColumn> = {
+  'user.grade': users.grade,
+  'user.firstName': users.nameFirst,
+  'user.lastName': users.nameLast,
+  'user.username': users.username,
+  'user.email': users.email,
 };
 
 /** Per-task status counters for progress overview aggregation (7-level). */
@@ -581,7 +626,190 @@ export function ReportService({
     }
   }
 
-  return { listProgressStudents, getProgressOverview, getScoreOverview };
+  /**
+   * List paginated per-student scores for an administration.
+   *
+   * Authorization (two FGA checks):
+   * 1. `verifyAdministrationAccess` — administration-level can_read_scores
+   * 2. `authorizeScopeAccess` with CAN_READ_SCORES — scope-level
+   *
+   * Sort and filter accept dynamic `scores.<taskId>.<field>` fields where
+   * `<field>` is one of `rawScore`, `percentile`, `standardScore`, `supportLevel`.
+   * The taskId is validated against the administration's tasks (400 if unknown).
+   * For multi-variant tasks, dynamic sort/filter targets the lowest-orderIndex
+   * variant of the task (the "primary variant") so SQL-level ordering remains
+   * deterministic across pages.
+   *
+   * Per-row dedup: each task in the response has at most one score entry per
+   * student. The service picks the first variant (in orderIndex order) with a
+   * completed run for that student. Students with no completed run on any
+   * variant of a task get `completed: false` and `supportLevel` either
+   * `'optional'` (task optional for them) or `null` (assigned-required).
+   *
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks can_read_scores
+   * @throws {ApiError} BAD_REQUEST if scope or sort/filter task ID is invalid
+   */
+  async function listStudentScores(
+    authContext: AuthContext,
+    administrationId: string,
+    query: StudentScoresInput,
+  ): Promise<StudentScoresResult> {
+    const { userId } = authContext;
+    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
+
+    try {
+      // 1. Authorization
+      await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
+
+      // 2. Get task metadata and apply taskId filter (merge multiple entries)
+      let taskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
+      if (taskIdFilters.length > 0) {
+        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
+        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
+      }
+
+      // 3. Build per-task primary variant map (lowest-orderIndex variant of each task)
+      const primaryVariantByTaskId = buildPrimaryVariantMap(taskMetas);
+
+      // 4. Validate any dynamic score-field references in sort/filter BEFORE
+      // any further DB call — bad task IDs should fail fast as 400, not get
+      // silently swallowed into a 500 by a downstream failure.
+      validateDynamicFieldTaskIds(sortBy, filter, primaryVariantByTaskId, taskMetas);
+
+      // 5. Resolve scoring versions per variant
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+      const allParams =
+        taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
+      const scoringVersionByVariant = new Map<string, number>();
+      for (const param of allParams) {
+        if (param.name === 'scoringVersion') {
+          const version = typeof param.value === 'number' ? param.value : Number(param.value);
+          if (!isNaN(version)) {
+            scoringVersionByVariant.set(param.taskVariantId, version);
+          }
+        }
+      }
+
+      // 6. Resolve scoring rules per variant for SQL CASE generation in the repo
+      const scoringRulesByVariant = new Map<string, ResolvedScoringRules>();
+      for (const variant of taskMetas) {
+        scoringRulesByVariant.set(
+          variant.taskVariantId,
+          resolveScoringRulesForVariant(variant.taskSlug, scoringVersionByVariant.get(variant.taskVariantId) ?? null),
+        );
+      }
+
+      // 7. Resolve dynamic sort field (against primary variants)
+      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId, scoringVersionByVariant);
+
+      // 8. Resolve dynamic score-field filters (against primary variants)
+      const userLevelFilters: ParsedFilter[] = [];
+      const scoreFieldFilters: StudentScoresFieldFilter[] = [];
+      for (const f of filter) {
+        if (f.field === 'taskId') continue;
+        if (SCORE_TASK_FIELD_PATTERN.test(f.field)) {
+          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId, scoringVersionByVariant);
+          if (filterRef) scoreFieldFilters.push(filterRef);
+          continue;
+        }
+        userLevelFilters.push(f);
+      }
+
+      const filterCondition =
+        userLevelFilters.length > 0
+          ? buildFilterConditions(userLevelFilters, STUDENT_SCORES_USER_FILTER_FIELDS, {
+              gradeAwareFields: GRADE_AWARE_FIELDS,
+            })
+          : undefined;
+
+      // Short-circuit: when the taskId filter (or an empty administration) leaves
+      // no tasks in scope, no per-task entries can be assembled. Skip the
+      // pagination + score JOINs and return an empty page. Matches the analogous
+      // short-circuit in getScoreOverview.
+      if (taskMetas.length === 0) {
+        return { tasks: [], items: [], totalItems: 0 };
+      }
+
+      // 9. Determine the static sort column when sorting by a user field.
+      // user.schoolName is handled inside the repository as a correlated subquery,
+      // so we pass undefined and rely on the dynamic-sort path falling through to
+      // the repo's school-name expression. Other static fields use their column.
+      // The map deliberately omits `user.schoolName` — TypeScript's narrowing on
+      // the explicit equality check below makes the lookup safe.
+      let staticSortColumn: Column | undefined;
+      if (!sortField) {
+        if (sortBy === 'user.schoolName') {
+          staticSortColumn = undefined; // repo will use schoolNameSql
+        } else {
+          const key = sortBy as Exclude<StudentScoresSortField, 'user.schoolName'>;
+          staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key] ?? users.nameLast;
+        }
+      }
+
+      // 10. Repository call
+      const result = await reportRepository.getStudentScores(
+        administrationId,
+        { scopeType, scopeId },
+        taskMetas,
+        { page, perPage, sortColumn: staticSortColumn, sortDirection: sortOrder },
+        filterCondition,
+        sortField,
+        scoreFieldFilters,
+        scoringRulesByVariant,
+      );
+
+      // 11. Build response — dedupe per taskId, classify, set optional/completed
+      const tasksOrdered: ServiceTaskMetadata[] = uniqueTaskMetadataInOrder(taskMetas);
+
+      // Resolve schoolNames for district-scope rows (not auto-populated by repo for that field)
+      let schoolNamesByUser: Map<string, string> | undefined;
+      if (scopeType === EntityType.DISTRICT) {
+        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(result.items.map((s) => s.userId));
+      }
+
+      // Group taskMetas by taskId once — the grouping is independent of the
+      // per-student row data, so hoisting it out of the per-row map saves
+      // O(students × variants) reallocations.
+      const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
+
+      const items: ServiceStudentScoreRow[] = result.items.map((row) =>
+        assembleStudentScoreRow(
+          row,
+          taskOrder,
+          variantsByTaskId,
+          scoringVersionByVariant,
+          taskService.evaluateTaskVariantEligibility,
+          scopeType,
+          schoolNamesByUser,
+        ),
+      );
+
+      return { tasks: tasksOrdered, items, totalItems: result.totalItems };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, scopeType, scopeId } },
+        'Failed to retrieve student scores report',
+      );
+
+      throw new ApiError('Failed to retrieve student scores report', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, scopeType, scopeId },
+        cause: error,
+      });
+    }
+  }
+
+  return { listProgressStudents, getProgressOverview, getScoreOverview, listStudentScores };
 }
 
 // --- Progress sort/filter resolution helpers ---
@@ -1044,4 +1272,409 @@ function aggregateTaskGroup(
       needsExtraSupport: { count: needsSupportCount },
     },
   };
+}
+
+// --- Student-scores helpers ---
+
+/**
+ * Build a map of taskId → primary variant (lowest orderIndex within the task).
+ * The primary variant is what dynamic sort/filter on `scores.<taskId>.<field>`
+ * resolves against — it ensures SQL ordering is deterministic across pages
+ * even when a task has multiple grade-specific variants.
+ *
+ * Assumes `taskMetas` is already ordered by orderIndex (as returned by
+ * `getTaskMetadata`).
+ */
+function buildPrimaryVariantMap(taskMetas: ReportTaskMeta[]): Map<string, ReportTaskMeta> {
+  const out = new Map<string, ReportTaskMeta>();
+  for (const meta of taskMetas) {
+    if (!out.has(meta.taskId)) {
+      out.set(meta.taskId, meta);
+    }
+  }
+  return out;
+}
+
+/**
+ * Return a deduplicated list of task metadata (one entry per taskId) preserving
+ * the orderIndex order of the input. Used for the response's `tasks` array so
+ * the frontend renders one column per task.
+ */
+function uniqueTaskMetadataInOrder(taskMetas: ReportTaskMeta[]): ServiceTaskMetadata[] {
+  const seen = new Set<string>();
+  const out: ServiceTaskMetadata[] = [];
+  for (const meta of taskMetas) {
+    if (!seen.has(meta.taskId)) {
+      seen.add(meta.taskId);
+      out.push({
+        taskId: meta.taskId,
+        taskSlug: meta.taskSlug,
+        taskName: meta.taskName,
+        orderIndex: meta.orderIndex,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Resolve the scoring config for a variant + scoring version into the shape the
+ * repository needs for SQL CASE generation. Decouples the repository from the
+ * scoring service.
+ *
+ * Returns an empty rules object for unknown task slugs and for `'none'`
+ * classification — those tasks have no support level the SQL CASE can compute.
+ */
+function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number | null): ResolvedScoringRules {
+  const empty: ResolvedScoringRules = {
+    assessmentSupportLevelField: null,
+    percentileCutoffs: null,
+    rawScoreThresholds: null,
+    percentileBelowGrade: null,
+    percentileFieldNames: [],
+    rawScoreFieldNames: [],
+    standardScoreFieldNames: [],
+  };
+
+  const config = getScoringConfig(taskSlug);
+  if (!config) return empty;
+
+  const fieldNames = resolveScoreFieldNames(taskSlug, null, scoringVersion);
+  const baseRules: ResolvedScoringRules = {
+    ...empty,
+    percentileFieldNames: fieldNames.percentileFieldNames,
+    rawScoreFieldNames: fieldNames.rawScoreFieldNames,
+    standardScoreFieldNames: fieldNames.standardScoreFieldNames,
+  };
+
+  if (config.classification.type === 'assessment-computed') {
+    return {
+      ...baseRules,
+      assessmentSupportLevelField: config.classification.supportLevelField ?? 'supportLevel',
+    };
+  }
+  if (config.classification.type === 'none') {
+    return baseRules;
+  }
+
+  // percentile-then-rawscore
+  const version = scoringVersion ?? 0;
+  const pctEntry = config.classification.percentileCutoffs.find((e) => version >= e.minVersion);
+  const rawEntry = config.classification.rawScoreThresholds.find((e) => version >= e.minVersion);
+  return {
+    ...baseRules,
+    percentileCutoffs: pctEntry?.cutoffs ?? null,
+    rawScoreThresholds: rawEntry?.thresholds ?? null,
+    // percentileBelowGrade defaults to 6 (exclusive); null in the config means
+    // "use percentile for all grades", which we represent as null in the rules.
+    percentileBelowGrade: config.classification.percentileBelowGrade ?? 6,
+  };
+}
+
+/**
+ * Parse a `scores.<uuid>.<field>` string into its components.
+ * Returns null if the string doesn't match the expected pattern.
+ */
+function parseScoreFieldString(field: string): { taskId: string; fieldType: StudentScoresFieldType } | null {
+  if (!SCORE_TASK_FIELD_PATTERN.test(field)) return null;
+  const parts = field.split('.');
+  if (parts.length !== 3) return null;
+  const taskId = parts[1]!;
+  const fieldType = parts[2] as StudentScoresFieldType;
+  return { taskId, fieldType };
+}
+
+/**
+ * Validate that every dynamic `scores.<taskId>.<field>` reference in `sortBy`
+ * and `filter` resolves to a known taskId. Throws 400 on any unknown taskId.
+ *
+ * Called before fetching scoring versions so input-validation errors fail fast
+ * as 400 rather than getting wrapped as 500 by an unrelated downstream failure.
+ */
+function validateDynamicFieldTaskIds(
+  sortBy: string,
+  filter: ParsedFilter[],
+  primaryVariantByTaskId: Map<string, ReportTaskMeta>,
+  taskMetas: ReportTaskMeta[],
+): void {
+  const knownIds = () => taskMetas.map((t) => t.taskId);
+
+  const sortParsed = parseScoreFieldString(sortBy);
+  if (sortParsed && !primaryVariantByTaskId.has(sortParsed.taskId)) {
+    throw new ApiError('Invalid task ID in sort field', {
+      statusCode: StatusCodes.BAD_REQUEST,
+      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      context: { sortBy, availableTaskIds: knownIds() },
+    });
+  }
+
+  for (const f of filter) {
+    if (f.field === 'taskId') continue;
+    const parsed = parseScoreFieldString(f.field);
+    if (parsed && !primaryVariantByTaskId.has(parsed.taskId)) {
+      throw new ApiError('Invalid task ID in filter field', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { field: f.field, availableTaskIds: knownIds() },
+      });
+    }
+  }
+}
+
+/**
+ * Resolve a dynamic sort string into a `StudentScoresFieldRef` against the
+ * primary variant of the referenced task. Returns null for static sort fields
+ * (the caller falls back to the static-column path) and throws 400 for
+ * unknown task IDs.
+ */
+function resolveDynamicSortField(
+  sortBy: string,
+  primaryVariantByTaskId: Map<string, ReportTaskMeta>,
+  scoringVersionByVariant: Map<string, number>,
+): StudentScoresFieldRef | null {
+  const parsed = parseScoreFieldString(sortBy);
+  if (!parsed) return null;
+
+  const variant = primaryVariantByTaskId.get(parsed.taskId);
+
+  // Guaranteed to exist with validation from validateDynamicFieldTaskIds (line 683)
+  return {
+    taskVariantId: variant!.taskVariantId,
+    taskSlug: variant!.taskSlug,
+    fieldType: parsed.fieldType,
+    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
+  };
+}
+
+/**
+ * Mapping between contract-side support level names and the SQL priority
+ * integers the repository's CASE expressions return.
+ */
+const SUPPORT_LEVEL_NAME_TO_PRIORITY: Record<string, number> = {
+  achievedSkill: 3,
+  developingSkill: 2,
+  needsExtraSupport: 1,
+};
+
+/**
+ * Resolve a dynamic score-field filter into a `StudentScoresFieldFilter`. For
+ * `supportLevel` filters the level names (`achievedSkill`, etc.) are translated
+ * to priority integers so the repository can compare against its CASE output.
+ *
+ * Returns null when the filter targets an unsupported value (e.g.,
+ * `supportLevel:eq:optional` — `optional` requires post-fetch logic and isn't
+ * representable in the SQL CASE; the service silently drops the filter and
+ * documents the limitation in the API contract).
+ *
+ * @throws {ApiError} BAD_REQUEST if the task ID is unknown
+ */
+function resolveDynamicFilter(
+  filter: ParsedFilter,
+  primaryVariantByTaskId: Map<string, ReportTaskMeta>,
+  scoringVersionByVariant: Map<string, number>,
+): StudentScoresFieldFilter | null {
+  const parsed = parseScoreFieldString(filter.field);
+  if (!parsed) return null;
+
+  const variant = primaryVariantByTaskId.get(parsed.taskId);
+
+  // Translate values: numeric fields use raw strings (cast in SQL); supportLevel
+  // names map to priorities (3/2/1). 'optional' has no SQL representation — drop
+  // those values from the filter list.
+  let values: string[];
+  if (parsed.fieldType === 'supportLevel') {
+    const rawValues = filter.operator === 'in' ? filter.value.split(',').map((v) => v.trim()) : [filter.value];
+    values = rawValues
+      .map((v) => SUPPORT_LEVEL_NAME_TO_PRIORITY[v])
+      .filter((p): p is number => p !== undefined)
+      .map(String);
+    if (values.length === 0) return null;
+  } else {
+    values = filter.operator === 'in' ? filter.value.split(',').map((v) => v.trim()) : [filter.value];
+  }
+
+  // Guaranteed to exist with validation from validateDynamicFieldTaskIds (line 683)
+  return {
+    taskVariantId: variant!.taskVariantId,
+    taskSlug: variant!.taskSlug,
+    fieldType: parsed.fieldType,
+    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
+    operator: filter.operator as StudentScoresFilterOperator,
+    values,
+  };
+}
+
+/**
+ * Round a numeric score to an integer for the API response. Returns null for
+ * null/NaN inputs.
+ */
+function roundScoreOrNull(value: number | null): number | null {
+  if (value === null || isNaN(value)) return null;
+  return Math.round(value);
+}
+
+/**
+ * Alias of `EligibilityEvaluator` for use in the student-scores helpers.
+ * Kept as a re-export so the consuming code reads naturally; both names refer
+ * to the same `TaskService.evaluateTaskVariantEligibility` shape.
+ */
+type StudentEligibilityEvaluator = EligibilityEvaluator;
+
+/**
+ * Convert a single repository row into a service-shaped student row with one
+ * score entry per taskId. For each task:
+ *
+ * - If any variant has a completed run for this student, pick the
+ *   lowest-orderIndex variant with scores and classify; that becomes the
+ *   per-task entry.
+ * - Otherwise, evaluate condition assignment/requirement across all variants.
+ *   `assigned` if any variant assigns; `optional` only if every assigning
+ *   variant marks the student optional.
+ * - Tasks where every variant excludes the student via `conditionsAssignment`
+ *   are omitted from the `scores` map (they're not visible to that student).
+ */
+function assembleStudentScoreRow(
+  row: StudentScoreQueryRow,
+  taskOrder: ReadonlyArray<string>,
+  variantsByTaskId: ReadonlyMap<string, ReportTaskMeta[]>,
+  scoringVersionByVariant: Map<string, number>,
+  evaluateEligibility: StudentEligibilityEvaluator,
+  scopeType: ScopeType,
+  schoolNamesByUser: Map<string, string> | undefined,
+): ServiceStudentScoreRow {
+  const scores: Record<string, ServiceStudentScoreEntry> = {};
+
+  for (const taskId of taskOrder) {
+    const variants = variantsByTaskId.get(taskId)!;
+
+    // Find the first variant with completed run + scores
+    let scored: {
+      variant: ReportTaskMeta;
+      scoreMap: Map<string, string>;
+      runMeta: { reliable: boolean | null; engagementFlags: string[] };
+    } | null = null;
+    for (const v of variants) {
+      const variantScores = row.scores.get(v.taskVariantId);
+      const runMeta = row.runs.get(v.taskVariantId);
+      if (variantScores && variantScores.size > 0 && runMeta) {
+        scored = {
+          variant: v,
+          scoreMap: variantScores,
+          runMeta: { reliable: runMeta.reliable, engagementFlags: runMeta.engagementFlags },
+        };
+        break;
+      }
+    }
+
+    if (scored) {
+      const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+      const gradeLevel = getGradeAsNumber(row.grade);
+      // Match score-overview's resolution strategy: omit scoringVersion so all-version
+      // field names are returned. This is best-effort — the version is still passed to
+      // getSupportLevel below for correct cutoff selection.
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
+
+      const percentile = resolveNumericScore(scored.scoreMap, fieldNames.percentileFieldNames);
+      const rawScore = resolveNumericScore(scored.scoreMap, fieldNames.rawScoreFieldNames);
+      const standardScore = resolveNumericScore(scored.scoreMap, fieldNames.standardScoreFieldNames);
+      const assessmentSupportLevel = resolveStringScore(scored.scoreMap, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
+
+      const supportLevel = getSupportLevel({
+        grade: row.grade,
+        percentile,
+        rawScore,
+        taskSlug: scored.variant.taskSlug,
+        scoringVersion,
+        assessmentSupportLevel,
+      }) as ServiceSupportLevelValue | null;
+
+      // Eligibility for the optional flag (independent of completion)
+      const eligibility = evaluateAcrossVariants(row, variants, evaluateEligibility);
+
+      scores[taskId] = {
+        rawScore: roundScoreOrNull(rawScore),
+        percentile: roundScoreOrNull(percentile),
+        standardScore: roundScoreOrNull(standardScore),
+        supportLevel,
+        reliable: scored.runMeta.reliable,
+        engagementFlags: scored.runMeta.engagementFlags,
+        optional: eligibility.isOptional,
+        completed: true,
+      };
+    } else {
+      // No completed run on any variant — evaluate condition across variants
+      const eligibility = evaluateAcrossVariants(row, variants, evaluateEligibility);
+      if (!eligibility.isAssigned) continue; // task not visible to this student
+
+      scores[taskId] = {
+        rawScore: null,
+        percentile: null,
+        standardScore: null,
+        supportLevel: eligibility.isOptional ? 'optional' : null,
+        reliable: null,
+        engagementFlags: [],
+        optional: eligibility.isOptional,
+        completed: false,
+      };
+    }
+  }
+
+  return {
+    user: {
+      userId: row.userId,
+      assessmentPid: row.assessmentPid,
+      username: row.username,
+      email: row.email,
+      firstName: row.nameFirst,
+      lastName: row.nameLast,
+      grade: row.grade,
+      schoolName: scopeType === EntityType.DISTRICT ? (schoolNamesByUser?.get(row.userId) ?? null) : null,
+    },
+    scores,
+  };
+}
+
+/**
+ * Group task metadata by taskId, preserving the orderIndex order of the input.
+ * Returns the ordered taskId list and a map from taskId to its variants. Pure
+ * function — depends only on `taskMetas`, so the result is hoisted out of the
+ * per-student loop in `listStudentScores` to avoid recomputing it for every row.
+ */
+function groupTaskMetasByTaskId(taskMetas: ReportTaskMeta[]): {
+  taskOrder: string[];
+  variantsByTaskId: Map<string, ReportTaskMeta[]>;
+} {
+  const variantsByTaskId = new Map<string, ReportTaskMeta[]>();
+  const taskOrder: string[] = [];
+  for (const meta of taskMetas) {
+    if (!variantsByTaskId.has(meta.taskId)) {
+      variantsByTaskId.set(meta.taskId, []);
+      taskOrder.push(meta.taskId);
+    }
+    variantsByTaskId.get(meta.taskId)!.push(meta);
+  }
+  return { taskOrder, variantsByTaskId };
+}
+
+/**
+ * Evaluate task-variant eligibility across every variant of a task.
+ * A student is "assigned" if any variant assigns them; "optional" only when
+ * every assigning variant marks them optional. Mirrors the score-overview
+ * helper of the same intent.
+ */
+function evaluateAcrossVariants(
+  user: ConditionEvaluationUser,
+  variants: ReportTaskMeta[],
+  evaluateEligibility: StudentEligibilityEvaluator,
+): { isAssigned: boolean; isOptional: boolean } {
+  let anyAssigned = false;
+  let anyRequired = false;
+  for (const v of variants) {
+    const { isAssigned, isOptional } = evaluateEligibility(user, v.conditionsAssignment, v.conditionsRequirements);
+    if (isAssigned) {
+      anyAssigned = true;
+      if (!isOptional) anyRequired = true;
+    }
+  }
+  return { isAssigned: anyAssigned, isOptional: anyAssigned && !anyRequired };
 }
