@@ -63,6 +63,7 @@ tests:
           can_update_child: true
           can_delete_child: true
           can_consent_for_child: true
+          can_create_run_for_child: true
           can_create: false
           can_update: false
           can_delete: false
@@ -85,6 +86,7 @@ tests:
           can_update_child: false
           can_delete_child: false
           can_consent_for_child: false
+          can_create_run_for_child: false
           can_create: false
           can_update: false
           can_delete: false
@@ -104,6 +106,7 @@ tests:
           can_update_child: false
           can_delete_child: false
           can_consent_for_child: false
+          can_create_run_for_child: false
           member: false
 
   - name: Child cannot see another family
@@ -133,6 +136,7 @@ tests:
           can_update_child: false
           can_delete_child: false
           can_consent_for_child: false
+          can_create_run_for_child: false
           can_create: false
           can_update: false
           can_delete: false

@@ -89,7 +89,7 @@ export async function writeFgaFamilyMembership(
   userId: string,
   familyId: string,
   role: UserFamilyRole,
-  joinedOn: Date | null,
+  joinedOn: Date,
   leftOn: Date | null,
 ): Promise<void> {
   const client = FgaClient.getClient();
