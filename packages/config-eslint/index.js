@@ -59,6 +59,7 @@ export const config = [
       globals: {},
     },
     rules: {
+      'import/no-extraneous-dependencies': 'error',
       'import/prefer-default-export': 'off',
       'import/no-named-as-default': 'off',
       'import/no-cycle': 'off',
@@ -93,6 +94,8 @@ export const config = [
   },
 
   // Node tooling/config files (shared across frontend/backend)
+  // These legitimately import from root workspace devDependencies (e.g., rollup plugins,
+  // shared ESLint/Prettier configs) which aren't in each package's own package.json.
   {
     files: [
       '**/*.{config,setup}.{js,cjs,mjs,ts}',
@@ -108,6 +111,9 @@ export const config = [
         process: 'readonly',
         __dirname: 'readonly',
       },
+    },
+    rules: {
+      'import/no-extraneous-dependencies': 'off',
     },
   },
 
