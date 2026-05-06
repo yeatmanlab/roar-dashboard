@@ -50,7 +50,10 @@ export class FinishRunCommand implements Command<FinishRunInput, FinishRunOutput
   readonly name = 'FinishRun';
   readonly idempotent = false;
 
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private participantId: string,
+  ) {}
 
   /**
    * Executes the finish run command.
@@ -61,7 +64,7 @@ export class FinishRunCommand implements Command<FinishRunInput, FinishRunOutput
    */
   async execute(input: FinishRunInput): Promise<FinishRunOutput> {
     const result = await this.api.client.runs.event({
-      params: { runId: input.runId },
+      params: { userId: this.participantId, runId: input.runId },
       body: {
         type: input.type,
         ...(input.metadata ? { metadata: input.metadata } : {}),

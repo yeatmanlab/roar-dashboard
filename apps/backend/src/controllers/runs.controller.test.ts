@@ -29,6 +29,7 @@ describe('RunsController', () => {
   const mockCreate = vi.fn();
   const mockCompleteRun = vi.fn();
   const mockAuthContext = { userId: 'test-user', isSuperAdmin: false };
+  const mockTargetUserId = 'test-user';
   const mockBody = {
     taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
     taskVersion: '1.0.0',
@@ -59,7 +60,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.status).toBe(StatusCodes.CREATED);
       expect(result.body).toEqual({
@@ -67,15 +68,16 @@ describe('RunsController', () => {
       });
     });
 
-    it('should pass auth context and body to service', async () => {
+    it('should pass auth context, targetUserId, and body to service', async () => {
       mockCreate.mockResolvedValue({ id: 'run-uuid-123' });
 
       const { RunsController } = await import('./runs.controller');
 
       const customAuthContext = { userId: 'user-456', isSuperAdmin: true };
-      await RunsController.create(customAuthContext, mockBody);
+      const customTargetUserId = 'user-456';
+      await RunsController.create(customAuthContext, customTargetUserId, mockBody);
 
-      expect(mockCreate).toHaveBeenCalledWith(customAuthContext, mockBody);
+      expect(mockCreate).toHaveBeenCalledWith(customAuthContext, customTargetUserId, mockBody);
     });
 
     it('should return 422 when service throws UNPROCESSABLE_ENTITY ApiError', async () => {
@@ -88,7 +90,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
       expect(result.body).toEqual({
@@ -110,7 +112,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toEqual({
@@ -132,7 +134,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(result.body).toEqual({
@@ -154,7 +156,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.status).toBe(StatusCodes.BAD_REQUEST);
       expect(result.body).toEqual({
@@ -176,7 +178,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.status).toBe(StatusCodes.UNAUTHORIZED);
       expect(result.body).toEqual({
@@ -194,7 +196,9 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      await expect(RunsController.create(mockAuthContext, mockBody)).rejects.toThrow('Database connection lost');
+      await expect(RunsController.create(mockAuthContext, mockTargetUserId, mockBody)).rejects.toThrow(
+        'Database connection lost',
+      );
     });
 
     it('should include error code in error response', async () => {
@@ -207,7 +211,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.body).toHaveProperty('error.code');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -224,7 +228,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.create(mockAuthContext, mockBody);
+      const result = await RunsController.create(mockAuthContext, mockTargetUserId, mockBody);
 
       expect(result.body).toHaveProperty('error.traceId');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -243,7 +247,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toEqual({
@@ -257,9 +261,9 @@ describe('RunsController', () => {
       const { RunsController } = await import('./runs.controller');
 
       const customAuthContext = { userId: 'user-456', isSuperAdmin: true };
-      await RunsController.event(customAuthContext, validRunId, validEventBody);
+      await RunsController.event(customAuthContext, mockTargetUserId, validRunId, validEventBody);
 
-      expect(mockCompleteRun).toHaveBeenCalledWith(customAuthContext, validRunId, validEventBody);
+      expect(mockCompleteRun).toHaveBeenCalledWith(customAuthContext, mockTargetUserId, validRunId, validEventBody);
     });
 
     it('should handle abort event type', async () => {
@@ -274,7 +278,7 @@ describe('RunsController', () => {
       const { RunsController: ReloadedController } = await import('./runs.controller');
 
       const abortBody = { type: 'abort' as const };
-      const result = await ReloadedController.event(mockAuthContext, validRunId, abortBody);
+      const result = await ReloadedController.event(mockAuthContext, mockTargetUserId, validRunId, abortBody);
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toEqual({ data: { status: 'ok' } });
@@ -295,7 +299,7 @@ describe('RunsController', () => {
         type: 'trial' as const,
         trial: { assessmentStage: 'test' as const, correct: 1 },
       };
-      const result = await ReloadedController.event(mockAuthContext, validRunId, trialBody);
+      const result = await ReloadedController.event(mockAuthContext, mockTargetUserId, validRunId, trialBody);
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toEqual({ data: { status: 'ok' } });
@@ -317,7 +321,7 @@ describe('RunsController', () => {
         engagementFlags: { incomplete: true },
         reliableRun: true,
       };
-      const result = await ReloadedController.event(mockAuthContext, validRunId, engagementBody);
+      const result = await ReloadedController.event(mockAuthContext, mockTargetUserId, validRunId, engagementBody);
 
       expect(result.status).toBe(StatusCodes.OK);
       expect(result.body).toEqual({ data: { status: 'ok' } });
@@ -333,7 +337,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.status).toBe(StatusCodes.BAD_REQUEST);
       expect(result.body).toEqual({
@@ -355,7 +359,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.status).toBe(StatusCodes.UNAUTHORIZED);
       expect(result.body).toEqual({
@@ -377,7 +381,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.status).toBe(StatusCodes.FORBIDDEN);
       expect(result.body).toEqual({
@@ -399,7 +403,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.status).toBe(StatusCodes.NOT_FOUND);
       expect(result.body).toEqual({
@@ -421,7 +425,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
       expect(result.body).toEqual({
@@ -439,7 +443,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      await expect(RunsController.event(mockAuthContext, validRunId, validEventBody)).rejects.toThrow(
+      await expect(RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody)).rejects.toThrow(
         'Database connection lost',
       );
     });
@@ -454,7 +458,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.body).toHaveProperty('error.code');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -471,7 +475,7 @@ describe('RunsController', () => {
 
       const { RunsController } = await import('./runs.controller');
 
-      const result = await RunsController.event(mockAuthContext, validRunId, validEventBody);
+      const result = await RunsController.event(mockAuthContext, mockTargetUserId, validRunId, validEventBody);
 
       expect(result.body).toHaveProperty('error.traceId');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

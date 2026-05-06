@@ -14,7 +14,7 @@ const RunEventType = RunEventTypeSchema.enum;
 /**
  * RunsController
  *
- * Handles HTTP concerns for the /runs endpoint and /runs/:runId/event endpoints.
+ * Handles HTTP concerns for the /user/:userId/runs and /user/:userId/runs/:runId/event endpoints.
  * Delegates business logic and authorization to RunService and RunEventService.
  * Maps ApiError status codes to typed error responses via toErrorResponse.
  */
@@ -23,12 +23,13 @@ export const RunsController = {
    * Create a new run (assessment session instance).
    *
    * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param targetUserId - The user ID from the path parameter (the owner of the run being created)
    * @param body - Request body with taskVariantId, taskVersion, administrationId, and optional metadata
    * @returns Response with status 201 and id on success, or error response on failure
    */
-  create: async (authContext: AuthContext, body: CreateRunRequestBody) => {
+  create: async (authContext: AuthContext, targetUserId: string, body: CreateRunRequestBody) => {
     try {
-      const { id } = await runService.create(authContext, body);
+      const { id } = await runService.create(authContext, targetUserId, body);
 
       return {
         status: StatusCodes.CREATED as const,
@@ -61,27 +62,28 @@ export const RunsController = {
    * - engagement: Update engagement flags and reliability status
    *
    * @param authContext - Authentication context with userId and isSuperAdmin
+   * @param targetUserId - The user ID from the path parameter (the owner of the run)
    * @param runId - UUID of the run to post the event to
    * @param body - Event body with type and type-specific fields
    * @returns Response with status 200 and { status: 'ok' } on success, or error response on failure
    */
-  event: async (authContext: AuthContext, runId: string, body: RunEventBody) => {
+  event: async (authContext: AuthContext, targetUserId: string, runId: string, body: RunEventBody) => {
     try {
       switch (body.type) {
         case RunEventType.complete:
-          await runEventsService.completeRun(authContext, runId, body);
+          await runEventsService.completeRun(authContext, targetUserId, runId, body);
           break;
 
         case RunEventType.abort:
-          await runEventsService.abortRun(authContext, runId, body);
+          await runEventsService.abortRun(authContext, targetUserId, runId, body);
           break;
 
         case RunEventType.trial:
-          await runEventsService.writeTrial(authContext, runId, body);
+          await runEventsService.writeTrial(authContext, targetUserId, runId, body);
           break;
 
         case RunEventType.engagement:
-          await runEventsService.updateEngagement(authContext, runId, body);
+          await runEventsService.updateEngagement(authContext, targetUserId, runId, body);
           break;
       }
 
