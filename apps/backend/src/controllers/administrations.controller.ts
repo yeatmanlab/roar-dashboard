@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { GetTreeOptions } from '../services/administration/administration.service';
+import type { GetTreeOptions, TreeNodeStats } from '../services/administration/administration.service';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ReportService } from '../services/report/report.service';
 import type {
@@ -10,14 +10,15 @@ import type {
   AdministrationTreeQuery,
   AdministrationsListQuery,
   Condition,
+  CreateAdministrationRequest,
   OrganizationTreeNode,
   ProgressOverviewQuery,
   ProgressStudent,
   ProgressStudentsQuery,
   ReportTaskMetadata,
   ScoreOverviewQuery,
-  TreeNodeStats,
-  CreateAdministrationRequest,
+  StudentScoresQuery,
+  StudentScoreRow,
 } from '@roar-dashboard/api-contract';
 import type {
   AgreementWithVersion,
@@ -519,6 +520,56 @@ export const AdministrationsController = {
           StatusCodes.BAD_REQUEST,
           StatusCodes.NOT_FOUND,
           StatusCodes.FORBIDDEN,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * List paginated per-student scores for an administration.
+   *
+   * Delegates to ReportService for authorization, score classification, and
+   * per-row dedup across multi-variant tasks. The service returns
+   * `ServiceStudentScoreRow` objects whose shape is structurally equivalent
+   * to the contract's `StudentScoreRow`, so the result is returned directly.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Pagination, sort, filter, and scope parameters
+   */
+  listStudentScores: async (authContext: AuthContext, administrationId: string, query: StudentScoresQuery) => {
+    try {
+      const result = await reportService.listStudentScores(authContext, administrationId, query);
+
+      // Service and contract types are structurally equivalent (same field
+      // names: tasks[], items[], totalItems). The cast is implicit via TS structural
+      // typing — see report.types.ts for the source of truth on each side.
+      const tasks: ReportTaskMetadata[] = result.tasks;
+      const items: StudentScoreRow[] = result.items;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            tasks,
+            items,
+            pagination: {
+              page: query.page,
+              perPage: query.perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / query.perPage),
+            },
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.INTERNAL_SERVER_ERROR,
         ]);
       }
