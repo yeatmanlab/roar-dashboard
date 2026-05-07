@@ -1,0 +1,77 @@
+name: roar-research
+version: '3.8'
+
+# ⚠️  The credentials below are intentional defaults for LOCAL development only.
+# Never use these in a production or shared environment.
+
+services:
+  # ──────────────────────────────────────────────────────────────────────────
+  # PostgreSQL Database
+  # ──────────────────────────────────────────────────────────────────────────
+  db:
+    container_name: roar-researcher-db
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-postgres}
+      POSTGRES_INITDB_ARGS: -c log_statement=all
+    ports:
+      - '5433:5432'
+    volumes:
+      - roar-researcher-db-data:/var/lib/postgresql/data
+      - ./scripts/assessment-sdk/init-researcher-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${PG_USER:-postgres}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: 
+      - "postgres"
+      - "-c"
+      - "log_statement=all"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Backend API
+  # ──────────────────────────────────────────────────────────────────────────
+  backend:
+    container_name: roar-researcher-backend
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      # Database URLs - connect to the 'db' service
+      CORE_DATABASE_URL: postgresql://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@db:5432/roar_core
+      ASSESSMENT_DATABASE_URL: postgresql://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@db:5432/roar_assessment
+      # Firebase (optional - can be disabled for local testing)
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-roar-local}
+      # OpenFGA (optional - can be disabled for local testing)
+      FGA_API_URL: ${FGA_API_URL:-}
+      FGA_STORE_ID: ${FGA_STORE_ID:-}
+      FGA_MODEL_ID: ${FGA_MODEL_ID:-}
+    ports:
+      - '8080:8080'
+    restart: on-failure
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # pgweb - Web UI for Database Inspection
+  # ──────────────────────────────────────────────────────────────────────────
+  pgweb:
+    container_name: roar-researcher-pgweb
+    image: sosedoff/pgweb:0.15.0
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@db:5432/roar_core?sslmode=disable
+    ports:
+      - '8081:8081'
+    restart: unless-stopped
+
+volumes:
+  roar-researcher-db-data:
