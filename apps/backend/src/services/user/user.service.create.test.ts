@@ -314,6 +314,34 @@ describe('UserService.create', () => {
       });
       expect(mockAuth.createUser).not.toHaveBeenCalled();
     });
+
+    it('non-super-admin: non-existent district entityId → 422 before Firebase call (defense-in-depth)', async () => {
+      // verifyMembershipEntityExists is called for all non-class, non-family memberships
+      // even when the FGA check would likely catch it anyway. Defense-in-depth.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: false });
+      mockDistrictRepo.getActiveById.mockResolvedValue(null);
+
+      await expect(service.create(authContext, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
+
+    it('non-super-admin: non-existent family entityId → 422 before Firebase call (defense-in-depth)', async () => {
+      // Family entities have no FGA check, so verifyMembershipEntityExists is the only guard.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: false });
+      const familyId = 'family-uuid-1';
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserFamilyRole.CHILD }],
+      };
+      mockFamilyRepo.getActiveById.mockResolvedValue(null);
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
   });
 
   // ── Pre-flight uniqueness ──────────────────────────────────────────────────
@@ -472,6 +500,42 @@ describe('UserService.create', () => {
       // Firebase was created in step 3 and must be compensated
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
     });
+
+    it('class membership with no resolvable root district → 404 before transaction opens', async () => {
+      // getDistinctRootOrgIds returns [] when the class has no org hierarchy row above it.
+      // The resolver throws NOT_FOUND before runTransaction is called.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([]);
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
+      };
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+
+      expect(mockUserRepo.runTransaction).not.toHaveBeenCalled();
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
+
+    it('school membership with no resolvable root district → 404 before transaction opens', async () => {
+      // getDistinctRootOrgIds returns [] when the school has no parent in the org hierarchy.
+      // The resolver throws NOT_FOUND before runTransaction is called.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockSchoolRepo.getDistinctRootOrgIds.mockResolvedValue([]);
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.SCHOOL, entityId: schoolId, role: UserRole.STUDENT }],
+      };
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+
+      expect(mockUserRepo.runTransaction).not.toHaveBeenCalled();
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
   });
 
   // ── FGA write + full compensation ─────────────────────────────────────────
@@ -487,10 +551,11 @@ describe('UserService.create', () => {
 
       // FGA partial-write compensation
       expect(mockAuthzService.deleteTuples).toHaveBeenCalledOnce();
-      // Roster provider row must be deleted before the user row (trigger ordering)
-      expect(mockRosterProviderRepo.deleteByEntityId).toHaveBeenCalledWith(newUserId);
+      // Roster provider row must be deleted before the user row (trigger ordering),
+      // both inside a single transaction for atomicity.
+      expect(mockRosterProviderRepo.deleteByEntityId).toHaveBeenCalledWith(newUserId, expect.anything());
       // DB compensation
-      expect(mockUserRepo.delete).toHaveBeenCalledWith({ id: newUserId });
+      expect(mockUserRepo.delete).toHaveBeenCalledWith(expect.objectContaining({ id: newUserId }));
       // Firebase compensation
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
     });

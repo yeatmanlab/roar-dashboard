@@ -735,11 +735,16 @@ export function UserService({
       }));
       await authorizationService.deleteTuples(deleteTuples);
 
-      // Delete DB rows in the correct order: roster provider ID must be removed first
-      // or the `prevent_rostered_entity_delete` trigger will block the user DELETE.
+      // Wrap both deletes in a single transaction: the roster provider row must be
+      // removed first (trigger ordering), and atomicity ensures we never end up with
+      // a user row that has no rostering entry if the second delete fails.
       try {
-        await rosterProviderIdRepository.deleteByEntityId(newUserId);
-        await userRepository.delete({ id: newUserId });
+        await userRepository.runTransaction({
+          fn: async (tx) => {
+            await rosterProviderIdRepository.deleteByEntityId(newUserId, tx);
+            await userRepository.delete({ id: newUserId, transaction: tx });
+          },
+        });
       } catch (dbDeleteError) {
         logger.error(
           { err: dbDeleteError, context: { userId, newUserId, firebaseUid } },
