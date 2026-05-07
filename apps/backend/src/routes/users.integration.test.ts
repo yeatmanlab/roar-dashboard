@@ -64,6 +64,8 @@ import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
 import { EntityType } from '../types/entity-type';
+import { RosteringProvider } from '../enums/rostering-provider.enum';
+import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -2013,7 +2015,24 @@ describe('POST /v1/users', () => {
         .withBody(validBodyForDistrict('resolver-district'))
         .toReturn(StatusCodes.CREATED);
 
-      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+      const userId: string = res.body.data.id;
+
+      // Full record assertion — the only test in this suite that verifies every field
+      // written to rostering_provider_ids, not just partnerId.
+      const { rosteringProviderIds } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+      const { CoreDbClient } = await import('../test-support/db');
+      const [record] = await CoreDbClient.select()
+        .from(rosteringProviderIds)
+        .where(eq(rosteringProviderIds.entityId, userId));
+
+      expect(record).toMatchObject({
+        providerType: RosteringProvider.DASHBOARD,
+        entityType: RosteringEntityType.USER,
+        entityId: userId,
+        providerId: userId, // DASHBOARD provider uses the user's own ID as the external provider ID
+        partnerId: baseFixture.district.id,
+      });
     });
 
     it('school-only membership → partnerId resolves to parent district via ltree', async () => {
@@ -2058,16 +2077,32 @@ describe('POST /v1/users', () => {
       expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.group.id);
     });
 
-    it('district takes priority over class and school when all three are present', async () => {
-      // validBodyForClassInSchoolInDistrict includes district + school + class memberships.
-      // The resolver should return on the district branch without touching the school
-      // or class ltree paths.
+    it('consistent district + school + class memberships → partnerId is the shared district', async () => {
+      // All three org membership types point to the same district.
+      // The resolver collects all evidence, confirms one unique root, and returns it.
       const res = await expectRoute('POST', '/v1/users')
         .as(tiers.superAdmin)
-        .withBody(validBodyForClassInSchoolInDistrict('resolver-priority'))
+        .withBody(validBodyForClassInSchoolInDistrict('resolver-consistent'))
         .toReturn(StatusCodes.CREATED);
 
       expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+    });
+
+    it('explicit district_A + class in district_B → 422 (cross-district inconsistency)', async () => {
+      // Previously undefined behaviour: the resolver returned district_A without
+      // checking that the class belongs there. Now all sources are validated together.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-district-class-mismatch'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+            { entityType: 'class', entityId: baseFixture.classInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
     });
 
     it('class memberships spanning two districts → 422 (cross-district ambiguity)', async () => {
@@ -2084,6 +2119,39 @@ describe('POST /v1/users', () => {
           memberships: [
             { entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' },
             { entityType: 'class', entityId: baseFixture.classInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    it('family-only membership → partnerId is the family ID (direct fallback)', async () => {
+      // Family memberships fall through all org/class/school/group branches and resolve
+      // to the family ID directly. sharedFamily is set up in the POST /v1/users beforeAll.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-family'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'family', entityId: sharedFamily.id, role: 'parent' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(sharedFamily.id);
+    });
+
+    it('school memberships spanning two districts → 422 (cross-district ambiguity)', async () => {
+      // schoolA is under district; schoolInDistrictB is under districtB.
+      // Symmetric to the class cross-district case — the same multi-root guard fires.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-school-cross-district'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+            { entityType: 'school', entityId: baseFixture.schoolInDistrictB.id, role: 'student' },
           ],
         })
         .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);

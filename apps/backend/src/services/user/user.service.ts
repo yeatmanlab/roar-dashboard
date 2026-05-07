@@ -780,105 +780,80 @@ export function UserService({
   /**
    * Resolve the single root org provider ID from the user's memberships.
    *
-   * Resolution priority (first match wins):
-   * 1. Explicit district membership → district ID
-   * 2. Class memberships → district ID via ltree path (classRepository.getDistinctRootOrgIds)
-   * 3. School memberships → district ID via ltree path (schoolRepository.getDistinctRootOrgIds)
-   * 4. Group memberships → first group ID
-   * 5. Family memberships → first family ID
+   * District resolution gathers evidence from all three org sources first, then
+   * validates that they agree before returning. This catches inconsistencies such
+   * as an explicit district_A combined with a class whose ltree root is district_B.
+   *
+   * Resolution order:
+   * 1. Collect district IDs from: explicit district memberships + class ltree roots
+   *    + school ltree roots (all resolved in parallel).
+   * 2. If the combined set has exactly one district → return it.
+   * 3. If the combined set has more than one distinct district → throw 422.
+   * 4. If no district evidence → fall through to group, then family.
    *
    * @param memberships The user's membership information from the request body
    * @returns The resolved root org provider ID
-   * @throws {ApiError} If the ID cannot be resolved or if cross-district memberships are detected
+   * @throws {ApiError} NOT_FOUND if a class or school membership has no resolvable root district
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if memberships span more than one distinct district
+   * @throws {ApiError} NOT_FOUND if no provider can be resolved at all
    */
   async function resolveRootOrgProviderFromMemberships(memberships: CreateUserMemberships[]): Promise<string> {
-    // Extract the partner IDs from the memberships
     const partnerIds = memberships.map(({ entityId, entityType }) => ({ entityId, entityType }));
 
-    // 1) If there's an explicit district membership, return it
-    const districtIds = partnerIds
-      .filter(({ entityType }) => entityType === EntityType.DISTRICT)
-      .map(({ entityId }) => entityId);
-
-    if (districtIds.length > 1) {
-      throw new ApiError('Multiple district memberships found', {
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
-        context: { districtIds },
-      });
-    }
-
-    if (districtIds.length === 1) {
-      return districtIds[0]!;
-    }
-
-    // 2) If there are class memberships, resolve class -> school -> district
     const classIds = partnerIds
       .filter(({ entityType }) => entityType === EntityType.CLASS)
       .map(({ entityId }) => entityId);
 
-    if (classIds.length > 0) {
-      const districtIdsFromClasses = (await classRepository.getDistinctRootOrgIds(classIds)).map(({ id }) => id);
-
-      // Check if there are any district IDs from class memberships
-      const districtIdsFromClassesSet = new Set(districtIdsFromClasses);
-
-      // If no district IDs are found from class memberships, throw an error
-      if (districtIdsFromClassesSet.size === 0) {
-        throw new ApiError('No district found for class memberships', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { classIds, districtIdsFromClasses },
-        });
-      }
-
-      // If multiple district IDs are found from class memberships, throw an error
-      if (districtIdsFromClassesSet.size > 1) {
-        throw new ApiError('Multiple districts found for class memberships', {
-          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
-          context: { classIds, districtIdsFromClasses },
-        });
-      }
-
-      // If a single district ID is found from class memberships, return it
-      return districtIdsFromClasses[0]!;
-    }
-
-    // 3) If there are school memberships, resolve school -> district
     const schoolIds = partnerIds
       .filter(({ entityType }) => entityType === EntityType.SCHOOL)
       .map(({ entityId }) => entityId);
 
-    if (schoolIds.length > 0) {
-      const districtIdsFromSchools = (await schoolRepository.getDistinctRootOrgIds(schoolIds)).map(({ id }) => id);
+    // Resolve class and school roots in parallel to keep the write window short.
+    const [classDistricts, schoolDistricts] = await Promise.all([
+      classIds.length > 0 ? classRepository.getDistinctRootOrgIds(classIds) : Promise.resolve([]),
+      schoolIds.length > 0 ? schoolRepository.getDistinctRootOrgIds(schoolIds) : Promise.resolve([]),
+    ]);
 
-      // Check if there are any district IDs from school memberships
-      const districtIdsFromSchoolsSet = new Set(districtIdsFromSchools);
-
-      // If no district IDs are found from school memberships, throw an error
-      if (districtIdsFromSchoolsSet.size === 0) {
-        throw new ApiError('No district found from school memberships', {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { schoolIds },
-        });
-      }
-
-      // If multiple district IDs are found from school memberships, throw an error
-      if (districtIdsFromSchoolsSet.size > 1) {
-        throw new ApiError('Multiple districts found from school memberships', {
-          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
-          context: { schoolIds, districtIdsFromSchools },
-        });
-      }
-
-      // If a single district ID is found from school memberships, return it
-      return districtIdsFromSchools[0]!;
+    if (classIds.length > 0 && classDistricts.length === 0) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { classIds },
+      });
     }
 
-    // 4) Fall back to group, then family
+    if (schoolIds.length > 0 && schoolDistricts.length === 0) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { schoolIds },
+      });
+    }
+
+    // Gather all district evidence into one set: explicit memberships + ltree roots.
+    // Using a Set naturally deduplicates — e.g., district_A explicit + school_in_district_A
+    // correctly collapses to a single entry rather than being flagged as cross-district.
+    const resolvedDistricts = new Set<string>();
+
+    for (const { entityId } of partnerIds.filter(({ entityType }) => entityType === EntityType.DISTRICT)) {
+      resolvedDistricts.add(entityId);
+    }
+    for (const { id } of classDistricts) resolvedDistricts.add(id);
+    for (const { id } of schoolDistricts) resolvedDistricts.add(id);
+
+    if (resolvedDistricts.size > 1) {
+      throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        context: { resolvedDistricts: [...resolvedDistricts] },
+      });
+    }
+
+    if (resolvedDistricts.size === 1) {
+      return [...resolvedDistricts][0]!;
+    }
+
+    // No district evidence — fall through to group, then family
     const groupIds = partnerIds
       .filter(({ entityType }) => entityType === EntityType.GROUP)
       .map(({ entityId }) => entityId);
@@ -891,7 +866,7 @@ export function UserService({
 
     if (familyIds.length > 0) return familyIds[0]!;
 
-    throw new ApiError('Failed to resolve root org provider from user memberships', {
+    throw new ApiError(ApiErrorMessage.NOT_FOUND, {
       statusCode: StatusCodes.NOT_FOUND,
       code: ApiErrorCode.RESOURCE_NOT_FOUND,
       context: { memberships },

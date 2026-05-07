@@ -434,6 +434,44 @@ describe('UserService.create', () => {
         expect.stringContaining('compensation failed'),
       );
     });
+
+    it('resolveRootOrgProviderFromMemberships throws before transaction opens → only Firebase compensated', async () => {
+      // Resolver runs before runTransaction is called. If it throws, no DB write has
+      // occurred — only the Firebase account (created in step 3) needs compensation.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: 'district-a' }, { id: 'district-b' }]);
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
+      };
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+
+      // Resolver threw before the transaction opened — no DB write was attempted
+      expect(mockUserRepo.runTransaction).not.toHaveBeenCalled();
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
+      expect(mockRosterProviderRepo.create).not.toHaveBeenCalled();
+      // Firebase was created in step 3 and must be compensated
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
+
+    it('rosterProviderIdRepository.create fails inside transaction → transaction rolled back, only Firebase compensated', async () => {
+      // rosterProviderIdRepository.create runs inside runTransaction. On failure the
+      // transaction rolls back atomically — no explicit userRepository.delete is needed.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockRosterProviderRepo.create.mockRejectedValue(new Error('insert failed'));
+
+      await expect(service.create(authContext, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+
+      // Transaction rolled back — explicit row delete must not be attempted
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
+      // Firebase was created in step 3 and must be compensated
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
   });
 
   // ── FGA write + full compensation ─────────────────────────────────────────
