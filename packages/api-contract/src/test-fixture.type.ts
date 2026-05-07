@@ -11,9 +11,11 @@
 
 export interface TestFixture {
   testUser: {
+    id: string;
     authId: string;
   };
   schoolATeacher: {
+    id: string;
     authId: string;
   };
   administrationAssignedToDistrict: {

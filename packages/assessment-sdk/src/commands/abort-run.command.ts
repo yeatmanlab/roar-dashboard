@@ -33,7 +33,10 @@ export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
   readonly name = 'AbortRun';
   readonly idempotent = false;
 
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private participantId: string,
+  ) {}
 
   /**
    * Executes the abort run command.
@@ -44,7 +47,7 @@ export class AbortRunCommand implements Command<AbortRunInput, AbortRunOutput> {
    */
   async execute(input: AbortRunInput): Promise<AbortRunOutput> {
     const result = await this.api.client.runs.event({
-      params: { runId: input.runId },
+      params: { userId: this.participantId, runId: input.runId },
       body: { type: input.type },
     });
 

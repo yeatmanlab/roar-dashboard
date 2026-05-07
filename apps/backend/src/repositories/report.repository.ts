@@ -7,6 +7,8 @@ import {
   userOrgs,
   userClasses,
   userGroups,
+  userFamilies,
+  families,
   orgs,
   classes,
   groups,
@@ -33,7 +35,8 @@ import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
-import { isEnrollmentActive } from './utils/enrollment.utils';
+import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
+import { alias } from 'drizzle-orm/pg-core';
 
 /**
  * Scope parameters for report queries.
@@ -266,6 +269,21 @@ export interface HistoricalRunRow {
   completedAt: Date;
   reliableRun: boolean | null;
   engagementFlags: string[];
+}
+
+/**
+ * Per-administration metadata returned by `getStudentAdministrations`.
+ *
+ * One row per administration the student has either started a run in or
+ * remains assigned to via their org/class/group memberships, ordered by
+ * `dateStart` ascending. The service joins this with task and score data
+ * to populate the per-administration `tasks` array of the guardian report.
+ */
+export interface StudentAdministrationRow {
+  id: string;
+  name: string;
+  dateStart: Date;
+  dateEnd: Date;
 }
 
 /**
@@ -2105,6 +2123,275 @@ export class ReportRepository {
       })
       .from(fdwRunScores)
       .where(inArray(fdwRunScores.runId, runIds));
+
+    return rows;
+  }
+
+  /**
+   * Verify that a guardian user is currently linked to a target student via
+   * the `user_families` junction table.
+   *
+   * The guardian must hold `role='parent'` and the student must hold
+   * `role='child'` in the same family, both with active membership
+   * (`isActiveInFamily`), and the family must not have its rostering ended.
+   *
+   * Used by the guardian student report to authorize access without leaking
+   * whether the guardian is generally a parent in the system or whether the
+   * student exists — both ambiguous cases collapse to a single boolean.
+   *
+   * @param guardianUserId - The user requesting access (must hold role='parent')
+   * @param studentUserId - The target student user (must hold role='child')
+   * @returns `true` only when an active parent-child link exists in the same family
+   */
+  async verifyGuardianStudentLink(guardianUserId: string, studentUserId: string): Promise<boolean> {
+    const parentMembership = alias(userFamilies, 'parent_uf');
+    const childMembership = alias(userFamilies, 'child_uf');
+
+    const rows = await this.db
+      .select({ familyId: parentMembership.familyId })
+      .from(parentMembership)
+      .innerJoin(childMembership, eq(parentMembership.familyId, childMembership.familyId))
+      .innerJoin(families, eq(parentMembership.familyId, families.id))
+      .where(
+        and(
+          eq(parentMembership.userId, guardianUserId),
+          eq(parentMembership.role, 'parent'),
+          isActiveInFamily(parentMembership),
+          eq(childMembership.userId, studentUserId),
+          eq(childMembership.role, 'child'),
+          isActiveInFamily(childMembership),
+          isNull(families.rosteringEnded),
+        ),
+      )
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  /**
+   * Verify that a supervisory user shares an org/class/group scope with the
+   * target student (the "org-overlap guard" for the guardian student report).
+   *
+   * Returns `true` if any of the following overlaps exist:
+   * - Supervisor has any of `supervisorRoles` on an org whose ltree path is
+   *   an ancestor (or equal to) one of the student's effective paths
+   *   (the student's own user_orgs paths or the orgPath of a class the
+   *   student is in).
+   * - Supervisor has any of `supervisorRoles` directly on a class the
+   *   student is also in.
+   * - Supervisor has any of `supervisorRoles` directly on a group the
+   *   student is also in.
+   *
+   * All memberships must be currently active and the underlying entities
+   * must not have rostering ended.
+   *
+   * @param supervisorUserId - The user requesting access
+   * @param studentUserId - The target student
+   * @param supervisorRoles - Allowlist of roles for the supervisor side
+   * @returns `true` when overlap exists, `false` otherwise
+   */
+  async verifyUserOrgOverlap(
+    supervisorUserId: string,
+    studentUserId: string,
+    supervisorRoles: ReadonlyArray<UserRole>,
+  ): Promise<boolean> {
+    if (supervisorRoles.length === 0) return false;
+
+    // Composite role-list literal for embedding in IN (...) clauses below.
+    // `sql.join` on enum values is parameterized by the driver; the enum
+    // values themselves are typed (`UserRole`) so there's no injection
+    // surface to worry about.
+    const roleList = sql.join(
+      supervisorRoles.map((r) => sql`${r}`),
+      sql`, `,
+    );
+
+    // One round-trip across all three overlap paths. PostgreSQL's planner
+    // short-circuits the OR/EXISTS chain once any branch matches, so this
+    // is no slower than the previous chained-Drizzle implementation in the
+    // happy path and is one round-trip cheaper in the no-overlap path.
+    const result = await this.db.execute<{ ok: number }>(sql`
+      SELECT 1 AS ok
+      WHERE
+        -- Path 1: supervisor's user_orgs path contains a student effective path
+        EXISTS (
+          SELECT 1
+          FROM ${userOrgs} sup_uo
+          INNER JOIN ${orgs} sup_org ON sup_uo.org_id = sup_org.id
+          WHERE sup_uo.user_id = ${supervisorUserId}
+            AND sup_uo.role IN (${roleList})
+            AND sup_uo.enrollment_start <= NOW()
+            AND (sup_uo.enrollment_end IS NULL OR sup_uo.enrollment_end > NOW())
+            AND sup_org.rostering_ended IS NULL
+            AND (
+              EXISTS (
+                SELECT 1 FROM ${userOrgs} stu_uo
+                INNER JOIN ${orgs} stu_org ON stu_uo.org_id = stu_org.id
+                WHERE stu_uo.user_id = ${studentUserId}
+                  AND stu_uo.role = ${UserRole.STUDENT}
+                  AND stu_uo.enrollment_start <= NOW()
+                  AND (stu_uo.enrollment_end IS NULL OR stu_uo.enrollment_end > NOW())
+                  AND stu_org.rostering_ended IS NULL
+                  AND stu_org.path <@ sup_org.path
+              )
+              OR EXISTS (
+                SELECT 1 FROM ${userClasses} stu_uc
+                INNER JOIN ${classes} stu_cls ON stu_uc.class_id = stu_cls.id
+                WHERE stu_uc.user_id = ${studentUserId}
+                  AND stu_uc.role = ${UserRole.STUDENT}
+                  AND stu_uc.enrollment_start <= NOW()
+                  AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+                  AND stu_cls.rostering_ended IS NULL
+                  AND stu_cls.org_path <@ sup_org.path
+              )
+            )
+        )
+        OR
+        -- Path 2: supervisor and student share a class directly.
+        EXISTS (
+          SELECT 1
+          FROM ${userClasses} sup_uc
+          INNER JOIN ${classes} c ON sup_uc.class_id = c.id
+          INNER JOIN ${userClasses} stu_uc
+            ON stu_uc.class_id = sup_uc.class_id
+            AND stu_uc.user_id = ${studentUserId}
+          WHERE sup_uc.user_id = ${supervisorUserId}
+            AND sup_uc.role IN (${roleList})
+            AND sup_uc.enrollment_start <= NOW()
+            AND (sup_uc.enrollment_end IS NULL OR sup_uc.enrollment_end > NOW())
+            AND stu_uc.role = ${UserRole.STUDENT}
+            AND stu_uc.enrollment_start <= NOW()
+            AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+            AND c.rostering_ended IS NULL
+        )
+        OR
+        -- Path 3: supervisor and student share a group directly.
+        EXISTS (
+          SELECT 1
+          FROM ${userGroups} sup_ug
+          INNER JOIN ${groups} g ON sup_ug.group_id = g.id
+          INNER JOIN ${userGroups} stu_ug
+            ON stu_ug.group_id = sup_ug.group_id
+            AND stu_ug.user_id = ${studentUserId}
+          WHERE sup_ug.user_id = ${supervisorUserId}
+            AND sup_ug.role IN (${roleList})
+            AND sup_ug.enrollment_start <= NOW()
+            AND (sup_ug.enrollment_end IS NULL OR sup_ug.enrollment_end > NOW())
+            AND stu_ug.role = ${UserRole.STUDENT}
+            AND stu_ug.enrollment_start <= NOW()
+            AND (stu_ug.enrollment_end IS NULL OR stu_ug.enrollment_end > NOW())
+            AND g.rostering_ended IS NULL
+        )
+      LIMIT 1
+    `);
+
+    return result.rows.length > 0;
+  }
+
+  /**
+   * Fetch the set of administrations a student is connected to — either by
+   * having started a run in `app_assessment_fdw.runs`, or by remaining
+   * actively assigned via their org / class / group memberships.
+   *
+   * The four contributing paths are:
+   * - **Runs:** any administration the student has a non-deleted run in.
+   * - **Org assignment:** any administration assigned at an org whose
+   *   ltree `path` is an ancestor (or equal to) one of the student's
+   *   effective paths — their `user_orgs` orgs or the `orgPath` of a class
+   *   they're enrolled in.
+   * - **Class assignment:** any administration assigned directly at a
+   *   class the student is enrolled in.
+   * - **Group assignment:** any administration assigned directly at a
+   *   group the student is in.
+   *
+   * Results are deduplicated via the `selectDistinct` and ordered by
+   * `dateStart` ascending so the service can render `administrations`
+   * chronologically without an additional sort.
+   *
+   * @param studentUserId - The target student
+   * @returns Administrations the student is connected to, oldest first
+   */
+  async getStudentAdministrations(studentUserId: string): Promise<StudentAdministrationRow[]> {
+    const rows = await this.db
+      .selectDistinct({
+        id: administrations.id,
+        name: administrations.name,
+        dateStart: administrations.dateStart,
+        dateEnd: administrations.dateEnd,
+      })
+      .from(administrations)
+      .where(
+        // The administrations table has no soft-delete column; existence
+        // alone is enough to consider an admin in scope here. We still
+        // filter the FDW runs by `r.deleted_at IS NULL` in path A so that
+        // soft-deleted runs don't pull dead administrations into the result.
+        or(
+          // Path A: student has a run in this admin
+          sql`EXISTS (
+            SELECT 1 FROM ${fdwRuns} r
+            WHERE r.administration_id = ${administrations.id}
+              AND r.user_id = ${studentUserId}
+              AND r.deleted_at IS NULL
+          )`,
+          // Path B: org-assignment whose path contains a student effective path
+          sql`EXISTS (
+            SELECT 1
+            FROM ${administrationOrgs} ao
+            INNER JOIN ${orgs} ao_org ON ao.org_id = ao_org.id
+            WHERE ao.administration_id = ${administrations.id}
+              AND ao_org.rostering_ended IS NULL
+              AND (
+                EXISTS (
+                  SELECT 1 FROM ${userOrgs} stu_uo
+                  INNER JOIN ${orgs} stu_org ON stu_uo.org_id = stu_org.id
+                  WHERE stu_uo.user_id = ${studentUserId}
+                    AND stu_uo.role = ${UserRole.STUDENT}
+                    AND stu_uo.enrollment_start <= NOW()
+                    AND (stu_uo.enrollment_end IS NULL OR stu_uo.enrollment_end > NOW())
+                    AND stu_org.rostering_ended IS NULL
+                    AND stu_org.path <@ ao_org.path
+                )
+                OR EXISTS (
+                  SELECT 1 FROM ${userClasses} stu_uc
+                  INNER JOIN ${classes} stu_cls ON stu_uc.class_id = stu_cls.id
+                  WHERE stu_uc.user_id = ${studentUserId}
+                    AND stu_uc.role = ${UserRole.STUDENT}
+                    AND stu_uc.enrollment_start <= NOW()
+                    AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+                    AND stu_cls.rostering_ended IS NULL
+                    AND stu_cls.org_path <@ ao_org.path
+                )
+              )
+          )`,
+          // Path C: admin assigned at a class the student is in
+          sql`EXISTS (
+            SELECT 1
+            FROM ${administrationClasses} ac
+            INNER JOIN ${userClasses} uc ON ac.class_id = uc.class_id
+            INNER JOIN ${classes} c ON ac.class_id = c.id
+            WHERE ac.administration_id = ${administrations.id}
+              AND uc.user_id = ${studentUserId}
+              AND uc.role = ${UserRole.STUDENT}
+              AND uc.enrollment_start <= NOW()
+              AND (uc.enrollment_end IS NULL OR uc.enrollment_end > NOW())
+              AND c.rostering_ended IS NULL
+          )`,
+          // Path D: admin assigned at a group the student is in
+          sql`EXISTS (
+            SELECT 1
+            FROM ${administrationGroups} ag
+            INNER JOIN ${userGroups} ug ON ag.group_id = ug.group_id
+            INNER JOIN ${groups} g ON ag.group_id = g.id
+            WHERE ag.administration_id = ${administrations.id}
+              AND ug.user_id = ${studentUserId}
+              AND ug.role = ${UserRole.STUDENT}
+              AND ug.enrollment_start <= NOW()
+              AND (ug.enrollment_end IS NULL OR ug.enrollment_end > NOW())
+              AND g.rostering_ended IS NULL
+          )`,
+        ),
+      )
+      .orderBy(asc(administrations.dateStart), asc(administrations.id));
 
     return rows;
   }

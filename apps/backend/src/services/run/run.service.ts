@@ -6,12 +6,14 @@ import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { logger } from '../../logger';
 import { RunRepository } from '../../repositories/run.repository';
 import { TaskVariantRepository } from '../../repositories/task-variant.repository';
+import { FamilyRepository } from '../../repositories/family.repository';
 import { AdministrationService } from '../administration/administration.service';
 import type { NewRun } from '../../db/schema';
 
 import type { AuthContext } from '../../types/auth-context';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
+import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
 import { ANONYMOUS_RUN_ADMINISTRATION_ID } from '../../constants/run';
 
 /**
@@ -32,52 +34,93 @@ export function RunService({
   administrationService = AdministrationService(),
   taskVariantRepository = new TaskVariantRepository(),
   authorizationService = AuthorizationService(),
+  familyRepository = new FamilyRepository(),
 }: {
   runRepository?: RunRepository;
   administrationService?: ReturnType<typeof AdministrationService>;
   taskVariantRepository?: TaskVariantRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
+  familyRepository?: FamilyRepository;
 } = {}) {
+  /**
+   * Verify that the authenticated user has access to the target user.
+   *
+   * Performs a two-step check:
+   * 1. User can access their own runs (userId === targetUserId)
+   * 2. User has CAN_READ_CHILD permission on target user (e.g., parent/guardian access)
+   * 3. Super admins have unrestricted access
+   *
+   * Returns the target user's family IDs when cross-user access is granted via CAN_READ_CHILD,
+   * allowing callers to reuse this data for subsequent FGA checks (e.g., CAN_CREATE_RUN_FOR_CHILD)
+   * without redundant database queries.
+   *
+   * @param authContext - User's auth context (id and super admin flag)
+   * @param targetUserId - The user ID to verify access for
+   * @returns Family IDs of the target user if cross-user access granted, empty array otherwise
+   * @throws {ApiError} FORBIDDEN if user lacks access
+   */
+  async function verifyUserAccess(authContext: AuthContext, targetUserId: string): Promise<string[]> {
+    return verifyTargetUserAccess(
+      authContext,
+      targetUserId,
+      FgaRelation.CAN_READ_CHILD,
+      familyRepository,
+      authorizationService,
+    );
+  }
+
   /**
    * Creates a new run (assessment session instance).
    *
    * Performs the following validations and operations:
-   * 1. Rejects anonymous runs that include an administrationId
-   * 2. For non-anonymous runs, validates that the administration exists and user has access
-   * 3. For non-anonymous, non-super-admin users, checks can_create_run via FGA
-   * 4. Resolves the taskId from the provided taskVariantId
-   * 5. Creates the run record (anonymous runs use the sentinel administration ID)
+   * 1. Verifies user has access to the target user via FGA
+   * 2. Rejects anonymous runs that include an administrationId
+   * 3. For non-anonymous runs, validates that the administration exists and user has access
+   * 4. For non-anonymous, non-super-admin users, checks can_create_run via FGA
+   * 5. Resolves the taskId from the provided taskVariantId
+   * 6. Creates the run record (anonymous runs use the sentinel administration ID)
    *
    * @param authContext - Authentication context with userId and isSuperAdmin flag
+   * @param targetUserId - The user ID who will own the run (from path parameter)
    * @param body - Request body containing taskVariantId, taskVersion, optional isAnonymous flag,
    *   administrationId (required for non-anonymous runs), and optional metadata
    * @returns Promise resolving to object with id
+   * @throws ApiError with FORBIDDEN if user lacks access to target user
    * @throws ApiError with UNPROCESSABLE_ENTITY if administrationId or taskVariantId are invalid
    * @throws ApiError with FORBIDDEN if user lacks permission to create run
    * @throws ApiError with INTERNAL_SERVER_ERROR if database operation fails
    */
-  async function create(authContext: AuthContext, body: CreateRunRequestBody): Promise<{ id: string }> {
-    const { userId, isSuperAdmin } = authContext;
+  async function create(
+    authContext: AuthContext,
+    targetUserId: string,
+    body: CreateRunRequestBody,
+  ): Promise<{ id: string }> {
+    const { userId: requesterUserId, isSuperAdmin } = authContext;
     const { isAnonymous } = body;
 
-    if (isAnonymous && body.administrationId) {
-      throw new ApiError('administrationId must not be provided for anonymous runs', {
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-        context: { userId },
-      });
-    }
+    // Verify user has access to the target user and get family IDs for potential reuse
+    const targetFamilyIds = await verifyUserAccess(authContext, targetUserId);
+
+    // Note: Zod schema validation already rejects isAnonymous && administrationId combination,
+    // so we don't need to check it here. This is caught at the request level (400 BAD_REQUEST).
 
     if (!isAnonymous) {
+      // When a parent creates a run for their child, the child is the one who needs
+      // access to the administration and CAN_CREATE_RUN permission — not the parent.
+      // The parent's authorization is verified separately via CAN_CREATE_RUN_FOR_CHILD.
+      // Super admins always use their own context (they bypass FGA checks anyway).
+      const administrationAuthContext: AuthContext =
+        requesterUserId !== targetUserId && !isSuperAdmin ? { userId: targetUserId, isSuperAdmin: false } : authContext;
+
       try {
-        await administrationService.verifyAdministrationAccess(authContext, body.administrationId!);
+        await administrationService.verifyAdministrationAccess(administrationAuthContext, body.administrationId!);
       } catch (error) {
         if (error instanceof ApiError) {
           if (error.statusCode === StatusCodes.NOT_FOUND) {
             throw new ApiError('Invalid administration ID', {
               statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
               code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-              context: { userId, administrationId: body.administrationId },
+              context: { requesterUserId, targetUserId, administrationId: body.administrationId },
               cause: error,
             });
           }
@@ -86,7 +129,7 @@ export function RunService({
             throw new ApiError(ApiErrorMessage.FORBIDDEN, {
               statusCode: StatusCodes.FORBIDDEN,
               code: ApiErrorCode.AUTH_FORBIDDEN,
-              context: { userId, administrationId: body.administrationId },
+              context: { requesterUserId, targetUserId, administrationId: body.administrationId },
               cause: error,
             });
           }
@@ -95,12 +138,35 @@ export function RunService({
       }
 
       if (!isSuperAdmin) {
-        // FGA checks if the user has can_create_run on this administration
+        // FGA checks if the run owner has can_create_run on this administration.
+        // For self-runs, this is the requester. For parent-for-child runs, this is the child.
+        const isParentForChildRun = requesterUserId !== targetUserId;
         await authorizationService.requirePermission(
-          userId,
+          isParentForChildRun ? targetUserId : requesterUserId,
           FgaRelation.CAN_CREATE_RUN,
           `${FgaType.ADMINISTRATION}:${body.administrationId!}`,
         );
+      }
+
+      // Check CAN_CREATE_RUN_FOR_CHILD only when creating a run for a different user
+      if (requesterUserId !== targetUserId && !isSuperAdmin) {
+        // Requester is creating a run for a different user (e.g., parent creating for child).
+        // Check if requester has can_create_run_for_child permission on any family containing the target user.
+        // Reuse targetFamilyIds from verifyUserAccess to avoid redundant database query.
+        const familyObjects = targetFamilyIds.map((id) => `${FgaType.FAMILY}:${id}`);
+        const hasAccess = await authorizationService.hasAnyPermission(
+          requesterUserId,
+          FgaRelation.CAN_CREATE_RUN_FOR_CHILD,
+          familyObjects,
+        );
+
+        if (!hasAccess) {
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { requesterUserId, targetUserId },
+          });
+        }
       }
     }
 
@@ -111,12 +177,12 @@ export function RunService({
         throw new ApiError('Invalid task variant ID', {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
-          context: { userId, taskVariantId: body.taskVariantId },
+          context: { targetUserId, requesterUserId, taskVariantId: body.taskVariantId },
         });
       }
 
       const data: NewRun = {
-        userId,
+        userId: targetUserId,
         taskId: result.taskId,
         taskVariantId: body.taskVariantId,
         taskVersion: body.taskVersion,
@@ -135,7 +201,8 @@ export function RunService({
         {
           err: error,
           context: {
-            userId,
+            targetUserId,
+            requesterUserId,
             taskVariantId: body.taskVariantId,
             taskVersion: body.taskVersion,
             administrationId: body.administrationId,
@@ -148,7 +215,7 @@ export function RunService({
       throw new ApiError('Failed to create run', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId },
+        context: { targetUserId, requesterUserId },
         cause: error,
       });
     }

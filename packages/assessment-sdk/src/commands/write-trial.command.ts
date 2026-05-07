@@ -153,7 +153,10 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
   readonly name = 'WriteTrial';
   readonly idempotent = false;
 
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private participantId: string,
+  ) {}
 
   /**
    * Executes the write trial command.
@@ -177,7 +180,7 @@ export class WriteTrialCommand implements Command<WriteTrialCommandInput, WriteT
     const { assessmentStage, ...restTrial } = input.trial;
 
     const result = await this.api.client.runs.event({
-      params: { runId: input.runId },
+      params: { userId: this.participantId, runId: input.runId },
       body: {
         type: input.type,
         trial: {
