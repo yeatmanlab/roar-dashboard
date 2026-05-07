@@ -329,7 +329,7 @@ export function ReportService({
           firstName: student.nameFirst,
           lastName: student.nameLast,
           grade: student.grade,
-          schoolName: scopeType === EntityType.DISTRICT ? student.schoolName ?? null : null,
+          schoolName: scopeType === EntityType.DISTRICT ? (student.schoolName ?? null) : null,
         },
         progress: buildProgressMap(student, taskMetas, taskService.evaluateTaskVariantEligibility),
       }));
@@ -2160,7 +2160,7 @@ function assembleStudentScoreRow(
       firstName: row.nameFirst,
       lastName: row.nameLast,
       grade: row.grade,
-      schoolName: scopeType === EntityType.DISTRICT ? schoolNamesByUser?.get(row.userId) ?? null : null,
+      schoolName: scopeType === EntityType.DISTRICT ? (schoolNamesByUser?.get(row.userId) ?? null) : null,
     },
     scores,
   };

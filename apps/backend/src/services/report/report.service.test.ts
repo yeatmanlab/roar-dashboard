@@ -3352,7 +3352,7 @@ describe('ReportService', () => {
       mockUserRepository.getById.mockResolvedValue(
         opts?.user === null
           ? null
-          : opts?.user ??
+          : (opts?.user ??
               UserFactory.build({
                 id: targetUserId,
                 nameFirst: 'Jane',
@@ -3360,7 +3360,7 @@ describe('ReportService', () => {
                 username: 'jdoe',
                 grade: '3',
                 rosteringEnded: null,
-              }),
+              })),
       );
       mockReportRepository.verifyGuardianStudentLink.mockResolvedValue(false);
       mockReportRepository.verifyUserOrgOverlap.mockResolvedValue(false);
