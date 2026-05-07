@@ -510,8 +510,6 @@ describe('UserService.create', () => {
     });
   });
 
-  // ──  ─────────────────────────────────────────────────
-
   // ── Happy path end-to-end ─────────────────────────────────────────────────
 
   describe('happy path', () => {
@@ -587,6 +585,45 @@ describe('UserService.create', () => {
       expect(orgMemberships).toHaveLength(2); // district + school
       expect(classMemberships).toHaveLength(0);
       expect(groupMemberships).toHaveLength(1);
+    });
+
+    it('multiple group memberships → first group ID used as partnerId (first-wins)', async () => {
+      // Groups are flat; no hierarchy to validate. First in request order wins.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const secondGroupId = 'group-uuid-2';
+      const body = {
+        ...validBody,
+        memberships: [
+          { entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT },
+          { entityType: EntityType.GROUP, entityId: secondGroupId, role: UserRole.STUDENT },
+        ],
+      };
+
+      await service.create(authContext, body);
+
+      expect(mockRosterProviderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ partnerId: groupId }) }),
+      );
+    });
+
+    it('multiple family memberships → first family ID used as partnerId (first-wins)', async () => {
+      // Families are flat; no hierarchy to validate. First in request order wins.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const firstFamilyId = 'family-uuid-1';
+      const secondFamilyId = 'family-uuid-2';
+      const body = {
+        ...validBody,
+        memberships: [
+          { entityType: EntityType.FAMILY, entityId: firstFamilyId, role: UserFamilyRole.PARENT },
+          { entityType: EntityType.FAMILY, entityId: secondFamilyId, role: UserFamilyRole.PARENT },
+        ],
+      };
+
+      await service.create(authContext, body);
+
+      expect(mockRosterProviderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ partnerId: firstFamilyId }) }),
+      );
     });
   });
 });

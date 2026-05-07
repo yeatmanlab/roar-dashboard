@@ -677,7 +677,8 @@ export function UserService({
         },
       });
     } catch (error) {
-      // The transaction rolled back atomically — DB is clean.
+      // DB is clean: either the transaction rolled back atomically, or no transaction
+      // was opened (resolver threw before runTransaction was called).
       // Only Firebase requires compensation since step 3 has already run.
       await compensateDeleteFirebaseUser(firebaseUid, userId, email, 'step 4 failure');
 
@@ -790,6 +791,12 @@ export function UserService({
    * 2. If the combined set has exactly one district → return it.
    * 3. If the combined set has more than one distinct district → throw 422.
    * 4. If no district evidence → fall through to group, then family.
+   *
+   * Group and family fall-through use first-wins semantics: when multiple group or
+   * family memberships are present and no district evidence exists, the first ID in
+   * request order is returned. Groups and families are flat (non-hierarchical) so
+   * there is no "root" to validate uniqueness against. Callers should not rely on
+   * which entry wins when order is ambiguous.
    *
    * @param memberships The user's membership information from the request body
    * @returns The resolved root org provider ID
