@@ -193,6 +193,8 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
 
     const [entity] = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
 
+    if (!entity) throw new Error('Insert returned no rows');
+
     return entity;
   }
 
@@ -239,8 +241,9 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
    * Deletes an entity by ID.
    */
   async delete(params: BaseDeleteParams): Promise<void> {
+    const db = params.transaction ?? this.db;
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
-    await this.db.delete(this.typedTable).where(eq(idColumn, params.id));
+    await db.delete(this.typedTable).where(eq(idColumn, params.id));
   }
 
   /**

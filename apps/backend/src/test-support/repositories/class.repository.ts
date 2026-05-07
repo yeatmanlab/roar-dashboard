@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
-import { createMockBaseRepositoryMethods } from './base.repository';
+import { createMockLtreeRepository } from './l-tree.repository';
 import type { ClassRepository } from '../../repositories/class.repository';
 
 /**
@@ -10,7 +10,7 @@ import type { ClassRepository } from '../../repositories/class.repository';
  */
 export function createMockClassRepository(): MockedObject<ClassRepository> {
   return {
-    ...createMockBaseRepositoryMethods(),
+    ...createMockLtreeRepository(),
     getUsersByClassId: vi.fn(),
     listBySchoolId: vi.fn(),
     createClass: vi.fn(),

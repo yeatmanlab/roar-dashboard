@@ -208,21 +208,25 @@ describe('UserRepository', () => {
     it('creates user row and org memberships atomically', async () => {
       const email = `create-with-orgs-${Date.now()}@example.com`;
 
-      const result = await repository.createWithMemberships(
-        {
-          email,
-          assessmentPid: `pid-${email}`,
-          authId: `firebase-uid-${email}`,
-          authProvider: [AuthProvider.PASSWORD],
-          nameFirst: 'Test',
-          nameLast: 'User',
-          userType: UserType.STUDENT,
-        },
-        [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-        [],
-        [],
-        [],
-      );
+      const result = await repository.runTransaction({
+        fn: (tx) =>
+          repository.createWithMemberships(
+            {
+              email,
+              assessmentPid: `pid-${email}`,
+              authId: `firebase-uid-${email}`,
+              authProvider: [AuthProvider.PASSWORD],
+              nameFirst: 'Test',
+              nameLast: 'User',
+              userType: UserType.STUDENT,
+            },
+            [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+            [],
+            [],
+            [],
+            tx,
+          ),
+      });
 
       expect(result.id).toBeDefined();
 
@@ -239,20 +243,24 @@ describe('UserRepository', () => {
       const email = `create-multi-${Date.now()}@example.com`;
       const group = await GroupFactory.create();
 
-      const result = await repository.createWithMemberships(
-        {
-          email,
-          assessmentPid: `pid-${email}`,
-          authProvider: [AuthProvider.PASSWORD],
-          nameFirst: 'Multi',
-          nameLast: 'Member',
-          userType: UserType.STUDENT,
-        },
-        [],
-        [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-        [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-        [],
-      );
+      const result = await repository.runTransaction({
+        fn: (tx) =>
+          repository.createWithMemberships(
+            {
+              email,
+              assessmentPid: `pid-${email}`,
+              authProvider: [AuthProvider.PASSWORD],
+              nameFirst: 'Multi',
+              nameLast: 'Member',
+              userType: UserType.STUDENT,
+            },
+            [],
+            [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+            [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+            [],
+            tx,
+          ),
+      });
 
       expect(result.id).toBeDefined();
 
@@ -269,20 +277,24 @@ describe('UserRepository', () => {
       const group = await GroupFactory.create();
       const family = await FamilyFactory.create();
 
-      const result = await repository.createWithMemberships(
-        {
-          email,
-          assessmentPid: `pid-${email}`,
-          authProvider: [AuthProvider.PASSWORD],
-          nameFirst: 'All',
-          nameLast: 'Types',
-          userType: UserType.STUDENT,
-        },
-        [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-        [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-        [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
-        [{ familyId: family.id, role: 'child', joinedOn: enrollmentStart, leftOn: null }],
-      );
+      const result = await repository.runTransaction({
+        fn: (tx) =>
+          repository.createWithMemberships(
+            {
+              email,
+              assessmentPid: `pid-${email}`,
+              authProvider: [AuthProvider.PASSWORD],
+              nameFirst: 'All',
+              nameLast: 'Types',
+              userType: UserType.STUDENT,
+            },
+            [{ orgId: baseFixture.district.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+            [{ classId: baseFixture.classInSchoolA.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+            [{ groupId: group.id, role: UserRole.STUDENT as UserRole, enrollmentStart }],
+            [{ familyId: family.id, role: 'child', joinedOn: enrollmentStart, leftOn: null }],
+            tx,
+          ),
+      });
 
       expect(result.id).toBeDefined();
 
@@ -298,20 +310,24 @@ describe('UserRepository', () => {
       const email = `rollback-test-${Date.now()}@example.com`;
 
       await expect(
-        repository.createWithMemberships(
-          {
-            email,
-            assessmentPid: `pid-${email}`,
-            authProvider: [AuthProvider.PASSWORD],
-            nameFirst: 'Rollback',
-            nameLast: 'Test',
-            userType: UserType.STUDENT,
-          },
-          [{ orgId: '00000000-0000-0000-0000-000000000099', role: UserRole.STUDENT as UserRole, enrollmentStart }],
-          [],
-          [],
-          [],
-        ),
+        repository.runTransaction({
+          fn: (tx) =>
+            repository.createWithMemberships(
+              {
+                email,
+                assessmentPid: `pid-${email}`,
+                authProvider: [AuthProvider.PASSWORD],
+                nameFirst: 'Rollback',
+                nameLast: 'Test',
+                userType: UserType.STUDENT,
+              },
+              [{ orgId: '00000000-0000-0000-0000-000000000099', role: UserRole.STUDENT as UserRole, enrollmentStart }],
+              [],
+              [],
+              [],
+              tx,
+            ),
+        }),
       ).rejects.toThrow();
 
       // The user row must NOT exist — transaction rolled back
@@ -328,20 +344,24 @@ describe('UserRepository', () => {
       const email = baseFixture.districtAdmin.email!;
 
       await expect(
-        repository.createWithMemberships(
-          {
-            email,
-            assessmentPid: `pid-unique-${Date.now()}`,
-            authProvider: [AuthProvider.PASSWORD],
-            nameFirst: 'Dup',
-            nameLast: 'Email',
-            userType: UserType.STUDENT,
-          },
-          [],
-          [],
-          [],
-          [],
-        ),
+        repository.runTransaction({
+          fn: (tx) =>
+            repository.createWithMemberships(
+              {
+                email,
+                assessmentPid: `pid-unique-${Date.now()}`,
+                authProvider: [AuthProvider.PASSWORD],
+                nameFirst: 'Dup',
+                nameLast: 'Email',
+                userType: UserType.STUDENT,
+              },
+              [],
+              [],
+              [],
+              [],
+              tx,
+            ),
+        }),
       ).rejects.toThrow();
     });
   });

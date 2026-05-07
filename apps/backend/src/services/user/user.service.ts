@@ -3,6 +3,8 @@ import type { User, NewUserAgreement, NewUserOrg, NewUserClass, NewUserGroup, Ne
 import type { Grade } from '../../enums/grade.enum';
 import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
+import { RosteringProvider } from '../../enums/rostering-provider.enum';
+import { RosteringEntityType } from '../../enums/rostering-entity-type.enum';
 import { UserRole } from '../../enums/user-role.enum';
 import { UserFamilyRole } from '../../enums/user-family-role.enum';
 import { EntityType } from '../../types/entity-type';
@@ -19,8 +21,10 @@ import { AgreementVersionRepository } from '../../repositories/agreement-version
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import { DistrictRepository } from '../../repositories/district.repository';
 import { SchoolRepository } from '../../repositories/school.repository';
+import { ClassRepository } from '../../repositories/class.repository';
 import { GroupRepository } from '../../repositories/group.repository';
 import { FamilyRepository } from '../../repositories/family.repository';
+import { RosterProviderIdRepository } from '../../repositories/roster-provider-id.repository';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
 import { generateAssessmentPid } from '../../utils/assessment-pid.util';
 import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
@@ -180,8 +184,10 @@ export function UserService({
   agreementRepository = new AgreementRepository(),
   districtRepository = new DistrictRepository(),
   schoolRepository = new SchoolRepository(),
+  classRepository = new ClassRepository(),
   groupRepository = new GroupRepository(),
   familyRepository = new FamilyRepository(),
+  rosterProviderIdRepository = new RosterProviderIdRepository(),
   authorizationService = AuthorizationService(),
 }: {
   userRepository?: UserRepository;
@@ -190,8 +196,10 @@ export function UserService({
   agreementRepository?: AgreementRepository;
   districtRepository?: DistrictRepository;
   schoolRepository?: SchoolRepository;
+  classRepository?: ClassRepository;
   groupRepository?: GroupRepository;
   familyRepository?: FamilyRepository;
+  rosterProviderIdRepository?: RosterProviderIdRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
   /** Map repository entity types to FGA object type prefixes. */
@@ -363,6 +371,7 @@ export function UserService({
    * @throws {ApiError} INTERNAL_SERVER_ERROR (500) on unexpected failures or unrecoverable compensation
    */
   async function create(authContext: AuthContext, body: CreateUserData): Promise<{ id: string }> {
+    const { demographics, dob, grade, email, identifiers, memberships, name, password, userType } = body;
     const { userId, isSuperAdmin } = authContext;
 
     // ── Step 1: Authorization + entity existence pre-flight ───────────────────
@@ -381,7 +390,7 @@ export function UserService({
 
     if (!isSuperAdmin) {
       // Guard against a current platform admin creating a new platform admin account
-      for (const m of body.memberships) {
+      for (const m of memberships) {
         if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN)
           throw new ApiError('Platform admin cannot create a new platform admin account', {
             statusCode: StatusCodes.FORBIDDEN,
@@ -392,12 +401,12 @@ export function UserService({
 
       // Verify that all membership entities exist before proceeding
       await Promise.all(
-        body.memberships.map(async (membership) => {
+        memberships.map(async (membership) => {
           if (membership.entityType === EntityType.CLASS) {
             const schoolId = await userRepository.findClassParentSchool(membership.entityId);
             if (!schoolId) {
               logger.warn(
-                { userId, classId: membership.entityId, totalMemberships: body.memberships.length },
+                { userId, classId: membership.entityId, totalMemberships: memberships.length },
                 'Class not found or rostered out during user create pre-flight',
               );
               throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
@@ -406,6 +415,7 @@ export function UserService({
                 context: { userId, classId: membership.entityId },
               });
             }
+
             await authorizationService.requirePermission(
               userId,
               FgaRelation.CAN_CREATE_USERS,
@@ -459,7 +469,7 @@ export function UserService({
       // after a Firebase account has already been created and needs compensating deletion.
 
       await Promise.all(
-        body.memberships.map(async ({ entityType, entityId }) => {
+        memberships.map(async ({ entityType, entityId }) => {
           const exists = await verifyMembershipEntityExists(entityType, entityId);
           if (!exists) {
             logger.warn({ userId, entityType, entityId }, 'Membership entity not found during user create pre-flight');
@@ -484,16 +494,16 @@ export function UserService({
     // the true last line of defense for concurrent creates.
 
     const assessmentPid =
-      body.identifiers?.pid ??
+      identifiers?.pid ??
       generateAssessmentPid({
-        userId: body.email,
+        userId: email,
         // Prefixes could be derived from the first district/school membership abbreviation;
         // omitted for now to keep this endpoint consistent with the current cloud function
         // default (checksum-only) for new single-user creation.
       });
 
     const alreadyExists = await userRepository.existsByUniqueFields({
-      email: body.email,
+      email,
       assessmentPid,
     });
 
@@ -501,31 +511,28 @@ export function UserService({
       throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
-        context: { userId, email: body.email },
+        context: { userId, email },
       });
     }
 
     // Also check Firebase Auth — a user might exist there without a DB row
     try {
-      await FirebaseAuthClient.getUserByEmail(body.email);
+      await FirebaseAuthClient.getUserByEmail(email);
       // If getUserByEmail succeeds, the account already exists
       throw new ApiError(ApiErrorMessage.CONFLICT, {
         statusCode: StatusCodes.CONFLICT,
         code: ApiErrorCode.RESOURCE_CONFLICT,
-        context: { userId, email: body.email },
+        context: { userId, email },
       });
     } catch (error) {
       if (error instanceof ApiError) throw error;
       // `auth/user-not-found` is the expected case — swallow and continue
       if (!isFirebaseError(error) || error.code !== FIREBASE_ERROR_CODES.AUTH.USER_NOT_FOUND) {
-        logger.error(
-          { err: error, context: { userId, email: body.email } },
-          'Firebase getUserByEmail failed during pre-flight',
-        );
+        logger.error({ err: error, context: { userId, email } }, 'Firebase getUserByEmail failed during pre-flight');
         throw new ApiError('Failed to check Firebase user existence', {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
           code: ApiErrorCode.DATABASE_QUERY_FAILED,
-          context: { userId, email: body.email },
+          context: { userId, email },
           cause: error,
         });
       }
@@ -536,9 +543,9 @@ export function UserService({
     let firebaseUid: string;
     try {
       const authRecord = await FirebaseAuthClient.createUser({
-        email: body.email,
-        password: body.password,
-        displayName: [body.name.first, body.name.last].filter(Boolean).join(' '),
+        email,
+        password: password,
+        displayName: [name.first, name.last].filter(Boolean).join(' '),
       });
       firebaseUid = authRecord.uid;
     } catch (error) {
@@ -546,7 +553,7 @@ export function UserService({
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { userId, email: body.email },
+          context: { userId, email },
         });
       }
 
@@ -554,25 +561,30 @@ export function UserService({
         throw new ApiError(ApiErrorMessage.RATE_LIMITED, {
           statusCode: StatusCodes.TOO_MANY_REQUESTS,
           code: ApiErrorCode.RATE_LIMITED,
-          context: { userId, email: body.email },
+          context: { userId, email },
           cause: error,
         });
       }
 
-      logger.error({ err: error, context: { userId, email: body.email } }, 'Firebase createUser failed');
+      logger.error({ err: error, context: { userId, email } }, 'Firebase createUser failed');
       throw new ApiError('Failed to create Firebase auth account', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, email: body.email },
+        context: { userId, email },
         cause: error,
       });
     }
 
-    // ── Step 4: DB transaction (user row + junction rows) ────────────────────
+    // ── Step 4: DB transaction (user row + junction rows + roster provider ID row) ────────────────────
     //
-    // On failure: compensate by deleting the Firebase auth account.
+    // createWithMemberships and rosterProviderIdRepository.create run inside a single
+    // transaction so all DB writes succeed or roll back together.
+    // resolveRootOrgProviderFromMemberships is read-only and runs before the transaction
+    // opens to keep the write window as short as possible.
+    //
+    // On failure: the transaction rolls back atomically — only Firebase needs compensation.
 
-    let newUserId: string;
+    let newUserId!: string;
     try {
       const enrollmentStart = new Date();
 
@@ -615,68 +627,88 @@ export function UserService({
           leftOn: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
         }));
 
-      const result = await userRepository.createWithMemberships(
-        {
-          authId: firebaseUid,
-          authProvider: [AuthProvider.PASSWORD],
-          email: body.email,
-          nameFirst: body.name.first,
-          nameMiddle: body.name.middle ?? null,
-          nameLast: body.name.last,
-          dob: body.dob ?? null,
-          grade: body.grade ?? null,
-          assessmentPid,
-          userType: body.userType,
-          statusEll: body.demographics?.statusEll ?? null,
-          statusFrl: body.demographics?.statusFrl ?? null,
-          statusIep: body.demographics?.statusIep ?? null,
-          gender: body.demographics?.gender ?? null,
-          race: body.demographics?.race ?? null,
-          hispanicEthnicity: body.demographics?.hispanicEthnicity ?? null,
-          homeLanguage: body.demographics?.homeLanguage ?? null,
-          stateId: body.identifiers?.stateId ?? null,
-          isSuperAdmin: false,
-        },
-        orgMemberships,
-        classMemberships,
-        groupMemberships,
-        familyMemberships,
-      );
+      // Resolve the root org partner ID before opening the write transaction.
+      // Read-only — if it throws, no DB writes have happened yet so only Firebase needs compensation.
+      const resolvedPartnerId = await resolveRootOrgProviderFromMemberships(memberships);
 
-      newUserId = result.id;
+      newUserId = await userRepository.runTransaction({
+        fn: async (tx) => {
+          const result = await userRepository.createWithMemberships(
+            {
+              authId: firebaseUid,
+              authProvider: [AuthProvider.PASSWORD],
+              email: email,
+              nameFirst: name.first,
+              nameMiddle: name.middle ?? null,
+              nameLast: name.last,
+              dob: dob ?? null,
+              grade: grade ?? null,
+              assessmentPid,
+              userType: userType,
+              statusEll: demographics?.statusEll ?? null,
+              statusFrl: demographics?.statusFrl ?? null,
+              statusIep: demographics?.statusIep ?? null,
+              gender: demographics?.gender ?? null,
+              race: demographics?.race ?? null,
+              hispanicEthnicity: demographics?.hispanicEthnicity ?? null,
+              homeLanguage: demographics?.homeLanguage ?? null,
+              stateId: identifiers?.stateId ?? null,
+              isSuperAdmin: false,
+            },
+            orgMemberships,
+            classMemberships,
+            groupMemberships,
+            familyMemberships,
+            tx,
+          );
+
+          await rosterProviderIdRepository.create({
+            data: {
+              providerType: RosteringProvider.DASHBOARD,
+              providerId: result.id,
+              partnerId: resolvedPartnerId,
+              entityType: RosteringEntityType.USER,
+              entityId: result.id,
+            },
+            transaction: tx,
+          });
+
+          return result.id;
+        },
+      });
     } catch (error) {
+      // DB is clean: either the transaction rolled back atomically, or no transaction
+      // was opened (resolver threw before runTransaction was called).
+      // Only Firebase requires compensation since step 3 has already run.
+      await compensateDeleteFirebaseUser(firebaseUid, userId, email, 'step 4 failure');
+
       if (error instanceof ApiError) throw error;
 
       const dbError = unwrapDrizzleError(error);
 
       if (isUniqueViolation(dbError)) {
-        // Compensate: roll back the Firebase auth account
-        await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'DB unique violation');
         throw new ApiError(ApiErrorMessage.CONFLICT, {
           statusCode: StatusCodes.CONFLICT,
           code: ApiErrorCode.RESOURCE_CONFLICT,
-          context: { userId, email: body.email },
+          context: { userId, email },
           cause: error,
         });
       }
 
       if (isForeignKeyViolation(dbError)) {
-        // A membership entityId didn't resolve — FK constraint fired
-        await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'FK violation on membership entity');
         throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
           statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, email: body.email },
+          context: { userId, email },
           cause: error,
         });
       }
 
-      logger.error({ err: error, context: { userId, email: body.email } }, 'DB write failed during user create');
-      await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'DB write failure');
+      logger.error({ err: error, context: { userId, email } }, 'DB write failed during user create');
       throw new ApiError('Failed to create user record', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, email: body.email, firebaseUid },
+        context: { userId, email, firebaseUid },
         cause: error,
       });
     }
@@ -685,13 +717,13 @@ export function UserService({
     //
     // On failure: compensate by deleting FGA tuples, then the DB row, then Firebase.
 
-    const fgaTuples = buildMembershipTuples(newUserId, body.memberships);
+    const fgaTuples = buildMembershipTuples(newUserId, memberships);
 
     try {
       await authorizationService.writeTuplesOrThrow(fgaTuples);
     } catch (error) {
       logger.error(
-        { err: error, context: { userId, newUserId, email: body.email, firebaseUid } },
+        { err: error, context: { userId, newUserId, email, firebaseUid } },
         'FGA write failed during user create — beginning compensation',
       );
 
@@ -703,9 +735,16 @@ export function UserService({
       }));
       await authorizationService.deleteTuples(deleteTuples);
 
-      // Delete the DB row (cascade removes junction rows)
+      // Wrap both deletes in a single transaction: the roster provider row must be
+      // removed first (trigger ordering), and atomicity ensures we never end up with
+      // a user row that has no rostering entry if the second delete fails.
       try {
-        await userRepository.delete({ id: newUserId });
+        await userRepository.runTransaction({
+          fn: async (tx) => {
+            await rosterProviderIdRepository.deleteByEntityId(newUserId, tx);
+            await userRepository.delete({ id: newUserId, transaction: tx });
+          },
+        });
       } catch (dbDeleteError) {
         logger.error(
           { err: dbDeleteError, context: { userId, newUserId, firebaseUid } },
@@ -714,17 +753,17 @@ export function UserService({
       }
 
       // Delete the Firebase auth account
-      await compensateDeleteFirebaseUser(firebaseUid, userId, body.email, 'FGA write failure');
+      await compensateDeleteFirebaseUser(firebaseUid, userId, email, 'FGA write failure');
 
       throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
-        context: { userId, newUserId, email: body.email, firebaseUid },
+        context: { userId, newUserId, email, firebaseUid },
         cause: error,
       });
     }
 
-    logger.info({ userId, newUserId, email: body.email }, 'Created user');
+    logger.info({ userId, newUserId, email }, 'Created user');
     return { id: newUserId };
   }
 
@@ -742,6 +781,108 @@ export function UserService({
     if (entityType === EntityType.CLASS) return (await userRepository.findClassParentSchool(entityId)) !== null;
     if (entityType === EntityType.GROUP) return (await groupRepository.getActiveById({ id: entityId })) !== null;
     return (await familyRepository.getActiveById({ id: entityId })) !== null;
+  }
+
+  /**
+   * Resolve the single root org provider ID from the user's memberships.
+   *
+   * District resolution gathers evidence from all three org sources first, then
+   * validates that they agree before returning. This catches inconsistencies such
+   * as an explicit district_A combined with a class whose ltree root is district_B.
+   *
+   * Resolution order:
+   * 1. Collect district IDs from: explicit district memberships + class ltree roots
+   *    + school ltree roots (all resolved in parallel).
+   * 2. If the combined set has exactly one district → return it.
+   * 3. If the combined set has more than one distinct district → throw 422.
+   * 4. If no district evidence → fall through to group, then family.
+   *
+   * Group and family fall-through use first-wins semantics: when multiple group or
+   * family memberships are present and no district evidence exists, the first ID in
+   * request order is returned. Groups and families are flat (non-hierarchical) so
+   * there is no "root" to validate uniqueness against. Callers should not rely on
+   * which entry wins when order is ambiguous.
+   *
+   * @param memberships The user's membership information from the request body
+   * @returns The resolved root org provider ID
+   * @throws {ApiError} NOT_FOUND if a class or school membership has no resolvable root district
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if memberships span more than one distinct district
+   * @throws {ApiError} NOT_FOUND if no provider can be resolved at all
+   */
+  async function resolveRootOrgProviderFromMemberships(memberships: CreateUserMemberships[]): Promise<string> {
+    const partnerIds = memberships.map(({ entityId, entityType }) => ({ entityId, entityType }));
+
+    const classIds = partnerIds
+      .filter(({ entityType }) => entityType === EntityType.CLASS)
+      .map(({ entityId }) => entityId);
+
+    const schoolIds = partnerIds
+      .filter(({ entityType }) => entityType === EntityType.SCHOOL)
+      .map(({ entityId }) => entityId);
+
+    // Resolve class and school roots in parallel to keep the write window short.
+    const [classDistricts, schoolDistricts] = await Promise.all([
+      classIds.length > 0 ? classRepository.getDistinctRootOrgIds(classIds) : Promise.resolve([]),
+      schoolIds.length > 0 ? schoolRepository.getDistinctRootOrgIds(schoolIds) : Promise.resolve([]),
+    ]);
+
+    if (classIds.length > 0 && classDistricts.length === 0) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { classIds },
+      });
+    }
+
+    if (schoolIds.length > 0 && schoolDistricts.length === 0) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { schoolIds },
+      });
+    }
+
+    // Gather all district evidence into one set: explicit memberships + ltree roots.
+    // Using a Set naturally deduplicates — e.g., district_A explicit + school_in_district_A
+    // correctly collapses to a single entry rather than being flagged as cross-district.
+    const resolvedDistricts = new Set<string>();
+
+    for (const { entityId } of partnerIds.filter(({ entityType }) => entityType === EntityType.DISTRICT)) {
+      resolvedDistricts.add(entityId);
+    }
+    for (const { id } of classDistricts) resolvedDistricts.add(id);
+    for (const { id } of schoolDistricts) resolvedDistricts.add(id);
+
+    if (resolvedDistricts.size > 1) {
+      throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        context: { resolvedDistricts: [...resolvedDistricts] },
+      });
+    }
+
+    if (resolvedDistricts.size === 1) {
+      return [...resolvedDistricts][0]!;
+    }
+
+    // No district evidence — fall through to group, then family
+    const groupIds = partnerIds
+      .filter(({ entityType }) => entityType === EntityType.GROUP)
+      .map(({ entityId }) => entityId);
+
+    if (groupIds.length > 0) return groupIds[0]!;
+
+    const familyIds = partnerIds
+      .filter(({ entityType }) => entityType === EntityType.FAMILY)
+      .map(({ entityId }) => entityId);
+
+    if (familyIds.length > 0) return familyIds[0]!;
+
+    throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+      statusCode: StatusCodes.NOT_FOUND,
+      code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      context: { memberships },
+    });
   }
 
   /**

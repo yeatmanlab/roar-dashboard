@@ -63,6 +63,9 @@ import { AgreementVersionFactory } from '../test-support/factories/agreement-ver
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
+import { EntityType } from '../types/entity-type';
+import { RosteringProvider } from '../enums/rostering-provider.enum';
+import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -1418,7 +1421,7 @@ describe('POST /v1/users', () => {
     email: makeEmail(suffix),
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
-    memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+    memberships: [{ entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' }],
   });
 
   const validBodyForSchoolInDistrict = (suffix: string) => ({
@@ -1426,8 +1429,8 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.SCHOOL, entityId: baseFixture.schoolA.id, role: 'student' },
     ],
   });
 
@@ -1436,9 +1439,9 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
-      { entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.SCHOOL, entityId: baseFixture.schoolA.id, role: 'student' },
+      { entityType: EntityType.CLASS, entityId: baseFixture.classInSchoolA.id, role: 'student' },
     ],
   });
 
@@ -1447,8 +1450,8 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'group', entityId: baseFixture.group.id, role: 'student' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.GROUP, entityId: baseFixture.group.id, role: 'student' },
     ],
   });
 
@@ -1459,8 +1462,8 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'family', entityId: sharedFamily.id, role: 'parent' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.FAMILY, entityId: sharedFamily.id, role: 'parent' },
     ],
   });
 
@@ -1985,6 +1988,173 @@ describe('POST /v1/users', () => {
         .as(tiers.superAdmin)
         .withBody({ ...validBodyForDistrict('short-pass'), password: '1234567' })
         .toReturn(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  // ── Roster provider ID resolution ────────────────────────────────────────
+
+  describe('roster provider ID resolution', () => {
+    // resolveRootOrgProviderFromMemberships is only observable via the partnerId
+    // written to rostering_provider_ids after a successful create.
+    // superAdmin is used throughout so authorization never interferes with the
+    // resolver path being exercised.
+
+    async function getPartnerId(userId: string): Promise<string | null> {
+      const { rosteringProviderIds } = await import('../db/schema');
+      const { eq, and } = await import('drizzle-orm');
+      const { CoreDbClient } = await import('../test-support/db');
+      const [record] = await CoreDbClient.select({ partnerId: rosteringProviderIds.partnerId })
+        .from(rosteringProviderIds)
+        .where(and(eq(rosteringProviderIds.entityId, userId)));
+      return record?.partnerId ?? null;
+    }
+
+    it('district membership → partnerId is the district ID (direct, no DB lookup)', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(validBodyForDistrict('resolver-district'))
+        .toReturn(StatusCodes.CREATED);
+
+      const userId: string = res.body.data.id;
+
+      // Full record assertion — the only test in this suite that verifies every field
+      // written to rostering_provider_ids, not just partnerId.
+      const { rosteringProviderIds } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+      const { CoreDbClient } = await import('../test-support/db');
+      const [record] = await CoreDbClient.select()
+        .from(rosteringProviderIds)
+        .where(eq(rosteringProviderIds.entityId, userId));
+
+      expect(record).toMatchObject({
+        providerType: RosteringProvider.DASHBOARD,
+        entityType: RosteringEntityType.USER,
+        entityId: userId,
+        providerId: userId, // DASHBOARD provider uses the user's own ID as the external provider ID
+        partnerId: baseFixture.district.id,
+      });
+    });
+
+    it('school-only membership → partnerId resolves to parent district via ltree', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-school'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+    });
+
+    it('class-only membership → partnerId resolves to ancestor district via ltree', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-class'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+    });
+
+    it('group-only membership → partnerId is the group ID (direct fallback, no DB lookup)', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-group'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'group', entityId: baseFixture.group.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.group.id);
+    });
+
+    it('consistent district + school + class memberships → partnerId is the shared district', async () => {
+      // All three org membership types point to the same district.
+      // The resolver collects all evidence, confirms one unique root, and returns it.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(validBodyForClassInSchoolInDistrict('resolver-consistent'))
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+    });
+
+    it('explicit district_A + class in district_B → 422 (cross-district inconsistency)', async () => {
+      // Previously undefined behaviour: the resolver returned district_A without
+      // checking that the class belongs there. Now all sources are validated together.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-district-class-mismatch'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+            { entityType: 'class', entityId: baseFixture.classInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    it('class memberships spanning two districts → 422 (cross-district ambiguity)', async () => {
+      // classInSchoolA is under district; classInDistrictB is under districtB.
+      // resolveRootOrgProviderFromMemberships finds two distinct root IDs and throws
+      // UNPROCESSABLE_ENTITY. The catch block should delete the DB row and the
+      // Firebase account before re-throwing.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-cross-district'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' },
+            { entityType: 'class', entityId: baseFixture.classInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    it('family-only membership → partnerId is the family ID (direct fallback)', async () => {
+      // Family memberships fall through all org/class/school/group branches and resolve
+      // to the family ID directly. sharedFamily is set up in the POST /v1/users beforeAll.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-family'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'family', entityId: sharedFamily.id, role: 'parent' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(sharedFamily.id);
+    });
+
+    it('school memberships spanning two districts → 422 (cross-district ambiguity)', async () => {
+      // schoolA is under district; schoolInDistrictB is under districtB.
+      // Symmetric to the class cross-district case — the same multi-root guard fires.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-school-cross-district'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+            { entityType: 'school', entityId: baseFixture.schoolInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
     });
   });
 });

@@ -33,6 +33,18 @@ type CoreDbClientType = NodePgDatabase<typeof CoreDbSchema> & { $client: Pool };
 /** Drizzle ORM client type for the assessment database with full schema. */
 type AssessmentDbClientType = NodePgDatabase<typeof AssessmentDbSchema> & { $client: Pool };
 
+/**
+ * The transaction proxy type produced by `CoreDbClient.transaction()`. Use this
+ * instead of `NodePgDatabase<any>` when accepting a transaction as a parameter.
+ *
+ * Derived from the callback signature of `CoreDbClientType.transaction` so it
+ * always stays in sync with the actual driver and schema without hard-coding
+ * the internal Drizzle generic parameters.
+ */
+export type CoreTransaction = Parameters<CoreDbClientType['transaction']>[0] extends (tx: infer T) => unknown
+  ? T
+  : never;
+
 let corePool: Pool | null = null;
 let assessmentPool: Pool | null = null;
 let initialized = false;

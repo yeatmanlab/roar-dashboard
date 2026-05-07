@@ -229,7 +229,7 @@ describe('BaseRepository', () => {
       });
 
       expect(result).not.toBeNull();
-      expect(result.id).toBe(user.id);
+      expect(result!.id).toBe(user.id);
 
       // Verify committed
       const fetched = await repository.getById({ id: user.id });

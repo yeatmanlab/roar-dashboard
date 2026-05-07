@@ -29,6 +29,9 @@ import { createMockDistrictRepository } from '../../test-support/repositories/di
 import { createMockSchoolRepository } from '../../test-support/repositories/school.repository';
 import { createMockGroupRepository } from '../../test-support/repositories/group.repository';
 import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
+import type { CoreTransaction } from '../../db/clients';
+import { createMockClassRepository } from '../../test-support/repositories/class.repository';
+import { createMockRosterProviderIdRepository } from '../../test-support/repositories/roster-provider-id.repository';
 import { OrgFactory } from '../../test-support/factories/org.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
 import { FamilyFactory } from '../../test-support/factories/family.factory';
@@ -98,7 +101,9 @@ describe('UserService.create', () => {
   let mockDistrictRepo: ReturnType<typeof createMockDistrictRepository>;
   let mockSchoolRepo: ReturnType<typeof createMockSchoolRepository>;
   let mockGroupRepo: ReturnType<typeof createMockGroupRepository>;
+  let mockClassRepo: ReturnType<typeof createMockClassRepository>;
   let mockFamilyRepo: ReturnType<typeof createMockFamilyRepository>;
+  let mockRosterProviderRepo: ReturnType<typeof createMockRosterProviderIdRepository>;
   let mockAuthzService: ReturnType<typeof createMockAuthorizationService>;
   let service: ReturnType<typeof UserService>;
 
@@ -107,7 +112,9 @@ describe('UserService.create', () => {
     mockDistrictRepo = createMockDistrictRepository();
     mockSchoolRepo = createMockSchoolRepository();
     mockGroupRepo = createMockGroupRepository();
+    mockClassRepo = createMockClassRepository();
     mockFamilyRepo = createMockFamilyRepository();
+    mockRosterProviderRepo = createMockRosterProviderIdRepository();
     mockAuthzService = createMockAuthorizationService();
 
     service = UserService({
@@ -117,8 +124,10 @@ describe('UserService.create', () => {
       agreementRepository: createMockAgreementRepository(),
       districtRepository: mockDistrictRepo,
       schoolRepository: mockSchoolRepo,
+      classRepository: mockClassRepo,
       groupRepository: mockGroupRepo,
       familyRepository: mockFamilyRepo,
+      rosterProviderIdRepository: mockRosterProviderRepo,
       authorizationService: mockAuthzService,
     });
 
@@ -127,10 +136,15 @@ describe('UserService.create', () => {
     mockUserRepo.existsByUniqueFields.mockResolvedValue(false);
     mockDistrictRepo.getActiveById.mockResolvedValue(OrgFactory.build());
     mockSchoolRepo.getActiveById.mockResolvedValue(OrgFactory.build());
+    mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: districtId }]);
+    mockSchoolRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: districtId }]);
     mockGroupRepo.getActiveById.mockResolvedValue(GroupFactory.build());
     mockFamilyRepo.getActiveById.mockResolvedValue(FamilyFactory.build());
     mockUserRepo.createWithMemberships.mockResolvedValue({ id: newUserId });
     mockUserRepo.delete.mockResolvedValue(undefined);
+    mockUserRepo.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
+    mockRosterProviderRepo.create.mockResolvedValue({ id: newUserId });
+    mockRosterProviderRepo.deleteByEntityId.mockResolvedValue(undefined);
 
     mockAuth.getUserByEmail.mockRejectedValue(makeFirebaseError('auth/user-not-found'));
     mockAuth.createUser.mockResolvedValue({ uid: firebaseUid });
@@ -300,6 +314,34 @@ describe('UserService.create', () => {
       });
       expect(mockAuth.createUser).not.toHaveBeenCalled();
     });
+
+    it('non-super-admin: non-existent district entityId → 422 before Firebase call (defense-in-depth)', async () => {
+      // verifyMembershipEntityExists is called for all non-class, non-family memberships
+      // even when the FGA check would likely catch it anyway. Defense-in-depth.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: false });
+      mockDistrictRepo.getActiveById.mockResolvedValue(null);
+
+      await expect(service.create(authContext, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
+
+    it('non-super-admin: non-existent family entityId → 422 before Firebase call (defense-in-depth)', async () => {
+      // Family entities have no FGA check, so verifyMembershipEntityExists is the only guard.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: false });
+      const familyId = 'family-uuid-1';
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.FAMILY, entityId: familyId, role: UserFamilyRole.CHILD }],
+      };
+      mockFamilyRepo.getActiveById.mockResolvedValue(null);
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
   });
 
   // ── Pre-flight uniqueness ──────────────────────────────────────────────────
@@ -380,6 +422,8 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.CONFLICT,
       });
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+      // createWithMemberships threw, so newUserId was never set — DB row delete must not be attempted
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
       expect(mockAuthzService.writeTuplesOrThrow).not.toHaveBeenCalled();
     });
 
@@ -391,6 +435,7 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       });
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
     });
 
     it('DB generic error → calls deleteUser compensation → 500', async () => {
@@ -401,6 +446,7 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       });
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
     });
 
     it('DB failure + deleteUser compensation failure → returns 500 and logs with full context', async () => {
@@ -416,6 +462,80 @@ describe('UserService.create', () => {
         expect.stringContaining('compensation failed'),
       );
     });
+
+    it('resolveRootOrgProviderFromMemberships throws before transaction opens → only Firebase compensated', async () => {
+      // Resolver runs before runTransaction is called. If it throws, no DB write has
+      // occurred — only the Firebase account (created in step 3) needs compensation.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: 'district-a' }, { id: 'district-b' }]);
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
+      };
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
+
+      // Resolver threw before the transaction opened — no DB write was attempted
+      expect(mockUserRepo.runTransaction).not.toHaveBeenCalled();
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
+      expect(mockRosterProviderRepo.create).not.toHaveBeenCalled();
+      // Firebase was created in step 3 and must be compensated
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
+
+    it('rosterProviderIdRepository.create fails inside transaction → transaction rolled back, only Firebase compensated', async () => {
+      // rosterProviderIdRepository.create runs inside runTransaction. On failure the
+      // transaction rolls back atomically — no explicit userRepository.delete is needed.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockRosterProviderRepo.create.mockRejectedValue(new Error('insert failed'));
+
+      await expect(service.create(authContext, validBody)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+
+      // Transaction rolled back — explicit row delete must not be attempted
+      expect(mockUserRepo.delete).not.toHaveBeenCalled();
+      // Firebase was created in step 3 and must be compensated
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
+
+    it('class membership with no resolvable root district → 404 before transaction opens', async () => {
+      // getDistinctRootOrgIds returns [] when the class has no org hierarchy row above it.
+      // The resolver throws NOT_FOUND before runTransaction is called.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([]);
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.CLASS, entityId: classId, role: UserRole.STUDENT }],
+      };
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+
+      expect(mockUserRepo.runTransaction).not.toHaveBeenCalled();
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
+
+    it('school membership with no resolvable root district → 404 before transaction opens', async () => {
+      // getDistinctRootOrgIds returns [] when the school has no parent in the org hierarchy.
+      // The resolver throws NOT_FOUND before runTransaction is called.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      mockSchoolRepo.getDistinctRootOrgIds.mockResolvedValue([]);
+      const body = {
+        ...validBody,
+        memberships: [{ entityType: EntityType.SCHOOL, entityId: schoolId, role: UserRole.STUDENT }],
+      };
+
+      await expect(service.create(authContext, body)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+      });
+
+      expect(mockUserRepo.runTransaction).not.toHaveBeenCalled();
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
+    });
   });
 
   // ── FGA write + full compensation ─────────────────────────────────────────
@@ -429,10 +549,13 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       });
 
-      // FGA compensation
+      // FGA partial-write compensation
       expect(mockAuthzService.deleteTuples).toHaveBeenCalledOnce();
+      // Roster provider row must be deleted before the user row (trigger ordering),
+      // both inside a single transaction for atomicity.
+      expect(mockRosterProviderRepo.deleteByEntityId).toHaveBeenCalledWith(newUserId, expect.anything());
       // DB compensation
-      expect(mockUserRepo.delete).toHaveBeenCalledWith({ id: newUserId });
+      expect(mockUserRepo.delete).toHaveBeenCalledWith(expect.objectContaining({ id: newUserId }));
       // Firebase compensation
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
     });
@@ -449,6 +572,8 @@ describe('UserService.create', () => {
         expect.objectContaining({ context: expect.objectContaining({ newUserId }) }),
         expect.stringContaining('DB delete compensation failed'),
       );
+      // Firebase compensation must fire regardless of whether DB cleanup succeeded
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
     });
   });
 
@@ -485,10 +610,11 @@ describe('UserService.create', () => {
 
       expect(mockUserRepo.createWithMemberships).toHaveBeenCalledWith(
         expect.objectContaining({ assessmentPid: 'custom-pid' }),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
+        expect.anything(), // orgMemberships
+        expect.anything(), // classMemberships
+        expect.anything(), // groupMemberships
+        expect.anything(), // familyMemberships
+        expect.anything(), // tx
       );
     });
 
@@ -526,6 +652,45 @@ describe('UserService.create', () => {
       expect(orgMemberships).toHaveLength(2); // district + school
       expect(classMemberships).toHaveLength(0);
       expect(groupMemberships).toHaveLength(1);
+    });
+
+    it('multiple group memberships → first group ID used as partnerId (first-wins)', async () => {
+      // Groups are flat; no hierarchy to validate. First in request order wins.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const secondGroupId = 'group-uuid-2';
+      const body = {
+        ...validBody,
+        memberships: [
+          { entityType: EntityType.GROUP, entityId: groupId, role: UserRole.STUDENT },
+          { entityType: EntityType.GROUP, entityId: secondGroupId, role: UserRole.STUDENT },
+        ],
+      };
+
+      await service.create(authContext, body);
+
+      expect(mockRosterProviderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ partnerId: groupId }) }),
+      );
+    });
+
+    it('multiple family memberships → first family ID used as partnerId (first-wins)', async () => {
+      // Families are flat; no hierarchy to validate. First in request order wins.
+      const authContext = AuthContextFactory.build({ isSuperAdmin: true });
+      const firstFamilyId = 'family-uuid-1';
+      const secondFamilyId = 'family-uuid-2';
+      const body = {
+        ...validBody,
+        memberships: [
+          { entityType: EntityType.FAMILY, entityId: firstFamilyId, role: UserFamilyRole.PARENT },
+          { entityType: EntityType.FAMILY, entityId: secondFamilyId, role: UserFamilyRole.PARENT },
+        ],
+      };
+
+      await service.create(authContext, body);
+
+      expect(mockRosterProviderRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ partnerId: firstFamilyId }) }),
+      );
     });
   });
 });

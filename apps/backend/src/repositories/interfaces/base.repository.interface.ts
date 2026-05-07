@@ -1,11 +1,12 @@
 import type { SQL } from 'drizzle-orm';
+import type { CoreTransaction } from '../../db/clients';
 
 /**
- * Generic transaction type for database operations.
- * This will be implemented by specific database adapters (e.g., Drizzle).
+ * Transaction type for repository operations. Typed as the Drizzle transaction
+ * proxy produced by `CoreDbClient.transaction()` so all transaction-accepting
+ * repository methods carry real type information.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Transaction = any;
+export type Transaction = CoreTransaction;
 
 /**
  * Base parameters for repository operations.
