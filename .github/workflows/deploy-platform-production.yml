@@ -7,6 +7,14 @@ on:
         description: "Release version (e.g., 3.27.0)"
         type: string
         required: true
+  push:
+    tags:
+      # TODO: Remove once backend refactor is complete and merged to main.
+      # Temporary fallback to allow continuous backend deployments during refactor.
+      # Once release.yml is active on main, this trigger will be removed.
+      - "backend-v[0-9]+.[0-9]+.[0-9]+"
+      - "backend-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "backend-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -34,8 +42,8 @@ jobs:
 
       - name: Verify tags exist on main
         run: |
-          # Determine version
-          VERSION="${{ inputs.version }}"
+          # Determine version: use inputs.version for workflow_call, github.ref_name for push trigger
+          VERSION="${{ inputs.version || github.ref_name }}"
           
           # Remove tag prefix if present (e.g., "backend-v3.27.0" -> "3.27.0")
           VERSION="${VERSION#backend-v}"
@@ -61,7 +69,7 @@ jobs:
       - name: Log release components
         run: |
           echo "Release Summary:"
-          echo "  Version: ${{ inputs.version }}"
+          echo "  Version: ${{ inputs.version || github.ref_name }}"
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Production deployment approval
@@ -200,4 +208,4 @@ jobs:
         with:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
-          version: ${{ inputs.version }}
+          version: ${{ inputs.version || github.ref_name }}
