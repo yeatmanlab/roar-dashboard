@@ -19,6 +19,7 @@ import type {
   ScoreOverviewQuery,
   StudentScoresQuery,
   StudentScoreRow,
+  UpdateAdministrationRequest,
   IndividualStudentReportQuery,
   IndividualStudentReportResponse,
 } from '@roar-dashboard/api-contract';
@@ -673,6 +674,41 @@ export const AdministrationsController = {
         return toErrorResponse(error, [
           StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing administration.
+   *
+   * Delegates to AdministrationService for validation and update.
+   * Returns 200 OK with the administration ID on success.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration to update
+   * @param body - The update administration request body
+   */
+  update: async (authContext: AuthContext, administrationId: string, body: UpdateAdministrationRequest) => {
+    try {
+      const result = await administrationService.update(authContext, administrationId, body);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.CONFLICT,
           StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.INTERNAL_SERVER_ERROR,
