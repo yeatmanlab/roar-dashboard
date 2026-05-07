@@ -44,7 +44,6 @@ jobs:
         run: |
           # Determine version: use inputs.version for workflow_call, github.ref_name for push trigger
           VERSION="${{ inputs.version || github.ref_name }}"
-          
           # Remove tag prefix if present (e.g., "backend-v3.27.0" -> "3.27.0")
           VERSION="${VERSION#backend-v}"
           
@@ -69,7 +68,7 @@ jobs:
       - name: Log release components
         run: |
           echo "Release Summary:"
-          echo "  Version: ${{ inputs.version || github.ref_name }}"
+          echo "  Version: ${{ inputs.version }}"
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Production deployment approval
