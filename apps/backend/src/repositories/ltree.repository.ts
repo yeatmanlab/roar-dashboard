@@ -1,5 +1,5 @@
 import type { AnyColumn } from 'drizzle-orm';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import { alias } from 'drizzle-orm/pg-core';
@@ -67,15 +67,18 @@ export abstract class LtreeRepository<
   protected readonly ancestorTable: PgTable;
 
   /**
-   * The id column of `ancestorTable`. Resolved from the table reference so
-   * subclasses don't need to pass it explicitly.
-   */
-  protected readonly ancestorIdColumn: AnyColumn;
-
-  /**
    * The ltree column on `ancestorTable` used as the join target.
    */
   protected readonly ancestorPathColumn: AnyColumn;
+
+  /**
+   * The JS property key on `ancestorTable` (and on its `alias()` proxy) that
+   * resolves to `ancestorPathColumn`. Pre-computed at construction time so
+   * the alias lookup at query time uses the correct key — `alias()` exposes
+   * columns by JS property name (`orgPath`), not by SQL column name
+   * (`org_path`), and conflating the two is a silent runtime bug.
+   */
+  protected readonly ancestorPathColumnKey: string;
 
   /**
    * @param db - Drizzle database client.
@@ -99,15 +102,32 @@ export abstract class LtreeRepository<
     super(db, table);
     this.pathColumn = pathColumn;
     this.ancestorTable = ancestorTable ?? table;
-
-    // Mirror BaseRepository's runtime column-access pattern. `id` is required
-    // on every table per the codebase convention; `ancestorPathColumn` falls
-    // back to the driving path column only when the ancestor and driving
-    // tables are the same.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ancestorTyped = this.ancestorTable as PgTable & Record<string, any>;
-    this.ancestorIdColumn = ancestorTyped['id'] as AnyColumn;
     this.ancestorPathColumn = ancestorPathColumn ?? pathColumn;
+
+    // Resolve the JS property key for the ancestor path column up front so
+    // the alias lookup at query time can't silently miss when the SQL name
+    // and JS property name differ (e.g., orgPath ↔ org_path). Throwing here
+    // surfaces a misconfigured subclass at startup rather than at first use.
+    this.ancestorPathColumnKey = LtreeRepository.findColumnKey(this.ancestorTable, this.ancestorPathColumn);
+  }
+
+  /**
+   * Find the JS property key on `table` whose value is the given `column`
+   * reference. Used to resolve the alias-side property name for columns
+   * whose SQL name differs from their JS key (e.g., `orgPath` → `org_path`).
+   *
+   * @throws If `column` is not a property of `table`.
+   */
+  private static findColumnKey(table: PgTable, column: AnyColumn): string {
+    const tableRecord = table as unknown as Record<string, unknown>;
+    const entry = Object.entries(tableRecord).find(([, value]) => value === column);
+    if (!entry) {
+      throw new Error(
+        'LtreeRepository: ancestorPathColumn is not a property of ancestorTable. ' +
+          'Pass a column reference owned by the ancestor table (e.g., `orgs.path`).',
+      );
+    }
+    return entry[0];
   }
 
   /**
@@ -165,9 +185,9 @@ export abstract class LtreeRepository<
     const drivingTable = this.table as PgTable & Record<string, any>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rootTable = root as PgTable & Record<string, any>;
-    const idColumn = drivingTable['id'] as Parameters<typeof eq>[0];
+    const idColumn = drivingTable['id'] as Parameters<typeof inArray>[0];
     const rootIdColumn = rootTable['id'] as AnyColumn;
-    const rootPathColumn = rootTable[this.ancestorPathColumnName()] as AnyColumn;
+    const rootPathColumn = rootTable[this.ancestorPathColumnKey] as AnyColumn;
 
     // `subpath(path, 0, 1)` extracts the first label of the ltree — that is,
     // the root label of the node's tree. We then look up the ancestor row
@@ -179,23 +199,5 @@ export abstract class LtreeRepository<
       .where(inArray(idColumn, ids));
 
     return result;
-  }
-
-  /**
-   * Returns the JS property name for the ancestor path column.
-   *
-   * Drizzle's `alias()` returns a proxy whose columns are accessible by the
-   * same property keys as the original table. For the ltree columns in this
-   * codebase, the underlying SQL column name and the JS property name
-   * happen to align (`orgs.path` is property `path` mapped to SQL `path`).
-   * If a future ancestor table has a column where these differ (e.g.,
-   * `classes.orgPath` is property `orgPath` mapped to SQL `org_path`),
-   * subclasses must pass the correct property name explicitly via a
-   * different mechanism rather than relying on the SQL name.
-   */
-  private ancestorPathColumnName(): string {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const column = this.ancestorPathColumn as any;
-    return column.name as string;
   }
 }

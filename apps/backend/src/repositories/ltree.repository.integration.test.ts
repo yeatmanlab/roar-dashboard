@@ -98,16 +98,23 @@ describe('LtreeRepository', () => {
       const ids = result.map((row) => row.id).sort();
       expect(ids).toEqual([baseFixture.district.id, baseFixture.districtB.id].sort());
     });
+  });
 
-    it('handles a deeper hierarchy where the root is not a direct parent', async () => {
-      // Build a department under School A so the input row is two hops below the district.
+  describe('getDistinctRootOrgIds (orgs-rooted multi-hop)', () => {
+    // Orgs-rooted hierarchies (districts and schools both drive the orgs table)
+    // share the same ltree traversal. Validate behavior more than two labels
+    // deep — covers cases where the root isn't a direct parent.
+    it('resolves a department two hops below the district to the district root', async () => {
       const department = await OrgFactory.create({
         name: 'Test Department',
         orgType: OrgType.DEPARTMENT,
         parentOrgId: baseFixture.schoolA.id,
       });
 
-      const result = await schoolRepository.getDistinctRootOrgIds([department.id]);
+      // Either DistrictRepository or SchoolRepository works here — both drive
+      // `orgs` and use the same ltree path. Use DistrictRepository since
+      // "find the root district" is the canonical framing.
+      const result = await districtRepository.getDistinctRootOrgIds([department.id]);
 
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe(baseFixture.district.id);
