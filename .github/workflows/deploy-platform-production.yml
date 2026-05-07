@@ -61,10 +61,7 @@ jobs:
       - name: Log release components
         run: |
           echo "Release Summary:"
-          echo "  Version: ${{ inputs.version || github.ref_name }}"
-          echo "  Backend: ${{ inputs.backend_release_created }}"
-          echo "  Dashboard: ${{ inputs.dashboard_release_created }}"
-          echo "  API Contract: ${{ inputs.api_contract_release_created }}"
+          echo "  Version: ${{ inputs.version }}"
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Production deployment approval

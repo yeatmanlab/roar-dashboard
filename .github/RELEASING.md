@@ -25,7 +25,7 @@ The monorepo uses **hybrid versioning**:
 
 ### 1. Create a PR with Conventional Commit Title
 
-All PRs must have a clear, conventional commit title that describes the user-facing impact:
+All PRs must have a clear, conventional commit title that describes the user-facing impact. **Release Please reads the PR title** (not individual commit messages) to determine version bumps and changelog entries:
 
 ```
 feat(backend): add user creation endpoint
