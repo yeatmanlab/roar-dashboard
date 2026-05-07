@@ -42,10 +42,8 @@ jobs:
 
       - name: Verify tags exist on main
         run: |
-          # Determine version: use inputs.version for workflow_call, github.ref_name for push trigger
-          VERSION="${{ inputs.version || github.ref_name }}"
-          # Remove tag prefix if present (e.g., "backend-v3.27.0" -> "3.27.0")
-          VERSION="${VERSION#backend-v}"
+          # Determine version
+          VERSION="${{ inputs.version }}"
           
           # Verify all three platform tags exist and are on main
           for PREFIX in backend dashboard api-contract; do
