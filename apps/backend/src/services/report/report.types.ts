@@ -183,9 +183,9 @@ export interface ServiceTaskScoreFacet {
   taskSlug: string;
   taskName: string;
   orderIndex: number;
-  supportLevelByGrade: ServiceSupportLevelDistribution & { grade: string; totalAssessed: number };
+  supportLevelByGrade: (ServiceSupportLevelDistribution & { grade: string; totalAssessed: number })[];
   supportLevelBySchool:
-    | (ServiceSupportLevelDistribution & { schoolId: string; schoolName: string | undefined; totalAssessed: number })
+    | (ServiceSupportLevelDistribution & { schoolId: string; schoolName: string | undefined; totalAssessed: number })[]
     | null;
   scoreBinsByGrade: {
     grade: string;
