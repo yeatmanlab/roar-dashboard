@@ -1,4 +1,4 @@
-import type { MockedObject } from 'vitest';
+import { vi, type MockedObject } from 'vitest';
 import { createMockBaseRepositoryMethods } from './base.repository';
 import type { RosterProviderIdRepository } from '../../repositories/roster-provider-id.repository';
 
@@ -10,7 +10,8 @@ import type { RosterProviderIdRepository } from '../../repositories/roster-provi
 export function createMockRosterProviderIdRepository(): MockedObject<RosterProviderIdRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
-  } as MockedObject<RosterProviderIdRepository>;
+    deleteByEntityId: vi.fn(),
+  } as unknown as MockedObject<RosterProviderIdRepository>;
 }
 
 export type MockRosterProviderIdRepository = ReturnType<typeof createMockRosterProviderIdRepository>;

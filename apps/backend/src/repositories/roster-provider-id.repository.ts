@@ -1,4 +1,5 @@
 import type { InferInsertModel } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseRepository } from './base.repository';
 import type { BaseCreateParams } from './interfaces/base.repository.interface';
@@ -33,5 +34,18 @@ export class RosterProviderIdRepository extends BaseRepository<RosterProviderId,
     const db = params.transaction ?? this.db;
     await db.insert(rosteringProviderIds).values(params.data);
     return { id: params.data.entityId };
+  }
+
+  /**
+   * Delete all roster provider ID records for a given entity.
+   *
+   * Must be called before deleting the entity row itself — the
+   * `prevent_rostered_entity_delete` trigger blocks DELETE on `users` (and
+   * other entity tables) while a matching `rostering_provider_ids` row exists.
+   *
+   * @param entityId - The UUID of the entity whose roster provider rows should be removed.
+   */
+  async deleteByEntityId(entityId: string): Promise<void> {
+    await this.db.delete(rosteringProviderIds).where(eq(rosteringProviderIds.entityId, entityId));
   }
 }

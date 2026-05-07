@@ -193,6 +193,8 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
 
     const [entity] = await db.insert(this.typedTable).values(params.data).returning({ id: this.typedTable.id });
 
+    if (!entity) throw new Error('Insert returned no rows');
+
     return entity;
   }
 

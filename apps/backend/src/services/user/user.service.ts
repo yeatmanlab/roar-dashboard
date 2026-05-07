@@ -95,15 +95,6 @@ interface CreateUserMemberships {
   enrollmentEnd?: string | undefined;
 }
 
-/** Interface for creating a user's roster provider in the create user payload. */
-interface CreateUserRosterProvider {
-  providerType: RosteringProvider;
-  providerId: string;
-  partnerId: string;
-  entityType: RosteringEntityType;
-  entityId: string;
-}
-
 /**
  * Narrowed membership types used only in the create function for type-safe mapping.
  * The flat CreateUserMemberships interface is kept for controller compatibility —
@@ -586,7 +577,12 @@ export function UserService({
 
     // ── Step 4: DB transaction (user row + junction rows + roster provider ID row) ────────────────────
     //
-    // On failure: compensate by deleting the Firebase auth account.
+    // createWithMemberships and rosterProviderIdRepository.create run inside a single
+    // transaction so all DB writes succeed or roll back together.
+    // resolveRootOrgProviderFromMemberships is read-only and runs before the transaction
+    // opens to keep the write window as short as possible.
+    //
+    // On failure: the transaction rolls back atomically — only Firebase needs compensation.
 
     let newUserId!: string;
     try {
@@ -631,65 +627,58 @@ export function UserService({
           leftOn: m.enrollmentEnd ? new Date(m.enrollmentEnd) : null,
         }));
 
-      const result = await userRepository.createWithMemberships(
-        {
-          authId: firebaseUid,
-          authProvider: [AuthProvider.PASSWORD],
-          email: email,
-          nameFirst: name.first,
-          nameMiddle: name.middle ?? null,
-          nameLast: name.last,
-          dob: dob ?? null,
-          grade: grade ?? null,
-          assessmentPid,
-          userType: userType,
-          statusEll: demographics?.statusEll ?? null,
-          statusFrl: demographics?.statusFrl ?? null,
-          statusIep: demographics?.statusIep ?? null,
-          gender: demographics?.gender ?? null,
-          race: demographics?.race ?? null,
-          hispanicEthnicity: demographics?.hispanicEthnicity ?? null,
-          homeLanguage: demographics?.homeLanguage ?? null,
-          stateId: identifiers?.stateId ?? null,
-          isSuperAdmin: false,
-        },
-        orgMemberships,
-        classMemberships,
-        groupMemberships,
-        familyMemberships,
-      );
-
-      newUserId = result.id;
-
-      // Determine the root org provider from the memberships — throws if unresolvable
+      // Resolve the root org partner ID before opening the write transaction.
+      // Read-only — if it throws, no DB writes have happened yet so only Firebase needs compensation.
       const resolvedPartnerId = await resolveRootOrgProviderFromMemberships(memberships);
 
-      const rosterProviderData: CreateUserRosterProvider = {
-        providerType: RosteringProvider.DASHBOARD,
-        providerId: newUserId,
-        partnerId: resolvedPartnerId,
-        entityType: RosteringEntityType.USER,
-        entityId: newUserId,
-      };
-
-      await rosterProviderIdRepository.create({ data: rosterProviderData });
-    } catch (error) {
-      // ── Compensation ────────────────────────────────────────────────────────
-      // If createWithMemberships already committed a row, delete it now.
-      // This covers failures from resolveRootOrgProviderFromMemberships,
-      // the !resolvedPartnerId guard, and rosterProviderIdRepository.create().
-      if (newUserId) {
-        try {
-          await userRepository.delete({ id: newUserId });
-        } catch (dbDeleteError) {
-          logger.error(
-            { err: dbDeleteError, context: { userId, newUserId } },
-            'DB delete compensation failed during step 4 — manual cleanup required',
+      newUserId = await userRepository.runTransaction({
+        fn: async (tx) => {
+          const result = await userRepository.createWithMemberships(
+            {
+              authId: firebaseUid,
+              authProvider: [AuthProvider.PASSWORD],
+              email: email,
+              nameFirst: name.first,
+              nameMiddle: name.middle ?? null,
+              nameLast: name.last,
+              dob: dob ?? null,
+              grade: grade ?? null,
+              assessmentPid,
+              userType: userType,
+              statusEll: demographics?.statusEll ?? null,
+              statusFrl: demographics?.statusFrl ?? null,
+              statusIep: demographics?.statusIep ?? null,
+              gender: demographics?.gender ?? null,
+              race: demographics?.race ?? null,
+              hispanicEthnicity: demographics?.hispanicEthnicity ?? null,
+              homeLanguage: demographics?.homeLanguage ?? null,
+              stateId: identifiers?.stateId ?? null,
+              isSuperAdmin: false,
+            },
+            orgMemberships,
+            classMemberships,
+            groupMemberships,
+            familyMemberships,
+            tx,
           );
-        }
-      }
 
-      // Always compensate Firebase — step 3 has already run by this point.
+          await rosterProviderIdRepository.create({
+            data: {
+              providerType: RosteringProvider.DASHBOARD,
+              providerId: result.id,
+              partnerId: resolvedPartnerId,
+              entityType: RosteringEntityType.USER,
+              entityId: result.id,
+            },
+            transaction: tx,
+          });
+
+          return result.id;
+        },
+      });
+    } catch (error) {
+      // The transaction rolled back atomically — DB is clean.
+      // Only Firebase requires compensation since step 3 has already run.
       await compensateDeleteFirebaseUser(firebaseUid, userId, email, 'step 4 failure');
 
       if (error instanceof ApiError) throw error;
@@ -745,8 +734,10 @@ export function UserService({
       }));
       await authorizationService.deleteTuples(deleteTuples);
 
-      // Delete the DB row (cascade removes junction rows)
+      // Delete DB rows in the correct order: roster provider ID must be removed first
+      // or the `prevent_rostered_entity_delete` trigger will block the user DELETE.
       try {
+        await rosterProviderIdRepository.deleteByEntityId(newUserId);
         await userRepository.delete({ id: newUserId });
       } catch (dbDeleteError) {
         logger.error(

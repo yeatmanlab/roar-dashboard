@@ -4,6 +4,7 @@ import type { User, NewUser, NewUserOrg, NewUserClass, NewUserGroup, NewUserFami
 import { EntityType } from '../types/entity-type';
 import { users, userOrgs, userClasses, userGroups, userFamilies, orgs, classes } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
+import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';
 import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
@@ -129,14 +130,25 @@ export class UserRepository extends BaseRepository<User, typeof users> {
    * Create a user row and all junction-table memberships in a single DB transaction.
    *
    * Inserts the `users` row and all `user_orgs`, `user_classes`, `user_groups`, and
-   * `user_families` rows atomically. The caller (service layer) is responsible for
-   * Firebase Auth creation and FGA tuple writes — those happen outside this transaction.
+   * `user_families` rows within the supplied transaction.
+   *
+   * The caller is responsible for managing the transaction lifecycle. Use
+   * `runTransaction` to open one:
+   *
+   * ```typescript
+   * await repository.runTransaction({
+   *   fn: (tx) => repository.createWithMemberships(userData, orgs, classes, groups, families, tx),
+   * });
+   * ```
+   *
+   * Firebase Auth creation and FGA tuple writes always happen outside this method.
    *
    * @param userData - The user fields to insert (excluding system-managed fields)
    * @param orgMemberships - Rows to insert into `user_orgs`
    * @param classMemberships - Rows to insert into `user_classes`
    * @param groupMemberships - Rows to insert into `user_groups`
    * @param familyMemberships - Rows to insert into `user_families`
+   * @param transaction - The active transaction to execute writes within
    * @returns The newly created user's ID
    */
   async createWithMemberships(
@@ -145,34 +157,33 @@ export class UserRepository extends BaseRepository<User, typeof users> {
     classMemberships: Omit<NewUserClass, 'userId'>[],
     groupMemberships: Omit<NewUserGroup, 'userId'>[],
     familyMemberships: Omit<NewUserFamily, 'userId'>[],
+    transaction: CoreTransaction,
   ): Promise<{ id: string }> {
-    return this.db.transaction(async (tx) => {
-      const [created] = await tx.insert(users).values(userData).returning({ id: users.id });
+    const [created] = await transaction.insert(users).values(userData).returning({ id: users.id });
 
-      if (!created) {
-        throw new Error('User insert returned no rows');
-      }
+    if (!created) {
+      throw new Error('User insert returned no rows');
+    }
 
-      const { id: userId } = created;
+    const { id: userId } = created;
 
-      if (orgMemberships.length > 0) {
-        await tx.insert(userOrgs).values(orgMemberships.map((m) => ({ ...m, userId })));
-      }
+    if (orgMemberships.length > 0) {
+      await transaction.insert(userOrgs).values(orgMemberships.map((m) => ({ ...m, userId })));
+    }
 
-      if (classMemberships.length > 0) {
-        await tx.insert(userClasses).values(classMemberships.map((m) => ({ ...m, userId })));
-      }
+    if (classMemberships.length > 0) {
+      await transaction.insert(userClasses).values(classMemberships.map((m) => ({ ...m, userId })));
+    }
 
-      if (groupMemberships.length > 0) {
-        await tx.insert(userGroups).values(groupMemberships.map((m) => ({ ...m, userId })));
-      }
+    if (groupMemberships.length > 0) {
+      await transaction.insert(userGroups).values(groupMemberships.map((m) => ({ ...m, userId })));
+    }
 
-      if (familyMemberships.length > 0) {
-        await tx.insert(userFamilies).values(familyMemberships.map((m) => ({ ...m, userId })));
-      }
+    if (familyMemberships.length > 0) {
+      await transaction.insert(userFamilies).values(familyMemberships.map((m) => ({ ...m, userId })));
+    }
 
-      return { id: userId };
-    });
+    return { id: userId };
   }
 
   /**
