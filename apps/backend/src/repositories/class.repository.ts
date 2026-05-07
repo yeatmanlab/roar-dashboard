@@ -5,14 +5,14 @@ import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../db/clients';
 import type { Class } from '../db/schema';
-import { classes, userClasses, users } from '../db/schema';
+import { classes, orgs, userClasses, users } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { ClassType } from '../enums/class-type.enum';
 import type { Grade } from '../enums/grade.enum';
 import type { ParsedFilter } from '../types/filter';
 import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import type { PaginatedResult } from './base.repository';
-import { BaseRepository } from './base.repository';
+import { LtreeRepository } from './ltree.repository';
 import {
   ENROLLED_USERS_SORT_COLUMNS,
   getEnrolledUsersFilterConditions,
@@ -51,9 +51,9 @@ export interface CreateClassInput {
   location?: string | undefined;
 }
 
-export class ClassRepository extends BaseRepository<Class, typeof classes> {
+export class ClassRepository extends LtreeRepository<Class, typeof classes> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, classes);
+    super(db, classes, classes.orgPath, orgs, orgs.path);
   }
 
   /**

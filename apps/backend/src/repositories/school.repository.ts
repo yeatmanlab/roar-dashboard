@@ -2,7 +2,7 @@ import { eq, countDistinct, and, isNull, sql, inArray, asc, desc } from 'drizzle
 import type { SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PaginatedResult } from './base.repository';
-import { BaseRepository } from './base.repository';
+import { LtreeRepository } from './ltree.repository';
 import type { Org } from '../db/schema';
 import { orgs, userOrgs, classes, userClasses, users } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
@@ -88,9 +88,9 @@ export interface ListAuthorizedOptions {
  * Provides both unrestricted access (for super admins) and FGA-filtered access
  * (for regular users based on their FGA object membership).
  */
-export class SchoolRepository extends BaseRepository<School, typeof orgs> {
+export class SchoolRepository extends LtreeRepository<School, typeof orgs> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, orgs);
+    super(db, orgs, orgs.path);
   }
 
   /**

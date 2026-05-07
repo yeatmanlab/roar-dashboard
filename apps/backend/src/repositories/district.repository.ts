@@ -11,7 +11,7 @@ import { OrgType } from '../enums/org-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
 import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import type { PaginatedResult } from './base.repository';
-import { BaseRepository } from './base.repository';
+import { LtreeRepository } from './ltree.repository';
 import {
   ENROLLED_USERS_SORT_COLUMNS,
   getEnrolledUsersFilterConditions,
@@ -87,9 +87,9 @@ export interface ListDistrictOptions {
  *
  * Handles data access for districts (orgs with orgType = 'district').
  */
-export class DistrictRepository extends BaseRepository<District, typeof orgs> {
+export class DistrictRepository extends LtreeRepository<District, typeof orgs> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, orgs);
+    super(db, orgs, orgs.path);
   }
 
   /**
