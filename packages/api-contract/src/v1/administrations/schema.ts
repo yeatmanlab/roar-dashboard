@@ -591,3 +591,72 @@ export type CreateAdministrationRequest = z.infer<typeof CreateAdministrationReq
  * Returns the created administration's ID.
  */
 export const CreateAdministrationResponseSchema = z.string().uuid();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Update Administration Schemas
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Task variant input for updating an administration.
+ * Each task variant includes ordering and optional eligibility/requirement conditions.
+ */
+export const UpdateAdministrationTaskVariantSchema = z
+  .object({
+    taskVariantId: z.string().uuid(),
+    orderIndex: z.number().int().min(0),
+    conditionsEligibility: ConditionSchema.optional(),
+    conditionsRequirement: ConditionSchema.optional(),
+  })
+  .strict();
+
+export type UpdateAdministrationTaskVariant = z.infer<typeof UpdateAdministrationTaskVariantSchema>;
+
+/**
+ * Request body schema for updating an existing administration.
+ *
+ * All fields are optional — only those present in the request body are applied.
+ * Array fields use replacement logic:
+ * - Records not in the new array are deleted
+ * - Records that exist in both are updated
+ * - Records only in the new array are added
+ *
+ * Optional fields:
+ * - name: Internal name for the administration
+ * - namePublic: Public-facing name shown to users
+ * - description: Description of the administration
+ * - dateStart: Start date/time of the administration
+ * - dateEnd: End date/time of the administration
+ * - isOrdered: Whether tasks must be completed sequentially
+ * - orgs: Array of organization UUIDs to assign (replaces existing)
+ * - classes: Array of class UUIDs to assign (replaces existing)
+ * - groups: Array of group UUIDs to assign (replaces existing)
+ * - taskVariants: Array of task variants to include (replaces existing)
+ * - agreements: Array of agreement UUIDs to require (replaces existing)
+ */
+export const UpdateAdministrationRequestSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    namePublic: z.string().min(1).optional(),
+    description: z.string().optional(),
+    dateStart: z.string().datetime().optional(),
+    dateEnd: z.string().datetime().optional(),
+    isOrdered: z.boolean().optional(),
+    orgs: z.array(z.string().uuid()).optional(),
+    classes: z.array(z.string().uuid()).optional(),
+    groups: z.array(z.string().uuid()).optional(),
+    taskVariants: z.array(UpdateAdministrationTaskVariantSchema).optional(),
+    agreements: z.array(z.string().uuid()).optional(),
+  })
+  .strict();
+
+export type UpdateAdministrationRequest = z.infer<typeof UpdateAdministrationRequestSchema>;
+
+/**
+ * Response schema for update administration endpoint.
+ * Returns only the ID of the updated administration.
+ */
+export const UpdateAdministrationResponseSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type UpdateAdministrationResponse = z.infer<typeof UpdateAdministrationResponseSchema>;

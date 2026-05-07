@@ -1,4 +1,4 @@
-import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray } from 'drizzle-orm';
+import { and, eq, asc, desc, lte, gte, lt, gt, sql, count, countDistinct, inArray, notInArray, ne } from 'drizzle-orm';
 import type { SQL, Column, InferInsertModel } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { PgColumn } from 'drizzle-orm/pg-core';
@@ -200,6 +200,32 @@ export interface CreateAdministrationInput {
     conditionsRequirements?: unknown;
   }>;
   agreementIds: string[];
+}
+
+/**
+ * Input for updating an administration with all related junction table entries.
+ * All fields are optional - only those present will be updated.
+ * Array fields use replacement logic (delete/update/insert).
+ */
+export interface UpdateAdministrationInput {
+  administration?: Partial<{
+    name: string;
+    namePublic: string;
+    description: string;
+    dateStart: Date;
+    dateEnd: Date;
+    isOrdered: boolean;
+  }>;
+  orgIds?: string[];
+  classIds?: string[];
+  groupIds?: string[];
+  taskVariants?: Array<{
+    taskVariantId: string;
+    orderIndex: number;
+    conditionsAssignment?: unknown;
+    conditionsRequirements?: unknown;
+  }>;
+  agreementIds?: string[];
 }
 
 /**
@@ -996,5 +1022,182 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       .limit(1);
 
     return result.length > 0;
+  }
+
+  /**
+   * Check if an administration with the given name already exists, excluding a specific ID.
+   * Used for update validation to allow keeping the same name.
+   *
+   * @param name - The name to check
+   * @param excludeId - The administration ID to exclude from the check
+   * @returns true if another administration with this name exists, false otherwise
+   */
+  async existsByNameExcludingId(name: string, excludeId: string): Promise<boolean> {
+    const result = await this.db
+      .select({ id: administrations.id })
+      .from(administrations)
+      .where(and(sql`lower(${administrations.name}) = lower(${name})`, ne(administrations.id, excludeId)))
+      .limit(1);
+
+    return result.length > 0;
+  }
+
+  /**
+   * Updates an administration with all related junction table entries in a single transaction.
+   *
+   * Uses upsert and prune logic for array fields:
+   * - Upserts records that are in the new array (insert or update on conflict)
+   * - Prunes records that are no longer in the new array
+   *
+   * Only updates fields that are present in the input.
+   *
+   * @param administrationId - The ID of the administration to update
+   * @param input - The update data (all fields optional)
+   * @returns The ID of the updated administration
+   * @throws If any operation fails, the entire transaction is rolled back
+   */
+  async updateWithAssignments(administrationId: string, input: UpdateAdministrationInput): Promise<{ id: string }> {
+    return this.runTransaction({
+      fn: async (tx) => {
+        // Update the main administration record if any fields are provided
+        if (input.administration && Object.keys(input.administration).length > 0) {
+          await tx.update(administrations).set(input.administration).where(eq(administrations.id, administrationId));
+        }
+
+        // Upsert and prune org assignments if provided
+        if (input.orgIds !== undefined) {
+          await this.upsertAndPruneEntities(tx, {
+            table: administrationOrgs,
+            administrationIdColumn: administrationOrgs.administrationId,
+            entityIdColumn: administrationOrgs.orgId,
+            administrationId,
+            entityIds: input.orgIds,
+            buildValues: (orgId) => ({ administrationId, orgId }),
+          });
+        }
+
+        // Upsert and prune class assignments if provided
+        if (input.classIds !== undefined) {
+          await this.upsertAndPruneEntities(tx, {
+            table: administrationClasses,
+            administrationIdColumn: administrationClasses.administrationId,
+            entityIdColumn: administrationClasses.classId,
+            administrationId,
+            entityIds: input.classIds,
+            buildValues: (classId) => ({ administrationId, classId }),
+          });
+        }
+
+        // Upsert and prune group assignments if provided
+        if (input.groupIds !== undefined) {
+          await this.upsertAndPruneEntities(tx, {
+            table: administrationGroups,
+            administrationIdColumn: administrationGroups.administrationId,
+            entityIdColumn: administrationGroups.groupId,
+            administrationId,
+            entityIds: input.groupIds,
+            buildValues: (groupId) => ({ administrationId, groupId }),
+          });
+        }
+
+        // Upsert and prune task variant assignments if provided
+        if (input.taskVariants !== undefined) {
+          const taskVariantIds = input.taskVariants.map((tv) => tv.taskVariantId);
+
+          // Upsert task variants with their additional fields
+          if (input.taskVariants.length > 0) {
+            await tx
+              .insert(administrationTaskVariants)
+              .values(
+                input.taskVariants.map((tv) => ({
+                  administrationId,
+                  taskVariantId: tv.taskVariantId,
+                  orderIndex: tv.orderIndex,
+                  conditionsAssignment: tv.conditionsAssignment,
+                  conditionsRequirements: tv.conditionsRequirements,
+                })),
+              )
+              .onConflictDoUpdate({
+                target: [administrationTaskVariants.administrationId, administrationTaskVariants.taskVariantId],
+                set: {
+                  orderIndex: sql`excluded.order_index`,
+                  conditionsAssignment: sql`excluded.conditions_assignment`,
+                  conditionsRequirements: sql`excluded.conditions_requirements`,
+                },
+              });
+          }
+
+          // Prune task variants no longer in the list
+          if (taskVariantIds.length > 0) {
+            await tx
+              .delete(administrationTaskVariants)
+              .where(
+                and(
+                  eq(administrationTaskVariants.administrationId, administrationId),
+                  notInArray(administrationTaskVariants.taskVariantId, taskVariantIds),
+                ),
+              );
+          } else {
+            // If no task variants provided, delete all
+            await tx
+              .delete(administrationTaskVariants)
+              .where(eq(administrationTaskVariants.administrationId, administrationId));
+          }
+        }
+
+        // Upsert and prune agreement requirements if provided
+        if (input.agreementIds !== undefined) {
+          await this.upsertAndPruneEntities(tx, {
+            table: administrationAgreements,
+            administrationIdColumn: administrationAgreements.administrationId,
+            entityIdColumn: administrationAgreements.agreementId,
+            administrationId,
+            entityIds: input.agreementIds,
+            buildValues: (agreementId) => ({ administrationId, agreementId }),
+          });
+        }
+
+        return { id: administrationId };
+      },
+    });
+  }
+
+  /**
+   * Helper function to upsert and prune entities in a junction table.
+   *
+   * - Upserts all provided entity IDs (insert or no-op on conflict for simple junction tables)
+   * - Prunes entities where administrationId matches but entityId is not in the provided list
+   *
+   * @param tx - The transaction context
+   * @param options - Configuration for the upsert and prune operation
+   */
+  private async upsertAndPruneEntities<TValues extends Record<string, unknown>>(
+    tx: NodePgDatabase<typeof CoreDbSchema>,
+    options: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      table: any; // Drizzle junction table types are complex generics; typed via administrationIdColumn and entityIdColumn
+      administrationIdColumn: PgColumn;
+      entityIdColumn: PgColumn;
+      administrationId: string;
+      entityIds: string[];
+      buildValues: (entityId: string) => TValues;
+    },
+  ): Promise<void> {
+    const { table, administrationIdColumn, entityIdColumn, administrationId, entityIds, buildValues } = options;
+
+    // Upsert entities (no-op on conflict for junction tables with composite PKs)
+    if (entityIds.length > 0) {
+      await tx.insert(table).values(entityIds.map(buildValues)).onConflictDoNothing();
+    }
+
+    // Prune entities no longer in the list
+    if (entityIds.length > 0) {
+      await tx
+        .delete(table)
+        .where(and(eq(administrationIdColumn, administrationId), notInArray(entityIdColumn, entityIds)));
+    } else {
+      // If no entities provided, delete all for this administration
+      await tx.delete(table).where(eq(administrationIdColumn, administrationId));
+    }
   }
 }

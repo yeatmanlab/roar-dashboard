@@ -8,6 +8,7 @@ import type {
   TreeEmbedOptionType,
   TreeParentEntityType,
   CreateAdministrationRequest,
+  UpdateAdministrationRequest,
 } from '@roar-dashboard/api-contract';
 import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-dashboard/api-contract';
 import { StatusCodes } from 'http-status-codes';
@@ -35,6 +36,7 @@ import type {
   TaskVariantWithAssignment,
   TreeNode,
   CreateAdministrationInput,
+  UpdateAdministrationInput,
 } from '../../repositories/administration.repository';
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
@@ -53,6 +55,7 @@ import { TaskVariantRepository } from '../../repositories/task-variant.repositor
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { Condition } from '../../types/condition';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
+import { verifyEntitiesExist } from '../utils/validations.utils';
 
 /**
  * Administration with optional embedded data.
@@ -1453,6 +1456,392 @@ export function AdministrationService({
     }
   }
 
+  /**
+   * Update an existing administration with the specified fields.
+   *
+   * Validates:
+   * - dateEnd must be after dateStart (using existing values for missing fields)
+   * - If isOrdered is true (existing or new), task variant orderIndex values must be unique
+   * - At least one org, class, or group must remain assigned after update
+   * - Name must be unique (case-insensitive), excluding the current administration
+   * - All referenced entities (orgs, classes, groups, task variants, agreements) must exist
+   * - Task variants must be published
+   *
+   * Array fields use replacement logic:
+   * - Records not in the new array are deleted
+   * - Records that exist in both are updated
+   * - Records only in the new array are added
+   *
+   * FGA tuples are updated to reflect changes in entity assignments.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - The ID of the administration to update
+   * @param request - The update administration request body
+   * @returns The updated administration
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user is not a super admin
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if validation fails
+   * @throws {ApiError} CONFLICT if the new name conflicts with another administration
+   * @throws {ApiError} INTERNAL_SERVER_ERROR if the database operation fails
+   */
+  async function update(
+    authContext: AuthContext,
+    administrationId: string,
+    request: UpdateAdministrationRequest,
+  ): Promise<{ id: string }> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // Verify administration exists first (404 before 403)
+      const existing = await administrationRepository.getById({ id: administrationId });
+      if (!existing) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Check authorization (super admin only for updates)
+      if (!isSuperAdmin) {
+        logger.warn({ userId, administrationId }, 'Non-super-admin attempted to update administration');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, administrationId },
+        });
+      }
+
+      // Determine effective values (new value or existing)
+      const effectiveDateStart = request.dateStart ? new Date(request.dateStart) : existing.dateStart;
+      const effectiveDateEnd = request.dateEnd ? new Date(request.dateEnd) : existing.dateEnd;
+      const effectiveIsOrdered = request.isOrdered ?? existing.isOrdered;
+
+      // Validate date range: dateEnd must be after dateStart
+      if (effectiveDateEnd <= effectiveDateStart) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, administrationId, reason: 'dateEnd must be after dateStart' },
+        });
+      }
+
+      // Validate taskVariant ids are unique in the request
+      if (request.taskVariants !== undefined) {
+        const taskVariantIdSet = new Set(request.taskVariants.map((tv) => tv.taskVariantId));
+        if (taskVariantIdSet.size !== request.taskVariants.length) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, administrationId, reason: 'Duplicate taskVariantId values in request' },
+          });
+        }
+      }
+
+      // Validate unique orderIndex values when isOrdered is true
+      if (effectiveIsOrdered) {
+        let orderIndices: number[];
+
+        if (request.taskVariants !== undefined) {
+          // Validate orderIndex uniqueness in the request
+          orderIndices = request.taskVariants.map((tv) => tv.orderIndex);
+        } else {
+          // Validate existing task variants have unique orderIndex values
+          const existingTaskVariants = await administrationRepository.getTaskVariantsByAdministrationId(
+            administrationId,
+            false,
+            { page: 1, perPage: 1000 },
+          );
+          orderIndices = existingTaskVariants.items.map((tv) => tv.assignment.orderIndex);
+        }
+
+        const uniqueIndices = new Set(orderIndices);
+        if (uniqueIndices.size !== orderIndices.length) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: {
+              userId,
+              administrationId,
+              reason: 'Task variant orderIndex values must be unique when isOrdered is true',
+            },
+          });
+        }
+      }
+
+      // Get current assignees to determine effective entity assignments
+      const currentAssignees = await administrationRepository.getAssignees(administrationId);
+      const currentAssigneeIds = {
+        districtIds: currentAssignees.districts.map((d) => d.id),
+        schoolIds: currentAssignees.schools.map((s) => s.id),
+        classIds: currentAssignees.classes.map((c) => c.id),
+        groupIds: currentAssignees.groups.map((g) => g.id),
+      };
+
+      // Determine effective entity assignments
+      const effectiveOrgIds = request.orgs ?? [...currentAssigneeIds.districtIds, ...currentAssigneeIds.schoolIds];
+      const effectiveClassIds = request.classes ?? currentAssigneeIds.classIds;
+      const effectiveGroupIds = request.groups ?? currentAssigneeIds.groupIds;
+
+      // Validate there is at least one org, class, or group assigned after update
+      if (effectiveOrgIds.length === 0 && effectiveClassIds.length === 0 && effectiveGroupIds.length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, administrationId, reason: 'At least one org, class, or group must be assigned' },
+        });
+      }
+
+      // Validate at least one task variant exists after update
+      if (request.taskVariants !== undefined && request.taskVariants.length === 0) {
+        throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+          context: { userId, administrationId, reason: 'At least one task variant must be assigned' },
+        });
+      }
+
+      // Validate name uniqueness if name is being changed
+      if (request.name !== undefined) {
+        const nameExists = await administrationRepository.existsByNameExcludingId(request.name, administrationId);
+        if (nameExists) {
+          throw new ApiError(ApiErrorMessage.CONFLICT, {
+            statusCode: StatusCodes.CONFLICT,
+            code: ApiErrorCode.RESOURCE_CONFLICT,
+            context: {
+              userId,
+              administrationId,
+              name: request.name,
+              reason: 'An administration with this name already exists',
+            },
+          });
+        }
+      }
+
+      // Validate that all referenced entities exist
+      let existingDistrictIds: string[] = [];
+      let existingSchoolIds: string[] = [];
+
+      // Verify orgs exist (districts and schools) if being updated
+      if (request.orgs !== undefined && request.orgs.length > 0) {
+        const { items: existingDistricts } = await districtRepository.listByIds(request.orgs, {
+          page: 1,
+          perPage: request.orgs.length,
+        });
+        const { items: existingSchools } = await schoolRepository.listByIds(request.orgs, {
+          page: 1,
+          perPage: request.orgs.length,
+        });
+        existingDistrictIds = existingDistricts.map((d) => d.id);
+        existingSchoolIds = existingSchools.map((s) => s.id);
+        verifyEntitiesExist([...existingDistricts, ...existingSchools], request.orgs);
+      }
+
+      // Verify classes exist if being updated
+      if (request.classes !== undefined && request.classes.length > 0) {
+        const { items: existingClasses } = await classRepository.getByIds(request.classes, {
+          page: 1,
+          perPage: request.classes.length,
+        });
+        verifyEntitiesExist(existingClasses, request.classes);
+      }
+
+      // Verify groups exist if being updated
+      if (request.groups !== undefined && request.groups.length > 0) {
+        const { items: existingGroups } = await groupRepository.getByIds(request.groups, {
+          page: 1,
+          perPage: request.groups.length,
+        });
+        verifyEntitiesExist(existingGroups, request.groups);
+      }
+
+      // Verify task variants exist and are published if being updated
+      if (request.taskVariants !== undefined && request.taskVariants.length > 0) {
+        const taskVariantIds = request.taskVariants.map((tv) => tv.taskVariantId);
+        const { items: existingTaskVariants } = await taskVariantRepository.getByIds(taskVariantIds, {
+          page: 1,
+          perPage: taskVariantIds.length,
+        });
+        verifyEntitiesExist(existingTaskVariants, taskVariantIds);
+
+        // Verify all task variants are published
+        const unpublishedTaskVariants = existingTaskVariants
+          .filter((tv) => tv.status !== TaskVariantStatus.PUBLISHED)
+          .map((tv) => tv.id);
+        if (unpublishedTaskVariants.length > 0) {
+          throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+            statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+            code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+            context: { userId, administrationId, unpublishedTaskVariants },
+          });
+        }
+      }
+
+      // Verify agreements exist if being updated
+      if (request.agreements !== undefined && request.agreements.length > 0) {
+        const { items: existingAgreements } = await agreementRepository.getByIds(request.agreements, {
+          page: 1,
+          perPage: request.agreements.length,
+        });
+        verifyEntitiesExist(existingAgreements, request.agreements);
+      }
+
+      // Build the update input
+      const updateInput: UpdateAdministrationInput = {};
+
+      // Build administration entity updates
+      const adminUpdates: UpdateAdministrationInput['administration'] = {};
+      if (request.name !== undefined) adminUpdates.name = request.name;
+      if (request.namePublic !== undefined) adminUpdates.namePublic = request.namePublic;
+      if (request.description !== undefined) adminUpdates.description = request.description;
+      if (request.dateStart !== undefined) adminUpdates.dateStart = new Date(request.dateStart);
+      if (request.dateEnd !== undefined) adminUpdates.dateEnd = new Date(request.dateEnd);
+      if (request.isOrdered !== undefined) adminUpdates.isOrdered = request.isOrdered;
+
+      if (Object.keys(adminUpdates).length > 0) {
+        updateInput.administration = adminUpdates;
+      }
+
+      // Build administration relational entity updates
+      if (request.orgs !== undefined) updateInput.orgIds = request.orgs;
+      if (request.classes !== undefined) updateInput.classIds = request.classes;
+      if (request.groups !== undefined) updateInput.groupIds = request.groups;
+      if (request.agreements !== undefined) updateInput.agreementIds = request.agreements;
+
+      if (request.taskVariants !== undefined) {
+        updateInput.taskVariants = request.taskVariants.map((tv) => ({
+          taskVariantId: tv.taskVariantId,
+          orderIndex: tv.orderIndex,
+          conditionsAssignment: tv.conditionsEligibility ?? null,
+          conditionsRequirements: tv.conditionsRequirement ?? null,
+        }));
+      }
+
+      // Handle FGA tuple updates first if entity assignments changed (Saga pattern)
+      // Update FGA first, then DB. If DB fails, compensate by reverting FGA changes.
+      const entityAssignmentsChanged =
+        request.orgs !== undefined || request.classes !== undefined || request.groups !== undefined;
+
+      let tuplesToAdd: ReturnType<typeof administrationDistrictTuple>[] = [];
+      let tuplesToRemove: ReturnType<typeof administrationDistrictTuple>[] = [];
+
+      if (entityAssignmentsChanged) {
+        // Determine new district and school IDs (already validated above)
+        const finalDistrictIds = request.orgs !== undefined ? existingDistrictIds : currentAssigneeIds.districtIds;
+        const finalSchoolIds = request.orgs !== undefined ? existingSchoolIds : currentAssigneeIds.schoolIds;
+        const finalClassIds = request.classes ?? currentAssigneeIds.classIds;
+        const finalGroupIds = request.groups ?? currentAssigneeIds.groupIds;
+
+        // Calculate tuples to add and remove
+        const oldDistrictSet = new Set(currentAssigneeIds.districtIds);
+        const oldSchoolSet = new Set(currentAssigneeIds.schoolIds);
+        const oldClassSet = new Set(currentAssigneeIds.classIds);
+        const oldGroupSet = new Set(currentAssigneeIds.groupIds);
+
+        const newDistrictSet = new Set(finalDistrictIds);
+        const newSchoolSet = new Set(finalSchoolIds);
+        const newClassSet = new Set(finalClassIds);
+        const newGroupSet = new Set(finalGroupIds);
+
+        // Tuples to add (in new but not in old)
+        tuplesToAdd = [
+          ...finalDistrictIds
+            .filter((id) => !oldDistrictSet.has(id))
+            .map((id) => administrationDistrictTuple(administrationId, id)),
+          ...finalSchoolIds
+            .filter((id) => !oldSchoolSet.has(id))
+            .map((id) => administrationSchoolTuple(administrationId, id)),
+          ...finalClassIds
+            .filter((id) => !oldClassSet.has(id))
+            .map((id) => administrationClassTuple(administrationId, id)),
+          ...finalGroupIds
+            .filter((id) => !oldGroupSet.has(id))
+            .map((id) => administrationGroupTuple(administrationId, id)),
+        ];
+
+        // Tuples to remove (in old but not in new)
+        tuplesToRemove = [
+          ...currentAssigneeIds.districtIds
+            .filter((id) => !newDistrictSet.has(id))
+            .map((id) => administrationDistrictTuple(administrationId, id)),
+          ...currentAssigneeIds.schoolIds
+            .filter((id) => !newSchoolSet.has(id))
+            .map((id) => administrationSchoolTuple(administrationId, id)),
+          ...currentAssigneeIds.classIds
+            .filter((id) => !newClassSet.has(id))
+            .map((id) => administrationClassTuple(administrationId, id)),
+          ...currentAssigneeIds.groupIds
+            .filter((id) => !newGroupSet.has(id))
+            .map((id) => administrationGroupTuple(administrationId, id)),
+        ];
+
+        // Write FGA tuple changes first
+        if (tuplesToAdd.length > 0) {
+          await authorizationService.writeTuplesOrThrow(tuplesToAdd);
+        }
+        if (tuplesToRemove.length > 0) {
+          // Tuple deletion is fire-and-forget, consistent with service function definition.
+          // This is acceptable because the Postgres write is the source of truth
+          // and the backfill endpoint reconciles stale tuples.
+          await authorizationService.deleteTuples(tuplesToRemove);
+        }
+      }
+
+      // Update the administration with all related entities in a single transaction
+      // If this fails, compensate by reverting FGA changes
+      try {
+        await administrationRepository.updateWithAssignments(administrationId, updateInput);
+      } catch (dbError) {
+        // DB write failed - compensate by reverting FGA changes
+        if (entityAssignmentsChanged && (tuplesToAdd.length > 0 || tuplesToRemove.length > 0)) {
+          logger.error(
+            {
+              err: dbError,
+              administrationId,
+              tuplesToAdd: tuplesToAdd.length,
+              tuplesToRemove: tuplesToRemove.length,
+            },
+            'Database update failed, compensating by reverting FGA tuple changes',
+          );
+
+          try {
+            // Reverse the FGA operations: delete what we added, re-add what we removed
+            if (tuplesToAdd.length > 0) {
+              await authorizationService.deleteTuples(tuplesToAdd);
+            }
+            if (tuplesToRemove.length > 0) {
+              await authorizationService.writeTuplesOrThrow(tuplesToRemove);
+            }
+            logger.info({ administrationId }, 'Compensation successful: FGA tuples reverted');
+          } catch (compensateError) {
+            // Compensation failed - log for manual intervention
+            logger.error(
+              { err: compensateError, administrationId },
+              'Compensation failed: FGA tuples may be in inconsistent state with database. Manual intervention required.',
+            );
+          }
+        }
+
+        throw dbError;
+      }
+
+      logger.info({ userId, administrationId }, 'Administration updated successfully');
+
+      return { id: administrationId };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, administrationId } }, 'Failed to update administration');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId },
+        cause: error,
+      });
+    }
+  }
+
   return {
     verifyAdministrationAccess,
     list,
@@ -1465,5 +1854,6 @@ export function AdministrationService({
     getTree,
     create,
     getUserAdministration,
+    update,
   };
 }
