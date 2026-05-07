@@ -241,8 +241,9 @@ export abstract class BaseRepository<TEntity extends Record<string, unknown>, TT
    * Deletes an entity by ID.
    */
   async delete(params: BaseDeleteParams): Promise<void> {
+    const db = params.transaction ?? this.db;
     const idColumn = this.typedTable.id as Parameters<typeof eq>[0];
-    await this.db.delete(this.typedTable).where(eq(idColumn, params.id));
+    await db.delete(this.typedTable).where(eq(idColumn, params.id));
   }
 
   /**

@@ -5,7 +5,7 @@ import type { RosterProviderIdRepository } from '../../repositories/roster-provi
 /**
  * Mock RosterProviderIdRepository
  * Returns a mocked version of RosterProviderIdRepository with all methods as vi.fn() mocks.
- * This allows unit tests to acoid implementation details of the base repository (typedTable, db, etc.).
+ * This allows unit tests to avoid implementation details of the base repository (typedTable, db, etc.).
  */
 export function createMockRosterProviderIdRepository(): MockedObject<RosterProviderIdRepository> {
   return {
