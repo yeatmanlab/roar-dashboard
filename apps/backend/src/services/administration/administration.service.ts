@@ -55,7 +55,7 @@ import { TaskVariantRepository } from '../../repositories/task-variant.repositor
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { Condition } from '../../types/condition';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
-import { verifyEntitiesExist } from '../../repositories/utils/validations.utils';
+import { verifyEntitiesExist } from '../utils/validations.utils';
 
 /**
  * Administration with optional embedded data.
