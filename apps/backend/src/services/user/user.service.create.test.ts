@@ -29,6 +29,7 @@ import { createMockDistrictRepository } from '../../test-support/repositories/di
 import { createMockSchoolRepository } from '../../test-support/repositories/school.repository';
 import { createMockGroupRepository } from '../../test-support/repositories/group.repository';
 import { createMockFamilyRepository } from '../../test-support/repositories/family.repository';
+import type { CoreTransaction } from '../../db/clients';
 import { createMockClassRepository } from '../../test-support/repositories/class.repository';
 import { createMockRosterProviderIdRepository } from '../../test-support/repositories/roster-provider-id.repository';
 import { OrgFactory } from '../../test-support/factories/org.factory';
@@ -141,7 +142,9 @@ describe('UserService.create', () => {
     mockFamilyRepo.getActiveById.mockResolvedValue(FamilyFactory.build());
     mockUserRepo.createWithMemberships.mockResolvedValue({ id: newUserId });
     mockUserRepo.delete.mockResolvedValue(undefined);
+    mockUserRepo.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
     mockRosterProviderRepo.create.mockResolvedValue({ id: newUserId });
+    mockRosterProviderRepo.deleteByEntityId.mockResolvedValue(undefined);
 
     mockAuth.getUserByEmail.mockRejectedValue(makeFirebaseError('auth/user-not-found'));
     mockAuth.createUser.mockResolvedValue({ uid: firebaseUid });
@@ -444,8 +447,10 @@ describe('UserService.create', () => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
       });
 
-      // FGA compensation
+      // FGA partial-write compensation
       expect(mockAuthzService.deleteTuples).toHaveBeenCalledOnce();
+      // Roster provider row must be deleted before the user row (trigger ordering)
+      expect(mockRosterProviderRepo.deleteByEntityId).toHaveBeenCalledWith(newUserId);
       // DB compensation
       expect(mockUserRepo.delete).toHaveBeenCalledWith({ id: newUserId });
       // Firebase compensation
@@ -502,10 +507,11 @@ describe('UserService.create', () => {
 
       expect(mockUserRepo.createWithMemberships).toHaveBeenCalledWith(
         expect.objectContaining({ assessmentPid: 'custom-pid' }),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
+        expect.anything(), // orgMemberships
+        expect.anything(), // classMemberships
+        expect.anything(), // groupMemberships
+        expect.anything(), // familyMemberships
+        expect.anything(), // tx
       );
     });
 
