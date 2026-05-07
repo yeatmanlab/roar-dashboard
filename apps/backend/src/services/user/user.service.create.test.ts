@@ -572,6 +572,8 @@ describe('UserService.create', () => {
         expect.objectContaining({ context: expect.objectContaining({ newUserId }) }),
         expect.stringContaining('DB delete compensation failed'),
       );
+      // Firebase compensation must fire regardless of whether DB cleanup succeeded
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith(firebaseUid);
     });
   });
 
