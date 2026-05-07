@@ -319,8 +319,8 @@ A: Release Please runs on every push to `main`. It creates a Release PR if conve
 - `.release-please-manifest.json` - Auto-generated manifest tracking current versions
 
 **Workflows**:
-- `.github/workflows/release-please.yml` - Automated release workflow
-- `.github/workflows/deploy-platform-production.yml` - Production deployment workflow (triggered by tags)
+- `.github/workflows/release.yml` - Automated release workflow
+- `.github/workflows/deploy-platform-production.yml` - Production deployment workflow (triggered by workflow_call)
 
 **Changelogs** (auto-generated):
 - `apps/backend/CHANGELOG.md`
@@ -366,7 +366,7 @@ Release Please uses two bootstrap fields in `.release-please.json`:
 
 **`bootstrap-sha`** (commit SHA):
 - Tells Release Please where to start scanning for conventional commits on the first run
-- Set to `"3a7a1a157"` (the commit before this release strategy was introduced)
+- Set to last commit in main before this release strategy was introduced
 - Prevents Release Please from scanning the entire repo history
 - **Should be removed after the first release** — otherwise it will override Release Please's version calculations on every subsequent run
 - Safe to keep during development/testing; remove it once you've completed your first real release
