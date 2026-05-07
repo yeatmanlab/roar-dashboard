@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
-import { createMockBaseRepositoryMethods } from './base.repository';
 import type { SchoolRepository } from '../../repositories/school.repository';
+import { createMockLtreeRepository } from './l-tree.repository';
 
 /**
  * Mock School Repository
@@ -10,7 +10,7 @@ import type { SchoolRepository } from '../../repositories/school.repository';
  */
 export function createMockSchoolRepository(): MockedObject<SchoolRepository> {
   return {
-    ...createMockBaseRepositoryMethods(),
+    ...createMockLtreeRepository(),
     listAll: vi.fn(),
     listByIds: vi.fn(),
     listAccessibleByDistrictId: vi.fn(),
@@ -18,7 +18,7 @@ export function createMockSchoolRepository(): MockedObject<SchoolRepository> {
     listAllByDistrictId: vi.fn(),
     getUsersBySchoolId: vi.fn(),
     createSchool: vi.fn(),
-    getDistinctRootIds: vi.fn(),
+    getDistinctRootOrgIds: vi.fn(),
     getActiveById: vi.fn(),
   } as unknown as MockedObject<SchoolRepository>;
 }

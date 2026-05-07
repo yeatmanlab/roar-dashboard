@@ -1,21 +1,21 @@
-import { eq, countDistinct, and, isNull, sql, inArray, asc, desc } from 'drizzle-orm';
-import type { SQL } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { PaginatedResult } from './base.repository';
-import { LtreeRepository } from './ltree.repository';
-import { alias } from 'drizzle-orm/pg-core';
-import type { Org } from '../db/schema';
-import { orgs, userOrgs, classes, userClasses, users } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
-import type * as CoreDbSchema from '../db/schema/core';
 import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import type { SQL } from 'drizzle-orm';
+import { and, asc, countDistinct, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+
+import { CoreDbClient } from '../db/clients';
+import type { Org } from '../db/schema';
+import { classes, orgs, userClasses, userOrgs, users } from '../db/schema';
+import type * as CoreDbSchema from '../db/schema/core';
 import { OrgType } from '../enums/org-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
 import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../types/user';
+import type { PaginatedResult } from './base.repository';
+import { LtreeRepository } from './ltree.repository';
 import {
-  getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
+  getEnrolledUsersFilterConditions,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
@@ -507,41 +507,5 @@ export class SchoolRepository extends LtreeRepository<School, typeof orgs> {
       })),
       totalItems,
     };
-  }
-
-  /**
-   * Returns the distinct root IDs for a set of nodes in an ltree-based hierarchy.
-   *
-   * For each input ID, the node's "root" is the ancestor whose path is the first
-   * label of that node's path (i.e. `subpath(path, 0, 1)`). This method joins
-   * back to the ancestor table to resolve those root labels into actual rows
-   * and returns the unique set.
-   *
-   * The ancestor table may differ from the node's own table — for example, a
-   * `ClassesRepository` resolves its roots against the `orgs` table, since a
-   * class's path is composed of org labels. By default, the ancestor table is
-   * the same table as the node (e.g. `orgs` rooted in `orgs`).
-   *
-   * Notes:
-   * - Roots are returned without preserving the input→root mapping. If you need
-   *   to know which input maps to which root, use a non-distinct variant.
-   * - If a node's root label has no corresponding row in the ancestor table
-   *   (orphan path), it is silently dropped by the inner join. Switch to a
-   *   left join if you need to surface those.
-   * - An empty `ids` array short-circuits to `[]` without hitting the database.
-   *
-   * @param ids - The IDs of the nodes whose roots should be resolved.
-   * @returns The distinct set of root rows, each with an `id` field.
-   */
-  async getDistinctRootIds(ids: string[]) {
-    if (ids.length === 0) return [];
-
-    const root = alias(orgs, 'root');
-
-    return this.db
-      .selectDistinct({ id: root.id })
-      .from(orgs)
-      .innerJoin(root, sql`${root.path} = subpath(${orgs.path}, 0, 1)`)
-      .where(inArray(orgs.id, ids));
   }
 }
