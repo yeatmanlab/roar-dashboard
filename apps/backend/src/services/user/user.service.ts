@@ -791,8 +791,8 @@ export function UserService({
    *
    * Resolution priority (first match wins):
    * 1. Explicit district membership → district ID
-   * 2. Class memberships → district ID via ltree path (classRepository.getDistinctRootIds)
-   * 3. School memberships → district ID via ltree path (schoolRepository.getDistinctRootIds)
+   * 2. Class memberships → district ID via ltree path (classRepository.getDistinctRootOrgIds)
+   * 3. School memberships → district ID via ltree path (schoolRepository.getDistinctRootOrgIds)
    * 4. Group memberships → first group ID
    * 5. Family memberships → first family ID
    *
@@ -827,7 +827,7 @@ export function UserService({
       .map(({ entityId }) => entityId);
 
     if (classIds.length > 0) {
-      const districtIdsFromClasses = (await classRepository.getDistinctRootIds(classIds)).map(({ id }) => id);
+      const districtIdsFromClasses = (await classRepository.getDistinctRootOrgIds(classIds)).map(({ id }) => id);
 
       // Check if there are any district IDs from class memberships
       const districtIdsFromClassesSet = new Set(districtIdsFromClasses);
@@ -860,7 +860,7 @@ export function UserService({
       .map(({ entityId }) => entityId);
 
     if (schoolIds.length > 0) {
-      const districtIdsFromSchools = (await schoolRepository.getDistinctRootIds(schoolIds)).map(({ id }) => id);
+      const districtIdsFromSchools = (await schoolRepository.getDistinctRootOrgIds(schoolIds)).map(({ id }) => id);
 
       // Check if there are any district IDs from school memberships
       const districtIdsFromSchoolsSet = new Set(districtIdsFromSchools);

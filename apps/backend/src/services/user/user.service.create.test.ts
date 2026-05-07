@@ -135,8 +135,8 @@ describe('UserService.create', () => {
     mockUserRepo.existsByUniqueFields.mockResolvedValue(false);
     mockDistrictRepo.getActiveById.mockResolvedValue(OrgFactory.build());
     mockSchoolRepo.getActiveById.mockResolvedValue(OrgFactory.build());
-    mockClassRepo.getDistinctRootIds.mockResolvedValue([{ id: districtId }]);
-    mockSchoolRepo.getDistinctRootIds.mockResolvedValue([{ id: districtId }]);
+    mockClassRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: districtId }]);
+    mockSchoolRepo.getDistinctRootOrgIds.mockResolvedValue([{ id: districtId }]);
     mockGroupRepo.getActiveById.mockResolvedValue(GroupFactory.build());
     mockFamilyRepo.getActiveById.mockResolvedValue(FamilyFactory.build());
     mockUserRepo.createWithMemberships.mockResolvedValue({ id: newUserId });

@@ -1,9 +1,9 @@
 import type { SchoolClassSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { Column, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { alias } from 'drizzle-orm/pg-core';
+
 import { CoreDbClient } from '../db/clients';
 import type { Class } from '../db/schema';
 import { classes, orgs, userClasses, users } from '../db/schema';
@@ -230,41 +230,5 @@ export class ClassRepository extends LtreeRepository<Class, typeof classes> {
       items: dataResult,
       totalItems,
     };
-  }
-
-  /**
-   * Returns the distinct root IDs for a set of nodes in an ltree-based hierarchy.
-   *
-   * For each input ID, the node's "root" is the ancestor whose path is the first
-   * label of that node's path (i.e. `subpath(path, 0, 1)`). This method joins
-   * back to the ancestor table to resolve those root labels into actual rows
-   * and returns the unique set.
-   *
-   * The ancestor table may differ from the node's own table — for example, a
-   * `ClassesRepository` resolves its roots against the `orgs` table, since a
-   * class's path is composed of org labels. By default, the ancestor table is
-   * the same table as the node (e.g. `orgs` rooted in `orgs`).
-   *
-   * Notes:
-   * - Roots are returned without preserving the input→root mapping. If you need
-   *   to know which input maps to which root, use a non-distinct variant.
-   * - If a node's root label has no corresponding row in the ancestor table
-   *   (orphan path), it is silently dropped by the inner join. Switch to a
-   *   left join if you need to surface those.
-   * - An empty `ids` array short-circuits to `[]` without hitting the database.
-   *
-   * @param ids - The IDs of the nodes whose roots should be resolved.
-   * @returns The distinct set of root rows, each with an `id` field.
-   */
-  async getDistinctRootIds(ids: string[]) {
-    if (ids.length === 0) return [];
-
-    const root = alias(classes, 'root');
-
-    return this.db
-      .selectDistinct({ id: orgs.id })
-      .from(root)
-      .innerJoin(orgs, sql`${orgs.path} = subpath(${root.orgPath}, 0, 1)`)
-      .where(inArray(root.id, ids));
   }
 }

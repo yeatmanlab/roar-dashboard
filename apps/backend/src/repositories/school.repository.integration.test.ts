@@ -866,20 +866,20 @@ describe('SchoolRepository', () => {
     });
   });
 
-  describe('getDistinctRootIds', () => {
+  describe('getDistinctRootOrgIds', () => {
     // Base fixture school → district mapping:
     //   schoolA          → district
     //   schoolB          → district
     //   schoolInDistrictB → districtB
 
     it('returns empty array when called with no ids', async () => {
-      const result = await repository.getDistinctRootIds([]);
+      const result = await repository.getDistinctRootOrgIds([]);
 
       expect(result).toEqual([]);
     });
 
     it('returns the district for a single school', async () => {
-      const result = await repository.getDistinctRootIds([baseFixture.schoolA.id]);
+      const result = await repository.getDistinctRootOrgIds([baseFixture.schoolA.id]);
 
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe(baseFixture.district.id);
@@ -887,14 +887,14 @@ describe('SchoolRepository', () => {
 
     it('deduplicates when multiple schools share the same district', async () => {
       // schoolA and schoolB both belong to district
-      const result = await repository.getDistinctRootIds([baseFixture.schoolA.id, baseFixture.schoolB.id]);
+      const result = await repository.getDistinctRootOrgIds([baseFixture.schoolA.id, baseFixture.schoolB.id]);
 
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe(baseFixture.district.id);
     });
 
     it('returns multiple districts when schools span different roots', async () => {
-      const result = await repository.getDistinctRootIds([baseFixture.schoolA.id, baseFixture.schoolInDistrictB.id]);
+      const result = await repository.getDistinctRootOrgIds([baseFixture.schoolA.id, baseFixture.schoolInDistrictB.id]);
 
       const ids = result.map((r) => r.id);
       expect(ids).toHaveLength(2);
@@ -903,7 +903,7 @@ describe('SchoolRepository', () => {
     });
 
     it('returns empty array for a non-existent school id', async () => {
-      const result = await repository.getDistinctRootIds(['00000000-0000-0000-0000-000000000000']);
+      const result = await repository.getDistinctRootOrgIds(['00000000-0000-0000-0000-000000000000']);
 
       expect(result).toEqual([]);
     });
