@@ -20,6 +20,8 @@ import type {
   StudentScoresQuery,
   StudentScoreRow,
   UpdateAdministrationRequest,
+  IndividualStudentReportQuery,
+  IndividualStudentReportResponse,
 } from '@roar-dashboard/api-contract';
 import type {
   AgreementWithVersion,
@@ -564,6 +566,46 @@ export const AdministrationsController = {
             },
           },
         },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single student's detailed score report for an administration.
+   *
+   * Delegates to ReportService for authorization, scope verification, score
+   * classification, subscore extraction, tag generation, and historical-scores
+   * assembly. Service and contract response types are structurally equivalent;
+   * the result is returned directly via TS structural typing.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - UUID of the administration
+   * @param targetUserId - UUID of the student whose report to fetch
+   * @param query - Scope parameters
+   */
+  getIndividualStudentReport: async (
+    authContext: AuthContext,
+    administrationId: string,
+    targetUserId: string,
+    query: IndividualStudentReportQuery,
+  ) => {
+    try {
+      const result = await reportService.getIndividualStudentReport(authContext, administrationId, targetUserId, query);
+      const data: IndividualStudentReportResponse = result;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: { data },
       };
     } catch (error) {
       if (error instanceof ApiError) {

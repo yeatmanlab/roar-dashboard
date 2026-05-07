@@ -19,9 +19,9 @@ export async function createOidcAxiosInstance(audience: string): Promise<AxiosIn
   const instance = axios.create();
 
   instance.interceptors.request.use(async (config) => {
-    // getRequestHeaders() returns { Authorization: 'Bearer <token>' } at runtime.
-    // The return type resolves to the global Node.js Headers (from @types/node) instead of
-    // the library's own { [index: string]: string } interface, so we use .get().
+    // getRequestHeaders() returns the global `Headers` class (undici, exposed by
+    // @types/node) in google-auth-library v10+. Use the standard `.get()` method.
+    // Returns `string | null` when the header is absent.
     const headers = await idTokenClient.getRequestHeaders();
     const authorization = headers.get('Authorization');
     if (!authorization) {

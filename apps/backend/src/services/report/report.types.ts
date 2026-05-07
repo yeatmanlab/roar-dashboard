@@ -229,3 +229,138 @@ export interface StudentScoresResult {
   items: ServiceStudentScoreRow[];
   totalItems: number;
 }
+
+/** Query input for getIndividualStudentReport. */
+export interface IndividualStudentReportInput {
+  scopeType: ScopeType;
+  scopeId: string;
+}
+
+/**
+ * Severity styling for a tag, mirroring PrimeVue's tag severity values.
+ * The service emits these as plain strings; the contract enum (TagSeverity)
+ * narrows them on the response side.
+ */
+export type ServiceTagSeverity = 'info' | 'success' | 'warn' | 'danger' | 'secondary' | 'contrast';
+
+/** A single tag in a per-task entry of the individual student report. */
+export interface ServiceTaskTag {
+  label: string;
+  value: string;
+  severity: ServiceTagSeverity;
+}
+
+/** Per-task scores object for the individual student report. */
+export interface ServiceTaskScores {
+  rawScore: number | null;
+  percentile: number | null;
+  standardScore: number | null;
+}
+
+/** A single subscore entry. */
+export interface ServiceSubscoreEntry {
+  correct: number | null;
+  attempted: number | null;
+  percentCorrect: number | null;
+}
+
+/** A historical score entry under a task. */
+export interface ServiceHistoricalScore {
+  administrationId: string;
+  administrationName: string;
+  date: string;
+  scores: ServiceTaskScores;
+}
+
+/** Per-task entry in the individual student report. */
+/**
+ * Per-task entry shape shared between the admin-scoped individual student
+ * report and the guardian / longitudinal student report.
+ *
+ * The two endpoints differ only in whether per-task `historicalScores` are
+ * present: the admin-scoped report attaches them here; the guardian report
+ * carries longitudinal data at the response root keyed by task slug.
+ */
+export interface ServiceStudentReportTaskBase {
+  taskId: string;
+  taskSlug: string;
+  taskName: string;
+  orderIndex: number;
+  scores: ServiceTaskScores;
+  supportLevel: ServiceSupportLevelValue | null;
+  reliable: boolean | null;
+  optional: boolean;
+  completed: boolean;
+  engagementFlags: string[];
+  tags: ServiceTaskTag[];
+  /** Present only for tasks declaring a `subscores` block in their scoring config. */
+  subscores?: Record<string, ServiceSubscoreEntry>;
+  /** Present only for PA tasks. */
+  skillsToWorkOn?: string[];
+}
+
+export interface ServiceIndividualStudentReportTask extends ServiceStudentReportTaskBase {
+  historicalScores: ServiceHistoricalScore[];
+}
+
+/** Header-level student info. */
+export interface ServiceIndividualStudentReportStudent {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  grade: string | null;
+}
+
+/** Header-level administration metadata. */
+export interface ServiceIndividualStudentReportAdministration {
+  id: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string;
+}
+
+/** Return type for getIndividualStudentReport. */
+export interface IndividualStudentReportResult {
+  student: ServiceIndividualStudentReportStudent;
+  administration: ServiceIndividualStudentReportAdministration;
+  tasks: ServiceIndividualStudentReportTask[];
+  completedTaskCount: number;
+  totalTaskCount: number;
+}
+
+// --- Guardian / longitudinal student report ---
+
+/**
+ * Per-task entry on a single administration in the guardian student report.
+ *
+ * Identical to `ServiceStudentReportTaskBase` — historical data on the
+ * guardian endpoint lives at the response root in `longitudinalScores`.
+ */
+export type ServiceGuardianTaskEntry = ServiceStudentReportTaskBase;
+
+/** One administration entry in the guardian report. */
+export interface ServiceGuardianAdministrationEntry {
+  administrationId: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string;
+  tasks: ServiceGuardianTaskEntry[];
+}
+
+/** Header-level student info for the guardian report (adds schoolName). */
+export interface ServiceGuardianReportStudent {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  grade: string | null;
+  schoolName: string | null;
+}
+
+/** Return type for getGuardianStudentReport. */
+export interface GuardianStudentReportResult {
+  student: ServiceGuardianReportStudent;
+  administrations: ServiceGuardianAdministrationEntry[];
+  longitudinalScores: Record<string, ServiceHistoricalScore[]>;
+}

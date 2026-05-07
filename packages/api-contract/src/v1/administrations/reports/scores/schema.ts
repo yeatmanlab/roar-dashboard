@@ -227,3 +227,151 @@ export const StudentScoresResponseSchema = z.object({
 });
 
 export type StudentScoresResponse = z.infer<typeof StudentScoresResponseSchema>;
+
+// --- Individual Student Report schemas ---
+
+/**
+ * Severity styling for a tag, mirroring PrimeVue's tag severity values.
+ * Backend emits these as plain strings; the frontend renders them as colored chips.
+ */
+export const TagSeveritySchema = z.enum(['info', 'success', 'warn', 'danger', 'secondary', 'contrast']);
+
+export type TagSeverity = z.infer<typeof TagSeveritySchema>;
+
+/**
+ * A single tag in the per-task entry (e.g., `Type: Required`, `Reliability: Reliable`).
+ *
+ * `label` and `value` are display strings; the frontend may localize `value`
+ * but `label` is a stable identifier the frontend can switch on.
+ */
+export const TaskTagSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  severity: TagSeveritySchema,
+});
+
+export type TaskTag = z.infer<typeof TaskTagSchema>;
+
+/**
+ * Per-task scores object — all three score types are surfaced so the frontend
+ * can decide which to display per its grade/task rules. `null` for fields that
+ * don't apply (e.g., `standardScore` for grades the task config doesn't norm).
+ */
+export const TaskScoresSchema = z.object({
+  rawScore: z.number().int().nullable(),
+  percentile: z.number().int().nullable(),
+  standardScore: z.number().int().nullable(),
+});
+
+export type TaskScores = z.infer<typeof TaskScoresSchema>;
+
+/**
+ * One subscore entry under a task's `subscores` map. `correct`/`attempted` are
+ * the underlying counts; `percentCorrect` is `100 * correct / attempted` rounded
+ * to one decimal place. Both raw counts are nullable so partial data renders
+ * defensibly when the assessment side has not yet emitted a complete tally.
+ */
+export const SubscoreEntrySchema = z.object({
+  correct: z.number().int().nullable(),
+  attempted: z.number().int().nullable(),
+  percentCorrect: z.number().nullable(),
+});
+
+export type SubscoreEntry = z.infer<typeof SubscoreEntrySchema>;
+
+/**
+ * A historical score entry for a task — one per prior administration the
+ * student completed runs in (and the current administration itself, included
+ * for trend continuity).
+ *
+ * `administrationName` is included so the frontend can label trend chart
+ * points without an additional query.
+ */
+export const HistoricalScoreSchema = z.object({
+  administrationId: z.string().uuid(),
+  administrationName: z.string(),
+  date: z.string().datetime(),
+  scores: TaskScoresSchema,
+});
+
+export type HistoricalScore = z.infer<typeof HistoricalScoreSchema>;
+
+/**
+ * Per-task entry in the individual student report.
+ *
+ * Fields specific to certain task families:
+ * - `subscores` — present for tasks with sub-skill breakdowns (PA, phonics).
+ *   Omitted for tasks without subscores.
+ * - `skillsToWorkOn` — present for PA tasks only; lists subscore keys whose
+ *   `percentCorrect` is below the PA proficiency threshold.
+ *
+ * `historicalScores` includes only administrations whose `dateStart` is on or
+ * before this administration's `dateStart` (ordered chronologically). For
+ * tasks the student never completed in a prior administration, this is `[]`.
+ */
+export const IndividualStudentReportTaskSchema = z.object({
+  taskId: z.string().uuid(),
+  taskSlug: z.string(),
+  taskName: z.string(),
+  orderIndex: z.number().int(),
+  scores: TaskScoresSchema,
+  supportLevel: SupportLevelValueSchema.nullable(),
+  reliable: z.boolean().nullable(),
+  optional: z.boolean(),
+  completed: z.boolean(),
+  engagementFlags: z.array(z.string()),
+  tags: z.array(TaskTagSchema),
+  subscores: z.record(z.string(), SubscoreEntrySchema).optional(),
+  skillsToWorkOn: z.array(z.string()).optional(),
+  historicalScores: z.array(HistoricalScoreSchema),
+});
+
+export type IndividualStudentReportTask = z.infer<typeof IndividualStudentReportTaskSchema>;
+
+/** Header-level student info for the individual student report. */
+export const IndividualStudentReportStudentSchema = z.object({
+  userId: z.string().uuid(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  username: z.string().nullable(),
+  grade: z.string().nullable(),
+});
+
+export type IndividualStudentReportStudent = z.infer<typeof IndividualStudentReportStudentSchema>;
+
+/** Header-level administration metadata for the individual student report. */
+export const IndividualStudentReportAdministrationSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  dateStart: z.string().datetime(),
+  dateEnd: z.string().datetime(),
+});
+
+export type IndividualStudentReportAdministration = z.infer<typeof IndividualStudentReportAdministrationSchema>;
+
+/**
+ * Response schema for the individual student report endpoint.
+ *
+ * Returns a single resource (no pagination): one student's complete scoreboard
+ * for one administration, with header context, per-task scores plus tags and
+ * subscores, longitudinal historical scores, and completion summary counts.
+ */
+export const IndividualStudentReportResponseSchema = z.object({
+  student: IndividualStudentReportStudentSchema,
+  administration: IndividualStudentReportAdministrationSchema,
+  tasks: z.array(IndividualStudentReportTaskSchema),
+  /** Number of tasks the student has at least one completed run for. */
+  completedTaskCount: z.number().int(),
+  /** Total number of tasks visible to the student (post condition evaluation). */
+  totalTaskCount: z.number().int(),
+});
+
+export type IndividualStudentReportResponse = z.infer<typeof IndividualStudentReportResponseSchema>;
+
+/**
+ * Query schema for the individual student report endpoint.
+ * Requires scope parameters; no pagination/sort/filter.
+ */
+export const IndividualStudentReportQuerySchema = ReportScopeQuerySchema;
+
+export type IndividualStudentReportQuery = z.infer<typeof IndividualStudentReportQuerySchema>;

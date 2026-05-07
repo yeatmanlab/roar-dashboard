@@ -14,7 +14,7 @@ describe('StartRunCommand', () => {
     vi.clearAllMocks();
     mockApi = createMockRoarApi();
     createRun = mockApi.client.runs.create as Mock;
-    command = new StartRunCommand(mockApi);
+    command = new StartRunCommand(mockApi, 'participant-123');
   });
 
   it('has correct properties', () => {
@@ -39,6 +39,7 @@ describe('StartRunCommand', () => {
 
     expect(createRun).toHaveBeenCalledTimes(1);
     expect(createRun).toHaveBeenCalledWith({
+      params: { userId: 'participant-123' },
       body: {
         taskVariantId: 'variant-123',
         taskVersion: '1.0.0',
@@ -66,6 +67,7 @@ describe('StartRunCommand', () => {
 
     expect(createRun).toHaveBeenCalledTimes(1);
     expect(createRun).toHaveBeenCalledWith({
+      params: { userId: 'participant-123' },
       body: {
         taskVariantId: 'variant-123',
         taskVersion: '1.0.0',
