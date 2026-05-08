@@ -56,6 +56,16 @@ export const runScores = db.table(
 
     // - Lookup for scores by run ID and type
     p.index('run_scores_run_id_type_idx').on(table.runId, table.type),
+
+    // Constraints
+    // - Natural-key unique constraint enabling ON CONFLICT upserts.
+    //   `assessment_stage` is nullable; `nullsNotDistinct()` ensures rows with the same
+    //   (run_id, type, domain, name) and a NULL stage are treated as duplicates rather
+    //   than distinct rows. Requires Postgres 15+.
+    p
+      .unique('run_scores_natural_key_unique')
+      .on(table.runId, table.type, table.domain, table.name, table.assessmentStage)
+      .nullsNotDistinct(),
   ],
 );
 
