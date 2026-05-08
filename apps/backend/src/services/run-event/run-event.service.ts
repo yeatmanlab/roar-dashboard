@@ -7,11 +7,13 @@ import { logger } from '../../logger';
 import { RunRepository } from '../../repositories/run.repository';
 import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
+import { RunScoresRepository } from '../../repositories/run-scores.repository';
 import { FamilyRepository } from '../../repositories/family.repository';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaRelation } from '../authorization/fga-constants';
 import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
 import type { AuthContext } from '../../types/auth-context';
+import type { NewRunScore } from '../../db/schema';
 
 type RunCompleteEventBody = Extract<RunEventBody, { type: 'complete' }>;
 type RunAbortEventBody = Extract<RunEventBody, { type: 'abort' }>;
@@ -27,6 +29,7 @@ type RunEngagementEventBody = Extract<RunEventBody, { type: 'engagement' }>;
  * @param runRepository - Repository for accessing run data (injected for testing)
  * @param runTrialsRepository - Repository for accessing run trials (injected for testing)
  * @param runTrialInteractionsRepository - Repository for accessing run trial interactions (injected for testing)
+ * @param runScoresRepository - Repository for upserting run scores (injected for testing)
  * @param familyRepository - Repository for accessing family relationships (injected for testing)
  * @param authorizationService - FGA authorization service (injected for testing)
  * @returns Object with event handling methods
@@ -35,12 +38,14 @@ export function RunEventService({
   runRepository = new RunRepository(),
   runTrialsRepository = new RunTrialsRepository(),
   runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
+  runScoresRepository = new RunScoresRepository(),
   familyRepository = new FamilyRepository(),
   authorizationService = AuthorizationService(),
 }: {
   runRepository?: RunRepository;
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
+  runScoresRepository?: RunScoresRepository;
   familyRepository?: FamilyRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
@@ -154,8 +159,12 @@ export function RunEventService({
   /**
    * Records a trial event for a run.
    *
-   * Verifies user ownership, and persists trial data
-   * along with optional interaction events in a transaction.
+   * Verifies user ownership, and persists trial data along with optional interaction events
+   * and optional run-level score snapshots in a single transaction. If `body.scores` is
+   * provided, each entry is upserted into `run_scores` keyed on
+   * `(run_id, type, domain, name, assessment_stage)` — the natural key — so that re-sending
+   * the same score for the same trial replaces the previous value rather than inserting a
+   * duplicate. Empty/missing `scores` is a no-op.
    *
    * @throws ApiError bubbled from assertRunOwnedByUser (e.g., NOT_FOUND / FORBIDDEN) if run ownership checks fail
    * @throws ApiError with INTERNAL_SERVER_ERROR (500) if database transaction fails or any unexpected error occurs
@@ -195,6 +204,23 @@ export function RunEventService({
                 }),
               ),
             );
+          }
+
+          if (body.scores && body.scores.length > 0) {
+            const scoreRows: NewRunScore[] = body.scores.map((s) => ({
+              runId,
+              type: s.type,
+              domain: s.domain,
+              name: s.name,
+              value: s.value,
+              assessmentStage: s.assessmentStage ?? null,
+              categoryScore: s.categoryScore ?? null,
+            }));
+
+            await runScoresRepository.upsertMany({
+              data: scoreRows,
+              transaction: tx,
+            });
           }
         },
       });

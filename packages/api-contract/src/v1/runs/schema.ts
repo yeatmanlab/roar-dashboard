@@ -86,12 +86,38 @@ export const RunTrialInteractionSchema = z.object({
   timeMs: z.number().int().nonnegative(),
 });
 /**
+ * Schema for a single score entry in a run-level scoring update.
+ *
+ * Mirrors the natural-key shape of `app.run_scores` on the backend. A trial event may
+ * carry zero or more of these in its `scores` array; each entry upserts the
+ * corresponding row keyed on `(run_id, type, domain, name, assessment_stage)`.
+ *
+ * - `type` — matches the `score_type` enum (`computed` or `raw`)
+ * - `domain` — the assessment domain (e.g., `composite`)
+ * - `name` — the score name within that domain (e.g., `thetaSE`, `numAttempted`)
+ * - `value` — stored as text on the backend for flexibility (numeric strings, codes, etc.)
+ * - `assessmentStage` — optional; omit for run-aggregate scores not tied to a stage
+ * - `categoryScore` — optional flag for category-level aggregate scores
+ */
+export const ScoreEntrySchema = z.object({
+  type: z.enum(['computed', 'raw']),
+  domain: z.string().min(1),
+  name: z.string().min(1),
+  value: z.string(),
+  assessmentStage: AssessmentStageSchema.optional(),
+  categoryScore: z.boolean().optional(),
+});
+
+/**
  * Schema for a run write trial event.
  *
  * Represents an event that writes a trial.
  * - type: Must be 'trial' (literal type for discriminated union)
  * - trial: The trial data
  * - interactions: Optional array of trial interactions
+ * - scores: Optional array of score snapshots produced by this trial; each entry
+ *   upserts the corresponding row in `run_scores` by natural key in the same
+ *   transaction as the trial write.
  */
 export const RunTrialEventSchema = z.object({
   type: z.literal(RunEventTypeSchema.enum.trial),
@@ -102,6 +128,7 @@ export const RunTrialEventSchema = z.object({
     })
     .passthrough(), // allow app-specific
   interactions: z.array(RunTrialInteractionSchema).optional(),
+  scores: z.array(ScoreEntrySchema).optional(),
 });
 
 /**
@@ -137,3 +164,4 @@ export const RunEventBodySchema = z.discriminatedUnion('type', [
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;
 export type CreateRunResponse = z.infer<typeof CreateRunResponseSchema>;
+export type ScoreEntry = z.infer<typeof ScoreEntrySchema>;

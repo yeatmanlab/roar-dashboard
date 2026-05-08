@@ -9,12 +9,14 @@ import type {
   MockRunRepository,
   MockRunTrialRepository,
   MockRunTrialInteractionsRepository,
+  MockRunScoresRepository,
   MockFamilyRepository,
 } from '../../test-support/repositories';
 import {
   createMockRunRepository,
   createMockRunTrialRepository,
   createMockRunTrialInteractionsRepository,
+  createMockRunScoresRepository,
   createMockFamilyRepository,
 } from '../../test-support/repositories';
 import type { MockAuthorizationService } from '../../test-support/services';
@@ -32,6 +34,7 @@ describe('RunEventService', () => {
   let runRepository: MockRunRepository;
   let runTrialsRepository: MockRunTrialRepository;
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
+  let runScoresRepository: MockRunScoresRepository;
   let familyRepository: MockFamilyRepository;
   let authorizationService: MockAuthorizationService;
   let runEventsService: ReturnType<typeof RunEventService>;
@@ -47,6 +50,8 @@ describe('RunEventService', () => {
 
     runTrialInteractionsRepository = createMockRunTrialInteractionsRepository();
 
+    runScoresRepository = createMockRunScoresRepository();
+
     familyRepository = createMockFamilyRepository();
 
     authorizationService = createMockAuthorizationService();
@@ -55,6 +60,7 @@ describe('RunEventService', () => {
       runRepository,
       runTrialsRepository,
       runTrialInteractionsRepository,
+      runScoresRepository,
       familyRepository,
       authorizationService,
     });
@@ -495,6 +501,200 @@ describe('RunEventService', () => {
       await expect(runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody)).rejects.toBe(
         apiError,
       );
+    });
+
+    describe('scores', () => {
+      it('does not call runScoresRepository.upsertMany when scores is missing', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody);
+
+        expect(runScoresRepository.upsertMany).not.toHaveBeenCalled();
+      });
+
+      it('does not call runScoresRepository.upsertMany when scores is an empty array', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithEmptyScores = {
+          ...validBody,
+          scores: [],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithEmptyScores);
+
+        expect(runScoresRepository.upsertMany).not.toHaveBeenCalled();
+      });
+
+      it('upserts a single score row inside the trial transaction', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithScore = {
+          ...validBody,
+          scores: [
+            {
+              type: 'raw' as const,
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              assessmentStage: 'test' as const,
+            },
+          ],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        const txSentinel = { __tx: true };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn(txSentinel);
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+        runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-1' }]);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScore);
+
+        expect(runScoresRepository.upsertMany).toHaveBeenCalledTimes(1);
+        expect(runScoresRepository.upsertMany).toHaveBeenCalledWith({
+          transaction: txSentinel,
+          data: [
+            {
+              runId: validRunId,
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              assessmentStage: 'test',
+              categoryScore: null,
+            },
+          ],
+        });
+      });
+
+      it('upserts multiple score rows in a single call', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithScores = {
+          ...validBody,
+          scores: [
+            {
+              type: 'raw' as const,
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              assessmentStage: 'test' as const,
+            },
+            {
+              type: 'raw' as const,
+              domain: 'composite',
+              name: 'numAttempted',
+              value: '12',
+              assessmentStage: 'test' as const,
+            },
+          ],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+        runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-1' }, { id: 'score-2' }]);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScores);
+
+        expect(runScoresRepository.upsertMany).toHaveBeenCalledTimes(1);
+        const call = runScoresRepository.upsertMany.mock.calls[0]![0];
+        expect(call.data).toHaveLength(2);
+        expect(call.data[0]!.name).toBe('thetaSE');
+        expect(call.data[1]!.name).toBe('numAttempted');
+      });
+
+      it('passes assessmentStage as null when omitted', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithStagelessScore = {
+          ...validBody,
+          scores: [
+            {
+              type: 'computed' as const,
+              domain: 'composite',
+              name: 'support_level',
+              value: 'achievedSkill',
+              categoryScore: true,
+            },
+          ],
+        };
+
+        const createdTrial = { id: 'trial-123' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockResolvedValue(createdTrial);
+        runScoresRepository.upsertMany.mockResolvedValue([{ id: 'score-1' }]);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithStagelessScore);
+
+        const call = runScoresRepository.upsertMany.mock.calls[0]![0];
+        expect(call.data[0]!.assessmentStage).toBeNull();
+        expect(call.data[0]!.categoryScore).toBe(true);
+      });
+
+      it('rolls back trial and interactions when score upsert fails', async () => {
+        const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const bodyWithScore = {
+          ...validBody,
+          scores: [
+            {
+              type: 'raw' as const,
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              assessmentStage: 'test' as const,
+            },
+          ],
+        };
+
+        // Simulate the transaction propagating the score-upsert failure: runTransaction
+        // invokes its fn which calls upsertMany and rejects, then runTransaction itself rejects.
+        const dbError = new Error('upsert failed');
+        runTrialsRepository.runTransaction.mockImplementation(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          async ({ fn }: any) => {
+            await fn({});
+          },
+        );
+        runTrialsRepository.create.mockResolvedValue({ id: 'trial-123' });
+        runScoresRepository.upsertMany.mockRejectedValue(dbError);
+
+        await expect(
+          runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScore),
+        ).rejects.toMatchObject({
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        });
+      });
     });
   });
 

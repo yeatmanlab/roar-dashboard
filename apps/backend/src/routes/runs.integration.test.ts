@@ -466,6 +466,153 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
     });
   });
 
+  describe('trial scores', () => {
+    /** Reads all run_scores rows for a given run from the assessment DB. */
+    async function readScoresForRun(runId: string) {
+      const { AssessmentDbClient } = await import('../test-support/db');
+      const { runScores } = await import('../db/schema/assessment');
+      const { eq } = await import('drizzle-orm');
+      return AssessmentDbClient.select().from(runScores).where(eq(runScores.runId, runId));
+    }
+
+    it('persists scores from a trial event into run_scores', async () => {
+      const runId = await createRunAsStudent();
+
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              assessmentStage: 'test',
+            },
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'numAttempted',
+              value: '12',
+              assessmentStage: 'test',
+            },
+          ],
+        });
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(2);
+      const byName = new Map(rows.map((r) => [r.name, r.value]));
+      expect(byName.get('thetaSE')).toBe('0.5');
+      expect(byName.get('numAttempted')).toBe('12');
+    });
+
+    it('updates an existing score row when the same natural key is sent again', async () => {
+      const runId = await createRunAsStudent();
+
+      // First trial — initial score
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              assessmentStage: 'test',
+            },
+          ],
+        });
+
+      // Second trial — same natural key, new value
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.3',
+              assessmentStage: 'test',
+            },
+          ],
+        });
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.value).toBe('0.3');
+    });
+
+    it('treats NULL assessment_stage as the same key on re-send (NULLS NOT DISTINCT)', async () => {
+      const runId = await createRunAsStudent();
+
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              // assessmentStage omitted → null in DB
+            },
+          ],
+        });
+
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.4',
+            },
+          ],
+        });
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.value).toBe('0.4');
+      expect(rows[0]!.assessmentStage).toBeNull();
+    });
+
+    it('writes no run_scores rows when scores is omitted', async () => {
+      const runId = await createRunAsStudent();
+
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildTrialEventBody());
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(0);
+    });
+  });
+
   describe('state guards', () => {
     it('returns 409 when completing an already completed run', async () => {
       const runId = await createRunAsStudent();
