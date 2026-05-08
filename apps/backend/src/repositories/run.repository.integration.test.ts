@@ -12,7 +12,9 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { faker } from '@faker-js/faker';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
+import { RunScoreFactory } from '../test-support/factories/run-score.factory';
 import { RunRepository } from './run.repository';
+import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../constants/run-scores';
 
 describe('RunRepository', () => {
   let repository: RunRepository;
@@ -210,6 +212,331 @@ describe('RunRepository', () => {
       const result = await repository.getByAdministrationId(targetAdministrationId);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('recomputeUseForReporting', () => {
+    /**
+     * Builds a fresh `(userId, administrationId, taskVariantId)` partition. Each test
+     * isolates itself via unique UUIDs rather than truncation.
+     */
+    function newPartition() {
+      return {
+        userId: faker.string.uuid(),
+        administrationId: faker.string.uuid(),
+        taskVariantId: faker.string.uuid(),
+      };
+    }
+
+    /**
+     * Reads every non-deleted run in the partition. Tests that depend on identifying the
+     * winner key into the resulting map by id.
+     */
+    async function readPartition(partition: { userId: string; administrationId: string; taskVariantId: string }) {
+      const { AssessmentDbClient } = await import('../db/clients');
+      const { runs } = await import('../db/schema/assessment');
+      const { and, eq, isNull } = await import('drizzle-orm');
+      return AssessmentDbClient.select()
+        .from(runs)
+        .where(
+          and(
+            eq(runs.userId, partition.userId),
+            eq(runs.administrationId, partition.administrationId),
+            eq(runs.taskVariantId, partition.taskVariantId),
+            isNull(runs.deletedAt),
+          ),
+        );
+    }
+
+    /** Seeds a thetaSE score row for a run. */
+    async function seedThetaSE(runId: string, value: string) {
+      await RunScoreFactory.create({
+        runId,
+        type: SCORE_TYPE.RAW,
+        domain: SCORE_DOMAIN.COMPOSITE,
+        name: SCORE_NAME.THETA_SE,
+        value,
+        assessmentStage: ASSESSMENT_STAGE.TEST,
+        categoryScore: null,
+      });
+    }
+
+    /** Seeds a numAttempted score row for a run. */
+    async function seedNumAttempted(runId: string, value: string) {
+      await RunScoreFactory.create({
+        runId,
+        type: SCORE_TYPE.RAW,
+        domain: SCORE_DOMAIN.COMPOSITE,
+        name: SCORE_NAME.NUM_ATTEMPTED,
+        value,
+        assessmentStage: ASSESSMENT_STAGE.TEST,
+        categoryScore: null,
+      });
+    }
+
+    /** Builds a winner map keyed by run id. */
+    function winnerMap(rows: Array<{ id: string; useForReporting: boolean }>) {
+      return new Map(rows.map((r) => [r.id, r.useForReporting]));
+    }
+
+    it('selects the only candidate as the winner in a single-run partition', async () => {
+      const p = newPartition();
+      const run = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
+
+      await repository.recomputeUseForReporting(p);
+
+      const rows = await readPartition(p);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.id).toBe(run.id);
+      expect(rows[0]!.useForReporting).toBe(true);
+    });
+
+    it('tier 1 (reliable + completed): earliest created_at wins', async () => {
+      const p = newPartition();
+      const earlier = await RunFactory.create({
+        ...p,
+        completedAt: new Date(),
+        reliableRun: true,
+      });
+      // Sleep briefly so the second run has a strictly later created_at.
+      await new Promise((r) => setTimeout(r, 5));
+      const later = await RunFactory.create({
+        ...p,
+        completedAt: new Date(),
+        reliableRun: true,
+      });
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(earlier.id)).toBe(true);
+      expect(m.get(later.id)).toBe(false);
+    });
+
+    it('tier 2 (reliable + incomplete): lowest thetaSE wins', async () => {
+      const p = newPartition();
+      const lowerTheta = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
+      const higherTheta = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
+      await seedThetaSE(lowerTheta.id, '0.2');
+      await seedThetaSE(higherTheta.id, '0.5');
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(lowerTheta.id)).toBe(true);
+      expect(m.get(higherTheta.id)).toBe(false);
+    });
+
+    it('tier 2 ties on thetaSE: highest numAttempted wins', async () => {
+      const p = newPartition();
+      const fewerAttempts = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
+      const moreAttempts = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
+      await seedThetaSE(fewerAttempts.id, '0.4');
+      await seedThetaSE(moreAttempts.id, '0.4');
+      await seedNumAttempted(fewerAttempts.id, '5');
+      await seedNumAttempted(moreAttempts.id, '15');
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(moreAttempts.id)).toBe(true);
+      expect(m.get(fewerAttempts.id)).toBe(false);
+    });
+
+    it('tier 3 (unreliable + completed): latest created_at wins', async () => {
+      const p = newPartition();
+      const earlier = await RunFactory.create({
+        ...p,
+        completedAt: new Date(),
+        reliableRun: false,
+      });
+      await new Promise((r) => setTimeout(r, 5));
+      const later = await RunFactory.create({
+        ...p,
+        completedAt: new Date(),
+        reliableRun: false,
+      });
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(later.id)).toBe(true);
+      expect(m.get(earlier.id)).toBe(false);
+    });
+
+    it('tier 4 (unreliable + incomplete): lowest thetaSE wins, then numAttempted, then earliest', async () => {
+      const p = newPartition();
+      const winner = await RunFactory.create({ ...p, completedAt: null, reliableRun: false });
+      const loserHigherTheta = await RunFactory.create({ ...p, completedAt: null, reliableRun: false });
+      await seedThetaSE(winner.id, '0.2');
+      await seedThetaSE(loserHigherTheta.id, '0.5');
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(winner.id)).toBe(true);
+      expect(m.get(loserHigherTheta.id)).toBe(false);
+    });
+
+    it('cross-tier priority: reliable+completed beats reliable+incomplete with better scores', async () => {
+      const p = newPartition();
+      // Tier-1 reliable+completed run, no scores at all.
+      const completed = await RunFactory.create({
+        ...p,
+        completedAt: new Date(),
+        reliableRun: true,
+      });
+      // Tier-2 reliable+incomplete run with a great thetaSE — should still lose to tier 1.
+      const incomplete = await RunFactory.create({
+        ...p,
+        completedAt: null,
+        reliableRun: true,
+      });
+      await seedThetaSE(incomplete.id, '0.01');
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(completed.id)).toBe(true);
+      expect(m.get(incomplete.id)).toBe(false);
+    });
+
+    it('reliable beats unreliable across completion states (tier 2 beats tier 3)', async () => {
+      const p = newPartition();
+      // Tier 2: reliable + incomplete.
+      const tier2 = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
+      // Tier 3: unreliable + completed.
+      const tier3 = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: false });
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(tier2.id)).toBe(true);
+      expect(m.get(tier3.id)).toBe(false);
+    });
+
+    it('excludes aborted runs from candidates and resets their use_for_reporting to false', async () => {
+      const p = newPartition();
+      const eligible = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
+      // Pre-existing aborted run with a stale use_for_reporting=true that needs resetting.
+      const aborted = await RunFactory.create({
+        ...p,
+        completedAt: null,
+        abortedAt: new Date(),
+        reliableRun: true,
+        useForReporting: true,
+      });
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(eligible.id)).toBe(true);
+      expect(m.get(aborted.id)).toBe(false);
+    });
+
+    it('excludes soft-deleted runs from both candidate ranking and the outer reset', async () => {
+      const p = newPartition();
+      const eligible = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
+      const deleted = await RunFactory.create({
+        ...p,
+        completedAt: new Date(),
+        reliableRun: true,
+        deletedAt: new Date(),
+        deletedBy: faker.string.uuid(),
+        useForReporting: true,
+      });
+
+      await repository.recomputeUseForReporting(p);
+
+      // Soft-deleted rows are excluded from readPartition's filter.
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(eligible.id)).toBe(true);
+      expect(m.has(deleted.id)).toBe(false);
+    });
+
+    it('resets every use_for_reporting to false when no eligible candidates remain', async () => {
+      const p = newPartition();
+      const a = await RunFactory.create({
+        ...p,
+        completedAt: null,
+        abortedAt: new Date(),
+        useForReporting: true,
+      });
+      const b = await RunFactory.create({
+        ...p,
+        completedAt: null,
+        abortedAt: new Date(),
+        useForReporting: true,
+      });
+
+      await repository.recomputeUseForReporting(p);
+
+      const m = winnerMap(await readPartition(p));
+      expect(m.get(a.id)).toBe(false);
+      expect(m.get(b.id)).toBe(false);
+    });
+
+    it('flips the winner when an existing thetaSE is updated to a lower value', async () => {
+      const p = newPartition();
+      const original = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
+      const challenger = await RunFactory.create({ ...p, completedAt: null, reliableRun: true });
+      await seedThetaSE(original.id, '0.3');
+      await seedThetaSE(challenger.id, '0.5');
+
+      // Initial recompute — original wins.
+      await repository.recomputeUseForReporting(p);
+      let m = winnerMap(await readPartition(p));
+      expect(m.get(original.id)).toBe(true);
+      expect(m.get(challenger.id)).toBe(false);
+
+      // Challenger gets a better thetaSE in a follow-up score write.
+      const { AssessmentDbClient } = await import('../db/clients');
+      const { runScores } = await import('../db/schema/assessment');
+      const { and, eq } = await import('drizzle-orm');
+      await AssessmentDbClient.update(runScores)
+        .set({ value: '0.1' })
+        .where(and(eq(runScores.runId, challenger.id), eq(runScores.name, SCORE_NAME.THETA_SE)));
+
+      await repository.recomputeUseForReporting(p);
+      m = winnerMap(await readPartition(p));
+      expect(m.get(challenger.id)).toBe(true);
+      expect(m.get(original.id)).toBe(false);
+    });
+
+    it('does not affect runs in a different partition', async () => {
+      const p1 = newPartition();
+      const p2 = newPartition();
+      const inP1 = await RunFactory.create({ ...p1, completedAt: new Date(), reliableRun: true });
+      const inP2 = await RunFactory.create({
+        ...p2,
+        completedAt: new Date(),
+        reliableRun: true,
+        useForReporting: true,
+      });
+
+      await repository.recomputeUseForReporting(p1);
+
+      const m1 = winnerMap(await readPartition(p1));
+      const m2 = winnerMap(await readPartition(p2));
+      expect(m1.get(inP1.id)).toBe(true);
+      // p2 untouched.
+      expect(m2.get(inP2.id)).toBe(true);
+    });
+
+    it('is idempotent — running twice with no intervening writes produces the same state', async () => {
+      const p = newPartition();
+      const a = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
+      const b = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
+      void b;
+
+      await repository.recomputeUseForReporting(p);
+      const first = winnerMap(await readPartition(p));
+
+      await repository.recomputeUseForReporting(p);
+      const second = winnerMap(await readPartition(p));
+
+      expect(second).toEqual(first);
+      expect(first.get(a.id)).toBe(true);
     });
   });
 });

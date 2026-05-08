@@ -409,4 +409,69 @@ describe('RunService', () => {
       });
     });
   });
+
+  describe('recomputeBestRunForVariant', () => {
+    const partition = {
+      userId: 'user-abc',
+      administrationId: '660e8400-e29b-41d4-a716-446655440001',
+      taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+    };
+
+    it('delegates to runRepository.recomputeUseForReporting with the partition keys', async () => {
+      runRepository.recomputeUseForReporting.mockResolvedValue(undefined);
+
+      await runService.recomputeBestRunForVariant(partition);
+
+      expect(runRepository.recomputeUseForReporting).toHaveBeenCalledTimes(1);
+      expect(runRepository.recomputeUseForReporting).toHaveBeenCalledWith({
+        userId: partition.userId,
+        administrationId: partition.administrationId,
+        taskVariantId: partition.taskVariantId,
+        transaction: undefined,
+      });
+    });
+
+    it('passes the caller-provided transaction through to the repository', async () => {
+      runRepository.recomputeUseForReporting.mockResolvedValue(undefined);
+      const txSentinel = { __tx: true };
+
+      await runService.recomputeBestRunForVariant({ ...partition, transaction: txSentinel });
+
+      expect(runRepository.recomputeUseForReporting).toHaveBeenCalledWith({
+        userId: partition.userId,
+        administrationId: partition.administrationId,
+        taskVariantId: partition.taskVariantId,
+        transaction: txSentinel,
+      });
+    });
+
+    it('short-circuits without hitting the repository for anonymous-run partitions', async () => {
+      await runService.recomputeBestRunForVariant({
+        ...partition,
+        administrationId: ANONYMOUS_RUN_ADMINISTRATION_ID,
+      });
+
+      expect(runRepository.recomputeUseForReporting).not.toHaveBeenCalled();
+    });
+
+    it('wraps a repository failure in a 500 ApiError with DATABASE_QUERY_FAILED', async () => {
+      const dbError = new Error('connection lost');
+      runRepository.recomputeUseForReporting.mockRejectedValue(dbError);
+
+      await expect(runService.recomputeBestRunForVariant(partition)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('re-throws ApiError unchanged without re-wrapping', async () => {
+      const apiError = new ApiError('upstream', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+      runRepository.recomputeUseForReporting.mockRejectedValue(apiError);
+
+      await expect(runService.recomputeBestRunForVariant(partition)).rejects.toBe(apiError);
+    });
+  });
 });
