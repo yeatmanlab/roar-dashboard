@@ -86,6 +86,11 @@ export const RunTrialInteractionSchema = z.object({
   timeMs: z.number().int().nonnegative(),
 });
 /**
+ * Score type enum. Mirrors `score_type` on the backend (`computed` or `raw`).
+ */
+export const ScoreTypeSchema = z.enum(['computed', 'raw']);
+
+/**
  * Schema for a single score entry in a run-level scoring update.
  *
  * Mirrors the natural-key shape of `app.run_scores` on the backend. A trial event may
@@ -100,10 +105,10 @@ export const RunTrialInteractionSchema = z.object({
  * - `categoryScore` — optional flag for category-level aggregate scores
  */
 export const ScoreEntrySchema = z.object({
-  type: z.enum(['computed', 'raw']),
+  type: ScoreTypeSchema,
   domain: z.string().min(1),
   name: z.string().min(1),
-  value: z.string(),
+  value: z.string().min(1),
   assessmentStage: AssessmentStageSchema.optional(),
   categoryScore: z.boolean().optional(),
 });
@@ -165,3 +170,4 @@ export const RunEventBodySchema = z.discriminatedUnion('type', [
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;
 export type CreateRunResponse = z.infer<typeof CreateRunResponseSchema>;
 export type ScoreEntry = z.infer<typeof ScoreEntrySchema>;
+export type ScoreType = z.infer<typeof ScoreTypeSchema>;

@@ -659,7 +659,7 @@ describe('RunEventService', () => {
         expect(call.data[0]!.categoryScore).toBe(true);
       });
 
-      it('rolls back trial and interactions when score upsert fails', async () => {
+      it('propagates a score-upsert failure as a 500 ApiError with DATABASE_QUERY_FAILED', async () => {
         const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
         runRepository.getById.mockResolvedValue(mockRun);
 

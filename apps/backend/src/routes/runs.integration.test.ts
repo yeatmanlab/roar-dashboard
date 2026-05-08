@@ -611,6 +611,53 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
       const rows = await readScoresForRun(runId);
       expect(rows).toHaveLength(0);
     });
+
+    it('rolls back the trial when the score upsert fails (transaction atomicity)', async () => {
+      const runId = await createRunAsStudent();
+
+      // Sending two score entries with the same natural key in a single ON CONFLICT
+      // upsert triggers Postgres's "command cannot affect row a second time" error.
+      // The score upsert fails inside the transaction, which must roll back the trial
+      // insert that ran earlier in the same transaction.
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.5',
+              assessmentStage: 'test',
+            },
+            {
+              type: 'raw',
+              domain: 'composite',
+              name: 'thetaSE',
+              value: '0.7',
+              assessmentStage: 'test',
+            },
+          ],
+        });
+
+      expect(res.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(res.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+
+      // No run_scores rows should have landed.
+      const scoreRows = await readScoresForRun(runId);
+      expect(scoreRows).toHaveLength(0);
+
+      // No run_trials rows should have landed either — the trial insert rolled back
+      // when the score upsert failed.
+      const { AssessmentDbClient } = await import('../test-support/db');
+      const { runTrials } = await import('../db/schema/assessment');
+      const { eq } = await import('drizzle-orm');
+      const trialRows = await AssessmentDbClient.select().from(runTrials).where(eq(runTrials.runId, runId));
+      expect(trialRows).toHaveLength(0);
+    });
   });
 
   describe('state guards', () => {
