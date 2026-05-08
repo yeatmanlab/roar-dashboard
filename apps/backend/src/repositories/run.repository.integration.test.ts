@@ -526,8 +526,9 @@ describe('RunRepository', () => {
     it('is idempotent — running twice with no intervening writes produces the same state', async () => {
       const p = newPartition();
       const a = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
-      const b = await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
-      void b;
+      // Second run in the same partition — its identity doesn't matter for the assertion
+      // (the test only verifies that running recompute twice produces the same winner state).
+      await RunFactory.create({ ...p, completedAt: new Date(), reliableRun: true });
 
       await repository.recomputeUseForReporting(p);
       const first = winnerMap(await readPartition(p));

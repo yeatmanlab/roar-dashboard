@@ -727,11 +727,11 @@ describe('RunEventService', () => {
           ...validBody,
           scores: [
             {
-              type: 'raw' as const,
-              domain: 'composite',
-              name: 'thetaSE',
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
               value: '0.5',
-              assessmentStage: 'test' as const,
+              assessmentStage: ASSESSMENT_STAGE.TEST,
             },
           ],
         };
