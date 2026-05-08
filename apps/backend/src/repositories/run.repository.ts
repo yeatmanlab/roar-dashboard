@@ -7,6 +7,7 @@ import type { Run } from '../db/schema/';
 import { runs } from '../db/schema/assessment';
 import type { BaseGetByIdParams, Transaction } from './interfaces/base.repository.interface';
 import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../constants/run-scores';
+import { BEST_RUN_TIER } from '../constants/best-run';
 
 /**
  * Run stats for an administration (started/completed counts from assessment DB).
@@ -112,22 +113,39 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
    * `false`.
    *
    * The "best run" is determined by a four-tier ranking that mirrors the legacy Firestore
-   * `selectBestRun` behavior:
+   * `selectBestRun` behavior. See `constants/best-run.ts` (`BEST_RUN_TIER`) for the named
+   * tiers; the numeric priorities are interpolated into the SQL below rather than inlined as
+   * magic numbers.
    *
    * 1. Reliable + completed — earliest `created_at`
    * 2. Reliable + incomplete — lowest `thetaSE`, then highest `numAttempted`
    * 3. Unreliable + completed — latest `created_at`
    * 4. Unreliable + incomplete — lowest `thetaSE`, then highest `numAttempted`, then earliest `created_at`
    *
+   * Architectural note: this method encodes business rules (tier priority, in-tier
+   * tiebreakers) in SQL. That deviates from the usual "business logic belongs in services"
+   * principle, by deliberate analogy with `repositories/access-controls/` — both are cases
+   * where the rules can only be applied efficiently as joins/ordering against many rows in
+   * a single round-trip. Doing the ranking in TypeScript would require fetching every
+   * candidate run plus its scores into memory and reintroducing TOCTOU races against
+   * concurrent writers. If a second consumer of this ranking ever appears (e.g., a
+   * dry-run preview endpoint), extract the ORDER BY expression into an injectable helper
+   * along the lines of `AdministrationAccessControls`.
+   *
    * Implementation notes:
    *
    * - The partition's candidates (non-deleted, non-aborted runs) are locked via `FOR UPDATE`
    *   so concurrent recomputes for the same partition serialize at the row-lock level.
+   *   `FOR UPDATE` cannot coexist with window functions in the same CTE, so the locking
+   *   happens in `locked_candidates` and the ranking happens in a follow-on `ranked` CTE.
    * - The outer `UPDATE` deliberately includes aborted runs (only `deleted_at IS NULL`) so a
    *   previously-true `use_for_reporting` on a now-aborted or now-ineligible run gets reset to
    *   `false` in the same statement.
-   * - If no candidates exist (e.g., every run in the partition is aborted), the statement
-   *   sets every run's `use_for_reporting` to `false`, which is the correct behavior.
+   * - If no candidates exist (e.g., every run in the partition is aborted), the scalar
+   *   subquery on `winner` returns NULL and `(r.id = NULL) IS TRUE` evaluates to `false` —
+   *   so every run in the partition correctly ends up `use_for_reporting = false`. This is
+   *   why the SQL uses a scalar subquery instead of `UPDATE ... FROM (winner)` (which would
+   *   be an inner join and produce zero affected rows on an empty winner).
    * - thetaSE / numAttempted lookups use `LEFT JOIN` against `app.run_scores`; runs without
    *   scores still rank deterministically within their tier via `NULLS LAST`.
    * - The `created_at` column is used as a proxy for the legacy `timeStarted`; the new schema
@@ -154,19 +172,8 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
     const scoreDomain = SCORE_DOMAIN.COMPOSITE;
     const scoreStage = ASSESSMENT_STAGE.TEST;
 
-    // SQL shape rationale:
-    // - `locked_candidates` acquires row locks on the eligible runs (non-deleted, non-aborted)
-    //   so concurrent recomputes for the same partition serialize. FOR UPDATE cannot coexist
-    //   with window functions in the same CTE, so the ranking happens in a follow-on CTE that
-    //   reads the locked rows.
-    // - The outer UPDATE uses a scalar subquery on `winner` rather than `UPDATE ... FROM`
-    //   because UPDATE...FROM is an inner join: if `winner` is empty (e.g., every run in the
-    //   partition is aborted), the outer UPDATE would affect zero rows and previously-true
-    //   `use_for_reporting` flags would not get reset to false. With a scalar subquery and
-    //   `IS TRUE`, an empty winner produces NULL on every row's comparison, which `IS TRUE`
-    //   collapses to false — the desired "no eligible runs → all false" behavior.
-    // - The outer WHERE deliberately omits `aborted_at IS NULL` so that previously-true
-    //   `use_for_reporting` on a now-aborted (or now-ineligible) run gets reset.
+    // See the JSDoc for the architectural rationale (business logic in SQL by analogy with
+    // access controls) and the choice of CTE-with-scalar-subquery over UPDATE...FROM.
     await db.execute(sql`
       WITH locked_candidates AS (
         SELECT r.id, r.reliable_run, r.completed_at, r.created_at
@@ -184,10 +191,10 @@ export class RunRepository extends BaseRepository<Run, typeof runs> {
           ROW_NUMBER() OVER (
             ORDER BY
               CASE
-                WHEN lc.reliable_run AND lc.completed_at IS NOT NULL THEN 1
-                WHEN lc.reliable_run AND lc.completed_at IS NULL THEN 2
-                WHEN NOT lc.reliable_run AND lc.completed_at IS NOT NULL THEN 3
-                ELSE 4
+                WHEN lc.reliable_run AND lc.completed_at IS NOT NULL THEN ${BEST_RUN_TIER.RELIABLE_COMPLETED}
+                WHEN lc.reliable_run AND lc.completed_at IS NULL THEN ${BEST_RUN_TIER.RELIABLE_INCOMPLETE}
+                WHEN NOT lc.reliable_run AND lc.completed_at IS NOT NULL THEN ${BEST_RUN_TIER.UNRELIABLE_COMPLETED}
+                ELSE ${BEST_RUN_TIER.UNRELIABLE_INCOMPLETE}
               END,
               CASE WHEN lc.reliable_run AND lc.completed_at IS NOT NULL THEN lc.created_at END ASC NULLS LAST,
               CASE WHEN lc.reliable_run AND lc.completed_at IS NULL THEN theta_se.value::numeric END ASC NULLS LAST,
