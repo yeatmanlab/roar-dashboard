@@ -22,6 +22,7 @@ import {
 import type { MockAuthorizationService } from '../../test-support/services';
 import { createMockAuthorizationService } from '../../test-support/services';
 import { RunFactory } from '../../test-support/factories/run.factory';
+import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../../constants/run-scores';
 
 /**
  * RunEventService Tests
@@ -400,7 +401,7 @@ describe('RunEventService', () => {
     const validBody = {
       type: 'trial' as const,
       trial: {
-        assessmentStage: 'test' as const,
+        assessmentStage: ASSESSMENT_STAGE.TEST,
         correct: 1,
       },
     };
@@ -425,7 +426,7 @@ describe('RunEventService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             runId: validRunId,
-            assessmentStage: 'test',
+            assessmentStage: ASSESSMENT_STAGE.TEST,
             correct: 1,
           }),
         }),
@@ -439,7 +440,7 @@ describe('RunEventService', () => {
       const bodyWithInteractions = {
         type: 'trial' as const,
         trial: {
-          assessmentStage: 'practice' as const,
+          assessmentStage: ASSESSMENT_STAGE.PRACTICE,
           correct: 1,
         },
         interactions: [
@@ -549,11 +550,11 @@ describe('RunEventService', () => {
           ...validBody,
           scores: [
             {
-              type: 'raw' as const,
-              domain: 'composite',
-              name: 'thetaSE',
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
               value: '0.5',
-              assessmentStage: 'test' as const,
+              assessmentStage: ASSESSMENT_STAGE.TEST,
             },
           ],
         };
@@ -575,11 +576,11 @@ describe('RunEventService', () => {
           data: [
             {
               runId: validRunId,
-              type: 'raw',
-              domain: 'composite',
-              name: 'thetaSE',
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
               value: '0.5',
-              assessmentStage: 'test',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
               categoryScore: null,
             },
           ],
@@ -594,18 +595,18 @@ describe('RunEventService', () => {
           ...validBody,
           scores: [
             {
-              type: 'raw' as const,
-              domain: 'composite',
-              name: 'thetaSE',
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
               value: '0.5',
-              assessmentStage: 'test' as const,
+              assessmentStage: ASSESSMENT_STAGE.TEST,
             },
             {
-              type: 'raw' as const,
-              domain: 'composite',
-              name: 'numAttempted',
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.NUM_ATTEMPTED,
               value: '12',
-              assessmentStage: 'test' as const,
+              assessmentStage: ASSESSMENT_STAGE.TEST,
             },
           ],
         };
@@ -623,20 +624,25 @@ describe('RunEventService', () => {
         expect(runScoresRepository.upsertMany).toHaveBeenCalledTimes(1);
         const call = runScoresRepository.upsertMany.mock.calls[0]![0];
         expect(call.data).toHaveLength(2);
-        expect(call.data[0]!.name).toBe('thetaSE');
-        expect(call.data[1]!.name).toBe('numAttempted');
+        expect(call.data[0]!.name).toBe(SCORE_NAME.THETA_SE);
+        expect(call.data[1]!.name).toBe(SCORE_NAME.NUM_ATTEMPTED);
       });
 
       it('passes assessmentStage as null when omitted', async () => {
         const mockRun = RunFactory.build({ id: validRunId, userId: targetUserId });
         runRepository.getById.mockResolvedValue(mockRun);
 
+        // The score `name` and `value` here are illustrative — `support_level` is
+        // task-dependent (resolved via `getSupportLevelFieldName(taskSlug)`) and
+        // `achievedSkill` is one of three valid `SupportLevel` values defined as a
+        // type union, not a typed const object. The test asserts on `assessmentStage`
+        // and `categoryScore` flow-through, not the score name/value.
         const bodyWithStagelessScore = {
           ...validBody,
           scores: [
             {
-              type: 'computed' as const,
-              domain: 'composite',
+              type: SCORE_TYPE.COMPUTED,
+              domain: SCORE_DOMAIN.COMPOSITE,
               name: 'support_level',
               value: 'achievedSkill',
               categoryScore: true,
@@ -667,11 +673,11 @@ describe('RunEventService', () => {
           ...validBody,
           scores: [
             {
-              type: 'raw' as const,
-              domain: 'composite',
-              name: 'thetaSE',
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
               value: '0.5',
-              assessmentStage: 'test' as const,
+              assessmentStage: ASSESSMENT_STAGE.TEST,
             },
           ],
         };
