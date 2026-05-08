@@ -392,7 +392,7 @@ export function UserService({
       // Guard against a current platform admin creating a new platform admin account
       for (const m of memberships) {
         if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN)
-          throw new ApiError('ApiErrorMessage.FORBIDDEN, {
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
             code: ApiErrorCode.AUTH_FORBIDDEN,
             context: { userId },
@@ -810,6 +810,51 @@ export function UserService({
    * @throws {ApiError} NOT_FOUND if no provider can be resolved at all
    */
   async function resolveRootOrgProviderFromMemberships(memberships: CreateUserMemberships[]): Promise<string> {
+    // First, try to resolve district evidence (class/school roots + explicit district memberships)
+    const resolvedDistrict = await resolveDistrictProvider(memberships);
+    if (resolvedDistrict) return resolvedDistrict;
+
+    // No district evidence — fall through to group, then family
+    const resolvedGroup = resolveGroupProvider(memberships);
+    if (resolvedGroup) return resolvedGroup;
+
+    const resolvedFamily = resolveFamilyProvider(memberships);
+    if (resolvedFamily) return resolvedFamily;
+
+    throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+      statusCode: StatusCodes.NOT_FOUND,
+      code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      context: { memberships },
+    });
+  }
+
+  /**
+   * Resolve a single district provider ID from the user's memberships.
+   *
+   * Gathers district evidence from all three org sources in parallel, then
+   * validates that they all agree before returning. This catches inconsistencies
+   * such as an explicit district_A combined with a class whose ltree root is
+   * district_B.
+   *
+   * Evidence sources:
+   * - Explicit `district` memberships in the request
+   * - ltree root of any `class` memberships (via `classRepository.getDistinctRootOrgIds`)
+   * - ltree root of any `school` memberships (via `schoolRepository.getDistinctRootOrgIds`)
+   *
+   * Resolution rules:
+   * 1. Resolve class and school ltree roots in parallel.
+   * 2. Deduplicate all district IDs into a single set.
+   * 3. Exactly one distinct district → return it.
+   * 4. More than one distinct district → throw 422.
+   * 5. No district evidence at all → return `undefined` (caller falls through to group/family).
+   *
+   * @param memberships The user's membership information from the request body
+   * @returns The resolved district ID, or `undefined` if no district evidence exists
+   * @throws {ApiError} NOT_FOUND if class memberships are present but have no resolvable root district
+   * @throws {ApiError} NOT_FOUND if school memberships are present but have no resolvable root district
+   * @throws {ApiError} UNPROCESSABLE_ENTITY if memberships span more than one distinct district
+   */
+  async function resolveDistrictProvider(memberships: CreateUserMemberships[]): Promise<string | undefined> {
     const partnerIds = memberships.map(({ entityId, entityType }) => ({ entityId, entityType }));
 
     const classIds = partnerIds
@@ -865,24 +910,35 @@ export function UserService({
       return [...resolvedDistricts][0]!;
     }
 
-    // No district evidence — fall through to group, then family
-    const groupIds = partnerIds
-      .filter(({ entityType }) => entityType === EntityType.GROUP)
-      .map(({ entityId }) => entityId);
+    return undefined;
+  }
 
-    if (groupIds.length > 0) return groupIds[0]!;
+  /**
+   * Resolve the root org provider from group memberships.
+   *
+   * Uses first-wins semantics: when multiple group memberships are present,
+   * the first ID in request order is returned. Groups are flat (non-hierarchical)
+   * so there is no root to validate uniqueness against.
+   *
+   * @param memberships The user's membership information from the request body
+   * @returns The first group ID found, or `undefined` if no group memberships exist
+   */
+  function resolveGroupProvider(memberships: CreateUserMemberships[]): string | undefined {
+    return memberships.find(({ entityType }) => entityType === EntityType.GROUP)?.entityId;
+  }
 
-    const familyIds = partnerIds
-      .filter(({ entityType }) => entityType === EntityType.FAMILY)
-      .map(({ entityId }) => entityId);
-
-    if (familyIds.length > 0) return familyIds[0]!;
-
-    throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-      statusCode: StatusCodes.NOT_FOUND,
-      code: ApiErrorCode.RESOURCE_NOT_FOUND,
-      context: { memberships },
-    });
+  /**
+   * Resolve the root org provider from family memberships.
+   *
+   * Uses first-wins semantics: when multiple family memberships are present,
+   * the first ID in request order is returned. Families are flat (non-hierarchical)
+   * so there is no root to validate uniqueness against.
+   *
+   * @param memberships The user's membership information from the request body
+   * @returns The first family ID found, or `undefined` if no family memberships exist
+   */
+  function resolveFamilyProvider(memberships: CreateUserMemberships[]): string | undefined {
+    return memberships.find(({ entityType }) => entityType === EntityType.FAMILY)?.entityId;
   }
 
   /**
