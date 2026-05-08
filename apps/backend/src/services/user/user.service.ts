@@ -392,7 +392,7 @@ export function UserService({
       // Guard against a current platform admin creating a new platform admin account
       for (const m of memberships) {
         if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN)
-          throw new ApiError('Platform admin cannot create a new platform admin account', {
+          throw new ApiError('ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
             code: ApiErrorCode.AUTH_FORBIDDEN,
             context: { userId },
