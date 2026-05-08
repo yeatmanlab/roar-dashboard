@@ -38,15 +38,17 @@ export class RunScoresRepository extends BaseRepository<RunScore, typeof runScor
    * Upsert one or more score rows by their natural key.
    *
    * Existing rows matching `(run_id, type, domain, name, assessment_stage)` are updated
-   * with the incoming `value`, `category_score`, and `updated_at`; rows with no match
-   * are inserted. Returns the resulting row IDs (newly inserted or pre-existing).
+   * with the incoming `value` and `category_score`; rows with no match are inserted.
+   * `updated_at` is bumped automatically by the `run_scores_set_updated_at` trigger.
    *
    * Idempotent: replaying the same input produces the same final state.
    *
    * Returns an empty array on empty input.
    *
    * @param params - Score rows to upsert and optional transaction context
-   * @returns Array of `{ id }` for each affected row, in input order
+   * @returns Array of `{ id }` for each affected row. Postgres does not formally guarantee
+   *          ordering of `RETURNING` rows for multi-value inserts, so callers should not
+   *          rely on a specific correspondence between input and output indices.
    */
   async upsertMany(params: RunScoresUpsertManyParams): Promise<{ id: string }[]> {
     const { data, transaction } = params;
