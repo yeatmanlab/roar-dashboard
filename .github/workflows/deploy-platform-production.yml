@@ -1,15 +1,18 @@
 name: Deploy Platform to Production
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Release version (e.g., 3.27.0)"
+        type: string
+        required: true
   push:
     branches:
-      # TODO: Remove once backend refactor is complete
+      # TODO: Remove once backend refactor is complete and merged to main.
+      # Temporary fallback to allow continuous backend deployments during refactor.
+      # Once release.yml is active on main, this trigger will be removed.
       - project/backend-refactor
-    # TODO: Re-enable once backend refactor is complete
-    # tags:
-    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+"
-    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-    #   - "roar-platform:v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -31,31 +34,49 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout repository
-        # TODO: Remove once branch triggers are removed and only tags remain
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'workflow_call'
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Verify tag commit is on main
-        # TODO: Remove once branch triggers are removed and only tags remain
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Verify tags exist on main
+        if: github.event_name == 'workflow_call'
         run: |
-          TAG_SHA="${{ github.sha }}"
-          if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
-            echo "::error::Tag ${{ github.ref_name }} (${TAG_SHA}) is not on the main branch. Aborting."
-            exit 1
-          fi
-          echo "Tag ${{ github.ref_name }} is on main."
+          # Determine version
+          VERSION="${{ inputs.version }}"
+          
+          # Verify all three platform tags exist and are on main
+          for PREFIX in backend dashboard api-contract; do
+            TAG="${PREFIX}-v${VERSION}"
+            TAG_SHA=$(git rev-list -n1 "refs/tags/${TAG}" 2>/dev/null || true)
+            
+            if [ -z "$TAG_SHA" ]; then
+              echo "::error::Tag ${TAG} not found."
+              exit 1
+            fi
+            
+            if ! git merge-base --is-ancestor "$TAG_SHA" origin/main; then
+              echo "::error::Tag ${TAG} (${TAG_SHA}) is not on the main branch. Aborting."
+              exit 1
+            fi
+            
+            echo "✓ Tag ${TAG} verified on main"
+          done
+
+      - name: Log release components
+        if: github.event_name == 'workflow_call'
+        run: |
+          echo "Release Summary:"
+          echo "  Version: ${{ inputs.version }}"
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Product owner review
+  # Production deployment approval
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  product-owner-review:
-    name: Request product owner review
+  approval:
+    name: Request production deployment approval
     needs: [verify-tag]
     runs-on: ubuntu-latest
-    environment: roar-platform:production:release-approval
+    environment: platform:production
     timeout-minutes: 15
     steps:
       - name: Approval granted
@@ -66,7 +87,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––– #
   build-backend:
     name: Build backend Docker image
-    needs: [product-owner-review]
+    needs: [approval]
     runs-on: ubuntu-latest
     environment: platform:production
     timeout-minutes: 10
@@ -147,8 +168,8 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # TODO: Re-enable after testing is complete
   deploy-frontend:
+    # TODO: Re-enable after frontend deployment testing is complete (project/backend-refactor)
     if: false
     name: Deploy frontend
     needs: [deploy-backend]
@@ -185,4 +206,4 @@ jobs:
         with:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
-          version: ${{ github.ref_name }}
+          version: ${{ inputs.version }}

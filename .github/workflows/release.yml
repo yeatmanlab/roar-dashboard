@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release-please:
+    name: Create Release PR
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      backend_release_created: ${{ steps.release.outputs.backend--release_created }}
+      dashboard_release_created: ${{ steps.release.outputs.dashboard--release_created }}
+      api_contract_release_created: ${{ steps.release.outputs.api-contract--release_created }}
+      assessment_sdk_release_created: ${{ steps.release.outputs.assessment-sdk--release_created }}
+      backend_tag_name: ${{ steps.release.outputs.backend--tag_name }}
+      dashboard_tag_name: ${{ steps.release.outputs.dashboard--tag_name }}
+      api_contract_tag_name: ${{ steps.release.outputs.api-contract--tag_name }}
+      assessment_sdk_tag_name: ${{ steps.release.outputs.assessment-sdk--tag_name }}
+      backend_version: ${{ steps.release.outputs.backend--version }}
+      dashboard_version: ${{ steps.release.outputs.dashboard--version }}
+      api_contract_version: ${{ steps.release.outputs.api-contract--version }}
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: .release-please.json
+          manifest-file: .release-please-manifest.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: main
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Trigger platform deployment on release
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  trigger-platform-deployment:
+    name: Trigger Platform Deployment
+    needs: release-please
+    if: |
+      needs.release-please.outputs.releases_created == 'true' &&
+      needs.release-please.outputs.backend_release_created == 'true' &&
+      needs.release-please.outputs.dashboard_release_created == 'true' &&
+      needs.release-please.outputs.api_contract_release_created == 'true'
+    uses: ./.github/workflows/deploy-platform-production.yml
+    secrets: inherit
+    with:
+      version: ${{ needs.release-please.outputs.backend_version }}

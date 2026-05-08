@@ -1,0 +1,70 @@
+{
+  "bootstrap-sha": "3a7a1a1577fab6498d7a906d69053de2be9a2e0b",
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features",
+      "hidden": false
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes",
+      "hidden": false
+    },
+    {
+      "type": "refactor",
+      "section": "Refactoring",
+      "hidden": false
+    },
+    {
+      "type": "perf",
+      "section": "Performance",
+      "hidden": false
+    },
+    {
+      "type": "docs",
+      "section": "Documentation",
+      "hidden": false
+    },
+    {
+      "type": "chore",
+      "section": "Miscellaneous",
+      "hidden": false
+    }
+  ],
+  "packages": {
+    "apps/backend": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "backend"
+    },
+    "apps/dashboard": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "dashboard"
+    },
+    "packages/api-contract": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "api-contract"
+    },
+    "packages/assessment-sdk": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "assessment-sdk"
+    }
+  },
+  "group-pull-request-title-pattern": "chore: release ${version}",
+  "pull-request-title-pattern": "chore(${scope}): release ${version}",
+  "pull-request-header": "## Release Summary\n\nThis PR updates versions and changelogs for the following packages:\n\n- **backend**: Backend API service\n- **dashboard**: Frontend dashboard application\n- **api-contract**: Shared API contract and types\n- **assessment-sdk**: Assessment client SDK (independent versioning)\n\n### Release Strategy\n\n- **Platform Release** (backend + dashboard + api-contract): Shared version number\n- **SDK Release** (assessment-sdk): Independent version number\n\n### Approval Gates\n\n1. **Release PR**: Requires QA + Tech Lead review\n2. **Production Deployment**: Requires Tech Lead + Product Owner approval\n\n### Next Steps\n\n1. Review and approve this Release PR\n2. Merge to main\n3. Tags will be created automatically\n4. Production deployment will require additional approval\n\nSee [RELEASING.md](.github/RELEASING.md) for detailed release workflow documentation.",
+  "release-as": {
+    "apps/backend": "3.26.0",
+    "apps/dashboard": "3.26.0",
+    "packages/api-contract": "3.26.0",
+    "packages/assessment-sdk": "0.1.0"
+  }
+}
