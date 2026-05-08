@@ -8,13 +8,11 @@ on:
         type: string
         required: true
   push:
-    tags:
+    branches:
       # TODO: Remove once backend refactor is complete and merged to main.
       # Temporary fallback to allow continuous backend deployments during refactor.
       # Once release.yml is active on main, this trigger will be removed.
-      - "backend-v[0-9]+.[0-9]+.[0-9]+"
-      - "backend-v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "backend-v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+      - project/backend-refactor
 
 concurrency:
   # Scope to workflow name so concurrent pushes queue instead of cancelling each other.
@@ -32,6 +30,9 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   verify-tag:
     name: Verify tag is on main
+    # Skip for branch trigger (project/backend-refactor) — tags don't exist yet.
+    # Only verify tags when triggered via workflow_call from release.yml.
+    if: github.event_name == 'workflow_call'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -168,7 +169,7 @@ jobs:
   # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   deploy-frontend:
-    # TODO: Re-enable after frontend deployment testing is complete
+    # TODO: Re-enable after frontend deployment testing is complete (project/backend-refactor)
     if: false
     name: Deploy frontend
     needs: [deploy-backend]
