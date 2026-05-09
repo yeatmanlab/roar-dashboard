@@ -6,7 +6,11 @@ import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import type { MockFgaClient } from '../../test-support/clients/fga.client';
-import { createMockFgaClient } from '../../test-support/clients/fga.client';
+import {
+  createMockFgaClient,
+  mockStreamedListObjects,
+  mockStreamedListObjectsError,
+} from '../../test-support/clients/fga.client';
 import { AuthorizationService } from './authorization.service';
 
 let mockClient: MockFgaClient;
@@ -308,15 +312,15 @@ describe('AuthorizationService', () => {
   });
 
   describe('listAccessibleObjects', () => {
-    it('returns object IDs from the FGA client', async () => {
+    it('collects streamed object IDs into an array', async () => {
       const objects = ['administration:aaa', 'administration:bbb'];
-      mockClient.listObjects.mockResolvedValueOnce({ objects });
+      mockStreamedListObjects(mockClient, objects);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       const result = await service.listAccessibleObjects('user-123', 'can_read', 'administration');
 
       expect(result).toEqual(objects);
-      expect(mockClient.listObjects).toHaveBeenCalledWith({
+      expect(mockClient.streamedListObjects).toHaveBeenCalledWith({
         user: 'user:user-123',
         relation: 'can_read',
         type: 'administration',
@@ -325,7 +329,7 @@ describe('AuthorizationService', () => {
     });
 
     it('returns an empty array when no objects are accessible', async () => {
-      mockClient.listObjects.mockResolvedValueOnce({ objects: [] });
+      mockStreamedListObjects(mockClient, []);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       const result = await service.listAccessibleObjects('user-123', 'can_read', 'administration');
@@ -333,9 +337,18 @@ describe('AuthorizationService', () => {
       expect(result).toEqual([]);
     });
 
-    it('wraps FGA client errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
-      const sdkError = new Error('FGA listObjects failed');
-      mockClient.listObjects.mockRejectedValueOnce(sdkError);
+    it('does not call the deprecated listObjects API', async () => {
+      mockStreamedListObjects(mockClient, ['administration:aaa']);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service.listAccessibleObjects('user-123', 'can_read', 'administration');
+
+      expect(mockClient.listObjects).not.toHaveBeenCalled();
+    });
+
+    it('wraps streamed-list errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
+      const sdkError = new Error('FGA streamedListObjects failed');
+      mockStreamedListObjectsError(mockClient, sdkError);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await expect(service.listAccessibleObjects('user-123', 'can_read', 'administration')).rejects.toThrow(
@@ -347,16 +360,70 @@ describe('AuthorizationService', () => {
       );
     });
 
-    it('logs error when FGA client fails', async () => {
-      const sdkError = new Error('FGA listObjects failed');
-      mockClient.listObjects.mockRejectedValueOnce(sdkError);
+    it('logs error when the FGA stream fails', async () => {
+      const sdkError = new Error('FGA streamedListObjects failed');
+      mockStreamedListObjectsError(mockClient, sdkError);
       const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
 
       await service.listAccessibleObjects('user-123', 'can_read', 'administration').catch(() => {});
 
       expect(logger.error).toHaveBeenCalledWith(
         { err: sdkError, context: { userId: 'user-123', relation: 'can_read', type: 'administration' } },
-        'FGA list accessible objects failed',
+        'FGA streamed list accessible objects failed',
+      );
+    });
+  });
+
+  describe('listAccessibleObjectsStreamed', () => {
+    it('yields objects from the FGA stream as a generator', async () => {
+      const objects = ['administration:aaa', 'administration:bbb', 'administration:ccc'];
+      mockStreamedListObjects(mockClient, objects);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const collected: string[] = [];
+      for await (const chunk of service.listAccessibleObjectsStreamed('user-123', 'can_read', 'administration')) {
+        collected.push(chunk.object);
+      }
+
+      expect(collected).toEqual(objects);
+    });
+
+    it('passes current_time context to the SDK', async () => {
+      mockStreamedListObjects(mockClient, ['administration:aaa']);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      // Drain the generator
+      let count = 0;
+      for await (const chunk of service.listAccessibleObjectsStreamed('user-123', 'can_read', 'administration')) {
+        if (chunk.object) count += 1;
+      }
+      expect(count).toBe(1);
+
+      expect(mockClient.streamedListObjects).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: 'user:user-123',
+          relation: 'can_read',
+          type: 'administration',
+          context: { current_time: expect.any(String) },
+        }),
+      );
+    });
+
+    it('wraps iteration errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
+      const sdkError = new Error('FGA streamed iteration failed');
+      mockStreamedListObjectsError(mockClient, sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(async () => {
+        for await (const chunk of service.listAccessibleObjectsStreamed('user-123', 'can_read', 'administration')) {
+          // touch chunk so the loop variable is used
+          void chunk.object;
+        }
+      }).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
       );
     });
   });
