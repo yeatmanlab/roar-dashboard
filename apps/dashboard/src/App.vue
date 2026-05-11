@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'vue';
+import { computed, onBeforeMount, onMounted, ref, watch, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
@@ -41,6 +41,9 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
+import useMeQuery from '@/composables/queries/useMeQuery';
+import { useGlobalError } from '@/composables/useGlobalError';
+import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
@@ -58,6 +61,47 @@ const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authS
 
 useRecaptchaProvider();
 
+// Enable `/me` only once the auth store reports an access token. The query
+// composable internally retries on transient failures and skips retry for
+// rostering-ended / terminal auth errors (see `useMeQuery.js`). Wire the
+// access-token check through `useMeQuery`'s own `enabled` knob so the query
+// composable controls all its conditional-enable logic (mirroring every
+// other query in `composables/queries/`).
+const { data: meData, error: meError } = useMeQuery({
+  enabled: computed(() => Boolean(authStore.accessToken)),
+});
+
+// Push the resolved `/me` payload into the auth store so consumers can read it
+// via `storeToRefs(authStore).meData` / the `hasUnsignedTos` / `currentUserId`
+// getters. Done via watcher rather than `onSuccess` so the store stays in sync
+// across `/me` refetches (e.g., after the TOS-signing mutation invalidates it).
+//
+// A successful refetch after a prior failure also clears any stale
+// `globalError` set by the error watcher below — without this, a transient
+// 500 followed by a successful retry would leave the user stuck on
+// `GenericError` because the router's global-error guard would keep firing.
+const { setGlobalError, clearGlobalError } = useGlobalError();
+watch(meData, (data) => {
+  if (data) {
+    authStore.setMeData(data);
+    clearGlobalError();
+  }
+});
+
+// Translate `/me` failures into the global error state. The router's
+// `beforeEach` guard then redirects to the appropriate error page
+// (AccessEnded / SignIn / GenericError).
+watch(meError, (err) => {
+  if (!err) return;
+  if (isRosteringEndedError(err)) {
+    setGlobalError({ type: 'rostering-ended' });
+  } else if (isTerminalAuthError(err)) {
+    setGlobalError({ type: 'auth-expired' });
+  } else {
+    setGlobalError({ type: 'server-error' });
+  }
+});
+
 onBeforeMount(async () => {
   await authStore.initFirekit();
 
@@ -65,6 +109,10 @@ onBeforeMount(async () => {
     // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
     // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
     // in order for SSO to work and cannot currently be changed without significant refactoring.
+    //
+    // The Firestore-based fetches below populate legacy `userData` / `userClaims` fields for existing
+    // consumers. The `useMeQuery` composable (above) populates the canonical `meData` field in parallel
+    // — new consumers should read from `meData`. Legacy consumers will migrate incrementally.
     if (authStore.uid) {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.userClaims = userClaims;

@@ -782,6 +782,12 @@ const routes = [
     meta: { pageTitle: 'Access Ended' },
   },
   {
+    path: APP_ROUTES.SIGN_TOS,
+    name: 'SignTos',
+    component: () => import('../pages/SignTos.vue'),
+    meta: { pageTitle: 'Sign Terms of Service' },
+  },
+  {
     path: '/error',
     name: 'GenericError',
     component: () => import('../pages/GenericError.vue'),
@@ -897,6 +903,15 @@ router.beforeEach(async (to, from, next) => {
       next({ path: APP_ROUTES.SSO, query: { redirect_to: from.query.redirect_to } });
       return;
     }
+  }
+
+  // Block all navigation when the user has unsigned TOS agreements except to
+  // the signing flow itself and the SignIn route (so the user can sign out if
+  // they don't want to accept). Once `unsignedAgreements` is empty (via
+  // `useRecordUserAgreementMutation` invalidating `/me`), this guard releases.
+  if (store.hasUnsignedTos && to.name !== 'SignTos' && to.name !== 'SignIn') {
+    next({ name: 'SignTos', query: { next: to.fullPath } });
+    return;
   }
 
   // Prevent routing to routes that the user does not have permission to access.
