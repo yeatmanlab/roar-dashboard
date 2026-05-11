@@ -15,6 +15,30 @@ beforeEach(() => {
     win.localStorage.setItem('__E2E__', 'true');
   });
 
+  // Default `/me` intercept. The dashboard's app initialization calls
+  // `GET /me` on every page load (via `useMeQuery` in `App.vue`); without
+  // this stub, tests that don't have a real backend reachable would see the
+  // query fail, set `globalError` to `server-error`, and get redirected to
+  // `GenericError` — masking the actual page under test.
+  //
+  // The default response is a successful "no unsigned agreements" payload
+  // so the TOS guard stays disengaged. Tests that need to exercise the
+  // rostering-ended / unsigned-TOS / server-error paths should call
+  // `cy.intercept('GET', '**/me', ...)` again before `cy.visit(...)` to
+  // override this default.
+  cy.intercept('GET', '**/me', {
+    statusCode: 200,
+    body: {
+      data: {
+        id: '00000000-0000-0000-0000-000000000000',
+        userType: 'admin',
+        nameFirst: 'E2E',
+        nameLast: 'Test',
+        unsignedAgreements: [],
+      },
+    },
+  }).as('getMe');
+
   cy.visit('/');
 
   // Simulate different network conditions based on test file name.
