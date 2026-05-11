@@ -22,6 +22,7 @@ import type { Condition } from '../../types/condition';
 import { Operator } from '../../types/condition';
 import type { User } from '../../db/schema';
 import { SortOrder, TaskSortField } from '@roar-dashboard/api-contract';
+import type { CoreTransaction } from '../../db/clients';
 
 describe('TaskService', () => {
   let authContext: AuthContext;
@@ -62,7 +63,7 @@ describe('TaskService', () => {
         });
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockTaskVariantParameterReturnValue);
@@ -104,7 +105,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce(mockParameterReturnValues);
@@ -145,7 +146,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -205,7 +206,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
 
@@ -241,7 +242,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValue(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
 
@@ -375,7 +376,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValue(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
 
         const taskId = mockTask.id;
@@ -424,7 +425,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -453,7 +454,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -482,7 +483,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -516,7 +517,7 @@ describe('TaskService', () => {
 
         taskRepository.getById.mockResolvedValueOnce(mockTask);
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.create.mockResolvedValueOnce(mockTaskVariant);
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -555,7 +556,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.update.mockResolvedValueOnce();
 
@@ -579,7 +580,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.update.mockResolvedValueOnce();
 
@@ -602,7 +603,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.update.mockResolvedValueOnce();
 
@@ -625,7 +626,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -660,7 +661,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.update.mockResolvedValueOnce();
         taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
@@ -696,7 +697,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.update.mockResolvedValueOnce();
 
@@ -719,7 +720,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
 
@@ -901,7 +902,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantRepository.update.mockResolvedValueOnce();
 
@@ -923,7 +924,7 @@ describe('TaskService', () => {
 
         taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
         taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-          return await fn({});
+          return await fn({} as CoreTransaction);
         });
         taskVariantParameterRepository.deleteByTaskVariantId.mockResolvedValueOnce();
         taskVariantParameterRepository.createMany.mockResolvedValueOnce([{ id: 'param-1' }]);
@@ -945,7 +946,7 @@ describe('TaskService', () => {
         for (const status of [TaskVariantStatus.DRAFT, TaskVariantStatus.PUBLISHED, TaskVariantStatus.DEPRECATED]) {
           taskVariantRepository.getTaskIdByVariantId.mockResolvedValueOnce({ taskId: mockTask.id });
           taskVariantRepository.runTransaction.mockImplementationOnce(async ({ fn }) => {
-            return await fn({});
+            return await fn({} as CoreTransaction);
           });
           taskVariantRepository.update.mockResolvedValueOnce();
 

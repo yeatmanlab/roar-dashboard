@@ -1,11 +1,17 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, inArray } from 'drizzle-orm';
-import type { TaskVariantParameter, NewTaskVariantParameter } from '../db/schema';
-import { taskVariantParameters } from '../db/schema';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../db/clients';
+import type { NewTaskVariantParameter, TaskVariantParameter } from '../db/schema';
+import { taskVariantParameters } from '../db/schema';
 import type * as CoreDbSchema from '../db/schema/core';
 import { BaseRepository } from './base.repository';
-import { BaseCreateManyParams } from './interfaces/base.repository.interface';
+import type { Transaction } from './interfaces/base.repository.interface';
+
+/** Parameters for creating multiple task variant parameters in optional transaction. */
+interface TaskVariantParameterCreateManyParams {
+  data: NewTaskVariantParameter[];
+  transaction?: Transaction;
+}
 
 /**
  * Repository for task variant parameter-related database operations.
@@ -83,9 +89,10 @@ export class TaskVariantParameterRepository extends BaseRepository<TaskVariantPa
    * Creates multiple task variant parameters.
    *
    * Overrides base createMany because this table uses a composite primary key (taskVariantId, name)
-   * instead of a single id column. Returns placeholder objects to satisfy the base interface.
+   * instead of a single id column and all fields are required in the database model.
+   * Returns placeholder objects to satisfy the base interface.
    */
-  override async createMany(params: BaseCreateManyParams<NewTaskVariantParameter>): Promise<{ id: string }[]> {
+  override async createMany(params: TaskVariantParameterCreateManyParams): Promise<{ id: string }[]> {
     const { transaction } = params;
     const db = transaction ?? this.db;
 
