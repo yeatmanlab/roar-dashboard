@@ -22,6 +22,18 @@ export const useAuthStore = () => {
         roarfirekit: null,
         userData: null,
         userClaims: null,
+        /**
+         * Response payload from the `/me` backend endpoint.
+         *
+         * Shape: `{ id, userType, nameFirst, nameLast, unsignedAgreements: UnsignedAgreement[] }`
+         * — see `packages/api-contract/src/v1/me/schema.ts` for the canonical schema.
+         *
+         * `meData` is the canonical source of truth for the authenticated user's
+         * identity and TOS status as part of the migration away from the
+         * Firestore-based user fetch. `userData`/`userClaims` are kept for
+         * legacy consumers and will be retired incrementally.
+         */
+        meData: null,
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
         nycpsOAuthRequested: false,
@@ -62,6 +74,22 @@ export const useAuthStore = () => {
         return true;
       },
       isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
+      /**
+       * The authenticated user's id as returned by `/me`.
+       *
+       * Falls back to `undefined` when `/me` has not resolved yet. The
+       * legacy `roarUid` getter exposes the same logical id sourced from
+       * Firestore-derived `userClaims`; it's populated earlier in the boot
+       * sequence but goes away as consumers migrate to `/me`. Prefer
+       * `currentUserId` in new code that runs after `/me` has resolved.
+       */
+      currentUserId: (state) => state.meData?.id,
+      /**
+       * `true` when the user has at least one unsigned TOS agreement returned
+       * by `/me`. The router's `beforeEach` guard uses this to gate navigation
+       * to the SignTos flow.
+       */
+      hasUnsignedTos: (state) => (state.meData?.unsignedAgreements?.length ?? 0) > 0,
     },
     actions: {
       async initFirekit() {
@@ -89,6 +117,26 @@ export const useAuthStore = () => {
           console.error('Error verifying parent registration:', error);
           throw error;
         }
+      },
+      /**
+       * Store the response payload from the `/me` endpoint.
+       *
+       * Called by `useMeQuery`'s watcher in `App.vue` after the query resolves.
+       * Replaces the legacy Firestore-driven population of `userData`/`userClaims`
+       * for new consumers — legacy consumers continue to read from those fields
+       * until they migrate.
+       *
+       * @param {import('@roar-dashboard/api-contract').Me} meData
+       */
+      setMeData(meData) {
+        this.meData = meData;
+      },
+      /**
+       * Clear the `/me` payload. Called on sign-out and when the query is
+       * invalidated (e.g., after the user signs an unsigned TOS).
+       */
+      clearMeData() {
+        this.meData = null;
       },
       setAuthStateListeners() {
         // Use onIdTokenChanged for admin auth to ensure accessToken stays current during token refreshes (~hourly)
