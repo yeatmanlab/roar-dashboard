@@ -14,6 +14,8 @@ import {
   administrationGroupTuple,
   districtMembershipTuple,
   schoolMembershipTuple,
+  classMembershipTuple,
+  classHierarchyTuples,
   groupMembershipTuple,
   familyMembershipTuple,
 } from '../../services/authorization/helpers/fga-tuples';
@@ -62,6 +64,41 @@ export async function writeFgaOrgMembership(
   const client = FgaClient.getClient();
   const builder = orgType === FgaType.DISTRICT ? districtMembershipTuple : schoolMembershipTuple;
   await client.writeTuples([builder(userId, orgId, role, null, null)]);
+}
+
+/**
+ * Write an FGA class membership tuple for a factory-created user-class enrollment.
+ *
+ * @param userId - The user ID
+ * @param classId - The class ID
+ * @param role - The user's role in this class
+ */
+export async function writeFgaClassMembership(userId: string, classId: string, role: UserRole): Promise<void> {
+  const client = FgaClient.getClient();
+  await client.writeTuples([classMembershipTuple(userId, classId, role, null, null)]);
+}
+
+/**
+ * Write the FGA hierarchy tuples linking a class to its parent school.
+ *
+ * Both directions are written: `school:{schoolId}` is `parent_org` of the class,
+ * and `class:{classId}` is `child_class` of the school. These tuples are what
+ * lets role cascades work — without them, a teacher membership on a class won't
+ * resolve to `school.subtree_supervisory_tier_group` for administrations
+ * assigned at the school level.
+ *
+ * The production sync writes these automatically when classes are created;
+ * tests that create classes via `ClassFactory.create(...)` must call this
+ * helper explicitly to mirror that behavior.
+ *
+ * @param schoolId - The parent school ID
+ * @param classId - The child class ID
+ */
+export async function writeFgaClassHierarchy(schoolId: string, classId: string): Promise<void> {
+  const client = FgaClient.getClient();
+  // `classHierarchyTuples` returns the same conditionless TupleKey shape that
+  // `writeTuples` accepts — pass through directly with spread.
+  await client.writeTuples([...classHierarchyTuples(schoolId, classId)]);
 }
 
 /**
