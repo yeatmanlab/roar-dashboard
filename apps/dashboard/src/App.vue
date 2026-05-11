@@ -62,15 +62,10 @@ const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authS
 
 useRecaptchaProvider();
 
-// Enable `/me` only once the auth store reports an access token. The query
-// composable internally retries on transient failures and skips retry for
-// rostering-ended / terminal auth errors (see `useMeQuery.js`). Wire the
-// access-token check through `useMeQuery`'s own `enabled` knob so the query
-// composable controls all its conditional-enable logic (mirroring every
-// other query in `composables/queries/`).
-const { data: meData, error: meError } = useMeQuery({
-  enabled: computed(() => Boolean(authStore.accessToken)),
-});
+// `useMeQuery` is internally gated on `authStore.accessToken`, so no
+// caller-side `enabled` is needed here. The composable also handles retry
+// (3x on transient failures, skip on rostering-ended / terminal auth).
+const { data: meData, error: meError } = useMeQuery();
 
 // Push the resolved `/me` payload into the auth store so consumers can read it
 // via `storeToRefs(authStore).meData` / the `hasUnsignedTos` / `currentUserId`

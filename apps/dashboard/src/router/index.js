@@ -906,10 +906,23 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // Block all navigation when the user has unsigned TOS agreements except to
-  // the signing flow itself and the SignIn route (so the user can sign out if
-  // they don't want to accept). Once `unsignedAgreements` is empty (via
-  // `useRecordUserAgreementMutation` invalidating `/me`), this guard releases.
-  if (store.hasUnsignedTos && to.name !== 'SignTos' && to.name !== 'SignIn') {
+  // the signing flow itself, SignIn (so the user can sign out if they don't
+  // want to accept), and the error pages (AccessEnded / GenericError). The
+  // error pages must be allowed through because the `meError` watcher in
+  // `App.vue` calls `router.replace()` to them when `/me` fails — without
+  // these in the allowlist, a user with both `hasUnsignedTos === true` (from
+  // a prior successful response) and a subsequent `/me` failure would enter
+  // a navigation loop: meError → router.replace(GenericError) → this guard
+  // redirects to SignTos → global-error guard redirects back to GenericError.
+  // Once `unsignedAgreements` is empty (via `useRecordUserAgreementMutation`
+  // invalidating `/me`), this guard releases entirely.
+  if (
+    store.hasUnsignedTos &&
+    to.name !== 'SignTos' &&
+    to.name !== 'SignIn' &&
+    to.name !== 'AccessEnded' &&
+    to.name !== 'GenericError'
+  ) {
     next({ name: 'SignTos', query: { next: to.fullPath } });
     return;
   }
