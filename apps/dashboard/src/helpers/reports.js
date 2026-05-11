@@ -263,11 +263,19 @@ export const taskDisplayNames = {
   },
   'roav-mp': {
     name: 'MP',
-    publicName: 'ROAV - Memory Processing',
-    studentFacingName: 'Memory Processing',
+    publicName: 'ROAV - Motion Perception',
+    studentFacingName: 'Motion Perception',
     extendedTitle: 'ROAV - MP',
     extendedName: 'MP',
     order: 26,
+  },
+  'roav-rvp': {
+    name: 'RVP',
+    publicName: 'ROAV - Rapid Visual Processing',
+    studentFacingName: 'Rapid Visual Processing',
+    extendedTitle: 'ROAV - RVP',
+    extendedName: 'RVP',
+    order: 27,
   },
   'roar-survey': {
     name: 'Survey',
@@ -275,7 +283,7 @@ export const taskDisplayNames = {
     studentFacingName: 'Survey',
     extendedTitle: 'ROAR - Survey',
     extendedName: 'Survey',
-    order: 27,
+    order: 28,
   },
 };
 
@@ -364,6 +372,7 @@ export const excludeFromScoringTasks = [
   'qualtrics-experience',
   'roar-survey',
   'roav-mp',
+  'roav-rvp',
   ...LEVANTE_TASK_IDS_NO_SCORES,
 ];
 
