@@ -392,6 +392,10 @@ export function UserService({
       // Guard against a current platform admin creating a new platform admin account
       for (const m of memberships) {
         if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN)
+          logger.warn(
+            { userId, attemptedRole: m.role, entityType: m.entityType, entityId: m.entityId },
+            'Non-super-admin attempted to create platform_admin via user creation',
+          );
           throw new ApiError(ApiErrorMessage.FORBIDDEN, {
             statusCode: StatusCodes.FORBIDDEN,
             code: ApiErrorCode.AUTH_FORBIDDEN,
