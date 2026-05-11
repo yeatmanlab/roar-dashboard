@@ -1,20 +1,21 @@
-import { eq, countDistinct, and, isNull, sql, inArray, asc, desc } from 'drizzle-orm';
-import type { SQL } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { PaginatedResult } from './base.repository';
-import { LtreeRepository } from './ltree.repository';
-import type { Org } from '../db/schema';
-import { orgs, userOrgs, classes, userClasses, users } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
-import type * as CoreDbSchema from '../db/schema/core';
 import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import type { SQL } from 'drizzle-orm';
+import { and, asc, countDistinct, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+
+import { CoreDbClient } from '../db/clients';
+import type { Org } from '../db/schema';
+import { classes, orgs, userClasses, userOrgs, users } from '../db/schema';
+import type * as CoreDbSchema from '../db/schema/core';
 import { OrgType } from '../enums/org-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
 import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../types/user';
+import type { PaginatedResult } from './base.repository';
+import { LtreeRepository } from './ltree.repository';
 import {
-  getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
+  getEnrolledUsersFilterConditions,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
 import { isEnrollmentActive } from './utils/enrollment.utils';
