@@ -27,7 +27,7 @@
 
 <script setup>
 import { computed, onBeforeMount, onMounted, ref, watch, defineAsyncComponent } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
@@ -50,6 +50,7 @@ const showDevtools = ref(false);
 
 const authStore = useAuthStore();
 const route = useRoute();
+const router = useRouter();
 
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
@@ -80,25 +81,48 @@ const { data: meData, error: meError } = useMeQuery({
 // `globalError` set by the error watcher below — without this, a transient
 // 500 followed by a successful retry would leave the user stuck on
 // `GenericError` because the router's global-error guard would keep firing.
+//
+// Initial-load redirect: `/me` resolves *after* the router has already
+// resolved the current route, so the `beforeEach` TOS guard doesn't fire on
+// the initial render. If the resolved payload has unsigned agreements and
+// the user is sitting on a non-SignTos route, push them to SignTos
+// explicitly so they can't see the protected content. The guard handles
+// subsequent navigations correctly; this watcher just closes the boot-time
+// gap.
 const { setGlobalError, clearGlobalError } = useGlobalError();
 watch(meData, (data) => {
-  if (data) {
-    authStore.setMeData(data);
-    clearGlobalError();
+  if (!data) return;
+  authStore.setMeData(data);
+  clearGlobalError();
+
+  const hasUnsignedTos = (data.unsignedAgreements?.length ?? 0) > 0;
+  if (hasUnsignedTos && route.name !== 'SignTos' && route.name !== 'SignIn') {
+    router.replace({ name: 'SignTos', query: { next: route.fullPath } });
   }
 });
 
-// Translate `/me` failures into the global error state. The router's
-// `beforeEach` guard then redirects to the appropriate error page
-// (AccessEnded / SignIn / GenericError).
+// Translate `/me` failures into the global error state and navigate to the
+// matching error page. The router's `beforeEach` guard handles subsequent
+// transitions, but `/me` typically resolves *after* the initial route is
+// rendered — without an explicit `router.replace()` here, the user would see
+// the requested page briefly before any later navigation triggered the guard.
 watch(meError, (err) => {
   if (!err) return;
   if (isRosteringEndedError(err)) {
     setGlobalError({ type: 'rostering-ended' });
+    if (route.name !== 'AccessEnded') {
+      router.replace({ name: 'AccessEnded' });
+    }
   } else if (isTerminalAuthError(err)) {
     setGlobalError({ type: 'auth-expired' });
+    if (route.name !== 'SignIn') {
+      router.replace({ name: 'SignIn' });
+    }
   } else {
     setGlobalError({ type: 'server-error' });
+    if (route.name !== 'GenericError') {
+      router.replace({ name: 'GenericError' });
+    }
   }
 });
 
