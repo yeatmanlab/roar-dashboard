@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { collectStreamedFgaObjects, withFgaFilterIds } from './fga-filter-ids.utils';
+import { withFgaFilterIds } from './fga-filter-ids.utils';
 
 describe('withFgaFilterIds', () => {
   /**
@@ -65,6 +65,26 @@ describe('withFgaFilterIds', () => {
     expect(tx.execute).toHaveBeenCalledTimes(1 + 3);
   });
 
+  // Boundary tests: exact chunk-size, one-over, and one-under. Off-by-one errors
+  // around the chunking loop would silently double-insert or drop rows, so these
+  // are explicit even if they look redundant.
+  it.each([
+    { length: 4_999, expectedInserts: 1 },
+    { length: 5_000, expectedInserts: 1 },
+    { length: 5_001, expectedInserts: 2 },
+    { length: 10_000, expectedInserts: 2 },
+    { length: 10_001, expectedInserts: 3 },
+  ])('chunks correctly at boundary: $length ids → $expectedInserts INSERT(s)', async ({ length, expectedInserts }) => {
+    const { db, tx } = createFakeDb();
+    const ids = Array.from({ length }, (_, i) => `id-${i}`);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await withFgaFilterIds(db as any, ids, async () => undefined);
+
+    // 1 CREATE TEMP TABLE + N INSERTs
+    expect(tx.execute).toHaveBeenCalledTimes(1 + expectedInserts);
+  });
+
   it('returns the callback result', async () => {
     const { db } = createFakeDb();
 
@@ -73,37 +93,46 @@ describe('withFgaFilterIds', () => {
 
     expect(result).toEqual({ count: 42 });
   });
-});
 
-describe('collectStreamedFgaObjects', () => {
-  it('collects all objects from an async generator', async () => {
-    async function* gen() {
-      yield { object: 'administration:abc' };
-      yield { object: 'administration:def' };
-      yield { object: 'administration:ghi' };
-    }
+  it('propagates errors from the callback so the transaction rolls back', async () => {
+    const { db } = createFakeDb();
+    const callbackError = new Error('callback exploded');
 
-    const result = await collectStreamedFgaObjects(gen());
+    await expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      withFgaFilterIds(db as any, ['id-1'], async () => {
+        throw callbackError;
+      }),
+    ).rejects.toThrow('callback exploded');
 
-    expect(result).toEqual(['administration:abc', 'administration:def', 'administration:ghi']);
+    // The transaction was opened — rollback is the responsibility of Drizzle's
+    // transaction wrapper, but we verify here that the error is not swallowed.
+    expect(db.transaction).toHaveBeenCalledTimes(1);
   });
 
-  it('returns an empty array for an empty generator', async () => {
-    async function* gen() {
-      // intentionally yields nothing
-    }
+  it('does not catch DB errors during temp-table creation', async () => {
+    // If the CREATE TEMP TABLE fails (e.g., permissions, connection drop),
+    // the error must propagate so the caller can wrap it appropriately
+    // — the helper does not silently swallow infrastructure failures.
+    const ddlError = new Error('cannot create temp table');
+    const tx: FakeTx = {
+      execute: vi.fn(async () => {
+        throw ddlError;
+      }),
+    };
+    const db = {
+      transaction: vi.fn(async <R>(cb: (tx: FakeTx) => Promise<R>) => cb(tx)),
+    };
 
-    const result = await collectStreamedFgaObjects(gen());
+    let callbackInvoked = false;
+    await expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      withFgaFilterIds(db as any, ['id-1'], async () => {
+        callbackInvoked = true;
+        return 'unreachable';
+      }),
+    ).rejects.toThrow('cannot create temp table');
 
-    expect(result).toEqual([]);
-  });
-
-  it('propagates errors from the generator', async () => {
-    async function* gen() {
-      yield { object: 'administration:abc' };
-      throw new Error('stream failed');
-    }
-
-    await expect(collectStreamedFgaObjects(gen())).rejects.toThrow('stream failed');
+    expect(callbackInvoked).toBe(false);
   });
 });

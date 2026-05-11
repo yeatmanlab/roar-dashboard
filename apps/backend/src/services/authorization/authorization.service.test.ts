@@ -311,6 +311,123 @@ describe('AuthorizationService', () => {
     });
   });
 
+  describe('hasAnyPermission', () => {
+    it('returns false without calling the SDK when the objects array is empty', async () => {
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.hasAnyPermission('user-123', 'can_read', []);
+
+      expect(result).toBe(false);
+      expect(mockClient.batchCheck).not.toHaveBeenCalled();
+    });
+
+    it('returns true when at least one batch check is allowed', async () => {
+      mockClient.batchCheck.mockResolvedValueOnce({
+        result: [{ allowed: false }, { allowed: true }],
+      });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.hasAnyPermission('user-123', 'can_read', [
+        'administration:aaa',
+        'administration:bbb',
+      ]);
+
+      expect(result).toBe(true);
+      expect(mockClient.batchCheck).toHaveBeenCalledWith({
+        checks: [
+          {
+            user: 'user:user-123',
+            relation: 'can_read',
+            object: 'administration:aaa',
+            context: { current_time: expect.any(String) },
+          },
+          {
+            user: 'user:user-123',
+            relation: 'can_read',
+            object: 'administration:bbb',
+            context: { current_time: expect.any(String) },
+          },
+        ],
+      });
+    });
+
+    it('returns false when no batch check is allowed', async () => {
+      mockClient.batchCheck.mockResolvedValueOnce({
+        result: [{ allowed: false }, { allowed: false }],
+      });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.hasAnyPermission('user-123', 'can_read', [
+        'administration:aaa',
+        'administration:bbb',
+      ]);
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false when batch check results have no `allowed` property set', async () => {
+      // FGA returns omitted `allowed` for deny — exercises the `=== true` strictness
+      // in the production code (so `undefined` is correctly treated as false).
+      mockClient.batchCheck.mockResolvedValueOnce({
+        result: [{}, {}],
+      });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const result = await service.hasAnyPermission('user-123', 'can_read', ['administration:aaa']);
+
+      expect(result).toBe(false);
+    });
+
+    it('wraps batch check errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
+      const sdkError = new Error('FGA batch check failed');
+      mockClient.batchCheck.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.hasAnyPermission('user-123', 'can_read', ['administration:aaa'])).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+    });
+
+    it('logs error context when the batch check fails', async () => {
+      const sdkError = new Error('FGA batch check failed');
+      mockClient.batchCheck.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await service
+        .hasAnyPermission('user-123', 'can_read', ['administration:aaa', 'administration:bbb'])
+        .catch(() => {});
+
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: sdkError, context: { userId: 'user-123', relation: 'can_read', objectCount: 2 } },
+        'FGA batch check failed',
+      );
+    });
+
+    it('includes context in the thrown ApiError', async () => {
+      const sdkError = new Error('FGA batch check failed');
+      mockClient.batchCheck.mockRejectedValueOnce(sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      try {
+        await service.hasAnyPermission('user-123', 'can_read', ['administration:aaa', 'administration:bbb']);
+        expect.fail('Expected hasAnyPermission to throw');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError);
+        const apiError = error as ApiError;
+        expect(apiError.context).toEqual({
+          userId: 'user-123',
+          relation: 'can_read',
+          objectCount: 2,
+        });
+        expect(apiError.cause).toBe(sdkError);
+      }
+    });
+  });
+
   describe('listAccessibleObjects', () => {
     it('collects streamed object IDs into an array', async () => {
       const objects = ['administration:aaa', 'administration:bbb'];
@@ -372,6 +489,29 @@ describe('AuthorizationService', () => {
         'FGA streamed list accessible objects failed',
       );
     });
+
+    it('wraps synchronous SDK setup errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
+      // Simulate the SDK throwing before iteration begins (e.g., network setup,
+      // bad credentials). The error is raised from `client.streamedListObjects(...)`
+      // itself, not from a `for await` step.
+      const sdkError = new Error('FGA streamedListObjects setup failed');
+      mockClient.streamedListObjects.mockImplementation(() => {
+        throw sdkError;
+      });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(service.listAccessibleObjects('user-123', 'can_read', 'administration')).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: sdkError, context: { userId: 'user-123', relation: 'can_read', type: 'administration' } },
+        'FGA streamed list accessible objects failed',
+      );
+    });
   });
 
   describe('listAccessibleObjectsStreamed', () => {
@@ -417,6 +557,59 @@ describe('AuthorizationService', () => {
       await expect(async () => {
         for await (const chunk of service.listAccessibleObjectsStreamed('user-123', 'can_read', 'administration')) {
           // touch chunk so the loop variable is used
+          void chunk.object;
+        }
+      }).rejects.toThrow(
+        expect.objectContaining({
+          message: ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        }),
+      );
+    });
+
+    it('yields nothing when the FGA stream is empty', async () => {
+      mockStreamedListObjects(mockClient, []);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      const collected: string[] = [];
+      for await (const chunk of service.listAccessibleObjectsStreamed('user-123', 'can_read', 'administration')) {
+        collected.push(chunk.object);
+      }
+
+      expect(collected).toEqual([]);
+    });
+
+    it('logs error context when the stream fails mid-iteration', async () => {
+      const sdkError = new Error('FGA streamed iteration failed');
+      mockStreamedListObjectsError(mockClient, sdkError);
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      try {
+        for await (const chunk of service.listAccessibleObjectsStreamed('user-123', 'can_read', 'administration')) {
+          void chunk.object;
+        }
+      } catch {
+        // swallow — assertion is on the logger call
+      }
+
+      expect(logger.error).toHaveBeenCalledWith(
+        { err: sdkError, context: { userId: 'user-123', relation: 'can_read', type: 'administration' } },
+        'FGA streamed list accessible objects failed',
+      );
+    });
+
+    it('wraps synchronous SDK setup errors in ApiError with EXTERNAL_SERVICE_FAILED', async () => {
+      // The generator function awaits `client.streamedListObjects` lazily on first
+      // iteration. If the SDK throws synchronously at call time, the error must still
+      // be wrapped in ApiError when the consumer iterates.
+      const sdkError = new Error('FGA streamedListObjects setup failed');
+      mockClient.streamedListObjects.mockImplementation(() => {
+        throw sdkError;
+      });
+      const service = AuthorizationService({ client: mockClient as unknown as OpenFgaClient });
+
+      await expect(async () => {
+        for await (const chunk of service.listAccessibleObjectsStreamed('user-123', 'can_read', 'administration')) {
           void chunk.object;
         }
       }).rejects.toThrow(

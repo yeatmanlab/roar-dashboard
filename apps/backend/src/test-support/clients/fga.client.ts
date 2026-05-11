@@ -15,6 +15,7 @@ export interface MockFgaClient {
   deleteTuples: Mock;
   read: Mock;
   check: Mock;
+  batchCheck: Mock;
   listObjects: Mock;
   streamedListObjects: Mock;
 }
@@ -49,6 +50,7 @@ export function createMockFgaClient(): MockFgaClient {
     deleteTuples: vi.fn(),
     read: vi.fn().mockResolvedValue({ tuples: [], continuation_token: '' }),
     check: vi.fn().mockResolvedValue({ allowed: false }),
+    batchCheck: vi.fn().mockResolvedValue({ result: [] }),
     listObjects: vi.fn().mockResolvedValue({ objects: [] }),
     streamedListObjects: vi.fn().mockImplementation(makeEmptyStreamedListObjects()),
   };

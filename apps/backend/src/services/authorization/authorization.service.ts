@@ -17,7 +17,8 @@ import { FgaType } from './fga-constants';
  * logged but not thrown, because the Postgres write has already succeeded and the
  * backfill endpoint (#06) will reconcile stale tuples.
  *
- * Permission checks (`hasPermission`, `listAccessibleObjects`) propagate errors to
+ * Permission checks (`hasPermission`, `requirePermission`, `hasAnyPermission`,
+ * `listAccessibleObjects`, `listAccessibleObjectsStreamed`) propagate errors to
  * callers — they are used in request-time authorization and must fail visibly.
  *
  * @param client - The OpenFGA client instance
@@ -155,10 +156,12 @@ export function AuthorizationService({
    * hitting the server-side cap on `listObjects` (default
    * `OPENFGA_LIST_OBJECTS_MAX_RESULTS = 1000`).
    *
-   * Use this directly for **high-cardinality domains** (users, classes) where the
+   * Use this directly for the **high-cardinality `class` domain** where the
    * caller wants to feed the IDs into a temp-table join rather than holding the
-   * full set in memory. For low-cardinality domains the convenience wrapper
-   * {@link listAccessibleObjects} collects the stream into a `string[]`.
+   * full set in memory. For low-cardinality domains (administration / district /
+   * school / group) the convenience wrapper {@link listAccessibleObjects}
+   * collects the stream into a `string[]`. The `user` domain has no FGA
+   * relations and is not a consumer of `listAccessibleObjects` at all.
    *
    * Errors thrown while iterating are wrapped in `ApiError` with the same
    * `EXTERNAL_SERVICE_FAILED` code as `listObjects` — this means consumers don't
@@ -211,10 +214,9 @@ export function AuthorizationService({
    * `client.listObjects`).
    *
    * Suitable for **low-cardinality domains** (administrations, districts,
-   * schools) where holding the full ID set in memory is fine. For
-   * high-cardinality domains (users, classes) iterate
-   * {@link listAccessibleObjectsStreamed} directly and feed the stream into a
-   * temp-table join via `withFgaFilterIds`.
+   * schools, groups) where holding the full ID set in memory is fine. For the
+   * high-cardinality `class` domain, iterate {@link listAccessibleObjectsStreamed}
+   * directly and feed the stream into a temp-table join via `withFgaFilterIds`.
    *
    * Passes `current_time` context so the `active_membership` condition evaluates
    * correctly for time-bound tuples.

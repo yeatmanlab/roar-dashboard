@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
+import type { TablesRelationalConfig } from 'drizzle-orm/relations';
 
 /**
  * Maximum number of UUIDs to insert per `INSERT ... VALUES (...)` statement.
@@ -15,10 +17,17 @@ const FGA_FILTER_INSERT_CHUNK_SIZE = 5000;
  *
  * Why `unknown`/dynamic schema? Repositories may use either the core or assessment
  * Drizzle schemas, and `withFgaFilterIds` is schema-agnostic — it only issues raw
- * `sql` template literals and never accesses typed schema columns.
+ * `sql` template literals and never accesses typed schema columns. The
+ * `NodePgQueryResultHKT` is preserved (rather than `any`) so that
+ * `tx.execute<TRow>(...)` returns `Promise<QueryResult<TRow>>` and callers get
+ * properly-typed `result.rows[]`.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type FgaFilterTx = PgTransaction<any, any, any>;
+export type FgaFilterTx = PgTransaction<
+  NodePgQueryResultHKT,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Record<string, any>,
+  TablesRelationalConfig
+>;
 
 /**
  * Run `callback` inside a Drizzle transaction with the given UUIDs materialized
@@ -36,9 +45,12 @@ export type FgaFilterTx = PgTransaction<any, any, any>;
  *   - The planner picks worse plans than it would for a temp-table JOIN.
  *
  * The administration / district / school domains are low-cardinality (a user
- * rarely has access to thousands of administrations). The user / class domains
- * will hit this scale as soon as they migrate to FGA — those repositories
- * should adopt `withFgaFilterIds()`.
+ * rarely has access to thousands of administrations). The class domain will
+ * hit this scale as soon as `AdministrationService.getAdministrationTree`'s
+ * class branch migrates to FGA-driven listing — that repository should adopt
+ * `withFgaFilterIds()`. The user domain is intentionally untouched: the FGA
+ * model has no `type user` relations, so there are no
+ * `listAccessibleObjects(..., FgaType.USER)` calls to migrate.
  *
  * ## Behavior
  *
@@ -53,19 +65,29 @@ export type FgaFilterTx = PgTransaction<any, any, any>;
  *    literals or via Drizzle's `sql` helper.
  *
  * If `ids` is empty, the temp table is still created (so callbacks that reference
- * it don't fail) but no rows are inserted. The expectation is that the caller
- * short-circuits the empty case before invoking this helper, but the no-row
- * fallback keeps the helper robust.
+ * it don't fail) but no rows are inserted. **Callers should short-circuit the
+ * empty case before invoking this helper** — otherwise you pay for a
+ * transaction + DDL round-trip just to materialize a guaranteed-empty JOIN
+ * result. The no-row fallback exists to keep the helper robust against rare
+ * race conditions; it is not an optimized path.
  *
  * @param db - Drizzle database client (any schema)
- * @param ids - FGA-resolved UUIDs to materialize
+ * @param ids - FGA-resolved UUIDs to materialize. **Must be distinct** — the
+ *              temp table declares `id uuid PRIMARY KEY`, so duplicate UUIDs
+ *              will fail the INSERT with a Postgres `23505` (unique-violation)
+ *              error. FGA's `streamedListObjects` returns distinct objects
+ *              (it's a set operation), so this is normally satisfied by
+ *              construction. If you merge results from multiple FGA calls or
+ *              concatenate generator runs, de-dupe via `new Set(ids)` first.
  * @param callback - Invoked with the transaction handle so SQL inside it can
  *                   `INNER JOIN fga_filter_ids` to filter results
  * @returns The value returned by `callback`
  *
  * @example
  * ```typescript
- * const ids = await collectStreamedFgaIds(generator);
+ * // Collect a high-cardinality FGA stream into an array first (use
+ * // `collectStreamedFgaObjects` from `services/authorization/helpers/`),
+ * // then feed it into the temp-table join.
  * const items = await withFgaFilterIds(db, ids, async (tx) => {
  *   return tx.execute(sql`
  *     SELECT u.* FROM users u
@@ -99,25 +121,4 @@ export async function withFgaFilterIds<R>(
 
     return callback(tx as FgaFilterTx);
   });
-}
-
-/**
- * Collect an async generator of FGA streamed-list-objects responses into an
- * array of fully-qualified object strings.
- *
- * Production callers usually want this when they need a single materialized
- * list of object IDs. For very high-cardinality cases prefer iterating the
- * generator directly so you don't hold the whole list in memory.
- *
- * @param generator - Generator yielding `{ object: string }` chunks (the SDK's
- *                    `StreamedListObjectsResponse` shape)
- * @returns Promise resolving to an array of fully-qualified FGA object strings
- *          (e.g., `['administration:abc-123', 'administration:def-456']`)
- */
-export async function collectStreamedFgaObjects(generator: AsyncIterable<{ object: string }>): Promise<string[]> {
-  const objects: string[] = [];
-  for await (const chunk of generator) {
-    objects.push(chunk.object);
-  }
-  return objects;
 }
