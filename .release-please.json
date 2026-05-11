@@ -1,5 +1,15 @@
 {
   "bootstrap-sha": "3a7a1a1577fab6498d7a906d69053de2be9a2e0b",
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "platform",
+      "components": ["backend", "dashboard", "api-contract"]
+    },
+    {
+      "type": "node-workspace"
+    }
+  ],
   "changelog-sections": [
     {
       "type": "feat",
