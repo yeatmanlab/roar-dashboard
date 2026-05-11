@@ -79,7 +79,7 @@ const validBody = {
   email: 'student@example.com',
   password: 'password123',
   name: { first: 'Test', last: 'Student' },
-  userType: UserType.ADMIN,
+  userType: UserType.STUDENT,
   memberships: [{ entityType: EntityType.DISTRICT, entityId: districtId, role: UserRole.STUDENT }],
 };
 

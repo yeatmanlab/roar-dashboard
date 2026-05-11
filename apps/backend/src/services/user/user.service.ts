@@ -391,7 +391,7 @@ export function UserService({
     if (!isSuperAdmin) {
       // Guard against a current platform admin creating a new platform admin account
       for (const m of memberships) {
-        if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN)
+        if (isOrgMembership(m) && m.role === UserRole.PLATFORM_ADMIN) {
           logger.warn(
             { userId, attemptedRole: m.role, entityType: m.entityType, entityId: m.entityId },
             'Non-super-admin attempted to create platform_admin via user creation',
@@ -401,6 +401,7 @@ export function UserService({
             code: ApiErrorCode.AUTH_FORBIDDEN,
             context: { userId },
           });
+        }
       }
 
       // Verify that all membership entities exist before proceeding
@@ -633,7 +634,7 @@ export function UserService({
 
       // Resolve the root org partner ID before opening the write transaction.
       // Read-only — if it throws, no DB writes have happened yet so only Firebase needs compensation.
-      const resolvedPartnerId = await resolveRootOrgProviderFromMemberships(memberships);
+      const resolvedRootOrgProvider = await resolveRootOrgProviderFromMemberships(memberships);
 
       newUserId = await userRepository.runTransaction({
         fn: async (tx) => {
@@ -670,7 +671,7 @@ export function UserService({
             data: {
               providerType: RosteringProvider.DASHBOARD,
               providerId: result.id,
-              partnerId: resolvedPartnerId,
+              partnerId: resolvedRootOrgProvider,
               entityType: RosteringEntityType.USER,
               entityId: result.id,
             },
@@ -859,35 +860,35 @@ export function UserService({
    * @throws {ApiError} UNPROCESSABLE_ENTITY if memberships span more than one distinct district
    */
   async function resolveDistrictProvider(memberships: CreateUserMemberships[]): Promise<string | undefined> {
-    const partnerIds = memberships.map(({ entityId, entityType }) => ({ entityId, entityType }));
+    const membershipRefs = memberships.map(({ entityId, entityType }) => ({ entityId, entityType }));
 
-    const classIds = partnerIds
+    const classRefs = membershipRefs
       .filter(({ entityType }) => entityType === EntityType.CLASS)
       .map(({ entityId }) => entityId);
 
-    const schoolIds = partnerIds
+    const schoolRefs = membershipRefs
       .filter(({ entityType }) => entityType === EntityType.SCHOOL)
       .map(({ entityId }) => entityId);
 
     // Resolve class and school roots in parallel to keep the write window short.
     const [classDistricts, schoolDistricts] = await Promise.all([
-      classIds.length > 0 ? classRepository.getDistinctRootOrgIds(classIds) : Promise.resolve([]),
-      schoolIds.length > 0 ? schoolRepository.getDistinctRootOrgIds(schoolIds) : Promise.resolve([]),
+      classRefs.length > 0 ? classRepository.getDistinctRootOrgIds(classRefs) : Promise.resolve([]),
+      schoolRefs.length > 0 ? schoolRepository.getDistinctRootOrgIds(schoolRefs) : Promise.resolve([]),
     ]);
 
-    if (classIds.length > 0 && classDistricts.length === 0) {
+    if (classRefs.length > 0 && classDistricts.length === 0) {
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { classIds },
+        context: { classRefs },
       });
     }
 
-    if (schoolIds.length > 0 && schoolDistricts.length === 0) {
+    if (schoolRefs.length > 0 && schoolDistricts.length === 0) {
       throw new ApiError(ApiErrorMessage.NOT_FOUND, {
         statusCode: StatusCodes.NOT_FOUND,
         code: ApiErrorCode.RESOURCE_NOT_FOUND,
-        context: { schoolIds },
+        context: { schoolRefs },
       });
     }
 
@@ -896,7 +897,7 @@ export function UserService({
     // correctly collapses to a single entry rather than being flagged as cross-district.
     const resolvedDistricts = new Set<string>();
 
-    for (const { entityId } of partnerIds.filter(({ entityType }) => entityType === EntityType.DISTRICT)) {
+    for (const { entityId } of membershipRefs.filter(({ entityType }) => entityType === EntityType.DISTRICT)) {
       resolvedDistricts.add(entityId);
     }
     for (const { id } of classDistricts) resolvedDistricts.add(id);
