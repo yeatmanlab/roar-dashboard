@@ -331,4 +331,53 @@ describe('ClassRepository', () => {
       });
     });
   });
+
+  describe('getDistinctRootOrgIds', () => {
+    // Base fixture class → district mapping:
+    //   classInSchoolA  → schoolA  → district
+    //   classInSchoolB  → schoolB  → district
+    //   classInDistrictB → schoolInDistrictB → districtB
+
+    it('returns empty array when called with no ids', async () => {
+      const result = await repository.getDistinctRootOrgIds([]);
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns the district for a single class', async () => {
+      const result = await repository.getDistinctRootOrgIds([baseFixture.classInSchoolA.id]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('deduplicates when multiple classes share the same district', async () => {
+      // classInSchoolA and classInSchoolB both fall under district via different schools
+      const result = await repository.getDistinctRootOrgIds([
+        baseFixture.classInSchoolA.id,
+        baseFixture.classInSchoolB.id,
+      ]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('returns multiple districts when classes span different roots', async () => {
+      const result = await repository.getDistinctRootOrgIds([
+        baseFixture.classInSchoolA.id,
+        baseFixture.classInDistrictB.id,
+      ]);
+
+      const ids = result.map((r) => r.id);
+      expect(ids).toHaveLength(2);
+      expect(ids).toContain(baseFixture.district.id);
+      expect(ids).toContain(baseFixture.districtB.id);
+    });
+
+    it('returns empty array for a non-existent class id', async () => {
+      const result = await repository.getDistinctRootOrgIds(['00000000-0000-0000-0000-000000000000']);
+
+      expect(result).toEqual([]);
+    });
+  });
 });
