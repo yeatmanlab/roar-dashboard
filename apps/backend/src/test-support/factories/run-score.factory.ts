@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import type { RunScore, NewRunScore } from '../../db/schema/assessment';
 import { AssessmentDbClient } from '../../db/clients';
 import { runScores } from '../../db/schema/assessment';
+import { SCORE_TYPE } from '../../constants/run-scores';
 
 /**
  * Factory for creating RunScore test objects in the assessment database.
@@ -35,7 +36,7 @@ export const RunScoreFactory = Factory.define<RunScore>(({ onCreate }) => {
   return {
     id: faker.string.uuid(),
     runId: faker.string.uuid(),
-    type: 'computed',
+    type: SCORE_TYPE.COMPUTED,
     domain: 'default',
     name: 'score',
     value: '0',
