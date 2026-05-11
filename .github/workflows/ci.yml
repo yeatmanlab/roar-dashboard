@@ -167,6 +167,14 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
+      # Build workspace dependencies the dashboard imports at runtime.
+      # The Cypress action runs `npm run build` inside `apps/dashboard/`,
+      # which bypasses turbo's workspace dependency graph — without this
+      # step, Vite can't resolve `@roar-dashboard/api-contract` because
+      # its `dist/` artifacts don't exist yet.
+      - name: Build api-contract package
+        run: npm run build -w packages/api-contract
+
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
@@ -218,6 +226,12 @@ jobs:
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
+
+      # Build workspace dependencies the dashboard imports at runtime.
+      # See the equivalent step in the `e2e-tests` job above for the
+      # full rationale.
+      - name: Build api-contract package
+        run: npm run build -w packages/api-contract
 
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
