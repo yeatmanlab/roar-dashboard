@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
+import { useAuthStore } from '@/store/auth';
 import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
@@ -13,6 +14,12 @@ const MAX_RETRIES = 3;
  * (id, userType, name, unsignedAgreements). This is the canonical source of
  * truth for user identity and TOS status; it replaces the Firestore-based
  * user data fetch.
+ *
+ * **Enablement.** The query is internally gated on `authStore.accessToken`
+ * so callers don't need to wire that condition themselves — calling
+ * `useMeQuery()` with no options is safe and won't fire until the auth
+ * store reports a token. Callers can pass `queryOptions.enabled` to add
+ * additional conditions; `computeQueryOverrides` AND's them together.
  *
  * Retry policy: the query does **not** retry on `auth/rostering-ended` or
  * terminal auth errors (`auth/required`, `auth/token-expired`). Those error
@@ -28,7 +35,9 @@ const MAX_RETRIES = 3;
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useMeQuery = (queryOptions = undefined) => {
-  const { isQueryEnabled, options } = computeQueryOverrides([], queryOptions);
+  const authStore = useAuthStore();
+  const conditions = [() => Boolean(authStore.accessToken)];
+  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
     queryKey: [ME_QUERY_KEY],
