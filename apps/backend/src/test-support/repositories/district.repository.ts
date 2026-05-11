@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import type { MockedObject } from 'vitest';
-import { createMockBaseRepositoryMethods } from './base.repository';
 import type { DistrictRepository } from '../../repositories/district.repository';
+import { createMockLtreeRepository } from './l-tree.repository';
 
 /**
  * Mock District Repository
@@ -10,7 +10,7 @@ import type { DistrictRepository } from '../../repositories/district.repository'
  */
 export function createMockDistrictRepository(): MockedObject<DistrictRepository> {
   return {
-    ...createMockBaseRepositoryMethods(),
+    ...createMockLtreeRepository(),
     listAll: vi.fn(),
     listByIds: vi.fn(),
     getUnrestrictedById: vi.fn(),
