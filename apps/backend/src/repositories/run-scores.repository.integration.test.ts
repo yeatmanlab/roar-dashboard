@@ -134,14 +134,19 @@ describe('RunScoresRepository', () => {
     it('treats two NULL assessment_stage rows with otherwise-identical natural keys as the same row', async () => {
       const run = await RunFactory.create();
 
+      // Uses type=computed because raw scores require an assessmentStage
+      // (run_scores_raw_requires_stage CHECK + discriminated-union contract rule
+      // landing alongside this constraint). The NULLS NOT DISTINCT behavior is
+      // independent of type, so a stage-less computed score exercises the same
+      // upsert semantics.
       // First write with NULL stage
       await repository.upsertMany({
         data: [
           {
             runId: run.id,
-            type: SCORE_TYPE.RAW,
+            type: SCORE_TYPE.COMPUTED,
             domain: SCORE_DOMAIN.COMPOSITE,
-            name: SCORE_NAME.THETA_SE,
+            name: 'final_composite',
             value: '0.5',
             assessmentStage: null,
           },
@@ -153,9 +158,9 @@ describe('RunScoresRepository', () => {
         data: [
           {
             runId: run.id,
-            type: SCORE_TYPE.RAW,
+            type: SCORE_TYPE.COMPUTED,
             domain: SCORE_DOMAIN.COMPOSITE,
-            name: SCORE_NAME.THETA_SE,
+            name: 'final_composite',
             value: '0.4',
             assessmentStage: null,
           },
