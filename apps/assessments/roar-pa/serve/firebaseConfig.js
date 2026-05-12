@@ -1,58 +1,27 @@
-/* eslint-disable import/prefer-default-export */
 import { log } from '../src/experiment/config/logger';
 
-const devFirebaseConfig = {
-  apiKey: 'AIzaSyCEUxEgYMp4fg2zORT0lsgn4Q6CCoMVzjU',
-  authDomain: 'gse-roar-assessment-dev.firebaseapp.com',
-  projectId: 'gse-roar-assessment-dev',
-  storageBucket: 'gse-roar-assessment-dev.appspot.com',
-  messagingSenderId: '26086061121',
-  appId: '1:26086061121:web:262163d6c145b7a80bc2c0',
-  siteKey: '6Ldq2SEqAAAAAKXTxXs9GnykkEZLYeVijzAKzqfQ',
+// Firebase config values are injected at build time by webpack DefinePlugin.
+// Secret values are sourced from GitHub environment secrets (VITE_FIREBASE_APP_*)
+// and are the same projects used by the dashboard.
+// eslint-disable-next-line no-undef
+export const firebaseConfig = {
+  // eslint-disable-next-line no-undef
+  apiKey: FIREBASE_APP_API_KEY,
+  // eslint-disable-next-line no-undef
+  authDomain: FIREBASE_APP_AUTH_DOMAIN,
+  // eslint-disable-next-line no-undef
+  projectId: FIREBASE_APP_PROJECT_ID,
+  // eslint-disable-next-line no-undef
+  storageBucket: FIREBASE_APP_STORAGE_BUCKET,
+  // eslint-disable-next-line no-undef
+  messagingSenderId: FIREBASE_APP_MESSAGING_SENDER_ID,
+  // eslint-disable-next-line no-undef
+  appId: FIREBASE_APP_APP_ID,
+  // eslint-disable-next-line no-undef
+  siteKey: FIREBASE_APP_SITE_KEY,
 };
 
-const stagingFirebaseConfig = {
-  apiKey: 'AIzaSyCGNBjSVXvvglqH0jdNFnyEd9pyyLqNXN8',
-  authDomain: 'gse-roar-assessment-staging.firebaseapp.com',
-  projectId: 'gse-roar-assessment-staging',
-  storageBucket: 'gse-roar-assessment-staging.firebasestorage.app',
-  messagingSenderId: '974990981425',
-  appId: '1:974990981425:web:67edfcef6dd3bd7b50d810',
-};
-
-const productionFirebaseConfig = {
-  apiKey: 'AIzaSyDw0TnTXbvRyoVo5_oa_muhXk9q7783k_g',
-  authDomain: 'gse-roar-assessment.firebaseapp.com',
-  projectId: 'gse-roar-assessment',
-  storageBucket: 'gse-roar-assessment.appspot.com',
-  messagingSenderId: '757277423033',
-  appId: '1:757277423033:web:d6e204ee2dd1047cb77268',
-};
-
-let firebaseConfigWrapper;
+export const roarConfig = { firebaseConfig };
 
 // eslint-disable-next-line no-undef
-if (ROAR_DB === 'development') {
-  firebaseConfigWrapper = devFirebaseConfig;
-  // eslint-disable-next-line no-undef
-} else if (ROAR_DB === 'staging') {
-  firebaseConfigWrapper = stagingFirebaseConfig;
-  // eslint-disable-next-line no-undef
-} else if (ROAR_DB === 'production') {
-  firebaseConfigWrapper = productionFirebaseConfig;
-} else {
-  throw new Error(
-    // eslint-disable-next-line no-undef
-    `Invalid ROAR_DB environment variable value. Expected "development", "staging", or "production". Received ${ROAR_DB}.`,
-  );
-}
-
-export const firebaseConfig = { ...firebaseConfigWrapper };
-
-export const roarConfig = {
-  firebaseConfig,
-};
-
-// eslint-disable-next-line operator-linebreak
-const logMessage = `This ROAR app will write data to the ${roarConfig.firebaseConfig.projectId} firestore database`;
-log.info(logMessage);
+log.info(`This ROAR app will write data to the ${FIREBASE_APP_PROJECT_ID} firestore database`);
