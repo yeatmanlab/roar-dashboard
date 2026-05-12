@@ -1,6 +1,6 @@
 {
   "name": "@yeatmanlab/assessment-sdk",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

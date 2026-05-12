@@ -1,7 +1,7 @@
 {
   "name": "roar-backend",
   "private": true,
-  "version": "0.0.0",
+  "version": "3.26.0",
   "type": "module",
   "scripts": {
     "dev": "rollup -cw --environment NODE_ENV:development",
