@@ -24,6 +24,14 @@ inputs:
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
+  dist-path:
+    description: "Path to the built dist directory to deploy."
+    required: false
+    default: "build/apps/dashboard/dist"
+  firebase-config-path:
+    description: "Path to the firebase.json hosting configuration file."
+    required: false
+    default: "build/apps/dashboard/firebase/admin/firebase.json"
 
 runs:
   using: composite
@@ -56,8 +64,8 @@ runs:
       shell: bash
       run: |
         mkdir app
-        cp -r build/apps/dashboard/dist app/dist
-        cp build/apps/dashboard/firebase/admin/firebase.json app/firebase.json
+        cp -r ${{ inputs.dist-path }} app/dist
+        cp ${{ inputs.firebase-config-path }} app/firebase.json
         cd app && pwd && ls -la
 
     # Deploy application
