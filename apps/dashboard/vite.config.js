@@ -4,6 +4,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { config } from '@dotenvx/dotenvx';
+import dsv from '@rollup/plugin-dsv';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
@@ -167,6 +168,7 @@ export default defineConfig(({ mode }) => {
           process: true,
         },
       }),
+      dsv(),
       UnheadVite(),
       ...(process.env.NODE_ENV !== 'development'
         ? [
