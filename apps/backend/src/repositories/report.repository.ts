@@ -1047,17 +1047,22 @@ export class ReportRepository {
    * soft-delete column. Instead, rostered users are protected from hard deletion
    * by the `prevent_rostered_entity_delete` DB trigger.
    */
-  private buildStudentInScopeQuery(scope: ReportScope, admin?: ReportAdminWindow, includeUnenrolledStudents = false) {
-    // When `admin` is supplied, the enrollment-overlap check is administration-
-    // aware (#1792): a student passes if their enrollment in the in-scope
-    // entity was still active as of `LEAST(admin.dateEnd, NOW())` rather
-    // than just "as of NOW()". With `includeUnenrolledStudents = true`,
-    // students who left mid-window are additionally included when they have
-    // qualifying `runs` for this administration.
+  private buildStudentInScopeQuery(scope: ReportScope, admin: ReportAdminWindow, includeUnenrolledStudents = false) {
+    // The enrollment-overlap check is administration-aware (#1792): a student
+    // passes if their enrollment in the in-scope entity was still active as
+    // of `LEAST(admin.dateEnd, NOW())` rather than just "as of NOW()". With
+    // `includeUnenrolledStudents = true`, students who left mid-window are
+    // additionally included when they have qualifying `runs` for this
+    // administration.
     //
-    // When `admin` is omitted, retains the legacy "currently active as of
-    // NOW()" semantics so non-reporting callers (if any) are unaffected.
-    // All reporting code paths pass an admin in practice.
+    // `admin` is required: every reporting code path passes one and there is
+    // no NOW()-only fallback. An earlier draft made `admin` optional and
+    // silently fell back to the legacy `isEnrollmentActive` predicate when
+    // omitted, but that's exactly the bug #1792 was filed to fix — keeping
+    // the fallback would let a future call site reintroduce it without a
+    // compile-time error. If you genuinely need NOW()-based semantics, call
+    // `isEnrollmentActive` directly (see `getSchoolNamesForUsers` for the
+    // canonical example and the reason it's intentional there).
     //
     // Each UNION branch joins through to `users` so the user-level
     // `isActiveRoster(users)` filter can exclude rostering-ended students
@@ -1071,22 +1076,19 @@ export class ReportRepository {
     // and the user-id column that the toggle-on EXISTS subquery should
     // correlate against. We pass `users.id` everywhere because every branch
     // joins `users` and we want a stable correlation target.
-    const adminDateEnd = admin ? sql`${admin.dateEnd}::timestamptz` : undefined;
-    const adminDateStart = admin ? sql`${admin.dateStart}::timestamptz` : undefined;
-    const adminIdSql = admin ? sql`${admin.id}::uuid` : undefined;
+    const adminDateEnd = sql`${admin.dateEnd}::timestamptz`;
+    const adminDateStart = sql`${admin.dateStart}::timestamptz`;
+    const adminIdSql = sql`${admin.id}::uuid`;
 
     const enrollmentPredicate = (
       table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
       userIdCol: AnyColumn,
     ) => {
-      if (!admin || !adminDateEnd) {
-        return isEnrollmentActive(table);
-      }
       const strict = isEnrollmentActiveForAdmin(table, adminDateEnd);
       if (!includeUnenrolledStudents) {
         return strict;
       }
-      return or(strict, hasWithdrawnWithDataForAdmin(table, adminDateStart!, adminDateEnd, userIdCol, adminIdSql!));
+      return or(strict, hasWithdrawnWithDataForAdmin(table, adminDateStart, adminDateEnd, userIdCol, adminIdSql));
     };
 
     switch (scope.scopeType) {
