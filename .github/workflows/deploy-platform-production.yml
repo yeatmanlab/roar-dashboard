@@ -208,3 +208,42 @@ jobs:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
           version: ${{ inputs.version }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Deploy roar-pa
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy-roar-pa:
+    name: Deploy roar-pa
+    needs: [product-owner-review]
+    runs-on: ubuntu-latest
+    environment: platform:production
+    timeout-minutes: 15
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache-dependency-path: 'package-lock.json'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build roar-pa
+        working-directory: apps/assessments/roar-pa
+        run: npm run build:prod
+
+      - name: Deploy roar-pa
+        uses: ./.github/actions/deploy
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+          dist-path: apps/assessments/roar-pa/dist
+          firebase-config-path: apps/assessments/roar-pa/firebase.json
