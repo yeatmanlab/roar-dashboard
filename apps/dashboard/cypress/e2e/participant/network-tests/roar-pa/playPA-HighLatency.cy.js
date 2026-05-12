@@ -1,7 +1,7 @@
 import { playPA } from '../../../../support/helper-functions/roar-pa/paHelpers';
 import { isCurrentVersion } from '../../../../support/utils';
 
-const app = '@bdelab/roar-pa';
+const app = '@roar-dashboard/roar-pa';
 
 describe('Testing playthrough of ROAR-Phoneme as a participant with a simulated high latency connection', () => {
   it(`ROAR-Phoneme Playthrough Test with username auth`, () => {
