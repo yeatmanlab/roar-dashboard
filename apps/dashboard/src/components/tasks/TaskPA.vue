@@ -216,6 +216,8 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
+@import '@roar-dashboard/roar-pa/dist/resources/roar-pa.css';
+
 .game-target {
   position: absolute;
   top: 0;
