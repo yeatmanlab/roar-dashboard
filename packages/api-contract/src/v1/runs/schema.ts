@@ -86,12 +86,75 @@ export const RunTrialInteractionSchema = z.object({
   timeMs: z.number().int().nonnegative(),
 });
 /**
+ * Score type enum. Mirrors `score_type` on the backend (`computed` or `raw`).
+ */
+export const ScoreTypeSchema = z.enum(['computed', 'raw']);
+
+/**
+ * Common fields shared by every score entry shape, regardless of `type`.
+ * Kept private to this module — consumers should use `ScoreEntrySchema` (the
+ * discriminated union) so the type-specific rules apply.
+ */
+const ScoreEntryBaseSchema = z.object({
+  domain: z.string().min(1),
+  name: z.string().min(1),
+  value: z.string().min(1),
+  categoryScore: z.boolean().optional(),
+});
+
+/**
+ * Schema for a `type='raw'` score entry.
+ *
+ * Raw scores capture the live state during a specific assessment stage (CAT
+ * progression on practice items vs test items, etc.), so `assessmentStage` is
+ * required for this variant. Without a stage, raw scores from different stages
+ * would collide on the natural key.
+ */
+export const RawScoreEntrySchema = ScoreEntryBaseSchema.extend({
+  type: z.literal('raw'),
+  assessmentStage: AssessmentStageSchema,
+});
+
+/**
+ * Schema for a `type='computed'` score entry.
+ *
+ * Computed scores are derived/aggregate values (percentile, support level, final
+ * composite). They may apply to a specific stage or be cross-stage, so
+ * `assessmentStage` is optional.
+ */
+export const ComputedScoreEntrySchema = ScoreEntryBaseSchema.extend({
+  type: z.literal('computed'),
+  assessmentStage: AssessmentStageSchema.optional(),
+});
+
+/**
+ * Discriminated-union schema for a single score entry in a run-level scoring update.
+ *
+ * Mirrors the natural-key shape of `app.run_scores` on the backend. A trial event may
+ * carry zero or more of these in its `scores` array; each entry upserts the
+ * corresponding row keyed on `(run_id, type, domain, name, assessment_stage)`.
+ *
+ * Discrimination on `type`:
+ * - `raw` — `assessmentStage` is **required** (raw scores are stage-scoped)
+ * - `computed` — `assessmentStage` is optional (computed scores may aggregate across stages)
+ *
+ * Encoding the rule in the contract gives TypeScript narrowing on the consumer side and
+ * surfaces violations as 400 validation errors at the API edge rather than as runtime DB
+ * errors. The same rule is enforced at the database via a CHECK constraint as
+ * defense-in-depth.
+ */
+export const ScoreEntrySchema = z.discriminatedUnion('type', [RawScoreEntrySchema, ComputedScoreEntrySchema]);
+
+/**
  * Schema for a run write trial event.
  *
  * Represents an event that writes a trial.
  * - type: Must be 'trial' (literal type for discriminated union)
  * - trial: The trial data
  * - interactions: Optional array of trial interactions
+ * - scores: Optional array of score snapshots produced by this trial; each entry
+ *   upserts the corresponding row in `run_scores` by natural key in the same
+ *   transaction as the trial write.
  */
 export const RunTrialEventSchema = z.object({
   type: z.literal(RunEventTypeSchema.enum.trial),
@@ -102,6 +165,7 @@ export const RunTrialEventSchema = z.object({
     })
     .passthrough(), // allow app-specific
   interactions: z.array(RunTrialInteractionSchema).optional(),
+  scores: z.array(ScoreEntrySchema).optional(),
 });
 
 /**
@@ -137,3 +201,7 @@ export const RunEventBodySchema = z.discriminatedUnion('type', [
 
 export type RunEventBody = z.infer<typeof RunEventBodySchema>;
 export type CreateRunResponse = z.infer<typeof CreateRunResponseSchema>;
+export type ScoreEntry = z.infer<typeof ScoreEntrySchema>;
+export type RawScoreEntry = z.infer<typeof RawScoreEntrySchema>;
+export type ComputedScoreEntry = z.infer<typeof ComputedScoreEntrySchema>;
+export type ScoreType = z.infer<typeof ScoreTypeSchema>;
