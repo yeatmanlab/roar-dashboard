@@ -5,9 +5,6 @@
       "type": "linked-versions",
       "groupName": "platform",
       "components": ["backend", "dashboard"]
-    },
-    {
-      "type": "node-workspace"
     }
   ],
   "changelog-sections": [
