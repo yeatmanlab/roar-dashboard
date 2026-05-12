@@ -392,6 +392,7 @@ export const AdministrationsController = {
               totalItems: result.totalItems,
               totalPages: Math.ceil(result.totalItems / query.perPage),
             },
+            exclusions: result.exclusions,
           },
         },
       };
@@ -547,7 +548,7 @@ export const AdministrationsController = {
       const result = await reportService.listStudentScores(authContext, administrationId, query);
 
       // Service and contract types are structurally equivalent (same field
-      // names: tasks[], items[], totalItems). The cast is implicit via TS structural
+      // names: tasks[], items[], totalItems, exclusions). The cast is implicit via TS structural
       // typing — see report.types.ts for the source of truth on each side.
       const tasks: ReportTaskMetadata[] = result.tasks;
       const items: StudentScoreRow[] = result.items;
@@ -564,6 +565,7 @@ export const AdministrationsController = {
               totalItems: result.totalItems,
               totalPages: Math.ceil(result.totalItems / query.perPage),
             },
+            exclusions: result.exclusions,
           },
         },
       };

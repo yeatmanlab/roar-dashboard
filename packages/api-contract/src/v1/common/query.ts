@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ExclusionsSchema } from './exclusions';
 
 /**
  * Schema for pagination query parameters.
@@ -140,6 +141,23 @@ export const createPaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema
   z.object({
     items: z.array(itemSchema),
     pagination: PaginationMetaSchema,
+  });
+
+/**
+ * Creates a paginated response schema for reporting list endpoints. Adds an
+ * `exclusions` object alongside `pagination` so the response can surface
+ * counts of records that were filtered out of the result set (see
+ * `common/exclusions.ts`). User-list endpoints — which return the active
+ * roster and don't have a notion of "excluded for reporting reasons" —
+ * keep using `createPaginatedResponseSchema` and don't include this field.
+ *
+ * @param itemSchema - The Zod schema for individual items in the list
+ */
+export const createReportingPaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
+  z.object({
+    items: z.array(itemSchema),
+    pagination: PaginationMetaSchema,
+    exclusions: ExclusionsSchema,
   });
 
 /**

@@ -35,7 +35,7 @@ import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
-import { isEnrollmentActive, isActiveInFamily } from './utils/enrollment.utils';
+import { isEnrollmentActive, isActiveInFamily, isActiveRoster } from './utils/enrollment.utils';
 import { alias } from 'drizzle-orm/pg-core';
 
 /**
@@ -1001,6 +1001,12 @@ export class ReportRepository {
    * by the `prevent_rostered_entity_delete` DB trigger.
    */
   private buildStudentInScopeQuery(scope: ReportScope) {
+    // Each UNION branch joins through to `users` so the user-level
+    // `isActiveRoster(users)` filter can exclude rostering-ended students
+    // (#1742). This is a separate, harder boundary than the existing
+    // entity-level `isNull(<entity>.rosteringEnded)` filters: a user whose
+    // own rostering has ended is decommissioned regardless of which entity
+    // their student-role enrollment is attached to.
     switch (scope.scopeType) {
       case EntityType.DISTRICT:
         // Students in user_orgs where org path is at or below the district
@@ -1010,11 +1016,13 @@ export class ReportRepository {
           .select({ userId: userOrgs.userId })
           .from(userOrgs)
           .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
               isEnrollmentActive(userOrgs),
               isNull(orgs.rosteringEnded),
+              isActiveRoster(users),
               sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
             ),
           )
@@ -1023,11 +1031,13 @@ export class ReportRepository {
               .select({ userId: userClasses.userId })
               .from(userClasses)
               .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
                   isEnrollmentActive(userClasses),
                   isNull(classes.rosteringEnded),
+                  isActiveRoster(users),
                   sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
                 ),
               ),
@@ -1040,11 +1050,13 @@ export class ReportRepository {
           .select({ userId: userOrgs.userId })
           .from(userOrgs)
           .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
               isEnrollmentActive(userOrgs),
               isNull(orgs.rosteringEnded),
+              isActiveRoster(users),
               eq(userOrgs.orgId, scope.scopeId),
             ),
           )
@@ -1053,11 +1065,13 @@ export class ReportRepository {
               .select({ userId: userClasses.userId })
               .from(userClasses)
               .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
                   isEnrollmentActive(userClasses),
                   isNull(classes.rosteringEnded),
+                  isActiveRoster(users),
                   eq(classes.schoolId, scope.scopeId),
                 ),
               ),
@@ -1068,11 +1082,13 @@ export class ReportRepository {
           .select({ userId: userClasses.userId })
           .from(userClasses)
           .innerJoin(classes, eq(userClasses.classId, classes.id))
+          .innerJoin(users, eq(users.id, userClasses.userId))
           .where(
             and(
               eq(userClasses.role, UserRole.STUDENT),
               isEnrollmentActive(userClasses),
               isNull(classes.rosteringEnded),
+              isActiveRoster(users),
               eq(userClasses.classId, scope.scopeId),
             ),
           );
@@ -1082,17 +1098,162 @@ export class ReportRepository {
           .select({ userId: userGroups.userId })
           .from(userGroups)
           .innerJoin(groups, eq(userGroups.groupId, groups.id))
+          .innerJoin(users, eq(users.id, userGroups.userId))
           .where(
             and(
               eq(userGroups.role, UserRole.STUDENT),
               isEnrollmentActive(userGroups),
               isNull(groups.rosteringEnded),
+              isActiveRoster(users),
               eq(userGroups.groupId, scope.scopeId),
             ),
           );
 
       default:
         // Exhaustive check — this should never be reached since ScopeType is validated by Zod
+        throw new Error(`Unsupported scope type: ${scope.scopeType satisfies never}`);
+    }
+  }
+
+  /**
+   * Count distinct students excluded from the report due to rostering-ended state.
+   *
+   * Mirrors `buildStudentInScopeQuery`'s FROM/JOIN shape, but with the
+   * rostering-ended predicates **inverted** so we count the users that would
+   * otherwise be in scope but are filtered out for either reason:
+   *   1. The user's own `rosteringEnded` is set in the past (`<= NOW()`), OR
+   *   2. The in-scope parent entity's `rosteringEnded` is set in the past.
+   *
+   * The two reasons share the `exclusions.rosteringEnded` key in the response
+   * (#1742) — frontend messaging is the same ("no longer active on ROAR") and
+   * users excluded for both are counted once via `COUNT(DISTINCT users.id)`.
+   *
+   * Designed to run in parallel with the main report query via `Promise.all`,
+   * adding one round-trip rather than serializing.
+   */
+  async countRosteringEndedExclusions(scope: ReportScope): Promise<number> {
+    // Predicate that matches users excluded by EITHER reason:
+    //   - users.rostering_ended <= NOW()  → user-level decommission
+    //   - <entity>.rostering_ended <= NOW()  → entity-level decommission
+    const userExcluded = and(isNotNull(users.rosteringEnded), lte(users.rosteringEnded, sql`NOW()`));
+
+    switch (scope.scopeType) {
+      case EntityType.DISTRICT: {
+        const orgsExcluded = and(isNotNull(orgs.rosteringEnded), lte(orgs.rosteringEnded, sql`NOW()`));
+        const classesExcluded = and(isNotNull(classes.rosteringEnded), lte(classes.rosteringEnded, sql`NOW()`));
+
+        const excludedUnion = this.db
+          .selectDistinct({ userId: userOrgs.userId })
+          .from(userOrgs)
+          .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
+          .where(
+            and(
+              eq(userOrgs.role, UserRole.STUDENT),
+              isEnrollmentActive(userOrgs),
+              sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
+              or(userExcluded, orgsExcluded),
+            ),
+          )
+          .union(
+            this.db
+              .selectDistinct({ userId: userClasses.userId })
+              .from(userClasses)
+              .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
+              .where(
+                and(
+                  eq(userClasses.role, UserRole.STUDENT),
+                  isEnrollmentActive(userClasses),
+                  sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
+                  or(userExcluded, classesExcluded),
+                ),
+              ),
+          )
+          .as('excluded');
+
+        const [row] = await this.db.select({ count: countDistinct(excludedUnion.userId) }).from(excludedUnion);
+        return Number(row?.count ?? 0);
+      }
+
+      case EntityType.SCHOOL: {
+        const orgsExcluded = and(isNotNull(orgs.rosteringEnded), lte(orgs.rosteringEnded, sql`NOW()`));
+        const classesExcluded = and(isNotNull(classes.rosteringEnded), lte(classes.rosteringEnded, sql`NOW()`));
+
+        const excludedUnion = this.db
+          .selectDistinct({ userId: userOrgs.userId })
+          .from(userOrgs)
+          .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
+          .where(
+            and(
+              eq(userOrgs.role, UserRole.STUDENT),
+              isEnrollmentActive(userOrgs),
+              eq(userOrgs.orgId, scope.scopeId),
+              or(userExcluded, orgsExcluded),
+            ),
+          )
+          .union(
+            this.db
+              .selectDistinct({ userId: userClasses.userId })
+              .from(userClasses)
+              .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
+              .where(
+                and(
+                  eq(userClasses.role, UserRole.STUDENT),
+                  isEnrollmentActive(userClasses),
+                  eq(classes.schoolId, scope.scopeId),
+                  or(userExcluded, classesExcluded),
+                ),
+              ),
+          )
+          .as('excluded');
+
+        const [row] = await this.db.select({ count: countDistinct(excludedUnion.userId) }).from(excludedUnion);
+        return Number(row?.count ?? 0);
+      }
+
+      case EntityType.CLASS: {
+        const classesExcluded = and(isNotNull(classes.rosteringEnded), lte(classes.rosteringEnded, sql`NOW()`));
+
+        const [row] = await this.db
+          .select({ count: countDistinct(userClasses.userId) })
+          .from(userClasses)
+          .innerJoin(classes, eq(userClasses.classId, classes.id))
+          .innerJoin(users, eq(users.id, userClasses.userId))
+          .where(
+            and(
+              eq(userClasses.role, UserRole.STUDENT),
+              isEnrollmentActive(userClasses),
+              eq(userClasses.classId, scope.scopeId),
+              or(userExcluded, classesExcluded),
+            ),
+          );
+        return Number(row?.count ?? 0);
+      }
+
+      case EntityType.GROUP: {
+        const groupsExcluded = and(isNotNull(groups.rosteringEnded), lte(groups.rosteringEnded, sql`NOW()`));
+
+        const [row] = await this.db
+          .select({ count: countDistinct(userGroups.userId) })
+          .from(userGroups)
+          .innerJoin(groups, eq(userGroups.groupId, groups.id))
+          .innerJoin(users, eq(users.id, userGroups.userId))
+          .where(
+            and(
+              eq(userGroups.role, UserRole.STUDENT),
+              isEnrollmentActive(userGroups),
+              eq(userGroups.groupId, scope.scopeId),
+              or(userExcluded, groupsExcluded),
+            ),
+          );
+        return Number(row?.count ?? 0);
+      }
+
+      default:
+        // Exhaustive check — Zod-validated upstream.
         throw new Error(`Unsupported scope type: ${scope.scopeType satisfies never}`);
     }
   }

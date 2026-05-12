@@ -836,6 +836,23 @@ export function AdministrationService({
           context: { userId },
         });
       }
+
+      // Rostering-ended users are decommissioned (#1742). The user-scoped
+      // URL names them as the target, so any caller (admin / teacher /
+      // guardian) gets a symmetric 404 — same shape as "not found" so the
+      // caller can't distinguish.
+      if (targetUser.rosteringEnded !== null && targetUser.rosteringEnded <= new Date()) {
+        logger.warn(
+          { requesterUserId, targetUserId: userId, rosteringEnded: targetUser.rosteringEnded },
+          'User-administration list attempted on rostering-ended user',
+        );
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, rosteringEnded: targetUser.rosteringEnded },
+        });
+      }
+
       const queryParams = {
         page: options.page,
         perPage: options.perPage,
@@ -1140,6 +1157,19 @@ export function AdministrationService({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId },
+        });
+      }
+
+      // Rostering-ended target → symmetric 404 (#1742).
+      if (targetUser.rosteringEnded !== null && targetUser.rosteringEnded <= new Date()) {
+        logger.warn(
+          { requesterUserId, targetUserId: userId, administrationId, rosteringEnded: targetUser.rosteringEnded },
+          'Per-user administration lookup attempted on rostering-ended user',
+        );
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId, rosteringEnded: targetUser.rosteringEnded },
         });
       }
 

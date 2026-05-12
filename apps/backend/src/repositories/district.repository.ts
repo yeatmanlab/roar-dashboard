@@ -17,7 +17,7 @@ import {
   getEnrolledUsersFilterConditions,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
-import { isEnrollmentActive } from './utils/enrollment.utils';
+import { isEnrollmentActive, isActiveRoster } from './utils/enrollment.utils';
 
 /**
  * District-specific type (Org with orgType = 'district')
@@ -214,14 +214,17 @@ export class DistrictRepository extends LtreeRepository<District, typeof orgs> {
     districtIds: string[],
     includeEnded: boolean,
   ): Promise<Map<string, DistrictCounts>> {
-    // Pre-aggregate user counts per district
+    // Pre-aggregate user counts per district. Join through to `users` so the
+    // count excludes rostering-ended users (#1742) in addition to the existing
+    // enrollment-end filter on the userOrgs junction.
     const userCounts = this.db
       .select({
         districtId: userOrgs.orgId,
         users: countDistinct(userOrgs.userId).as('users'),
       })
       .from(userOrgs)
-      .where(and(inArray(userOrgs.orgId, districtIds), isNull(userOrgs.enrollmentEnd)))
+      .innerJoin(users, eq(users.id, userOrgs.userId))
+      .where(and(inArray(userOrgs.orgId, districtIds), isNull(userOrgs.enrollmentEnd), isActiveRoster(users)))
       .groupBy(userOrgs.orgId)
       .as('user_counts');
 

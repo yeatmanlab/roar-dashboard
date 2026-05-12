@@ -251,6 +251,27 @@ export function UserService({
       });
     }
 
+    // 1b. Rostering-ended users are decommissioned (#1742). Any URL that
+    // names them as a target — single-user lookup, per-user reporting,
+    // PATCH, agreement record, user-scoped administration list — returns
+    // 404 with no access-control distinction (the auth guard #1735 already
+    // blocks the rostering-ended user themselves from calling the API; the
+    // only callers reaching this point are *other* users looking them up).
+    // The 404 is symmetric to a not-found user — same `ApiErrorMessage.NOT_FOUND`,
+    // same `ApiErrorCode.RESOURCE_NOT_FOUND` — so requesters can't infer
+    // whether the target ever existed.
+    if (user.rosteringEnded !== null && user.rosteringEnded <= new Date()) {
+      logger.warn(
+        { userId, targetUserId: id, rosteringEnded: user.rosteringEnded },
+        'Lookup attempted on rostering-ended user',
+      );
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { id, userId, rosteringEnded: user.rosteringEnded },
+      });
+    }
+
     // 2. Super admins bypass permission checks
     if (isSuperAdmin) {
       return user;
@@ -1088,6 +1109,20 @@ export function UserService({
         });
       }
 
+      // Rostering-ended users return 404 — same shape as not-found so requesters
+      // can't tell the difference (#1742).
+      if (user.rosteringEnded !== null && user.rosteringEnded <= new Date()) {
+        logger.warn(
+          { userId, targetUserId: id, rosteringEnded: user.rosteringEnded },
+          'PATCH attempted on rostering-ended user',
+        );
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, id, rosteringEnded: user.rosteringEnded },
+        });
+      }
+
       await userRepository.update({
         id,
         data: {
@@ -1181,6 +1216,20 @@ export function UserService({
           statusCode: StatusCodes.NOT_FOUND,
           code: ApiErrorCode.RESOURCE_NOT_FOUND,
           context: { userId: requestingUserId, targetUserId: userId },
+        });
+      }
+
+      // 1b. Rostering-ended users are decommissioned — same 404 shape as
+      // a not-found user so the caller can't distinguish (#1742).
+      if (targetUser.rosteringEnded !== null && targetUser.rosteringEnded <= new Date()) {
+        logger.warn(
+          { requestingUserId, targetUserId: userId, rosteringEnded: targetUser.rosteringEnded },
+          'Agreement record attempted on rostering-ended user',
+        );
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId: requestingUserId, targetUserId: userId, rosteringEnded: targetUser.rosteringEnded },
         });
       }
 
