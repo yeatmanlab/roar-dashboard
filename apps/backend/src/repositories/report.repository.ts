@@ -1,5 +1,5 @@
 import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray, lte } from 'drizzle-orm';
-import type { SQL, Column } from 'drizzle-orm';
+import type { SQL, Column, AnyColumn } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
@@ -35,7 +35,14 @@ import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
-import { isEnrollmentActive, isActiveInFamily, isActiveRoster } from './utils/enrollment.utils';
+import {
+  isEnrollmentActive,
+  isEnrollmentActiveForAdmin,
+  hasWithdrawnWithDataForAdmin,
+  hasQualifyingRunsForAdmin,
+  isActiveInFamily,
+  isActiveRoster,
+} from './utils/enrollment.utils';
 import { alias } from 'drizzle-orm/pg-core';
 
 /**
@@ -44,6 +51,25 @@ import { alias } from 'drizzle-orm/pg-core';
 export interface ReportScope {
   scopeType: ScopeType;
   scopeId: string;
+}
+
+/**
+ * Administration-window parameters used by admin-aware enrollment-overlap
+ * filters (#1792). Every reporting query that asks "was this student
+ * still enrolled when the administration window closed?" needs the
+ * administration's `dateStart` and `dateEnd`; the `id` is used to scope
+ * the `runs` EXISTS subquery in the `includeUnenrolledStudents` and
+ * per-student paths.
+ *
+ * The service layer is responsible for fetching the administration record
+ * once (via `verifyAdministrationAccess`, which already returns the row)
+ * and passing this object to every repository call that builds the
+ * in-scope student set.
+ */
+export interface ReportAdminWindow {
+  id: string;
+  dateStart: Date;
+  dateEnd: Date;
 }
 
 /**
@@ -606,17 +632,22 @@ export class ReportRepository {
   async getProgressStudents(
     administrationId: string,
     scope: ReportScope,
+    admin: ReportAdminWindow,
     taskVariantIds: string[],
     options: ReportPaginationOptions,
     filterCondition?: SQL,
     progressStatusSort?: ProgressStatusSortParam,
     progressStatusFilters?: ProgressStatusFilterParam[],
+    includeUnenrolledStudents = false,
   ): Promise<PaginatedResult<StudentProgressRow>> {
     const { page, perPage } = options;
     const offset = (page - 1) * perPage;
 
-    // Build the student-in-scope subquery
-    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
+    // Build the student-in-scope subquery (admin-aware strict overlap;
+    // optionally widened to include withdrawn-with-data students — #1792).
+    const studentsInScope = this.buildStudentInScopeQuery(scope, admin, includeUnenrolledStudents).as(
+      'students_in_scope',
+    );
 
     // Build LEFT JOIN subqueries for progress status sort and filter.
     // Each progress status filter targets a specific task variant and needs its own
@@ -1000,13 +1031,48 @@ export class ReportRepository {
    * soft-delete column. Instead, rostered users are protected from hard deletion
    * by the `prevent_rostered_entity_delete` DB trigger.
    */
-  private buildStudentInScopeQuery(scope: ReportScope) {
+  private buildStudentInScopeQuery(scope: ReportScope, admin?: ReportAdminWindow, includeUnenrolledStudents = false) {
+    // When `admin` is supplied, the enrollment-overlap check is administration-
+    // aware (#1792): a student passes if their enrollment in the in-scope
+    // entity was still active as of `LEAST(admin.dateEnd, NOW())` rather
+    // than just "as of NOW()". With `includeUnenrolledStudents = true`,
+    // students who left mid-window are additionally included when they have
+    // qualifying `runs` for this administration.
+    //
+    // When `admin` is omitted, retains the legacy "currently active as of
+    // NOW()" semantics so non-reporting callers (if any) are unaffected.
+    // All reporting code paths pass an admin in practice.
+    //
     // Each UNION branch joins through to `users` so the user-level
     // `isActiveRoster(users)` filter can exclude rostering-ended students
     // (#1742). This is a separate, harder boundary than the existing
     // entity-level `isNull(<entity>.rosteringEnded)` filters: a user whose
     // own rostering has ended is decommissioned regardless of which entity
     // their student-role enrollment is attached to.
+
+    // Pre-build the admin-aware predicate factory once per call. The
+    // returned function is invoked per UNION branch with the junction table
+    // and the user-id column that the toggle-on EXISTS subquery should
+    // correlate against. We pass `users.id` everywhere because every branch
+    // joins `users` and we want a stable correlation target.
+    const adminDateEnd = admin ? sql`${admin.dateEnd}::timestamptz` : undefined;
+    const adminDateStart = admin ? sql`${admin.dateStart}::timestamptz` : undefined;
+    const adminIdSql = admin ? sql`${admin.id}::uuid` : undefined;
+
+    const enrollmentPredicate = (
+      table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
+      userIdCol: AnyColumn,
+    ) => {
+      if (!admin || !adminDateEnd) {
+        return isEnrollmentActive(table);
+      }
+      const strict = isEnrollmentActiveForAdmin(table, adminDateEnd);
+      if (!includeUnenrolledStudents) {
+        return strict;
+      }
+      return or(strict, hasWithdrawnWithDataForAdmin(table, adminDateStart!, adminDateEnd, userIdCol, adminIdSql!));
+    };
+
     switch (scope.scopeType) {
       case EntityType.DISTRICT:
         // Students in user_orgs where org path is at or below the district
@@ -1020,7 +1086,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
-              isEnrollmentActive(userOrgs),
+              enrollmentPredicate(userOrgs, users.id),
               isNull(orgs.rosteringEnded),
               isActiveRoster(users),
               sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
@@ -1035,7 +1101,7 @@ export class ReportRepository {
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
-                  isEnrollmentActive(userClasses),
+                  enrollmentPredicate(userClasses, users.id),
                   isNull(classes.rosteringEnded),
                   isActiveRoster(users),
                   sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
@@ -1054,7 +1120,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
-              isEnrollmentActive(userOrgs),
+              enrollmentPredicate(userOrgs, users.id),
               isNull(orgs.rosteringEnded),
               isActiveRoster(users),
               eq(userOrgs.orgId, scope.scopeId),
@@ -1069,7 +1135,7 @@ export class ReportRepository {
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
-                  isEnrollmentActive(userClasses),
+                  enrollmentPredicate(userClasses, users.id),
                   isNull(classes.rosteringEnded),
                   isActiveRoster(users),
                   eq(classes.schoolId, scope.scopeId),
@@ -1086,7 +1152,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userClasses.role, UserRole.STUDENT),
-              isEnrollmentActive(userClasses),
+              enrollmentPredicate(userClasses, users.id),
               isNull(classes.rosteringEnded),
               isActiveRoster(users),
               eq(userClasses.classId, scope.scopeId),
@@ -1102,7 +1168,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userGroups.role, UserRole.STUDENT),
-              isEnrollmentActive(userGroups),
+              enrollmentPredicate(userGroups, users.id),
               isNull(groups.rosteringEnded),
               isActiveRoster(users),
               eq(userGroups.groupId, scope.scopeId),
@@ -1139,11 +1205,35 @@ export class ReportRepository {
    * Designed to run in parallel with the main report query via `Promise.all`,
    * adding one round-trip rather than serializing.
    */
-  async countRosteringEndedExclusions(scope: ReportScope): Promise<number> {
+  async countRosteringEndedExclusions(
+    scope: ReportScope,
+    admin: ReportAdminWindow,
+    includeUnenrolledStudents = false,
+  ): Promise<number> {
     // Predicate that matches users excluded by EITHER reason:
     //   - users.rostering_ended <= NOW()  → user-level decommission
     //   - <entity>.rostering_ended <= NOW()  → entity-level decommission
     const userExcluded = and(isNotNull(users.rosteringEnded), lte(users.rosteringEnded, sql`NOW()`));
+
+    // Admin-aware enrollment predicate used inside the *inverted* UNION
+    // branches below (#1792). The question this count answers is "how many
+    // users would have been visible in the report (per admin-aware overlap,
+    // optionally widened by `includeUnenrolledStudents`) but are rostering-
+    // ended?". Using `isEnrollmentActive` here (NOW()-based) would
+    // under-count for past administrations — a student who left between
+    // `admin.dateEnd` and `NOW()` would be admin-aware-visible but
+    // NOW()-inactive, so they'd be missed in the count.
+    const adminDateEnd = sql`${admin.dateEnd}::timestamptz`;
+    const adminDateStart = sql`${admin.dateStart}::timestamptz`;
+    const adminIdSql = sql`${admin.id}::uuid`;
+    const enrollmentPredicate = (
+      table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
+      userIdCol: AnyColumn,
+    ) => {
+      const strict = isEnrollmentActiveForAdmin(table, adminDateEnd);
+      if (!includeUnenrolledStudents) return strict;
+      return or(strict, hasWithdrawnWithDataForAdmin(table, adminDateStart, adminDateEnd, userIdCol, adminIdSql));
+    };
 
     // Postgres returns `count` as a bigint, which `pg` surfaces as a string
     // to avoid silent overflow. We always cast to `Number` before returning
@@ -1177,7 +1267,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
-              isEnrollmentActive(userOrgs),
+              enrollmentPredicate(userOrgs, users.id),
               sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
               or(userExcluded, orgsExcluded),
             ),
@@ -1191,7 +1281,7 @@ export class ReportRepository {
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
-                  isEnrollmentActive(userClasses),
+                  enrollmentPredicate(userClasses, users.id),
                   sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
                   or(userExcluded, classesExcluded),
                 ),
@@ -1199,7 +1289,7 @@ export class ReportRepository {
           )
           .as('excluded');
 
-        const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+        const studentsInScope = this.buildStudentInScopeQuery(scope, admin, includeUnenrolledStudents).as('sis');
 
         const [row] = await this.db
           .select({ count: countDistinct(excludedUnion.userId) })
@@ -1221,7 +1311,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
-              isEnrollmentActive(userOrgs),
+              enrollmentPredicate(userOrgs, users.id),
               eq(userOrgs.orgId, scope.scopeId),
               or(userExcluded, orgsExcluded),
             ),
@@ -1235,7 +1325,7 @@ export class ReportRepository {
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
-                  isEnrollmentActive(userClasses),
+                  enrollmentPredicate(userClasses, users.id),
                   eq(classes.schoolId, scope.scopeId),
                   or(userExcluded, classesExcluded),
                 ),
@@ -1243,7 +1333,7 @@ export class ReportRepository {
           )
           .as('excluded');
 
-        const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+        const studentsInScope = this.buildStudentInScopeQuery(scope, admin, includeUnenrolledStudents).as('sis');
 
         const [row] = await this.db
           .select({ count: countDistinct(excludedUnion.userId) })
@@ -1264,7 +1354,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userClasses.role, UserRole.STUDENT),
-              isEnrollmentActive(userClasses),
+              enrollmentPredicate(userClasses, users.id),
               eq(userClasses.classId, scope.scopeId),
               or(userExcluded, classesExcluded),
             ),
@@ -1283,7 +1373,7 @@ export class ReportRepository {
           .where(
             and(
               eq(userGroups.role, UserRole.STUDENT),
-              isEnrollmentActive(userGroups),
+              enrollmentPredicate(userGroups, users.id),
               eq(userGroups.groupId, scope.scopeId),
               or(userExcluded, groupsExcluded),
             ),
@@ -1408,7 +1498,9 @@ export class ReportRepository {
   async getProgressOverviewCountsBulk(
     administrationId: string,
     scopes: ReportScope[],
+    admin: ReportAdminWindow,
     taskMetas: ReportTaskMeta[],
+    includeUnenrolledStudents = false,
   ): Promise<Map<string, ProgressOverviewCountsResult>> {
     const resultMap = new Map<string, ProgressOverviewCountsResult>();
 
@@ -1417,9 +1509,11 @@ export class ReportRepository {
     }
 
     // 1. Build multi-scope students-in-scope CTE.
-    // Each scope's student query gets a literal scope_id column.
+    // Each scope's student query gets a literal scope_id column. Admin and
+    // toggle are pinned for this call — the bulk variant always runs against
+    // one administration, so a single `admin` covers all scopes (#1792).
     const scopeQueries: SQL[] = scopes.map((scope) => {
-      const studentQuery = this.buildStudentInScopeQuery(scope);
+      const studentQuery = this.buildStudentInScopeQuery(scope, admin, includeUnenrolledStudents);
       return sql`SELECT ${scope.scopeId}::text AS scope_id, sub.user_id FROM (${studentQuery}) sub`;
     });
 
@@ -1601,9 +1695,17 @@ export class ReportRepository {
   async getProgressOverviewCounts(
     administrationId: string,
     scope: ReportScope,
+    admin: ReportAdminWindow,
     taskMetas: ReportTaskMeta[],
+    includeUnenrolledStudents = false,
   ): Promise<ProgressOverviewCountsResult> {
-    const bulkResult = await this.getProgressOverviewCountsBulk(administrationId, [scope], taskMetas);
+    const bulkResult = await this.getProgressOverviewCountsBulk(
+      administrationId,
+      [scope],
+      admin,
+      taskMetas,
+      includeUnenrolledStudents,
+    );
     return (
       bulkResult.get(scope.scopeId) ?? {
         totalStudents: 0,
@@ -1699,9 +1801,13 @@ export class ReportRepository {
    */
   async getAllStudentsInScope(
     scope: ReportScope,
+    admin: ReportAdminWindow,
     filterCondition?: SQL,
+    includeUnenrolledStudents = false,
   ): Promise<{ totalStudents: number; students: StudentOverviewRow[] }> {
-    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
+    const studentsInScope = this.buildStudentInScopeQuery(scope, admin, includeUnenrolledStudents).as(
+      'students_in_scope',
+    );
 
     const [countRow] = await this.db
       .select({ total: countDistinct(users.id) })
@@ -1820,17 +1926,21 @@ export class ReportRepository {
   async getStudentScores(
     administrationId: string,
     scope: ReportScope,
+    admin: ReportAdminWindow,
     taskMetas: ReportTaskMeta[],
     options: ReportPaginationOptions,
     filterCondition?: SQL,
     sortField?: StudentScoresFieldRef | null,
     scoreFieldFilters?: StudentScoresFieldFilter[],
     scoringRulesByVariant?: Map<string, ResolvedScoringRules>,
+    includeUnenrolledStudents = false,
   ): Promise<PaginatedResult<StudentScoreQueryRow>> {
     const { page, perPage } = options;
     const offset = (page - 1) * perPage;
 
-    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
+    const studentsInScope = this.buildStudentInScopeQuery(scope, admin, includeUnenrolledStudents).as(
+      'students_in_scope',
+    );
 
     // 1. Determine which (variant, fieldType) joins are needed.
     // Sort and filters may target the same variant — we still build separate join
@@ -2138,32 +2248,49 @@ export class ReportRepository {
   }
 
   /**
-   * Verify that a student is in the requested scope as a STUDENT-role enrollment
-   * AND has not had their roster ended.
+   * Verify that a student is reachable from the requested scope for the given
+   * administration. Used by the per-student reporting endpoint.
    *
-   * Two checks combined:
-   * 1. The user's enrollment passes `buildStudentInScopeQuery` — they appear as
-   *    a student in the scope's org/class/group hierarchy and the underlying
-   *    org/class/group does not have `rosteringEnded` set.
-   * 2. The user record itself does not have `rosteringEnded` set.
+   * Returns `true` when ALL of the following hold:
+   * 1. The user record itself is NOT rostering-ended (#1742 hard boundary).
+   * 2. EITHER
+   *    - the user's enrollment passes admin-aware strict overlap via
+   *      `buildStudentInScopeQuery(scope, admin)`, OR
+   *    - the user has at least one non-deleted, non-aborted `runs` record
+   *      for this administration (the "always permits a withdrawn-with-data
+   *      lookup" rule per #1792).
    *
-   * Returns `true` only when both pass. The service uses this to surface a 404
-   * for individual-student-report requests targeting a user not in scope (or
-   * whose own roster has ended), as required by the ticket.
+   * The runs-EXISTS alternate-pass is ALWAYS on for the per-student endpoint
+   * — it does not honor the `includeUnenrolledStudents` toggle. The reasoning
+   * (per the ticket): the only students who might be looked up directly are
+   * ones that surfaced in some list view (default or toggle-on), and we want
+   * those deep links to work without the dashboard threading the toggle into
+   * the URL. A truly never-enrolled / never-tested student still 404s
+   * (neither branch passes).
+   *
+   * The rostering-ended check is enforced separately on the `users` row so it
+   * isn't bypassed by the runs-EXISTS alternate-pass — a rostering-ended user
+   * with runs data still returns `false` (404 at the service layer).
    */
-  async verifyStudentInScope(scope: ReportScope, userId: string): Promise<boolean> {
-    const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+  async verifyStudentInScope(scope: ReportScope, admin: ReportAdminWindow, userId: string): Promise<boolean> {
+    const studentsInScope = this.buildStudentInScopeQuery(scope, admin, false).as('sis');
+    const adminIdSql = sql`${admin.id}::uuid`;
 
     const rows = await this.db
       .select({ userId: users.id })
       .from(users)
-      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
-      // Use the shared `isActiveRoster` helper so this endpoint applies the
-      // same "future-end = still active" semantics as every other rostering-
-      // ended filter site. Previously this used `isNull(users.rosteringEnded)`,
-      // which would 404 a student whose roster end is set in the future even
-      // though the list/overview reporting endpoints would still include them.
-      .where(and(eq(users.id, userId), isActiveRoster(users)))
+      // LEFT JOIN so the alternate-pass branch (runs-EXISTS) still returns a
+      // row when strict-overlap fails.
+      .leftJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .where(
+        and(
+          eq(users.id, userId),
+          // Rostering-ended hard boundary applies regardless of strict-overlap
+          // or runs-EXISTS — see `isActiveRoster` semantics in #1742.
+          isActiveRoster(users),
+          or(isNotNull(studentsInScope.userId), hasQualifyingRunsForAdmin(users.id, adminIdSql)),
+        ),
+      )
       .limit(1);
 
     return rows.length > 0;

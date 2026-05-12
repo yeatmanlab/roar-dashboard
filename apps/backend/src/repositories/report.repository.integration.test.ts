@@ -33,6 +33,13 @@ let administrationId: string;
 let allGradesVariantId: string;
 let taskId: string;
 let districtScope: ReportScope;
+/**
+ * Admin window of the base-fixture district administration. Reused by every
+ * test that calls a `buildStudentInScopeQuery`-based method — those methods
+ * are admin-aware (#1792). Tests that exercise specific past/future-admin
+ * behavior construct their own admin window inline.
+ */
+let baseAdminWindow: { id: string; dateStart: Date; dateEnd: Date };
 
 beforeAll(() => {
   repo = new ReportRepository();
@@ -40,6 +47,11 @@ beforeAll(() => {
   allGradesVariantId = baseFixture.variantForAllGrades.id;
   taskId = baseFixture.task.id;
   districtScope = { scopeType: 'district', scopeId: baseFixture.district.id };
+  baseAdminWindow = {
+    id: baseFixture.administrationAssignedToDistrict.id,
+    dateStart: baseFixture.administrationAssignedToDistrict.dateStart,
+    dateEnd: baseFixture.administrationAssignedToDistrict.dateEnd,
+  };
 });
 
 describe('ReportRepository.getProgressStudents — FDW run queries', () => {
@@ -59,6 +71,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -85,6 +98,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -103,6 +117,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -129,6 +144,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -152,6 +168,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -174,6 +191,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -212,6 +230,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -252,6 +271,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -286,6 +306,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [grade3VariantId(), grade5VariantId()],
         defaultOptions,
       );
@@ -325,6 +346,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [grade3VariantId(), grade5VariantId()],
         defaultOptions,
       );
@@ -376,6 +398,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -490,7 +513,13 @@ describe('ReportRepository.getProgressOverviewCountsBulk — multi-scope aggrega
     // Execute the bulk query with both scopes
     schoolAScope = { scopeType: 'school', scopeId: baseFixture.schoolA.id };
     schoolBScope = { scopeType: 'school', scopeId: baseFixture.schoolB.id };
-    bulkResult = await bulkRepo.getProgressOverviewCountsBulk(bulkAdminId, [schoolAScope, schoolBScope], bulkTaskMetas);
+    const bulkAdminWindow = { id: bulkAdmin.id, dateStart: bulkAdmin.dateStart, dateEnd: bulkAdmin.dateEnd };
+    bulkResult = await bulkRepo.getProgressOverviewCountsBulk(
+      bulkAdminId,
+      [schoolAScope, schoolBScope],
+      bulkAdminWindow,
+      bulkTaskMetas,
+    );
   });
 
   it('returns results for both scopes', () => {
@@ -625,7 +654,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       });
       await UserOrgFactory.create({ userId: futureEndedStudent.id, orgId: district.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(2);
     });
 
@@ -649,7 +681,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedClass' });
       await UserClassFactory.create({ userId: student.id, classId: endedClass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -682,7 +717,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserClassFactory.create({ userId: student.id, classId: endedClass.id, role: UserRole.STUDENT });
       await UserOrgFactory.create({ userId: student.id, orgId: school.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(0);
     });
 
@@ -710,7 +748,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       });
       await UserClassFactory.create({ userId: doubleExcluded.id, classId: endedClass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -722,7 +763,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveDistrictStudentOnly' });
       await UserOrgFactory.create({ userId: student.id, orgId: district.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(0);
     });
 
@@ -738,7 +782,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserOrgFactory.create({ userId: endedTeacher.id, orgId: district.id, role: UserRole.TEACHER });
       await UserOrgFactory.create({ userId: endedStudent.id, orgId: district.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
   });
@@ -768,7 +815,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const classOrphanStudent = await UserFactory.create({ nameLast: 'ClassOrphanStudent' });
       await UserClassFactory.create({ userId: classOrphanStudent.id, classId: endedClass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'school', scopeId: school.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'school', scopeId: school.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(2);
     });
   });
@@ -790,7 +840,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserClassFactory.create({ userId: activeStudent.id, classId: klass.id, role: UserRole.STUDENT });
       await UserClassFactory.create({ userId: endedStudent.id, classId: klass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'class', scopeId: klass.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'class', scopeId: klass.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -805,7 +858,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedClassDirect' });
       await UserClassFactory.create({ userId: student.id, classId: endedKlass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'class', scopeId: endedKlass.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'class', scopeId: endedKlass.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
   });
@@ -823,7 +879,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserGroupFactory.create({ userId: activeStudent.id, groupId: group.id, role: UserRole.STUDENT });
       await UserGroupFactory.create({ userId: endedStudent.id, groupId: group.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'group', scopeId: group.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'group', scopeId: group.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -836,7 +895,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedGroup' });
       await UserGroupFactory.create({ userId: student.id, groupId: endedGroup.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'group', scopeId: endedGroup.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'group', scopeId: endedGroup.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
   });

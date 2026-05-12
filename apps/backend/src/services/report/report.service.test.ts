@@ -353,16 +353,19 @@ describe('ReportService', () => {
       expect(mockReportRepository.getProgressStudents).toHaveBeenCalledWith(
         testAdministrationId,
         { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.objectContaining({ id: expect.any(String), dateStart: expect.any(Date), dateEnd: expect.any(Date) }),
         testTaskMetas.map((t) => t.taskVariantId),
         expect.objectContaining({ page: 1, perPage: 25, sortDirection: 'asc' }),
         expect.anything(), // filter condition SQL object
         undefined, // no progress status sort
         undefined, // no progress status filters
+        expect.any(Boolean),
       );
 
       // Verify sortColumn is defined (mapped from 'user.firstName')
       const callArgs = mockReportRepository.getProgressStudents.mock.calls[0]!;
-      expect(callArgs[3]!.sortColumn).toBeDefined();
+      // options arg shifted from index 3 to index 4 once admin was inserted at index 2 (#1792).
+      expect(callArgs[4]!.sortColumn).toBeDefined();
     });
 
     it('sets schoolName to null for non-district scopes', async () => {
@@ -2185,7 +2188,8 @@ describe('ReportService', () => {
         ],
       });
 
-      const taskMetasArg = mockReportRepository.getStudentScores.mock.calls[0]![2];
+      // After #1792, getStudentScores args are: administrationId, scope, admin, taskMetas, options, filterCondition, sortField, scoreFieldFilters, scoringRulesByVariant, includeUnenrolledStudents
+      const taskMetasArg = mockReportRepository.getStudentScores.mock.calls[0]![3];
       const seenIds = new Set(taskMetasArg.map((t) => t.taskId));
       expect(seenIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
     });
@@ -2224,7 +2228,8 @@ describe('ReportService', () => {
         filter: [{ field: `scores.${TASK_ID_1}.supportLevel`, operator: 'eq', value: 'achievedSkill' }],
       });
 
-      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![6];
+      // scoreFieldFilters arg shifted from index 6 to 7 after admin insertion (#1792).
+      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![7];
       expect(fieldFilters).toHaveLength(1);
       expect(fieldFilters![0]).toMatchObject({
         taskVariantId: VARIANT_ID_1,
@@ -2243,7 +2248,8 @@ describe('ReportService', () => {
         filter: [{ field: `scores.${TASK_ID_1}.supportLevel`, operator: 'in', value: 'achievedSkill,developingSkill' }],
       });
 
-      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![6];
+      // scoreFieldFilters arg shifted from index 6 to 7 after admin insertion (#1792).
+      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![7];
       expect(fieldFilters![0]!.values).toEqual(['3', '2']);
     });
 
@@ -2256,7 +2262,8 @@ describe('ReportService', () => {
         filter: [{ field: `scores.${TASK_ID_1}.supportLevel`, operator: 'eq', value: 'optional' }],
       });
 
-      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![6];
+      // scoreFieldFilters arg shifted from index 6 to 7 after admin insertion (#1792).
+      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![7];
       // 'optional' has no SQL representation; the resolver returns null and we drop it
       expect(fieldFilters).toEqual([]);
     });
@@ -2270,7 +2277,8 @@ describe('ReportService', () => {
         filter: [{ field: `scores.${TASK_ID_1}.rawScore`, operator: 'gte', value: '500' }],
       });
 
-      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![6];
+      // scoreFieldFilters arg shifted from index 6 to 7 after admin insertion (#1792).
+      const fieldFilters = mockReportRepository.getStudentScores.mock.calls[0]![7];
       expect(fieldFilters![0]).toMatchObject({
         fieldType: 'rawScore',
         operator: 'gte',
