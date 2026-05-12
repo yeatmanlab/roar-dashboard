@@ -9,6 +9,7 @@ import { RunTrialsRepository } from '../../repositories/run-trials.repository';
 import { RunTrialInteractionsRepository } from '../../repositories/run-trial-interactions.repository';
 import { RunScoresRepository } from '../../repositories/run-scores.repository';
 import { FamilyRepository } from '../../repositories/family.repository';
+import { RunService } from '../run/run.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaRelation } from '../authorization/fga-constants';
 import { verifyTargetUserAccess } from '../authorization/verify-target-user-access';
@@ -30,6 +31,7 @@ type RunEngagementEventBody = Extract<RunEventBody, { type: 'engagement' }>;
  * @param runTrialsRepository - Repository for accessing run trials (injected for testing)
  * @param runTrialInteractionsRepository - Repository for accessing run trial interactions (injected for testing)
  * @param runScoresRepository - Repository for upserting run scores (injected for testing)
+ * @param runService - Service for run-level operations such as recomputing use_for_reporting (injected for testing)
  * @param familyRepository - Repository for accessing family relationships (injected for testing)
  * @param authorizationService - FGA authorization service (injected for testing)
  * @returns Object with event handling methods
@@ -39,6 +41,7 @@ export function RunEventService({
   runTrialsRepository = new RunTrialsRepository(),
   runTrialInteractionsRepository = new RunTrialInteractionsRepository(),
   runScoresRepository = new RunScoresRepository(),
+  runService = RunService(),
   familyRepository = new FamilyRepository(),
   authorizationService = AuthorizationService(),
 }: {
@@ -46,6 +49,7 @@ export function RunEventService({
   runTrialsRepository?: RunTrialsRepository;
   runTrialInteractionsRepository?: RunTrialInteractionsRepository;
   runScoresRepository?: RunScoresRepository;
+  runService?: ReturnType<typeof RunService>;
   familyRepository?: FamilyRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
@@ -176,7 +180,7 @@ export function RunEventService({
     body: RunTrialEventBody,
   ): Promise<void> {
     await verifyUserAccess(authContext, targetUserId);
-    await assertRunOwnedByUser(runId, targetUserId);
+    const run = await assertRunOwnedByUser(runId, targetUserId);
 
     try {
       await runTrialsRepository.runTransaction({
@@ -222,6 +226,15 @@ export function RunEventService({
               transaction: tx,
             });
           }
+
+          // Last step of the transaction so the recompute sees this trial's score writes.
+          // Anonymous runs short-circuit inside RunService.recomputeBestRunForVariant.
+          await runService.recomputeBestRunForVariant({
+            userId: run.userId,
+            administrationId: run.administrationId,
+            taskVariantId: run.taskVariantId,
+            transaction: tx,
+          });
         },
       });
     } catch (error) {

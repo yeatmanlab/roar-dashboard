@@ -19,8 +19,8 @@ import {
   createMockRunScoresRepository,
   createMockFamilyRepository,
 } from '../../test-support/repositories';
-import type { MockAuthorizationService } from '../../test-support/services';
-import { createMockAuthorizationService } from '../../test-support/services';
+import type { MockAuthorizationService, MockRunService } from '../../test-support/services';
+import { createMockAuthorizationService, createMockRunService } from '../../test-support/services';
 import { RunFactory } from '../../test-support/factories/run.factory';
 import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../../constants/run-scores';
 
@@ -36,6 +36,7 @@ describe('RunEventService', () => {
   let runTrialsRepository: MockRunTrialRepository;
   let runTrialInteractionsRepository: MockRunTrialInteractionsRepository;
   let runScoresRepository: MockRunScoresRepository;
+  let runService: MockRunService;
   let familyRepository: MockFamilyRepository;
   let authorizationService: MockAuthorizationService;
   let runEventsService: ReturnType<typeof RunEventService>;
@@ -53,6 +54,8 @@ describe('RunEventService', () => {
 
     runScoresRepository = createMockRunScoresRepository();
 
+    runService = createMockRunService();
+
     familyRepository = createMockFamilyRepository();
 
     authorizationService = createMockAuthorizationService();
@@ -62,6 +65,7 @@ describe('RunEventService', () => {
       runTrialsRepository,
       runTrialInteractionsRepository,
       runScoresRepository,
+      runService,
       familyRepository,
       authorizationService,
     });
@@ -663,6 +667,78 @@ describe('RunEventService', () => {
         const call = runScoresRepository.upsertMany.mock.calls[0]![0];
         expect(call.data[0]!.assessmentStage).toBeNull();
         expect(call.data[0]!.categoryScore).toBe(true);
+      });
+
+      it('calls runService.recomputeBestRunForVariant inside the trial transaction', async () => {
+        const mockRun = RunFactory.build({
+          id: validRunId,
+          userId: targetUserId,
+          administrationId: 'admin-456',
+          taskVariantId: 'variant-789',
+        });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const txSentinel = { __tx: true };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn(txSentinel);
+        });
+        runTrialsRepository.create.mockResolvedValue({ id: 'trial-123' });
+        runService.recomputeBestRunForVariant.mockResolvedValue(undefined);
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, validBody);
+
+        expect(runService.recomputeBestRunForVariant).toHaveBeenCalledTimes(1);
+        expect(runService.recomputeBestRunForVariant).toHaveBeenCalledWith({
+          userId: targetUserId,
+          administrationId: 'admin-456',
+          taskVariantId: 'variant-789',
+          transaction: txSentinel,
+        });
+      });
+
+      it('runs the recompute after the score upsert (last step of the transaction)', async () => {
+        const mockRun = RunFactory.build({
+          id: validRunId,
+          userId: targetUserId,
+          administrationId: 'admin-456',
+          taskVariantId: 'variant-789',
+        });
+        runRepository.getById.mockResolvedValue(mockRun);
+
+        const callOrder: string[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        runTrialsRepository.runTransaction.mockImplementation(async ({ fn }: any) => {
+          await fn({});
+        });
+        runTrialsRepository.create.mockImplementation(async () => {
+          callOrder.push('trial');
+          return { id: 'trial-123' };
+        });
+        runScoresRepository.upsertMany.mockImplementation(async () => {
+          callOrder.push('scores');
+          return [{ id: 'score-1' }];
+        });
+        runService.recomputeBestRunForVariant.mockImplementation(async () => {
+          callOrder.push('recompute');
+        });
+
+        const bodyWithScore = {
+          ...validBody,
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        };
+
+        await runEventsService.writeTrial(authContext, targetUserId, validRunId, bodyWithScore);
+
+        expect(callOrder).toEqual(['trial', 'scores', 'recompute']);
       });
 
       it('propagates a score-upsert failure as a 500 ApiError with DATABASE_QUERY_FAILED', async () => {
