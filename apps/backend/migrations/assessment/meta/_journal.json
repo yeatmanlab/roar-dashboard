@@ -148,6 +148,27 @@
       "when": 1774857600000,
       "tag": "0020_drop_fdw_views",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1774944000000,
+      "tag": "0021_add_run_scores_natural_key_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1778238129337,
+      "tag": "0022_add_platform_admin_to_user_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1778266456221,
+      "tag": "0023_add_run_scores_raw_requires_stage_check",
+      "breakpoints": true
     }
   ]
 }

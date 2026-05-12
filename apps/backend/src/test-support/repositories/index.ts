@@ -15,6 +15,7 @@ export {
   createMockRunTrialInteractionsRepository,
   MockRunTrialInteractionsRepository,
 } from './run-trial-interactions.repository';
+export { createMockRunScoresRepository, MockRunScoresRepository } from './run-scores.repository';
 export { createMockAdministrationRepository, MockAdministrationRepository } from './administration.repository';
 export {
   createMockAdministrationTaskVariantRepository,
