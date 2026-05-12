@@ -14,12 +14,12 @@ The monorepo uses **hybrid versioning**:
 |---------|-----------|-------|
 | backend | Shared (platform) | `apps/backend` |
 | dashboard | Shared (platform) | `apps/dashboard` |
-| api-contract | Shared (platform) | `packages/api-contract` |
+| api-contract | Independent | `packages/api-contract` |
 | assessment-sdk | Independent | `packages/assessment-sdk` |
 
-**Platform Release**: When backend, dashboard, or api-contract changes are released, they share a single version number (e.g., `3.26.0`).
+**Platform Release**: When backend or dashboard changes are released, they share a single version number (e.g., `3.26.0`).
 
-**SDK Release**: Assessment SDK is versioned independently (e.g., `0.1.0`) and can be released separately.
+**Independent Releases**: API contract and assessment SDK are versioned independently and can be released separately from the platform. This allows api-contract to be released once its publishing pipeline is implemented, without blocking platform releases.
 
 ## Workflow
 
@@ -104,8 +104,10 @@ When the Release PR is merged to `main`:
 **Tags created** (example for version 3.26.0):
 - `backend-v3.26.0` - Backend release
 - `dashboard-v3.26.0` - Dashboard release
-- `api-contract-v3.26.0` - API contract release
+- `api-contract-v3.26.0` - API contract release (independent, may have different version)
 - `assessment-sdk-v0.1.0` - SDK release (independent version)
+
+**Note**: API contract and SDK tags are created independently. They may not be present in every release.
 
 ### 6. Production Deployment
 
@@ -226,7 +228,24 @@ Release Please generates per-package changelogs:
 6. Tags created: `assessment-sdk-v0.2.0`
 7. SDK publishing workflow triggered (independent from platform deployment)
 
-### Example 4: Multi-Package Release
+### Example 4: API Contract Release (Independent)
+
+**Scenario**: You update the API contract types.
+
+1. Create PR with title: `feat(api-contract): add new user fields` → merge
+2. Release Please creates Release PR with:
+   - Backend version: unchanged (no changes)
+   - Dashboard version: unchanged (no changes)
+   - API contract version: `3.26.0` → `3.27.0` (minor bump, has feat commit)
+   - SDK version: unchanged
+3. Review and merge Release PR
+4. Tags created: `api-contract-v3.27.0`
+5. **No platform deployment triggered** (only backend + dashboard trigger deployment)
+6. API contract publishing workflow triggered (once implemented)
+
+**Note**: API contract is versioned independently. It can be released without backend/dashboard changes, and does not trigger platform deployment.
+
+### Example 5: Multi-Package Platform Release
 
 **Scenario**: You update the API contract AND create separate PRs for backend and dashboard to use it.
 
@@ -240,9 +259,10 @@ Release Please generates per-package changelogs:
    - SDK version: unchanged
 5. Review and merge Release PR
 6. Tags created: `backend-v3.27.0`, `dashboard-v3.27.0`, `api-contract-v3.27.0`
-7. Production deployment triggered (requires approval)
+7. **Platform deployment triggered** (backend + dashboard both released)
+8. API contract publishing workflow triggered (once implemented)
 
-**Note**: Release Please does NOT track dependencies between packages. Each package is bumped independently based on its own conventional commits. If only the API contract changes (no backend/dashboard commits), only the API contract version is bumped.
+**Note**: Release Please does NOT track dependencies between packages. Each package is bumped independently based on its own conventional commits. Platform deployment is triggered only when both backend AND dashboard are released.
 
 ## Troubleshooting
 
@@ -334,15 +354,25 @@ A: Release Please runs on every push to `main`. It creates a Release PR if conve
 |---------|-----------|-----------------|
 | backend | Shared (platform) | 3.26.0 |
 | dashboard | Shared (platform) | 3.26.0 |
-| api-contract | Shared (platform) | 3.26.0 |
+| api-contract | Independent | 3.26.0 |
 | assessment-sdk | Independent | 0.1.0 |
 | internal packages | Unversioned | N/A |
 
-**Platform Release**: When backend, dashboard, or api-contract changes are released, they share a single version number.
+**Platform Release**: When backend or dashboard changes are released, they share a single version number and trigger production deployment.
 
-**SDK Release**: Assessment SDK is versioned independently and can be released separately from the platform.
+**Independent Releases**: API contract and assessment SDK are versioned independently and can be released separately from the platform. API contract releases do not trigger platform deployment.
 
 **Internal Packages**: Packages like `authz`, `database`, etc. are not versioned and not published.
+
+### Deployment Trigger
+
+Production deployment is triggered when **both backend AND dashboard are released together**. This ensures coordinated platform updates.
+
+- ✅ Backend + Dashboard released → Platform deployment triggered
+- ❌ Backend only → No platform deployment
+- ❌ Dashboard only → No platform deployment
+- ❌ API contract only → No platform deployment (independent release)
+- ❌ SDK only → No platform deployment (independent release)
 
 ### Why Release Please?
 

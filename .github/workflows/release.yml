@@ -46,8 +46,7 @@ jobs:
     if: |
       needs.release-please.outputs.releases_created == 'true' &&
       needs.release-please.outputs.backend_release_created == 'true' &&
-      needs.release-please.outputs.dashboard_release_created == 'true' &&
-      needs.release-please.outputs.api_contract_release_created == 'true'
+      needs.release-please.outputs.dashboard_release_created == 'true'
     uses: ./.github/workflows/deploy-platform-production.yml
     secrets: inherit
     with:

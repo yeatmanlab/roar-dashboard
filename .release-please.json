@@ -4,7 +4,7 @@
     {
       "type": "linked-versions",
       "groupName": "platform",
-      "components": ["backend", "dashboard", "api-contract"]
+      "components": ["backend", "dashboard"]
     },
     {
       "type": "node-workspace"
