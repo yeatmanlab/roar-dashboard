@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - main
+      - test/release-please-validation
 
 permissions:
   contents: write
@@ -35,7 +35,7 @@ jobs:
           config-file: .release-please.json
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.GITHUB_TOKEN }}
-          target-branch: main
+          target-branch: test/release-please-validation
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Trigger platform deployment on release
@@ -44,6 +44,7 @@ jobs:
     name: Trigger Platform Deployment
     needs: release-please
     if: |
+      github.ref == 'refs/heads/main' &&
       needs.release-please.outputs.releases_created == 'true' &&
       needs.release-please.outputs.backend_release_created == 'true' &&
       needs.release-please.outputs.dashboard_release_created == 'true'
