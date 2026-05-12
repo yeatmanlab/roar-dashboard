@@ -5,6 +5,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import type { Transaction } from '../../repositories/interfaces/base.repository.interface';
 import type {
   MockRunRepository,
   MockTaskVariantRepository,
@@ -423,17 +424,28 @@ describe('RunService', () => {
       await runService.recomputeBestRunForVariant(partition);
 
       expect(runRepository.recomputeUseForReporting).toHaveBeenCalledTimes(1);
+      // The service uses conditional spread to avoid setting `transaction` to
+      // an explicit `undefined` (forbidden under exactOptionalPropertyTypes),
+      // so when no transaction is passed the property is absent from the
+      // call object. Assert the present properties and explicitly verify the
+      // transaction property was not included.
       expect(runRepository.recomputeUseForReporting).toHaveBeenCalledWith({
         userId: partition.userId,
         administrationId: partition.administrationId,
         taskVariantId: partition.taskVariantId,
-        transaction: undefined,
       });
+      const callArg = runRepository.recomputeUseForReporting.mock.calls[0]![0];
+      expect(callArg).not.toHaveProperty('transaction');
     });
 
     it('passes the caller-provided transaction through to the repository', async () => {
       runRepository.recomputeUseForReporting.mockResolvedValue(undefined);
-      const txSentinel = { __tx: true };
+      // The full `Transaction` type has 19+ methods (`schema`, `nestedIndex`,
+      // `rollback`, etc.) — none of which the service touches; it just
+      // forwards the value. Cast a minimal sentinel through `unknown` so the
+      // test can assert the value is propagated by reference without
+      // constructing a real Drizzle transaction.
+      const txSentinel = { __tx: true } as unknown as Transaction;
 
       await runService.recomputeBestRunForVariant({ ...partition, transaction: txSentinel });
 

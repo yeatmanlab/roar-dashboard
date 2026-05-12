@@ -253,11 +253,15 @@ export function RunService({
     }
 
     try {
+      // Conditional spread on `transaction` so we never set the property to
+      // an explicit `undefined`, which is forbidden under
+      // `exactOptionalPropertyTypes: true`. The repository signature accepts
+      // the property being absent OR a real `PgTransaction`, not `undefined`.
       await runRepository.recomputeUseForReporting({
         userId,
         administrationId,
         taskVariantId,
-        transaction,
+        ...(transaction !== undefined && { transaction }),
       });
     } catch (error) {
       if (error instanceof ApiError) throw error;
