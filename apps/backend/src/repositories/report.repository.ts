@@ -1137,6 +1137,11 @@ export class ReportRepository {
     //   - <entity>.rostering_ended <= NOW()  → entity-level decommission
     const userExcluded = and(isNotNull(users.rosteringEnded), lte(users.rosteringEnded, sql`NOW()`));
 
+    // Postgres returns `count` as a bigint, which `pg` surfaces as a string
+    // to avoid silent overflow. We always cast to `Number` before returning
+    // — distinct-user counts won't realistically exceed Number.MAX_SAFE_INTEGER
+    // at our scale, and the API contract types the field as `number`.
+
     switch (scope.scopeType) {
       case EntityType.DISTRICT: {
         const orgsExcluded = and(isNotNull(orgs.rosteringEnded), lte(orgs.rosteringEnded, sql`NOW()`));
@@ -2119,7 +2124,12 @@ export class ReportRepository {
       .select({ userId: users.id })
       .from(users)
       .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
-      .where(and(eq(users.id, userId), isNull(users.rosteringEnded)))
+      // Use the shared `isActiveRoster` helper so this endpoint applies the
+      // same "future-end = still active" semantics as every other rostering-
+      // ended filter site. Previously this used `isNull(users.rosteringEnded)`,
+      // which would 404 a student whose roster end is set in the future even
+      // though the list/overview reporting endpoints would still include them.
+      .where(and(eq(users.id, userId), isActiveRoster(users)))
       .limit(1);
 
     return rows.length > 0;

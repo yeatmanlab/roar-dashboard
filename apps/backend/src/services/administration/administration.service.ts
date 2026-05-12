@@ -55,7 +55,7 @@ import { TaskVariantRepository } from '../../repositories/task-variant.repositor
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { Condition } from '../../types/condition';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
-import { verifyEntitiesExist } from '../utils/validations.utils';
+import { verifyEntitiesExist, rejectRosteringEndedTarget } from '../utils/validations.utils';
 
 /**
  * Administration with optional embedded data.
@@ -841,17 +841,7 @@ export function AdministrationService({
       // URL names them as the target, so any caller (admin / teacher /
       // guardian) gets a symmetric 404 — same shape as "not found" so the
       // caller can't distinguish.
-      if (targetUser.rosteringEnded !== null && targetUser.rosteringEnded <= new Date()) {
-        logger.warn(
-          { requesterUserId, targetUserId: userId, rosteringEnded: targetUser.rosteringEnded },
-          'User-administration list attempted on rostering-ended user',
-        );
-        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, rosteringEnded: targetUser.rosteringEnded },
-        });
-      }
+      rejectRosteringEndedTarget(targetUser, { requesterUserId, targetUserId: userId }, 'User-administration list');
 
       const queryParams = {
         page: options.page,
@@ -1161,17 +1151,11 @@ export function AdministrationService({
       }
 
       // Rostering-ended target → symmetric 404 (#1742).
-      if (targetUser.rosteringEnded !== null && targetUser.rosteringEnded <= new Date()) {
-        logger.warn(
-          { requesterUserId, targetUserId: userId, administrationId, rosteringEnded: targetUser.rosteringEnded },
-          'Per-user administration lookup attempted on rostering-ended user',
-        );
-        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
-          statusCode: StatusCodes.NOT_FOUND,
-          code: ApiErrorCode.RESOURCE_NOT_FOUND,
-          context: { userId, administrationId, rosteringEnded: targetUser.rosteringEnded },
-        });
-      }
+      rejectRosteringEndedTarget(
+        targetUser,
+        { requesterUserId, targetUserId: userId, administrationId },
+        'Per-user administration lookup',
+      );
 
       const administration = await verifyAdministrationAccess(
         { userId, isSuperAdmin: targetUser.isSuperAdmin },
