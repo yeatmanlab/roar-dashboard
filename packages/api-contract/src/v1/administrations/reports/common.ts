@@ -46,12 +46,18 @@ export const ReportScopeQuerySchema = z.object({
  * tree-stats embed do not accept this parameter — see the ticket for the
  * rationale.
  *
- * `z.coerce.boolean()` accepts `'true'` / `'false'` strings as query-string
- * values (express's parsed query is `string | string[] | undefined`); the
- * resulting type is always a concrete `boolean` after parsing.
+ * Coercion: we accept JSON booleans, the literal strings `'true'` /
+ * `'false'`, missing (defaults to `false`), and reject anything else with a
+ * `REQUEST_VALIDATION_FAILED`. We deliberately do NOT use
+ * `z.coerce.boolean()` — that calls `Boolean(value)`, so any non-empty
+ * string (including `'false'`, `'0'`, and `'no'`) coerces to `true`,
+ * silently turning a misconfigured frontend into a privacy bug.
  */
 export const IncludeUnenrolledStudentsQuerySchema = z.object({
-  includeUnenrolledStudents: z.coerce.boolean().default(false),
+  includeUnenrolledStudents: z
+    .union([z.boolean(), z.literal('true'), z.literal('false')])
+    .transform((v) => v === true || v === 'true')
+    .default(false),
 });
 
 export type IncludeUnenrolledStudentsQuery = z.infer<typeof IncludeUnenrolledStudentsQuerySchema>;

@@ -330,11 +330,13 @@ describe('ReportService', () => {
       expect(mockReportRepository.getProgressStudents).toHaveBeenCalledWith(
         testAdministrationId,
         { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.objectContaining({ id: expect.any(String), dateStart: expect.any(Date), dateEnd: expect.any(Date) }),
         testTaskMetas.map((t) => t.taskVariantId),
         expect.objectContaining({ page: 1, perPage: 25, sortDirection: 'asc' }),
         undefined,
         undefined, // no progress status sort
         undefined, // no progress status filters
+        expect.any(Boolean),
       );
     });
 
@@ -431,10 +433,10 @@ describe('ReportService', () => {
       await service.listProgressStudents(superAdminAuth, testAdministrationId, sortByTaskQuery);
 
       const callArgs = mockReportRepository.getProgressStudents.mock.calls[0]!;
-      // arg[5] is progressStatusSort
-      expect(callArgs[5]).toEqual(expect.objectContaining({ taskVariantId: VARIANT_ID_1 }));
-      // arg[4] should be undefined (no user-level filter)
-      expect(callArgs[4]).toBeUndefined();
+      // arg[6] is progressStatusSort (shifted by +1 once admin was inserted at index 2 — #1792)
+      expect(callArgs[6]).toEqual(expect.objectContaining({ taskVariantId: VARIANT_ID_1 }));
+      // arg[5] should be undefined (no user-level filter)
+      expect(callArgs[5]).toBeUndefined();
     });
 
     it('passes progressStatusFilters when filtering by progress.<taskId>.status', async () => {
@@ -449,8 +451,8 @@ describe('ReportService', () => {
       await service.listProgressStudents(superAdminAuth, testAdministrationId, filterByTaskQuery);
 
       const callArgs = mockReportRepository.getProgressStudents.mock.calls[0]!;
-      // arg[6] is progressStatusFilters
-      expect(callArgs[6]).toEqual([
+      // arg[7] is progressStatusFilters (shifted by +1 once admin was inserted at index 2 — #1792)
+      expect(callArgs[7]).toEqual([
         expect.objectContaining({
           taskVariantId: VARIANT_ID_1,
           statusValues: ['completed'],
@@ -470,7 +472,8 @@ describe('ReportService', () => {
       await service.listProgressStudents(superAdminAuth, testAdministrationId, filterByTaskQuery);
 
       const callArgs = mockReportRepository.getProgressStudents.mock.calls[0]!;
-      expect(callArgs[6]).toEqual([
+      // arg[7] is progressStatusFilters (shifted by +1 once admin was inserted at index 2 — #1792)
+      expect(callArgs[7]).toEqual([
         expect.objectContaining({
           statusValues: ['completed', 'started'],
         }),
@@ -523,8 +526,8 @@ describe('ReportService', () => {
       await service.listProgressStudents(superAdminAuth, testAdministrationId, threeFilterQuery);
 
       const callArgs = mockReportRepository.getProgressStudents.mock.calls[0]!;
-      // arg[6] is progressStatusFilters
-      expect(callArgs[6]).toHaveLength(3);
+      // arg[7] is progressStatusFilters (shifted by +1 once admin was inserted at index 2 — #1792)
+      expect(callArgs[7]).toHaveLength(3);
     });
 
     it('returns 400 when more than 3 progress status filters are provided', async () => {
@@ -1254,7 +1257,9 @@ describe('ReportService', () => {
       expect(mockReportRepository.getProgressOverviewCounts).toHaveBeenCalledWith(
         testAdministrationId,
         { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.objectContaining({ id: expect.any(String), dateStart: expect.any(Date), dateEnd: expect.any(Date) }),
         testTaskMetas,
+        expect.any(Boolean),
       );
     });
   });
@@ -1714,7 +1719,9 @@ describe('ReportService', () => {
       // getAllStudentsInScope should be called with a non-undefined filter condition
       expect(mockReportRepository.getAllStudentsInScope).toHaveBeenCalledWith(
         { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.objectContaining({ id: expect.any(String), dateStart: expect.any(Date), dateEnd: expect.any(Date) }),
         expect.anything(),
+        expect.any(Boolean),
       );
     });
 
@@ -2166,7 +2173,8 @@ describe('ReportService', () => {
       });
 
       const callArgs = mockReportRepository.getStudentScores.mock.calls[0]!;
-      const sortField = callArgs[5];
+      // sortField shifted from index 5 to index 6 once admin was inserted at index 2 (#1792).
+      const sortField = callArgs[6];
       expect(sortField).toMatchObject({
         taskVariantId: VARIANT_ID_1,
         taskSlug: 'swr',
@@ -2618,6 +2626,7 @@ describe('ReportService', () => {
       expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
       expect(mockReportRepository.verifyStudentInScope).toHaveBeenCalledWith(
         { scopeType: 'district', scopeId: 'district-uuid-1' },
+        expect.objectContaining({ id: expect.any(String), dateStart: expect.any(Date), dateEnd: expect.any(Date) }),
         targetUserId,
       );
     });

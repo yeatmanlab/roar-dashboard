@@ -39,7 +39,6 @@ import {
   isEnrollmentActive,
   isEnrollmentActiveForAdmin,
   hasWithdrawnWithDataForAdmin,
-  hasQualifyingRunsForAdmin,
   isActiveInFamily,
   isActiveRoster,
 } from './utils/enrollment.utils';
@@ -2253,42 +2252,51 @@ export class ReportRepository {
    *
    * Returns `true` when ALL of the following hold:
    * 1. The user record itself is NOT rostering-ended (#1742 hard boundary).
-   * 2. EITHER
-   *    - the user's enrollment passes admin-aware strict overlap via
-   *      `buildStudentInScopeQuery(scope, admin)`, OR
-   *    - the user has at least one non-deleted, non-aborted `runs` record
-   *      for this administration (the "always permits a withdrawn-with-data
-   *      lookup" rule per #1792).
+   * 2. The user appears in `buildStudentInScopeQuery(scope, admin,
+   *    includeUnenrolledStudents = true)` — i.e. they pass admin-aware
+   *    strict overlap OR they meet the withdrawn-with-data path (mid-window
+   *    withdrawal *in this scope's enrollments* plus a non-deleted,
+   *    non-aborted run for this administration).
    *
-   * The runs-EXISTS alternate-pass is ALWAYS on for the per-student endpoint
+   * The withdrawn-with-data path is ALWAYS on for the per-student endpoint
    * — it does not honor the `includeUnenrolledStudents` toggle. The reasoning
    * (per the ticket): the only students who might be looked up directly are
    * ones that surfaced in some list view (default or toggle-on), and we want
    * those deep links to work without the dashboard threading the toggle into
-   * the URL. A truly never-enrolled / never-tested student still 404s
-   * (neither branch passes).
+   * the URL. A truly never-enrolled / never-tested student still 404s.
    *
-   * The rostering-ended check is enforced separately on the `users` row so it
-   * isn't bypassed by the runs-EXISTS alternate-pass — a rostering-ended user
-   * with runs data still returns `false` (404 at the service layer).
+   * Critical scope-isolation note: the predicate intentionally runs through
+   * `buildStudentInScopeQuery` rather than a bare runs-EXISTS check on
+   * `(userId, administrationId)`. The bare EXISTS does not know about scope
+   * — a student enrolled only in district A who has runs for an admin that
+   * was *also* assigned to district B would pass a districtB-scoped lookup,
+   * leaking cross-scope access. Routing through `buildStudentInScopeQuery`
+   * keeps the predicate scope-aware via the `user_orgs` / `user_classes` /
+   * `user_groups` joins (see review notes for #1792).
+   *
+   * The rostering-ended check is enforced separately on the `users` row so
+   * it isn't bypassed by the withdrawn-with-data path — a rostering-ended
+   * user with runs data still returns `false` (404 at the service layer).
    */
   async verifyStudentInScope(scope: ReportScope, admin: ReportAdminWindow, userId: string): Promise<boolean> {
-    const studentsInScope = this.buildStudentInScopeQuery(scope, admin, false).as('sis');
-    const adminIdSql = sql`${admin.id}::uuid`;
+    // `includeUnenrolledStudents = true` widens the in-scope predicate from
+    // strict overlap to "strict overlap OR withdrawn-with-data". Both halves
+    // join through the scope's enrollment tables, so the result is still
+    // gated on the user actually being enrolled (or having been enrolled)
+    // in the requested scope.
+    const studentsInScope = this.buildStudentInScopeQuery(scope, admin, true).as('sis');
 
     const rows = await this.db
       .select({ userId: users.id })
       .from(users)
-      // LEFT JOIN so the alternate-pass branch (runs-EXISTS) still returns a
-      // row when strict-overlap fails.
-      .leftJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
       .where(
         and(
           eq(users.id, userId),
-          // Rostering-ended hard boundary applies regardless of strict-overlap
-          // or runs-EXISTS — see `isActiveRoster` semantics in #1742.
+          // Rostering-ended hard boundary (#1742) applies in addition to the
+          // scope-gated overlap check — a decommissioned user with runs data
+          // still returns false.
           isActiveRoster(users),
-          or(isNotNull(studentsInScope.userId), hasQualifyingRunsForAdmin(users.id, adminIdSql)),
         ),
       )
       .limit(1);

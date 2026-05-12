@@ -5,7 +5,6 @@ import {
   isActiveRoster,
   isEnrollmentActiveForAdmin,
   hasWithdrawnWithDataForAdmin,
-  hasQualifyingRunsForAdmin,
 } from './enrollment.utils';
 import { userOrgs, userClasses, userGroups, users, orgs, classes, groups, administrations } from '../../db/schema';
 
@@ -149,17 +148,12 @@ describe('enrollment.utils', () => {
     });
   });
 
-  describe('hasQualifyingRunsForAdmin', () => {
-    it('returns a SQL EXISTS expression', () => {
-      const condition = hasQualifyingRunsForAdmin(users.id, administrations.id);
-      expect(condition).toBeTruthy();
-    });
-
-    it('accepts a SQL expression for the administration id', () => {
-      const condition = hasQualifyingRunsForAdmin(users.id, sql`'00000000-0000-0000-0000-000000000000'::uuid`);
-      expect(condition).toBeTruthy();
-    });
-  });
+  // Note: an earlier draft of #1792 also exported a `hasQualifyingRunsForAdmin`
+  // helper that did a bare `runs`-EXISTS check correlated only by
+  // `(userId, administrationId)`. It was removed during review — the
+  // per-student endpoint must stay scope-gated, so `verifyStudentInScope`
+  // now routes through `buildStudentInScopeQuery(scope, admin, true)`
+  // instead. Don't reintroduce a scope-less EXISTS helper.
 
   describe('isEnrollmentActive (regression — unchanged by #1792)', () => {
     it('still returns a SQL condition for the canonical junction tables', () => {

@@ -128,9 +128,12 @@ export function isActiveRoster(table: { rosteringEnded: AnyColumn }) {
  * the check date to `NOW()` so the predicate matches `isEnrollmentActive`'s
  * present-tense behavior.
  *
- * Strict overlap:
- * - `enrollment.start <= administrationDateEnd` — the student joined before
- *   the window closed.
+ * Strict overlap (both sides clamped to `LEAST(adminDateEnd, NOW())`):
+ * - `enrollment.start <= LEAST(adminDateEnd, NOW())` — the student had
+ *   joined by the check date. The clamp matters for active/future admins:
+ *   without it, a student whose `enrollment.start` falls between `NOW()` and
+ *   the admin's `dateEnd` would slip through, even though they aren't
+ *   actually enrolled yet — see #1792.
  * - `enrollment.end IS NULL` OR `enrollment.end > LEAST(adminDateEnd, NOW())`
  *   — and either is still enrolled or left after the check date.
  *
@@ -151,7 +154,7 @@ export function isEnrollmentActiveForAdmin(
 ) {
   const checkDate = sql`LEAST(${administrationDateEnd}, NOW())`;
   return and(
-    lte(table.enrollmentStart, administrationDateEnd),
+    lte(table.enrollmentStart, checkDate),
     or(gt(table.enrollmentEnd, checkDate), isNull(table.enrollmentEnd)),
   );
 }
@@ -167,7 +170,10 @@ export function isEnrollmentActiveForAdmin(
  * overlap, narrowed to those who actually took (or started) the assessment.
  *
  * The five enrollment-side predicates expand to:
- * - `enrollment.start <= administrationDateEnd`     — joined before window closed
+ * - `enrollment.start <= LEAST(adminDateEnd, NOW())` — joined by the check
+ *   date. Symmetric with `isEnrollmentActiveForAdmin`; protects against an
+ *   invalid row where `enrollment.start > enrollment.end` (the schema has a
+ *   CHECK for this at write time, but defense-in-depth is cheap).
  * - `enrollment.end IS NOT NULL`                    — they left
  * - `enrollment.end > administrationDateStart`      — overlapped the window
  * - `enrollment.end <= LEAST(adminDateEnd, NOW())`  — left at or before check
@@ -199,41 +205,20 @@ export function hasWithdrawnWithDataForAdmin(
 ) {
   const checkDate = sql`LEAST(${administrationDateEnd}, NOW())`;
   return and(
-    lte(table.enrollmentStart, administrationDateEnd),
+    lte(table.enrollmentStart, checkDate),
     isNotNull(table.enrollmentEnd),
     gt(table.enrollmentEnd, administrationDateStart),
     lte(table.enrollmentEnd, checkDate),
+    // Drizzle's `exists()` emits `exists ${subquery}` without adding
+    // parentheses — when given a raw `sql` template (rather than a
+    // Drizzle subquery object) we must wrap the inner SELECT in parens
+    // ourselves so PostgreSQL parses it as `EXISTS (SELECT ...)`.
     exists(
-      sql`SELECT 1 FROM ${fdwRuns}
+      sql`(SELECT 1 FROM ${fdwRuns}
           WHERE ${fdwRuns.userId} = ${userIdCol}
             AND ${fdwRuns.administrationId} = ${administrationIdCol}
             AND ${fdwRuns.deletedAt} IS NULL
-            AND ${fdwRuns.abortedAt} IS NULL`,
+            AND ${fdwRuns.abortedAt} IS NULL)`,
     ),
-  );
-}
-
-/**
- * "Has qualifying runs" predicate for the per-student reporting endpoint
- * (#1792). Matches users with at least one non-deleted, non-aborted `runs`
- * record for the given administration.
- *
- * The per-student endpoint always permits a withdrawn-with-data lookup, so
- * it OR-s strict admin-aware overlap with this predicate. The list-endpoint
- * inclusion path ({@link hasWithdrawnWithDataForAdmin}) layers this same
- * EXISTS check on top of the "left mid-window" enrollment predicate; this
- * helper is just the EXISTS half on its own.
- *
- * @param userIdCol - The user-id column the EXISTS subquery correlates against.
- * @param administrationIdCol - The administration-id column / expression.
- * @returns Drizzle SQL condition for "has qualifying runs for this admin".
- */
-export function hasQualifyingRunsForAdmin(userIdCol: AnyColumn, administrationIdCol: AnyColumn | SQL) {
-  return exists(
-    sql`SELECT 1 FROM ${fdwRuns}
-        WHERE ${fdwRuns.userId} = ${userIdCol}
-          AND ${fdwRuns.administrationId} = ${administrationIdCol}
-          AND ${fdwRuns.deletedAt} IS NULL
-          AND ${fdwRuns.abortedAt} IS NULL`,
   );
 }

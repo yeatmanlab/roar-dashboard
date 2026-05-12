@@ -3087,6 +3087,7 @@ describe('AdministrationService', () => {
           { scopeType: 'class', scopeId: 'class-1' },
           { scopeType: 'group', scopeId: 'group-1' },
         ],
+        expect.objectContaining({ id: expect.any(String), dateStart: expect.any(Date), dateEnd: expect.any(Date) }),
         expect.any(Array),
       );
     });
