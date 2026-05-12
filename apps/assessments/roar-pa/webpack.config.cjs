@@ -19,8 +19,10 @@ const commonConfig = {
           name(module) {
             // get the name. E.g. node_modules/packageName/not/this/part.js
             // or node_modules/packageName
-            const packageName = module.request?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
-            return packageName ? `npm.${packageName.replace('@', '')}` : 'vendor';
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+
+            // npm package names are URL-safe, but some servers don't like @ symbols
+            return `npm.${packageName.replace('@', '')}`;
           },
           chunks: 'all',
         },
@@ -143,10 +145,11 @@ const developmentConfig = merge(webConfig, {
 });
 
 module.exports = async (env, args) => {
-  const roarDB = env.dbmode;
+  const roarDB = env.dbmode === 'production' ? 'production' : 'development';
 
   const envDependentConfig = {
     plugins: [
+      new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
         ROAR_API_URL: JSON.stringify(process.env.ROAR_API_URL || 'https://localhost:4000'),
@@ -176,7 +179,7 @@ module.exports = async (env, args) => {
 
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
+      return merge(developmentConfig, envDependentConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:

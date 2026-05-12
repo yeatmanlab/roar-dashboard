@@ -186,7 +186,7 @@ export class RoarScores {
 
       if (myRow !== undefined) {
         // And add columns in the lookup table except for the age and roarScore.
-        const { roarScore, ...normedScores } = _omit(myRow, ['ageMonths', 'grade']);
+        const { ageMonths: rowAgeMonths, roarScore, grade: rowGrade, ...normedScores } = myRow;
 
         computedScores.composite = {
           ...computedScores.composite,
