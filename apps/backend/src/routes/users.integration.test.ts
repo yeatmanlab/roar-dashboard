@@ -444,6 +444,36 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
+    it('returns 404 for a rostering-ended target user — even to super admin (#1742)', async () => {
+      // Rostering-ended users are decommissioned: any URL that names them as a
+      // target returns 404, with the same code/shape as a non-existent user.
+      // The shape is symmetric so requesters can't distinguish whether the
+      // target ever existed.
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedUserDirectAccess',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('GET', `/v1/users/${endedUser.id}`).as(tiers.superAdmin).toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 for a rostering-ended target user — same shape as not-found (#1742)', async () => {
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedUserShapeCheck',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const endedRes = await expectRoute('GET', `/v1/users/${endedUser.id}`).as(tiers.superAdmin).toReturn(404);
+      const notFoundRes = await expectRoute('GET', '/v1/users/00000000-0000-0000-0000-000000000000')
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      // The error code matches — caller can't distinguish the two cases.
+      expect(endedRes.body.error.code).toBe(notFoundRes.body.error.code);
+    });
+
     it('returns 400 for invalid UUID format', async () => {
       const res = await expectRoute('GET', '/v1/users/not-a-valid-uuid').as(tiers.superAdmin).toReturn(400);
 
@@ -765,6 +795,28 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
+
+    it('returns 404 for a rostering-ended target user — same shape as not-found (#1742)', async () => {
+      // A rostering-ended user cannot be PATCHed — same 404 shape as
+      // not-found so callers can't distinguish.
+      const endedUser = await UserFactory.create({
+        nameFirst: 'Patch',
+        nameLast: 'EndedTarget',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('PATCH', `/v1/users/${endedUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: 'ShouldNotApply' })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+
+      // Verify the underlying row was NOT modified.
+      const stillEnded = await userRepository.getById({ id: endedUser.id });
+      expect(stillEnded).not.toBeNull();
+      expect(stillEnded!.nameFirst).toBe('Patch');
+    });
   });
 });
 
@@ -1027,6 +1079,22 @@ describe('POST /v1/users/:userId/agreements', () => {
   describe('validation', () => {
     it('should return 404 when target user does not exist', async () => {
       const res = await expectRoute('POST', '/v1/users/00000000-0000-0000-0000-000000000000/agreements')
+        .as(tiers.superAdmin)
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('should return 404 when target user is rostering-ended (#1742)', async () => {
+      // Even with a valid agreement version and a super-admin requester,
+      // a rostering-ended target user yields 404 with the same code as not-found.
+      const endedUser = await UserFactory.create({
+        dob: '1990-01-01',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('POST', `/v1/users/${endedUser.id}/agreements`)
         .as(tiers.superAdmin)
         .withBody({ agreementVersionId: tosAgreementVersion.id })
         .toReturn(StatusCodes.NOT_FOUND);
@@ -1345,6 +1413,19 @@ describe('GET /v1/users/:userId/administrations', () => {
   describe('validation', () => {
     it('returns 404 when target user does not exist', async () => {
       const res = await expectRoute('GET', '/v1/users/00000000-0000-0000-0000-000000000000/administrations')
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 when target user is rostering-ended (#1742)', async () => {
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedAdminsList1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('GET', `/v1/users/${endedUser.id}/administrations`)
         .as(tiers.superAdmin)
         .toReturn(StatusCodes.NOT_FOUND);
 
@@ -2304,6 +2385,22 @@ describe('GET /v1/users/:userId/administrations/:administrationId', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
+    it('returns 404 when target user is rostering-ended (#1742)', async () => {
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedSingleAdmin1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${endedUser.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
     it('returns 404 when administration does not exist', async () => {
       const res = await expectRoute(
         'GET',
@@ -2480,17 +2577,10 @@ describe('GET /v1/users/:userId/reports/scores', () => {
     });
 
     it('returns 404 for a student with rosteringEnded set', async () => {
-      // UserFactory.onCreate strips `rosteringEnded` from the insert payload, so
-      // setting it via the factory override has no DB-level effect. Set it
-      // explicitly with an UPDATE after the create to exercise the
-      // rostering-ended branch in the service.
-      const endedStudent = await UserFactory.create({ userType: 'student' });
-      const { eq } = await import('drizzle-orm');
-      const { CoreDbClient } = await import('../db/clients');
-      const { users } = await import('../db/schema');
-      await CoreDbClient.update(users)
-        .set({ rosteringEnded: new Date('2025-01-01') })
-        .where(eq(users.id, endedStudent.id));
+      const endedStudent = await UserFactory.create({
+        userType: 'student',
+        rosteringEnded: new Date('2025-01-01'),
+      });
 
       const res = await expectRoute('GET', reportPath(endedStudent.id)).as(tiers.superAdmin).toReturn(404);
 

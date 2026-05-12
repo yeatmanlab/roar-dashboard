@@ -13,6 +13,15 @@ import { RunFactory } from '../test-support/factories/run.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
+import { GroupFactory } from '../test-support/factories/group.factory';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+import { UserClassFactory } from '../test-support/factories/user-class.factory';
+import { UserGroupFactory } from '../test-support/factories/user-group.factory';
+import { OrgType } from '../enums/org-type.enum';
+import { UserRole } from '../enums/user-role.enum';
 
 let repo: ReportRepository;
 
@@ -570,5 +579,232 @@ describe('ReportRepository.getProgressOverviewCountsBulk — multi-scope aggrega
       .get(baseFixture.schoolB.id)!
       .taskStatusCounts.filter((tc) => tc.status === 'completed-required');
     expect(schoolBCompleted).toHaveLength(0);
+  });
+});
+
+describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
+  /**
+   * Each scope type gets a freshly created entity hierarchy and its own
+   * students, so the count is deterministic regardless of which other tests
+   * have seeded data on `baseFixture`. Both exclusion reasons are exercised:
+   *
+   * - User-level: `users.rosteringEnded <= NOW()`
+   * - Entity-level: parent entity's `rosteringEnded <= NOW()` (org / class /
+   *   group). The user themselves remains active.
+   */
+  let testRepo: ReportRepository;
+
+  beforeAll(() => {
+    testRepo = new ReportRepository();
+  });
+
+  const past = () => new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const future = () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+  describe('district scope', () => {
+    it('counts users excluded only at the user level (rostering-ended user, active district)', async () => {
+      const district = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'District UserLevel Exclude',
+      });
+
+      // 1 active student (must NOT be counted as excluded)
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveDistrictStudent' });
+      await UserOrgFactory.create({ userId: activeStudent.id, orgId: district.id, role: UserRole.STUDENT });
+
+      // 2 rostering-ended students (MUST be counted as excluded — distinct count = 2)
+      const endedStudent1 = await UserFactory.create({ nameLast: 'EndedDistrictStudent1', rosteringEnded: past() });
+      const endedStudent2 = await UserFactory.create({ nameLast: 'EndedDistrictStudent2', rosteringEnded: past() });
+      await UserOrgFactory.create({ userId: endedStudent1.id, orgId: district.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: endedStudent2.id, orgId: district.id, role: UserRole.STUDENT });
+
+      // Future-dated rostering-end is still active and must NOT be counted
+      const futureEndedStudent = await UserFactory.create({
+        nameLast: 'FutureEndedDistrictStudent',
+        rosteringEnded: future(),
+      });
+      await UserOrgFactory.create({ userId: futureEndedStudent.id, orgId: district.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      expect(count).toBe(2);
+    });
+
+    it('counts students excluded by descendant class rostering-ended even when no user is decommissioned', async () => {
+      const district = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'District EntityLevel Exclude',
+      });
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'School Under District Entity Exclude',
+        parentOrgId: district.id,
+      });
+      const endedClass = await ClassFactory.create({
+        name: 'Ended Class Under District',
+        schoolId: school.id,
+        districtId: district.id,
+        rosteringEnded: past(),
+      });
+
+      const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedClass' });
+      await UserClassFactory.create({ userId: student.id, classId: endedClass.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      expect(count).toBe(1);
+    });
+
+    it('counts a student once when excluded for both user-level and entity-level reasons', async () => {
+      const district = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'District Both Reasons Exclude',
+      });
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'School Under District Both Reasons',
+        parentOrgId: district.id,
+      });
+      const endedClass = await ClassFactory.create({
+        name: 'Ended Class For Dedup',
+        schoolId: school.id,
+        districtId: district.id,
+        rosteringEnded: past(),
+      });
+
+      // Student is both rostering-ended themselves AND in a rostering-ended class.
+      const doubleExcluded = await UserFactory.create({
+        nameLast: 'DoubleExcludedStudent',
+        rosteringEnded: past(),
+      });
+      await UserClassFactory.create({ userId: doubleExcluded.id, classId: endedClass.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      expect(count).toBe(1);
+    });
+
+    it('returns 0 when no students are excluded', async () => {
+      const district = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'District No Exclusions',
+      });
+      const student = await UserFactory.create({ nameLast: 'ActiveDistrictStudentOnly' });
+      await UserOrgFactory.create({ userId: student.id, orgId: district.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      expect(count).toBe(0);
+    });
+
+    it('only counts students (non-student roles are ignored)', async () => {
+      const district = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'District Role Filter Exclude',
+      });
+
+      const endedTeacher = await UserFactory.create({ nameLast: 'EndedTeacher', rosteringEnded: past() });
+      const endedStudent = await UserFactory.create({ nameLast: 'EndedStudentRoleFilter', rosteringEnded: past() });
+
+      await UserOrgFactory.create({ userId: endedTeacher.id, orgId: district.id, role: UserRole.TEACHER });
+      await UserOrgFactory.create({ userId: endedStudent.id, orgId: district.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      expect(count).toBe(1);
+    });
+  });
+
+  describe('school scope', () => {
+    it('counts user-level and class-entity-level exclusions distinctly', async () => {
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'School Exclude Mix',
+        parentOrgId: baseFixture.district.id,
+      });
+      const endedClass = await ClassFactory.create({
+        name: 'Ended Class In School Scope',
+        schoolId: school.id,
+        districtId: baseFixture.district.id,
+        rosteringEnded: past(),
+      });
+
+      // Org-level: 1 user-level exclusion
+      const orgEndedStudent = await UserFactory.create({
+        nameLast: 'OrgEndedSchoolStudent',
+        rosteringEnded: past(),
+      });
+      await UserOrgFactory.create({ userId: orgEndedStudent.id, orgId: school.id, role: UserRole.STUDENT });
+
+      // Class-level: 1 active user in an ended class
+      const classOrphanStudent = await UserFactory.create({ nameLast: 'ClassOrphanStudent' });
+      await UserClassFactory.create({ userId: classOrphanStudent.id, classId: endedClass.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'school', scopeId: school.id });
+      expect(count).toBe(2);
+    });
+  });
+
+  describe('class scope', () => {
+    it('counts user-level exclusions for students directly in the class', async () => {
+      const klass = await ClassFactory.create({
+        name: 'Class Exclude Direct',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveClassStudentDirect' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedClassStudentDirect',
+        rosteringEnded: past(),
+      });
+
+      await UserClassFactory.create({ userId: activeStudent.id, classId: klass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: endedStudent.id, classId: klass.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'class', scopeId: klass.id });
+      expect(count).toBe(1);
+    });
+
+    it('counts entity-level exclusion (rostering-ended class) for active enrollees', async () => {
+      const endedKlass = await ClassFactory.create({
+        name: 'Class Exclude EntityLevel',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+        rosteringEnded: past(),
+      });
+
+      const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedClassDirect' });
+      await UserClassFactory.create({ userId: student.id, classId: endedKlass.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'class', scopeId: endedKlass.id });
+      expect(count).toBe(1);
+    });
+  });
+
+  describe('group scope', () => {
+    it('counts user-level exclusions for group members', async () => {
+      const group = await GroupFactory.create({ name: 'Group Exclude UserLevel' });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveGroupStudentExclude' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedGroupStudentExclude',
+        rosteringEnded: past(),
+      });
+
+      await UserGroupFactory.create({ userId: activeStudent.id, groupId: group.id, role: UserRole.STUDENT });
+      await UserGroupFactory.create({ userId: endedStudent.id, groupId: group.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'group', scopeId: group.id });
+      expect(count).toBe(1);
+    });
+
+    it('counts entity-level exclusion (rostering-ended group) for active members', async () => {
+      const endedGroup = await GroupFactory.create({
+        name: 'Group Exclude EntityLevel',
+        rosteringEnded: past(),
+      });
+
+      const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedGroup' });
+      await UserGroupFactory.create({ userId: student.id, groupId: endedGroup.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'group', scopeId: endedGroup.id });
+      expect(count).toBe(1);
+    });
   });
 });
