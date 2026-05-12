@@ -46,7 +46,11 @@ import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { EntityType } from '../../types/entity-type';
 import { AdministrationService } from '../administration/administration.service';
-import { ReportRepository, REPORT_CONDITION_FIELD_MAP } from '../../repositories/report.repository';
+import {
+  ReportRepository,
+  REPORT_CONDITION_FIELD_MAP,
+  toReportAdminWindow,
+} from '../../repositories/report.repository';
 import type {
   ReportTaskMeta,
   StudentProgressRow,
@@ -285,11 +289,7 @@ export function ReportService({
         administrationId,
         FgaRelation.CAN_READ_PROGRESS,
       );
-      const adminWindow = {
-        id: administration.id,
-        dateStart: administration.dateStart,
-        dateEnd: administration.dateEnd,
-      };
+      const adminWindow = toReportAdminWindow(administration);
 
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
@@ -428,11 +428,7 @@ export function ReportService({
         administrationId,
         FgaRelation.CAN_READ_PROGRESS,
       );
-      const adminWindow = {
-        id: administration.id,
-        dateStart: administration.dateStart,
-        dateEnd: administration.dateEnd,
-      };
+      const adminWindow = toReportAdminWindow(administration);
 
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
@@ -609,11 +605,7 @@ export function ReportService({
         administrationId,
         FgaRelation.CAN_READ_SCORES,
       );
-      const adminWindow = {
-        id: administration.id,
-        dateStart: administration.dateStart,
-        dateEnd: administration.dateEnd,
-      };
+      const adminWindow = toReportAdminWindow(administration);
 
       // 2. Validate scope and authorize can_read_scores on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
@@ -784,11 +776,7 @@ export function ReportService({
         administrationId,
         FgaRelation.CAN_READ_SCORES,
       );
-      const adminWindow = {
-        id: administration.id,
-        dateStart: administration.dateStart,
-        dateEnd: administration.dateEnd,
-      };
+      const adminWindow = toReportAdminWindow(administration);
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
       // 2. Get task metadata and apply taskId filter (merge multiple entries)
@@ -1014,11 +1002,7 @@ export function ReportService({
       //    lookup (#1792): if the target passes admin-aware strict overlap
       //    OR has at least one non-deleted, non-aborted run for this
       //    administration, the check passes. Otherwise 404.
-      const adminWindow = {
-        id: administration.id,
-        dateStart: administration.dateStart,
-        dateEnd: administration.dateEnd,
-      };
+      const adminWindow = toReportAdminWindow(administration);
       const studentInScope = await reportRepository.verifyStudentInScope(
         { scopeType, scopeId },
         adminWindow,

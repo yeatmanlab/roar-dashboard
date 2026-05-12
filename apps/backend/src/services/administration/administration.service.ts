@@ -41,7 +41,7 @@ import type {
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
-import { ReportRepository } from '../../repositories/report.repository';
+import { ReportRepository, toReportAdminWindow } from '../../repositories/report.repository';
 import type { ReportScope } from '../../repositories/report.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
@@ -1003,11 +1003,7 @@ export function AdministrationService({
       // `includeUnenrolledStudents` toggle — default behavior only, per the
       // ticket — so we always pass `false` below.
       const administration = await verifyAdministrationAccess(authContext, administrationId);
-      const adminWindow = {
-        id: administration.id,
-        dateStart: administration.dateStart,
-        dateEnd: administration.dateEnd,
-      };
+      const adminWindow = toReportAdminWindow(administration);
 
       // Build FGA-scoped accessible IDs (undefined = no filter for super admins)
       let accessibleIds: AccessibleIds | undefined;

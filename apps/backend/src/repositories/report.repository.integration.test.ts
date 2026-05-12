@@ -1491,4 +1491,146 @@ describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
       expect(ok).toBe(false);
     });
   });
+
+  describe('pagination × includeUnenrolledStudents', () => {
+    it('widens totalItems and pages without duplicates when the toggle is on', async () => {
+      // Pagination contract under #1792: enabling the toggle monotonically
+      // adds rows to the in-scope set (withdrawn-with-data students), so
+      // `totalItems` widens and the union of pages must cover both cohorts
+      // without duplicating anyone.
+      //
+      // Setup: 3 strict-overlap students + 2 withdrawn-with-data students
+      // under a past admin. perPage = 2 forces 2 pages on toggle-off and
+      // 3 on toggle-on; the assertions pin (a) per-page counts, (b)
+      // totalItems, (c) deduped union across pages.
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Pagination × toggle',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+
+      // 3 strict-overlap students: currently enrolled, no end date, sorted
+      // by lastName to keep page order deterministic.
+      const strictNames = ['PageStrictA', 'PageStrictB', 'PageStrictC'];
+      const strictIds: string[] = [];
+      for (const name of strictNames) {
+        const user = await UserFactory.create({ nameLast: name });
+        strictIds.push(user.id);
+        await UserOrgFactory.create({
+          userId: user.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+      }
+
+      // 2 withdrawn-with-data students: left mid-window, completed run for
+      // this admin. Strict overlap rejects them; toggle-on accepts.
+      const withdrawnNames = ['PageWithdrawnD', 'PageWithdrawnE'];
+      const withdrawnIds: string[] = [];
+      for (const name of withdrawnNames) {
+        const user = await UserFactory.create({ nameLast: name });
+        withdrawnIds.push(user.id);
+        await UserOrgFactory.create({
+          userId: user.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: daysAgo(45),
+        });
+        await RunFactory.create({
+          userId: user.id,
+          taskId: baseFixture.task.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          administrationId: adminWindow.id,
+          useForReporting: true,
+          completedAt: daysAgo(50),
+        });
+      }
+
+      const options = { page: 1, perPage: 2 };
+
+      // --- Toggle off: 3 strict-overlap students across 2 pages ---
+      const offPage1 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 1 },
+        undefined,
+        undefined,
+        undefined,
+        false,
+      );
+      const offPage2 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 2 },
+        undefined,
+        undefined,
+        undefined,
+        false,
+      );
+
+      expect(offPage1.totalItems).toBe(3);
+      expect(offPage2.totalItems).toBe(3);
+      expect(offPage1.items).toHaveLength(2);
+      expect(offPage2.items).toHaveLength(1);
+
+      const offUnion = new Set([...offPage1.items, ...offPage2.items].map((r) => r.userId));
+      expect(offUnion.size).toBe(3);
+      expect([...offUnion].sort()).toEqual([...strictIds].sort());
+
+      // --- Toggle on: 5 students across 3 pages, no duplicates ---
+      const onPage1 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 1 },
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+      const onPage2 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 2 },
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+      const onPage3 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 3 },
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+
+      expect(onPage1.totalItems).toBe(5);
+      expect(onPage2.totalItems).toBe(5);
+      expect(onPage3.totalItems).toBe(5);
+      expect(onPage1.items).toHaveLength(2);
+      expect(onPage2.items).toHaveLength(2);
+      expect(onPage3.items).toHaveLength(1);
+
+      const onUnion = new Set([...onPage1.items, ...onPage2.items, ...onPage3.items].map((r) => r.userId));
+      expect(onUnion.size).toBe(5);
+      expect([...onUnion].sort()).toEqual([...strictIds, ...withdrawnIds].sort());
+    });
+  });
 });

@@ -72,6 +72,23 @@ export interface ReportAdminWindow {
 }
 
 /**
+ * Project a loaded `Administration` row down to the `ReportAdminWindow`
+ * shape consumed by reporting repository methods.
+ *
+ * Centralises the `{ id, dateStart, dateEnd }` projection so it doesn't
+ * have to be rebuilt at every service-layer call site. If the underlying
+ * `Administration` shape changes (e.g., `dateEnd` becomes nullable), only
+ * this helper needs to follow.
+ */
+export function toReportAdminWindow(administration: { id: string; dateStart: Date; dateEnd: Date }): ReportAdminWindow {
+  return {
+    id: administration.id,
+    dateStart: administration.dateStart,
+    dateEnd: administration.dateEnd,
+  };
+}
+
+/**
  * Task metadata resolved from administration_task_variants.
  * Includes condition JSONB for determining assigned vs optional status.
  */
