@@ -66,6 +66,15 @@ export const runScores = db.table(
       .unique('run_scores_natural_key_unique')
       .on(table.runId, table.type, table.domain, table.name, table.assessmentStage)
       .nullsNotDistinct(),
+
+    // - Raw scores are stage-scoped (CAT progression is per-stage). Computed scores
+    //   may be cross-stage and so allow NULL. The api-contract enforces the same rule
+    //   at validation time via a discriminated-union schema; this CHECK is the DB
+    //   defense-in-depth.
+    p.check(
+      'run_scores_raw_requires_stage',
+      sql`${table.type} <> 'raw'::app.score_type OR ${table.assessmentStage} IS NOT NULL`,
+    ),
   ],
 );
 

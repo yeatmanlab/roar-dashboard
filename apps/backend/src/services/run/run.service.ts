@@ -221,5 +221,67 @@ export function RunService({
     }
   }
 
-  return { create };
+  /**
+   * Recompute the `use_for_reporting` flag across all runs in a single
+   * `(userId, administrationId, taskVariantId)` partition.
+   *
+   * Promotes the single best run to `use_for_reporting = true` and demotes all others to
+   * `false` according to the four-tier ranking documented on
+   * `RunRepository.recomputeUseForReporting`. Intended to be called as the last step of any
+   * write-side transaction that can change ranking-relevant state (trial writes, completion,
+   * abort, engagement/reliability flips).
+   *
+   * Anonymous runs short-circuit: an anonymous run's `administrationId` is the sentinel and
+   * cross-user partitions are not meaningful, so no recompute is performed.
+   *
+   * @param params.userId - User the partition belongs to
+   * @param params.administrationId - Administration the partition belongs to
+   * @param params.taskVariantId - Task variant the partition belongs to
+   * @param params.transaction - Optional transaction to participate in
+   * @throws ApiError with INTERNAL_SERVER_ERROR if the underlying SQL fails
+   */
+  async function recomputeBestRunForVariant(params: {
+    userId: string;
+    administrationId: string;
+    taskVariantId: string;
+    transaction?: Parameters<RunRepository['recomputeUseForReporting']>[0]['transaction'];
+  }): Promise<void> {
+    const { userId, administrationId, taskVariantId, transaction } = params;
+
+    if (administrationId === ANONYMOUS_RUN_ADMINISTRATION_ID) {
+      return;
+    }
+
+    try {
+      // Conditional spread on `transaction` so we never set the property to
+      // an explicit `undefined`, which is forbidden under
+      // `exactOptionalPropertyTypes: true`. The repository signature accepts
+      // the property being absent OR a real `PgTransaction`, not `undefined`.
+      await runRepository.recomputeUseForReporting({
+        userId,
+        administrationId,
+        taskVariantId,
+        ...(transaction !== undefined && { transaction }),
+      });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        {
+          err: error,
+          context: { userId, administrationId, taskVariantId },
+        },
+        'Failed to recompute use_for_reporting',
+      );
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, taskVariantId },
+        cause: error,
+      });
+    }
+  }
+
+  return { create, recomputeBestRunForVariant };
 }

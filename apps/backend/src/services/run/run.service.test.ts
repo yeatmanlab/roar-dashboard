@@ -5,6 +5,7 @@ import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import type { AuthContext } from '../../types/auth-context';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import type { Transaction } from '../../repositories/interfaces/base.repository.interface';
 import type {
   MockRunRepository,
   MockTaskVariantRepository,
@@ -407,6 +408,82 @@ describe('RunService', () => {
         expect(familyRepository.getFamilyIdsForUser).not.toHaveBeenCalled();
         expect(authorizationService.hasAnyPermission).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('recomputeBestRunForVariant', () => {
+    const partition = {
+      userId: 'user-abc',
+      administrationId: '660e8400-e29b-41d4-a716-446655440001',
+      taskVariantId: '550e8400-e29b-41d4-a716-446655440000',
+    };
+
+    it('delegates to runRepository.recomputeUseForReporting with the partition keys', async () => {
+      runRepository.recomputeUseForReporting.mockResolvedValue(undefined);
+
+      await runService.recomputeBestRunForVariant(partition);
+
+      expect(runRepository.recomputeUseForReporting).toHaveBeenCalledTimes(1);
+      // The service uses conditional spread to avoid setting `transaction` to
+      // an explicit `undefined` (forbidden under exactOptionalPropertyTypes),
+      // so when no transaction is passed the property is absent from the
+      // call object. Assert the present properties and explicitly verify the
+      // transaction property was not included.
+      expect(runRepository.recomputeUseForReporting).toHaveBeenCalledWith({
+        userId: partition.userId,
+        administrationId: partition.administrationId,
+        taskVariantId: partition.taskVariantId,
+      });
+      const callArg = runRepository.recomputeUseForReporting.mock.calls[0]![0];
+      expect(callArg).not.toHaveProperty('transaction');
+    });
+
+    it('passes the caller-provided transaction through to the repository', async () => {
+      runRepository.recomputeUseForReporting.mockResolvedValue(undefined);
+      // The full `Transaction` type has 19+ methods (`schema`, `nestedIndex`,
+      // `rollback`, etc.) — none of which the service touches; it just
+      // forwards the value. Cast a minimal sentinel through `unknown` so the
+      // test can assert the value is propagated by reference without
+      // constructing a real Drizzle transaction.
+      const txSentinel = { __tx: true } as unknown as Transaction;
+
+      await runService.recomputeBestRunForVariant({ ...partition, transaction: txSentinel });
+
+      expect(runRepository.recomputeUseForReporting).toHaveBeenCalledWith({
+        userId: partition.userId,
+        administrationId: partition.administrationId,
+        taskVariantId: partition.taskVariantId,
+        transaction: txSentinel,
+      });
+    });
+
+    it('short-circuits without hitting the repository for anonymous-run partitions', async () => {
+      await runService.recomputeBestRunForVariant({
+        ...partition,
+        administrationId: ANONYMOUS_RUN_ADMINISTRATION_ID,
+      });
+
+      expect(runRepository.recomputeUseForReporting).not.toHaveBeenCalled();
+    });
+
+    it('wraps a repository failure in a 500 ApiError with DATABASE_QUERY_FAILED', async () => {
+      const dbError = new Error('connection lost');
+      runRepository.recomputeUseForReporting.mockRejectedValue(dbError);
+
+      await expect(runService.recomputeBestRunForVariant(partition)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('re-throws ApiError unchanged without re-wrapping', async () => {
+      const apiError = new ApiError('upstream', {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+      });
+      runRepository.recomputeUseForReporting.mockRejectedValue(apiError);
+
+      await expect(runService.recomputeBestRunForVariant(partition)).rejects.toBe(apiError);
     });
   });
 });
