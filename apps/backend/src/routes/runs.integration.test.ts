@@ -35,6 +35,7 @@ import { FamilyFactory } from '../test-support/factories/family.factory';
 import { UserFamilyFactory } from '../test-support/factories/user-family.factory';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { syncFgaTuplesFromPostgres } from '../test-support/fga';
+import { SCORE_TYPE, SCORE_DOMAIN, ASSESSMENT_STAGE, SCORE_NAME } from '../constants/run-scores';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -104,7 +105,7 @@ function buildTrialEventBody() {
   return {
     type: 'trial' as const,
     trial: {
-      assessmentStage: 'test' as const,
+      assessmentStage: ASSESSMENT_STAGE.TEST,
       correct: 1,
     },
   };
@@ -463,6 +464,230 @@ describe('POST /v1/user/:userId/runs/:runId/event', () => {
 
       expect(res.status).toBe(StatusCodes.OK);
       expect(res.body.data.status).toBe('ok');
+    });
+  });
+
+  describe('trial scores', () => {
+    /** Reads all run_scores rows for a given run from the assessment DB. */
+    async function readScoresForRun(runId: string) {
+      const { AssessmentDbClient } = await import('../test-support/db');
+      const { runScores } = await import('../db/schema/assessment');
+      const { eq } = await import('drizzle-orm');
+      return AssessmentDbClient.select().from(runScores).where(eq(runScores.runId, runId));
+    }
+
+    it('persists scores from a trial event into run_scores', async () => {
+      const runId = await createRunAsStudent();
+
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.NUM_ATTEMPTED,
+              value: '12',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        });
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(2);
+      const byName = new Map(rows.map((r) => [r.name, r.value]));
+      expect(byName.get(SCORE_NAME.THETA_SE)).toBe('0.5');
+      expect(byName.get(SCORE_NAME.NUM_ATTEMPTED)).toBe('12');
+    });
+
+    it('updates an existing score row when the same natural key is sent again', async () => {
+      const runId = await createRunAsStudent();
+
+      // First trial — initial score
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        });
+
+      // Second trial — same natural key, new value
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
+              value: '0.3',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        });
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.value).toBe('0.3');
+    });
+
+    it('treats NULL assessment_stage as the same key on re-send (NULLS NOT DISTINCT)', async () => {
+      const runId = await createRunAsStudent();
+
+      // Uses type=computed because raw scores require an assessmentStage by contract
+      // and DB CHECK constraint. The NULLS NOT DISTINCT behavior is independent of
+      // type, so a stage-less computed score exercises the same upsert semantics.
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: SCORE_TYPE.COMPUTED,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: 'final_composite',
+              value: '0.5',
+              // assessmentStage omitted → null in DB
+            },
+          ],
+        });
+
+      authenticateAs(tiers.student);
+      await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: SCORE_TYPE.COMPUTED,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: 'final_composite',
+              value: '0.4',
+            },
+          ],
+        });
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.value).toBe('0.4');
+      expect(rows[0]!.assessmentStage).toBeNull();
+    });
+
+    it('writes no run_scores rows when scores is omitted', async () => {
+      const runId = await createRunAsStudent();
+
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send(buildTrialEventBody());
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const rows = await readScoresForRun(runId);
+      expect(rows).toHaveLength(0);
+    });
+
+    it('rejects a raw score without assessmentStage with 400 (contract validation)', async () => {
+      const runId = await createRunAsStudent();
+
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
+              value: '0.5',
+              // assessmentStage missing — discriminated union requires it for raw scores
+            },
+          ],
+        });
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+
+      // Nothing should have landed in either table.
+      const scoreRows = await readScoresForRun(runId);
+      expect(scoreRows).toHaveLength(0);
+    });
+
+    it('rolls back the trial when the score upsert fails (transaction atomicity)', async () => {
+      const runId = await createRunAsStudent();
+
+      // Sending two score entries with the same natural key in a single ON CONFLICT
+      // upsert triggers Postgres's "command cannot affect row a second time" error.
+      // The score upsert fails inside the transaction, which must roll back the trial
+      // insert that ran earlier in the same transaction.
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .post(eventPath(tiers.student.id, runId))
+        .set('Authorization', 'Bearer token')
+        .send({
+          ...buildTrialEventBody(),
+          scores: [
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
+              value: '0.5',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+            {
+              type: SCORE_TYPE.RAW,
+              domain: SCORE_DOMAIN.COMPOSITE,
+              name: SCORE_NAME.THETA_SE,
+              value: '0.7',
+              assessmentStage: ASSESSMENT_STAGE.TEST,
+            },
+          ],
+        });
+
+      expect(res.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+      expect(res.body.error.code).toBe(ApiErrorCode.DATABASE_QUERY_FAILED);
+
+      // No run_scores rows should have landed.
+      const scoreRows = await readScoresForRun(runId);
+      expect(scoreRows).toHaveLength(0);
+
+      // No run_trials rows should have landed either — the trial insert rolled back
+      // when the score upsert failed.
+      const { AssessmentDbClient } = await import('../test-support/db');
+      const { runTrials } = await import('../db/schema/assessment');
+      const { eq } = await import('drizzle-orm');
+      const trialRows = await AssessmentDbClient.select().from(runTrials).where(eq(runTrials.runId, runId));
+      expect(trialRows).toHaveLength(0);
     });
   });
 
