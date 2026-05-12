@@ -5,3 +5,4 @@ export { createMockTaskService, type MockTaskService } from './task.service';
 export { createMockTaskVariantService, type MockTaskVariantService } from './task-variant.service';
 export { createMockTaskBundleService, type MockTaskBundleService } from './task-bundle.service';
 export { createMockUserService, type MockedUserService } from './user.service';
+export { createMockRunService, type MockRunService } from './run.service';
