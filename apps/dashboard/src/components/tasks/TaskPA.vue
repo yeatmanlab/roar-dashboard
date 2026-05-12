@@ -13,7 +13,7 @@ import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import packageLockJson from '../../../../../package-lock.json';
+import { version } from '@roar-dashboard/roar-pa/package.json';
 
 const props = defineProps({
   taskId: { type: String, default: 'pa' },
@@ -24,7 +24,6 @@ const props = defineProps({
 let TaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/@bdelab/roar-pa'];
 const router = useRouter();
 const taskStarted = ref(false);
 const gameStarted = ref(false);
@@ -62,7 +61,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@bdelab/roar-pa')).default;
+    TaskLauncher = (await import('@roar-dashboard/roar-pa')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -140,7 +139,7 @@ async function startTask(selectedAdmin) {
 }
 </script>
 <style>
-@import '@bdelab/roar-pa/lib/resources/roar-pa.css';
+@import '@roar-dashboard/roar-pa/dist/resources/roar-pa.css';
 
 .game-target {
   position: absolute;

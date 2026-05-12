@@ -28,10 +28,10 @@ export default {
   ],
   output: [
     {
-      dir: 'lib',
-      name: '@bdelab/roar-pa',
-      entryFileNames: '[name].[hash].js',
-      chunkFileNames: '[name].[hash].js',
+      dir: 'dist',
+      name: '@roar-dashboard/roar-pa',
+      entryFileNames: '[name].js',
+      chunkFileNames: '[name].js',
       format: 'es',
       sourcemap: true,
     },

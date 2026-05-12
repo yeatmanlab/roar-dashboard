@@ -1,7 +1,7 @@
 import { playPA } from '../../../../support/helper-functions/roar-pa/paHelpers';
 import { isCurrentVersion } from '../../../../support/utils';
 
-const app = '@bdelab/roar-pa';
+const app = '@roar-dashboard/roar-pa';
 let isCurrentAppVersion;
 
 describe('Participant Assessment: ROAR Phoneme', () => {
