@@ -45,8 +45,9 @@ jobs:
           # Determine version
           VERSION="${{ inputs.version }}"
           
-          # Verify all three platform tags exist and are on main
-          for PREFIX in backend dashboard api-contract; do
+          # Verify platform tags exist and are on main
+          # Note: api-contract is independently versioned and may have a different version
+          for PREFIX in backend dashboard; do
             TAG="${PREFIX}-v${VERSION}"
             TAG_SHA=$(git rev-list -n1 "refs/tags/${TAG}" 2>/dev/null || true)
             

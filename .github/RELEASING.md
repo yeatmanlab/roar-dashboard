@@ -189,12 +189,14 @@ Release Please generates per-package changelogs:
 3. Release Please detects the `feat` commit
 4. Release Please creates Release PR:
    - Backend version: `3.26.0` → `3.27.0` (minor bump)
-   - Dashboard version: unchanged (no changes)
+   - Dashboard version: `3.26.0` → `3.27.0` (minor bump, linked with backend)
    - API contract version: unchanged (no changes)
    - SDK version: unchanged (no changes)
 5. Review and merge Release PR
-6. Tags created: `backend-v3.27.0`
+6. Tags created: `backend-v3.27.0`, `dashboard-v3.27.0`
 7. Production deployment triggered (requires approval)
+
+**Note**: Backend and dashboard are linked via `linked-versions` plugin. When either package has a conventional commit, both are bumped to the same version.
 
 ### Example 2: Bug Fix Release
 
@@ -204,13 +206,15 @@ Release Please generates per-package changelogs:
 2. Merge to `main` using squash merge
 3. Release Please detects the `fix` commit
 4. Release Please creates Release PR:
-   - Backend version: unchanged
+   - Backend version: `3.26.0` → `3.26.1` (patch bump, linked with dashboard)
    - Dashboard version: `3.26.0` → `3.26.1` (patch bump)
    - API contract version: unchanged
    - SDK version: unchanged
 5. Review and merge Release PR
-6. Tags created: `dashboard-v3.26.1`
+6. Tags created: `backend-v3.26.1`, `dashboard-v3.26.1`
 7. Production deployment triggered (requires approval)
+
+**Note**: Backend and dashboard are linked via `linked-versions` plugin. When either package has a conventional commit, both are bumped to the same version.
 
 ### Example 3: SDK Release
 
@@ -316,7 +320,7 @@ These types don't trigger version bumps.
 A: Yes. You can edit the version numbers or changelog entries in the Release PR before merging.
 
 **Q: What if I need to release multiple packages at different versions?**
-A: The hybrid versioning strategy handles this. Platform packages (backend, dashboard, api-contract) share a version, while SDK is independent.
+A: The hybrid versioning strategy handles this. Platform packages (backend, dashboard) share a version via `linked-versions`, while API contract and SDK are independently versioned.
 
 **Q: Can I release just the SDK without the platform?**
 A: Yes. If only SDK changes are detected, only the SDK version will be bumped and released.
