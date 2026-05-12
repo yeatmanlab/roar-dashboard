@@ -152,6 +152,13 @@ module.exports = async (env, args) => {
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
+        FIREBASE_APP_API_KEY: JSON.stringify(process.env.VITE_FIREBASE_APP_API_KEY),
+        FIREBASE_APP_AUTH_DOMAIN: JSON.stringify(process.env.VITE_FIREBASE_APP_AUTH_DOMAIN),
+        FIREBASE_APP_PROJECT_ID: JSON.stringify(process.env.VITE_FIREBASE_APP_PROJECT_ID),
+        FIREBASE_APP_STORAGE_BUCKET: JSON.stringify(process.env.VITE_FIREBASE_APP_STORAGE_BUCKET),
+        FIREBASE_APP_MESSAGING_SENDER_ID: JSON.stringify(process.env.VITE_FIREBASE_APP_MESSAGING_SENDER_ID),
+        FIREBASE_APP_APP_ID: JSON.stringify(process.env.VITE_FIREBASE_APP_APP_ID),
+        FIREBASE_APP_SITE_KEY: JSON.stringify(process.env.VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
