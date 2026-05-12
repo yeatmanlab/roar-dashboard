@@ -362,11 +362,15 @@ A: Release Please runs on every push to `main`. It creates a Release PR if conve
 | assessment-sdk | Independent | 0.1.0 |
 | internal packages | Unversioned | N/A |
 
-**Platform Release**: When backend or dashboard changes are released, they share a single version number and trigger production deployment.
+**Platform Release**: When backend or dashboard changes are released, they share a single version number via the `linked-versions` plugin and trigger production deployment.
 
 **Independent Releases**: API contract and assessment SDK are versioned independently and can be released separately from the platform. API contract releases do not trigger platform deployment.
 
 **Internal Packages**: Packages like `authz`, `database`, etc. are not versioned and not published.
+
+**Plugins Used**:
+- `linked-versions`: Groups backend and dashboard to share version numbers
+- `node-workspace`: Removed to prevent unintended version bumps (each package versions independently based on its own commits)
 
 ### Deployment Trigger
 
@@ -396,29 +400,30 @@ Tags are created automatically when Release PR is merged:
 
 ### Bootstrap Configuration
 
-Release Please uses two bootstrap fields in `.release-please.json`:
+Release Please uses bootstrap fields in `.release-please.json`:
 
 **`bootstrap-sha`** (commit SHA):
 - Tells Release Please where to start scanning for conventional commits on the first run
-- Set to last commit in main before this release strategy was introduced
 - Prevents Release Please from scanning the entire repo history
-- **Should be removed after the first release** — otherwise it will override Release Please's version calculations on every subsequent run
-- Safe to keep during development/testing; remove it once you've completed your first real release
+- Should be set to the last commit before the release strategy was introduced
+- Can be removed after the first release, but safe to keep for ongoing use
 
-**`release-as`** (version numbers):
-- Specifies the initial versions for each package
+**`release-as`** (version numbers per package):
+- Specifies the initial versions for each package in the `packages` configuration
+- Each package has its own `release-as` field (e.g., `"release-as": "3.26.0"`)
 - Used only on the first run to bootstrap the `.release-please-manifest.json` file
-- **Should be removed after the first release** — the manifest will track versions from that point forward
+- Should be removed after the first release — the manifest will track versions from that point forward
 
 ### Testing the Setup
 
-1. **Create a test branch** with a conventional commit title
+1. **Create a PR** with a conventional commit title
 2. **Merge to main** using squash merge
-3. **Verify Release PR** is created with updated versions and changelogs
-4. **Review and merge Release PR**
-5. **Verify tags** are created and GitHub Releases are published
-6. **Verify production deployment** workflow is triggered
-7. **After first release**: Remove both `bootstrap-sha` and `release-as` fields from `.release-please.json`
+3. **Verify Release PR** is created automatically with updated versions and changelogs
+4. **Review Release PR** for accuracy (changelog entries, version bumps)
+5. **Merge Release PR** to trigger tag creation
+6. **Verify tags** are created and GitHub Releases are published
+7. **Verify production deployment** workflow is triggered (requires approval)
+8. **After first release**: Consider removing `bootstrap-sha` and `release-as` fields from `.release-please.json` if they're no longer needed
 
 ## Quick Reference Checklist
 
