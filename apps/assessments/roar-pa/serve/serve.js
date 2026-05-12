@@ -2,7 +2,7 @@ import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import i18next from 'i18next';
 import RoarPA from '../src/index';
-import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { roarConfig } from './firebaseConfig';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
@@ -24,11 +24,8 @@ const storyOption = urlParams.get('storyoption');
 const story = urlParams.get('story') ? urlParams.get('story').toLocaleLowerCase() !== 'false' : null;
 const skipInstructions = urlParams.get('skip') !== 'false';
 const { language } = i18next;
-
-const firebaseConfig = await getFirebaseConfig();
-
 // @ts-ignore
-const appKit = await initializeFirebaseProject(firebaseConfig, 'assessmentApp', 'none');
+const appKit = await initializeFirebaseProject(roarConfig.firebaseConfig, 'assessmentApp', 'none');
 const taskId = language === 'en' ? 'pa' : `pa-${language}`;
 const earlyStopping = urlParams.get('earlyStopping')?.toLocaleLowerCase() ?? null;
 const threshold = urlParams.get('threshold') ?? null;

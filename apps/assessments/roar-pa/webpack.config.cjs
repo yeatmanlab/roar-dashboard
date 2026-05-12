@@ -19,8 +19,10 @@ const commonConfig = {
           name(module) {
             // get the name. E.g. node_modules/packageName/not/this/part.js
             // or node_modules/packageName
-            const packageName = module.request?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
-            return packageName ? `npm.${packageName.replace('@', '')}` : 'vendor';
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+
+            // npm package names are URL-safe, but some servers don't like @ symbols
+            return `npm.${packageName.replace('@', '')}`;
           },
           chunks: 'all',
         },
@@ -143,10 +145,11 @@ const developmentConfig = merge(webConfig, {
 });
 
 module.exports = async (env, args) => {
-  const roarDB = env.dbmode;
+  const roarDB = env.dbmode === 'production' ? 'production' : 'development';
 
   const envDependentConfig = {
     plugins: [
+      new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
       }),
@@ -156,25 +159,9 @@ module.exports = async (env, args) => {
     ],
   };
 
-  // Firebase config is injected via EnvironmentPlugin only for local dev builds.
-  // Staging and production deployments fetch firebase config at runtime from /__/firebase/init.json
-  // (served automatically by Firebase Hosting), so no secrets enter the build pipeline.
-  const devFirebaseConfig = {
-    plugins: [
-      new webpack.EnvironmentPlugin({
-        FIREBASE_APP_API_KEY: '',
-        FIREBASE_APP_AUTH_DOMAIN: '',
-        FIREBASE_APP_PROJECT_ID: '',
-        FIREBASE_APP_STORAGE_BUCKET: '',
-        FIREBASE_APP_MESSAGING_SENDER_ID: '',
-        FIREBASE_APP_APP_ID: '',
-      }),
-    ],
-  };
-
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
+      return merge(developmentConfig, envDependentConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:
