@@ -2396,8 +2396,13 @@ describe('AdministrationService', () => {
 
   describe('getUserAdministrations', () => {
     it('should delegate to list() when user requests their own administrations (self-access)', async () => {
-      const mockAdmins = AdministrationFactory.buildList(2);
+      // The self-access path still goes through `userRepository.getById` +
+      // `rejectRosteringEndedTarget` (#1742) so a rostering-ended user can't
+      // bypass the boundary via self-listing. The user lookup must be mocked.
+      const mockUser = UserFactory.build({ id: 'user-123', rosteringEnded: null });
+      mockUserRepository.getById.mockResolvedValue(mockUser);
 
+      const mockAdmins = AdministrationFactory.buildList(2);
       mockAuthorizationService.listAccessibleObjects.mockResolvedValue(mockAdmins.map((a) => `administration:${a.id}`));
       mockAdministrationRepository.getByIds.mockResolvedValue({
         items: mockAdmins,
@@ -2406,6 +2411,7 @@ describe('AdministrationService', () => {
 
       const service = AdministrationService({
         administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
         authorizationService: mockAuthorizationService,
       });
 
