@@ -135,10 +135,9 @@ describe('RunScoresRepository', () => {
       const run = await RunFactory.create();
 
       // Uses type=computed because raw scores require an assessmentStage
-      // (run_scores_raw_requires_stage CHECK + discriminated-union contract rule
-      // landing alongside this constraint). The NULLS NOT DISTINCT behavior is
-      // independent of type, so a stage-less computed score exercises the same
-      // upsert semantics.
+      // (run_scores_raw_requires_stage CHECK + discriminated-union contract rule).
+      // The NULLS NOT DISTINCT behavior is independent of type, so a stage-less
+      // computed score exercises the same upsert semantics.
       // First write with NULL stage
       await repository.upsertMany({
         data: [

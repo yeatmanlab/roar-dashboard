@@ -43,6 +43,7 @@ describe('RunsController', () => {
     // Setup the mock RunService
     vi.mocked(RunService).mockReturnValue({
       create: mockCreate,
+      recomputeBestRunForVariant: vi.fn(),
     });
 
     // Setup the mock RunEventService
