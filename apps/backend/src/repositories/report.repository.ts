@@ -1417,6 +1417,17 @@ export class ReportRepository {
    * Public so that other repository methods (e.g., the student-scores listing) can
    * reuse the same lookup at district scope without duplicating the two-phase
    * user_orgs → user_classes fallback.
+   *
+   * #1792 caveat — DO NOT switch to `isEnrollmentActiveForAdmin`. This function
+   * deliberately uses NOW()-based `isEnrollmentActive` even when called from a
+   * past-admin report. The schema stores only a single live `user_orgs` row per
+   * (user, org) pair — there is no historical snapshot of a student's school
+   * affiliation during a past administration. The display will therefore show a
+   * transferred student's CURRENT school name, not the one they attended during
+   * the admin. That's a known limitation of the row-level design; switching to
+   * the admin-aware predicate here would just return empty schoolNames for
+   * students who have since moved schools, which is worse. If/when we add a
+   * `user_org_history` table or equivalent, this is the call site to update.
    */
   async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
     const rows = await this.db

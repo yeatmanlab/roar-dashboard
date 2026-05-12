@@ -154,6 +154,14 @@ export function isEnrollmentActiveForAdmin(
 ) {
   const checkDate = sql`LEAST(${administrationDateEnd}, NOW())`;
   return and(
+    // Start-side clamp uses the same `LEAST(adminDateEnd, NOW())` check
+    // date as the end-side. The #1792 issue spec writes the start clause
+    // as `enrollment.start <= administration.dateEnd`, but without the
+    // clamp a student whose enrollment starts in the future would pass
+    // for an active/future admin (e.g., enrollmentStart = next week,
+    // adminDateEnd = next month). The clamp keeps the predicate
+    // present-tense for active/future admins and admin-end-tense for
+    // past admins — see the JSDoc table above.
     lte(table.enrollmentStart, checkDate),
     or(gt(table.enrollmentEnd, checkDate), isNull(table.enrollmentEnd)),
   );

@@ -6,12 +6,14 @@
  * through the FDW foreign tables in the core DB.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ReportRepository } from './report.repository';
+import { ReportRepository, toReportAdminWindow } from './report.repository';
 import type { ReportScope, ReportTaskMeta, ProgressOverviewCountsResult } from './report.repository';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationClassFactory } from '../test-support/factories/administration-class.factory';
+import { AdministrationGroupFactory } from '../test-support/factories/administration-group.factory';
 import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { ClassFactory } from '../test-support/factories/class.factory';
@@ -47,11 +49,7 @@ beforeAll(() => {
   allGradesVariantId = baseFixture.variantForAllGrades.id;
   taskId = baseFixture.task.id;
   districtScope = { scopeType: 'district', scopeId: baseFixture.district.id };
-  baseAdminWindow = {
-    id: baseFixture.administrationAssignedToDistrict.id,
-    dateStart: baseFixture.administrationAssignedToDistrict.dateStart,
-    dateEnd: baseFixture.administrationAssignedToDistrict.dateEnd,
-  };
+  baseAdminWindow = toReportAdminWindow(baseFixture.administrationAssignedToDistrict);
 });
 
 describe('ReportRepository.getProgressStudents — FDW run queries', () => {
@@ -513,7 +511,7 @@ describe('ReportRepository.getProgressOverviewCountsBulk — multi-scope aggrega
     // Execute the bulk query with both scopes
     schoolAScope = { scopeType: 'school', scopeId: baseFixture.schoolA.id };
     schoolBScope = { scopeType: 'school', scopeId: baseFixture.schoolB.id };
-    const bulkAdminWindow = { id: bulkAdmin.id, dateStart: bulkAdmin.dateStart, dateEnd: bulkAdmin.dateEnd };
+    const bulkAdminWindow = toReportAdminWindow(bulkAdmin);
     bulkResult = await bulkRepo.getProgressOverviewCountsBulk(
       bulkAdminId,
       [schoolAScope, schoolBScope],
@@ -954,7 +952,7 @@ describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
       orderIndex: 0,
     });
 
-    const adminWindow = { id: admin.id, dateStart: admin.dateStart, dateEnd: admin.dateEnd };
+    const adminWindow = toReportAdminWindow(admin);
     const scope: ReportScope = { scopeType: 'district', scopeId: district.id };
     const taskMetas: ReportTaskMeta[] = await testRepo.getTaskMetadata(admin.id);
 
@@ -1106,6 +1104,106 @@ describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
         });
 
         const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+    });
+
+    describe('scope branches (acceptance criteria — verify on each scope)', () => {
+      // The admin-aware predicate itself lives in a closure (`enrollmentPredicate`)
+      // applied identically across every UNION branch of
+      // `buildStudentInScopeQuery`, so the district tests above are enough to pin
+      // the predicate's logic. The scenarios here cover the other half of the
+      // contract: that each scope branch applies the predicate at all (i.e., the
+      // closure is actually wired into `EntityType.CLASS` and `EntityType.GROUP`,
+      // not just the district branch). One past-admin case per scope is enough —
+      // we're verifying the wire-up, not re-deriving the predicate semantics.
+
+      it('class scope: applies admin-aware overlap to user_classes', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'Class-scope admin-aware overlap',
+          createdBy: baseFixture.districtAdmin.id,
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+        const klass = await ClassFactory.create({
+          name: 'Class-scope admin-aware overlap class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        await AdministrationClassFactory.create({ administrationId: admin.id, classId: klass.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: admin.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        });
+
+        // Enrolled before admin opened, still active — should count.
+        const earlyEnroller = await UserFactory.create({ nameLast: 'ClassScopeEarlyEnroller' });
+        await UserClassFactory.create({
+          userId: earlyEnroller.id,
+          classId: klass.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+
+        // Enrolled after admin closed — must NOT count under strict overlap
+        // for a past admin.
+        const lateEnroller = await UserFactory.create({ nameLast: 'ClassScopeLateEnroller' });
+        await UserClassFactory.create({
+          userId: lateEnroller.id,
+          classId: klass.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(10),
+          enrollmentEnd: null,
+        });
+
+        const adminWindow = toReportAdminWindow(admin);
+        const scope: ReportScope = { scopeType: 'class', scopeId: klass.id };
+        const taskMetas = await testRepo.getTaskMetadata(admin.id);
+
+        const result = await testRepo.getProgressOverviewCounts(admin.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+
+      it('group scope: applies admin-aware overlap to user_groups', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'Group-scope admin-aware overlap',
+          createdBy: baseFixture.districtAdmin.id,
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+        const group = await GroupFactory.create({ name: 'Group-scope admin-aware overlap group' });
+        await AdministrationGroupFactory.create({ administrationId: admin.id, groupId: group.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: admin.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        });
+
+        const earlyEnroller = await UserFactory.create({ nameLast: 'GroupScopeEarlyEnroller' });
+        await UserGroupFactory.create({
+          userId: earlyEnroller.id,
+          groupId: group.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+
+        const lateEnroller = await UserFactory.create({ nameLast: 'GroupScopeLateEnroller' });
+        await UserGroupFactory.create({
+          userId: lateEnroller.id,
+          groupId: group.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(10),
+          enrollmentEnd: null,
+        });
+
+        const adminWindow = toReportAdminWindow(admin);
+        const scope: ReportScope = { scopeType: 'group', scopeId: group.id };
+        const taskMetas = await testRepo.getTaskMetadata(admin.id);
+
+        const result = await testRepo.getProgressOverviewCounts(admin.id, scope, adminWindow, taskMetas);
         expect(result.totalStudents).toBe(1);
       });
     });
@@ -1437,7 +1535,7 @@ describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
         completedAt: daysAgo(50),
       });
 
-      const adminWindow = { id: admin.id, dateStart: admin.dateStart, dateEnd: admin.dateEnd };
+      const adminWindow = toReportAdminWindow(admin);
 
       // Sanity: lookup under district A passes.
       const inA = await testRepo.verifyStudentInScope(
