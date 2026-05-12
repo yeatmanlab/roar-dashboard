@@ -2433,6 +2433,42 @@ describe('AdministrationService', () => {
       expect(result.totalItems).toBe(2);
     });
 
+    it('throws 404 when a rostering-ended user requests their own administrations (#1742 defense-in-depth)', async () => {
+      // The auth guard (#1735) blocks rostering-ended users end-to-end, but
+      // the service-layer check runs BEFORE the `requesterUserId === userId`
+      // early return so a rostering-ended user can't bypass the boundary
+      // even if the guard is somehow circumvented or future-changed. This
+      // unit test exercises that defense-in-depth path directly.
+      const endedUser = UserFactory.build({
+        id: 'ended-user-self-1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+      mockUserRepository.getById.mockResolvedValue(endedUser);
+
+      const service = AdministrationService({
+        administrationRepository: mockAdministrationRepository,
+        userRepository: mockUserRepository,
+        authorizationService: mockAuthorizationService,
+      });
+
+      await expect(
+        service.getUserAdministrations({ userId: endedUser.id, isSuperAdmin: false }, endedUser.id, {
+          page: 1,
+          perPage: 25,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+
+      // Self-access early return must NOT have been taken — FGA / admin
+      // repo should never be called for a rostering-ended self-lookup.
+      expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+      expect(mockAdministrationRepository.getByIds).not.toHaveBeenCalled();
+    });
+
     it('should return administrations for super admin without filtering by requester permissions', async () => {
       const mockAdmins = AdministrationFactory.buildList(3);
       const mockUser = UserFactory.build({ id: 'target-user-123' });

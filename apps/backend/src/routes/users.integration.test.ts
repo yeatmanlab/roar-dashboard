@@ -1432,12 +1432,20 @@ describe('GET /v1/users/:userId/administrations', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
-    it('returns 404 when a rostering-ended user requests their own administrations (#1742)', async () => {
-      // Self-lookup is also blocked: the rostering-ended check now runs
-      // before the `requesterUserId === userId` early return so a
-      // rostering-ended user can't bypass the boundary via self-listing
-      // even if they manage to authenticate (defense-in-depth alongside
-      // auth guard #1735).
+    it('returns 403 when a rostering-ended user requests their own administrations (#1742)', async () => {
+      // End-to-end, the auth guard (#1735) blocks rostering-ended users at
+      // the middleware layer and returns 403 AUTH_ROSTERING_ENDED before
+      // any handler runs — so the service-layer 404 (which would otherwise
+      // fire for a self-lookup against a rostering-ended target) is
+      // unreachable from a route test. We still want to verify the
+      // user-visible behavior: a rostering-ended user can't access their
+      // own administrations.
+      //
+      // The service-layer defense-in-depth (rejectRosteringEndedTarget
+      // running BEFORE the `requesterUserId === userId` early return)
+      // matters if the auth guard logic is ever bypassed or changed —
+      // that path is covered by the unit test in
+      // `administration.service.test.ts`.
       const endedUser = await UserFactory.create({
         nameLast: 'EndedSelfAdmin1742',
         rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
@@ -1445,9 +1453,9 @@ describe('GET /v1/users/:userId/administrations', () => {
 
       const res = await expectRoute('GET', `/v1/users/${endedUser.id}/administrations`)
         .as({ id: endedUser.id, authId: endedUser.authId! })
-        .toReturn(StatusCodes.NOT_FOUND);
+        .toReturn(StatusCodes.FORBIDDEN);
 
-      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_ROSTERING_ENDED);
     });
 
     it('returns 403 when non-super-admin tries to list administrations for user with no shared access', async () => {
