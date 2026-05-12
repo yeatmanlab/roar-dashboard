@@ -162,6 +162,13 @@
       "when": 1778238129337,
       "tag": "0022_add_platform_admin_to_user_role",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1778266456221,
+      "tag": "0023_add_run_scores_raw_requires_stage_check",
+      "breakpoints": true
     }
   ]
 }
