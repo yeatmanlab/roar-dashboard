@@ -1128,6 +1128,14 @@ export class ReportRepository {
    * (#1742) — frontend messaging is the same ("no longer active on ROAR") and
    * users excluded for both are counted once via `COUNT(DISTINCT users.id)`.
    *
+   * At district / school scope the count is anti-joined against
+   * `buildStudentInScopeQuery` so a student who is excluded via one branch
+   * (e.g., rostering-ended class) but visible via another (e.g., active org
+   * enrollment) is NOT counted — that student appears in `items`, so
+   * counting them in `exclusions` would surface a false positive in the
+   * frontend "N students excluded" notice. Class / group scopes use a
+   * single query (no UNION), so the dual-enrollment case can't occur.
+   *
    * Designed to run in parallel with the main report query via `Promise.all`,
    * adding one round-trip rather than serializing.
    */
@@ -1141,6 +1149,20 @@ export class ReportRepository {
     // to avoid silent overflow. We always cast to `Number` before returning
     // — distinct-user counts won't realistically exceed Number.MAX_SAFE_INTEGER
     // at our scale, and the API contract types the field as `number`.
+
+    // Anti-join helper: at district / school scope, a student may appear in
+    // BOTH an excluded branch (e.g., a rostering-ended class) AND an
+    // in-scope branch (e.g., an active org enrollment). Without subtracting
+    // the in-scope set we'd surface a false positive in
+    // `exclusions.rosteringEnded` — the student is visible in `items` AND
+    // counted as "excluded". `buildStudentInScopeQuery` already returns
+    // exactly the set of students visible in `items` (rostering-ended
+    // branches are filtered out there), so a LEFT JOIN + IS NULL exactly
+    // expresses "excluded AND not visible elsewhere".
+    //
+    // CLASS / GROUP scopes use a single query (no UNION across branches),
+    // so the same student can't appear in both an excluded and an in-scope
+    // branch — the anti-join is unnecessary there.
 
     switch (scope.scopeType) {
       case EntityType.DISTRICT: {
@@ -1177,7 +1199,13 @@ export class ReportRepository {
           )
           .as('excluded');
 
-        const [row] = await this.db.select({ count: countDistinct(excludedUnion.userId) }).from(excludedUnion);
+        const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+
+        const [row] = await this.db
+          .select({ count: countDistinct(excludedUnion.userId) })
+          .from(excludedUnion)
+          .leftJoin(studentsInScope, eq(excludedUnion.userId, studentsInScope.userId))
+          .where(isNull(studentsInScope.userId));
         return Number(row?.count ?? 0);
       }
 
@@ -1215,7 +1243,13 @@ export class ReportRepository {
           )
           .as('excluded');
 
-        const [row] = await this.db.select({ count: countDistinct(excludedUnion.userId) }).from(excludedUnion);
+        const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+
+        const [row] = await this.db
+          .select({ count: countDistinct(excludedUnion.userId) })
+          .from(excludedUnion)
+          .leftJoin(studentsInScope, eq(excludedUnion.userId, studentsInScope.userId))
+          .where(isNull(studentsInScope.userId));
         return Number(row?.count ?? 0);
       }
 

@@ -1432,6 +1432,24 @@ describe('GET /v1/users/:userId/administrations', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
+    it('returns 404 when a rostering-ended user requests their own administrations (#1742)', async () => {
+      // Self-lookup is also blocked: the rostering-ended check now runs
+      // before the `requesterUserId === userId` early return so a
+      // rostering-ended user can't bypass the boundary via self-listing
+      // even if they manage to authenticate (defense-in-depth alongside
+      // auth guard #1735).
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedSelfAdmin1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('GET', `/v1/users/${endedUser.id}/administrations`)
+        .as({ id: endedUser.id, authId: endedUser.authId! })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
     it('returns 403 when non-super-admin tries to list administrations for user with no shared access', async () => {
       // districtBStudent is in a different district from tiers.admin (who is in districtA)
       const res = await expectRoute('GET', `/v1/users/${baseFixture.districtBStudent.id}/administrations`)

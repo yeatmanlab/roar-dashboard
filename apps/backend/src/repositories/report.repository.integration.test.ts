@@ -653,6 +653,39 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       expect(count).toBe(1);
     });
 
+    it('does NOT count a student whose excluded-class enrollment is offset by an active org enrollment', async () => {
+      // Anti-join correctness: a student enrolled in BOTH an active org
+      // (visible via the org branch) AND a rostering-ended class (excluded
+      // via the class branch) appears in `items` AND would naively also
+      // appear in the exclusion count. The anti-join against
+      // `buildStudentInScopeQuery` removes them — we should report 0
+      // exclusions because every "excluded" student is still visible.
+      const district = await OrgFactory.create({
+        orgType: OrgType.DISTRICT,
+        name: 'District DualEnrollment AntiJoin',
+      });
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'School Under District DualEnrollment',
+        parentOrgId: district.id,
+      });
+      const endedClass = await ClassFactory.create({
+        name: 'Ended Class Dual Enrollment',
+        schoolId: school.id,
+        districtId: district.id,
+        rosteringEnded: past(),
+      });
+
+      // Student is in the rostering-ended class AND in the active school
+      // org. The active org enrollment makes them visible in `items`.
+      const student = await UserFactory.create({ nameLast: 'DualEnrollmentStudent' });
+      await UserClassFactory.create({ userId: student.id, classId: endedClass.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: student.id, orgId: school.id, role: UserRole.STUDENT });
+
+      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      expect(count).toBe(0);
+    });
+
     it('counts a student once when excluded for both user-level and entity-level reasons', async () => {
       const district = await OrgFactory.create({
         orgType: OrgType.DISTRICT,

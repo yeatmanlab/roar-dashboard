@@ -37,6 +37,20 @@ function verifyEntitiesExist(allEntities: { id: string }[], entityIdsToCheck: st
  * Centralized here so every per-user endpoint applies the same predicate
  * with the same response shape and log message format.
  *
+ * ## Time source
+ *
+ * This comparison uses the Node.js wall clock (`new Date()`), while every
+ * SQL filter (`isActiveRoster`, the access-control subqueries, the report
+ * exclusion count) uses PostgreSQL `NOW()`. In a perfectly synchronized
+ * environment those are identical; in practice Node and Postgres can drift
+ * by milliseconds. The discrepancy is bounded by the host clock skew (NTP
+ * keeps it small) and is only observable in the instant straddling the
+ * exact `rosteringEnded` cutoff for a single request. Since rostering-end
+ * timestamps are set by an administrative action with second-or-coarser
+ * granularity, the practical window for a clock-skew false negative /
+ * positive is negligible. Accepting the small discrepancy keeps this
+ * predicate a pure in-memory check (no extra round-trip per call).
+ *
  * @param targetUser - The user record to check; only `rosteringEnded` is read.
  * @param context - Structured context for the warn log + error context object.
  *                  Pass `requesterUserId`, `targetUserId`, plus any extra

@@ -821,12 +821,11 @@ export function AdministrationService({
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId: requesterUserId, isSuperAdmin } = authContext;
 
-    if (requesterUserId === userId) {
-      return list(authContext, options);
-    }
-
     try {
-      // Verify target user exists
+      // Verify target user exists. The lookup + rostering-ended check runs
+      // BEFORE the self-lookup early return so a rostering-ended user can't
+      // bypass the boundary by requesting their own administrations
+      // (defense-in-depth alongside auth guard #1735).
       const targetUser = await userRepository.getById({ id: userId });
 
       if (!targetUser) {
@@ -839,9 +838,13 @@ export function AdministrationService({
 
       // Rostering-ended users are decommissioned (#1742). The user-scoped
       // URL names them as the target, so any caller (admin / teacher /
-      // guardian) gets a symmetric 404 — same shape as "not found" so the
-      // caller can't distinguish.
+      // guardian / the user themselves) gets a symmetric 404 — same shape
+      // as "not found" so the caller can't distinguish.
       rejectRosteringEndedTarget(targetUser, { requesterUserId, targetUserId: userId }, 'User-administration list');
+
+      if (requesterUserId === userId) {
+        return list(authContext, options);
+      }
 
       const queryParams = {
         page: options.page,
