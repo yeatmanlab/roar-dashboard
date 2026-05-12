@@ -6,7 +6,7 @@ import swrConfig from './configs/swr.json';
 import swrEsConfig from './configs/swr-es.json';
 import sreConfig from './configs/sre.json';
 import sreEsConfig from './configs/sre-es.json';
-import paConfig from './configs/pa.json';
+import paConfig from './configs/pa';
 import letterConfig from './configs/letter.json';
 import phonicsConfig from './configs/phonics.json';
 import roamAlpacaConfig from './configs/roam-alpaca.json';

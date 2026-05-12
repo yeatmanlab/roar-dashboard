@@ -1,0 +1,10 @@
+{
+  "extends": "@roar-dashboard/typescript-config/library.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true
+  },
+  "include": ["src"]
+}
