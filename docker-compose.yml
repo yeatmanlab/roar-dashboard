@@ -95,7 +95,7 @@ services:
       - PG_PORT=5432
       - PG_USER=postgres
       - PGPASSWORD=password
-    command: sh -c "npm ci --ignore-scripts && ./scripts/setup-fdw-local.sh && npm run db:migrate -w apps/backend"
+    command: sh -c "npm ci --ignore-scripts && apt-get update -qq && apt-get install -y --no-install-recommends postgresql-client && npm run build -w packages/assessment-schema && ./scripts/setup-fdw-local.sh && npm run db:migrate -w apps/backend && npm run db:seed:pa -w apps/backend"
     depends_on:
       researcher-db:
         condition: service_healthy
