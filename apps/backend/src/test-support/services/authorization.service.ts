@@ -14,6 +14,9 @@ export function createMockAuthorizationService(): MockedObject<ReturnType<typeof
     hasPermission: vi.fn().mockResolvedValue(false),
     requirePermission: vi.fn().mockResolvedValue(undefined),
     listAccessibleObjects: vi.fn().mockResolvedValue([]),
+    listAccessibleObjectsStreamed: vi.fn().mockImplementation(async function* () {
+      // default empty generator
+    }),
     hasAnyPermission: vi.fn().mockResolvedValue(false),
   } as MockedObject<ReturnType<typeof AuthorizationService>>;
 }
