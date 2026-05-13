@@ -12,6 +12,7 @@ import { RunFactory } from '../../test-support/factories/run.factory';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
+import { FgaRelation, FgaType } from '../authorization/fga-constants';
 import type {
   AssignmentWithOptional,
   TaskVariantWithAssignment,
@@ -2921,6 +2922,8 @@ describe('AdministrationService', () => {
       const result = await service.getTree(superAdminAuth, testAdminId, defaultOptions);
 
       expect(mockAuthorizationService.listAccessibleObjects).not.toHaveBeenCalled();
+      // Class uses the streamed surface — also must not fire for super admins.
+      expect(mockAuthorizationService.listAccessibleObjectsStreamed).not.toHaveBeenCalled();
       expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
         testAdminId,
         undefined,
@@ -2939,17 +2942,31 @@ describe('AdministrationService', () => {
         totalItems: 4,
       });
 
-      // Mock FGA responses for all 4 entity types
+      // Mock array responses for the 3 low-cardinality entity types: district, school, group.
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce(['district:district-1', 'district:district-2']) // districts
         .mockResolvedValueOnce(['school:school-1']) // schools
-        .mockResolvedValueOnce(['class:class-1', 'class:class-2']) // classes
         .mockResolvedValueOnce(['group:group-1']); // groups
+
+      // The class branch consumes the streamed surface (high-cardinality migration);
+      // mock it to yield two class objects and assert below that the resulting class IDs
+      // flow through to `getTreeNodes` exactly like the array variants.
+      mockAuthorizationService.listAccessibleObjectsStreamed.mockImplementation(async function* () {
+        yield { object: 'class:class-1' };
+        yield { object: 'class:class-2' };
+      });
 
       const service = createService();
       await service.getTree(regularUserAuth, testAdminId, defaultOptions);
 
-      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(4);
+      // Three array calls (district, school, group) + one streamed call (class).
+      expect(mockAuthorizationService.listAccessibleObjects).toHaveBeenCalledTimes(3);
+      expect(mockAuthorizationService.listAccessibleObjectsStreamed).toHaveBeenCalledTimes(1);
+      expect(mockAuthorizationService.listAccessibleObjectsStreamed).toHaveBeenCalledWith(
+        regularUserAuth.userId,
+        FgaRelation.CAN_READ,
+        FgaType.CLASS,
+      );
       expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
         testAdminId,
         undefined,
@@ -2962,6 +2979,67 @@ describe('AdministrationService', () => {
           groupIds: ['group-1'],
         },
       );
+    });
+
+    it('handles a non-super-admin caller with zero accessible classes — still passes empty classIds through', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+      mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
+
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['district:district-1'])
+        .mockResolvedValueOnce(['school:school-1'])
+        .mockResolvedValueOnce(['group:group-1']);
+
+      // Empty class stream — caller has no classes accessible via FGA.
+      mockAuthorizationService.listAccessibleObjectsStreamed.mockImplementation(async function* () {
+        // intentionally yields nothing
+      });
+
+      const service = createService();
+      await service.getTree(regularUserAuth, testAdminId, defaultOptions);
+
+      expect(mockAdministrationRepository.getTreeNodes).toHaveBeenCalledWith(
+        testAdminId,
+        undefined,
+        undefined,
+        { page: 1, perPage: 25 },
+        expect.objectContaining({ classIds: [] }),
+      );
+    });
+
+    it('wraps streamed-class FGA failures in a DATABASE_QUERY_FAILED error scoped to the class branch', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
+
+      // All three array-backed FGA calls succeed — so the only branch that
+      // could throw is the streamed class call.
+      mockAuthorizationService.listAccessibleObjects
+        .mockResolvedValueOnce(['district:district-1'])
+        .mockResolvedValueOnce(['school:school-1'])
+        .mockResolvedValueOnce(['group:group-1']);
+
+      // Streamed call rejects mid-iteration.
+      mockAuthorizationService.listAccessibleObjectsStreamed.mockImplementation(async function* () {
+        await Promise.reject(new Error('upstream FGA failure'));
+        yield { object: '' };
+      });
+
+      const service = createService();
+
+      // Assert that the thrown error not only has the right status/code, but
+      // is specifically the class-branch wrapper — `context.fgaType` is `class`
+      // and the error message identifies the class branch. This is what
+      // distinguishes a class-branch failure from a regression where one of
+      // the other three branches throws first.
+      await expect(service.getTree(regularUserAuth, testAdminId, defaultOptions)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        message: 'Failed to resolve class access',
+        context: expect.objectContaining({
+          userId: regularUserAuth.userId,
+          administrationId: testAdminId,
+          fgaType: FgaType.CLASS,
+        }),
+      });
     });
 
     it('should pass parentEntityType and parentEntityId to repository', async () => {
@@ -3187,11 +3265,16 @@ describe('AdministrationService', () => {
       mockAdministrationRepository.getById.mockResolvedValue(mockAdmin);
       mockAdministrationRepository.getTreeNodes.mockResolvedValue({ items: [], totalItems: 0 });
 
+      // District / school / group still use the array-returning listAccessibleObjects.
+      // Class uses the streamed surface — set it up below.
       mockAuthorizationService.listAccessibleObjects
         .mockResolvedValueOnce(['district:d1']) // districts
         .mockResolvedValueOnce(['school:s1']) // schools
-        .mockResolvedValueOnce(['class:c1']) // classes
         .mockResolvedValueOnce(['group:g1']); // groups
+
+      mockAuthorizationService.listAccessibleObjectsStreamed.mockImplementation(async function* () {
+        yield { object: 'class:c1' };
+      });
 
       const service = createService();
       await service.getTree(regularUserAuth, testAdminId, {
