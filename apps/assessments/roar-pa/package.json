@@ -12,7 +12,7 @@
     "build:dev": "npx webpack --mode production --env dbmode=development",
     "build:staging": "npx webpack --mode production --env dbmode=staging",
     "build:prod": "npx webpack --mode production --env dbmode=production",
-    "predev": "fkill :8000 -f || true",
+    "predev": "fkill :8000 -f 2>/dev/null || true",
     "dev": "npx webpack serve --open --mode development --env dbmode=development",
     "preserve:prod": "fkill :8000 -f || true",
     "serve:prod": "npx webpack serve --open --mode development --env dbmode=production",
