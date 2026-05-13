@@ -29,6 +29,7 @@ import {
 } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
+import { withFgaFilterIds } from './utils/fga-filter-ids.utils';
 import type {
   PaginationQuery,
   SortQuery,
@@ -836,17 +837,14 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
     const { page, perPage } = options;
     const offset = (page - 1) * perPage;
 
-    const classFgaFilter =
-      accessibleClassIds && accessibleClassIds.length > 0
-        ? sql`AND ${classes.id} IN (${sql.join(
-            accessibleClassIds.map((id) => sql`${id}`),
-            sql`, `,
-          )})`
-        : accessibleClassIds
-          ? sql`AND FALSE`
-          : sql``;
-
-    const query = sql`
+    /**
+     * Build the tree-node SELECT body once. The two callers below differ only
+     * in the FGA filter clause they pass in:
+     * - super admin path (`accessibleClassIds === undefined`): no filter
+     * - FGA-scoped path: `INNER JOIN fga_filter_ids` against the temp table
+     *   created by `withFgaFilterIds`.
+     */
+    const buildTreeQuery = (fgaJoin: SQL) => sql`
       WITH class_nodes AS (
         SELECT
           ${classes.id} AS id,
@@ -854,8 +852,8 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
           ${TreeNodeEntityType.CLASS} AS entity_type,
           FALSE AS has_children
         FROM ${classes}
+        ${fgaJoin}
         WHERE ${classes.schoolId} = ${schoolId}
-          ${classFgaFilter}
       )
       SELECT id, name, entity_type, has_children,
              COUNT(*) OVER() AS total_count
@@ -864,9 +862,31 @@ export class AdministrationRepository extends BaseRepository<Administration, typ
       LIMIT ${perPage} OFFSET ${offset}
     `;
 
-    const result = await this.db.execute(query);
+    let rows: TreeNodeRowWithCounts[];
 
-    const rows = result.rows as TreeNodeRowWithCounts[];
+    if (accessibleClassIds === undefined) {
+      // Super-admin path: no FGA filter. Plain SELECT with no temp table.
+      const result = await this.db.execute(buildTreeQuery(sql``));
+      rows = result.rows as TreeNodeRowWithCounts[];
+    } else if (accessibleClassIds.length === 0) {
+      // FGA caller has zero accessible classes — return an empty page without
+      // round-tripping a query that we already know yields no rows.
+      return { items: [], totalItems: 0 };
+    } else {
+      // FGA-scoped path: materialize the accessible class ids into the
+      // session-scoped `fga_filter_ids` temp table and INNER JOIN against it.
+      // This is the canonical high-cardinality consumer pattern documented
+      // in `withFgaFilterIds` — it avoids both the silent-truncation risk of
+      // the FGA listObjects 1000-cap (already mitigated upstream by streaming)
+      // and the bind-parameter / planner cost of `WHERE id IN (...)` at
+      // thousands of ids.
+      rows = await withFgaFilterIds(this.db, accessibleClassIds, async (tx) => {
+        const result = await tx.execute<TreeNodeRowWithCounts>(
+          buildTreeQuery(sql`INNER JOIN fga_filter_ids fga ON fga.id = ${classes.id}`),
+        );
+        return result.rows as TreeNodeRowWithCounts[];
+      });
+    }
 
     const totalItems = rows[0] ? parseInt(rows[0].total_count, 10) : 0;
 

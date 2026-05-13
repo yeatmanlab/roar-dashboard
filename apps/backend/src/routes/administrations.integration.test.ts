@@ -32,11 +32,18 @@ import { AdministrationFactory } from '../test-support/factories/administration.
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AdministrationClassFactory } from '../test-support/factories/administration-class.factory';
 import { AdministrationGroupFactory } from '../test-support/factories/administration-group.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
+import { UserClassFactory } from '../test-support/factories/user-class.factory';
 import { AgreementFactory } from '../test-support/factories/agreement.factory';
 import { AgreementVersionFactory } from '../test-support/factories/agreement-version.factory';
 import { AdministrationAgreementFactory } from '../test-support/factories/administration-agreement.factory';
 import { RunFactory } from '../test-support/factories/run.factory';
-import { writeFgaAdministrationAssignment, writeFgaOrgMembership } from '../test-support/fga/fga-test-tuples.helper';
+import {
+  writeFgaAdministrationAssignment,
+  writeFgaClassHierarchy,
+  writeFgaClassMembership,
+  writeFgaOrgMembership,
+} from '../test-support/fga/fga-test-tuples.helper';
 import { FgaType } from '../services/authorization/fga-constants';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -994,6 +1001,117 @@ describe('GET /v1/administrations/:id/tree', () => {
       for (const item of res.body.data.items) {
         expect(item.entityType).toBe('class');
         expect(item.hasChildren).toBe(false);
+      }
+    });
+
+    /**
+     * Authorization-correctness regression coverage for the class-FGA migration.
+     *
+     * The tree endpoint resolves accessible class IDs via FGA `streamedListObjects`
+     * and feeds them into a `withFgaFilterIds` temp-table INNER JOIN inside
+     * `getSchoolChildTreeNodes`. This test exercises that path end-to-end with a
+     * non-super-admin caller (a teacher who's a member of one class but not
+     * another in the same school) and asserts the response only includes the
+     * teacher's class.
+     *
+     * Previously, the tree endpoint's class-filter path was exercised only by
+     * `tiers.superAdmin` callers in route tests, which short-circuit FGA at
+     * `administration.service.ts:995` — leaving the FGA class branch and the
+     * temp-table JOIN composition without route-level coverage. This test closes
+     * that gap (deferred from PR #1753).
+     */
+    it('teacher with class-only FGA access sees only their own classes under the school', async () => {
+      // Two classes in the same school. Teacher will be a member of `allowedClass`
+      // only — `forbiddenClass` is the negative control.
+      const allowedClass = await ClassFactory.create({
+        name: 'Class with Teacher',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+      const forbiddenClass = await ClassFactory.create({
+        name: 'Class without Teacher',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+
+      // Write the school↔class hierarchy tuples for both new classes. The
+      // production class-create sync writes these automatically; tests that
+      // build classes via the factory must mirror that to make role cascades
+      // (school.subtree_supervisory_tier_group → administration.supervisory_tier_group)
+      // resolve correctly.
+      await Promise.all([
+        writeFgaClassHierarchy(baseFixture.schoolA.id, allowedClass.id),
+        writeFgaClassHierarchy(baseFixture.schoolA.id, forbiddenClass.id),
+      ]);
+
+      // Create the teacher and enroll them in the allowed class only.
+      const teacher = await UserFactory.create({ nameFirst: 'FGA', nameLast: 'Teacher' });
+      await UserClassFactory.create({
+        userId: teacher.id,
+        classId: allowedClass.id,
+        role: UserRole.TEACHER,
+      });
+      await writeFgaClassMembership(teacher.id, allowedClass.id, UserRole.TEACHER);
+
+      // Build an administration assigned to the school. The teacher's class
+      // membership grants `can_read` on the admin via the cascade
+      // administration.supervisory_tier_group → subtree_supervisory_tier_group
+      // from assigned_school → supervisory_tier_group from child_class. The
+      // tree drill-down for that school then asks FGA for accessible classes,
+      // which is where this PR's streamed + temp-table filter kicks in.
+      const admin = await AdministrationFactory.create({
+        name: 'Class FGA Filter Test',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: baseFixture.schoolA.id });
+      await writeFgaAdministrationAssignment(admin.id, baseFixture.schoolA.id, FgaType.SCHOOL);
+
+      // Drill into the school. The teacher should see `allowedClass` (where
+      // they are a member) and not `forbiddenClass`.
+      const res = await expectRoute(
+        'GET',
+        `/v1/administrations/${admin.id}/tree?parentEntityType=school&parentEntityId=${baseFixture.schoolA.id}`,
+      )
+        .as({ id: teacher.id, authId: teacher.authId! })
+        .toReturn(200);
+
+      const ids = res.body.data.items.map((item: { id: string }) => item.id);
+      expect(ids).toContain(allowedClass.id);
+      expect(ids).not.toContain(forbiddenClass.id);
+      // schoolA already has `classInSchoolA` from the base fixture. The teacher
+      // has no FGA tuple for it either, so the filter must exclude it too —
+      // a degenerate JOIN that leaked all schoolA classes would surface this
+      // class and fail here, giving a more informative failure than relying
+      // on the `forbiddenClass` assertion alone.
+      expect(ids).not.toContain(baseFixture.classInSchoolA.id);
+
+      // Sanity: every node returned is a class (school → classes is the only
+      // legal drill-down at this level), and none of them have children.
+      for (const item of res.body.data.items) {
+        expect(item.entityType).toBe('class');
+        expect(item.hasChildren).toBe(false);
+      }
+
+      // Defense-in-depth: re-run with `embed=stats` and confirm the stats
+      // attachment doesn't leak. The stats roll-up is computed per visible
+      // node, so a FGA filter leak at the node-list level would surface here
+      // as stats fields appearing on `forbiddenClass`. Per the issue's
+      // acceptance criteria, the embed=stats variant is required for this
+      // route-level coverage.
+      const statsRes = await expectRoute(
+        'GET',
+        `/v1/administrations/${admin.id}/tree?parentEntityType=school&parentEntityId=${baseFixture.schoolA.id}&embed=stats`,
+      )
+        .as({ id: teacher.id, authId: teacher.authId! })
+        .toReturn(200);
+
+      const statsIds = statsRes.body.data.items.map((item: { id: string }) => item.id);
+      expect(statsIds).toContain(allowedClass.id);
+      expect(statsIds).not.toContain(forbiddenClass.id);
+      expect(statsIds).not.toContain(baseFixture.classInSchoolA.id);
+      for (const item of statsRes.body.data.items) {
+        expect(item).toHaveProperty('stats');
+        expect(item.stats).toHaveProperty('assignment');
       }
     });
   });

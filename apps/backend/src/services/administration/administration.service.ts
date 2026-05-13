@@ -16,6 +16,7 @@ import type { Administration } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { extractFgaObjectId } from '../authorization/helpers/extract-fga-object-id.helper';
+import { collectStreamedFgaObjects } from '../authorization/helpers/collect-streamed-fga-objects.helper';
 import {
   administrationDistrictTuple,
   administrationSchoolTuple,
@@ -1021,7 +1022,16 @@ export function AdministrationService({
               cause: err,
             });
           }),
-          authorizationService.listAccessibleObjects(userId, FgaRelation.CAN_READ, FgaType.CLASS).catch((err) => {
+          // The class domain is the one high-cardinality FGA list in this Promise.all —
+          // a district admin in a typical district (50 schools × 30 classes ≈ 1500 classes)
+          // exceeds OPENFGA_LIST_OBJECTS_MAX_RESULTS. Use the streamed variant directly to
+          // signal that intent at the call site; collectStreamedFgaObjects materializes the
+          // generator into the same string[] shape the repository expects, then the
+          // repository feeds those ids into a temp-table INNER JOIN via withFgaFilterIds
+          // instead of a WHERE id IN (...) clause.
+          collectStreamedFgaObjects(
+            authorizationService.listAccessibleObjectsStreamed(userId, FgaRelation.CAN_READ, FgaType.CLASS),
+          ).catch((err) => {
             throw new ApiError('Failed to resolve class access', {
               statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
               code: ApiErrorCode.DATABASE_QUERY_FAILED,
