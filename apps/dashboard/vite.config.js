@@ -201,6 +201,19 @@ export default defineConfig(({ mode }) => {
       // Without this, Rollup may create multiple copies whose ParameterType enums initialize
       // in an undefined order, causing "Cannot read properties of undefined (reading 'BOOL')".
       dedupe: ['jspsych'],
+      alias: [
+        { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+        // @roar-dashboard/assessment-schema is not reliably resolved through workspace
+        // symlinks when using subpath exports (e.g. /pa). Point all subpath imports to
+        // the pre-built dist so Vite doesn't fail on unresolved package exports.
+        //
+        // The capture group `(\/[^/]+)?` matches a single subpath segment or nothing;
+        // `$1` is spliced in by JS regex replace — giving e.g. `.../dist/pa/index.js`.
+        {
+          find: /^@roar-dashboard\/assessment-schema(\/[^/]+)?$/,
+          replacement: fileURLToPath(new URL('../../packages/assessment-schema/dist', import.meta.url)) + '$1/index.js',
+        },
+      ],
     },
 
     server: {
