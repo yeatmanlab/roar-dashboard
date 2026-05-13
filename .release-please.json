@@ -1,0 +1,75 @@
+{
+  "bootstrap-sha": "446b0c3b5173b356a887ea302d6cc3c25651efae",
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "platform",
+      "components": ["backend", "dashboard"]
+    }
+  ],
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features",
+      "hidden": false
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes",
+      "hidden": false
+    },
+    {
+      "type": "refactor",
+      "section": "Refactoring",
+      "hidden": false
+    },
+    {
+      "type": "perf",
+      "section": "Performance",
+      "hidden": false
+    },
+    {
+      "type": "docs",
+      "section": "Documentation",
+      "hidden": false
+    },
+    {
+      "type": "chore",
+      "section": "Miscellaneous",
+      "hidden": false
+    }
+  ],
+  "packages": {
+    "apps/backend": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "backend",
+      "release-as": "3.26.0"
+    },
+    "apps/dashboard": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "dashboard",
+      "release-as": "3.26.0"
+    },
+    "packages/api-contract": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "api-contract",
+      "release-as": "3.26.0"
+    },
+    "packages/assessment-sdk": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "assessment-sdk",
+      "release-as": "0.1.0"
+    }
+  },
+  "group-pull-request-title-pattern": "chore: release ${version}",
+  "pull-request-title-pattern": "chore(${scope}): release ${version}",
+  "pull-request-header": "## Release Summary\n\nThis PR updates versions and changelogs for the following packages:\n\n- **backend**: Backend API service\n- **dashboard**: Frontend dashboard application\n- **api-contract**: Shared API contract and types (independent versioning)\n- **assessment-sdk**: Assessment client SDK (independent versioning)\n\n### Release Strategy\n\n- **Platform Release** (backend + dashboard): Shared version number, triggers production deployment\n- **Independent Releases** (api-contract + assessment-sdk): Independent versioning, no production deployment\n\n### Approval Gates\n\n1. **Release PR**: Requires QA + Tech Lead review\n2. **Production Deployment**: Requires Tech Lead + Product Owner approval\n\n### Next Steps\n\n1. Review and approve this Release PR\n2. Merge to main\n3. Tags will be created automatically\n4. Production deployment will require additional approval\n\nSee [RELEASING.md](.github/RELEASING.md) for detailed release workflow documentation."
+}
