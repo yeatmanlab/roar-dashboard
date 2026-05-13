@@ -1109,14 +1109,62 @@ describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
     });
 
     describe('scope branches (acceptance criteria — verify on each scope)', () => {
-      // The admin-aware predicate itself lives in a closure (`enrollmentPredicate`)
-      // applied identically across every UNION branch of
-      // `buildStudentInScopeQuery`, so the district tests above are enough to pin
-      // the predicate's logic. The scenarios here cover the other half of the
-      // contract: that each scope branch applies the predicate at all (i.e., the
-      // closure is actually wired into `EntityType.CLASS` and `EntityType.GROUP`,
-      // not just the district branch). One past-admin case per scope is enough —
+      // The admin-aware predicate itself lives in a closure
+      // (`buildEnrollmentPredicate`) applied identically across every UNION
+      // branch of `buildStudentInScopeQuery`, so the district tests above are
+      // enough to pin the predicate's logic. The scenarios here cover the
+      // other half of the contract: that each scope branch applies the
+      // predicate at all (i.e., the closure is actually wired into
+      // `EntityType.SCHOOL`, `EntityType.CLASS`, and `EntityType.GROUP`, not
+      // just the district branch). One past-admin case per scope is enough —
       // we're verifying the wire-up, not re-deriving the predicate semantics.
+
+      it('school scope: applies admin-aware overlap to user_orgs at school', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'School-scope admin-aware overlap',
+          createdBy: baseFixture.districtAdmin.id,
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+        const school = await OrgFactory.create({
+          orgType: OrgType.SCHOOL,
+          name: 'School-scope admin-aware overlap school',
+          parentOrgId: baseFixture.district.id,
+        });
+        await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: school.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: admin.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        });
+
+        // Enrolled before admin opened, still active — should count.
+        const earlyEnroller = await UserFactory.create({ nameLast: 'SchoolScopeEarlyEnroller' });
+        await UserOrgFactory.create({
+          userId: earlyEnroller.id,
+          orgId: school.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+
+        // Enrolled after admin closed — must NOT count under strict overlap.
+        const lateEnroller = await UserFactory.create({ nameLast: 'SchoolScopeLateEnroller' });
+        await UserOrgFactory.create({
+          userId: lateEnroller.id,
+          orgId: school.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(10),
+          enrollmentEnd: null,
+        });
+
+        const adminWindow = toReportAdminWindow(admin);
+        const scope: ReportScope = { scopeType: 'school', scopeId: school.id };
+        const taskMetas = await testRepo.getTaskMetadata(admin.id);
+
+        const result = await testRepo.getProgressOverviewCounts(admin.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
 
       it('class scope: applies admin-aware overlap to user_classes', async () => {
         const admin = await AdministrationFactory.create({

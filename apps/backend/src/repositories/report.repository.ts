@@ -1035,6 +1035,35 @@ export class ReportRepository {
   }
 
   /**
+   * Pre-build the admin-aware enrollment predicate factory shared by
+   * `buildStudentInScopeQuery` (the "who is in scope?" query) and
+   * `countRosteringEndedExclusions` (the "who would have been in scope but
+   * for rostering-ended?" query). Both need the same predicate semantics —
+   * strict admin-aware overlap, optionally widened with the
+   * withdrawn-with-data path — applied to per-branch junction tables.
+   *
+   * The returned function is called per UNION branch with the junction
+   * table (`userOrgs` / `userClasses` / `userGroups`) and the user-id
+   * column the toggle-on EXISTS subquery should correlate against. The
+   * outer query always joins `users`, so `users.id` is the conventional
+   * correlation target across all branches.
+   *
+   * Keeping the closure factory in one place prevents the two call sites
+   * from drifting if the predicate semantics ever change (#1792 review).
+   */
+  private buildEnrollmentPredicate(admin: ReportAdminWindow, includeUnenrolledStudents: boolean) {
+    const adminDateEnd = sql`${admin.dateEnd}::timestamptz`;
+    const adminDateStart = sql`${admin.dateStart}::timestamptz`;
+    const adminIdSql = sql`${admin.id}::uuid`;
+
+    return (table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn }, userIdCol: AnyColumn) => {
+      const strict = isEnrollmentActiveForAdmin(table, adminDateEnd);
+      if (!includeUnenrolledStudents) return strict;
+      return or(strict, hasWithdrawnWithDataForAdmin(table, adminDateStart, adminDateEnd, userIdCol, adminIdSql));
+    };
+  }
+
+  /**
    * Builds a Drizzle query that returns student userIds within a scope.
    * Filters to student roles and excludes rosteringEnded entities.
    * UNION (not UNION ALL) handles deduplication across branches.
@@ -1076,20 +1105,7 @@ export class ReportRepository {
     // and the user-id column that the toggle-on EXISTS subquery should
     // correlate against. We pass `users.id` everywhere because every branch
     // joins `users` and we want a stable correlation target.
-    const adminDateEnd = sql`${admin.dateEnd}::timestamptz`;
-    const adminDateStart = sql`${admin.dateStart}::timestamptz`;
-    const adminIdSql = sql`${admin.id}::uuid`;
-
-    const enrollmentPredicate = (
-      table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
-      userIdCol: AnyColumn,
-    ) => {
-      const strict = isEnrollmentActiveForAdmin(table, adminDateEnd);
-      if (!includeUnenrolledStudents) {
-        return strict;
-      }
-      return or(strict, hasWithdrawnWithDataForAdmin(table, adminDateStart, adminDateEnd, userIdCol, adminIdSql));
-    };
+    const enrollmentPredicate = this.buildEnrollmentPredicate(admin, includeUnenrolledStudents);
 
     switch (scope.scopeType) {
       case EntityType.DISTRICT:
@@ -1241,17 +1257,7 @@ export class ReportRepository {
     // under-count for past administrations — a student who left between
     // `admin.dateEnd` and `NOW()` would be admin-aware-visible but
     // NOW()-inactive, so they'd be missed in the count.
-    const adminDateEnd = sql`${admin.dateEnd}::timestamptz`;
-    const adminDateStart = sql`${admin.dateStart}::timestamptz`;
-    const adminIdSql = sql`${admin.id}::uuid`;
-    const enrollmentPredicate = (
-      table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
-      userIdCol: AnyColumn,
-    ) => {
-      const strict = isEnrollmentActiveForAdmin(table, adminDateEnd);
-      if (!includeUnenrolledStudents) return strict;
-      return or(strict, hasWithdrawnWithDataForAdmin(table, adminDateStart, adminDateEnd, userIdCol, adminIdSql));
-    };
+    const enrollmentPredicate = this.buildEnrollmentPredicate(admin, includeUnenrolledStudents);
 
     // Postgres returns `count` as a bigint, which `pg` surfaces as a string
     // to avoid silent overflow. We always cast to `Number` before returning
