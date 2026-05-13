@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
+import type { OpenFgaClient, StreamedListObjectsResponse, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import { FgaClient } from '../../clients/fga.client';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
@@ -17,7 +17,8 @@ import { FgaType } from './fga-constants';
  * logged but not thrown, because the Postgres write has already succeeded and the
  * backfill endpoint (#06) will reconcile stale tuples.
  *
- * Permission checks (`hasPermission`, `listAccessibleObjects`) propagate errors to
+ * Permission checks (`hasPermission`, `requirePermission`, `hasAnyPermission`,
+ * `listAccessibleObjects`, `listAccessibleObjectsStreamed`) propagate errors to
  * callers — they are used in request-time authorization and must fail visibly.
  *
  * @param client - The OpenFGA client instance
@@ -149,13 +150,76 @@ export function AuthorizationService({
   }
 
   /**
-   * List all objects of a given type that a user has a specific relation on.
+   * Stream all objects of a given type that a user has a specific relation on.
+   *
+   * Wraps the FGA SDK's `streamedListObjects` so callers can iterate without
+   * hitting the server-side cap on `listObjects` (default
+   * `OPENFGA_LIST_OBJECTS_MAX_RESULTS = 1000`).
+   *
+   * Use this directly for the **high-cardinality `class` domain** where the
+   * caller wants to feed the IDs into a temp-table join rather than holding the
+   * full set in memory. For low-cardinality domains (administration / district /
+   * school / group) the convenience wrapper {@link listAccessibleObjects}
+   * collects the stream into a `string[]`. The `user` domain has no FGA
+   * relations and is not a consumer of `listAccessibleObjects` at all.
+   *
+   * Errors thrown while iterating are wrapped in `ApiError` with the same
+   * `EXTERNAL_SERVICE_FAILED` code as `listObjects` — this means consumers don't
+   * have to add error handling around the `for await` loop.
    *
    * Passes `current_time` context so the `active_membership` condition evaluates
    * correctly for time-bound tuples.
    *
-   * Unlike tuple writes, errors propagate to callers — this is used in
-   * request-time authorization and must fail visibly.
+   * @param userId - The user ID (without the `user:` prefix)
+   * @param relation - The FGA relation to check (e.g., `can_read`)
+   * @param type - The FGA object type (e.g., `administration`)
+   * @returns AsyncGenerator yielding `StreamedListObjectsResponse` chunks, each with
+   *          a fully-qualified FGA object string in `.object`
+   * @throws {ApiError} EXTERNAL_SERVICE_UNAVAILABLE if the FGA stream fails
+   */
+  async function* listAccessibleObjectsStreamed(
+    userId: string,
+    relation: FgaRelation,
+    type: FgaType,
+  ): AsyncGenerator<StreamedListObjectsResponse> {
+    try {
+      const stream = client.streamedListObjects({
+        user: `${FgaType.USER}:${userId}`,
+        relation,
+        type,
+        context: { current_time: new Date().toISOString() },
+      });
+
+      for await (const chunk of stream) {
+        yield chunk;
+      }
+    } catch (error) {
+      logger.error({ err: error, context: { userId, relation, type } }, 'FGA streamed list accessible objects failed');
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+        context: { userId, relation, type },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * List all objects of a given type that a user has a specific relation on.
+   *
+   * Convenience wrapper around {@link listAccessibleObjectsStreamed} that
+   * collects the stream into a `string[]`. The implementation uses
+   * `streamedListObjects` under the hood so result sets are not silently
+   * truncated by `OPENFGA_LIST_OBJECTS_MAX_RESULTS` (the cap that affects
+   * `client.listObjects`).
+   *
+   * Suitable for **low-cardinality domains** (administrations, districts,
+   * schools, groups) where holding the full ID set in memory is fine. For the
+   * high-cardinality `class` domain, iterate {@link listAccessibleObjectsStreamed}
+   * directly and feed the stream into a temp-table join via `withFgaFilterIds`.
+   *
+   * Passes `current_time` context so the `active_membership` condition evaluates
+   * correctly for time-bound tuples.
    *
    * @param userId - The user ID (without the `user:` prefix)
    * @param relation - The FGA relation to check (e.g., `can_read`)
@@ -164,23 +228,11 @@ export function AuthorizationService({
    * @throws {ApiError} EXTERNAL_SERVICE_UNAVAILABLE if the FGA list fails
    */
   async function listAccessibleObjects(userId: string, relation: FgaRelation, type: FgaType): Promise<string[]> {
-    try {
-      const result = await client.listObjects({
-        user: `${FgaType.USER}:${userId}`,
-        relation,
-        type,
-        context: { current_time: new Date().toISOString() },
-      });
-      return result.objects;
-    } catch (error) {
-      logger.error({ err: error, context: { userId, relation, type } }, 'FGA list accessible objects failed');
-      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
-        context: { userId, relation, type },
-        cause: error,
-      });
+    const objects: string[] = [];
+    for await (const chunk of listAccessibleObjectsStreamed(userId, relation, type)) {
+      objects.push(chunk.object);
     }
+    return objects;
   }
 
   /**
@@ -233,6 +285,7 @@ export function AuthorizationService({
     hasPermission,
     requirePermission,
     listAccessibleObjects,
+    listAccessibleObjectsStreamed,
     hasAnyPermission,
   };
 }
