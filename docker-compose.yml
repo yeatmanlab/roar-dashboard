@@ -61,6 +61,7 @@ services:
       - "host.docker.internal:host-gateway"
     restart: on-failure
 
+  # Run the init script to instantiate ephemeral roar_core and roar_assessment postgres instances for researcher development
   researcher-db:
     container_name: researcher-db
     image: postgres:latest
@@ -75,7 +76,30 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./scripts/init-researcher-db.sh:/docker-entrypoint-initdb.d/init.sh:ro
+      - ./scripts/init-researcher-db.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+
+  # Run the backend Drizzle migration script to ensure ephemeral researcher-db always maintains the latest structure
+  researcher-db-migrate:
+    container_name: researcher-db-migrate
+    image: node:lts
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - CORE_DATABASE_URL=postgres://postgres:password@researcher-db:5432/roar_core
+      - ASSESSMENT_DATABASE_URL=postgres://postgres:password@researcher-db:5432/roar_assessment
+      - CORE_DB=roar_core
+      - ASSESSMENT_DB=roar_assessment
+      - PG_HOST=researcher-db
+      - PG_PORT=5432
+      - PG_USER=postgres
+      - PGPASSWORD=password
+    command: sh -c "npm ci --ignore-scripts && ./scripts/setup-fdw-local.sh && npm run db:migrate -w apps/backend"
+    depends_on:
+      researcher-db:
+        condition: service_healthy
+    # restart: on-failure
 
 volumes:
   pgdata:
