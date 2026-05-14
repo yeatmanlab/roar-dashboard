@@ -1111,23 +1111,53 @@ export class ReportRepository {
    * Public so that other repository methods (e.g., the student-scores listing) can
    * reuse the same lookup at district scope without duplicating the two-phase
    * user_orgs → user_classes fallback.
+   *
+   * **Known issue (cross-district leakage)**: this method does not constrain
+   * the resolved school by the requested scope's ltree path. A user in scope
+   * for district A who also has a live school enrollment in district B may
+   * surface district B's school in district A's report. The sibling
+   * {@link getSchoolsForUsers} accepts a `districtId` parameter and applies
+   * the path filter; this method has not been updated to avoid behavior
+   * changes to `getStudentScores` and `getIndividualStudentReport`. Tracked
+   * as a follow-up alongside the row-level user_orgs history work.
    */
   /**
-   * Like {@link getSchoolNamesForUsers} but returns `{ schoolId, schoolName }`
-   * tuples. The schoolId is needed by the facets endpoint for stable
-   * client-side keying — school name alone isn't unique across districts.
+   * Resolve `{ schoolId, schoolName }` tuples for a set of users, scoped to
+   * the descendants of a specific district. Used by the facets endpoint at
+   * district scope to attach school IDs to the per-school aggregation
+   * (schoolId is needed for stable client-side keying — school name alone
+   * isn't unique across districts).
    *
-   * Resolution rules and caveats match `getSchoolNamesForUsers`: a user
-   * with multiple school memberships gets their alphabetically-first
-   * school, the user_orgs → orgs path takes precedence over the
-   * user_classes → classes → school fallback, and rostering-ended schools
-   * / classes are excluded. The function uses the NOW()-based
-   * `isEnrollmentActive` predicate deliberately (the single live
-   * user_orgs row schema has no historical snapshot — see the JSDoc on
-   * `getSchoolNamesForUsers` for the past-admin display caveat).
+   * The `districtId` ltree filter is load-bearing for correctness, not
+   * defense-in-depth. Without it, a student in scope for district A who
+   * *also* has a live school enrollment in district B would surface
+   * district B's school in district A's per-school breakdown — leaking a
+   * foreign school's identity into the wrong district's report (review
+   * finding #1 on #1782).
+   *
+   * Resolution rules: a user with multiple school memberships within the
+   * district gets their alphabetically-first school; the user_orgs → orgs
+   * path takes precedence over the user_classes → classes → school
+   * fallback; rostering-ended schools / classes are excluded. Uses the
+   * NOW()-based `isEnrollmentActive` predicate deliberately — the single
+   * live user_orgs row schema has no historical snapshot. See the JSDoc
+   * on `getSchoolNamesForUsers` for the past-admin display caveat (which
+   * also applies here, though the older method has not yet been
+   * scope-filtered — tracked as a follow-up).
+   *
+   * @param userIds - Users to resolve schools for.
+   * @param districtId - The district whose subtree constrains the school
+   *   lookup. Schools outside this district's ltree path are excluded
+   *   from the result.
    */
-  async getSchoolsForUsers(userIds: string[]): Promise<Map<string, { schoolId: string; schoolName: string }>> {
+  async getSchoolsForUsers(
+    userIds: string[],
+    districtId: string,
+  ): Promise<Map<string, { schoolId: string; schoolName: string }>> {
     const map = new Map<string, { schoolId: string; schoolName: string }>();
+    if (userIds.length === 0) return map;
+
+    const districtPath = sql`(SELECT path FROM app.orgs WHERE id = ${districtId})`;
 
     const orgRows = await this.db
       .selectDistinct({
@@ -1143,6 +1173,7 @@ export class ReportRepository {
           eq(orgs.orgType, OrgType.SCHOOL),
           isEnrollmentActive(userOrgs),
           isNull(orgs.rosteringEnded),
+          sql`${orgs.path} <@ ${districtPath}`,
         ),
       )
       .orderBy(asc(orgs.name));
@@ -1170,6 +1201,7 @@ export class ReportRepository {
             isEnrollmentActive(userClasses),
             isNull(classes.rosteringEnded),
             isNull(orgs.rosteringEnded),
+            sql`${orgs.path} <@ ${districtPath}`,
           ),
         )
         .orderBy(asc(orgs.name));

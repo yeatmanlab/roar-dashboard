@@ -761,12 +761,16 @@ export function ReportService({
           ? students.filter((s) => userFilters.every((f) => studentMatchesUserFilter(s, f)))
           : students;
 
-      // 8. School resolution at district scope. At non-district scopes the
-      //    map stays empty and `aggregateTaskFacet` emits empty *BySchool
-      //    arrays per the contract.
+      // 8. School resolution at district scope. The `scopeId` (the
+      //    district's UUID) is required for `getSchoolsForUsers` to apply
+      //    its ltree path filter — without it, a student enrolled in a
+      //    school outside the requested district would surface in the
+      //    per-school breakdown (review finding #1 on #1782). At non-
+      //    district scopes the map stays empty and `aggregateTaskFacet`
+      //    emits empty *BySchool arrays per the contract.
       const isDistrictScope = scopeType === EntityType.DISTRICT;
       const schoolsByUser = isDistrictScope
-        ? await reportRepository.getSchoolsForUsers(studentIds)
+        ? await reportRepository.getSchoolsForUsers(studentIds, scopeId)
         : new Map<string, { schoolId: string; schoolName: string }>();
 
       // 9. Aggregate per task — bin edges from unfiltered, counts from filtered.
@@ -1976,12 +1980,15 @@ function buildPercentileBins(): { binStart: number; binEnd: number }[] {
  * Build raw-score bins covering `[min, max]` with `RAW_SCORE_BIN_COUNT`
  * equal-width intervals. Returns `[]` when no scored students exist in
  * the unfiltered population (caller emits empty bin arrays in that case);
- * returns a single bin when all scores collapse to the same value so the
- * histogram still renders coherently.
+ * returns a single degenerate bin `[min, min]` when all scores collapse
+ * to the same value, so the histogram renders coherently without the bin
+ * label implying a wider range than the data spans. `assignBin` handles
+ * the degenerate-bin case via its "last bin is closed at the top" rule
+ * (`value >= binStart && value <= binEnd`).
  */
 function buildRawScoreBins(min: number, max: number): { binStart: number; binEnd: number }[] {
   if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
-  if (min === max) return [{ binStart: min, binEnd: min + 1 }];
+  if (min === max) return [{ binStart: min, binEnd: min }];
   const step = (max - min) / RAW_SCORE_BIN_COUNT;
   const bins: { binStart: number; binEnd: number }[] = [];
   for (let i = 0; i < RAW_SCORE_BIN_COUNT; i++) {
@@ -2015,6 +2022,13 @@ function assignBin(value: number, bins: { binStart: number; binEnd: number }[]):
  * `getGradesInRange` so a request returning row R via this endpoint
  * also returns row R via the overview / students endpoints when the same
  * `user.grade` filter is applied.
+ *
+ * Parity gotchas the JS path is responsible for matching the SQL path on:
+ * - `in` drops empty values after trim, matching `buildOperatorCondition`
+ *   which uses `inArray` with the empties filtered out
+ * - invalid `gte`/`lte` reference grades (e.g., `Foobar`) throw
+ *   `BAD_REQUEST` rather than silently dropping every student — matches
+ *   the SQL path which throws when `getGradesInRange` returns null
  */
 function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFilter): boolean {
   if (filter.field !== 'user.grade') return false;
@@ -2030,13 +2044,20 @@ function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFil
       return filter.value
         .split(',')
         .map((v) => v.trim())
+        .filter((v) => v.length > 0)
         .includes(grade);
     case 'contains':
       return grade.toLowerCase().includes(filter.value.toLowerCase());
     case 'gte':
     case 'lte': {
       const allowed = getGradesInRange(filter.operator, filter.value);
-      return allowed !== null && allowed.includes(grade);
+      if (allowed === null) {
+        throw new ApiError(`Invalid grade value for ${filter.operator} filter: ${filter.value}`, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      }
+      return allowed.includes(grade);
     }
     default:
       return false;
@@ -2120,20 +2141,33 @@ function aggregateTaskFacet({
   schoolsByUser: Map<string, { schoolId: string; schoolName: string }>;
   isDistrictScope: boolean;
 }): ServiceTaskScoreFacet {
-  // --- 1. Compute bin edges from the unfiltered population ---
-  // We walk the unfiltered set once to find min/max raw score and to
-  // detect whether percentile is defined for this task at all. Tasks
-  // where every scored student emits null for a given score type return
-  // an empty bin array for that mode.
+  // --- 1. Resolve each unfiltered student's scored variant once. Both
+  //         passes below reuse the cached result — `findScoredVariant`
+  //         walks every variant for a task on each call, so caching cuts
+  //         the per-student cost in half at district scale (review
+  //         finding #11 on #1782). The cache also stores the student's
+  //         numeric grade level so field-name resolution stays
+  //         grade-aware in both passes.
+  type ScoredEntry = { variant: ReportTaskMeta; scores: Map<string, string>; gradeLevel: number | null };
+  const scoredByUserId = new Map<string, ScoredEntry>();
+  for (const student of unfilteredStudents) {
+    const scored = findScoredVariant(student.userId, variants, scoresByStudentTask);
+    if (scored) {
+      scoredByUserId.set(student.userId, { ...scored, gradeLevel: getGradeAsNumber(student.grade) });
+    }
+  }
+
+  // --- 2. Compute bin edges from the unfiltered scored cohort ---
+  // Walk the cache once to find min/max raw score and to detect whether
+  // percentile is defined for this task at all. Tasks where every scored
+  // student emits null for a given score type return an empty bin array
+  // for that mode.
   let rawScoreMin = Number.POSITIVE_INFINITY;
   let rawScoreMax = Number.NEGATIVE_INFINITY;
   let anyPercentileSeen = false;
 
-  for (const student of unfilteredStudents) {
-    const scored = findScoredVariant(student.userId, variants, scoresByStudentTask);
-    if (!scored) continue;
-    const gradeLevel = getGradeAsNumber(student.grade);
-    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
+  for (const [, scored] of scoredByUserId) {
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.gradeLevel);
     const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
     const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
     if (rawScore !== null) {
@@ -2146,13 +2180,13 @@ function aggregateTaskFacet({
   const rawScoreBins = buildRawScoreBins(rawScoreMin, rawScoreMax);
   const percentileBins = anyPercentileSeen ? buildPercentileBins() : [];
 
-  // --- 2. Walk filtered students, tallying per-grade and per-school ---
+  // --- 3. Walk filtered students, tallying per-grade and per-school ---
   const byGrade = new Map<string, FacetTally>();
   const bySchool = new Map<string, FacetTally>();
   const schoolNameById = new Map<string, string>();
 
   for (const student of filteredStudents) {
-    const scored = findScoredVariant(student.userId, variants, scoresByStudentTask);
+    const scored = scoredByUserId.get(student.userId);
     if (!scored) continue;
 
     const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
