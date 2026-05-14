@@ -1,1 +1,1 @@
-export * as pa from "./pa/index";
+export * as pa from "./pa/index.js";
