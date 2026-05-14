@@ -249,10 +249,10 @@ export function ReportService({
    * 1. **Administration progress access** (AdministrationService.verifyAdministrationAccess
    *    with `CAN_READ_PROGRESS`):
    *    Checks existence (404 before 403) then verifies `can_read_progress` on the
-   *    administration via FGA. This replaces the old 3-step pattern (administration
-   *    access → Reports.Progress.READ → hasSupervisoryRole) with a single call.
-   *    `can_read_progress: supervisory_tier_group` in the FGA model grants access
-   *    only to admin-tier and educator-tier roles, denying students and caregivers.
+   *    administration via FGA. `can_read_progress: supervisory_tier_group` in the FGA
+   *    model grants access only to admin-tier and educator-tier roles, denying students
+   *    and caregivers — the model composes the role-classification + permission check
+   *    that earlier service code had to do by hand.
    *
    * 2. **Scope-level authorization** (authorizeScopeAccess):
    *    Validates the scope is assigned to the administration (business rule), then
