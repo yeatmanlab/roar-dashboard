@@ -1077,7 +1077,7 @@ export class ReportRepository {
    * by the `prevent_rostered_entity_delete` DB trigger.
    */
   private buildStudentInScopeQuery(scope: ReportScope, admin: ReportAdminWindow, includeUnenrolledStudents = false) {
-    // The enrollment-overlap check is administration-aware (#1792): a student
+    // The enrollment-overlap check is administration-aware: a student
     // passes if their enrollment in the in-scope entity was still active as
     // of `LEAST(admin.dateEnd, NOW())` rather than just "as of NOW()". With
     // `includeUnenrolledStudents = true`, students who left mid-window are
@@ -2329,7 +2329,7 @@ export class ReportRepository {
       .where(
         and(
           eq(users.id, userId),
-          // Rostering-ended hard boundary (#1742) applies in addition to the
+          // Rostering-ended hard boundary applies in addition to the
           // scope-gated overlap check — a decommissioned user with runs data
           // still returns false.
           isActiveRoster(users),
