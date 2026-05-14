@@ -1,3 +1,3 @@
-export * from "./config";
-export * from "./score-names";
-export * from "./subscores";
+export * from "./config.js";
+export * from "./score-names.js";
+export * from "./subscores.js";
