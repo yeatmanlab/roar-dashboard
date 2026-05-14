@@ -536,7 +536,7 @@ export function UserService({
         logger.error({ err: error, context: { userId, email } }, 'Firebase getUserByEmail failed during pre-flight');
         throw new ApiError('Failed to check Firebase user existence', {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
           context: { userId, email },
           cause: error,
         });
@@ -574,7 +574,7 @@ export function UserService({
       logger.error({ err: error, context: { userId, email } }, 'Firebase createUser failed');
       throw new ApiError('Failed to create Firebase auth account', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, email },
         cause: error,
       });
@@ -762,7 +762,7 @@ export function UserService({
 
       throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, newUserId, email, firebaseUid },
         cause: error,
       });

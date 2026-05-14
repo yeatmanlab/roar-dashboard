@@ -216,7 +216,7 @@ export function FamilyService({
         logger.error({ err: error, context: { email } }, 'Firebase getUserByEmail failed during pre-flight');
         throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
           context: { email },
           cause: error,
         });
@@ -258,7 +258,7 @@ export function FamilyService({
       logger.error({ err: error, context: { email } }, 'Firebase createUser failed');
       throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { email },
         cause: error,
       });
