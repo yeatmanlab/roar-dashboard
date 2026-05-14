@@ -213,7 +213,7 @@ jobs:
   # Deploy assessments
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   deploy-roar-pa:
-    needs: [product-owner-review]
+    needs: [approval]
     uses: ./.github/workflows/deploy-assessment.yml
     secrets: inherit
     with:
