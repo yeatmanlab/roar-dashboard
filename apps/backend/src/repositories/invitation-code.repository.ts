@@ -19,6 +19,39 @@ export class InvitationCodeRepository extends BaseRepository<InvitationCode, typ
   }
 
   /**
+   * Look up an invitation code by its `code` value, only returning rows that are currently valid.
+   *
+   * Filters by:
+   * - `code` matches exactly (case-sensitive — codes are opaque)
+   * - `validFrom <= NOW()`
+   * - `validTo >= NOW() OR validTo IS NULL`
+   *
+   * Used by `POST /v1/families/:familyId/users` to resolve the caller-supplied
+   * activation code to a group before enrolling a child. Returns `null` for
+   * unknown or expired codes so the caller can produce a 422.
+   *
+   * @param code - The invitation code value (e.g. `'ABC123'`)
+   * @returns The invitation code row if valid, or null
+   */
+  async findValidByCode(code: string): Promise<InvitationCode | null> {
+    const now = sql`NOW()`;
+
+    const result = await this.db
+      .select()
+      .from(invitationCodes)
+      .where(
+        and(
+          eq(invitationCodes.code, code),
+          lte(invitationCodes.validFrom, now),
+          or(gte(invitationCodes.validTo, now), isNull(invitationCodes.validTo)),
+        ),
+      )
+      .limit(1);
+
+    return result[0] ?? null;
+  }
+
+  /**
    * Get the latest valid invitation code for a group.
    *
    * Filters by:

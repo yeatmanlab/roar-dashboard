@@ -1,6 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
+import { FAMILY_SIZE_LIMIT } from '@roar-dashboard/api-contract';
 import { FamilyRepository, FAMILIES_CREATED_BY_UNIQ_IDX } from '../../repositories/family.repository';
 import { UserRepository } from '../../repositories/user.repository';
+import { GroupRepository } from '../../repositories/group.repository';
+import { InvitationCodeRepository } from '../../repositories/invitation-code.repository';
 import { RosterProviderIdRepository } from '../../repositories/roster-provider-id.repository';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
@@ -11,7 +14,7 @@ import type { PaginatedResult } from '../../repositories/base.repository';
 import type { AuthContext } from '../../types/auth-context';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
-import { familyMembershipTuple } from '../authorization/helpers/fga-tuples';
+import { familyMembershipTuple, groupMembershipTuple } from '../authorization/helpers/fga-tuples';
 import { FirebaseAuthClient } from '../../clients/firebase-auth.clients';
 import { isFirebaseError } from '../../types/firebase';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
@@ -20,14 +23,19 @@ import { RosteringProvider } from '../../enums/rostering-provider.enum';
 import { RosteringEntityType } from '../../enums/rostering-entity-type.enum';
 import { UserType } from '../../enums/user-type.enum';
 import { UserFamilyRole } from '../../enums/user-family-role.enum';
+import { UserRole } from '../../enums/user-role.enum';
+import type { Grade } from '../../enums/grade.enum';
+import type { FreeReducedLunchStatus } from '../../enums/frl-status.enum';
 import { generateAssessmentPid } from '../../utils/assessment-pid.util';
-import { families, userFamilies, users } from '../../db/schema';
-import { and, eq } from 'drizzle-orm';
+import { families, userFamilies, userGroups, users } from '../../db/schema';
+import { rosteringProviderIds } from '../../db/schema/core';
+import { and, eq, inArray } from 'drizzle-orm';
 import type {
   EnrolledFamilyUsersQuery,
   EnrolledFamilyUserEntity,
   ListEnrolledFamilyUsersOptions,
 } from '../../types/user';
+import type { TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 
 /**
  * Caretaker name fields supplied at family-registration time.
@@ -67,6 +75,42 @@ export interface CreateFamilyServiceInput {
 }
 
 /**
+ * Per-child input for `addChildren`. Mirrors `AddChild` from the api-contract.
+ */
+export interface AddChildServiceInput {
+  email: string;
+  password: string;
+  name: {
+    first: string;
+    middle?: string | undefined;
+    last: string;
+  };
+  dob: string;
+  grade: Grade;
+  activationCode: string;
+  demographics?:
+    | {
+        gender?: string | null | undefined;
+        race?: string | null | undefined;
+        statusEll?: string | null | undefined;
+        statusFrl?: FreeReducedLunchStatus | null | undefined;
+        statusIep?: string | null | undefined;
+        hispanicEthnicity?: boolean | null | undefined;
+        homeLanguage?: string | null | undefined;
+      }
+    | undefined;
+}
+
+/**
+ * Service-layer input for `POST /v1/families/:familyId/users`.
+ *
+ * Mirrors `AddFamilyChildrenRequest` from the api-contract.
+ */
+export interface AddFamilyChildrenServiceInput {
+  children: AddChildServiceInput[];
+}
+
+/**
  * Family Service
  *
  * Business logic layer for family operations.
@@ -75,11 +119,15 @@ export interface CreateFamilyServiceInput {
 export function FamilyService({
   familyRepository = new FamilyRepository(),
   userRepository = new UserRepository(),
+  groupRepository = new GroupRepository(),
+  invitationCodeRepository = new InvitationCodeRepository(),
   rosterProviderIdRepository = new RosterProviderIdRepository(),
   authorizationService = AuthorizationService(),
 }: {
   familyRepository?: FamilyRepository;
   userRepository?: UserRepository;
+  groupRepository?: GroupRepository;
+  invitationCodeRepository?: InvitationCodeRepository;
   rosterProviderIdRepository?: RosterProviderIdRepository;
   authorizationService?: ReturnType<typeof AuthorizationService>;
 } = {}) {
@@ -406,6 +454,355 @@ export function FamilyService({
   }
 
   /**
+   * Add one or more children to an existing family.
+   *
+   * The endpoint is all-or-nothing: every child is created in the same DB transaction, and on
+   * failure every Firebase Auth account created earlier in this request is rolled back. The
+   * authorization rule is "caller is a parent of the family, or super admin" — the parent role
+   * is the supervisory role for family operations per the OneRoster user_family_role enum.
+   *
+   * Operation sequence:
+   * 1. Verify the family exists and is active (404 if missing, 422 if rosteringEnded).
+   * 2. Authorize the caller (parent role via `user_families`, or super admin).
+   * 3. Resolve every activation code in the request to its `(invitationCodeId, groupId)` pair via
+   *    the `invitation_codes` table. Dedupe by code so two children sharing a code resolve to the
+   *    same group lookup. Codes that don't resolve to an active group surface as 422.
+   * 4. Family-size cap: existing active members + len(children) <= FAMILY_SIZE_LIMIT (422 otherwise).
+   * 5. Pre-flight email uniqueness (DB + Firebase) for each child. 409 if any conflict.
+   * 6. Firebase `createUser` for each child sequentially. On any failure, delete the UIDs created
+   *    so far in this request and surface 409 / 429 / 500 as appropriate.
+   * 7. DB transaction: insert users, user_families, user_groups, rostering_provider_ids in one
+   *    shot. On failure: roll back DB + delete every Firebase UID created in step 6.
+   * 8. FGA tuples: one (child on family) tuple per child + one (student on group) tuple per
+   *    (child, group) pair. On failure: delete tuples, delete DB rows, delete Firebase UIDs.
+   *
+   * @param authContext Requesting user's auth context
+   * @param familyId Target family
+   * @param input Children to add
+   * @returns The new child ids in request order
+   * @throws {ApiError} 403 if the caller is not a parent of the family and not a super admin
+   * @throws {ApiError} 404 if the family doesn't exist
+   * @throws {ApiError} 409 if any child email is already in use
+   * @throws {ApiError} 422 for invalid/expired activation codes, family-size cap exceeded, or rosteringEnded
+   * @throws {ApiError} 429 if Firebase Auth rate-limits any createUser call
+   * @throws {ApiError} 500 on unexpected failures or unrecoverable compensation
+   */
+  async function addChildren(
+    authContext: AuthContext,
+    familyId: string,
+    input: AddFamilyChildrenServiceInput,
+  ): Promise<{ ids: string[] }> {
+    const { userId, isSuperAdmin } = authContext;
+    const { children } = input;
+
+    // ── Step 1: Family existence + active check (404 before 403) ──────────────
+    const family = await familyRepository.getById({ id: familyId });
+    if (!family) {
+      throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { userId, familyId },
+      });
+    }
+    if (family.rosteringEnded !== null && family.rosteringEnded <= new Date()) {
+      logger.warn({ userId, familyId }, 'Attempted to add children to a rostered-ended family');
+      throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        context: { userId, familyId },
+      });
+    }
+
+    // ── Step 2: Authorization (parent of the family, or super admin) ──────────
+    if (!isSuperAdmin) {
+      const roles = await familyRepository.getUserRolesInFamily(userId, familyId);
+      if (!roles.includes(UserFamilyRole.PARENT)) {
+        logger.warn({ userId, familyId, roles }, 'Non-parent attempted to add children to a family');
+        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+          context: { userId, familyId },
+        });
+      }
+    }
+
+    // ── Step 3: Resolve activation codes (deduplicated) ───────────────────────
+    const uniqueCodes = Array.from(new Set(children.map((c) => c.activationCode)));
+    const codeToGroupId = new Map<string, string>();
+    for (const code of uniqueCodes) {
+      const row = await invitationCodeRepository.findValidByCode(code);
+      if (!row) {
+        logger.warn({ userId, familyId, code }, 'Activation code not found or expired');
+        throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          context: { userId, familyId },
+        });
+      }
+      // Confirm the resolved group is itself active.
+      const group = await groupRepository.getById({ id: row.groupId });
+      if (!group || group.rosteringEnded !== null) {
+        logger.warn(
+          { userId, familyId, code, groupId: row.groupId },
+          'Activation code resolved to an inactive or missing group',
+        );
+        throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+          context: { userId, familyId },
+        });
+      }
+      codeToGroupId.set(code, row.groupId);
+    }
+
+    // ── Step 4: Family-size cap ───────────────────────────────────────────────
+    const existingMembers = await familyRepository.countActiveMembers(familyId);
+    if (existingMembers + children.length > FAMILY_SIZE_LIMIT) {
+      logger.warn(
+        { userId, familyId, existingMembers, newChildren: children.length },
+        'Family-size cap would be exceeded',
+      );
+      throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        context: { userId, familyId, existingMembers, requested: children.length, cap: FAMILY_SIZE_LIMIT },
+      });
+    }
+
+    // ── Step 5: Pre-flight email uniqueness ───────────────────────────────────
+    // Detect duplicate emails within the request itself first — these are a 400, not a 409.
+    const emailsInRequest = children.map((c) => c.email);
+    const lowerEmails = emailsInRequest.map((e) => e.toLowerCase());
+    if (new Set(lowerEmails).size !== lowerEmails.length) {
+      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { userId, familyId },
+      });
+    }
+
+    for (const email of emailsInRequest) {
+      const existsInDb = await userRepository.existsByUniqueFields({ email });
+      if (existsInDb) {
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, familyId, email },
+        });
+      }
+
+      try {
+        await FirebaseAuthClient.getUserByEmail(email);
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, familyId, email },
+        });
+      } catch (error) {
+        if (error instanceof ApiError) throw error;
+        if (!isFirebaseError(error) || error.code !== FIREBASE_ERROR_CODES.AUTH.USER_NOT_FOUND) {
+          logger.error({ err: error, context: { userId, familyId, email } }, 'Firebase pre-flight check failed');
+          throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, familyId, email },
+            cause: error,
+          });
+        }
+      }
+    }
+
+    // ── Step 6: Firebase createUser per child (sequential, cumulative rollback) ──
+    const firebaseUids: string[] = [];
+    for (let i = 0; i < children.length; i += 1) {
+      const child = children[i]!;
+      try {
+        const authRecord = await FirebaseAuthClient.createUser({
+          email: child.email,
+          password: child.password,
+          displayName: [child.name.first, child.name.last].filter(Boolean).join(' '),
+        });
+        firebaseUids.push(authRecord.uid);
+      } catch (error) {
+        // Roll back every UID created so far in this request, then surface the error.
+        await Promise.all(firebaseUids.map((uid) => compensateDeleteFirebaseUser(uid, child.email, 'step 6 failure')));
+
+        if (isFirebaseError(error) && error.code === FIREBASE_ERROR_CODES.AUTH.EMAIL_ALREADY_EXISTS) {
+          throw new ApiError(ApiErrorMessage.CONFLICT, {
+            statusCode: StatusCodes.CONFLICT,
+            code: ApiErrorCode.RESOURCE_CONFLICT,
+            context: { userId, familyId, email: child.email },
+          });
+        }
+        if (isFirebaseError(error) && error.code === FIREBASE_ERROR_CODES.AUTH.TOO_MANY_REQUESTS) {
+          throw new ApiError(ApiErrorMessage.RATE_LIMITED, {
+            statusCode: StatusCodes.TOO_MANY_REQUESTS,
+            code: ApiErrorCode.RATE_LIMITED,
+            context: { userId, familyId, email: child.email },
+            cause: error,
+          });
+        }
+        logger.error({ err: error, context: { userId, familyId, email: child.email } }, 'Firebase createUser failed');
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, familyId, email: child.email },
+          cause: error,
+        });
+      }
+    }
+
+    // ── Step 7: DB transaction ────────────────────────────────────────────────
+    const enrollmentStart = new Date();
+    let createdIds: string[] = [];
+
+    try {
+      createdIds = await familyRepository.runTransaction({
+        fn: async (tx) => {
+          const childInserts = children.map((child, i) => ({
+            user: {
+              authId: firebaseUids[i]!,
+              authProvider: [AuthProvider.PASSWORD],
+              email: child.email,
+              nameFirst: child.name.first,
+              nameMiddle: child.name.middle ?? null,
+              nameLast: child.name.last,
+              userType: UserType.STUDENT,
+              assessmentPid: generateAssessmentPid({ userId: child.email }),
+              dob: child.dob,
+              grade: child.grade,
+              statusEll: child.demographics?.statusEll ?? null,
+              statusFrl: child.demographics?.statusFrl ?? null,
+              statusIep: child.demographics?.statusIep ?? null,
+              gender: child.demographics?.gender ?? null,
+              race: child.demographics?.race ?? null,
+              hispanicEthnicity: child.demographics?.hispanicEthnicity ?? null,
+              homeLanguage: child.demographics?.homeLanguage ?? null,
+              isSuperAdmin: false,
+            },
+            family: {
+              familyId,
+              role: UserFamilyRole.CHILD,
+              joinedOn: enrollmentStart,
+            },
+            groupMemberships: [
+              {
+                groupId: codeToGroupId.get(child.activationCode)!,
+                role: UserRole.STUDENT,
+                enrollmentStart,
+                enrollmentEnd: null,
+              },
+            ],
+          }));
+
+          const result = await familyRepository.addChildren(childInserts, tx);
+
+          // Rostering provider IDs — one row per new child, partner = familyId.
+          for (const childId of result.ids) {
+            await rosterProviderIdRepository.create({
+              data: {
+                providerType: RosteringProvider.DASHBOARD,
+                providerId: childId,
+                partnerId: familyId,
+                entityType: RosteringEntityType.USER,
+                entityId: childId,
+              },
+              transaction: tx,
+            });
+          }
+
+          return result.ids;
+        },
+      });
+    } catch (error) {
+      // DB rolled back atomically — only Firebase needs compensation.
+      await Promise.all(
+        firebaseUids.map((uid, i) => compensateDeleteFirebaseUser(uid, children[i]!.email, 'step 7 failure')),
+      );
+
+      if (error instanceof ApiError) throw error;
+
+      const dbError = unwrapDrizzleError(error);
+      if (isUniqueViolation(dbError)) {
+        // Concurrent registration of the same email — race lost the pre-flight check.
+        throw new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+          context: { userId, familyId },
+          cause: error,
+        });
+      }
+
+      logger.error({ err: error, context: { userId, familyId } }, 'DB write failed during addChildren');
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, familyId, firebaseUidCount: firebaseUids.length },
+        cause: error,
+      });
+    }
+
+    // ── Step 8: FGA tuple writes ──────────────────────────────────────────────
+    const tuples: TupleKey[] = createdIds.flatMap((childId, i) => {
+      const child = children[i]!;
+      const groupId = codeToGroupId.get(child.activationCode)!;
+      return [
+        familyMembershipTuple(childId, familyId, UserFamilyRole.CHILD, enrollmentStart, null),
+        groupMembershipTuple(childId, groupId, UserRole.STUDENT, enrollmentStart, null),
+      ];
+    });
+
+    try {
+      await authorizationService.writeTuplesOrThrow(tuples);
+    } catch (error) {
+      logger.error(
+        { err: error, context: { userId, familyId, childIds: createdIds } },
+        'FGA write failed during addChildren — beginning compensation',
+      );
+
+      const deleteTuples: TupleKeyWithoutCondition[] = tuples.map(({ user, relation, object }) => ({
+        user,
+        relation,
+        object,
+      }));
+      await authorizationService.deleteTuples(deleteTuples);
+
+      try {
+        await familyRepository.runTransaction({
+          fn: async (tx) => {
+            // Order: rostering_provider_ids → user_groups → user_families → users
+            await tx.delete(rosteringProviderIds).where(inArray(rosteringProviderIds.entityId, createdIds));
+            await tx.delete(userGroups).where(inArray(userGroups.userId, createdIds));
+            await tx
+              .delete(userFamilies)
+              .where(and(inArray(userFamilies.userId, createdIds), eq(userFamilies.familyId, familyId)));
+            await tx.delete(users).where(inArray(users.id, createdIds));
+          },
+        });
+      } catch (dbDeleteError) {
+        logger.error(
+          { err: dbDeleteError, context: { userId, familyId, childIds: createdIds, firebaseUids } },
+          'DB delete compensation failed after FGA write failure — manual cleanup required',
+        );
+      }
+
+      await Promise.all(
+        firebaseUids.map((uid, i) => compensateDeleteFirebaseUser(uid, children[i]!.email, 'FGA write failure')),
+      );
+
+      throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, familyId, childIds: createdIds },
+        cause: error,
+      });
+    }
+
+    logger.info({ userId, familyId, childIds: createdIds }, 'Added children to family');
+    return { ids: createdIds };
+  }
+
+  /**
    * Delete a Firebase Auth account as a saga compensation step. Failures are logged with full
    * context but not re-thrown — the caller surfaces a 5xx to the client regardless. The
    * structured log gives a paper trail for manual reconciliation.
@@ -422,6 +819,7 @@ export function FamilyService({
   }
 
   return {
+    addChildren,
     create,
     listUsers,
   };

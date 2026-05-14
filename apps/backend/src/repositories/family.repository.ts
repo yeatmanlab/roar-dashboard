@@ -3,8 +3,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { SortOrder } from '@roar-dashboard/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
-import type { Family, NewFamily, NewUser } from '../db/schema';
-import { families, userFamilies, users } from '../db/schema';
+import type { Family, NewFamily, NewUser, NewUserFamily, NewUserGroup } from '../db/schema';
+import { families, userFamilies, userGroups, users } from '../db/schema';
 import { UserFamilyRole } from '../enums/user-family-role.enum';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
@@ -82,6 +82,87 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
     });
 
     return { caretakerId, familyId };
+  }
+
+  /**
+   * Insert a batch of new child users with their family + group memberships and rostering rows,
+   * all inside the supplied transaction.
+   *
+   * Mirrors `createWithCaretaker` in shape but writes N children rather than one caretaker. The
+   * `rostering_provider_ids` rows are NOT written here — the caller writes them via
+   * `RosterProviderIdRepository.create({ ..., transaction })` in the same transaction.
+   *
+   * Group memberships are passed in as a flat array `(childIndex, groupId, role)` rather than a
+   * map so that callers can pre-resolve and deduplicate activation codes — the repository simply
+   * writes what it's given. If two children share an activation code, the service writes two
+   * `user_groups` rows (one per child, one per resolved group).
+   *
+   * @param childInserts - One entry per child, in request order
+   * @param transaction - The active transaction to execute writes within
+   * @returns The newly created child ids, in the same order as `childInserts`
+   */
+  async addChildren(
+    childInserts: Array<{
+      user: Omit<NewUser, 'id'>;
+      family: Omit<NewUserFamily, 'userId' | 'familyId'> & { familyId: string };
+      groupMemberships: Array<Omit<NewUserGroup, 'userId'>>;
+    }>,
+    transaction: CoreTransaction,
+  ): Promise<{ ids: string[] }> {
+    const ids: string[] = [];
+
+    for (const entry of childInserts) {
+      const [createdUser] = await transaction.insert(users).values(entry.user).returning({ id: users.id });
+      if (!createdUser) {
+        throw new Error('User insert returned no rows');
+      }
+      const childId = createdUser.id;
+      ids.push(childId);
+
+      await transaction.insert(userFamilies).values({
+        ...entry.family,
+        userId: childId,
+      });
+
+      if (entry.groupMemberships.length > 0) {
+        await transaction.insert(userGroups).values(entry.groupMemberships.map((m) => ({ ...m, userId: childId })));
+      }
+    }
+
+    return { ids };
+  }
+
+  /**
+   * Count active members of a family — rows in `user_families` with `leftOn IS NULL`.
+   * Used to enforce the family-size cap before accepting an add-children request.
+   *
+   * @param familyId - The family to count members of
+   * @returns The count of currently-active memberships
+   */
+  async countActiveMembers(familyId: string): Promise<number> {
+    const result = await this.db
+      .select({ count: count() })
+      .from(userFamilies)
+      .where(and(eq(userFamilies.familyId, familyId), isNull(userFamilies.leftOn)));
+    return result[0]?.count ?? 0;
+  }
+
+  /**
+   * Get the active roles a user holds in a family. Used to authorize "is this caller a parent of
+   * the family?" — the service treats `parent` as the supervisory role for family operations.
+   *
+   * Returns an empty array if the user has no active membership.
+   *
+   * @param userId - The user to check
+   * @param familyId - The family to check against
+   * @returns Array of active roles the user holds in this family
+   */
+  async getUserRolesInFamily(userId: string, familyId: string): Promise<UserFamilyRole[]> {
+    const rows = await this.db
+      .select({ role: userFamilies.role })
+      .from(userFamilies)
+      .where(and(eq(userFamilies.userId, userId), eq(userFamilies.familyId, familyId), isNull(userFamilies.leftOn)));
+    return rows.map((r) => r.role);
   }
 
   /**
