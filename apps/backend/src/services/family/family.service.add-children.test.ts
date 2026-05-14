@@ -268,6 +268,24 @@ describe('FamilyService.addChildren', () => {
       });
       expect(mockAuth.createUser).not.toHaveBeenCalled();
     });
+
+    it('returns 500 with EXTERNAL_SERVICE_FAILED when getUserByEmail throws an unexpected error', async () => {
+      // Locks the error-code contract on the Firebase pre-flight unexpected-error path —
+      // flipping back to DATABASE_QUERY_FAILED would be a regression of the round-2 review fix.
+      mockAuth.getUserByEmail.mockRejectedValue(new Error('network timeout'));
+
+      await expect(
+        makeService().addChildren(parentAuth, FAMILY_ID, { children: [makeChild('1')] }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Firebase pre-flight check failed',
+      );
+      expect(mockAuth.createUser).not.toHaveBeenCalled();
+    });
   });
 
   describe('Firebase createUser failures (cumulative rollback)', () => {
@@ -295,6 +313,23 @@ describe('FamilyService.addChildren', () => {
       ).rejects.toMatchObject({
         statusCode: StatusCodes.TOO_MANY_REQUESTS,
       });
+    });
+
+    it('returns 500 with EXTERNAL_SERVICE_FAILED when createUser throws a non-Firebase error', async () => {
+      // Locks the error-code contract on the Firebase createUser unexpected-error path —
+      // flipping back to DATABASE_QUERY_FAILED would be a regression of the round-2 review fix.
+      mockAuth.createUser.mockRejectedValue(new Error('Firebase Auth is down'));
+
+      await expect(
+        makeService().addChildren(parentAuth, FAMILY_ID, { children: [makeChild('1')] }),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error) }),
+        'Firebase createUser failed',
+      );
     });
 
     it('logs orphaned-account warning when cumulative Firebase rollback delete itself fails', async () => {
