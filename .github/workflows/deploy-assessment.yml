@@ -2,13 +2,13 @@ name: Deploy Assessment
 
 # Reusable workflow for building and deploying a ROAR assessment to Firebase Hosting.
 # Convention: each assessment lives at apps/assessments/<name>/ with a firebase.json,
-# a dist/ output dir after build, and npm scripts: build:dev, build:staging, build:prod.
+# a dist/ output dir after build, and npm scripts: build:staging, build:prod.
 
 on:
   workflow_call:
     inputs:
       environment:
-        description: "GitHub environment to deploy to (e.g. platform:development)"
+        description: "GitHub environment to deploy to (e.g. platform:staging)"
         required: true
         type: string
       assessment:
@@ -16,8 +16,17 @@ on:
         required: true
         type: string
       build-script:
-        description: "npm script to build the assessment (e.g. build:dev)"
+        description: "npm script to build the assessment (e.g. build:staging)"
         required: true
+        type: string
+      run-cypress:
+        description: "Whether to run Cypress e2e tests after deployment."
+        required: false
+        type: boolean
+        default: false
+      cypress-base-url:
+        description: "Base URL for Cypress to run tests against. Required when run-cypress is true."
+        required: false
         type: string
 
 jobs:
@@ -62,3 +71,34 @@ jobs:
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
           dist-path: apps/assessments/${{ inputs.assessment }}/dist
           firebase-config-path: apps/assessments/${{ inputs.assessment }}/firebase.json
+
+  cypress:
+    name: Cypress ${{ inputs.assessment }}
+    if: ${{ inputs.run-cypress }}
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, edge]
+        containers: [1, 2]
+    env:
+      CYPRESS_BASE_URL: ${{ inputs.cypress-base-url }}
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          working-directory: apps/assessments/${{ inputs.assessment }}
+          wait-on: ${{ inputs.cypress-base-url }}
+          wait-on-timeout: 60
+          record: true
+          parallel: true
+          spec: cypress/e2e/**/*
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
