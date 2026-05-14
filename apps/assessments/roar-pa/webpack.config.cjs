@@ -145,20 +145,13 @@ const developmentConfig = merge(webConfig, {
 });
 
 module.exports = async (env, args) => {
-  const roarDB = env.dbmode === 'production' ? 'production' : 'development';
+  const roarDB = env.dbmode;
 
   const envDependentConfig = {
     plugins: [
       new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        FIREBASE_APP_API_KEY: JSON.stringify(process.env.VITE_FIREBASE_APP_API_KEY),
-        FIREBASE_APP_AUTH_DOMAIN: JSON.stringify(process.env.VITE_FIREBASE_APP_AUTH_DOMAIN),
-        FIREBASE_APP_PROJECT_ID: JSON.stringify(process.env.VITE_FIREBASE_APP_PROJECT_ID),
-        FIREBASE_APP_STORAGE_BUCKET: JSON.stringify(process.env.VITE_FIREBASE_APP_STORAGE_BUCKET),
-        FIREBASE_APP_MESSAGING_SENDER_ID: JSON.stringify(process.env.VITE_FIREBASE_APP_MESSAGING_SENDER_ID),
-        FIREBASE_APP_APP_ID: JSON.stringify(process.env.VITE_FIREBASE_APP_APP_ID),
-        FIREBASE_APP_SITE_KEY: JSON.stringify(process.env.VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -166,9 +159,26 @@ module.exports = async (env, args) => {
     ],
   };
 
+  // Firebase config is injected via EnvironmentPlugin only for local dev builds.
+  // Staging and production deployments fetch firebase config at runtime from /__/firebase/init.json
+  // (served automatically by Firebase Hosting), so no secrets enter the build pipeline.
+  const devFirebaseConfig = {
+    plugins: [
+      new webpack.EnvironmentPlugin({
+        FIREBASE_APP_API_KEY: '',
+        FIREBASE_APP_AUTH_DOMAIN: '',
+        FIREBASE_APP_PROJECT_ID: '',
+        FIREBASE_APP_STORAGE_BUCKET: '',
+        FIREBASE_APP_MESSAGING_SENDER_ID: '',
+        FIREBASE_APP_APP_ID: '',
+        FIREBASE_APP_RECAPTCHA_SITE_KEY: '',
+      }),
+    ],
+  };
+
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:
