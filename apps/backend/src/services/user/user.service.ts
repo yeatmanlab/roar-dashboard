@@ -41,6 +41,7 @@ import { UserType } from '../../enums/user-type.enum';
 import { AuthProvider } from '../../enums/auth-provider.enum';
 import { isFirebaseError } from '../../types/firebase';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
+import { rejectRosteringEndedTarget } from '../utils/validations.utils';
 
 // Types for the unsigned TOS agreements response
 interface TosAgreementVersion {
@@ -250,6 +251,14 @@ export function UserService({
         context: { id, userId },
       });
     }
+
+    // 1b. Rostering-ended users are decommissioned (#1742). Any URL that
+    // names them as a target — single-user lookup, per-user reporting,
+    // PATCH, agreement record, user-scoped administration list — returns
+    // 404 with no access-control distinction (the auth guard #1735 already
+    // blocks the rostering-ended user themselves from calling the API; the
+    // only callers reaching this point are *other* users looking them up).
+    rejectRosteringEndedTarget(user, { id, userId }, 'Lookup');
 
     // 2. Super admins bypass permission checks
     if (isSuperAdmin) {
@@ -1088,6 +1097,16 @@ export function UserService({
         });
       }
 
+      // Rostering-ended users return 404 — same shape as not-found so
+      // requesters can't tell the difference (#1742).
+      //
+      // TODO: When PATCH authorization is opened up beyond super-admin (see
+      // the FORBIDDEN guard above + JSDoc), this rostering-ended rejection
+      // must continue to run *before* the new authorization path so the 404
+      // remains the response for any non-super-admin attempting to write to
+      // a rostering-ended user — not a 403 / 200 race.
+      rejectRosteringEndedTarget(user, { userId, id }, 'PATCH');
+
       await userRepository.update({
         id,
         data: {
@@ -1183,6 +1202,10 @@ export function UserService({
           context: { userId: requestingUserId, targetUserId: userId },
         });
       }
+
+      // 1b. Rostering-ended users are decommissioned — same 404 shape as
+      // a not-found user so the caller can't distinguish (#1742).
+      rejectRosteringEndedTarget(targetUser, { userId: requestingUserId, targetUserId: userId }, 'Agreement record');
 
       // 2. Verify agreement version exists and fetch agreement type
       const agreementVersion = await agreementVersionRepository.getById({ id: agreementVersionId });
