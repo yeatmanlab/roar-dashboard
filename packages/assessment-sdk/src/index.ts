@@ -9,6 +9,10 @@ export type { Command, CommandContext, Logger } from './command/command';
 export { RoarApi } from './receiver/roar-api';
 export { SDKError } from './errors/sdk-error';
 
+// Re-exported so rollup includes compat/firekit as a preserved module, generating
+// dist/compat/firekit.mjs which the package.json exports map requires.
+export * from './compat/firekit';
+
 // Global singleton instances for the SDK
 let globalInvoker: Invoker | undefined;
 let globalApi: RoarApi | undefined;
