@@ -270,7 +270,12 @@ describe('FamilyService.create', () => {
       const { tx, deleteSpy } = makeMockTx();
       mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => fn(tx));
 
-      await expect(makeService().create(validInput)).rejects.toBeInstanceOf(ApiError);
+      // Locks the error-code contract for the FGA-failure path — flips back to
+      // DATABASE_QUERY_FAILED would be a regression of the round-1 review fix.
+      await expect(makeService().create(validInput)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
 
       // Tuple delete attempted
       expect(mockAuthorizationService.deleteTuples).toHaveBeenCalledTimes(1);
