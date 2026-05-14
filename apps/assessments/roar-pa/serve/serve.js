@@ -83,53 +83,20 @@ onAuthStateChanged(auth, async (user) => {
         }
       }
 
-      const ctx = {
-        // eslint-disable-next-line no-undef
-        baseUrl: `${ROAR_API_URL}/v1`,
-        auth: { getToken: () => user.getIdToken() },
-        participant: { participantId: data.id },
-      };
+    const taskInfo = {
+      taskId: taskId,
+      variantParams: gameParams,
+    };
 
-      initFirekitCompat(ctx, {
-        variantId: resolvedVariantId,
-        taskVersion,
-        isAnonymous: true,
-      });
+    const firekit = new RoarAppkit({
+      firebaseProject: appKit,
+      taskInfo,
+      userInfo,
+    });
 
-      const userParams = {
-        assessmentPid,
-        labId,
-        grade,
-        birthMonth,
-        birthYear,
-        age,
-        ageMonths,
-      };
+    const roarApp = new RoarPA(firekit, gameParams, userParams);
 
-      const gameParams = {
-        userMode,
-        recruitment,
-        skipInstructions,
-        consent,
-        story,
-        storyOption,
-        numTestItems,
-        earlyStopping,
-        threshold,
-        patience,
-        tolerance,
-        logicalOperation,
-        randomSeed,
-        isAdaptive,
-        itemSelect,
-        abilityMethod,
-      };
-
-      const roarApp = new RoarPA(gameParams, userParams);
-      roarApp.run();
-    } catch (err) {
-      console.error('Failed to initialize assessment:', err);
-    }
+    roarApp.run();
   }
 });
 
