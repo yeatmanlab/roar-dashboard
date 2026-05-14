@@ -269,6 +269,28 @@ describe('FamilyService.addChildren', () => {
         statusCode: StatusCodes.TOO_MANY_REQUESTS,
       });
     });
+
+    it('logs orphaned-account warning when cumulative Firebase rollback delete itself fails', async () => {
+      // Child 1 succeeds, child 2 fails creation, and the rollback of child 1 also fails.
+      mockAuth.createUser
+        .mockResolvedValueOnce({ uid: 'fb-uid-1' })
+        .mockRejectedValueOnce(makeFirebaseError(FIREBASE_ERROR_CODES.AUTH.EMAIL_ALREADY_EXISTS));
+      mockAuth.deleteUser.mockRejectedValueOnce(new Error('Firebase delete blew up'));
+
+      await expect(
+        makeService().addChildren(parentAuth, FAMILY_ID, { children: [makeChild('1'), makeChild('2')] }),
+      ).rejects.toMatchObject({ statusCode: StatusCodes.CONFLICT });
+
+      // The original error still propagates; the orphaned-account paper trail is logged
+      expect(mockAuth.deleteUser).toHaveBeenCalledWith('fb-uid-1');
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          err: expect.any(Error),
+          context: expect.objectContaining({ firebaseUid: 'fb-uid-1', reason: 'step 6 failure' }),
+        }),
+        'Firebase deleteUser compensation failed — orphaned auth account requires manual cleanup',
+      );
+    });
   });
 
   describe('DB transaction failures', () => {
