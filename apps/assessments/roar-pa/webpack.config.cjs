@@ -149,7 +149,7 @@ module.exports = async (env, args) => {
     plugins: [
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        ROAR_API_URL: JSON.stringify(process.env.ROAR_API_URL),
+        ROAR_API_URL: JSON.stringify(process.env.ROAR_API_URL || 'https://localhost:4000'),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -169,7 +169,7 @@ module.exports = async (env, args) => {
         FIREBASE_APP_STORAGE_BUCKET: '',
         FIREBASE_APP_MESSAGING_SENDER_ID: '',
         FIREBASE_APP_APP_ID: '',
-        ROAR_API_URL: 'http://localhost:3000',
+        ROAR_API_URL: 'https://localhost:4000',
       }),
     ],
   };
