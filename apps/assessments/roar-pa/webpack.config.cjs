@@ -145,7 +145,7 @@ const developmentConfig = merge(webConfig, {
 });
 
 module.exports = async (env, args) => {
-  const roarDB = env.dbmode === 'production' ? 'production' : 'development';
+  const roarDB = env.dbmode;
 
   const envDependentConfig = {
     plugins: [
@@ -179,7 +179,7 @@ module.exports = async (env, args) => {
 
   switch (args.mode) {
     case 'development':
-      return merge(developmentConfig, envDependentConfig);
+      return merge(developmentConfig, envDependentConfig, devFirebaseConfig);
     case 'production':
       return merge(productionConfig, envDependentConfig);
     default:
