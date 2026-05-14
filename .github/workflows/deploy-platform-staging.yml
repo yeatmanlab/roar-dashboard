@@ -142,3 +142,5 @@ jobs:
       environment: platform:staging
       assessment: roar-pa
       build-script: build:staging
+      run-cypress: true
+      cypress-base-url: https://roar-phoneme-staging.web.app/
