@@ -6,6 +6,7 @@ import store from 'store2';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 import i18next from 'i18next';
+import { updateEngagementFlags } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import {
   generateAssetObject,
   createPreloadTrials,
@@ -224,8 +225,8 @@ export function buildExperiment(config) {
   });
 
   const paHandleEngagementFlags = (flags, reliable) => {
-    if (config.firekit.run.started) {
-      return config.firekit.updateEngagementFlags(flags, reliable, paValidityEvaluator.reliabilityByBlock);
+    if (config.runStarted) {
+      return updateEngagementFlags(flags, reliable);
     }
     return null;
   };
