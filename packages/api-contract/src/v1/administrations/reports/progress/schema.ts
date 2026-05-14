@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PaginationQuerySchema, PaginationMetaSchema, createDynamicSortQuerySchema } from '../../../common/query';
+import { ExclusionsSchema } from '../../../common/exclusions';
 import {
   ReportScopeQuerySchema,
   createFilterQuerySchema,
@@ -147,12 +148,17 @@ export type ProgressStudent = z.infer<typeof ProgressStudentSchema>;
 
 /**
  * Response schema for the progress students endpoint.
- * Includes task metadata for column rendering and paginated student rows.
+ *
+ * Includes task metadata for column rendering, paginated student rows, and
+ * an `exclusions` object (see `common/exclusions.ts`) — reporting endpoints
+ * surface counts of records filtered out (e.g., for rostering-ended #1742) so
+ * the frontend can explain a sparse historical report.
  */
 export const ProgressStudentsResponseSchema = z.object({
   tasks: z.array(ReportTaskMetadataSchema),
   items: z.array(ProgressStudentSchema),
   pagination: PaginationMetaSchema,
+  exclusions: ExclusionsSchema,
 });
 
 export type ProgressStudentsResponse = z.infer<typeof ProgressStudentsResponseSchema>;
@@ -227,6 +233,13 @@ export const ProgressOverviewResponseSchema = z.object({
   studentsCompleted: z.number().int(),
   byTask: z.array(ProgressTaskOverviewSchema),
   computedAt: z.string().datetime(),
+  /**
+   * Counts of records filtered out of this report (see
+   * `common/exclusions.ts`). Surfaces rostering-ended (#1742) and future
+   * exclusion categories alongside the aggregate counts so the frontend can
+   * caveat a sparse historical report.
+   */
+  exclusions: ExclusionsSchema,
 });
 
 export type ProgressOverviewResponse = z.infer<typeof ProgressOverviewResponseSchema>;

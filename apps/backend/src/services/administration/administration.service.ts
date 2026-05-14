@@ -56,7 +56,7 @@ import { TaskVariantRepository } from '../../repositories/task-variant.repositor
 import { AgreementRepository } from '../../repositories/agreement.repository';
 import type { Condition } from '../../types/condition';
 import { isMajorityAge } from '../../utils/is-majority-age.util';
-import { verifyEntitiesExist } from '../utils/validations.utils';
+import { verifyEntitiesExist, rejectRosteringEndedTarget } from '../utils/validations.utils';
 
 /**
  * Administration with optional embedded data.
@@ -822,12 +822,11 @@ export function AdministrationService({
   ): Promise<PaginatedResult<AdministrationWithEmbeds>> {
     const { userId: requesterUserId, isSuperAdmin } = authContext;
 
-    if (requesterUserId === userId) {
-      return list(authContext, options);
-    }
-
     try {
-      // Verify target user exists
+      // Verify target user exists. The lookup + rostering-ended check runs
+      // BEFORE the self-lookup early return so a rostering-ended user can't
+      // bypass the boundary by requesting their own administrations
+      // (defense-in-depth alongside auth guard #1735).
       const targetUser = await userRepository.getById({ id: userId });
 
       if (!targetUser) {
@@ -837,6 +836,17 @@ export function AdministrationService({
           context: { userId },
         });
       }
+
+      // Rostering-ended users are decommissioned (#1742). The user-scoped
+      // URL names them as the target, so any caller (admin / teacher /
+      // guardian / the user themselves) gets a symmetric 404 — same shape
+      // as "not found" so the caller can't distinguish.
+      rejectRosteringEndedTarget(targetUser, { requesterUserId, targetUserId: userId }, 'User-administration list');
+
+      if (requesterUserId === userId) {
+        return list(authContext, options);
+      }
+
       const queryParams = {
         page: options.page,
         perPage: options.perPage,
@@ -1152,6 +1162,13 @@ export function AdministrationService({
           context: { userId },
         });
       }
+
+      // Rostering-ended target → symmetric 404 (#1742).
+      rejectRosteringEndedTarget(
+        targetUser,
+        { requesterUserId, targetUserId: userId, administrationId },
+        'Per-user administration lookup',
+      );
 
       const administration = await verifyAdministrationAccess(
         { userId, isSuperAdmin: targetUser.isSuperAdmin },

@@ -197,6 +197,57 @@ describe('ClassRepository', () => {
       expect(result.totalItems).toBe(0);
     });
 
+    it('excludes users with rosteringEnded set in the past (#1742)', async () => {
+      // User-level rostering end is a hard boundary independent of the class's own
+      // rostering state — even with active enrollment in an active class, a
+      // rostering-ended user must not appear in user-list results.
+      const userListClass = await ClassFactory.create({
+        name: 'Class with Rostering-Ended User',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveStudent1742' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedStudent1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserClassFactory.create({ userId: activeStudent.id, classId: userListClass.id, role: UserRole.STUDENT });
+      await UserClassFactory.create({ userId: endedStudent.id, classId: userListClass.id, role: UserRole.STUDENT });
+
+      const result = await repository.getUsersByClassId(userListClass.id, { page: 1, perPage: 100 });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items.map((u) => u.id)).toEqual([activeStudent.id]);
+    });
+
+    it('includes users with rosteringEnded set in the future (#1742)', async () => {
+      // A future rostering-end date means the user is still active. Only
+      // `rosteringEnded <= NOW()` is treated as decommissioned.
+      const userListClass = await ClassFactory.create({
+        name: 'Class with Future Rostering-Ended User',
+        schoolId: baseFixture.schoolA.id,
+        districtId: baseFixture.district.id,
+      });
+
+      const futureEndedStudent = await UserFactory.create({
+        nameLast: 'FutureEndedStudent1742',
+        rosteringEnded: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      });
+
+      await UserClassFactory.create({
+        userId: futureEndedStudent.id,
+        classId: userListClass.id,
+        role: UserRole.STUDENT,
+      });
+
+      const result = await repository.getUsersByClassId(userListClass.id, { page: 1, perPage: 100 });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items[0]!.id).toBe(futureEndedStudent.id);
+    });
+
     describe('filters', () => {
       it('filters by role', async () => {
         // Create a class with users having different roles

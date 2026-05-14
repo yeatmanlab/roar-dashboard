@@ -1,6 +1,7 @@
 import { SQL, inArray, eq, Column } from 'drizzle-orm';
 import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
 import { users, userClasses, userGroups, userOrgs, userFamilies } from '../../db/schema';
+import { isActiveRoster } from './enrollment.utils';
 import type { ListEnrolledUsersOptions, ListEnrolledFamilyUsersOptions } from '../../types/user';
 
 export const ENROLLED_USERS_SORT_COLUMNS: Record<EnrolledUsersSortFieldType, Column> = {
@@ -30,6 +31,12 @@ export const getEnrolledUsersFilterConditions = (
 ): SQL[] => {
   const { grade, role } = options;
   const conditions: SQL[] = [];
+
+  // Always exclude rostering-ended users (#1742). Applied at the query
+  // composition layer so every consumer of `getEnrolledUsersFilterConditions`
+  // — district, school, class, group, family user-list endpoints — gets
+  // the same hard boundary. There is no opt-in flag to include them.
+  conditions.push(isActiveRoster(users));
 
   if (grade?.length) {
     conditions.push(inArray(users.grade, grade));
