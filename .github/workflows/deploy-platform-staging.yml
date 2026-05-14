@@ -142,3 +142,4 @@ jobs:
       environment: platform:staging
       assessment: roar-pa
       build-script: build:staging
+      build-script: build:staging
