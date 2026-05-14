@@ -339,12 +339,13 @@ describe('FamiliesController', () => {
     });
 
     it.each([
+      [StatusCodes.BAD_REQUEST, ApiErrorMessage.REQUEST_VALIDATION_FAILED, ApiErrorCode.REQUEST_VALIDATION_FAILED],
       [StatusCodes.FORBIDDEN, ApiErrorMessage.FORBIDDEN, ApiErrorCode.AUTH_FORBIDDEN],
       [StatusCodes.NOT_FOUND, ApiErrorMessage.NOT_FOUND, ApiErrorCode.RESOURCE_NOT_FOUND],
       [StatusCodes.CONFLICT, ApiErrorMessage.CONFLICT, ApiErrorCode.RESOURCE_CONFLICT],
       [StatusCodes.UNPROCESSABLE_ENTITY, ApiErrorMessage.UNPROCESSABLE_ENTITY, ApiErrorCode.RESOURCE_UNPROCESSABLE],
       [StatusCodes.TOO_MANY_REQUESTS, ApiErrorMessage.RATE_LIMITED, ApiErrorCode.RATE_LIMITED],
-      [StatusCodes.INTERNAL_SERVER_ERROR, ApiErrorMessage.INTERNAL_SERVER_ERROR, ApiErrorCode.DATABASE_QUERY_FAILED],
+      [StatusCodes.INTERNAL_SERVER_ERROR, ApiErrorMessage.INTERNAL_SERVER_ERROR, ApiErrorCode.EXTERNAL_SERVICE_FAILED],
     ])('maps ApiError %s to the corresponding response', async (status, message, code) => {
       mockAddChildren.mockRejectedValue(new ApiError(message, { statusCode: status, code }));
 

@@ -504,7 +504,10 @@ export function FamilyService({
         context: { userId, familyId },
       });
     }
-    if (family.rosteringEnded !== null && family.rosteringEnded <= new Date()) {
+    // Strict null check matches the repository's listing filter (`isNull(families.rosteringEnded)`)
+    // and the group check below — any non-null `rosteringEnded` (even a future date) marks the
+    // family as deactivated for add-children purposes.
+    if (family.rosteringEnded !== null) {
       logger.warn({ userId, familyId }, 'Attempted to add children to a rostered-ended family');
       throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -518,10 +521,16 @@ export function FamilyService({
     // Uses FGA `can_create_child` on the family object (which the FGA model defines as
     // `parent`). This matches every other authorization check in the codebase — the SQL
     // junction tables are the source of truth that *seeds* FGA tuples, but the runtime
-    // authorization decision goes through FGA. The `POST /v1/families` saga writes the
-    // `(user:caretakerId, parent, family:familyId)` tuple inside the same compensation
-    // boundary as the DB row, so there is no observable window where the DB has the
-    // parent role but FGA doesn't.
+    // authorization decision goes through FGA.
+    //
+    // There is a transient window during family creation between the DB commit (step 3
+    // of `create`) and the FGA tuple write (step 4) where the DB has the parent role
+    // but FGA doesn't yet. A request that hits during that window will see a 403. The
+    // saga's compensation guarantees the two systems converge: if FGA fails, the DB
+    // rows are rolled back, so the window collapses to either "both have it" or
+    // "neither has it". The window is small enough that the race is not expected to
+    // matter in practice; if drift accumulates, the FGA backfill job re-derives tuples
+    // from the DB junction tables.
     if (!isSuperAdmin) {
       await authorizationService.requirePermission(
         userId,
@@ -608,7 +617,7 @@ export function FamilyService({
           logger.error({ err: error, context: { userId, familyId, email } }, 'Firebase pre-flight check failed');
           throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
             context: { userId, familyId, email },
             cause: error,
           });
@@ -649,7 +658,7 @@ export function FamilyService({
         logger.error({ err: error, context: { userId, familyId, email: child.email } }, 'Firebase createUser failed');
         throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
           statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
           context: { userId, familyId, email: child.email },
           cause: error,
         });
@@ -796,7 +805,7 @@ export function FamilyService({
 
       throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { userId, familyId, childIds: createdIds },
         cause: error,
       });

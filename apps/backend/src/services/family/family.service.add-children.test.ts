@@ -338,9 +338,14 @@ describe('FamilyService.addChildren', () => {
     it('deletes tuples, DB rows, and Firebase accounts before throwing 500', async () => {
       mockFamilyRepo.addChildren.mockResolvedValue({ ids: [CHILD_ID_1] });
 
+      // Locks the error-code contract on the FGA-failure path — flipping back to
+      // DATABASE_QUERY_FAILED would be a regression of the round-1 review fix.
       await expect(
         makeService().addChildren(parentAuth, FAMILY_ID, { children: [makeChild('1')] }),
-      ).rejects.toBeInstanceOf(ApiError);
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
+      });
 
       // Tuple delete
       expect(mockAuthorizationService.deleteTuples).toHaveBeenCalledTimes(1);

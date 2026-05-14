@@ -622,6 +622,16 @@ describe('POST /v1/families/:familyId/users', () => {
         .withBody({ children: [validChild('stranger')] })
         .toReturn(403);
     });
+
+    it('super admin can add children to any family (FGA bypass)', async () => {
+      const otherFamily = await FamilyFactory.create();
+      const res = await expectRoute('POST', `/v1/families/${otherFamily.id}/users`)
+        .as(superAdmin)
+        .withBody({ children: [validChild('super-admin')] })
+        .toReturn(201);
+
+      expect(res.body.data.ids).toHaveLength(1);
+    });
   });
 
   describe('not found / activation codes', () => {
