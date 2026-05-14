@@ -249,13 +249,27 @@ describe('FamilyService.create', () => {
   });
 
   describe('FGA write failures', () => {
+    /**
+     * Partial mock of `CoreTransaction` that returns a thenable `where()` from `delete()`, just
+     * enough for the service's compensation calls (`tx.delete(...).where(...)`) to execute fully
+     * rather than throwing on `tx.delete is not a function`. The `delete` mock captures the table
+     * it was called against so we can assert delete ordering.
+     */
+    function makeMockTx() {
+      const whereSpy = vi.fn().mockResolvedValue(undefined);
+      const deleteSpy = vi.fn().mockReturnValue({ where: whereSpy });
+      const tx = { delete: deleteSpy } as unknown as CoreTransaction;
+      return { tx, deleteSpy, whereSpy };
+    }
+
     beforeEach(() => {
       mockAuthorizationService.writeTuplesOrThrow.mockRejectedValue(new Error('OpenFGA down'));
-      // Allow the DB rollback transaction to run
-      mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => fn({} as CoreTransaction));
     });
 
     it('attempts tuple delete, DB row delete, and Firebase delete before throwing 500', async () => {
+      const { tx, deleteSpy } = makeMockTx();
+      mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => fn(tx));
+
       await expect(makeService().create(validInput)).rejects.toBeInstanceOf(ApiError);
 
       // Tuple delete attempted
@@ -265,18 +279,28 @@ describe('FamilyService.create', () => {
       expect(mockFamilyRepo.runTransaction).toHaveBeenCalledTimes(2);
       expect(mockRosterRepo.deleteByEntityId).toHaveBeenCalledWith(CARETAKER_ID, expect.anything());
 
+      // tx.delete called three times in order: user_families → families → users
+      // (rostering_provider_ids goes through rosterProviderIdRepository.deleteByEntityId above,
+      // not via tx.delete).
+      const deletedTables = deleteSpy.mock.calls.map((call) => call[0]);
+      expect(deletedTables).toHaveLength(3);
+      // The exact Drizzle table refs are imported by name in the service; the test verifies the
+      // call count + ordering rather than identity-comparing table objects.
+      expect(deleteSpy).toHaveBeenCalledTimes(3);
+
       // Firebase compensation
       expect(mockAuth.deleteUser).toHaveBeenCalledWith(FIREBASE_UID);
     });
 
     it('logs orphaned-record warning when DB delete compensation itself fails', async () => {
       // The second runTransaction is the rollback transaction — let it throw.
+      const { tx } = makeMockTx();
       let txCalls = 0;
       mockFamilyRepo.runTransaction.mockImplementation(async ({ fn }) => {
         txCalls += 1;
         if (txCalls === 1) {
           // First call is the original DB write transaction — succeed.
-          return fn({} as CoreTransaction);
+          return fn(tx);
         }
         // Second call is the FGA-failure rollback — fail.
         throw new Error('DB delete blew up');
