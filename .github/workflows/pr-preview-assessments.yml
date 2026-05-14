@@ -1,0 +1,21 @@
+name: PR Preview — Assessments
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  preview-roar-pa:
+    if: ${{ github.event.label.name == 'preview:roar-pa' }}
+    uses: ./.github/workflows/deploy-assessment.yml
+    secrets: inherit
+    with:
+      environment: platform:staging
+      assessment: roar-pa
+      build-script: build:staging
+      firebase-channel: preview
