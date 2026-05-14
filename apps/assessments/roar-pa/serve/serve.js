@@ -1,5 +1,6 @@
-import { RoarAppkit, initializeFirebaseProject } from '@bdelab/roar-firekit';
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import i18next from 'i18next';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
@@ -18,6 +19,8 @@ const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
 const numTestItems = urlParams.get('numtestitems') ? Number(urlParams.get('numtestitems')) : null;
+const variantId = urlParams.get('variantId');
+const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 // Boolean parameters
 const consent = urlParams.get('consent') !== 'false';
 const storyOption = urlParams.get('storyoption');
@@ -26,10 +29,9 @@ const skipInstructions = urlParams.get('skip') !== 'false';
 const { language } = i18next;
 
 const firebaseConfig = await getFirebaseConfig();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-// @ts-ignore
-const appKit = await initializeFirebaseProject(firebaseConfig, 'assessmentApp', 'none');
-const taskId = language === 'en' ? 'pa' : `pa-${language}`;
 const earlyStopping = urlParams.get('earlyStopping')?.toLocaleLowerCase() ?? null;
 const threshold = urlParams.get('threshold') ?? null;
 const patience = urlParams.get('patience') ?? null;
@@ -40,16 +42,21 @@ const isAdaptive = urlParams.get('isAdaptive') === 'true';
 const itemSelect = urlParams.get('itemSelect') ?? 'fixed';
 const abilityMethod = urlParams.get('abilityMethod')?.toLocaleLowerCase() ?? 'eap';
 
-onAuthStateChanged(appKit.auth, (user) => {
+onAuthStateChanged(auth, (user) => {
   if (user) {
-    const userInfo = {
-      assessmentPid,
-      assessmentUid: user.uid,
-      userMetadata: {
-        districtId: '',
-        language,
-      },
+    // eslint-disable-next-line no-undef
+    const ctx = {
+      // eslint-disable-next-line no-undef
+      baseUrl: ROAR_API_URL,
+      auth: { getToken: () => user.getIdToken() },
+      participant: { participantId: user.uid },
     };
+
+    initFirekitCompat(ctx, {
+      variantId,
+      taskVersion,
+      isAnonymous: true,
+    });
 
     const userParams = {
       assessmentPid,
@@ -80,21 +87,9 @@ onAuthStateChanged(appKit.auth, (user) => {
       abilityMethod,
     };
 
-    const taskInfo = {
-      taskId: taskId,
-      variantParams: gameParams,
-    };
-
-    const firekit = new RoarAppkit({
-      firebaseProject: appKit,
-      taskInfo,
-      userInfo,
-    });
-
-    const roarApp = new RoarPA(firekit, gameParams, userParams);
-
+    const roarApp = new RoarPA(gameParams, userParams);
     roarApp.run();
   }
 });
 
-await signInAnonymously(appKit.auth);
+await signInAnonymously(auth);
