@@ -13,6 +13,8 @@ import {
   AdministrationTreeResponseSchema,
   CreateAdministrationRequestSchema,
   CreateAdministrationResponseSchema,
+  UpdateAdministrationRequestSchema,
+  UpdateAdministrationResponseSchema,
 } from './schema';
 import { ErrorEnvelopeSchema, SuccessEnvelopeSchema } from '../response';
 import { ProgressReportsContract } from './reports/progress/index';
@@ -194,6 +196,35 @@ export const AdministrationsContract = c.router(
         'Returns 403 if the user lacks permission to delete the administration. ' +
         'Returns 404 if the administration does not exist. ' +
         'Returns 409 if the administration has existing assessment runs that must be preserved.',
+    },
+    update: {
+      method: 'PATCH',
+      path: '/:id',
+      pathParams: z.object({ id: z.string().uuid() }),
+      body: UpdateAdministrationRequestSchema,
+      responses: {
+        200: SuccessEnvelopeSchema(UpdateAdministrationResponseSchema),
+        400: ErrorEnvelopeSchema,
+        401: ErrorEnvelopeSchema,
+        403: ErrorEnvelopeSchema,
+        404: ErrorEnvelopeSchema,
+        409: ErrorEnvelopeSchema,
+        422: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Update an administration',
+      description:
+        'Updates an existing administration with the specified fields. ' +
+        'Only fields present in the request body are updated. ' +
+        'Array fields (orgs, classes, groups, taskVariants, agreements) use replacement logic: ' +
+        'records not in the new array are deleted, existing records are updated, new records are added. ' +
+        'Validates that dateEnd is after dateStart (using existing values for missing fields), ' +
+        'at least one task variant exists after update, and all referenced entities exist. ' +
+        'When isOrdered is true, task variants must have unique orderIndex values. ' +
+        'At least one org, class, or group must remain assigned. ' +
+        'Returns 422 for validation errors, 409 if the new name conflicts with another administration, ' +
+        '403 if the user lacks permission, 404 if the administration does not exist.',
     },
     // Nest report sub-routers under /administrations
     progressReports: ProgressReportsContract,

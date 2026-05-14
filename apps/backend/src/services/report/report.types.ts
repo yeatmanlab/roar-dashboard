@@ -72,11 +72,22 @@ export interface ServiceProgressStudent {
   progress: Record<string, ServiceProgressEntry>;
 }
 
+/**
+ * Counts of records filtered out of a reporting response (#1742). Surfaced
+ * alongside `pagination` / `totalItems` so the frontend can caveat sparse
+ * historical reports. Open-ended on purpose — future categories beyond
+ * `rosteringEnded` can be added without a breaking change.
+ */
+export interface ReportExclusions {
+  rosteringEnded: number;
+}
+
 /** Return type for listProgressStudents. */
 export interface ProgressStudentsResult {
   tasks: ServiceTaskMetadata[];
   items: ServiceProgressStudent[];
   totalItems: number;
+  exclusions: ReportExclusions;
 }
 
 /** Query input for getProgressOverview. */
@@ -120,6 +131,7 @@ export interface ProgressOverviewResult {
   studentsCompleted: number;
   byTask: ServiceTaskOverview[];
   computedAt: string;
+  exclusions: ReportExclusions;
 }
 
 /** Query input for getScoreOverview. */
@@ -161,4 +173,208 @@ export interface ScoreOverviewResult {
   tasks: ServiceTaskScoreOverview[];
   /** ISO 8601 timestamp when the aggregation was computed */
   computedAt: string;
+  exclusions: ReportExclusions;
+}
+
+/** Query input for listStudentScores. */
+export interface StudentScoresInput {
+  scopeType: ScopeType;
+  scopeId: string;
+  page: number;
+  perPage: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  filter: ParsedFilter[];
+}
+
+/** Static sort fields for student scores. */
+export type StudentScoresSortField =
+  | 'user.lastName'
+  | 'user.firstName'
+  | 'user.username'
+  | 'user.grade'
+  | 'user.schoolName';
+
+/** Static filter fields for student scores (excludes `taskId` which is handled separately). */
+export type StudentScoresFilterField =
+  | 'user.grade'
+  | 'user.firstName'
+  | 'user.lastName'
+  | 'user.username'
+  | 'user.email'
+  | 'user.schoolName';
+
+/**
+ * Support-level value as returned in per-task score entries.
+ *
+ * `optional` appears only when the student has no completed run AND the task is
+ * optional for them per condition evaluation. Students with completed runs are
+ * categorized into their actual support level regardless of optional status.
+ *
+ * `null` is returned when classification is not possible (no score data,
+ * unknown task, or thresholds unavailable for the resolved scoring version).
+ */
+export type ServiceSupportLevelValue = 'achievedSkill' | 'developingSkill' | 'needsExtraSupport' | 'optional';
+
+/** Per-task score entry on a student row. */
+export interface ServiceStudentScoreEntry {
+  rawScore: number | null;
+  percentile: number | null;
+  standardScore: number | null;
+  supportLevel: ServiceSupportLevelValue | null;
+  reliable: boolean | null;
+  engagementFlags: string[];
+  /** Whether this task is optional for the student per condition evaluation. */
+  optional: boolean;
+  /** Whether the student has at least one completed run for this task. */
+  completed: boolean;
+}
+
+/** A student row in score results. */
+export interface ServiceStudentScoreRow {
+  user: ServiceUserInfo;
+  scores: Record<string, ServiceStudentScoreEntry>;
+}
+
+/** Return type for listStudentScores. */
+export interface StudentScoresResult {
+  tasks: ServiceTaskMetadata[];
+  items: ServiceStudentScoreRow[];
+  totalItems: number;
+  exclusions: ReportExclusions;
+}
+
+/** Query input for getIndividualStudentReport. */
+export interface IndividualStudentReportInput {
+  scopeType: ScopeType;
+  scopeId: string;
+}
+
+/**
+ * Severity styling for a tag, mirroring PrimeVue's tag severity values.
+ * The service emits these as plain strings; the contract enum (TagSeverity)
+ * narrows them on the response side.
+ */
+export type ServiceTagSeverity = 'info' | 'success' | 'warn' | 'danger' | 'secondary' | 'contrast';
+
+/** A single tag in a per-task entry of the individual student report. */
+export interface ServiceTaskTag {
+  label: string;
+  value: string;
+  severity: ServiceTagSeverity;
+}
+
+/** Per-task scores object for the individual student report. */
+export interface ServiceTaskScores {
+  rawScore: number | null;
+  percentile: number | null;
+  standardScore: number | null;
+}
+
+/** A single subscore entry. */
+export interface ServiceSubscoreEntry {
+  correct: number | null;
+  attempted: number | null;
+  percentCorrect: number | null;
+}
+
+/** A historical score entry under a task. */
+export interface ServiceHistoricalScore {
+  administrationId: string;
+  administrationName: string;
+  date: string;
+  scores: ServiceTaskScores;
+}
+
+/** Per-task entry in the individual student report. */
+/**
+ * Per-task entry shape shared between the admin-scoped individual student
+ * report and the guardian / longitudinal student report.
+ *
+ * The two endpoints differ only in whether per-task `historicalScores` are
+ * present: the admin-scoped report attaches them here; the guardian report
+ * carries longitudinal data at the response root keyed by task slug.
+ */
+export interface ServiceStudentReportTaskBase {
+  taskId: string;
+  taskSlug: string;
+  taskName: string;
+  orderIndex: number;
+  scores: ServiceTaskScores;
+  supportLevel: ServiceSupportLevelValue | null;
+  reliable: boolean | null;
+  optional: boolean;
+  completed: boolean;
+  engagementFlags: string[];
+  tags: ServiceTaskTag[];
+  /** Present only for tasks declaring a `subscores` block in their scoring config. */
+  subscores?: Record<string, ServiceSubscoreEntry>;
+  /** Present only for PA tasks. */
+  skillsToWorkOn?: string[];
+}
+
+export interface ServiceIndividualStudentReportTask extends ServiceStudentReportTaskBase {
+  historicalScores: ServiceHistoricalScore[];
+}
+
+/** Header-level student info. */
+export interface ServiceIndividualStudentReportStudent {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  grade: string | null;
+}
+
+/** Header-level administration metadata. */
+export interface ServiceIndividualStudentReportAdministration {
+  id: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string;
+}
+
+/** Return type for getIndividualStudentReport. */
+export interface IndividualStudentReportResult {
+  student: ServiceIndividualStudentReportStudent;
+  administration: ServiceIndividualStudentReportAdministration;
+  tasks: ServiceIndividualStudentReportTask[];
+  completedTaskCount: number;
+  totalTaskCount: number;
+}
+
+// --- Guardian / longitudinal student report ---
+
+/**
+ * Per-task entry on a single administration in the guardian student report.
+ *
+ * Identical to `ServiceStudentReportTaskBase` — historical data on the
+ * guardian endpoint lives at the response root in `longitudinalScores`.
+ */
+export type ServiceGuardianTaskEntry = ServiceStudentReportTaskBase;
+
+/** One administration entry in the guardian report. */
+export interface ServiceGuardianAdministrationEntry {
+  administrationId: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string;
+  tasks: ServiceGuardianTaskEntry[];
+}
+
+/** Header-level student info for the guardian report (adds schoolName). */
+export interface ServiceGuardianReportStudent {
+  userId: string;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  grade: string | null;
+  schoolName: string | null;
+}
+
+/** Return type for getGuardianStudentReport. */
+export interface GuardianStudentReportResult {
+  student: ServiceGuardianReportStudent;
+  administrations: ServiceGuardianAdministrationEntry[];
+  longitudinalScores: Record<string, ServiceHistoricalScore[]>;
 }

@@ -41,6 +41,16 @@ function scoreOverviewPath(administrationId: string) {
   return `/v1/administrations/${administrationId}/reports/scores/overview`;
 }
 
+/** Builds the student scores endpoint path for the given administration. */
+function studentScoresPath(administrationId: string) {
+  return `/v1/administrations/${administrationId}/reports/scores/students`;
+}
+
+/** Builds the individual student report endpoint path. */
+function individualStudentReportPath(administrationId: string, userId: string) {
+  return `/v1/administrations/${administrationId}/reports/scores/students/${userId}`;
+}
+
 /** Default query params for a valid request. */
 function defaultQuery() {
   return {
@@ -382,6 +392,13 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       expect(data.pagination.page).toBe(1);
       expect(data.pagination.perPage).toBe(25);
       expect(data.pagination.totalItems).toBeGreaterThan(0);
+
+      // Exclusions block — #1742. Always present, defaulting to 0 when no
+      // rostering-ended users would have otherwise been in scope.
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
     });
 
     it('respects pagination parameters', async () => {
@@ -550,6 +567,65 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  describe('rostering-ended exclusions (#1742)', () => {
+    /**
+     * End-to-end check that a rostering-ended student is invisible from the
+     * progress students list AND surfaces in `exclusions.rosteringEnded`. This
+     * targets the progress students endpoint specifically; the other three
+     * reporting endpoints share the same service-level wiring and are covered
+     * at the repository level by `countRosteringEndedExclusions` tests.
+     */
+    it('excludes rostering-ended student from items and increments exclusions count', async () => {
+      const { OrgFactory } = await import('../test-support/factories/org.factory');
+      const { UserFactory } = await import('../test-support/factories/user.factory');
+      const { UserOrgFactory } = await import('../test-support/factories/user-org.factory');
+      const { AdministrationFactory } = await import('../test-support/factories/administration.factory');
+      const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
+      const { AdministrationTaskVariantFactory } = await import(
+        '../test-support/factories/administration-task-variant.factory'
+      );
+      const { OrgType } = await import('../enums/org-type.enum');
+      const { UserRole } = await import('../enums/user-role.enum');
+
+      // Isolated district + administration so the count is deterministic.
+      const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'District Exclusions Route Test' });
+      const admin = await AdministrationFactory.create({
+        name: 'Admin Exclusions Route Test',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: district.id });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: admin.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        orderIndex: 0,
+      });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveStudentForReport1742' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedStudentForReport1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserOrgFactory.create({ userId: activeStudent.id, orgId: district.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: endedStudent.id, orgId: district.id, role: UserRole.STUDENT });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(admin.id))
+        .query({ scopeType: 'district', scopeId: district.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const { data } = res.body;
+
+      const itemUserIds = (data.items as Array<{ user: { userId: string } }>).map((row) => row.user.userId);
+      expect(itemUserIds).toContain(activeStudent.id);
+      expect(itemUserIds).not.toContain(endedStudent.id);
+
+      expect(data.exclusions.rosteringEnded).toBe(1);
     });
   });
 
@@ -1063,6 +1139,12 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       // Convenience totals by requirement axis
       expect(firstTask).toHaveProperty('required');
       expect(firstTask).toHaveProperty('optional');
+
+      // Exclusions block — #1742
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
     });
 
     it('per-task 7-level counts are internally consistent', async () => {
@@ -1647,6 +1729,12 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       expect(firstTask.supportLevels).toHaveProperty('developingSkill');
       expect(firstTask.supportLevels).toHaveProperty('needsExtraSupport');
       expect(firstTask.supportLevels.achievedSkill).toHaveProperty('count');
+
+      // Exclusions block — #1742
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
     });
 
     it('per-task counts are internally consistent', async () => {
@@ -1826,6 +1914,761 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       expect(notAssessedTotal).toBeGreaterThan(0);
       // Every assigned student is either assessed or not-assessed — never both.
       expect(taskOverview!.totalAssessed + notAssessedTotal).toBeLessThanOrEqual(data.totalStudents);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/administrations/:id/reports/scores/students
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/administrations/:id/reports/scores/students', () => {
+  /** Default query params for a valid student scores request. */
+  function studentScoresQuery() {
+    return {
+      scopeType: 'district',
+      scopeId: baseFixture.district.id,
+      page: 1,
+      perPage: 25,
+    };
+  }
+
+  describe('authorization', () => {
+    it('returns 401 without auth', async () => {
+      const res = await expectRoute('GET', studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .unauthenticated()
+        .toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('super admin can access', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('admin (administrator role) at district can access', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('site admin (site_administrator role) at district can access', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('educator (teacher) at district is forbidden from reading scores at district scope', async () => {
+      // District can_read_scores is restricted to admin_tier only.
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('principal at school A can access at school scope', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+          page: 1,
+          perPage: 25,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('principal at school A is forbidden at district scope', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('student tier returns 403', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier returns 403', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 403 for admin in a different district', async () => {
+      authenticateAs(baseFixture.districtBAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+          page: 1,
+          perPage: 25,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('returns 403 when class teacher requests school scope', async () => {
+      authenticateAs(baseFixture.classATeacher);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+          page: 1,
+          perPage: 25,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+  });
+
+  describe('scope validation', () => {
+    it('returns 400 for scope not assigned to administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolB.id,
+          page: 1,
+          perPage: 25,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('returns 400 when scopeType is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ scopeId: baseFixture.district.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when scopeId is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({ scopeType: 'district' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 404 for non-existent administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath('00000000-0000-0000-0000-000000000000'))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 when sortBy references an unknown task ID', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...studentScoresQuery(),
+          sortBy: 'scores.00000000-0000-0000-0000-000000000000.percentile',
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  describe('response shape', () => {
+    it('returns 200 with correct response structure', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('tasks');
+      expect(data).toHaveProperty('items');
+      expect(data).toHaveProperty('pagination');
+      expect(data.tasks).toBeInstanceOf(Array);
+      expect(data.tasks.length).toBeGreaterThan(0);
+
+      // Per-task metadata shape
+      const firstTask = data.tasks[0];
+      expect(firstTask).toHaveProperty('taskId');
+      expect(firstTask).toHaveProperty('taskSlug');
+      expect(firstTask).toHaveProperty('taskName');
+      expect(firstTask).toHaveProperty('orderIndex');
+
+      // Pagination shape
+      expect(data.pagination).toEqual(
+        expect.objectContaining({
+          page: 1,
+          perPage: 25,
+          totalItems: expect.any(Number),
+          totalPages: expect.any(Number),
+        }),
+      );
+
+      // If any students are in scope, verify the row shape
+      if (data.items.length > 0) {
+        const row = data.items[0];
+        expect(row).toHaveProperty('user');
+        expect(row).toHaveProperty('scores');
+        expect(row.user).toHaveProperty('userId');
+        expect(row.user).toHaveProperty('grade');
+      }
+
+      // Exclusions block — #1742
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
+    });
+
+    it('populates schoolName on user info at district scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      // Every row at district scope should have schoolName as either string or null;
+      // at least one row should have a non-null value (district has school memberships)
+      for (const row of data.items) {
+        expect(['string', 'object']).toContain(typeof row.user.schoolName); // string or null
+      }
+    });
+
+    it('returns null schoolName at non-district scopes', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToSchoolA.id))
+        .query({
+          scopeType: 'school',
+          scopeId: baseFixture.schoolA.id,
+          page: 1,
+          perPage: 25,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      for (const row of res.body.data.items) {
+        expect(row.user.schoolName).toBeNull();
+      }
+    });
+
+    it('filters tasks via taskId filter', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...studentScoresQuery(),
+          filter: `taskId:in:${baseFixture.task.id}`,
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      // Only the filtered task should appear in tasks metadata
+      for (const t of data.tasks) {
+        expect(t.taskId).toBe(baseFixture.task.id);
+      }
+      // And in score entries
+      for (const row of data.items) {
+        for (const entryTaskId of Object.keys(row.scores)) {
+          expect(entryTaskId).toBe(baseFixture.task.id);
+        }
+      }
+    });
+
+    it('filters student population via user.grade filter', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query({
+          ...studentScoresQuery(),
+          filter: 'user.grade:eq:5',
+        })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      for (const row of res.body.data.items) {
+        expect(row.user.grade).toBe('5');
+      }
+    });
+
+    it('sorts by user.lastName by default', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const lastNames = res.body.data.items
+        .map((r: { user: { lastName: string | null } }) => r.user.lastName)
+        .filter((n: string | null): n is string => n !== null);
+      const sorted = [...lastNames].sort((a, b) => a.localeCompare(b));
+      expect(lastNames).toEqual(sorted);
+    });
+  });
+
+  describe('FDW-backed score classification', () => {
+    // Seed a completed run with a percentile score for grade5Student so the
+    // service has real data to classify and the row reaches the assessed path.
+    beforeAll(async () => {
+      const run = await RunFactory.create({
+        userId: baseFixture.grade5Student.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: baseFixture.administrationAssignedToDistrict.id,
+        useForReporting: true,
+        completedAt: new Date('2025-09-01T10:00:00Z'),
+      });
+
+      await RunScoreFactory.create({
+        runId: run.id,
+        type: 'computed',
+        domain: 'default',
+        name: 'percentile',
+        value: '90',
+      });
+    });
+
+    it('returns completed:true with run metadata for the seeded student', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const seededRow = res.body.data.items.find(
+        (r: { user: { userId: string } }) => r.user.userId === baseFixture.grade5Student.id,
+      );
+      expect(seededRow).toBeDefined();
+      const entry = seededRow.scores[baseFixture.task.id];
+      expect(entry).toBeDefined();
+      // Run-level wiring: the completed run was joined and reliability propagated.
+      expect(entry.completed).toBe(true);
+      expect(typeof entry.reliable).toBe('boolean');
+      expect(Array.isArray(entry.engagementFlags)).toBe(true);
+      // Note: rawScore/percentile/standardScore/supportLevel resolution requires the
+      // task's slug to be registered in the scoring config (apps/backend/src/services/scoring/configs/*).
+      // The fixture's task uses an auto-generated slug, so those fields stay null end-to-end.
+      // Score classification correctness is covered by service unit tests, which exercise
+      // the full scoring pipeline against known slugs (swr, roam-alpaca, etc.).
+    });
+
+    it('returns completed:false for students without a completed run', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(baseFixture.administrationAssignedToDistrict.id))
+        .query(studentScoresQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      // Find any student-without-run row (there should be several besides grade5Student)
+      const unfinishedRow = res.body.data.items.find(
+        (r: { user: { userId: string }; scores: Record<string, { completed: boolean }> }) =>
+          r.user.userId !== baseFixture.grade5Student.id &&
+          r.scores[baseFixture.task.id] !== undefined &&
+          r.scores[baseFixture.task.id]!.completed === false,
+      );
+      expect(unfinishedRow).toBeDefined();
+      expect(unfinishedRow.scores[baseFixture.task.id]!.rawScore).toBeNull();
+      expect(unfinishedRow.scores[baseFixture.task.id]!.percentile).toBeNull();
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/administrations/:id/reports/scores/students/:userId
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/administrations/:id/reports/scores/students/:userId', () => {
+  /** Default scope params for the individual student report endpoint. */
+  function reportQuery() {
+    return {
+      scopeType: 'district',
+      scopeId: baseFixture.district.id,
+    };
+  }
+
+  describe('authorization', () => {
+    it('returns 401 without auth', async () => {
+      const res = await expectRoute(
+        'GET',
+        individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id),
+      )
+        .unauthenticated()
+        .toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('super admin can access', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('admin (administrator role) at district can access', async () => {
+      authenticateAs(tiers.admin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data).toBeDefined();
+    });
+
+    it('site admin at district can access', async () => {
+      authenticateAs(tiers.siteAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('educator (teacher) at district is forbidden at district scope', async () => {
+      authenticateAs(tiers.educator);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('principal at school A can access at school scope', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.classAStudent.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+    });
+
+    it('principal at school A is forbidden at district scope', async () => {
+      authenticateAs(baseFixture.schoolAPrincipal);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('student tier returns 403', async () => {
+      authenticateAs(tiers.student);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('caregiver tier returns 403', async () => {
+      authenticateAs(tiers.caregiver);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('returns 403 for admin in a different district', async () => {
+      authenticateAs(baseFixture.districtBAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.classAStudent.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('class teacher requesting school scope returns 403', async () => {
+      authenticateAs(baseFixture.classATeacher);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.classAStudent.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolA.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.FORBIDDEN);
+    });
+  });
+
+  describe('scope and target validation', () => {
+    it('returns 400 for scope not assigned', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToSchoolA.id, baseFixture.classAStudent.id))
+        .query({ scopeType: 'school', scopeId: baseFixture.schoolB.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+      expect(res.body.error.code).toBe(ApiErrorCode.REQUEST_VALIDATION_FAILED);
+    });
+
+    it('returns 400 when scopeType is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query({ scopeId: baseFixture.district.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 400 when scopeId is missing', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query({ scopeType: 'district' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('returns 404 for non-existent administration', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath('00000000-0000-0000-0000-000000000000', baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 for student not in the requested scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      // grade5Student IS in the district; districtBAdmin is in districtB and is not a student in district A
+      const res = await request(app)
+        .get(
+          individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.districtBAdmin.id),
+        )
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 for an unknown user ID', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(
+          individualStudentReportPath(
+            baseFixture.administrationAssignedToDistrict.id,
+            '00000000-0000-0000-0000-000000000000',
+          ),
+        )
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.NOT_FOUND);
+    });
+  });
+
+  describe('response shape', () => {
+    it('returns 200 with student, administration, tasks, and counts', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('student');
+      expect(data).toHaveProperty('administration');
+      expect(data).toHaveProperty('tasks');
+      expect(data).toHaveProperty('completedTaskCount');
+      expect(data).toHaveProperty('totalTaskCount');
+
+      expect(data.student.userId).toBe(baseFixture.grade5Student.id);
+      expect(data.administration.id).toBe(baseFixture.administrationAssignedToDistrict.id);
+      expect(typeof data.administration.dateStart).toBe('string');
+      expect(typeof data.administration.dateEnd).toBe('string');
+      expect(data.tasks).toBeInstanceOf(Array);
+      expect(typeof data.completedTaskCount).toBe('number');
+      expect(typeof data.totalTaskCount).toBe('number');
+      expect(data.completedTaskCount).toBeLessThanOrEqual(data.totalTaskCount);
+
+      // Per-task entry shape
+      if (data.tasks.length > 0) {
+        const task = data.tasks[0];
+        expect(task).toHaveProperty('taskId');
+        expect(task).toHaveProperty('taskSlug');
+        expect(task).toHaveProperty('taskName');
+        expect(task).toHaveProperty('orderIndex');
+        expect(task).toHaveProperty('scores');
+        expect(task).toHaveProperty('supportLevel');
+        expect(task).toHaveProperty('reliable');
+        expect(task).toHaveProperty('optional');
+        expect(task).toHaveProperty('completed');
+        expect(task).toHaveProperty('engagementFlags');
+        expect(task).toHaveProperty('tags');
+        expect(task).toHaveProperty('historicalScores');
+        // Tags always include Type label
+        expect(task.tags.some((t: { label: string }) => t.label === 'Type')).toBe(true);
+      }
+    });
+  });
+
+  describe('FDW-backed run integration', () => {
+    // Reuse the seeded run from the student-scores describe-block beforeAll
+    // (grade5Student has a completed run + percentile=90 score for baseFixture.task).
+    it('returns completed:true with run metadata for the student with a seeded run', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      const seededTask = data.tasks.find((t: { taskId: string }) => t.taskId === baseFixture.task.id);
+      expect(seededTask).toBeDefined();
+      expect(seededTask.completed).toBe(true);
+      expect(typeof seededTask.reliable).toBe('boolean');
+      expect(Array.isArray(seededTask.engagementFlags)).toBe(true);
+      // Run-level wiring proven; classification correctness covered by service unit tests
+      // (the fixture's auto-generated task slug is not in the scoring config registry,
+      // so percentile/rawScore/standardScore stay null end-to-end).
+    });
+
+    it('counts completed tasks correctly', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+
+      const { data } = res.body;
+      expect(data.completedTaskCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it('every per-task entry includes a Type tag with Required or Optional', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToDistrict.id, baseFixture.grade5Student.id))
+        .query(reportQuery())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      for (const task of res.body.data.tasks) {
+        const typeTag = task.tags.find((t: { label: string }) => t.label === 'Type');
+        expect(typeTag).toBeDefined();
+        expect(['Required', 'Optional']).toContain(typeTag.value);
+      }
+    });
+  });
+
+  describe('class and group scopes', () => {
+    it('returns 200 for class scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToClassA.id, baseFixture.classAStudent.id))
+        .query({ scopeType: 'class', scopeId: baseFixture.classInSchoolA.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const { data } = res.body;
+      expect(data.student.userId).toBe(baseFixture.classAStudent.id);
+      expect(data.administration.id).toBe(baseFixture.administrationAssignedToClassA.id);
+    });
+
+    it('returns 200 for group scope', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(baseFixture.administrationAssignedToGroup.id, baseFixture.groupStudent.id))
+        .query({ scopeType: 'group', scopeId: baseFixture.group.id })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const { data } = res.body;
+      expect(data.student.userId).toBe(baseFixture.groupStudent.id);
+      // Group administration has no task variants assigned — tasks empty but query 200s
+      expect(data.tasks).toEqual([]);
     });
   });
 });

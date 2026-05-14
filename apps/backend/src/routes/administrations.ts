@@ -56,6 +56,11 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.delete(user!, id),
     },
+    update: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { id }, body }) => AdministrationsController.update(user!, id, body),
+    },
     progressReports: {
       getStudentProgress: {
         // @ts-expect-error - Express v4/v5 types mismatch in monorepo
@@ -76,6 +81,18 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
         middleware: [AuthGuardMiddleware],
         handler: async ({ req: { user }, params: { id }, query }) =>
           AdministrationsController.getScoreOverview(user!, id, query),
+      },
+      listStudents: {
+        // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+        middleware: [AuthGuardMiddleware],
+        handler: async ({ req: { user }, params: { id }, query }) =>
+          AdministrationsController.listStudentScores(user!, id, query),
+      },
+      getIndividualStudentReport: {
+        // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+        middleware: [AuthGuardMiddleware],
+        handler: async ({ req: { user }, params: { id, userId }, query }) =>
+          AdministrationsController.getIndividualStudentReport(user!, id, userId, query),
       },
     },
   });

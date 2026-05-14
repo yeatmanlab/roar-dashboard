@@ -58,7 +58,10 @@ export class UpdateRunEngagementFlagsCommand
    *
    * @param api - The ROAR API client instance
    */
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private participantId: string,
+  ) {}
 
   /**
    * Executes the command to update engagement flags for a run.
@@ -77,7 +80,7 @@ export class UpdateRunEngagementFlagsCommand
     const { runId, type, engagementFlags, reliableRun = false } = input;
 
     const result = await this.api.client.runs.event({
-      params: { runId },
+      params: { userId: this.participantId, runId },
       body: {
         type,
         engagementFlags,

@@ -62,6 +62,12 @@ interface MockTransaction {
   insert: ReturnType<typeof vi.fn>;
   values: ReturnType<typeof vi.fn>;
   returning: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  set: ReturnType<typeof vi.fn>;
+  where: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  onConflictDoUpdate: ReturnType<typeof vi.fn>;
+  onConflictDoNothing: ReturnType<typeof vi.fn>;
 }
 
 // Mock database type for testing
@@ -87,6 +93,12 @@ describe('AdministrationRepository', () => {
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
       returning: vi.fn(),
+      update: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockReturnThis(),
+      onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+      onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
     };
 
     mockDb = {
@@ -278,6 +290,134 @@ describe('AdministrationRepository', () => {
       // Act & Assert
       await expect(repository.createWithAssignments(input)).rejects.toThrow('Database error');
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('updateWithAssignments', () => {
+    it('updates administration fields in a transaction', async () => {
+      const administrationId = faker.string.uuid();
+      const input = {
+        administration: {
+          name: 'Updated Name',
+          description: 'Updated description',
+        },
+      };
+
+      const result = await repository.updateWithAssignments(administrationId, input);
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ id: administrationId });
+    });
+
+    it('upserts and prunes org assignments when orgIds provided', async () => {
+      const administrationId = faker.string.uuid();
+      const input = {
+        orgIds: [faker.string.uuid(), faker.string.uuid()],
+      };
+
+      const result = await repository.updateWithAssignments(administrationId, input);
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.insert).toHaveBeenCalled();
+      expect(mockTx.delete).toHaveBeenCalled();
+      expect(mockTx.onConflictDoNothing).toHaveBeenCalled();
+      expect(result).toEqual({ id: administrationId });
+    });
+
+    it('upserts and prunes task variants with additional fields', async () => {
+      const administrationId = faker.string.uuid();
+      const input = {
+        taskVariants: [
+          {
+            taskVariantId: faker.string.uuid(),
+            orderIndex: 0,
+            conditionsAssignment: { field: 'grade', op: '>=', value: 3 },
+            conditionsRequirements: null,
+          },
+          {
+            taskVariantId: faker.string.uuid(),
+            orderIndex: 1,
+            conditionsAssignment: null,
+            conditionsRequirements: null,
+          },
+        ],
+      };
+
+      const result = await repository.updateWithAssignments(administrationId, input);
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.insert).toHaveBeenCalled();
+      expect(result).toEqual({ id: administrationId });
+    });
+
+    it('deletes all task variants when empty array provided', async () => {
+      const administrationId = faker.string.uuid();
+      const input = {
+        taskVariants: [],
+      };
+
+      const result = await repository.updateWithAssignments(administrationId, input);
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.delete).toHaveBeenCalled();
+      expect(result).toEqual({ id: administrationId });
+    });
+
+    it('skips updates for undefined fields', async () => {
+      const administrationId = faker.string.uuid();
+      const input = {
+        administration: {
+          name: 'New Name',
+        },
+      };
+
+      const result = await repository.updateWithAssignments(administrationId, input);
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.update).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ id: administrationId });
+    });
+
+    it('rolls back transaction on error', async () => {
+      const administrationId = faker.string.uuid();
+      const input = {
+        administration: {
+          name: 'Updated Name',
+        },
+      };
+
+      mockDb.transaction.mockRejectedValue(new Error('Database error'));
+
+      await expect(repository.updateWithAssignments(administrationId, input)).rejects.toThrow('Database error');
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles multiple entity types in single update', async () => {
+      const administrationId = faker.string.uuid();
+      const input = {
+        administration: {
+          name: 'Updated Name',
+          isOrdered: true,
+        },
+        orgIds: [faker.string.uuid()],
+        classIds: [faker.string.uuid()],
+        groupIds: [faker.string.uuid()],
+        taskVariants: [
+          {
+            taskVariantId: faker.string.uuid(),
+            orderIndex: 0,
+            conditionsAssignment: null,
+            conditionsRequirements: null,
+          },
+        ],
+        agreementIds: [faker.string.uuid()],
+      };
+
+      const result = await repository.updateWithAssignments(administrationId, input);
+
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.insert).toHaveBeenCalled();
+      expect(result).toEqual({ id: administrationId });
     });
   });
 });

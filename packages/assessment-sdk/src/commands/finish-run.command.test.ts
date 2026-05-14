@@ -16,7 +16,7 @@ describe('FinishRunCommand', () => {
     vi.clearAllMocks();
     mockApi = createMockRoarApi();
     eventMock = mockApi.client.runs.event as Mock;
-    command = new FinishRunCommand(mockApi);
+    command = new FinishRunCommand(mockApi, 'participant-123');
   });
 
   it('has correct properties', () => {
@@ -39,7 +39,7 @@ describe('FinishRunCommand', () => {
 
     expect(eventMock).toHaveBeenCalledTimes(1);
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-123' },
+      params: { userId: 'participant-123', runId: 'run-123' },
       body: { type: RUN_EVENT_COMPLETE },
     });
     expect(result).toEqual({ status: 'ok' });
@@ -62,7 +62,7 @@ describe('FinishRunCommand', () => {
 
     expect(eventMock).toHaveBeenCalledTimes(1);
     expect(eventMock).toHaveBeenCalledWith({
-      params: { runId: 'run-456' },
+      params: { userId: 'participant-123', runId: 'run-456' },
       body: { type: RUN_EVENT_COMPLETE, metadata },
     });
     expect(result).toEqual({ status: 'ok' });

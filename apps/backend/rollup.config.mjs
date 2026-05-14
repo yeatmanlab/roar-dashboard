@@ -105,6 +105,17 @@ export default defineConfig({
       }),
   ].filter(Boolean),
 
+  // Treat unresolved imports as build errors. Without this, rollup silently leaves the bare
+  // import in the output, which crashes at runtime in the distroless Docker container where
+  // no node_modules directory exists.
+  onLog(level, log, handler) {
+    if (log.code === 'UNRESOLVED_IMPORT') {
+      handler('error', log);
+      return;
+    }
+    handler(level, log);
+  },
+
   treeshake: isDev ? false : 'recommended',
 
   watch: {

@@ -21,7 +21,9 @@ export function createMockAdministrationRepository(): MockedObject<Administratio
     getDistrictChildTreeNodes: vi.fn(),
     getSchoolChildTreeNodes: vi.fn(),
     createWithAssignments: vi.fn(),
+    updateWithAssignments: vi.fn(),
     existsByName: vi.fn(),
+    existsByNameExcludingId: vi.fn(),
   } as unknown as MockedObject<AdministrationRepository>;
 }
 

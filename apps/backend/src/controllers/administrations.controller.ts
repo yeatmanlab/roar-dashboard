@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { GetTreeOptions } from '../services/administration/administration.service';
+import type { GetTreeOptions, TreeNodeStats } from '../services/administration/administration.service';
 import { AdministrationService } from '../services/administration/administration.service';
 import { ReportService } from '../services/report/report.service';
 import type {
@@ -10,14 +10,18 @@ import type {
   AdministrationTreeQuery,
   AdministrationsListQuery,
   Condition,
+  CreateAdministrationRequest,
   OrganizationTreeNode,
   ProgressOverviewQuery,
   ProgressStudent,
   ProgressStudentsQuery,
   ReportTaskMetadata,
   ScoreOverviewQuery,
-  TreeNodeStats,
-  CreateAdministrationRequest,
+  StudentScoresQuery,
+  StudentScoreRow,
+  UpdateAdministrationRequest,
+  IndividualStudentReportQuery,
+  IndividualStudentReportResponse,
 } from '@roar-dashboard/api-contract';
 import type {
   AgreementWithVersion,
@@ -388,6 +392,7 @@ export const AdministrationsController = {
               totalItems: result.totalItems,
               totalPages: Math.ceil(result.totalItems / query.perPage),
             },
+            exclusions: result.exclusions,
           },
         },
       };
@@ -527,6 +532,97 @@ export const AdministrationsController = {
   },
 
   /**
+   * List paginated per-student scores for an administration.
+   *
+   * Delegates to ReportService for authorization, score classification, and
+   * per-row dedup across multi-variant tasks. The service returns
+   * `ServiceStudentScoreRow` objects whose shape is structurally equivalent
+   * to the contract's `StudentScoreRow`, so the result is returned directly.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Pagination, sort, filter, and scope parameters
+   */
+  listStudentScores: async (authContext: AuthContext, administrationId: string, query: StudentScoresQuery) => {
+    try {
+      const result = await reportService.listStudentScores(authContext, administrationId, query);
+
+      // Service and contract types are structurally equivalent (same field
+      // names: tasks[], items[], totalItems, exclusions). The cast is implicit via TS structural
+      // typing — see report.types.ts for the source of truth on each side.
+      const tasks: ReportTaskMetadata[] = result.tasks;
+      const items: StudentScoreRow[] = result.items;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: {
+            tasks,
+            items,
+            pagination: {
+              page: query.page,
+              perPage: query.perPage,
+              totalItems: result.totalItems,
+              totalPages: Math.ceil(result.totalItems / query.perPage),
+            },
+            exclusions: result.exclusions,
+          },
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get a single student's detailed score report for an administration.
+   *
+   * Delegates to ReportService for authorization, scope verification, score
+   * classification, subscore extraction, tag generation, and historical-scores
+   * assembly. Service and contract response types are structurally equivalent;
+   * the result is returned directly via TS structural typing.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - UUID of the administration
+   * @param targetUserId - UUID of the student whose report to fetch
+   * @param query - Scope parameters
+   */
+  getIndividualStudentReport: async (
+    authContext: AuthContext,
+    administrationId: string,
+    targetUserId: string,
+    query: IndividualStudentReportQuery,
+  ) => {
+    try {
+      const result = await reportService.getIndividualStudentReport(authContext, administrationId, targetUserId, query);
+      const data: IndividualStudentReportResponse = result;
+
+      return {
+        status: StatusCodes.OK as const,
+        body: { data },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Delete an administration by ID.
    *
    * Delegates to AdministrationService for authorization and deletion.
@@ -580,6 +676,41 @@ export const AdministrationsController = {
         return toErrorResponse(error, [
           StatusCodes.BAD_REQUEST,
           StatusCodes.FORBIDDEN,
+          StatusCodes.CONFLICT,
+          StatusCodes.UNPROCESSABLE_ENTITY,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing administration.
+   *
+   * Delegates to AdministrationService for validation and update.
+   * Returns 200 OK with the administration ID on success.
+   *
+   * @param authContext - User's authentication context
+   * @param administrationId - UUID of the administration to update
+   * @param body - The update administration request body
+   */
+  update: async (authContext: AuthContext, administrationId: string, body: UpdateAdministrationRequest) => {
+    try {
+      const result = await administrationService.update(authContext, administrationId, body);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
           StatusCodes.CONFLICT,
           StatusCodes.UNPROCESSABLE_ENTITY,
           StatusCodes.INTERNAL_SERVER_ERROR,

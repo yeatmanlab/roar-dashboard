@@ -14,6 +14,7 @@ import {
   AdministrationsListResponseSchema,
   AdministrationBaseSchema,
 } from '../administrations/schema';
+import { GuardianStudentReportContract } from './reports/scores/index';
 
 const c = initContract();
 
@@ -177,6 +178,8 @@ export const UsersContract = c.router(
         'Returns 403 if the requester does not have access to the administration for the specified user. ' +
         'Returns 404 if the specified user or administration does not exist.',
     },
+    // Nest guardian / longitudinal score report sub-router under /users
+    scoreReports: GuardianStudentReportContract,
   },
   { pathPrefix: '/users' },
 );

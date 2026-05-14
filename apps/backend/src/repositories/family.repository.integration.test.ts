@@ -225,6 +225,25 @@ describe('FamilyRepository', () => {
       expect(result.items).toEqual([]);
     });
 
+    it('excludes users with rosteringEnded set in the past (#1742)', async () => {
+      // The family is active, but one of its members is decommissioned.
+      // The rostering-ended user must be filtered at the user level.
+      const family = await FamilyFactory.create();
+      const activeParent = await UserFactory.create({ nameLast: 'ActiveParent1742' });
+      const endedChild = await UserFactory.create({
+        nameLast: 'EndedChild1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserFamilyFactory.create({ userId: activeParent.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: endedChild.id, familyId: family.id, role: 'child' });
+
+      const result = await repository.getUsersByFamilyId(family.id, { page: 1, perPage: 100 });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items.map((u) => u.id)).toEqual([activeParent.id]);
+    });
+
     it('returns empty for nonexistent family ID', async () => {
       const result = await repository.getUsersByFamilyId('00000000-0000-0000-0000-000000000000', {
         page: 1,

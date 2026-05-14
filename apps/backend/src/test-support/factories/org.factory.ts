@@ -78,11 +78,19 @@ export const OrgFactory = Factory.define<Org>(({ onCreate, params }) => {
   // Use overridden orgType if provided, otherwise default to district
   const orgType = params.orgType ?? OrgType.DISTRICT;
   const name = params.name ?? generateOrgName(orgType);
-  const abbreviation = name
-    .split(' ')
-    .map((word) => word.charAt(0))
-    .join('')
-    .toUpperCase();
+  // Take the first character of each space-split word, then strip any non-alphanumeric
+  // characters. faker.location.city() returns real-world names like "Town 'n' Country"
+  // or "St. Louis" whose first-char-per-word would otherwise produce abbreviations
+  // (e.g. "T'CHS") that violate the `orgs_abbreviation_format` check constraint
+  // (`^[A-Za-z0-9]+$`). Falls back to 'ORG' when sanitization leaves an empty string,
+  // since the constraint also rejects empty abbreviations.
+  const abbreviation =
+    name
+      .split(' ')
+      .map((word) => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '') || 'ORG';
 
   return {
     id: faker.string.uuid(),

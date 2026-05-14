@@ -16,12 +16,31 @@ import type {
   ScoreOverviewInput,
   ScoreOverviewResult,
   ServiceTaskScoreOverview,
+  StudentScoresInput,
+  StudentScoresSortField,
+  StudentScoresFilterField,
+  StudentScoresResult,
+  ServiceStudentScoreRow,
+  ServiceStudentScoreEntry,
+  ServiceSupportLevelValue,
+  IndividualStudentReportInput,
+  IndividualStudentReportResult,
+  ServiceIndividualStudentReportTask,
+  ServiceStudentReportTaskBase,
+  ServiceTaskScores,
+  ServiceSubscoreEntry,
+  ServiceHistoricalScore,
+  ServiceTaskTag,
+  GuardianStudentReportResult,
+  ServiceGuardianAdministrationEntry,
+  ServiceGuardianTaskEntry,
   ParsedFilter,
 } from './report.types';
-import { PROGRESS_TASK_STATUS_PATTERN } from '@roar-dashboard/api-contract';
+import { PROGRESS_TASK_STATUS_PATTERN, SCORE_TASK_FIELD_PATTERN } from '@roar-dashboard/api-contract';
 import { PROGRESS_STATUS_PRIORITY } from '../../constants/progress-status';
 import { buildFilterConditions } from '../../utils/build-filter-conditions.util';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
 import { logger } from '../../logger';
 import { users } from '../../db/schema';
@@ -35,12 +54,32 @@ import type {
   RunScoreRow,
   ProgressStatusSortParam,
   ProgressStatusFilterParam,
+  StudentScoresFieldRef,
+  StudentScoresFieldFilter,
+  StudentScoresFilterOperator,
+  StudentScoresFieldType,
+  StudentScoreQueryRow,
+  ResolvedScoringRules,
+  HistoricalRunRow,
 } from '../../repositories/report.repository';
 import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
-import { getSupportLevel, parseScoreValue, resolveScoreFieldNames } from '../scoring';
+import {
+  getScoringConfig,
+  getSubscoresConfig,
+  getSupportLevel,
+  parseScoreValue,
+  resolveScoreFieldNames,
+  PA_SKILL_THRESHOLD,
+  PA_SKILL_LEGACY_THRESHOLD,
+  PA_SUBTASK_KEYS,
+} from '../scoring';
+import { UserRepository } from '../../repositories/user.repository';
+import { Permissions } from '../../constants/permissions';
+import { rolesForPermission } from '../../constants/role-permissions';
+import { filterSupervisoryRoles } from '../../repositories/utils/supervisory-roles.utils';
 import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
@@ -76,6 +115,38 @@ const SCORE_OVERVIEW_USER_FILTER_FIELDS: Record<string, PgColumn> = {
   'user.grade': users.grade,
 };
 
+/**
+ * Map sortBy field strings to Drizzle column references for student scores.
+ *
+ * `user.schoolName` is intentionally excluded — it has no direct column to
+ * point at (the value is a correlated subquery built inside the repository).
+ * The service routes that case explicitly before consulting this map, and the
+ * type omits it so any accidental lookup fails at compile time rather than
+ * silently falling back to a wrong column.
+ */
+const STUDENT_SCORES_SORT_COLUMNS: Record<Exclude<StudentScoresSortField, 'user.schoolName'>, Column> = {
+  'user.lastName': users.nameLast,
+  'user.firstName': users.nameFirst,
+  'user.username': users.username,
+  'user.grade': users.grade,
+};
+
+/**
+ * Map static filter field strings to Drizzle column references for student scores.
+ * `user.schoolName` is filterable via ILIKE in district scope; the column reference
+ * is `orgs.name` joined indirectly via user_orgs — represented as a sentinel here
+ * because buildFilterConditions can't directly express a correlated lookup.
+ * Currently we only support exact-match user-level filters in SQL; schoolName
+ * filtering is delegated to the repository's own correlated subquery.
+ */
+const STUDENT_SCORES_USER_FILTER_FIELDS: Record<Exclude<StudentScoresFilterField, 'user.schoolName'>, PgColumn> = {
+  'user.grade': users.grade,
+  'user.firstName': users.nameFirst,
+  'user.lastName': users.nameLast,
+  'user.username': users.username,
+  'user.email': users.email,
+};
+
 /** Per-task status counters for progress overview aggregation (7-level). */
 interface TaskStatusCounter {
   'assigned-required': number;
@@ -101,12 +172,14 @@ export function ReportService({
   taskService = TaskService(),
   authorizationService = AuthorizationService(),
   taskVariantParameterRepository = new TaskVariantParameterRepository(),
+  userRepository = new UserRepository(),
 }: {
   administrationService?: ReturnType<typeof AdministrationService>;
   reportRepository?: ReportRepository;
   taskService?: ReturnType<typeof TaskService>;
   authorizationService?: ReturnType<typeof AuthorizationService>;
   taskVariantParameterRepository?: TaskVariantParameterRepository;
+  userRepository?: UserRepository;
 } = {}) {
   /** Map report scope types to FGA object type prefixes. */
   const SCOPE_TO_FGA_TYPE: Record<ScopeType, FgaType> = {
@@ -153,7 +226,7 @@ export function ReportService({
       scopeId,
     });
     if (!isAssigned) {
-      throw new ApiError('Scope entity is not assigned to this administration', {
+      throw new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
         statusCode: StatusCodes.BAD_REQUEST,
         code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
         context: { userId, administrationId, scopeType, scopeId },
@@ -227,17 +300,34 @@ export function ReportService({
           ? buildFilterConditions(userFilters, PROGRESS_FILTER_FIELDS, { gradeAwareFields: GRADE_AWARE_FIELDS })
           : undefined;
 
-      // 5. Get paginated students with run data.
-      // Progress status sort/filter is handled via LEFT JOIN + CASE in the repository.
-      const result = await reportRepository.getProgressStudents(
-        administrationId,
-        { scopeType, scopeId },
-        taskVariantIds,
-        { page, perPage, sortColumn, sortDirection: sortOrder },
-        filterCondition,
-        progressStatusSort ?? undefined,
-        progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
-      );
+      // 5. Get paginated students with run data and the rostering-ended
+      // exclusion count in parallel. Progress status sort/filter is handled
+      // via LEFT JOIN + CASE in the repository. The exclusion query runs as
+      // a sibling rather than a serial follow-up so the wall-clock cost is
+      // bounded by `max(students-query, exclusion-count-query)` rather than
+      // the sum.
+      const [result, exclusionsRosteringEnded] = await Promise.all([
+        reportRepository.getProgressStudents(
+          administrationId,
+          { scopeType, scopeId },
+          taskVariantIds,
+          { page, perPage, sortColumn, sortDirection: sortOrder },
+          filterCondition,
+          progressStatusSort ?? undefined,
+          progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
+        ),
+        reportRepository.countRosteringEndedExclusions({ scopeType, scopeId }).catch((err) => {
+          // Wrap the parallel branch in `.catch` so a failure here throws
+          // `ApiError` immediately rather than propagating a raw error to
+          // the outer catch (per backend-error-handling.md).
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        }),
+      ]);
 
       // 6. Transform to response shape
       const tasks: ServiceTaskMetadata[] = taskMetas.map((t) => ({
@@ -265,7 +355,12 @@ export function ReportService({
       // Students with an empty progress map (all tasks excluded by conditionsAssignment)
       // are intentionally included — they are enrolled in the scope and the empty row is
       // meaningful to teachers. Excluding them would cause pagination instability.
-      return { tasks, items, totalItems: result.totalItems };
+      return {
+        tasks,
+        items,
+        totalItems: result.totalItems,
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -324,14 +419,22 @@ export function ReportService({
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
 
-      // 3. Get task metadata and run SQL-level aggregation
+      // 3. Get task metadata and run SQL-level aggregation in parallel with
+      // the rostering-ended exclusion count (#1742). The exclusion query
+      // adds one round-trip rather than serializing.
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
-      const { totalStudents, taskStatusCounts, studentCounts } = await reportRepository.getProgressOverviewCounts(
-        administrationId,
-        { scopeType, scopeId },
-        taskMetas,
-      );
+      const [{ totalStudents, taskStatusCounts, studentCounts }, exclusionsRosteringEnded] = await Promise.all([
+        reportRepository.getProgressOverviewCounts(administrationId, { scopeType, scopeId }, taskMetas),
+        reportRepository.countRosteringEndedExclusions({ scopeType, scopeId }).catch((err) => {
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        }),
+      ]);
 
       // 4. Build per-task counters from unique taskIds (preserving order from metadata)
       const taskIdOrder: string[] = [];
@@ -409,6 +512,7 @@ export function ReportService({
         studentsCompleted: studentCounts.studentsCompleted,
         byTask,
         computedAt: new Date().toISOString(),
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
       };
     } catch (error) {
       if (error instanceof ApiError) throw error;
@@ -509,11 +613,29 @@ export function ReportService({
       // filter eliminates every task we can short-circuit without touching the DB.
       const taskGroups = groupVariantsByTaskId(taskMetas);
 
+      // Fetch the rostering-ended exclusion count eagerly so it can be
+      // surfaced in every return path of this function (including the
+      // short-circuit empty-tasks branch immediately below). The count is
+      // a single COUNT(DISTINCT) query — cheap on its own and run before
+      // the heavier `getAllStudentsInScope` so we can include it in early-
+      // return responses.
+      const exclusionsRosteringEnded = await reportRepository
+        .countRosteringEndedExclusions({ scopeType, scopeId })
+        .catch((err) => {
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        });
+
       if (taskGroups.length === 0) {
         return {
           totalStudents: 0,
           tasks: [],
           computedAt: new Date().toISOString(),
+          exclusions: { rosteringEnded: exclusionsRosteringEnded },
         };
       }
 
@@ -528,6 +650,7 @@ export function ReportService({
           totalStudents,
           tasks: taskGroups.map(({ representative }) => buildEmptyTaskOverview(representative)),
           computedAt: new Date().toISOString(),
+          exclusions: { rosteringEnded: exclusionsRosteringEnded },
         };
       }
 
@@ -563,7 +686,12 @@ export function ReportService({
         ),
       );
 
-      return { totalStudents, tasks, computedAt: new Date().toISOString() };
+      return {
+        totalStudents,
+        tasks,
+        computedAt: new Date().toISOString(),
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -581,7 +709,713 @@ export function ReportService({
     }
   }
 
-  return { listProgressStudents, getProgressOverview, getScoreOverview };
+  /**
+   * List paginated per-student scores for an administration.
+   *
+   * Authorization (two FGA checks):
+   * 1. `verifyAdministrationAccess` — administration-level can_read_scores
+   * 2. `authorizeScopeAccess` with CAN_READ_SCORES — scope-level
+   *
+   * Sort and filter accept dynamic `scores.<taskId>.<field>` fields where
+   * `<field>` is one of `rawScore`, `percentile`, `standardScore`, `supportLevel`.
+   * The taskId is validated against the administration's tasks (400 if unknown).
+   * For multi-variant tasks, dynamic sort/filter targets the lowest-orderIndex
+   * variant of the task (the "primary variant") so SQL-level ordering remains
+   * deterministic across pages.
+   *
+   * Per-row dedup: each task in the response has at most one score entry per
+   * student. The service picks the first variant (in orderIndex order) with a
+   * completed run for that student. Students with no completed run on any
+   * variant of a task get `completed: false` and `supportLevel` either
+   * `'optional'` (task optional for them) or `null` (assigned-required).
+   *
+   * @throws {ApiError} NOT_FOUND if administration doesn't exist
+   * @throws {ApiError} FORBIDDEN if user lacks can_read_scores
+   * @throws {ApiError} BAD_REQUEST if scope or sort/filter task ID is invalid
+   */
+  async function listStudentScores(
+    authContext: AuthContext,
+    administrationId: string,
+    query: StudentScoresInput,
+  ): Promise<StudentScoresResult> {
+    const { userId } = authContext;
+    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
+
+    try {
+      // 1. Authorization
+      await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
+
+      // 2. Get task metadata and apply taskId filter (merge multiple entries)
+      let taskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
+      if (taskIdFilters.length > 0) {
+        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
+        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
+      }
+
+      // 3. Build per-task primary variant map (lowest-orderIndex variant of each task)
+      const primaryVariantByTaskId = buildPrimaryVariantMap(taskMetas);
+
+      // 4. Validate any dynamic score-field references in sort/filter BEFORE
+      // any further DB call — bad task IDs should fail fast as 400, not get
+      // silently swallowed into a 500 by a downstream failure.
+      validateDynamicFieldTaskIds(sortBy, filter, primaryVariantByTaskId, taskMetas);
+
+      // 5. Resolve scoring versions per variant
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+      const allParams =
+        taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
+      const scoringVersionByVariant = new Map<string, number>();
+      for (const param of allParams) {
+        if (param.name === 'scoringVersion') {
+          const version = typeof param.value === 'number' ? param.value : Number(param.value);
+          if (!isNaN(version)) {
+            scoringVersionByVariant.set(param.taskVariantId, version);
+          }
+        }
+      }
+
+      // 6. Resolve scoring rules per variant for SQL CASE generation in the repo
+      const scoringRulesByVariant = new Map<string, ResolvedScoringRules>();
+      for (const variant of taskMetas) {
+        scoringRulesByVariant.set(
+          variant.taskVariantId,
+          resolveScoringRulesForVariant(variant.taskSlug, scoringVersionByVariant.get(variant.taskVariantId) ?? null),
+        );
+      }
+
+      // 7. Resolve dynamic sort field (against primary variants)
+      const sortField = resolveDynamicSortField(sortBy, primaryVariantByTaskId, scoringVersionByVariant);
+
+      // 8. Resolve dynamic score-field filters (against primary variants)
+      const userLevelFilters: ParsedFilter[] = [];
+      const scoreFieldFilters: StudentScoresFieldFilter[] = [];
+      for (const f of filter) {
+        if (f.field === 'taskId') continue;
+        if (SCORE_TASK_FIELD_PATTERN.test(f.field)) {
+          const filterRef = resolveDynamicFilter(f, primaryVariantByTaskId, scoringVersionByVariant);
+          if (filterRef) scoreFieldFilters.push(filterRef);
+          continue;
+        }
+        userLevelFilters.push(f);
+      }
+
+      const filterCondition =
+        userLevelFilters.length > 0
+          ? buildFilterConditions(userLevelFilters, STUDENT_SCORES_USER_FILTER_FIELDS, {
+              gradeAwareFields: GRADE_AWARE_FIELDS,
+            })
+          : undefined;
+
+      // Fetch the rostering-ended exclusion count eagerly so it can be
+      // surfaced in every return path of this function (including the
+      // short-circuit empty-tasks branch immediately below).
+      const exclusionsRosteringEnded = await reportRepository
+        .countRosteringEndedExclusions({ scopeType, scopeId })
+        .catch((err) => {
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        });
+
+      // Short-circuit: when the taskId filter (or an empty administration) leaves
+      // no tasks in scope, no per-task entries can be assembled. Skip the
+      // pagination + score JOINs and return an empty page. Matches the analogous
+      // short-circuit in getScoreOverview.
+      if (taskMetas.length === 0) {
+        return { tasks: [], items: [], totalItems: 0, exclusions: { rosteringEnded: exclusionsRosteringEnded } };
+      }
+
+      // 9. Determine the static sort column when sorting by a user field.
+      // user.schoolName is handled inside the repository as a correlated subquery,
+      // so we pass undefined and rely on the dynamic-sort path falling through to
+      // the repo's school-name expression. Other static fields use their column.
+      // The map deliberately omits `user.schoolName` — TypeScript's narrowing on
+      // the explicit equality check below makes the lookup safe.
+      let staticSortColumn: Column | undefined;
+      if (!sortField) {
+        if (sortBy === 'user.schoolName') {
+          staticSortColumn = undefined; // repo will use schoolNameSql
+        } else {
+          const key = sortBy as Exclude<StudentScoresSortField, 'user.schoolName'>;
+          staticSortColumn = STUDENT_SCORES_SORT_COLUMNS[key] ?? users.nameLast;
+        }
+      }
+
+      // 10. Repository call
+      const result = await reportRepository.getStudentScores(
+        administrationId,
+        { scopeType, scopeId },
+        taskMetas,
+        { page, perPage, sortColumn: staticSortColumn, sortDirection: sortOrder },
+        filterCondition,
+        sortField,
+        scoreFieldFilters,
+        scoringRulesByVariant,
+      );
+
+      // 11. Build response — dedupe per taskId, classify, set optional/completed
+      const tasksOrdered: ServiceTaskMetadata[] = uniqueTaskMetadataInOrder(taskMetas);
+
+      // Resolve schoolNames for district-scope rows (not auto-populated by repo for that field)
+      let schoolNamesByUser: Map<string, string> | undefined;
+      if (scopeType === EntityType.DISTRICT) {
+        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(result.items.map((s) => s.userId));
+      }
+
+      // Group taskMetas by taskId once — the grouping is independent of the
+      // per-student row data, so hoisting it out of the per-row map saves
+      // O(students × variants) reallocations.
+      const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
+
+      const items: ServiceStudentScoreRow[] = result.items.map((row) =>
+        assembleStudentScoreRow(
+          row,
+          taskOrder,
+          variantsByTaskId,
+          scoringVersionByVariant,
+          taskService.evaluateTaskVariantEligibility,
+          scopeType,
+          schoolNamesByUser,
+        ),
+      );
+
+      return {
+        tasks: tasksOrdered,
+        items,
+        totalItems: result.totalItems,
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, scopeType, scopeId } },
+        'Failed to retrieve student scores report',
+      );
+
+      throw new ApiError('Failed to retrieve student scores report', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, scopeType, scopeId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Get a single student's detailed individual score report for an administration.
+   *
+   * Authorization (three checks, in order — 404-before-403 throughout):
+   * 1. `verifyAdministrationAccess` — administration exists and the
+   *    user has FGA `can_read_scores` on it.
+   * 2. `authorizeScopeAccess(...CAN_READ_SCORES)` — scope is assigned to the
+   *    administration and the user has FGA `can_read_scores` on the scope.
+   * 3. `verifyStudentInScope` — the target student is enrolled as a STUDENT in
+   *    the requested scope and has not had their roster ended. This step
+   *    surfaces a 404 (not 403) per the ticket: callers should not be able to
+   *    distinguish between "student not in scope" and "student doesn't exist".
+   *
+   * Per-task assembly mirrors `listStudentScores`'s row-level dedup: pick the
+   * lowest-orderIndex variant with completed runs + scores; classify via
+   * `getSupportLevel`; evaluate eligibility across all variants for the
+   * `optional` flag. Adds three #1684-specific concerns:
+   * - **Subscores** — extracted from `run_scores` for tasks declaring a
+   *   `subscores` block in their scoring config (PA, phonics).
+   * - **`skillsToWorkOn`** — PA only; the subset of subscore keys whose
+   *   `percentCorrect` is below `PA_SKILL_THRESHOLD`.
+   * - **`historicalScores`** — one entry per (prior administration, task) the
+   *   student has completed runs in, including the current administration as
+   *   the most-recent point on the trend line.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param targetUserId - The student whose report to fetch
+   * @param query - Scope params
+   * @returns Full individual student report
+   * @throws {ApiError} NOT_FOUND if administration missing, student not in scope, or roster ended
+   * @throws {ApiError} FORBIDDEN if FGA denies can_read_scores at administration or scope level
+   * @throws {ApiError} BAD_REQUEST if scope is invalid
+   */
+  async function getIndividualStudentReport(
+    authContext: AuthContext,
+    administrationId: string,
+    targetUserId: string,
+    query: IndividualStudentReportInput,
+  ): Promise<IndividualStudentReportResult> {
+    const { userId } = authContext;
+    const { scopeType, scopeId } = query;
+
+    try {
+      // 1. Administration-level authorization (also returns the loaded
+      // administration record, avoiding a redundant getById in step 4)
+      const administration = await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
+
+      // 2. Scope-level authorization
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
+
+      // 3. Student-in-scope check (also enforces user.rosteringEnded IS NULL)
+      const studentInScope = await reportRepository.verifyStudentInScope({ scopeType, scopeId }, targetUserId);
+      if (!studentInScope) {
+        // Use the generic NOT_FOUND message — distinguishing "student doesn't
+        // exist" from "student isn't in this scope" would leak scope membership.
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, administrationId, targetUserId, scopeType, scopeId },
+        });
+      }
+
+      // 4. Fetch supporting data in parallel: target user, task metadata
+      const [targetUser, taskMetas] = await Promise.all([
+        userRepository.getById({ id: targetUserId }),
+        reportRepository.getTaskMetadata(administrationId),
+      ]);
+
+      // verifyStudentInScope already ensured the user exists and isn't roster-ended.
+      if (!targetUser) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, targetUserId },
+        });
+      }
+
+      // 5. Fetch scoring versions per variant (drives both classification and subscore lookups)
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+      const allParams =
+        taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
+      const scoringVersionByVariant = new Map<string, number>();
+      for (const param of allParams) {
+        if (param.name === 'scoringVersion') {
+          const version = typeof param.value === 'number' ? param.value : Number(param.value);
+          if (!isNaN(version)) {
+            scoringVersionByVariant.set(param.taskVariantId, version);
+          }
+        }
+      }
+
+      // 6. Fetch the student's current-admin scores, run metadata, and historical
+      // runs/scores in parallel. Run metadata (reliable, engagementFlags) lives
+      // on the runs row; getCompletedRunScores only returns score rows, so we
+      // also call getCompletedRunsForUser for the run-level signals.
+      const taskIdsInAdmin = Array.from(new Set(taskMetas.map((t) => t.taskId)));
+      const [currentScoreRows, currentRunRows, historicalRuns] = await Promise.all([
+        reportRepository.getCompletedRunScores(administrationId, [targetUserId], taskVariantIds),
+        reportRepository.getCompletedRunsForUser(administrationId, targetUserId, taskVariantIds),
+        reportRepository.getHistoricalRunsForUser(targetUserId, administration.dateStart, taskIdsInAdmin),
+      ]);
+
+      const historicalRunIds = historicalRuns.map((r) => r.runId);
+      const historicalScoreRows =
+        historicalRunIds.length > 0 ? await reportRepository.getScoresForRunIds(historicalRunIds) : [];
+
+      // 7. Build per-task entries
+      const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
+
+      // Index current-admin scores: variantId → name → value
+      const currentScoresByVariant = buildVariantScoreLookup(currentScoreRows);
+
+      // Index current-admin run metadata: variantId → most-recent-completed run.
+      // When multiple runs match the (user, variant) — defensive against the rare
+      // multi-run case — pick the latest by completedAt.
+      const currentRunByVariant = new Map<string, { reliable: boolean | null; engagementFlags: string[] }>();
+      const seenRunCompletedAt = new Map<string, Date>();
+      for (const r of currentRunRows) {
+        const existing = seenRunCompletedAt.get(r.taskVariantId);
+        if (!existing || r.completedAt > existing) {
+          currentRunByVariant.set(r.taskVariantId, {
+            reliable: r.reliable,
+            engagementFlags: r.engagementFlags,
+          });
+          seenRunCompletedAt.set(r.taskVariantId, r.completedAt);
+        }
+      }
+
+      // Index historical scores: runId → name → value
+      const historicalScoresByRun = buildRunScoreLookup(historicalScoreRows);
+
+      const tasks: ServiceIndividualStudentReportTask[] = [];
+      let completedTaskCount = 0;
+      let totalTaskCount = 0;
+
+      for (const taskId of taskOrder) {
+        const variants = variantsByTaskId.get(taskId)!;
+
+        // Eligibility for the optional/visibility decision
+        const eligibility = evaluateAcrossVariants(targetUser, variants, taskService.evaluateTaskVariantEligibility);
+        if (!eligibility.isAssigned) {
+          // Task is excluded from the student's view per condition evaluation
+          continue;
+        }
+        totalTaskCount++;
+
+        // Find the first variant with a completed run + scores
+        let scoredVariant: ReportTaskMeta | null = null;
+        let scoredScoreMap: Map<string, string> | null = null;
+        for (const v of variants) {
+          const map = currentScoresByVariant.get(v.taskVariantId);
+          if (map && map.size > 0) {
+            scoredVariant = v;
+            scoredScoreMap = map;
+            break;
+          }
+        }
+
+        const representative = variants[0]!;
+        const taskMeta: ServiceTaskMetadata = {
+          taskId: representative.taskId,
+          taskSlug: representative.taskSlug,
+          taskName: representative.taskName,
+          orderIndex: representative.orderIndex,
+        };
+
+        if (scoredVariant && scoredScoreMap) {
+          completedTaskCount++;
+          const runMeta = currentRunByVariant.get(scoredVariant.taskVariantId) ?? null;
+          const taskEntry = buildAssessedTaskEntry(
+            taskMeta,
+            scoredVariant,
+            scoredScoreMap,
+            scoringVersionByVariant.get(scoredVariant.taskVariantId) ?? null,
+            targetUser.grade,
+            eligibility.isOptional,
+            historicalRuns,
+            historicalScoresByRun,
+            runMeta,
+          );
+          tasks.push(taskEntry);
+        } else {
+          tasks.push(buildUnassessedTaskEntry(taskMeta, eligibility.isOptional, historicalRuns, historicalScoresByRun));
+        }
+      }
+
+      return {
+        student: {
+          userId: targetUser.id,
+          firstName: targetUser.nameFirst,
+          lastName: targetUser.nameLast,
+          username: targetUser.username,
+          grade: targetUser.grade,
+        },
+        administration: {
+          id: administration.id,
+          name: administration.name,
+          dateStart: administration.dateStart.toISOString(),
+          dateEnd: administration.dateEnd.toISOString(),
+        },
+        tasks,
+        completedTaskCount,
+        totalTaskCount,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, targetUserId, scopeType, scopeId } },
+        'Failed to retrieve individual student report',
+      );
+
+      throw new ApiError('Failed to retrieve individual student report', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, targetUserId, scopeType, scopeId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Get a longitudinal score report for a single student across every
+   * administration they are connected to.
+   *
+   * Authorization (in order, super-admin bypasses all):
+   * 1. Target student must exist and not have `rosteringEnded` set (404
+   *    otherwise — the message is generic to avoid leaking student
+   *    membership status to a hostile caller).
+   * 2. Self-access is denied — students cannot view their own report (403).
+   * 3. Guardian access: the caller must be linked to the student via
+   *    `user_families` (parent → child, both currently active).
+   * 4. Supervisory access: when the caller is not a guardian, they must
+   *    hold one of the roles allowed by `Reports.Score.READ` AND share an
+   *    org/class/group scope with the student (the org-overlap guard).
+   *
+   * The response includes the student header (with school name), one
+   * entry per administration the student is in (chronological), and a
+   * top-level `longitudinalScores` map keyed by task slug.
+   *
+   * @param authContext - User's auth context
+   * @param targetUserId - The student whose report is being fetched
+   * @returns Guardian / longitudinal student report
+   * @throws {ApiError} NOT_FOUND if student doesn't exist or is rostering-ended
+   * @throws {ApiError} FORBIDDEN if access denied per the rules above
+   * @throws {ApiError} INTERNAL_SERVER_ERROR for unexpected failures
+   */
+  async function getGuardianStudentReport(
+    authContext: AuthContext,
+    targetUserId: string,
+  ): Promise<GuardianStudentReportResult> {
+    const { userId, isSuperAdmin } = authContext;
+
+    try {
+      // 1. Existence + rostering-ended check (404 returned via generic message)
+      const targetUser = await userRepository.getById({ id: targetUserId });
+      if (!targetUser || targetUser.rosteringEnded) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, targetUserId },
+        });
+      }
+
+      // 2. Authorization
+      if (!isSuperAdmin) {
+        // Self-access denied
+        if (userId === targetUserId) {
+          logger.warn({ userId, targetUserId }, 'User attempted to view their own guardian report');
+          throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+            statusCode: StatusCodes.FORBIDDEN,
+            code: ApiErrorCode.AUTH_FORBIDDEN,
+            context: { userId, targetUserId },
+          });
+        }
+
+        // Guardian linkage first (cheaper, single query). If the caller
+        // isn't a guardian, fall through to the supervisory + org-overlap
+        // guard. The overlap check itself enforces the role gate — it only
+        // matches the supervisor side against the allow-listed supervisory
+        // roles, so a supervised caller (e.g., a student) drops out there.
+        const isLinkedGuardian = await reportRepository.verifyGuardianStudentLink(userId, targetUserId);
+
+        if (!isLinkedGuardian) {
+          const allowedRoles = rolesForPermission(Permissions.Reports.Score.READ);
+          const supervisoryRoles = filterSupervisoryRoles(allowedRoles);
+
+          const hasOverlap = await reportRepository.verifyUserOrgOverlap(userId, targetUserId, supervisoryRoles);
+          if (!hasOverlap) {
+            logger.warn(
+              { userId, targetUserId, supervisoryRoles },
+              'Supervisory caller lacks org/class/group overlap with target student',
+            );
+            throw new ApiError(ApiErrorMessage.FORBIDDEN, {
+              statusCode: StatusCodes.FORBIDDEN,
+              code: ApiErrorCode.AUTH_FORBIDDEN,
+              context: { userId, targetUserId },
+            });
+          }
+        }
+      }
+
+      // 3. Resolve the student's set of administrations and school name in parallel
+      const [adminMetas, schoolNamesMap] = await Promise.all([
+        reportRepository.getStudentAdministrations(targetUserId),
+        reportRepository.getSchoolNamesForUsers([targetUserId]),
+      ]);
+      const schoolName = schoolNamesMap.get(targetUserId) ?? null;
+
+      // Early-exit when the student has no administrations — still return a
+      // valid empty payload so the frontend can render a "no data" state
+      // without an error.
+      if (adminMetas.length === 0) {
+        return {
+          student: {
+            userId: targetUser.id,
+            firstName: targetUser.nameFirst,
+            lastName: targetUser.nameLast,
+            username: targetUser.username,
+            grade: targetUser.grade,
+            schoolName,
+          },
+          administrations: [],
+          longitudinalScores: {},
+        };
+      }
+
+      // 4. Fetch task metadata per admin in parallel
+      const taskMetadataResults = await Promise.all(
+        adminMetas.map(async (admin) => {
+          const metas = await reportRepository.getTaskMetadata(admin.id);
+          return [admin.id, metas] as const;
+        }),
+      );
+      const taskMetadataByAdmin = new Map<string, ReportTaskMeta[]>(taskMetadataResults);
+
+      // 5. Bulk-fetch scoring versions across the union of all variants
+      const allVariantIds = Array.from(
+        new Set(taskMetadataResults.flatMap(([, metas]) => metas.map((m) => m.taskVariantId))),
+      );
+      const allParams =
+        allVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(allVariantIds) : [];
+      const scoringVersionByVariant = new Map<string, number>();
+      for (const param of allParams) {
+        if (param.name === 'scoringVersion') {
+          const version = typeof param.value === 'number' ? param.value : Number(param.value);
+          if (!isNaN(version)) {
+            scoringVersionByVariant.set(param.taskVariantId, version);
+          }
+        }
+      }
+
+      // 6. Fetch scores + run metadata per admin in parallel.
+      // Each admin only fetches its own variants; pinning queries to a single
+      // (admin, user) pair keeps the FDW-side filters narrow.
+      const perAdminFetches = await Promise.all(
+        adminMetas.map(async (admin) => {
+          const variants = taskMetadataByAdmin.get(admin.id) ?? [];
+          const variantIds = variants.map((v) => v.taskVariantId);
+          if (variantIds.length === 0) {
+            return { admin, scoresByVariant: new Map<string, Map<string, string>>(), runMetaByVariant: new Map() };
+          }
+          const [scoreRows, runRows] = await Promise.all([
+            reportRepository.getCompletedRunScores(admin.id, [targetUserId], variantIds),
+            reportRepository.getCompletedRunsForUser(admin.id, targetUserId, variantIds),
+          ]);
+          const scoresByVariant = buildVariantScoreLookup(scoreRows);
+          // Pick the most-recent completed run per variant — defensive against
+          // the rare multi-run case (matches the pattern in
+          // getIndividualStudentReport).
+          const runMetaByVariant = new Map<string, { reliable: boolean | null; engagementFlags: string[] }>();
+          const seenCompletedAt = new Map<string, Date>();
+          for (const r of runRows) {
+            const existing = seenCompletedAt.get(r.taskVariantId);
+            if (!existing || r.completedAt > existing) {
+              runMetaByVariant.set(r.taskVariantId, {
+                reliable: r.reliable,
+                engagementFlags: r.engagementFlags,
+              });
+              seenCompletedAt.set(r.taskVariantId, r.completedAt);
+            }
+          }
+          return { admin, scoresByVariant, runMetaByVariant };
+        }),
+      );
+
+      // 7. Assemble per-admin entries + longitudinalScores
+      const administrations: ServiceGuardianAdministrationEntry[] = [];
+      const longitudinalScores: Record<string, ServiceHistoricalScore[]> = {};
+
+      for (const { admin, scoresByVariant, runMetaByVariant } of perAdminFetches) {
+        const taskMetas = taskMetadataByAdmin.get(admin.id) ?? [];
+        const { taskOrder, variantsByTaskId } = groupTaskMetasByTaskId(taskMetas);
+        const tasks: ServiceGuardianTaskEntry[] = [];
+
+        for (const taskId of taskOrder) {
+          const variants = variantsByTaskId.get(taskId)!;
+          const eligibility = evaluateAcrossVariants(targetUser, variants, taskService.evaluateTaskVariantEligibility);
+          if (!eligibility.isAssigned) continue;
+
+          // Multi-variant dedup: first variant with a completed run + scores
+          let scoredVariant: ReportTaskMeta | null = null;
+          let scoredScoreMap: Map<string, string> | null = null;
+          for (const v of variants) {
+            const map = scoresByVariant.get(v.taskVariantId);
+            if (map && map.size > 0) {
+              scoredVariant = v;
+              scoredScoreMap = map;
+              break;
+            }
+          }
+
+          const representative = variants[0]!;
+          const taskMeta: ServiceTaskMetadata = {
+            taskId: representative.taskId,
+            taskSlug: representative.taskSlug,
+            taskName: representative.taskName,
+            orderIndex: representative.orderIndex,
+          };
+
+          if (scoredVariant && scoredScoreMap) {
+            const runMeta = runMetaByVariant.get(scoredVariant.taskVariantId) ?? null;
+            const { entry } = buildBaseAssessedTaskEntry(
+              taskMeta,
+              scoredVariant,
+              scoredScoreMap,
+              scoringVersionByVariant.get(scoredVariant.taskVariantId) ?? null,
+              targetUser.grade,
+              eligibility.isOptional,
+              runMeta,
+            );
+            tasks.push(entry);
+
+            // Surface this admin's scores into the longitudinal series for
+            // the task slug. Score points use `dateEnd` so the chart x-axis
+            // anchors to the close of the assessment window — matching the
+            // ticket sample.
+            const point: ServiceHistoricalScore = {
+              administrationId: admin.id,
+              administrationName: admin.name,
+              date: admin.dateEnd.toISOString(),
+              scores: entry.scores,
+            };
+            const slug = representative.taskSlug;
+            if (!longitudinalScores[slug]) {
+              longitudinalScores[slug] = [];
+            }
+            longitudinalScores[slug].push(point);
+          } else {
+            tasks.push(buildBaseUnassessedTaskEntry(taskMeta, eligibility.isOptional));
+          }
+        }
+
+        administrations.push({
+          administrationId: admin.id,
+          name: admin.name,
+          dateStart: admin.dateStart.toISOString(),
+          dateEnd: admin.dateEnd.toISOString(),
+          tasks,
+        });
+      }
+
+      // `adminMetas` is already sorted by dateStart ascending (repository
+      // contract) so the populated longitudinalScores arrays inherit the
+      // chronological ordering without an extra sort.
+
+      return {
+        student: {
+          userId: targetUser.id,
+          firstName: targetUser.nameFirst,
+          lastName: targetUser.nameLast,
+          username: targetUser.username,
+          grade: targetUser.grade,
+          schoolName,
+        },
+        administrations,
+        longitudinalScores,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, targetUserId } }, 'Failed to retrieve guardian student report');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, targetUserId },
+        cause: error,
+      });
+    }
+  }
+
+  return {
+    listProgressStudents,
+    getProgressOverview,
+    getScoreOverview,
+    listStudentScores,
+    getIndividualStudentReport,
+    getGuardianStudentReport,
+  };
 }
 
 // --- Progress sort/filter resolution helpers ---
@@ -1044,4 +1878,763 @@ function aggregateTaskGroup(
       needsExtraSupport: { count: needsSupportCount },
     },
   };
+}
+
+// --- Student-scores helpers ---
+
+/**
+ * Build a map of taskId → primary variant (lowest orderIndex within the task).
+ * The primary variant is what dynamic sort/filter on `scores.<taskId>.<field>`
+ * resolves against — it ensures SQL ordering is deterministic across pages
+ * even when a task has multiple grade-specific variants.
+ *
+ * Assumes `taskMetas` is already ordered by orderIndex (as returned by
+ * `getTaskMetadata`).
+ */
+function buildPrimaryVariantMap(taskMetas: ReportTaskMeta[]): Map<string, ReportTaskMeta> {
+  const out = new Map<string, ReportTaskMeta>();
+  for (const meta of taskMetas) {
+    if (!out.has(meta.taskId)) {
+      out.set(meta.taskId, meta);
+    }
+  }
+  return out;
+}
+
+/**
+ * Return a deduplicated list of task metadata (one entry per taskId) preserving
+ * the orderIndex order of the input. Used for the response's `tasks` array so
+ * the frontend renders one column per task.
+ */
+function uniqueTaskMetadataInOrder(taskMetas: ReportTaskMeta[]): ServiceTaskMetadata[] {
+  const seen = new Set<string>();
+  const out: ServiceTaskMetadata[] = [];
+  for (const meta of taskMetas) {
+    if (!seen.has(meta.taskId)) {
+      seen.add(meta.taskId);
+      out.push({
+        taskId: meta.taskId,
+        taskSlug: meta.taskSlug,
+        taskName: meta.taskName,
+        orderIndex: meta.orderIndex,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Resolve the scoring config for a variant + scoring version into the shape the
+ * repository needs for SQL CASE generation. Decouples the repository from the
+ * scoring service.
+ *
+ * Returns an empty rules object for unknown task slugs and for `'none'`
+ * classification — those tasks have no support level the SQL CASE can compute.
+ */
+function resolveScoringRulesForVariant(taskSlug: string, scoringVersion: number | null): ResolvedScoringRules {
+  const empty: ResolvedScoringRules = {
+    assessmentSupportLevelField: null,
+    percentileCutoffs: null,
+    rawScoreThresholds: null,
+    percentileBelowGrade: null,
+    percentileFieldNames: [],
+    rawScoreFieldNames: [],
+    standardScoreFieldNames: [],
+  };
+
+  const config = getScoringConfig(taskSlug);
+  if (!config) return empty;
+
+  const fieldNames = resolveScoreFieldNames(taskSlug, null, scoringVersion);
+  const baseRules: ResolvedScoringRules = {
+    ...empty,
+    percentileFieldNames: fieldNames.percentileFieldNames,
+    rawScoreFieldNames: fieldNames.rawScoreFieldNames,
+    standardScoreFieldNames: fieldNames.standardScoreFieldNames,
+  };
+
+  if (config.classification.type === 'assessment-computed') {
+    return {
+      ...baseRules,
+      assessmentSupportLevelField: config.classification.supportLevelField ?? 'supportLevel',
+    };
+  }
+  if (config.classification.type === 'none') {
+    return baseRules;
+  }
+
+  // percentile-then-rawscore
+  const version = scoringVersion ?? 0;
+  const pctEntry = config.classification.percentileCutoffs.find((e) => version >= e.minVersion);
+  const rawEntry = config.classification.rawScoreThresholds.find((e) => version >= e.minVersion);
+  return {
+    ...baseRules,
+    percentileCutoffs: pctEntry?.cutoffs ?? null,
+    rawScoreThresholds: rawEntry?.thresholds ?? null,
+    // percentileBelowGrade defaults to 6 (exclusive); null in the config means
+    // "use percentile for all grades", which we represent as null in the rules.
+    percentileBelowGrade: config.classification.percentileBelowGrade ?? 6,
+  };
+}
+
+/**
+ * Parse a `scores.<uuid>.<field>` string into its components.
+ * Returns null if the string doesn't match the expected pattern.
+ */
+function parseScoreFieldString(field: string): { taskId: string; fieldType: StudentScoresFieldType } | null {
+  if (!SCORE_TASK_FIELD_PATTERN.test(field)) return null;
+  const parts = field.split('.');
+  if (parts.length !== 3) return null;
+  const taskId = parts[1]!;
+  const fieldType = parts[2] as StudentScoresFieldType;
+  return { taskId, fieldType };
+}
+
+/**
+ * Validate that every dynamic `scores.<taskId>.<field>` reference in `sortBy`
+ * and `filter` resolves to a known taskId. Throws 400 on any unknown taskId.
+ *
+ * Called before fetching scoring versions so input-validation errors fail fast
+ * as 400 rather than getting wrapped as 500 by an unrelated downstream failure.
+ */
+function validateDynamicFieldTaskIds(
+  sortBy: string,
+  filter: ParsedFilter[],
+  primaryVariantByTaskId: Map<string, ReportTaskMeta>,
+  taskMetas: ReportTaskMeta[],
+): void {
+  const knownIds = () => taskMetas.map((t) => t.taskId);
+
+  const sortParsed = parseScoreFieldString(sortBy);
+  if (sortParsed && !primaryVariantByTaskId.has(sortParsed.taskId)) {
+    throw new ApiError('Invalid task ID in sort field', {
+      statusCode: StatusCodes.BAD_REQUEST,
+      code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      context: { sortBy, availableTaskIds: knownIds() },
+    });
+  }
+
+  for (const f of filter) {
+    if (f.field === 'taskId') continue;
+    const parsed = parseScoreFieldString(f.field);
+    if (parsed && !primaryVariantByTaskId.has(parsed.taskId)) {
+      throw new ApiError('Invalid task ID in filter field', {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { field: f.field, availableTaskIds: knownIds() },
+      });
+    }
+  }
+}
+
+/**
+ * Resolve a dynamic sort string into a `StudentScoresFieldRef` against the
+ * primary variant of the referenced task. Returns null for static sort fields
+ * (the caller falls back to the static-column path) and throws 400 for
+ * unknown task IDs.
+ */
+function resolveDynamicSortField(
+  sortBy: string,
+  primaryVariantByTaskId: Map<string, ReportTaskMeta>,
+  scoringVersionByVariant: Map<string, number>,
+): StudentScoresFieldRef | null {
+  const parsed = parseScoreFieldString(sortBy);
+  if (!parsed) return null;
+
+  const variant = primaryVariantByTaskId.get(parsed.taskId);
+
+  // Guaranteed to exist with validation from validateDynamicFieldTaskIds (line 683)
+  return {
+    taskVariantId: variant!.taskVariantId,
+    taskSlug: variant!.taskSlug,
+    fieldType: parsed.fieldType,
+    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
+  };
+}
+
+/**
+ * Mapping between contract-side support level names and the SQL priority
+ * integers the repository's CASE expressions return.
+ */
+const SUPPORT_LEVEL_NAME_TO_PRIORITY: Record<string, number> = {
+  achievedSkill: 3,
+  developingSkill: 2,
+  needsExtraSupport: 1,
+};
+
+/**
+ * Resolve a dynamic score-field filter into a `StudentScoresFieldFilter`. For
+ * `supportLevel` filters the level names (`achievedSkill`, etc.) are translated
+ * to priority integers so the repository can compare against its CASE output.
+ *
+ * Returns null when the filter targets an unsupported value (e.g.,
+ * `supportLevel:eq:optional` — `optional` requires post-fetch logic and isn't
+ * representable in the SQL CASE; the service silently drops the filter and
+ * documents the limitation in the API contract).
+ *
+ * @throws {ApiError} BAD_REQUEST if the task ID is unknown
+ */
+function resolveDynamicFilter(
+  filter: ParsedFilter,
+  primaryVariantByTaskId: Map<string, ReportTaskMeta>,
+  scoringVersionByVariant: Map<string, number>,
+): StudentScoresFieldFilter | null {
+  const parsed = parseScoreFieldString(filter.field);
+  if (!parsed) return null;
+
+  const variant = primaryVariantByTaskId.get(parsed.taskId);
+
+  // Translate values: numeric fields use raw strings (cast in SQL); supportLevel
+  // names map to priorities (3/2/1). 'optional' has no SQL representation — drop
+  // those values from the filter list.
+  let values: string[];
+  if (parsed.fieldType === 'supportLevel') {
+    const rawValues = filter.operator === 'in' ? filter.value.split(',').map((v) => v.trim()) : [filter.value];
+    values = rawValues
+      .map((v) => SUPPORT_LEVEL_NAME_TO_PRIORITY[v])
+      .filter((p): p is number => p !== undefined)
+      .map(String);
+    if (values.length === 0) return null;
+  } else {
+    values = filter.operator === 'in' ? filter.value.split(',').map((v) => v.trim()) : [filter.value];
+  }
+
+  // Guaranteed to exist with validation from validateDynamicFieldTaskIds (line 683)
+  return {
+    taskVariantId: variant!.taskVariantId,
+    taskSlug: variant!.taskSlug,
+    fieldType: parsed.fieldType,
+    scoringVersion: scoringVersionByVariant.get(variant!.taskVariantId) ?? null,
+    operator: filter.operator as StudentScoresFilterOperator,
+    values,
+  };
+}
+
+/**
+ * Round a numeric score to an integer for the API response. Returns null for
+ * null/NaN inputs.
+ */
+function roundScoreOrNull(value: number | null): number | null {
+  if (value === null || isNaN(value)) return null;
+  return Math.round(value);
+}
+
+/**
+ * Alias of `EligibilityEvaluator` for use in the student-scores helpers.
+ * Kept as a re-export so the consuming code reads naturally; both names refer
+ * to the same `TaskService.evaluateTaskVariantEligibility` shape.
+ */
+type StudentEligibilityEvaluator = EligibilityEvaluator;
+
+/**
+ * Convert a single repository row into a service-shaped student row with one
+ * score entry per taskId. For each task:
+ *
+ * - If any variant has a completed run for this student, pick the
+ *   lowest-orderIndex variant with scores and classify; that becomes the
+ *   per-task entry.
+ * - Otherwise, evaluate condition assignment/requirement across all variants.
+ *   `assigned` if any variant assigns; `optional` only if every assigning
+ *   variant marks the student optional.
+ * - Tasks where every variant excludes the student via `conditionsAssignment`
+ *   are omitted from the `scores` map (they're not visible to that student).
+ */
+function assembleStudentScoreRow(
+  row: StudentScoreQueryRow,
+  taskOrder: ReadonlyArray<string>,
+  variantsByTaskId: ReadonlyMap<string, ReportTaskMeta[]>,
+  scoringVersionByVariant: Map<string, number>,
+  evaluateEligibility: StudentEligibilityEvaluator,
+  scopeType: ScopeType,
+  schoolNamesByUser: Map<string, string> | undefined,
+): ServiceStudentScoreRow {
+  const scores: Record<string, ServiceStudentScoreEntry> = {};
+
+  for (const taskId of taskOrder) {
+    const variants = variantsByTaskId.get(taskId)!;
+
+    // Find the first variant with completed run + scores
+    let scored: {
+      variant: ReportTaskMeta;
+      scoreMap: Map<string, string>;
+      runMeta: { reliable: boolean | null; engagementFlags: string[] };
+    } | null = null;
+    for (const v of variants) {
+      const variantScores = row.scores.get(v.taskVariantId);
+      const runMeta = row.runs.get(v.taskVariantId);
+      if (variantScores && variantScores.size > 0 && runMeta) {
+        scored = {
+          variant: v,
+          scoreMap: variantScores,
+          runMeta: { reliable: runMeta.reliable, engagementFlags: runMeta.engagementFlags },
+        };
+        break;
+      }
+    }
+
+    if (scored) {
+      const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+      const gradeLevel = getGradeAsNumber(row.grade);
+      // Match score-overview's resolution strategy: omit scoringVersion so all-version
+      // field names are returned. This is best-effort — the version is still passed to
+      // getSupportLevel below for correct cutoff selection.
+      const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
+
+      const percentile = resolveNumericScore(scored.scoreMap, fieldNames.percentileFieldNames);
+      const rawScore = resolveNumericScore(scored.scoreMap, fieldNames.rawScoreFieldNames);
+      const standardScore = resolveNumericScore(scored.scoreMap, fieldNames.standardScoreFieldNames);
+      const assessmentSupportLevel = resolveStringScore(scored.scoreMap, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
+
+      const supportLevel = getSupportLevel({
+        grade: row.grade,
+        percentile,
+        rawScore,
+        taskSlug: scored.variant.taskSlug,
+        scoringVersion,
+        assessmentSupportLevel,
+      }) as ServiceSupportLevelValue | null;
+
+      // Eligibility for the optional flag (independent of completion)
+      const eligibility = evaluateAcrossVariants(row, variants, evaluateEligibility);
+
+      scores[taskId] = {
+        rawScore: roundScoreOrNull(rawScore),
+        percentile: roundScoreOrNull(percentile),
+        standardScore: roundScoreOrNull(standardScore),
+        supportLevel,
+        reliable: scored.runMeta.reliable,
+        engagementFlags: scored.runMeta.engagementFlags,
+        optional: eligibility.isOptional,
+        completed: true,
+      };
+    } else {
+      // No completed run on any variant — evaluate condition across variants
+      const eligibility = evaluateAcrossVariants(row, variants, evaluateEligibility);
+      if (!eligibility.isAssigned) continue; // task not visible to this student
+
+      scores[taskId] = {
+        rawScore: null,
+        percentile: null,
+        standardScore: null,
+        supportLevel: eligibility.isOptional ? 'optional' : null,
+        reliable: null,
+        engagementFlags: [],
+        optional: eligibility.isOptional,
+        completed: false,
+      };
+    }
+  }
+
+  return {
+    user: {
+      userId: row.userId,
+      assessmentPid: row.assessmentPid,
+      username: row.username,
+      email: row.email,
+      firstName: row.nameFirst,
+      lastName: row.nameLast,
+      grade: row.grade,
+      schoolName: scopeType === EntityType.DISTRICT ? (schoolNamesByUser?.get(row.userId) ?? null) : null,
+    },
+    scores,
+  };
+}
+
+/**
+ * Group task metadata by taskId, preserving the orderIndex order of the input.
+ * Returns the ordered taskId list and a map from taskId to its variants. Pure
+ * function — depends only on `taskMetas`, so the result is hoisted out of the
+ * per-student loop in `listStudentScores` to avoid recomputing it for every row.
+ */
+function groupTaskMetasByTaskId(taskMetas: ReportTaskMeta[]): {
+  taskOrder: string[];
+  variantsByTaskId: Map<string, ReportTaskMeta[]>;
+} {
+  const variantsByTaskId = new Map<string, ReportTaskMeta[]>();
+  const taskOrder: string[] = [];
+  for (const meta of taskMetas) {
+    if (!variantsByTaskId.has(meta.taskId)) {
+      variantsByTaskId.set(meta.taskId, []);
+      taskOrder.push(meta.taskId);
+    }
+    variantsByTaskId.get(meta.taskId)!.push(meta);
+  }
+  return { taskOrder, variantsByTaskId };
+}
+
+/**
+ * Evaluate task-variant eligibility across every variant of a task.
+ * A student is "assigned" if any variant assigns them; "optional" only when
+ * every assigning variant marks them optional. Mirrors the score-overview
+ * helper of the same intent.
+ */
+function evaluateAcrossVariants(
+  user: ConditionEvaluationUser,
+  variants: ReportTaskMeta[],
+  evaluateEligibility: StudentEligibilityEvaluator,
+): { isAssigned: boolean; isOptional: boolean } {
+  let anyAssigned = false;
+  let anyRequired = false;
+  for (const v of variants) {
+    const { isAssigned, isOptional } = evaluateEligibility(user, v.conditionsAssignment, v.conditionsRequirements);
+    if (isAssigned) {
+      anyAssigned = true;
+      if (!isOptional) anyRequired = true;
+    }
+  }
+  return { isAssigned: anyAssigned, isOptional: anyAssigned && !anyRequired };
+}
+
+// --- Individual student report helpers ---
+
+/** Index per-variant raw run_scores rows: variantId → scoreName → scoreValue. */
+function buildVariantScoreLookup(rows: RunScoreRow[]): Map<string, Map<string, string>> {
+  const out = new Map<string, Map<string, string>>();
+  for (const r of rows) {
+    if (!out.has(r.taskVariantId)) out.set(r.taskVariantId, new Map());
+    out.get(r.taskVariantId)!.set(r.scoreName, r.scoreValue);
+  }
+  return out;
+}
+
+/** Index historical run_scores rows: runId → scoreName → scoreValue. */
+function buildRunScoreLookup(
+  rows: ReadonlyArray<{ runId: string; scoreName: string; scoreValue: string }>,
+): Map<string, Map<string, string>> {
+  const out = new Map<string, Map<string, string>>();
+  for (const r of rows) {
+    if (!out.has(r.runId)) out.set(r.runId, new Map());
+    out.get(r.runId)!.set(r.scoreName, r.scoreValue);
+  }
+  return out;
+}
+
+/**
+ * Build the per-task `tags` array from the optional/reliable/completed flags.
+ *
+ * Tags are presentation-layer triples `{ label, value, severity }`. The label
+ * is a stable identifier the frontend can switch on; the value is the human
+ * string. Reliability is omitted when there's no completed run (no run = no
+ * reliability signal).
+ */
+function buildTaskTags(args: { optional: boolean; completed: boolean; reliable: boolean | null }): ServiceTaskTag[] {
+  const tags: ServiceTaskTag[] = [];
+  tags.push({
+    label: 'Type',
+    value: args.optional ? 'Optional' : 'Required',
+    severity: 'info',
+  });
+  if (args.completed && args.reliable !== null) {
+    tags.push({
+      label: 'Reliability',
+      value: args.reliable ? 'Reliable' : 'Unreliable',
+      severity: args.reliable ? 'success' : 'warn',
+    });
+  }
+  return tags;
+}
+
+/**
+ * Extract the per-task subscores map from a run_scores score map, using the
+ * task's `subscores` declaration in the scoring config.
+ *
+ * Returns `null` for tasks that don't declare subscores (most tasks). Each
+ * declared key produces a `{ correct, attempted, percentCorrect }` triple where:
+ *
+ * - `correct` and `attempted` come from the run_scores rows named by the
+ *   config's `correctName` / `attemptedName`.
+ * - `percentCorrect` comes from the config's `percentCorrectName` row when
+ *   present; otherwise it is computed as `100 * correct / attempted` rounded
+ *   to one decimal place. Returns `null` for the entry when neither source is
+ *   available (the response shape allows nullable fields per subscore).
+ *
+ * Reused by the task-subscores endpoint (#1685) — exporting so that endpoint
+ * can call into the same extraction logic.
+ */
+export function extractSubscoresFromScoreMap(
+  scoreMap: Map<string, string>,
+  taskSlug: string,
+): Record<string, ServiceSubscoreEntry> | null {
+  const config = getSubscoresConfig(taskSlug);
+  if (!config) return null;
+
+  const out: Record<string, ServiceSubscoreEntry> = {};
+  for (const [responseKey, fields] of Object.entries(config)) {
+    const correctRaw = scoreMap.get(fields.correctName);
+    const attemptedRaw = scoreMap.get(fields.attemptedName);
+    const correct = parseScoreValue(correctRaw);
+    const attempted = parseScoreValue(attemptedRaw);
+
+    let percentCorrect: number | null = null;
+    if (fields.percentCorrectName) {
+      const pct = parseScoreValue(scoreMap.get(fields.percentCorrectName));
+      if (pct !== null) percentCorrect = Math.round(pct * 10) / 10;
+    }
+    if (percentCorrect === null && correct !== null && attempted !== null && attempted > 0) {
+      percentCorrect = Math.round((correct / attempted) * 1000) / 10;
+    }
+
+    out[responseKey] = {
+      correct: correct === null ? null : Math.round(correct),
+      attempted: attempted === null ? null : Math.round(attempted),
+      percentCorrect,
+    };
+  }
+  return out;
+}
+
+/**
+ * Compute `skillsToWorkOn` for PA tasks — the subset of `PA_SUBTASK_KEYS` whose
+ * `percentCorrect` is below `PA_SKILL_THRESHOLD`. When `percentCorrect` is
+ * unavailable, falls back to the legacy `roarScore`-vs-`PA_SKILL_LEGACY_THRESHOLD`
+ * comparison via the subscore's `correct` count, mirroring
+ * `getPaSkillsToWorkOn` from the legacy frontend helper.
+ *
+ * Returns `null` for non-PA tasks (the caller omits the field from the response).
+ *
+ * Reused by #1685 alongside `extractSubscoresFromScoreMap`.
+ */
+export function computePaSkillsToWorkOn(
+  taskSlug: string,
+  subscores: Record<string, ServiceSubscoreEntry> | null,
+): string[] | null {
+  if (taskSlug !== 'pa' || !subscores) return null;
+
+  const out: string[] = [];
+  for (const key of PA_SUBTASK_KEYS) {
+    const sub = subscores[key];
+    if (!sub) continue;
+    let needsWork = false;
+    if (sub.percentCorrect !== null) {
+      needsWork = sub.percentCorrect < PA_SKILL_THRESHOLD;
+    } else if (sub.correct !== null) {
+      needsWork = sub.correct < PA_SKILL_LEGACY_THRESHOLD;
+    }
+    if (needsWork) out.push(key);
+  }
+  return out;
+}
+
+/** Resolve numeric score fields from a score map — wraps the existing helpers. */
+function resolveTaskScores(
+  scoreMap: Map<string, string>,
+  taskSlug: string,
+  gradeLevel: number | null,
+): ServiceTaskScores {
+  const fieldNames = resolveScoreFieldNames(taskSlug, gradeLevel);
+  return {
+    rawScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames)),
+    percentile: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.percentileFieldNames)),
+    standardScore: roundScoreOrNull(resolveNumericScore(scoreMap, fieldNames.standardScoreFieldNames)),
+  };
+}
+
+/**
+ * Build the per-task historical scores array for one task, given all historical
+ * runs for the user (already pre-fetched, across all tasks) and a score lookup
+ * keyed by run ID.
+ *
+ * Filters to the runs whose `taskId` matches and resolves their score fields
+ * via the same logic as the current administration. Sorted ascending by
+ * `administrationDateStart` so the trend reads chronologically left-to-right.
+ */
+function buildHistoricalScoresForTask(
+  taskId: string,
+  taskSlug: string,
+  gradeLevel: number | null,
+  historicalRuns: HistoricalRunRow[],
+  historicalScoresByRun: Map<string, Map<string, string>>,
+): ServiceHistoricalScore[] {
+  // `getHistoricalRunsForUser` returns one row per (administration, taskVariant)
+  // for completed runs. When a task has multiple variants and the student
+  // completed more than one in the same prior administration, we'd otherwise
+  // emit duplicate `historicalScores` entries with the same administrationId —
+  // a trend chart expects one point per administration per task.
+  //
+  // Sort by administrationDateStart, then by completedAt and taskVariantId as
+  // deterministic tie-breakers within an administration. Dedup by
+  // administrationId after sorting, keeping the earliest-completed run for
+  // that administration (a stable, defensible "first attempt" choice).
+  const matching = historicalRuns
+    .filter((r) => r.taskId === taskId)
+    .sort((a, b) => {
+      const dateDiff = a.administrationDateStart.getTime() - b.administrationDateStart.getTime();
+      if (dateDiff !== 0) return dateDiff;
+      const completedDiff = a.completedAt.getTime() - b.completedAt.getTime();
+      if (completedDiff !== 0) return completedDiff;
+      return a.taskVariantId.localeCompare(b.taskVariantId);
+    });
+
+  const seenAdmins = new Set<string>();
+  const deduped = matching.filter((run) => {
+    if (seenAdmins.has(run.administrationId)) return false;
+    seenAdmins.add(run.administrationId);
+    return true;
+  });
+
+  return deduped.map((run) => {
+    const scoreMap = historicalScoresByRun.get(run.runId) ?? new Map();
+    return {
+      administrationId: run.administrationId,
+      administrationName: run.administrationName,
+      date: run.completedAt.toISOString(),
+      scores: resolveTaskScores(scoreMap, taskSlug, gradeLevel),
+    };
+  });
+}
+
+/**
+ * Assemble a per-task entry for a task the student has a completed run for.
+ *
+ * Pulls together: classified scores, support level (via the scoring service
+ * with cutoffs/version awareness), tags, optional subscores (when the task
+ * config declares them) and skillsToWorkOn (PA only), and historical scores
+ * across prior administrations (and the current one).
+ */
+/**
+ * Per-task entry assembly for a task the student has completed — without
+ * historical scores. Shared by both the admin-scoped individual student
+ * report and the guardian / longitudinal student report.
+ *
+ * The admin-scoped builder wraps this and appends `historicalScores`; the
+ * guardian builder uses the base shape directly because longitudinal data
+ * is rendered at the response root.
+ *
+ * Returning `gradeLevel` alongside the entry lets the admin-scoped wrapper
+ * resolve historical scores with the same numeric grade used for the
+ * current entry, without re-deriving it.
+ */
+function buildBaseAssessedTaskEntry(
+  taskMeta: ServiceTaskMetadata,
+  scoredVariant: ReportTaskMeta,
+  scoreMap: Map<string, string>,
+  scoringVersion: number | null,
+  grade: string | null,
+  optional: boolean,
+  runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
+): { entry: ServiceStudentReportTaskBase; gradeLevel: number | null } {
+  const gradeLevel = getGradeAsNumber(grade);
+  const scores = resolveTaskScores(scoreMap, scoredVariant.taskSlug, gradeLevel);
+
+  // Re-derive the unrounded numeric scores for classification (rounding before
+  // classification could swing borderline cases — pass the raw numerics into
+  // getSupportLevel and let it apply cutoffs).
+  const fieldNames = resolveScoreFieldNames(scoredVariant.taskSlug, gradeLevel);
+  const percentile = resolveNumericScore(scoreMap, fieldNames.percentileFieldNames);
+  const rawScore = resolveNumericScore(scoreMap, fieldNames.rawScoreFieldNames);
+  const assessmentSupportLevel = resolveStringScore(scoreMap, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
+  const supportLevel = getSupportLevel({
+    grade,
+    percentile,
+    rawScore,
+    taskSlug: scoredVariant.taskSlug,
+    scoringVersion,
+    assessmentSupportLevel,
+  }) as ServiceSupportLevelValue | null;
+
+  // Run-level signals come from `getCompletedRunsForUser` (the score map only
+  // carries score values, not run metadata). When the lookup turns up no run
+  // for the variant — defensive against eventual-consistency edge cases between
+  // run and score writes — we conservatively report `reliable: null` and an
+  // empty engagement-flags list rather than fabricating a "reliable" reading.
+  const reliable = runMeta?.reliable ?? null;
+  const engagementFlags = runMeta?.engagementFlags ?? [];
+
+  const subscores = extractSubscoresFromScoreMap(scoreMap, scoredVariant.taskSlug);
+  const skillsToWorkOn = computePaSkillsToWorkOn(scoredVariant.taskSlug, subscores);
+
+  const entry: ServiceStudentReportTaskBase = {
+    ...taskMeta,
+    scores,
+    supportLevel,
+    reliable,
+    optional,
+    completed: true,
+    engagementFlags,
+    tags: buildTaskTags({ optional, completed: true, reliable }),
+  };
+  if (subscores) entry.subscores = subscores;
+  if (skillsToWorkOn) entry.skillsToWorkOn = skillsToWorkOn;
+
+  return { entry, gradeLevel };
+}
+
+/**
+ * Assemble a per-task entry for a task the student has completed in this
+ * administration, with historical scores attached.
+ */
+function buildAssessedTaskEntry(
+  taskMeta: ServiceTaskMetadata,
+  scoredVariant: ReportTaskMeta,
+  scoreMap: Map<string, string>,
+  scoringVersion: number | null,
+  grade: string | null,
+  optional: boolean,
+  historicalRuns: HistoricalRunRow[],
+  historicalScoresByRun: Map<string, Map<string, string>>,
+  runMeta: { reliable: boolean | null; engagementFlags: string[] } | null,
+): ServiceIndividualStudentReportTask {
+  const { entry, gradeLevel } = buildBaseAssessedTaskEntry(
+    taskMeta,
+    scoredVariant,
+    scoreMap,
+    scoringVersion,
+    grade,
+    optional,
+    runMeta,
+  );
+
+  // Historical entries are resolved with the current variant's slug. Runs for
+  // the same task across administrations share a slug, so we don't need a
+  // per-historical-run scoring-version lookup at this layer; if we ever need
+  // per-run version resolution, the variant→version map can be threaded back
+  // in alongside `historicalScoresByRun`.
+  const historicalScores = buildHistoricalScoresForTask(
+    taskMeta.taskId,
+    scoredVariant.taskSlug,
+    gradeLevel,
+    historicalRuns,
+    historicalScoresByRun,
+  );
+
+  return { ...entry, historicalScores };
+}
+
+/**
+ * Per-task entry assembly for a task the student has not completed —
+ * without historical scores. Shared between admin-scoped and guardian
+ * report builders.
+ */
+function buildBaseUnassessedTaskEntry(taskMeta: ServiceTaskMetadata, optional: boolean): ServiceStudentReportTaskBase {
+  return {
+    ...taskMeta,
+    scores: { rawScore: null, percentile: null, standardScore: null },
+    supportLevel: optional ? 'optional' : null,
+    reliable: null,
+    optional,
+    completed: false,
+    engagementFlags: [],
+    tags: buildTaskTags({ optional, completed: false, reliable: null }),
+  };
+}
+
+/** Assemble a per-task entry for a task the student has not completed. */
+function buildUnassessedTaskEntry(
+  taskMeta: ServiceTaskMetadata,
+  optional: boolean,
+  historicalRuns: HistoricalRunRow[],
+  historicalScoresByRun: Map<string, Map<string, string>>,
+): ServiceIndividualStudentReportTask {
+  // Historical scores are still meaningful for a not-completed task — earlier
+  // administrations may have results. Use the representative variant's slug
+  // for score-field resolution; we don't have a "scored" variant for this row.
+  const historicalScores = buildHistoricalScoresForTask(
+    taskMeta.taskId,
+    taskMeta.taskSlug,
+    null,
+    historicalRuns,
+    historicalScoresByRun,
+  );
+
+  return { ...buildBaseUnassessedTaskEntry(taskMeta, optional), historicalScores };
 }

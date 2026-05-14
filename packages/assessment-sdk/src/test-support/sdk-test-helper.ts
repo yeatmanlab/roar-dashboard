@@ -32,6 +32,18 @@ export function getBackendUrl(): string {
 let cachedTestToken: string | null = null;
 
 /**
+ * Cached test user ID that is populated by getBaseFixtureData().
+ * Must be initialized before any SDK requests that require userId path parameter.
+ */
+let cachedTestUserId: string | null = null;
+
+/**
+ * Cached teacher user ID that is populated by getBaseFixtureData().
+ * Used for tests that need a different user context.
+ */
+let cachedTeacherUserId: string | null = null;
+
+/**
  * Creates a test auth context that uses the cached token.
  *
  * The token must be initialized by calling getBaseFixtureData() before making any authenticated requests.
@@ -82,6 +94,34 @@ export function initTestSdk(overrides: Partial<CommandContext> = {}) {
 }
 
 /**
+ * Gets the cached test user ID.
+ * Must be initialized by calling getBaseFixtureData() first.
+ *
+ * @returns The test user's UUID
+ * @throws Error if called before getBaseFixtureData() has initialized the ID
+ */
+export function getTestUserId(): string {
+  if (!cachedTestUserId) {
+    throw new Error('Test user ID not initialized. Call getBaseFixtureData() first.');
+  }
+  return cachedTestUserId;
+}
+
+/**
+ * Gets the cached teacher user ID.
+ * Must be initialized by calling getBaseFixtureData() first.
+ *
+ * @returns The teacher user's UUID
+ * @throws Error if called before getBaseFixtureData() has initialized the ID
+ */
+export function getTeacherUserId(): string {
+  if (!cachedTeacherUserId) {
+    throw new Error('Teacher user ID not initialized. Call getBaseFixtureData() first.');
+  }
+  return cachedTeacherUserId;
+}
+
+/**
  * Reads the backend's baseFixture data from the fixture file written by server-test.ts.
  *
  * The test server entrypoint writes fixture data (task variants, users, etc.) to a JSON file
@@ -112,6 +152,16 @@ export async function getBaseFixtureData(): Promise<TestFixture> {
   // Cache the test user's authId as the token for subsequent requests
   if (data.testUser?.authId) {
     cachedTestToken = data.testUser.authId;
+  }
+
+  // Cache the test user's ID for path parameters
+  if (data.testUser?.id) {
+    cachedTestUserId = data.testUser.id;
+  }
+
+  // Cache the teacher user's ID for tests that need a different user context
+  if (data.schoolATeacher?.id) {
+    cachedTeacherUserId = data.schoolATeacher.id;
   }
 
   return data;

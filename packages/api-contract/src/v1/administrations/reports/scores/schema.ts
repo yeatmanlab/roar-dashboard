@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { ReportScopeQuerySchema, createFilterQuerySchema, ReportTaskMetadataSchema } from '../common';
+import { PaginationQuerySchema, PaginationMetaSchema, createDynamicSortQuerySchema } from '../../../common/query';
+import { ExclusionsSchema } from '../../../common/exclusions';
+import {
+  ReportScopeQuerySchema,
+  createFilterQuerySchema,
+  ReportTaskMetadataSchema,
+  ReportUserInfoSchema,
+} from '../common';
 
 /**
  * Filter fields for the score overview endpoint.
@@ -62,6 +69,322 @@ export const ScoreOverviewResponseSchema = z.object({
   tasks: z.array(TaskScoreOverviewSchema),
   /** Server timestamp when the aggregation was computed (ISO 8601) */
   computedAt: z.string().datetime(),
+  /**
+   * Counts of records filtered out of this overview (see
+   * `common/exclusions.ts`). Surfaces rostering-ended (#1742) and future
+   * exclusion categories so the frontend can caveat a sparse historical
+   * report.
+   */
+  exclusions: ExclusionsSchema,
 });
 
 export type ScoreOverviewResponse = z.infer<typeof ScoreOverviewResponseSchema>;
+
+// --- Student Scores schemas ---
+
+/**
+ * Per-task score field types that may appear in dynamic sort/filter strings,
+ * formatted as `scores.<taskId>.<field>`.
+ *
+ * - `rawScore` — domain-specific raw score value
+ * - `percentile` — percentile ranking
+ * - `standardScore` — normed standard score
+ * - `supportLevel` — derived classification (achievedSkill, developingSkill,
+ *   needsExtraSupport, optional, null). Sortable via per-variant SQL CASE
+ *   constructed from the scoring config's resolved cutoffs.
+ */
+export const SCORE_FIELD_TYPES = ['rawScore', 'percentile', 'standardScore', 'supportLevel'] as const;
+export type ScoreFieldType = (typeof SCORE_FIELD_TYPES)[number];
+
+/**
+ * Regex pattern matching `scores.<uuid>.<field>` for dynamic sort/filter.
+ * The UUID is validated against the administration's actual task IDs in the
+ * service layer; the field is one of `SCORE_FIELD_TYPES`.
+ */
+export const SCORE_TASK_FIELD_PATTERN =
+  /^scores\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(rawScore|percentile|standardScore|supportLevel)$/;
+
+/**
+ * Static sort fields for the student scores endpoint.
+ *
+ * Also accepts dynamic `scores.<taskId>.<field>` fields via pattern matching.
+ * The taskId UUID is validated against the administration's actual tasks in the
+ * service layer — unknown task IDs return 400.
+ *
+ * `user.schoolName` is sortable here (unlike progress) because the column is
+ * resolved via a LEFT JOIN against the org/class hierarchy that supports
+ * SQL-level ordering.
+ */
+export const STUDENT_SCORES_SORT_FIELDS = [
+  'user.lastName',
+  'user.firstName',
+  'user.username',
+  'user.grade',
+  'user.schoolName',
+] as const;
+
+export type StudentScoresSortField = (typeof STUDENT_SCORES_SORT_FIELDS)[number];
+
+/**
+ * Static filter fields for the student scores endpoint.
+ *
+ * Also accepts dynamic `scores.<taskId>.<field>` fields via pattern matching.
+ * `user.schoolName` filtering uses ILIKE for partial matches and is only
+ * meaningful at district scope.
+ */
+export const STUDENT_SCORES_FILTER_FIELDS = [
+  'taskId',
+  'user.grade',
+  'user.firstName',
+  'user.lastName',
+  'user.username',
+  'user.email',
+  'user.schoolName',
+] as const;
+
+export type StudentScoresFilterField = (typeof STUDENT_SCORES_FILTER_FIELDS)[number];
+
+/**
+ * Query schema for the student scores endpoint.
+ * Combines pagination, scope, filter, and sort parameters with dynamic score-field support.
+ */
+export const StudentScoresQuerySchema = PaginationQuerySchema.merge(ReportScopeQuerySchema)
+  .merge(
+    createFilterQuerySchema(STUDENT_SCORES_FILTER_FIELDS, {
+      dynamicFieldPatterns: [SCORE_TASK_FIELD_PATTERN],
+      dynamicFieldHint: 'scores.<taskId>.<rawScore|percentile|standardScore|supportLevel>',
+    }),
+  )
+  .merge(
+    createDynamicSortQuerySchema(
+      STUDENT_SCORES_SORT_FIELDS,
+      'user.lastName',
+      'asc',
+      [SCORE_TASK_FIELD_PATTERN],
+      'scores.<taskId>.<rawScore|percentile|standardScore|supportLevel>',
+    ),
+  );
+
+export type StudentScoresQuery = z.infer<typeof StudentScoresQuerySchema>;
+
+/**
+ * Support level classification values returned in per-task score entries.
+ *
+ * Names match the scoring service's `SupportLevel` type for consistency.
+ * `optional` appears only when the student has no completed run AND the task
+ * is optional for them per condition evaluation. Students with completed runs
+ * are categorized into their actual support level (achievedSkill, developingSkill,
+ * or needsExtraSupport) regardless of whether the task was optional.
+ *
+ * `null` is returned when classification is not possible (no score data, unknown
+ * task, or thresholds unavailable).
+ */
+export const SupportLevelValueSchema = z.enum(['achievedSkill', 'developingSkill', 'needsExtraSupport', 'optional']);
+
+export type SupportLevelValue = z.infer<typeof SupportLevelValueSchema>;
+
+/**
+ * Per-task score entry on a student row.
+ *
+ * - `completed: true` → student has a completed run; score fields populated where available
+ * - `completed: false` → student has no completed run; score fields are null and
+ *   `supportLevel` is either `'optional'` (task optional for this student) or `null` (assigned-required)
+ *
+ * `reliable` and `engagementFlags` are populated from the underlying run regardless
+ * of completion. They are null/empty when no run exists.
+ */
+export const StudentScoreEntrySchema = z.object({
+  rawScore: z.number().int().nullable(),
+  percentile: z.number().int().nullable(),
+  standardScore: z.number().int().nullable(),
+  supportLevel: SupportLevelValueSchema.nullable(),
+  reliable: z.boolean().nullable(),
+  engagementFlags: z.array(z.string()),
+  /**
+   * Whether this task is optional for the student per condition evaluation.
+   * Independent of completion status — an optional task can still be completed.
+   */
+  optional: z.boolean(),
+  /** Whether the student has at least one completed run for this task. */
+  completed: z.boolean(),
+});
+
+export type StudentScoreEntry = z.infer<typeof StudentScoreEntrySchema>;
+
+/**
+ * A student row in the score report, keyed by taskId.
+ *
+ * Tasks where `conditionsAssignment` evaluates to false for the student are excluded
+ * from the `scores` map entirely — the task is not visible to that student.
+ */
+export const StudentScoreRowSchema = z.object({
+  user: ReportUserInfoSchema,
+  scores: z.record(z.string().uuid(), StudentScoreEntrySchema),
+});
+
+export type StudentScoreRow = z.infer<typeof StudentScoreRowSchema>;
+
+/**
+ * Response schema for the student scores endpoint.
+ *
+ * Includes task metadata for column rendering, paginated student rows, and
+ * an `exclusions` object (see `common/exclusions.ts`) — reporting endpoints
+ * surface counts of records filtered out (e.g., for rostering-ended #1742) so
+ * the frontend can explain a sparse historical report.
+ */
+export const StudentScoresResponseSchema = z.object({
+  tasks: z.array(ReportTaskMetadataSchema),
+  items: z.array(StudentScoreRowSchema),
+  pagination: PaginationMetaSchema,
+  exclusions: ExclusionsSchema,
+});
+
+export type StudentScoresResponse = z.infer<typeof StudentScoresResponseSchema>;
+
+// --- Individual Student Report schemas ---
+
+/**
+ * Severity styling for a tag, mirroring PrimeVue's tag severity values.
+ * Backend emits these as plain strings; the frontend renders them as colored chips.
+ */
+export const TagSeveritySchema = z.enum(['info', 'success', 'warn', 'danger', 'secondary', 'contrast']);
+
+export type TagSeverity = z.infer<typeof TagSeveritySchema>;
+
+/**
+ * A single tag in the per-task entry (e.g., `Type: Required`, `Reliability: Reliable`).
+ *
+ * `label` and `value` are display strings; the frontend may localize `value`
+ * but `label` is a stable identifier the frontend can switch on.
+ */
+export const TaskTagSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  severity: TagSeveritySchema,
+});
+
+export type TaskTag = z.infer<typeof TaskTagSchema>;
+
+/**
+ * Per-task scores object — all three score types are surfaced so the frontend
+ * can decide which to display per its grade/task rules. `null` for fields that
+ * don't apply (e.g., `standardScore` for grades the task config doesn't norm).
+ */
+export const TaskScoresSchema = z.object({
+  rawScore: z.number().int().nullable(),
+  percentile: z.number().int().nullable(),
+  standardScore: z.number().int().nullable(),
+});
+
+export type TaskScores = z.infer<typeof TaskScoresSchema>;
+
+/**
+ * One subscore entry under a task's `subscores` map. `correct`/`attempted` are
+ * the underlying counts; `percentCorrect` is `100 * correct / attempted` rounded
+ * to one decimal place. Both raw counts are nullable so partial data renders
+ * defensibly when the assessment side has not yet emitted a complete tally.
+ */
+export const SubscoreEntrySchema = z.object({
+  correct: z.number().int().nullable(),
+  attempted: z.number().int().nullable(),
+  percentCorrect: z.number().nullable(),
+});
+
+export type SubscoreEntry = z.infer<typeof SubscoreEntrySchema>;
+
+/**
+ * A historical score entry for a task — one per prior administration the
+ * student completed runs in (and the current administration itself, included
+ * for trend continuity).
+ *
+ * `administrationName` is included so the frontend can label trend chart
+ * points without an additional query.
+ */
+export const HistoricalScoreSchema = z.object({
+  administrationId: z.string().uuid(),
+  administrationName: z.string(),
+  date: z.string().datetime(),
+  scores: TaskScoresSchema,
+});
+
+export type HistoricalScore = z.infer<typeof HistoricalScoreSchema>;
+
+/**
+ * Per-task entry in the individual student report.
+ *
+ * Fields specific to certain task families:
+ * - `subscores` — present for tasks with sub-skill breakdowns (PA, phonics).
+ *   Omitted for tasks without subscores.
+ * - `skillsToWorkOn` — present for PA tasks only; lists subscore keys whose
+ *   `percentCorrect` is below the PA proficiency threshold.
+ *
+ * `historicalScores` includes only administrations whose `dateStart` is on or
+ * before this administration's `dateStart` (ordered chronologically). For
+ * tasks the student never completed in a prior administration, this is `[]`.
+ */
+export const IndividualStudentReportTaskSchema = z.object({
+  taskId: z.string().uuid(),
+  taskSlug: z.string(),
+  taskName: z.string(),
+  orderIndex: z.number().int(),
+  scores: TaskScoresSchema,
+  supportLevel: SupportLevelValueSchema.nullable(),
+  reliable: z.boolean().nullable(),
+  optional: z.boolean(),
+  completed: z.boolean(),
+  engagementFlags: z.array(z.string()),
+  tags: z.array(TaskTagSchema),
+  subscores: z.record(z.string(), SubscoreEntrySchema).optional(),
+  skillsToWorkOn: z.array(z.string()).optional(),
+  historicalScores: z.array(HistoricalScoreSchema),
+});
+
+export type IndividualStudentReportTask = z.infer<typeof IndividualStudentReportTaskSchema>;
+
+/** Header-level student info for the individual student report. */
+export const IndividualStudentReportStudentSchema = z.object({
+  userId: z.string().uuid(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  username: z.string().nullable(),
+  grade: z.string().nullable(),
+});
+
+export type IndividualStudentReportStudent = z.infer<typeof IndividualStudentReportStudentSchema>;
+
+/** Header-level administration metadata for the individual student report. */
+export const IndividualStudentReportAdministrationSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  dateStart: z.string().datetime(),
+  dateEnd: z.string().datetime(),
+});
+
+export type IndividualStudentReportAdministration = z.infer<typeof IndividualStudentReportAdministrationSchema>;
+
+/**
+ * Response schema for the individual student report endpoint.
+ *
+ * Returns a single resource (no pagination): one student's complete scoreboard
+ * for one administration, with header context, per-task scores plus tags and
+ * subscores, longitudinal historical scores, and completion summary counts.
+ */
+export const IndividualStudentReportResponseSchema = z.object({
+  student: IndividualStudentReportStudentSchema,
+  administration: IndividualStudentReportAdministrationSchema,
+  tasks: z.array(IndividualStudentReportTaskSchema),
+  /** Number of tasks the student has at least one completed run for. */
+  completedTaskCount: z.number().int(),
+  /** Total number of tasks visible to the student (post condition evaluation). */
+  totalTaskCount: z.number().int(),
+});
+
+export type IndividualStudentReportResponse = z.infer<typeof IndividualStudentReportResponseSchema>;
+
+/**
+ * Query schema for the individual student report endpoint.
+ * Requires scope parameters; no pagination/sort/filter.
+ */
+export const IndividualStudentReportQuerySchema = ReportScopeQuerySchema;
+
+export type IndividualStudentReportQuery = z.infer<typeof IndividualStudentReportQuerySchema>;

@@ -11,6 +11,8 @@ import type {
   ReportTaskMetadata,
   ProgressStudent,
   ScoreOverviewQuery,
+  StudentScoresQuery,
+  IndividualStudentReportQuery,
 } from '@roar-dashboard/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -49,11 +51,14 @@ describe('AdministrationsController', () => {
   const mockDeleteById = vi.fn();
   const mockGetTree = vi.fn();
   const mockCreate = vi.fn();
+  const mockUpdate = vi.fn();
   const mockListProgressStudents = vi.fn();
   const mockGetProgressOverview = vi.fn();
   const mockGetScoreOverview = vi.fn();
   const mockGetUserAdministrations = vi.fn();
   const mockGetUserAdministration = vi.fn();
+  const mockListStudentScores = vi.fn();
+  const mockGetIndividualStudentReport = vi.fn();
   const mockAuthContext = { userId: 'user-123', isSuperAdmin: false };
 
   beforeEach(() => {
@@ -72,12 +77,16 @@ describe('AdministrationsController', () => {
       getTree: mockGetTree,
       create: mockCreate,
       getUserAdministration: mockGetUserAdministration,
+      update: mockUpdate,
     });
 
     vi.mocked(ReportService).mockReturnValue({
       listProgressStudents: mockListProgressStudents,
       getProgressOverview: mockGetProgressOverview,
       getScoreOverview: mockGetScoreOverview,
+      listStudentScores: mockListStudentScores,
+      getIndividualStudentReport: mockGetIndividualStudentReport,
+      getGuardianStudentReport: vi.fn(),
     });
   });
   describe('list', () => {
@@ -1985,7 +1994,6 @@ describe('AdministrationsController', () => {
 
       const { AdministrationsController: Controller } = await import('./administrations.controller');
       const result = await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
-
       expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
     });
 
@@ -2004,6 +2012,442 @@ describe('AdministrationsController', () => {
       await Controller.getScoreOverview(mockAuthContext, testAdminId, scoreQuery);
 
       expect(mockGetScoreOverview).toHaveBeenCalledWith(mockAuthContext, testAdminId, scoreQuery);
+    });
+  });
+
+  describe('listStudentScores', () => {
+    const testAdminId = 'admin-uuid-1';
+
+    const studentScoresQuery: StudentScoresQuery = {
+      scopeType: 'district',
+      scopeId: 'district-uuid-1',
+      page: 1,
+      perPage: 25,
+      sortBy: 'user.lastName',
+      sortOrder: 'asc',
+      filter: [],
+    };
+
+    const testStudentScoresResult = {
+      tasks: [
+        {
+          taskId: 'task-1',
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 0,
+        },
+      ],
+      items: [
+        {
+          user: {
+            userId: 'user-1',
+            assessmentPid: null,
+            username: 'jdoe',
+            email: 'jdoe@school.edu',
+            firstName: 'Jane',
+            lastName: 'Doe',
+            grade: '3',
+            schoolName: 'Lincoln Elementary',
+          },
+          scores: {
+            'task-1': {
+              rawScore: 520,
+              percentile: 45,
+              standardScore: 102,
+              supportLevel: 'developingSkill' as const,
+              reliable: true,
+              engagementFlags: [],
+              optional: false,
+              completed: true,
+            },
+          },
+        },
+      ],
+      totalItems: 50,
+    };
+
+    it('returns 200 with paginated student scores and computed totalPages', async () => {
+      mockListStudentScores.mockResolvedValue(testStudentScoresResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      const data = expectOkResponse(result);
+      expect(data.tasks).toHaveLength(1);
+      expect(data.items).toHaveLength(1);
+      expect(data.items[0]!.scores['task-1']!.supportLevel).toBe('developingSkill');
+      expect(data.pagination).toEqual({
+        page: 1,
+        perPage: 25,
+        totalItems: 50,
+        totalPages: 2, // ceil(50 / 25)
+      });
+    });
+
+    it('maps ApiError to typed error response for 400', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Bad request', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('maps ApiError to typed error response for 403', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Forbidden', {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('maps ApiError to typed error response for 404', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Not found', {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('maps ApiError to typed error response for 500', async () => {
+      mockListStudentScores.mockRejectedValue(
+        new ApiError('Internal', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('re-throws non-ApiError errors', async () => {
+      mockListStudentScores.mockRejectedValue(new Error('unexpected'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery)).rejects.toThrow(
+        'unexpected',
+      );
+    });
+
+    it('passes authContext, administrationId, and query to service', async () => {
+      mockListStudentScores.mockResolvedValue(testStudentScoresResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await Controller.listStudentScores(mockAuthContext, testAdminId, studentScoresQuery);
+
+      expect(mockListStudentScores).toHaveBeenCalledWith(mockAuthContext, testAdminId, studentScoresQuery);
+    });
+  });
+
+  describe('update', () => {
+    const validUpdateBody = {
+      name: 'Updated Administration Name',
+      description: 'Updated description',
+    };
+
+    it('should return 200 with administration ID on successful update', async () => {
+      const mockResult = { id: 'admin-123' };
+      mockUpdate.mockResolvedValue(mockResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.OK);
+      expect(result.body).toEqual({ data: { id: 'admin-123' } });
+      expect(mockUpdate).toHaveBeenCalledWith(mockAuthContext, 'admin-123', validUpdateBody);
+    });
+
+    it('should return 404 when administration does not exist', async () => {
+      const error = new ApiError(ApiErrorMessage.NOT_FOUND, {
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        context: { administrationId: 'non-existent-id' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'non-existent-id', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+        });
+      }
+    });
+
+    it('should return 403 when user is not a super admin', async () => {
+      const error = new ApiError(ApiErrorMessage.FORBIDDEN, {
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+        context: { userId: 'user-123' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        });
+      }
+    });
+
+    it('should return 422 when validation fails', async () => {
+      const error = new ApiError(ApiErrorMessage.REQUEST_VALIDATION_FAILED, {
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { reason: 'dateEnd must be after dateStart' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', {
+        dateStart: '2024-12-31T00:00:00Z',
+        dateEnd: '2024-01-01T00:00:00Z',
+      });
+
+      expect(result.status).toBe(StatusCodes.UNPROCESSABLE_ENTITY);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.REQUEST_VALIDATION_FAILED,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      }
+    });
+
+    it('should return 409 when name conflicts with existing administration', async () => {
+      const error = new ApiError(ApiErrorMessage.CONFLICT, {
+        statusCode: StatusCodes.CONFLICT,
+        code: ApiErrorCode.RESOURCE_CONFLICT,
+        context: { name: 'Duplicate Name' },
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', { name: 'Duplicate Name' });
+
+      expect(result.status).toBe(StatusCodes.CONFLICT);
+      if ('error' in result.body) {
+        expect(result.body.error).toMatchObject({
+          message: ApiErrorMessage.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        });
+      }
+    });
+
+    it('should return 500 when internal server error occurs', async () => {
+      const error = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      const result = await Controller.update(mockAuthContext, 'admin-123', validUpdateBody);
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('should throw when service throws unexpected error', async () => {
+      const error = new Error('Unexpected error');
+      mockUpdate.mockRejectedValue(error);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(Controller.update(mockAuthContext, 'admin-123', validUpdateBody)).rejects.toThrow(
+        'Unexpected error',
+      );
+    });
+  });
+
+  describe('getIndividualStudentReport', () => {
+    const testAdminId = 'admin-uuid-1';
+    const targetUserId = 'student-uuid-1';
+
+    const reportQuery: IndividualStudentReportQuery = {
+      scopeType: 'district',
+      scopeId: 'district-uuid-1',
+    };
+
+    const testReportResult = {
+      student: {
+        userId: targetUserId,
+        firstName: 'Jane',
+        lastName: 'Doe',
+        username: 'jdoe',
+        grade: '3',
+      },
+      administration: {
+        id: testAdminId,
+        name: 'Fall 2025',
+        dateStart: '2025-09-01T00:00:00.000Z',
+        dateEnd: '2025-12-15T00:00:00.000Z',
+      },
+      tasks: [
+        {
+          taskId: 'task-1',
+          taskSlug: 'swr',
+          taskName: 'ROAR - Word',
+          orderIndex: 0,
+          scores: { rawScore: 520, percentile: 45, standardScore: 102 },
+          supportLevel: 'developingSkill' as const,
+          reliable: true,
+          optional: false,
+          completed: true,
+          engagementFlags: [],
+          tags: [
+            { label: 'Type', value: 'Required', severity: 'info' as const },
+            { label: 'Reliability', value: 'Reliable', severity: 'success' as const },
+          ],
+          historicalScores: [],
+        },
+      ],
+      completedTaskCount: 1,
+      totalTaskCount: 1,
+    };
+
+    it('returns 200 with the individual student report', async () => {
+      mockGetIndividualStudentReport.mockResolvedValue(testReportResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getIndividualStudentReport(
+        mockAuthContext,
+        testAdminId,
+        targetUserId,
+        reportQuery,
+      );
+
+      const data = expectOkResponse(result);
+      expect(data.student.userId).toBe(targetUserId);
+      expect(data.administration.id).toBe(testAdminId);
+      expect(data.tasks).toHaveLength(1);
+      expect(data.completedTaskCount).toBe(1);
+      expect(data.totalTaskCount).toBe(1);
+    });
+
+    it('maps ApiError to typed 404', async () => {
+      mockGetIndividualStudentReport.mockRejectedValue(
+        new ApiError('Not found', { statusCode: StatusCodes.NOT_FOUND, code: ApiErrorCode.RESOURCE_NOT_FOUND }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getIndividualStudentReport(
+        mockAuthContext,
+        testAdminId,
+        targetUserId,
+        reportQuery,
+      );
+
+      expect(result.status).toBe(StatusCodes.NOT_FOUND);
+    });
+
+    it('maps ApiError to typed 403', async () => {
+      mockGetIndividualStudentReport.mockRejectedValue(
+        new ApiError('Forbidden', { statusCode: StatusCodes.FORBIDDEN, code: ApiErrorCode.AUTH_FORBIDDEN }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getIndividualStudentReport(
+        mockAuthContext,
+        testAdminId,
+        targetUserId,
+        reportQuery,
+      );
+
+      expect(result.status).toBe(StatusCodes.FORBIDDEN);
+    });
+
+    it('maps ApiError to typed 400', async () => {
+      mockGetIndividualStudentReport.mockRejectedValue(
+        new ApiError('Bad request', {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getIndividualStudentReport(
+        mockAuthContext,
+        testAdminId,
+        targetUserId,
+        reportQuery,
+      );
+
+      expect(result.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+
+    it('maps ApiError to typed 500', async () => {
+      mockGetIndividualStudentReport.mockRejectedValue(
+        new ApiError('Internal', {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      const result = await Controller.getIndividualStudentReport(
+        mockAuthContext,
+        testAdminId,
+        targetUserId,
+        reportQuery,
+      );
+
+      expect(result.status).toBe(StatusCodes.INTERNAL_SERVER_ERROR);
+    });
+
+    it('re-throws non-ApiError errors', async () => {
+      mockGetIndividualStudentReport.mockRejectedValue(new Error('unexpected'));
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+
+      await expect(
+        Controller.getIndividualStudentReport(mockAuthContext, testAdminId, targetUserId, reportQuery),
+      ).rejects.toThrow('unexpected');
+    });
+
+    it('passes authContext, administrationId, targetUserId, and query to the service', async () => {
+      mockGetIndividualStudentReport.mockResolvedValue(testReportResult);
+
+      const { AdministrationsController: Controller } = await import('./administrations.controller');
+      await Controller.getIndividualStudentReport(mockAuthContext, testAdminId, targetUserId, reportQuery);
+
+      expect(mockGetIndividualStudentReport).toHaveBeenCalledWith(
+        mockAuthContext,
+        testAdminId,
+        targetUserId,
+        reportQuery,
+      );
     });
   });
 });

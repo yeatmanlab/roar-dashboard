@@ -27,6 +27,20 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
   }
 
   /**
+   * Get family IDs for a specific user (active memberships only).
+   *
+   * @param userId - The user whose families to retrieve
+   * @returns Array of family IDs the user actively belongs to
+   */
+  async getFamilyIdsForUser(userId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ familyId: userFamilies.familyId })
+      .from(userFamilies)
+      .where(and(eq(userFamilies.userId, userId), isNull(userFamilies.leftOn)));
+    return rows.map((r) => r.familyId);
+  }
+
+  /**
    * Get users enrolled in a family with pagination and filtering
    * @param familyId - The family ID to filter users by
    * @param options - Pagination and filtering options

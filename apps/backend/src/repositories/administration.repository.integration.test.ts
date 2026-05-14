@@ -10,6 +10,7 @@ import { AdministrationFactory } from '../test-support/factories/administration.
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
 import { AdministrationClassFactory } from '../test-support/factories/administration-class.factory';
 import { AdministrationGroupFactory } from '../test-support/factories/administration-group.factory';
+import { ClassFactory } from '../test-support/factories/class.factory';
 import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
 import { TaskFactory } from '../test-support/factories/task.factory';
 import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
@@ -869,6 +870,73 @@ describe('AdministrationRepository', () => {
 
         expect(result.items).toHaveLength(1);
         expect(result.items[0]!.id).toBe(baseFixture.classInSchoolA.id);
+      });
+
+      it('uses the fga_filter_ids temp-table JOIN when class IDs are provided', async () => {
+        // Seed a second class in schoolA so the FGA filter has a non-trivial choice
+        // to make. Without the temp-table join filtering correctly, both classes
+        // would come back; with it, only the allow-listed one should appear.
+        const allowedClass = await ClassFactory.create({
+          name: 'Allowed Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        const forbiddenClass = await ClassFactory.create({
+          name: 'Forbidden Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'school',
+          baseFixture.schoolA.id,
+          defaultOptions,
+          // Allow `allowedClass` and the seeded `classInSchoolA`, but not `forbiddenClass`.
+          { classIds: [allowedClass.id, baseFixture.classInSchoolA.id] },
+        );
+
+        const ids = result.items.map((item) => item.id);
+        expect(ids).toContain(allowedClass.id);
+        expect(ids).toContain(baseFixture.classInSchoolA.id);
+        expect(ids).not.toContain(forbiddenClass.id);
+      });
+
+      it('pins JOIN cardinality with a single-id filter (regression guard against degenerate JOIN)', async () => {
+        // Defense-in-depth against a Drizzle SQL composition bug where the JOIN's
+        // ON predicate is dropped (degenerate CROSS JOIN) or the empty-INSERT
+        // branch silently produces extra rows. Pass exactly one id and assert the
+        // result is exactly one row — both `items.length` and `totalItems` from
+        // the COUNT(*) OVER() must agree.
+        const onlyAllowedClass = await ClassFactory.create({
+          name: 'Sole Allowed Class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        // Two more classes in the same school act as negative controls — the
+        // single-id filter should exclude them.
+        await ClassFactory.create({
+          name: 'Decoy Class A',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        await ClassFactory.create({
+          name: 'Decoy Class B',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+
+        const result = await repository.getTreeNodes(
+          baseFixture.administrationAssignedToDistrict.id,
+          'school',
+          baseFixture.schoolA.id,
+          defaultOptions,
+          { classIds: [onlyAllowedClass.id] },
+        );
+
+        expect(result.items).toHaveLength(1);
+        expect(result.totalItems).toBe(1);
+        expect(result.items[0]!.id).toBe(onlyAllowedClass.id);
       });
     });
 

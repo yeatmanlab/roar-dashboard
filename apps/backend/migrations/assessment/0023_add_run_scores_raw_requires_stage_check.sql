@@ -1,0 +1,1 @@
+ALTER TABLE "app"."run_scores" ADD CONSTRAINT "run_scores_raw_requires_stage" CHECK ("app"."run_scores"."type" <> 'raw'::app.score_type OR "app"."run_scores"."assessment_stage" IS NOT NULL);

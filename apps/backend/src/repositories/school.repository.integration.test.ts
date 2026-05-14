@@ -213,6 +213,36 @@ describe('SchoolRepository', () => {
       });
     });
 
+    it('excludes rostering-ended users from school user counts (#1742)', async () => {
+      // School with one active and one decommissioned user. The user-count
+      // subquery joins through `users` with isActiveRoster, so the ended
+      // user must drop out of the count.
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'School with Rostering-Ended User Counts',
+        parentOrgId: baseFixture.district.id,
+      });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveSchoolStudent1742' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedSchoolStudent1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserOrgFactory.create({ userId: activeStudent.id, orgId: school.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: endedStudent.id, orgId: school.id, role: UserRole.STUDENT });
+
+      const result = (await repository.listAll({
+        page: 1,
+        perPage: 1000,
+        embedCounts: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const schoolResult = result.items.find((s) => s.id === school.id);
+      expect(schoolResult).toBeDefined();
+      expect(schoolResult?.counts?.users).toBe(1);
+    });
+
     it('includes ended classes in counts when includeEnded=true', async () => {
       // Create a school with one active class and one ended class
       const school = await OrgFactory.create({
@@ -863,6 +893,49 @@ describe('SchoolRepository', () => {
         expect(result.totalItems).toBe(0);
         expect(result.items).toEqual([]);
       });
+    });
+  });
+
+  describe('getDistinctRootOrgIds', () => {
+    // Base fixture school → district mapping:
+    //   schoolA          → district
+    //   schoolB          → district
+    //   schoolInDistrictB → districtB
+
+    it('returns empty array when called with no ids', async () => {
+      const result = await repository.getDistinctRootOrgIds([]);
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns the district for a single school', async () => {
+      const result = await repository.getDistinctRootOrgIds([baseFixture.schoolA.id]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('deduplicates when multiple schools share the same district', async () => {
+      // schoolA and schoolB both belong to district
+      const result = await repository.getDistinctRootOrgIds([baseFixture.schoolA.id, baseFixture.schoolB.id]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(baseFixture.district.id);
+    });
+
+    it('returns multiple districts when schools span different roots', async () => {
+      const result = await repository.getDistinctRootOrgIds([baseFixture.schoolA.id, baseFixture.schoolInDistrictB.id]);
+
+      const ids = result.map((r) => r.id);
+      expect(ids).toHaveLength(2);
+      expect(ids).toContain(baseFixture.district.id);
+      expect(ids).toContain(baseFixture.districtB.id);
+    });
+
+    it('returns empty array for a non-existent school id', async () => {
+      const result = await repository.getDistinctRootOrgIds(['00000000-0000-0000-0000-000000000000']);
+
+      expect(result).toEqual([]);
     });
   });
 });

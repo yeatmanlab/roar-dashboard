@@ -1,14 +1,18 @@
-import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray } from 'drizzle-orm';
+import { and, or, eq, sql, isNull, isNotNull, asc, desc, countDistinct, inArray, lte } from 'drizzle-orm';
 import type { SQL, Column } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   users,
   userOrgs,
   userClasses,
   userGroups,
+  userFamilies,
+  families,
   orgs,
   classes,
   groups,
+  administrations,
   administrationOrgs,
   administrationClasses,
   administrationGroups,
@@ -31,7 +35,8 @@ import { UserRole } from '../enums/user-role.enum';
 import { PROGRESS_PRIORITY_TO_STATUS } from '../constants/progress-status';
 import type { ProgressStatus, ProgressStatusPriority } from '../constants/progress-status';
 import type { PaginatedResult } from './base.repository';
-import { isEnrollmentActive } from './utils/enrollment.utils';
+import { isEnrollmentActive, isActiveInFamily, isActiveRoster } from './utils/enrollment.utils';
+import { alias } from 'drizzle-orm/pg-core';
 
 /**
  * Scope parameters for report queries.
@@ -176,6 +181,147 @@ export interface RunScoreRow {
   taskVariantId: string;
   scoreName: string;
   scoreValue: string;
+}
+
+/** Score field type used in dynamic sort/filter on the student-scores endpoint. */
+export type StudentScoresFieldType = 'rawScore' | 'percentile' | 'standardScore' | 'supportLevel';
+
+/**
+ * Parameters describing a single dynamic score-field sort or filter.
+ *
+ * The variant is the lowest-orderIndex variant of a multi-variant task — the
+ * "primary variant". Sort and filter operate on its score values; students
+ * with no score for the primary variant are sorted last (NULLS LAST).
+ */
+export interface StudentScoresFieldRef {
+  /** The task variant to read scores from (primary variant of the task). */
+  taskVariantId: string;
+  /** The task slug — used for scoring-config lookups (cutoffs, support level). */
+  taskSlug: string;
+  /** The score field type to read. */
+  fieldType: StudentScoresFieldType;
+  /**
+   * The scoring version for this variant (from task_variant_parameters), or null
+   * for the legacy v0 path. Determines which cutoff/threshold table to use.
+   */
+  scoringVersion: number | null;
+}
+
+/** Operator for student-scores filter conditions on score fields. */
+export type StudentScoresFilterOperator = 'eq' | 'neq' | 'gte' | 'lte' | 'in';
+
+/**
+ * A filter on a dynamic score field. `values` is always an array — single-value
+ * operators use a one-element array; `in` may use multiple. For `supportLevel`
+ * filters, values are support level priorities (1, 2, 3) rather than the string
+ * names — the service translates names → priorities before passing to the repo.
+ */
+export interface StudentScoresFieldFilter extends StudentScoresFieldRef {
+  operator: StudentScoresFilterOperator;
+  /** String for numeric fields (cast in SQL); priority numbers for supportLevel. */
+  values: string[];
+}
+
+/**
+ * Resolved scoring cutoffs/thresholds for a single variant, ready to be emitted
+ * into a SQL CASE expression. Built from the scoring config in JS at query-build
+ * time.
+ *
+ * - `assessmentSupportLevelField`: when set, the variant uses
+ *   classification.type === 'assessment-computed' and its support level lives
+ *   in run_scores under this field name.
+ * - `percentileCutoffs` / `rawScoreThresholds`: present when classification is
+ *   `percentile-then-rawscore`. `null` for tasks with classification.type
+ *   `'none'` or unknown taskSlug — the support level is unclassifiable.
+ * - `percentileBelowGrade`: from the scoring config; null means "use percentile
+ *   for all grades".
+ */
+export interface ResolvedScoringRules {
+  assessmentSupportLevelField: string | null;
+  percentileCutoffs: { achieved: number; developing: number } | null;
+  rawScoreThresholds: { above: number; some: number } | null;
+  percentileBelowGrade: number | null;
+  /** Resolved field names for the variant + grade-aware fallback. */
+  percentileFieldNames: string[];
+  rawScoreFieldNames: string[];
+  standardScoreFieldNames: string[];
+}
+
+/**
+ * One historical run row for the individual-student-report endpoint.
+ *
+ * The repository returns one of these per (administration, taskVariant) the
+ * student has a completed, reporting-eligible run for — across all
+ * administrations whose `dateStart` is on or before a target date.
+ *
+ * The service layer joins these with the per-run score rows (returned
+ * separately by `getScoresForRunIds`) to assemble the per-task
+ * `historicalScores` arrays in the response.
+ */
+export interface HistoricalRunRow {
+  runId: string;
+  userId: string;
+  taskId: string;
+  taskVariantId: string;
+  administrationId: string;
+  administrationName: string;
+  administrationDateStart: Date;
+  completedAt: Date;
+  reliableRun: boolean | null;
+  engagementFlags: string[];
+}
+
+/**
+ * Per-administration metadata returned by `getStudentAdministrations`.
+ *
+ * One row per administration the student has either started a run in or
+ * remains assigned to via their org/class/group memberships, ordered by
+ * `dateStart` ascending. The service joins this with task and score data
+ * to populate the per-administration `tasks` array of the guardian report.
+ */
+export interface StudentAdministrationRow {
+  id: string;
+  name: string;
+  dateStart: Date;
+  dateEnd: Date;
+}
+
+/**
+ * A single row from the paginated student-scores query — student demographics
+ * plus a flat list of (variantId, scoreName, scoreValue) score rows for that
+ * student.
+ *
+ * Run-level metadata (`reliable`, `engagementFlags`, `runId`) is keyed by
+ * variantId — a student has at most one selected completed run per variant
+ * (the one used to populate scores).
+ */
+export interface StudentScoreQueryRow {
+  userId: string;
+  assessmentPid: string | null;
+  username: string | null;
+  email: string | null;
+  nameFirst: string | null;
+  nameLast: string | null;
+  grade: string | null;
+  /** Demographic fields needed for condition evaluation. */
+  statusEll: string | null;
+  statusIep: string | null;
+  statusFrl: string | null;
+  dob: string | null;
+  gender: string | null;
+  race: string | null;
+  hispanicEthnicity: boolean | null;
+  homeLanguage: string | null;
+  /**
+   * Map of taskVariantId → run metadata for the selected completed run.
+   *
+   * `completedAt` is the run's completion timestamp; included so the repository
+   * can pick the most recent completed run per (user, variant) without an extra
+   * lookup, and surfaced for any consumer that wants to display recency.
+   */
+  runs: Map<string, { runId: string; reliable: boolean | null; engagementFlags: string[]; completedAt: Date | null }>;
+  /** Map of taskVariantId → score field name → value (raw text from run_scores). */
+  scores: Map<string, Map<string, string>>;
 }
 
 /**
@@ -855,6 +1001,12 @@ export class ReportRepository {
    * by the `prevent_rostered_entity_delete` DB trigger.
    */
   private buildStudentInScopeQuery(scope: ReportScope) {
+    // Each UNION branch joins through to `users` so the user-level
+    // `isActiveRoster(users)` filter can exclude rostering-ended students
+    // (#1742). This is a separate, harder boundary than the existing
+    // entity-level `isNull(<entity>.rosteringEnded)` filters: a user whose
+    // own rostering has ended is decommissioned regardless of which entity
+    // their student-role enrollment is attached to.
     switch (scope.scopeType) {
       case EntityType.DISTRICT:
         // Students in user_orgs where org path is at or below the district
@@ -864,11 +1016,13 @@ export class ReportRepository {
           .select({ userId: userOrgs.userId })
           .from(userOrgs)
           .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
               isEnrollmentActive(userOrgs),
               isNull(orgs.rosteringEnded),
+              isActiveRoster(users),
               sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
             ),
           )
@@ -877,11 +1031,13 @@ export class ReportRepository {
               .select({ userId: userClasses.userId })
               .from(userClasses)
               .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
                   isEnrollmentActive(userClasses),
                   isNull(classes.rosteringEnded),
+                  isActiveRoster(users),
                   sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
                 ),
               ),
@@ -894,11 +1050,13 @@ export class ReportRepository {
           .select({ userId: userOrgs.userId })
           .from(userOrgs)
           .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
           .where(
             and(
               eq(userOrgs.role, UserRole.STUDENT),
               isEnrollmentActive(userOrgs),
               isNull(orgs.rosteringEnded),
+              isActiveRoster(users),
               eq(userOrgs.orgId, scope.scopeId),
             ),
           )
@@ -907,11 +1065,13 @@ export class ReportRepository {
               .select({ userId: userClasses.userId })
               .from(userClasses)
               .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
               .where(
                 and(
                   eq(userClasses.role, UserRole.STUDENT),
                   isEnrollmentActive(userClasses),
                   isNull(classes.rosteringEnded),
+                  isActiveRoster(users),
                   eq(classes.schoolId, scope.scopeId),
                 ),
               ),
@@ -922,11 +1082,13 @@ export class ReportRepository {
           .select({ userId: userClasses.userId })
           .from(userClasses)
           .innerJoin(classes, eq(userClasses.classId, classes.id))
+          .innerJoin(users, eq(users.id, userClasses.userId))
           .where(
             and(
               eq(userClasses.role, UserRole.STUDENT),
               isEnrollmentActive(userClasses),
               isNull(classes.rosteringEnded),
+              isActiveRoster(users),
               eq(userClasses.classId, scope.scopeId),
             ),
           );
@@ -936,17 +1098,201 @@ export class ReportRepository {
           .select({ userId: userGroups.userId })
           .from(userGroups)
           .innerJoin(groups, eq(userGroups.groupId, groups.id))
+          .innerJoin(users, eq(users.id, userGroups.userId))
           .where(
             and(
               eq(userGroups.role, UserRole.STUDENT),
               isEnrollmentActive(userGroups),
               isNull(groups.rosteringEnded),
+              isActiveRoster(users),
               eq(userGroups.groupId, scope.scopeId),
             ),
           );
 
       default:
         // Exhaustive check — this should never be reached since ScopeType is validated by Zod
+        throw new Error(`Unsupported scope type: ${scope.scopeType satisfies never}`);
+    }
+  }
+
+  /**
+   * Count distinct students excluded from the report due to rostering-ended state.
+   *
+   * Mirrors `buildStudentInScopeQuery`'s FROM/JOIN shape, but with the
+   * rostering-ended predicates **inverted** so we count the users that would
+   * otherwise be in scope but are filtered out for either reason:
+   *   1. The user's own `rosteringEnded` is set in the past (`<= NOW()`), OR
+   *   2. The in-scope parent entity's `rosteringEnded` is set in the past.
+   *
+   * The two reasons share the `exclusions.rosteringEnded` key in the response
+   * (#1742) — frontend messaging is the same ("no longer active on ROAR") and
+   * users excluded for both are counted once via `COUNT(DISTINCT users.id)`.
+   *
+   * At district / school scope the count is anti-joined against
+   * `buildStudentInScopeQuery` so a student who is excluded via one branch
+   * (e.g., rostering-ended class) but visible via another (e.g., active org
+   * enrollment) is NOT counted — that student appears in `items`, so
+   * counting them in `exclusions` would surface a false positive in the
+   * frontend "N students excluded" notice. Class / group scopes use a
+   * single query (no UNION), so the dual-enrollment case can't occur.
+   *
+   * Designed to run in parallel with the main report query via `Promise.all`,
+   * adding one round-trip rather than serializing.
+   */
+  async countRosteringEndedExclusions(scope: ReportScope): Promise<number> {
+    // Predicate that matches users excluded by EITHER reason:
+    //   - users.rostering_ended <= NOW()  → user-level decommission
+    //   - <entity>.rostering_ended <= NOW()  → entity-level decommission
+    const userExcluded = and(isNotNull(users.rosteringEnded), lte(users.rosteringEnded, sql`NOW()`));
+
+    // Postgres returns `count` as a bigint, which `pg` surfaces as a string
+    // to avoid silent overflow. We always cast to `Number` before returning
+    // — distinct-user counts won't realistically exceed Number.MAX_SAFE_INTEGER
+    // at our scale, and the API contract types the field as `number`.
+
+    // Anti-join helper: at district / school scope, a student may appear in
+    // BOTH an excluded branch (e.g., a rostering-ended class) AND an
+    // in-scope branch (e.g., an active org enrollment). Without subtracting
+    // the in-scope set we'd surface a false positive in
+    // `exclusions.rosteringEnded` — the student is visible in `items` AND
+    // counted as "excluded". `buildStudentInScopeQuery` already returns
+    // exactly the set of students visible in `items` (rostering-ended
+    // branches are filtered out there), so a LEFT JOIN + IS NULL exactly
+    // expresses "excluded AND not visible elsewhere".
+    //
+    // CLASS / GROUP scopes use a single query (no UNION across branches),
+    // so the same student can't appear in both an excluded and an in-scope
+    // branch — the anti-join is unnecessary there.
+
+    switch (scope.scopeType) {
+      case EntityType.DISTRICT: {
+        const orgsExcluded = and(isNotNull(orgs.rosteringEnded), lte(orgs.rosteringEnded, sql`NOW()`));
+        const classesExcluded = and(isNotNull(classes.rosteringEnded), lte(classes.rosteringEnded, sql`NOW()`));
+
+        const excludedUnion = this.db
+          .selectDistinct({ userId: userOrgs.userId })
+          .from(userOrgs)
+          .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
+          .where(
+            and(
+              eq(userOrgs.role, UserRole.STUDENT),
+              isEnrollmentActive(userOrgs),
+              sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
+              or(userExcluded, orgsExcluded),
+            ),
+          )
+          .union(
+            this.db
+              .selectDistinct({ userId: userClasses.userId })
+              .from(userClasses)
+              .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
+              .where(
+                and(
+                  eq(userClasses.role, UserRole.STUDENT),
+                  isEnrollmentActive(userClasses),
+                  sql`${classes.orgPath} <@ (SELECT path FROM app.orgs WHERE id = ${scope.scopeId})`,
+                  or(userExcluded, classesExcluded),
+                ),
+              ),
+          )
+          .as('excluded');
+
+        const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+
+        const [row] = await this.db
+          .select({ count: countDistinct(excludedUnion.userId) })
+          .from(excludedUnion)
+          .leftJoin(studentsInScope, eq(excludedUnion.userId, studentsInScope.userId))
+          .where(isNull(studentsInScope.userId));
+        return Number(row?.count ?? 0);
+      }
+
+      case EntityType.SCHOOL: {
+        const orgsExcluded = and(isNotNull(orgs.rosteringEnded), lte(orgs.rosteringEnded, sql`NOW()`));
+        const classesExcluded = and(isNotNull(classes.rosteringEnded), lte(classes.rosteringEnded, sql`NOW()`));
+
+        const excludedUnion = this.db
+          .selectDistinct({ userId: userOrgs.userId })
+          .from(userOrgs)
+          .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+          .innerJoin(users, eq(users.id, userOrgs.userId))
+          .where(
+            and(
+              eq(userOrgs.role, UserRole.STUDENT),
+              isEnrollmentActive(userOrgs),
+              eq(userOrgs.orgId, scope.scopeId),
+              or(userExcluded, orgsExcluded),
+            ),
+          )
+          .union(
+            this.db
+              .selectDistinct({ userId: userClasses.userId })
+              .from(userClasses)
+              .innerJoin(classes, eq(userClasses.classId, classes.id))
+              .innerJoin(users, eq(users.id, userClasses.userId))
+              .where(
+                and(
+                  eq(userClasses.role, UserRole.STUDENT),
+                  isEnrollmentActive(userClasses),
+                  eq(classes.schoolId, scope.scopeId),
+                  or(userExcluded, classesExcluded),
+                ),
+              ),
+          )
+          .as('excluded');
+
+        const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+
+        const [row] = await this.db
+          .select({ count: countDistinct(excludedUnion.userId) })
+          .from(excludedUnion)
+          .leftJoin(studentsInScope, eq(excludedUnion.userId, studentsInScope.userId))
+          .where(isNull(studentsInScope.userId));
+        return Number(row?.count ?? 0);
+      }
+
+      case EntityType.CLASS: {
+        const classesExcluded = and(isNotNull(classes.rosteringEnded), lte(classes.rosteringEnded, sql`NOW()`));
+
+        const [row] = await this.db
+          .select({ count: countDistinct(userClasses.userId) })
+          .from(userClasses)
+          .innerJoin(classes, eq(userClasses.classId, classes.id))
+          .innerJoin(users, eq(users.id, userClasses.userId))
+          .where(
+            and(
+              eq(userClasses.role, UserRole.STUDENT),
+              isEnrollmentActive(userClasses),
+              eq(userClasses.classId, scope.scopeId),
+              or(userExcluded, classesExcluded),
+            ),
+          );
+        return Number(row?.count ?? 0);
+      }
+
+      case EntityType.GROUP: {
+        const groupsExcluded = and(isNotNull(groups.rosteringEnded), lte(groups.rosteringEnded, sql`NOW()`));
+
+        const [row] = await this.db
+          .select({ count: countDistinct(userGroups.userId) })
+          .from(userGroups)
+          .innerJoin(groups, eq(userGroups.groupId, groups.id))
+          .innerJoin(users, eq(users.id, userGroups.userId))
+          .where(
+            and(
+              eq(userGroups.role, UserRole.STUDENT),
+              isEnrollmentActive(userGroups),
+              eq(userGroups.groupId, scope.scopeId),
+              or(userExcluded, groupsExcluded),
+            ),
+          );
+        return Number(row?.count ?? 0);
+      }
+
+      default:
+        // Exhaustive check — Zod-validated upstream.
         throw new Error(`Unsupported scope type: ${scope.scopeType satisfies never}`);
     }
   }
@@ -961,8 +1307,12 @@ export class ReportRepository {
    * the user's school from their org membership regardless of which schools are part of
    * the administration. For a user enrolled in multiple schools, the alphabetically first
    * school may not be the most relevant one for the current report context.
+   *
+   * Public so that other repository methods (e.g., the student-scores listing) can
+   * reuse the same lookup at district scope without duplicating the two-phase
+   * user_orgs → user_classes fallback.
    */
-  private async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
+  async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
     const rows = await this.db
       .selectDistinct({
         userId: userOrgs.userId,
@@ -1440,4 +1790,952 @@ export class ReportRepository {
 
     return rows;
   }
+
+  /**
+   * Get paginated per-student score rows for an administration.
+   *
+   * Returns one row per student in scope, with run metadata (`runs`) and raw
+   * score values (`scores`) keyed by `taskVariantId` for every variant in the
+   * filtered `taskMetas` set. The service layer assembles the final response
+   * shape (deduping per taskId, computing supportLevel from scores, formatting).
+   *
+   * Dynamic sort/filter on `scores.<taskId>.<field>` is implemented via
+   * per-variant LEFT JOIN subqueries against `runs` + `run_scores`. The sort
+   * applies to one variant at most (the primary variant for the task selected
+   * by the service); each filter targets one (variant, fieldType) pair. For
+   * `supportLevel`, the SQL CASE is built from `scoringRulesByVariant` — the
+   * service pre-resolves the scoring config's cutoffs/thresholds and passes
+   * them in so the repository stays decoupled from the scoring service.
+   *
+   * @param administrationId - The administration ID
+   * @param scope - The scope to query students within
+   * @param taskMetas - Task metadata after taskId filtering
+   * @param options - Pagination + static sort column
+   * @param filterCondition - Optional SQL filter on user-level columns
+   * @param sortField - Optional dynamic score-field sort
+   * @param scoreFieldFilters - Optional dynamic score-field filters
+   * @param scoringRulesByVariant - Resolved scoring rules per variant for supportLevel CASE generation
+   * @returns Paginated student rows with run metadata and score values
+   */
+  async getStudentScores(
+    administrationId: string,
+    scope: ReportScope,
+    taskMetas: ReportTaskMeta[],
+    options: ReportPaginationOptions,
+    filterCondition?: SQL,
+    sortField?: StudentScoresFieldRef | null,
+    scoreFieldFilters?: StudentScoresFieldFilter[],
+    scoringRulesByVariant?: Map<string, ResolvedScoringRules>,
+  ): Promise<PaginatedResult<StudentScoreQueryRow>> {
+    const { page, perPage } = options;
+    const offset = (page - 1) * perPage;
+
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('students_in_scope');
+
+    // 1. Determine which (variant, fieldType) joins are needed.
+    // Sort and filters may target the same variant — we still build separate join
+    // aliases per (variant, fieldType, joinPurpose) for clarity. PostgreSQL's
+    // planner collapses redundancy.
+    interface JoinPlan {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle subquery generics
+      sub: any;
+      alias: string;
+      // SQL expression that evaluates to a comparable value (numeric for raw/pct/std,
+      // priority integer for supportLevel) on the joined row.
+      expr: SQL;
+    }
+    const joins: JoinPlan[] = [];
+
+    /** Build a runs+run_scores subquery selecting `value` for one (variant, name) combo. */
+    const buildScoreSub = (alias: string, variantId: string, scoreNames: string[]) =>
+      this.db
+        .select({
+          userId: fdwRuns.userId,
+          value: fdwRunScores.value,
+        })
+        .from(fdwRuns)
+        .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+        .where(
+          and(
+            eq(fdwRuns.administrationId, administrationId),
+            eq(fdwRuns.taskVariantId, variantId),
+            isNull(fdwRuns.deletedAt),
+            isNull(fdwRuns.abortedAt),
+            eq(fdwRuns.useForReporting, true),
+            isNotNull(fdwRuns.completedAt),
+            scoreNames.length === 1 ? eq(fdwRunScores.name, scoreNames[0]!) : inArray(fdwRunScores.name, scoreNames),
+          ),
+        )
+        .as(alias);
+
+    /** Add a numeric (rawScore/percentile/standardScore) join for a field ref. */
+    const addNumericJoin = (alias: string, ref: StudentScoresFieldRef): SQL | null => {
+      const rules = scoringRulesByVariant?.get(ref.taskVariantId);
+      const fieldNames =
+        ref.fieldType === 'rawScore'
+          ? rules?.rawScoreFieldNames
+          : ref.fieldType === 'percentile'
+            ? rules?.percentileFieldNames
+            : ref.fieldType === 'standardScore'
+              ? rules?.standardScoreFieldNames
+              : undefined;
+      if (!fieldNames || fieldNames.length === 0) {
+        // Task has no resolvable field for this type (e.g., letter has no percentile)
+        return null;
+      }
+      const sub = buildScoreSub(alias, ref.taskVariantId, fieldNames);
+      const expr = numericValueSql(sub.value);
+      joins.push({ sub, alias, expr });
+      return expr;
+    };
+
+    /** Add support-level priority join(s) for a field ref. Returns the priority SQL or null. */
+    const addSupportLevelJoin = (aliasPrefix: string, ref: StudentScoresFieldRef): SQL | null => {
+      const rules = scoringRulesByVariant?.get(ref.taskVariantId);
+      if (!rules) return null;
+
+      // Assessment-computed: one join on the supportLevel field, mapped to priority
+      if (rules.assessmentSupportLevelField) {
+        const sub = buildScoreSub(`${aliasPrefix}_sl`, ref.taskVariantId, [rules.assessmentSupportLevelField]);
+        const expr = sql`CASE ${sub.value}
+          WHEN 'achievedSkill' THEN 3
+          WHEN 'developingSkill' THEN 2
+          WHEN 'needsExtraSupport' THEN 1
+          ELSE NULL::integer
+        END`;
+        joins.push({ sub, alias: `${aliasPrefix}_sl`, expr });
+        return expr;
+      }
+
+      // Percentile-then-rawscore: needs percentile + rawScore joins (each may be empty)
+      const pctNames = rules.percentileFieldNames;
+      const rawNames = rules.rawScoreFieldNames;
+      let pctSql: SQL | null = null;
+      let rawSql: SQL | null = null;
+
+      if (pctNames.length > 0 && rules.percentileCutoffs) {
+        const sub = buildScoreSub(`${aliasPrefix}_pct`, ref.taskVariantId, pctNames);
+        joins.push({ sub, alias: `${aliasPrefix}_pct`, expr: numericValueSql(sub.value) });
+        pctSql = numericValueSql(sub.value);
+      }
+      if (rawNames.length > 0 && rules.rawScoreThresholds) {
+        const sub = buildScoreSub(`${aliasPrefix}_raw`, ref.taskVariantId, rawNames);
+        joins.push({ sub, alias: `${aliasPrefix}_raw`, expr: numericValueSql(sub.value) });
+        rawSql = numericValueSql(sub.value);
+      }
+
+      return buildSupportLevelPrioritySql(rules, gradeAsIntSql(users.grade), pctSql, rawSql);
+    };
+
+    // 2. Build sort expression (via dynamic field if requested)
+    let dynamicSortExpr: SQL | undefined;
+    if (sortField) {
+      const sortAlias = `sort_${joins.length}`;
+      const expr =
+        sortField.fieldType === 'supportLevel'
+          ? addSupportLevelJoin(sortAlias, sortField)
+          : addNumericJoin(`${sortAlias}_${sortField.fieldType}`, sortField);
+      if (expr) dynamicSortExpr = expr;
+    }
+
+    // 3. Build score-field filter conditions
+    const fieldFilterConditions: SQL[] = [];
+    if (scoreFieldFilters) {
+      for (let i = 0; i < scoreFieldFilters.length; i++) {
+        const f = scoreFieldFilters[i]!;
+        const filterAlias = `filt_${i}`;
+        const valueExpr =
+          f.fieldType === 'supportLevel'
+            ? addSupportLevelJoin(filterAlias, f)
+            : addNumericJoin(`${filterAlias}_${f.fieldType}`, f);
+        if (!valueExpr) continue; // No resolvable scores → filter has no effect (matches nothing)
+        const condition = buildScoreFieldFilterCondition(valueExpr, f.operator, f.values);
+        if (condition) fieldFilterConditions.push(condition);
+      }
+    }
+    const fieldFilterSql = fieldFilterConditions.length > 0 ? and(...fieldFilterConditions) : undefined;
+
+    // 4. Combined WHERE: user-level + score-field filters
+    const combinedWhere = and(filterCondition, fieldFilterSql);
+
+    // 5. School name lookup for sorting/filtering by user.schoolName at district scope.
+    // Uses a correlated lateral subquery against user_orgs/orgs for SQL-side sortability.
+    const schoolNameSql =
+      scope.scopeType === EntityType.DISTRICT
+        ? sql<string>`(
+            SELECT MIN(${orgs.name}) FROM ${orgs}
+            INNER JOIN ${userOrgs} ON ${userOrgs.orgId} = ${orgs.id}
+            WHERE ${userOrgs.userId} = ${users.id}
+              AND ${orgs.orgType} = ${OrgType.SCHOOL}
+              AND ${isEnrollmentActive(userOrgs)}
+              AND ${orgs.rosteringEnded} IS NULL
+          )`
+        : sql<string | null>`NULL::text`;
+
+    // 6. Count query (DISTINCT on user.id because filter joins may multiply rows)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle dynamic chain
+    let countQuery: any = this.db
+      .select({ total: countDistinct(users.id) })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
+    for (const j of joins) {
+      countQuery = countQuery.leftJoin(j.sub, eq(users.id, j.sub.userId));
+    }
+    const countResult = await countQuery.where(combinedWhere);
+    const totalItems = countResult[0]?.total ?? 0;
+
+    if (totalItems === 0) {
+      return { items: [], totalItems: 0 };
+    }
+
+    // 7. Paginated data query
+    const sortFn = options.sortDirection === SortOrder.DESC ? desc : asc;
+    const baseSelect = {
+      userId: users.id,
+      assessmentPid: users.assessmentPid,
+      username: users.username,
+      email: users.email,
+      nameFirst: users.nameFirst,
+      nameLast: users.nameLast,
+      grade: users.grade,
+      statusEll: users.statusEll,
+      statusIep: users.statusIep,
+      statusFrl: users.statusFrl,
+      dob: users.dob,
+      gender: users.gender,
+      race: users.race,
+      hispanicEthnicity: users.hispanicEthnicity,
+      homeLanguage: users.homeLanguage,
+      schoolName: schoolNameSql,
+    };
+
+    // When sorting by a dynamic expression, include it in the SELECT list so
+    // PostgreSQL's DISTINCT-with-ORDER-BY rule is satisfied.
+    const selectFields = dynamicSortExpr ? { ...baseSelect, _sort_expr: dynamicSortExpr } : baseSelect;
+    const primarySort = dynamicSortExpr ?? options.sortColumn ?? users.nameLast;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle dynamic chain
+    let dataQuery: any = this.db
+      .selectDistinct(selectFields)
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId));
+    for (const j of joins) {
+      dataQuery = dataQuery.leftJoin(j.sub, eq(users.id, j.sub.userId));
+    }
+
+    const studentRows = await dataQuery
+      .where(combinedWhere)
+      .orderBy(sql`${sortFn(primarySort)} NULLS LAST`, asc(users.id))
+      .limit(perPage)
+      .offset(offset);
+
+    if (studentRows.length === 0) {
+      return { items: [], totalItems };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dataQuery is any from dynamic chain
+    const studentIds = studentRows.map((s: any) => s.userId as string);
+    const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+
+    // 8. Bulk fetch run metadata (reliable, engagementFlags) for displayed students
+    // and bulk fetch all run scores so the service can assemble per-task entries.
+    const runsByStudent = new Map<string, StudentScoreQueryRow['runs']>();
+    const scoresByStudent = new Map<string, Map<string, Map<string, string>>>();
+
+    if (taskVariantIds.length > 0) {
+      const runRows = await this.db
+        .select({
+          userId: fdwRuns.userId,
+          taskVariantId: fdwRuns.taskVariantId,
+          runId: fdwRuns.id,
+          reliableRun: fdwRuns.reliableRun,
+          engagementFlags: fdwRuns.engagementFlags,
+          completedAt: fdwRuns.completedAt,
+        })
+        .from(fdwRuns)
+        .where(
+          and(
+            eq(fdwRuns.administrationId, administrationId),
+            inArray(fdwRuns.userId, studentIds),
+            inArray(fdwRuns.taskVariantId, taskVariantIds),
+            isNull(fdwRuns.deletedAt),
+            isNull(fdwRuns.abortedAt),
+            eq(fdwRuns.useForReporting, true),
+            isNotNull(fdwRuns.completedAt),
+          ),
+        );
+
+      // Pick the most recent completed run per (user, variant) — defensive against
+      // the rare case where multiple useForReporting runs exist (see getCompletedRunScores).
+      // Tracking completedAt directly in the map value lets the comparison stay O(1)
+      // per row instead of scanning runRows on every duplicate.
+      for (const r of runRows) {
+        if (!runsByStudent.has(r.userId)) runsByStudent.set(r.userId, new Map());
+        const studentRuns = runsByStudent.get(r.userId)!;
+        const existing = studentRuns.get(r.taskVariantId);
+        const existingCompletedAt = existing?.completedAt ?? null;
+        if (!existing || (r.completedAt && existingCompletedAt && r.completedAt > existingCompletedAt)) {
+          studentRuns.set(r.taskVariantId, {
+            runId: r.runId,
+            reliable: r.reliableRun,
+            engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+            completedAt: r.completedAt,
+          });
+        }
+      }
+
+      // Collect the selected run IDs from the deduped map (one per user/variant).
+      const selectedRunIds: string[] = [];
+      for (const studentRuns of runsByStudent.values()) {
+        for (const meta of studentRuns.values()) {
+          selectedRunIds.push(meta.runId);
+        }
+      }
+      if (selectedRunIds.length > 0) {
+        const scoreRows = await this.db
+          .select({
+            userId: fdwRuns.userId,
+            taskVariantId: fdwRuns.taskVariantId,
+            scoreName: fdwRunScores.name,
+            scoreValue: fdwRunScores.value,
+          })
+          .from(fdwRuns)
+          .innerJoin(fdwRunScores, eq(fdwRuns.id, fdwRunScores.runId))
+          .where(inArray(fdwRuns.id, selectedRunIds));
+
+        for (const row of scoreRows) {
+          if (!scoresByStudent.has(row.userId)) scoresByStudent.set(row.userId, new Map());
+          const variantMap = scoresByStudent.get(row.userId)!;
+          if (!variantMap.has(row.taskVariantId)) variantMap.set(row.taskVariantId, new Map());
+          variantMap.get(row.taskVariantId)!.set(row.scoreName, row.scoreValue);
+        }
+      }
+    }
+
+    // 9. Assemble result rows
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dataQuery is any from dynamic chain
+    const items: StudentScoreQueryRow[] = studentRows.map((student: any) => ({
+      userId: student.userId,
+      assessmentPid: student.assessmentPid,
+      username: student.username,
+      email: student.email,
+      nameFirst: student.nameFirst,
+      nameLast: student.nameLast,
+      grade: student.grade,
+      statusEll: student.statusEll,
+      statusIep: student.statusIep,
+      statusFrl: student.statusFrl,
+      dob: student.dob,
+      gender: student.gender,
+      race: student.race,
+      hispanicEthnicity: student.hispanicEthnicity,
+      homeLanguage: student.homeLanguage,
+      runs: runsByStudent.get(student.userId) ?? new Map(),
+      scores: scoresByStudent.get(student.userId) ?? new Map(),
+    }));
+
+    return { items, totalItems };
+  }
+
+  /**
+   * Verify that a student is in the requested scope as a STUDENT-role enrollment
+   * AND has not had their roster ended.
+   *
+   * Two checks combined:
+   * 1. The user's enrollment passes `buildStudentInScopeQuery` — they appear as
+   *    a student in the scope's org/class/group hierarchy and the underlying
+   *    org/class/group does not have `rosteringEnded` set.
+   * 2. The user record itself does not have `rosteringEnded` set.
+   *
+   * Returns `true` only when both pass. The service uses this to surface a 404
+   * for individual-student-report requests targeting a user not in scope (or
+   * whose own roster has ended), as required by the ticket.
+   */
+  async verifyStudentInScope(scope: ReportScope, userId: string): Promise<boolean> {
+    const studentsInScope = this.buildStudentInScopeQuery(scope).as('sis');
+
+    const rows = await this.db
+      .select({ userId: users.id })
+      .from(users)
+      .innerJoin(studentsInScope, eq(users.id, studentsInScope.userId))
+      // Use the shared `isActiveRoster` helper so this endpoint applies the
+      // same "future-end = still active" semantics as every other rostering-
+      // ended filter site. Previously this used `isNull(users.rosteringEnded)`,
+      // which would 404 a student whose roster end is set in the future even
+      // though the list/overview reporting endpoints would still include them.
+      .where(and(eq(users.id, userId), isActiveRoster(users)))
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  /**
+   * Fetch historical run rows for one student across all administrations whose
+   * `dateStart` is on or before `currentAdminDateStart`, restricted to a list of
+   * task IDs (so callers don't pull in irrelevant runs from other tasks the
+   * student happened to complete in earlier administrations).
+   *
+   * Returns one row per (administration, taskVariant) with run-level metadata
+   * and the parent administration's name and start date — the service uses these
+   * to assemble per-task historical entries and label trend chart points.
+   *
+   * Score rows are NOT included; the service follows up with
+   * `getScoresForRunIds` keyed by the run IDs returned here. Splitting
+   * the two queries keeps the data shape predictable and lets the service
+   * decide which scores to surface per task.
+   *
+   * Filters: completed runs only, non-aborted, non-deleted, reporting-eligible.
+   * Includes the current administration too (because `<=`), which the service
+   * treats as the most-recent point on the trend line.
+   *
+   * @param userId - The student's user ID
+   * @param currentAdminDateStart - Inclusive upper bound on `administration.dateStart`
+   * @param taskIds - Restrict to these task IDs (typically the current admin's tasks)
+   * @returns One row per (administration, taskVariant) with run + admin metadata
+   */
+  async getHistoricalRunsForUser(
+    userId: string,
+    currentAdminDateStart: Date,
+    taskIds: string[],
+  ): Promise<HistoricalRunRow[]> {
+    if (taskIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        runId: fdwRuns.id,
+        userId: fdwRuns.userId,
+        taskId: fdwRuns.taskId,
+        taskVariantId: fdwRuns.taskVariantId,
+        administrationId: fdwRuns.administrationId,
+        administrationName: administrations.name,
+        administrationDateStart: administrations.dateStart,
+        completedAt: fdwRuns.completedAt,
+        reliableRun: fdwRuns.reliableRun,
+        engagementFlags: fdwRuns.engagementFlags,
+      })
+      .from(fdwRuns)
+      .innerJoin(administrations, eq(fdwRuns.administrationId, administrations.id))
+      .where(
+        and(
+          eq(fdwRuns.userId, userId),
+          inArray(fdwRuns.taskId, taskIds),
+          lte(administrations.dateStart, currentAdminDateStart),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          isNotNull(fdwRuns.completedAt),
+        ),
+      );
+
+    return rows.map((r) => ({
+      runId: r.runId,
+      userId: r.userId,
+      taskId: r.taskId,
+      taskVariantId: r.taskVariantId,
+      administrationId: r.administrationId,
+      administrationName: r.administrationName,
+      administrationDateStart: r.administrationDateStart,
+      completedAt: r.completedAt!,
+      reliableRun: r.reliableRun,
+      engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+    }));
+  }
+
+  /**
+   * Bulk fetch run-level metadata for one student's completed runs in one
+   * administration, restricted to a list of task variants.
+   *
+   * Returns the run id plus the fields the individual-student-report endpoint
+   * surfaces alongside scores: `reliable` (from `reliableRun`),
+   * `engagementFlags`, and `completedAt`. The companion `getCompletedRunScores`
+   * method returns the score values; together they let the service assemble
+   * the per-task entry without losing run-level signals.
+   *
+   * Multiple completed runs per (user, variant) are not deduplicated here —
+   * the service is responsible for picking one (typically the most recent).
+   * The same `useForReporting=true` invariant documented on
+   * `getCompletedRunScores` applies: the assessment side guarantees at most
+   * one such run per (user, variant) in practice.
+   *
+   * Filters mirror `getCompletedRunScores`: completed runs only
+   * (`completedAt IS NOT NULL`), non-aborted, non-deleted, reporting-eligible.
+   */
+  async getCompletedRunsForUser(
+    administrationId: string,
+    userId: string,
+    taskVariantIds: string[],
+  ): Promise<
+    Array<{
+      runId: string;
+      taskVariantId: string;
+      reliable: boolean | null;
+      engagementFlags: string[];
+      completedAt: Date;
+    }>
+  > {
+    if (taskVariantIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        runId: fdwRuns.id,
+        taskVariantId: fdwRuns.taskVariantId,
+        reliableRun: fdwRuns.reliableRun,
+        engagementFlags: fdwRuns.engagementFlags,
+        completedAt: fdwRuns.completedAt,
+      })
+      .from(fdwRuns)
+      .where(
+        and(
+          eq(fdwRuns.administrationId, administrationId),
+          eq(fdwRuns.userId, userId),
+          inArray(fdwRuns.taskVariantId, taskVariantIds),
+          isNull(fdwRuns.deletedAt),
+          isNull(fdwRuns.abortedAt),
+          eq(fdwRuns.useForReporting, true),
+          isNotNull(fdwRuns.completedAt),
+        ),
+      );
+
+    return rows.map((r) => ({
+      runId: r.runId,
+      taskVariantId: r.taskVariantId,
+      reliable: r.reliableRun,
+      engagementFlags: Array.isArray(r.engagementFlags) ? (r.engagementFlags as string[]) : [],
+      completedAt: r.completedAt!,
+    }));
+  }
+
+  /**
+   * Bulk fetch all run_scores rows for the given run IDs.
+   *
+   * Companion to `getHistoricalRunsForUser` — the service uses this to attach
+   * scores to historical entries. Returns raw `(runId, scoreName, scoreValue)`
+   * triples; the service is responsible for resolving them via
+   * `resolveScoreFieldNames` against the run's task slug + scoring version.
+   *
+   * Splitting from the runs query (rather than a single JOIN) keeps the row
+   * count proportional to (runs × scoresPerRun) only when scores actually
+   * exist, and lets the service short-circuit when no historical runs exist.
+   */
+  async getScoresForRunIds(runIds: string[]): Promise<Array<{ runId: string; scoreName: string; scoreValue: string }>> {
+    if (runIds.length === 0) return [];
+
+    const rows = await this.db
+      .select({
+        runId: fdwRunScores.runId,
+        scoreName: fdwRunScores.name,
+        scoreValue: fdwRunScores.value,
+      })
+      .from(fdwRunScores)
+      .where(inArray(fdwRunScores.runId, runIds));
+
+    return rows;
+  }
+
+  /**
+   * Verify that a guardian user is currently linked to a target student via
+   * the `user_families` junction table.
+   *
+   * The guardian must hold `role='parent'` and the student must hold
+   * `role='child'` in the same family, both with active membership
+   * (`isActiveInFamily`), and the family must not have its rostering ended.
+   *
+   * Used by the guardian student report to authorize access without leaking
+   * whether the guardian is generally a parent in the system or whether the
+   * student exists — both ambiguous cases collapse to a single boolean.
+   *
+   * @param guardianUserId - The user requesting access (must hold role='parent')
+   * @param studentUserId - The target student user (must hold role='child')
+   * @returns `true` only when an active parent-child link exists in the same family
+   */
+  async verifyGuardianStudentLink(guardianUserId: string, studentUserId: string): Promise<boolean> {
+    const parentMembership = alias(userFamilies, 'parent_uf');
+    const childMembership = alias(userFamilies, 'child_uf');
+
+    const rows = await this.db
+      .select({ familyId: parentMembership.familyId })
+      .from(parentMembership)
+      .innerJoin(childMembership, eq(parentMembership.familyId, childMembership.familyId))
+      .innerJoin(families, eq(parentMembership.familyId, families.id))
+      .where(
+        and(
+          eq(parentMembership.userId, guardianUserId),
+          eq(parentMembership.role, 'parent'),
+          isActiveInFamily(parentMembership),
+          eq(childMembership.userId, studentUserId),
+          eq(childMembership.role, 'child'),
+          isActiveInFamily(childMembership),
+          isNull(families.rosteringEnded),
+        ),
+      )
+      .limit(1);
+
+    return rows.length > 0;
+  }
+
+  /**
+   * Verify that a supervisory user shares an org/class/group scope with the
+   * target student (the "org-overlap guard" for the guardian student report).
+   *
+   * Returns `true` if any of the following overlaps exist:
+   * - Supervisor has any of `supervisorRoles` on an org whose ltree path is
+   *   an ancestor (or equal to) one of the student's effective paths
+   *   (the student's own user_orgs paths or the orgPath of a class the
+   *   student is in).
+   * - Supervisor has any of `supervisorRoles` directly on a class the
+   *   student is also in.
+   * - Supervisor has any of `supervisorRoles` directly on a group the
+   *   student is also in.
+   *
+   * All memberships must be currently active and the underlying entities
+   * must not have rostering ended.
+   *
+   * @param supervisorUserId - The user requesting access
+   * @param studentUserId - The target student
+   * @param supervisorRoles - Allowlist of roles for the supervisor side
+   * @returns `true` when overlap exists, `false` otherwise
+   */
+  async verifyUserOrgOverlap(
+    supervisorUserId: string,
+    studentUserId: string,
+    supervisorRoles: ReadonlyArray<UserRole>,
+  ): Promise<boolean> {
+    if (supervisorRoles.length === 0) return false;
+
+    // Composite role-list literal for embedding in IN (...) clauses below.
+    // `sql.join` on enum values is parameterized by the driver; the enum
+    // values themselves are typed (`UserRole`) so there's no injection
+    // surface to worry about.
+    const roleList = sql.join(
+      supervisorRoles.map((r) => sql`${r}`),
+      sql`, `,
+    );
+
+    // One round-trip across all three overlap paths. PostgreSQL's planner
+    // short-circuits the OR/EXISTS chain once any branch matches, so this
+    // is no slower than the previous chained-Drizzle implementation in the
+    // happy path and is one round-trip cheaper in the no-overlap path.
+    const result = await this.db.execute<{ ok: number }>(sql`
+      SELECT 1 AS ok
+      WHERE
+        -- Path 1: supervisor's user_orgs path contains a student effective path
+        EXISTS (
+          SELECT 1
+          FROM ${userOrgs} sup_uo
+          INNER JOIN ${orgs} sup_org ON sup_uo.org_id = sup_org.id
+          WHERE sup_uo.user_id = ${supervisorUserId}
+            AND sup_uo.role IN (${roleList})
+            AND sup_uo.enrollment_start <= NOW()
+            AND (sup_uo.enrollment_end IS NULL OR sup_uo.enrollment_end > NOW())
+            AND sup_org.rostering_ended IS NULL
+            AND (
+              EXISTS (
+                SELECT 1 FROM ${userOrgs} stu_uo
+                INNER JOIN ${orgs} stu_org ON stu_uo.org_id = stu_org.id
+                WHERE stu_uo.user_id = ${studentUserId}
+                  AND stu_uo.role = ${UserRole.STUDENT}
+                  AND stu_uo.enrollment_start <= NOW()
+                  AND (stu_uo.enrollment_end IS NULL OR stu_uo.enrollment_end > NOW())
+                  AND stu_org.rostering_ended IS NULL
+                  AND stu_org.path <@ sup_org.path
+              )
+              OR EXISTS (
+                SELECT 1 FROM ${userClasses} stu_uc
+                INNER JOIN ${classes} stu_cls ON stu_uc.class_id = stu_cls.id
+                WHERE stu_uc.user_id = ${studentUserId}
+                  AND stu_uc.role = ${UserRole.STUDENT}
+                  AND stu_uc.enrollment_start <= NOW()
+                  AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+                  AND stu_cls.rostering_ended IS NULL
+                  AND stu_cls.org_path <@ sup_org.path
+              )
+            )
+        )
+        OR
+        -- Path 2: supervisor and student share a class directly.
+        EXISTS (
+          SELECT 1
+          FROM ${userClasses} sup_uc
+          INNER JOIN ${classes} c ON sup_uc.class_id = c.id
+          INNER JOIN ${userClasses} stu_uc
+            ON stu_uc.class_id = sup_uc.class_id
+            AND stu_uc.user_id = ${studentUserId}
+          WHERE sup_uc.user_id = ${supervisorUserId}
+            AND sup_uc.role IN (${roleList})
+            AND sup_uc.enrollment_start <= NOW()
+            AND (sup_uc.enrollment_end IS NULL OR sup_uc.enrollment_end > NOW())
+            AND stu_uc.role = ${UserRole.STUDENT}
+            AND stu_uc.enrollment_start <= NOW()
+            AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+            AND c.rostering_ended IS NULL
+        )
+        OR
+        -- Path 3: supervisor and student share a group directly.
+        EXISTS (
+          SELECT 1
+          FROM ${userGroups} sup_ug
+          INNER JOIN ${groups} g ON sup_ug.group_id = g.id
+          INNER JOIN ${userGroups} stu_ug
+            ON stu_ug.group_id = sup_ug.group_id
+            AND stu_ug.user_id = ${studentUserId}
+          WHERE sup_ug.user_id = ${supervisorUserId}
+            AND sup_ug.role IN (${roleList})
+            AND sup_ug.enrollment_start <= NOW()
+            AND (sup_ug.enrollment_end IS NULL OR sup_ug.enrollment_end > NOW())
+            AND stu_ug.role = ${UserRole.STUDENT}
+            AND stu_ug.enrollment_start <= NOW()
+            AND (stu_ug.enrollment_end IS NULL OR stu_ug.enrollment_end > NOW())
+            AND g.rostering_ended IS NULL
+        )
+      LIMIT 1
+    `);
+
+    return result.rows.length > 0;
+  }
+
+  /**
+   * Fetch the set of administrations a student is connected to — either by
+   * having started a run in `app_assessment_fdw.runs`, or by remaining
+   * actively assigned via their org / class / group memberships.
+   *
+   * The four contributing paths are:
+   * - **Runs:** any administration the student has a non-deleted run in.
+   * - **Org assignment:** any administration assigned at an org whose
+   *   ltree `path` is an ancestor (or equal to) one of the student's
+   *   effective paths — their `user_orgs` orgs or the `orgPath` of a class
+   *   they're enrolled in.
+   * - **Class assignment:** any administration assigned directly at a
+   *   class the student is enrolled in.
+   * - **Group assignment:** any administration assigned directly at a
+   *   group the student is in.
+   *
+   * Results are deduplicated via the `selectDistinct` and ordered by
+   * `dateStart` ascending so the service can render `administrations`
+   * chronologically without an additional sort.
+   *
+   * @param studentUserId - The target student
+   * @returns Administrations the student is connected to, oldest first
+   */
+  async getStudentAdministrations(studentUserId: string): Promise<StudentAdministrationRow[]> {
+    const rows = await this.db
+      .selectDistinct({
+        id: administrations.id,
+        name: administrations.name,
+        dateStart: administrations.dateStart,
+        dateEnd: administrations.dateEnd,
+      })
+      .from(administrations)
+      .where(
+        // The administrations table has no soft-delete column; existence
+        // alone is enough to consider an admin in scope here. We still
+        // filter the FDW runs by `r.deleted_at IS NULL` in path A so that
+        // soft-deleted runs don't pull dead administrations into the result.
+        or(
+          // Path A: student has a run in this admin
+          sql`EXISTS (
+            SELECT 1 FROM ${fdwRuns} r
+            WHERE r.administration_id = ${administrations.id}
+              AND r.user_id = ${studentUserId}
+              AND r.deleted_at IS NULL
+          )`,
+          // Path B: org-assignment whose path contains a student effective path
+          sql`EXISTS (
+            SELECT 1
+            FROM ${administrationOrgs} ao
+            INNER JOIN ${orgs} ao_org ON ao.org_id = ao_org.id
+            WHERE ao.administration_id = ${administrations.id}
+              AND ao_org.rostering_ended IS NULL
+              AND (
+                EXISTS (
+                  SELECT 1 FROM ${userOrgs} stu_uo
+                  INNER JOIN ${orgs} stu_org ON stu_uo.org_id = stu_org.id
+                  WHERE stu_uo.user_id = ${studentUserId}
+                    AND stu_uo.role = ${UserRole.STUDENT}
+                    AND stu_uo.enrollment_start <= NOW()
+                    AND (stu_uo.enrollment_end IS NULL OR stu_uo.enrollment_end > NOW())
+                    AND stu_org.rostering_ended IS NULL
+                    AND stu_org.path <@ ao_org.path
+                )
+                OR EXISTS (
+                  SELECT 1 FROM ${userClasses} stu_uc
+                  INNER JOIN ${classes} stu_cls ON stu_uc.class_id = stu_cls.id
+                  WHERE stu_uc.user_id = ${studentUserId}
+                    AND stu_uc.role = ${UserRole.STUDENT}
+                    AND stu_uc.enrollment_start <= NOW()
+                    AND (stu_uc.enrollment_end IS NULL OR stu_uc.enrollment_end > NOW())
+                    AND stu_cls.rostering_ended IS NULL
+                    AND stu_cls.org_path <@ ao_org.path
+                )
+              )
+          )`,
+          // Path C: admin assigned at a class the student is in
+          sql`EXISTS (
+            SELECT 1
+            FROM ${administrationClasses} ac
+            INNER JOIN ${userClasses} uc ON ac.class_id = uc.class_id
+            INNER JOIN ${classes} c ON ac.class_id = c.id
+            WHERE ac.administration_id = ${administrations.id}
+              AND uc.user_id = ${studentUserId}
+              AND uc.role = ${UserRole.STUDENT}
+              AND uc.enrollment_start <= NOW()
+              AND (uc.enrollment_end IS NULL OR uc.enrollment_end > NOW())
+              AND c.rostering_ended IS NULL
+          )`,
+          // Path D: admin assigned at a group the student is in
+          sql`EXISTS (
+            SELECT 1
+            FROM ${administrationGroups} ag
+            INNER JOIN ${userGroups} ug ON ag.group_id = ug.group_id
+            INNER JOIN ${groups} g ON ag.group_id = g.id
+            WHERE ag.administration_id = ${administrations.id}
+              AND ug.user_id = ${studentUserId}
+              AND ug.role = ${UserRole.STUDENT}
+              AND ug.enrollment_start <= NOW()
+              AND (ug.enrollment_end IS NULL OR ug.enrollment_end > NOW())
+              AND g.rostering_ended IS NULL
+          )`,
+        ),
+      )
+      .orderBy(asc(administrations.dateStart), asc(administrations.id));
+
+    return rows;
+  }
+}
+
+// --- SQL emission helpers for the student-scores query (top-level utilities) ---
+
+/**
+ * Emit SQL that coerces a text grade column to a numeric grade level.
+ *
+ * Strips every non-digit character before casting to integer:
+ *   `'Kindergarten'` → NULL, `'3'` → 3, `'12'` → 12, `'K-3'` → 3 (the digit only).
+ *
+ * Negative grades are not part of any roster convention we currently support, so
+ * the regex deliberately excludes `-` — keeping it would let `'K-3'` parse as
+ * `-3`, which would silently mis-classify scoring config branches that compare
+ * grade against `percentileBelowGrade` (e.g., grade < 6 → percentile path).
+ */
+function gradeAsIntSql(gradeColumn: SQL | Column | PgColumn): SQL {
+  return sql`CAST(NULLIF(REGEXP_REPLACE(${gradeColumn}::text, '[^0-9]', '', 'g'), '') AS INTEGER)`;
+}
+
+/**
+ * Emit SQL that strips non-numeric characters from a text score value and casts
+ * to NUMERIC. Handles angle-bracket strings like `'>99'` (→ 99) and `'<1'` (→ 1).
+ * Used for percentile/rawScore/standardScore values stored as text in run_scores.
+ */
+function numericValueSql(valueExpr: SQL | Column): SQL {
+  return sql`CAST(NULLIF(REGEXP_REPLACE(${valueExpr}, '[^0-9.-]', '', 'g'), '') AS NUMERIC)`;
+}
+
+/**
+ * Emit SQL CASE returning support-level priority for a single variant.
+ *
+ * Priority mapping: 3 = achievedSkill, 2 = developingSkill, 1 = needsExtraSupport,
+ * NULL = unclassified (no scores, no config, classification.type === 'none', or
+ * thresholds/cutoffs unavailable for the resolved scoring version).
+ *
+ * For percentile-then-rawscore tasks, the CASE evaluates percentile cutoffs when
+ * the student's grade is below `percentileBelowGrade`, otherwise raw-score
+ * thresholds. Cutoffs/thresholds are emitted as numeric literals from the
+ * pre-resolved `ResolvedScoringRules` so the repository stays decoupled from
+ * the scoring service.
+ *
+ * @param rules - Pre-resolved scoring rules for the variant
+ * @param gradeIntSql - SQL expression evaluating to the student's numeric grade
+ * @param pctSql - SQL expression evaluating to the student's percentile (or null if no percentile join)
+ * @param rawSql - SQL expression evaluating to the student's raw score (or null if no raw-score join)
+ * @returns CASE expression returning priority integer or NULL — null when no rules apply
+ */
+function buildSupportLevelPrioritySql(
+  rules: ResolvedScoringRules,
+  gradeIntSql: SQL,
+  pctSql: SQL | null,
+  rawSql: SQL | null,
+): SQL | null {
+  const pct = rules.percentileCutoffs;
+  const raw = rules.rawScoreThresholds;
+  if (!pct && !raw) return null;
+
+  const branches: SQL[] = [];
+
+  if (pct && pctSql) {
+    const gradeGate =
+      rules.percentileBelowGrade !== null
+        ? sql`AND (${gradeIntSql}) IS NOT NULL AND (${gradeIntSql}) < ${rules.percentileBelowGrade}`
+        : sql``;
+    branches.push(sql`WHEN ${pctSql} IS NOT NULL ${gradeGate} THEN
+      CASE
+        WHEN ${pctSql} >= ${pct.achieved} THEN 3
+        WHEN ${pctSql} >= ${pct.developing} THEN 2
+        ELSE 1
+      END`);
+  }
+  if (raw && rawSql) {
+    branches.push(sql`WHEN ${rawSql} IS NOT NULL THEN
+      CASE
+        WHEN ${rawSql} >= ${raw.above} THEN 3
+        WHEN ${rawSql} >= ${raw.some} THEN 2
+        ELSE 1
+      END`);
+  }
+
+  if (branches.length === 0) return null;
+
+  return sql`CASE ${sql.join(branches, sql` `)} ELSE NULL::integer END`;
+}
+
+/**
+ * Build a SQL WHERE condition from a value expression + operator + values list.
+ *
+ * For numeric fields, values are cast to numeric. For supportLevel, the value
+ * expression already returns a priority integer and the values are priority
+ * strings (e.g., `'3'`) — they cast to integer via the same numeric path.
+ *
+ * Returns undefined for empty value lists (no-op filter).
+ */
+function buildScoreFieldFilterCondition(
+  valueExpr: SQL,
+  operator: StudentScoresFilterOperator,
+  values: string[],
+): SQL | undefined {
+  if (values.length === 0) return undefined;
+  const numericValues = values.map((v) => Number(v)).filter((n) => !isNaN(n));
+
+  switch (operator) {
+    case 'eq':
+      return numericValues[0] !== undefined ? sql`${valueExpr} = ${numericValues[0]}` : undefined;
+    case 'neq':
+      return numericValues[0] !== undefined ? sql`${valueExpr} <> ${numericValues[0]}` : undefined;
+    case 'gte':
+      return numericValues[0] !== undefined ? sql`${valueExpr} >= ${numericValues[0]}` : undefined;
+    case 'lte':
+      return numericValues[0] !== undefined ? sql`${valueExpr} <= ${numericValues[0]}` : undefined;
+    case 'in':
+      return numericValues.length > 0
+        ? sql`${valueExpr} IN (${sql.join(
+            numericValues.map((n) => sql`${n}`),
+            sql`, `,
+          )})`
+        : undefined;
+    default:
+      // Exhaustiveness check — adding a new StudentScoresFilterOperator without
+      // updating this switch will fail compilation here. The runtime fallback
+      // is also a defensive guard against unsupported operators (e.g., `contains`
+      // is valid for user-level fields but not for score fields).
+      return assertUnreachableOperator(operator);
+  }
+}
+
+/**
+ * Compile-time exhaustiveness check used by `buildScoreFieldFilterCondition`'s
+ * default branch. Adding a new `StudentScoresFilterOperator` value will produce
+ * a TypeScript error at the call site if this switch isn't extended. At runtime
+ * the function returns `undefined` (no-op filter) — defensive but visible.
+ */
+function assertUnreachableOperator(op: never): undefined {
+  // Intentionally swallow the unknown operator at runtime — the TypeScript
+  // narrowing above already prevents this branch in normal code paths.
+  void op;
+  return undefined;
 }

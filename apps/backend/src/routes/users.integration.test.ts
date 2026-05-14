@@ -63,6 +63,9 @@ import { AgreementVersionFactory } from '../test-support/factories/agreement-ver
 import { UserRole } from '../enums/user-role.enum';
 import { UserRepository } from '../repositories/user.repository';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
+import { EntityType } from '../types/entity-type';
+import { RosteringProvider } from '../enums/rostering-provider.enum';
+import { RosteringEntityType } from '../enums/rostering-entity-type.enum';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -441,6 +444,36 @@ describe('GET /v1/users/:id', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
+    it('returns 404 for a rostering-ended target user — even to super admin (#1742)', async () => {
+      // Rostering-ended users are decommissioned: any URL that names them as a
+      // target returns 404, with the same code/shape as a non-existent user.
+      // The shape is symmetric so requesters can't distinguish whether the
+      // target ever existed.
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedUserDirectAccess',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('GET', `/v1/users/${endedUser.id}`).as(tiers.superAdmin).toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 for a rostering-ended target user — same shape as not-found (#1742)', async () => {
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedUserShapeCheck',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const endedRes = await expectRoute('GET', `/v1/users/${endedUser.id}`).as(tiers.superAdmin).toReturn(404);
+      const notFoundRes = await expectRoute('GET', '/v1/users/00000000-0000-0000-0000-000000000000')
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      // The error code matches — caller can't distinguish the two cases.
+      expect(endedRes.body.error.code).toBe(notFoundRes.body.error.code);
+    });
+
     it('returns 400 for invalid UUID format', async () => {
       const res = await expectRoute('GET', '/v1/users/not-a-valid-uuid').as(tiers.superAdmin).toReturn(400);
 
@@ -762,6 +795,28 @@ describe('PATCH /v1/users/:id', () => {
 
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
+
+    it('returns 404 for a rostering-ended target user — same shape as not-found (#1742)', async () => {
+      // A rostering-ended user cannot be PATCHed — same 404 shape as
+      // not-found so callers can't distinguish.
+      const endedUser = await UserFactory.create({
+        nameFirst: 'Patch',
+        nameLast: 'EndedTarget',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('PATCH', `/v1/users/${endedUser.id}`)
+        .as(tiers.superAdmin)
+        .withBody({ nameFirst: 'ShouldNotApply' })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+
+      // Verify the underlying row was NOT modified.
+      const stillEnded = await userRepository.getById({ id: endedUser.id });
+      expect(stillEnded).not.toBeNull();
+      expect(stillEnded!.nameFirst).toBe('Patch');
+    });
   });
 });
 
@@ -1024,6 +1079,22 @@ describe('POST /v1/users/:userId/agreements', () => {
   describe('validation', () => {
     it('should return 404 when target user does not exist', async () => {
       const res = await expectRoute('POST', '/v1/users/00000000-0000-0000-0000-000000000000/agreements')
+        .as(tiers.superAdmin)
+        .withBody({ agreementVersionId: tosAgreementVersion.id })
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('should return 404 when target user is rostering-ended (#1742)', async () => {
+      // Even with a valid agreement version and a super-admin requester,
+      // a rostering-ended target user yields 404 with the same code as not-found.
+      const endedUser = await UserFactory.create({
+        dob: '1990-01-01',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('POST', `/v1/users/${endedUser.id}/agreements`)
         .as(tiers.superAdmin)
         .withBody({ agreementVersionId: tosAgreementVersion.id })
         .toReturn(StatusCodes.NOT_FOUND);
@@ -1348,6 +1419,45 @@ describe('GET /v1/users/:userId/administrations', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
+    it('returns 404 when target user is rostering-ended (#1742)', async () => {
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedAdminsList1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('GET', `/v1/users/${endedUser.id}/administrations`)
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 403 when a rostering-ended user requests their own administrations (#1742)', async () => {
+      // End-to-end, the auth guard (#1735) blocks rostering-ended users at
+      // the middleware layer and returns 403 AUTH_ROSTERING_ENDED before
+      // any handler runs — so the service-layer 404 (which would otherwise
+      // fire for a self-lookup against a rostering-ended target) is
+      // unreachable from a route test. We still want to verify the
+      // user-visible behavior: a rostering-ended user can't access their
+      // own administrations.
+      //
+      // The service-layer defense-in-depth (rejectRosteringEndedTarget
+      // running BEFORE the `requesterUserId === userId` early return)
+      // matters if the auth guard logic is ever bypassed or changed —
+      // that path is covered by the unit test in
+      // `administration.service.test.ts`.
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedSelfAdmin1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute('GET', `/v1/users/${endedUser.id}/administrations`)
+        .as({ id: endedUser.id, authId: endedUser.authId! })
+        .toReturn(StatusCodes.FORBIDDEN);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_ROSTERING_ENDED);
+    });
+
     it('returns 403 when non-super-admin tries to list administrations for user with no shared access', async () => {
       // districtBStudent is in a different district from tiers.admin (who is in districtA)
       const res = await expectRoute('GET', `/v1/users/${baseFixture.districtBStudent.id}/administrations`)
@@ -1418,7 +1528,7 @@ describe('POST /v1/users', () => {
     email: makeEmail(suffix),
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
-    memberships: [{ entityType: 'district', entityId: baseFixture.district.id, role: 'student' }],
+    memberships: [{ entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' }],
   });
 
   const validBodyForSchoolInDistrict = (suffix: string) => ({
@@ -1426,8 +1536,8 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.SCHOOL, entityId: baseFixture.schoolA.id, role: 'student' },
     ],
   });
 
@@ -1436,9 +1546,9 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
-      { entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.SCHOOL, entityId: baseFixture.schoolA.id, role: 'student' },
+      { entityType: EntityType.CLASS, entityId: baseFixture.classInSchoolA.id, role: 'student' },
     ],
   });
 
@@ -1447,8 +1557,8 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'group', entityId: baseFixture.group.id, role: 'student' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.GROUP, entityId: baseFixture.group.id, role: 'student' },
     ],
   });
 
@@ -1459,8 +1569,8 @@ describe('POST /v1/users', () => {
     password: 'Password123!',
     name: { first: 'Test', last: 'User' },
     memberships: [
-      { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
-      { entityType: 'family', entityId: sharedFamily.id, role: 'parent' },
+      { entityType: EntityType.DISTRICT, entityId: baseFixture.district.id, role: 'student' },
+      { entityType: EntityType.FAMILY, entityId: sharedFamily.id, role: 'parent' },
     ],
   });
 
@@ -1987,6 +2097,173 @@ describe('POST /v1/users', () => {
         .toReturn(StatusCodes.BAD_REQUEST);
     });
   });
+
+  // ── Roster provider ID resolution ────────────────────────────────────────
+
+  describe('roster provider ID resolution', () => {
+    // resolveRootOrgProviderFromMemberships is only observable via the partnerId
+    // written to rostering_provider_ids after a successful create.
+    // superAdmin is used throughout so authorization never interferes with the
+    // resolver path being exercised.
+
+    async function getPartnerId(userId: string): Promise<string | null> {
+      const { rosteringProviderIds } = await import('../db/schema');
+      const { eq, and } = await import('drizzle-orm');
+      const { CoreDbClient } = await import('../test-support/db');
+      const [record] = await CoreDbClient.select({ partnerId: rosteringProviderIds.partnerId })
+        .from(rosteringProviderIds)
+        .where(and(eq(rosteringProviderIds.entityId, userId)));
+      return record?.partnerId ?? null;
+    }
+
+    it('district membership → partnerId is the district ID (direct, no DB lookup)', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(validBodyForDistrict('resolver-district'))
+        .toReturn(StatusCodes.CREATED);
+
+      const userId: string = res.body.data.id;
+
+      // Full record assertion — the only test in this suite that verifies every field
+      // written to rostering_provider_ids, not just partnerId.
+      const { rosteringProviderIds } = await import('../db/schema');
+      const { eq } = await import('drizzle-orm');
+      const { CoreDbClient } = await import('../test-support/db');
+      const [record] = await CoreDbClient.select()
+        .from(rosteringProviderIds)
+        .where(eq(rosteringProviderIds.entityId, userId));
+
+      expect(record).toMatchObject({
+        providerType: RosteringProvider.DASHBOARD,
+        entityType: RosteringEntityType.USER,
+        entityId: userId,
+        providerId: userId, // DASHBOARD provider uses the user's own ID as the external provider ID
+        partnerId: baseFixture.district.id,
+      });
+    });
+
+    it('school-only membership → partnerId resolves to parent district via ltree', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-school'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+    });
+
+    it('class-only membership → partnerId resolves to ancestor district via ltree', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-class'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+    });
+
+    it('group-only membership → partnerId is the group ID (direct fallback, no DB lookup)', async () => {
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-group'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'group', entityId: baseFixture.group.id, role: 'student' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.group.id);
+    });
+
+    it('consistent district + school + class memberships → partnerId is the shared district', async () => {
+      // All three org membership types point to the same district.
+      // The resolver collects all evidence, confirms one unique root, and returns it.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody(validBodyForClassInSchoolInDistrict('resolver-consistent'))
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(baseFixture.district.id);
+    });
+
+    it('explicit district_A + class in district_B → 422 (cross-district inconsistency)', async () => {
+      // Previously undefined behaviour: the resolver returned district_A without
+      // checking that the class belongs there. Now all sources are validated together.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-district-class-mismatch'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'district', entityId: baseFixture.district.id, role: 'student' },
+            { entityType: 'class', entityId: baseFixture.classInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    it('class memberships spanning two districts → 422 (cross-district ambiguity)', async () => {
+      // classInSchoolA is under district; classInDistrictB is under districtB.
+      // resolveRootOrgProviderFromMemberships finds two distinct root IDs and throws
+      // UNPROCESSABLE_ENTITY. The catch block should delete the DB row and the
+      // Firebase account before re-throwing.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-cross-district'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'class', entityId: baseFixture.classInSchoolA.id, role: 'student' },
+            { entityType: 'class', entityId: baseFixture.classInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+
+    it('family-only membership → partnerId is the family ID (direct fallback)', async () => {
+      // Family memberships fall through all org/class/school/group branches and resolve
+      // to the family ID directly. sharedFamily is set up in the POST /v1/users beforeAll.
+      const res = await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-family'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [{ entityType: 'family', entityId: sharedFamily.id, role: 'parent' }],
+        })
+        .toReturn(StatusCodes.CREATED);
+
+      expect(await getPartnerId(res.body.data.id)).toBe(sharedFamily.id);
+    });
+
+    it('school memberships spanning two districts → 422 (cross-district ambiguity)', async () => {
+      // schoolA is under district; schoolInDistrictB is under districtB.
+      // Symmetric to the class cross-district case — the same multi-root guard fires.
+      await expectRoute('POST', '/v1/users')
+        .as(tiers.superAdmin)
+        .withBody({
+          email: makeEmail('resolver-school-cross-district'),
+          password: 'Password123!',
+          name: { first: 'Test', last: 'User' },
+          memberships: [
+            { entityType: 'school', entityId: baseFixture.schoolA.id, role: 'student' },
+            { entityType: 'school', entityId: baseFixture.schoolInDistrictB.id, role: 'student' },
+          ],
+        })
+        .toReturn(StatusCodes.UNPROCESSABLE_ENTITY);
+    });
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2134,6 +2411,22 @@ describe('GET /v1/users/:userId/administrations/:administrationId', () => {
       expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
     });
 
+    it('returns 404 when target user is rostering-ended (#1742)', async () => {
+      const endedUser = await UserFactory.create({
+        nameLast: 'EndedSingleAdmin1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      const res = await expectRoute(
+        'GET',
+        `/v1/users/${endedUser.id}/administrations/${baseFixture.administrationAssignedToSchoolA.id}`,
+      )
+        .as(tiers.superAdmin)
+        .toReturn(StatusCodes.NOT_FOUND);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
     it('returns 404 when administration does not exist', async () => {
       const res = await expectRoute(
         'GET',
@@ -2216,6 +2509,167 @@ describe('GET /v1/users/:userId/administrations/:administrationId', () => {
         .toReturn(StatusCodes.OK);
 
       expect(res.body.data.id).toBe(baseFixture.administrationAssignedToSchoolA.id);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GET /v1/users/:userId/reports/scores  (#1687 Guardian Student Report)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('GET /v1/users/:userId/reports/scores', () => {
+  function reportPath(userId: string) {
+    return `/v1/users/${userId}/reports/scores`;
+  }
+
+  describe('authorization', () => {
+    it('returns 401 without auth', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).unauthenticated().toReturn(401);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+    });
+
+    it('super admin can access any student', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).as(tiers.superAdmin).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('admin tier (administrator at district) can access an in-scope student', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).as(tiers.admin).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('educator tier with class overlap can access a student in their class', async () => {
+      // tiers.educator is assigned to classInSchoolA at class level
+      // in the file's beforeAll. District and school-level educators can only
+      // access students in classes they are explicitly assigned to.
+      const res = await expectRoute('GET', reportPath(baseFixture.classAStudent.id)).as(tiers.educator).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(baseFixture.classAStudent.id);
+    });
+
+    it('educator without overlap is forbidden', async () => {
+      // tiers.educator is a TEACHER at the main district (created by createTierUsers
+      // with `district.id`). districtBStudent lives under districtB — a fully
+      // disjoint district hierarchy — so no ltree ancestry, class, or group
+      // overlap exists between them.
+      const res = await expectRoute('GET', reportPath(baseFixture.districtBStudent.id))
+        .as(tiers.educator)
+        .toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('linked caregiver (parent) can access their child', async () => {
+      const { UserFamilyFactory } = await import('../test-support/factories/user-family.factory');
+      const { FamilyFactory } = await import('../test-support/factories/family.factory');
+
+      const child = await UserFactory.create({ dob: '2015-01-01', grade: '3' });
+      const family = await FamilyFactory.create();
+      await UserFamilyFactory.create({ userId: tiers.caregiver.id, familyId: family.id, role: 'parent' });
+      await UserFamilyFactory.create({ userId: child.id, familyId: family.id, role: 'child' });
+
+      const res = await expectRoute('GET', reportPath(child.id)).as(tiers.caregiver).toReturn(200);
+
+      expect(res.body.data.student.userId).toBe(child.id);
+    });
+
+    it('caregiver who is not linked to the student is forbidden', async () => {
+      // tiers.caregiver has no user_families link to schoolAStudent.
+      const res = await expectRoute('GET', reportPath(baseFixture.schoolAStudent.id)).as(tiers.caregiver).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('student attempting to view their own report is forbidden', async () => {
+      // schoolAStudent is a student tier user — calling for themselves should be denied.
+      const studentAsTier = {
+        id: baseFixture.schoolAStudent.id,
+        authId: baseFixture.schoolAStudent.authId!,
+      };
+      const res = await expectRoute('GET', reportPath(baseFixture.schoolAStudent.id)).as(studentAsTier).toReturn(403);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.AUTH_FORBIDDEN);
+    });
+
+    it('returns 404 for an unknown user ID', async () => {
+      const res = await expectRoute('GET', reportPath('00000000-0000-0000-0000-000000000000'))
+        .as(tiers.superAdmin)
+        .toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 404 for a student with rosteringEnded set', async () => {
+      const endedStudent = await UserFactory.create({
+        userType: 'student',
+        rosteringEnded: new Date('2025-01-01'),
+      });
+
+      const res = await expectRoute('GET', reportPath(endedStudent.id)).as(tiers.superAdmin).toReturn(404);
+
+      expect(res.body.error.code).toBe(ApiErrorCode.RESOURCE_NOT_FOUND);
+    });
+
+    it('returns 400 for a malformed userId path parameter', async () => {
+      // ts-rest validates path params before the request reaches the global
+      // error handler, so the response body shape is the validator's native
+      // shape (not our `{ error: { ... } }` envelope). Asserting the 400
+      // status is sufficient — the body shape is owned by ts-rest.
+      await expectRoute('GET', reportPath('not-a-uuid')).as(tiers.superAdmin).toReturn(400);
+    });
+  });
+
+  describe('response shape', () => {
+    it('returns 200 with student, administrations, and longitudinalScores', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.grade5Student.id)).as(tiers.superAdmin).toReturn(200);
+
+      const { data } = res.body;
+      expect(data).toHaveProperty('student');
+      expect(data).toHaveProperty('administrations');
+      expect(data).toHaveProperty('longitudinalScores');
+
+      // Header
+      expect(data.student.userId).toBe(baseFixture.grade5Student.id);
+      expect(data.student).toHaveProperty('firstName');
+      expect(data.student).toHaveProperty('lastName');
+      expect(data.student).toHaveProperty('grade');
+      expect(data.student).toHaveProperty('schoolName');
+
+      // Per-admin entries: array, each with required fields
+      expect(Array.isArray(data.administrations)).toBe(true);
+      for (const admin of data.administrations) {
+        expect(admin).toHaveProperty('administrationId');
+        expect(admin).toHaveProperty('name');
+        expect(admin).toHaveProperty('dateStart');
+        expect(admin).toHaveProperty('dateEnd');
+        expect(typeof admin.dateStart).toBe('string');
+        expect(Array.isArray(admin.tasks)).toBe(true);
+
+        // Per-task entries omit historicalScores (longitudinal data is at the response root)
+        for (const task of admin.tasks) {
+          expect(task).not.toHaveProperty('historicalScores');
+          expect(task).toHaveProperty('tags');
+          // Type tag is always present
+          expect(task.tags.some((t: { label: string }) => t.label === 'Type')).toBe(true);
+        }
+      }
+
+      // Longitudinal map
+      expect(typeof data.longitudinalScores).toBe('object');
+    });
+
+    it('administrations are sorted ascending by dateStart', async () => {
+      const res = await expectRoute('GET', reportPath(baseFixture.grade5Student.id)).as(tiers.superAdmin).toReturn(200);
+
+      const dates = (res.body.data.administrations as Array<{ dateStart: string }>).map((a) =>
+        new Date(a.dateStart).getTime(),
+      );
+      for (let i = 1; i < dates.length; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i - 1]!);
+      }
     });
   });
 });

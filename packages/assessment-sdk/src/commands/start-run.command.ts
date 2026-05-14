@@ -35,7 +35,10 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
   readonly name = 'StartRun';
   readonly idempotent = false;
 
-  constructor(private api: RoarApi) {}
+  constructor(
+    private api: RoarApi,
+    private participantId: string,
+  ) {}
 
   /**
    * Creates a new assessment run.
@@ -59,7 +62,7 @@ export class StartRunCommand implements Command<StartRunInput, StartRunOutput> {
       ...(input.metadata ? { metadata: input.metadata } : {}),
     };
 
-    const result = await this.api.client.runs.create({ body });
+    const result = await this.api.client.runs.create({ params: { userId: this.participantId }, body });
 
     if (result.status === StatusCodes.CREATED) {
       return { runId: result.body.data.id };

@@ -11,13 +11,13 @@ import { OrgType } from '../enums/org-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
 import type { EnrolledUserEntity, EnrolledUsersSortFieldType, ListEnrolledUsersOptions } from '../types/user';
 import type { PaginatedResult } from './base.repository';
-import { BaseRepository } from './base.repository';
+import { LtreeRepository } from './ltree.repository';
 import {
   ENROLLED_USERS_SORT_COLUMNS,
   getEnrolledUsersFilterConditions,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
-import { isEnrollmentActive } from './utils/enrollment.utils';
+import { isEnrollmentActive, isActiveRoster } from './utils/enrollment.utils';
 
 /**
  * District-specific type (Org with orgType = 'district')
@@ -87,9 +87,9 @@ export interface ListDistrictOptions {
  *
  * Handles data access for districts (orgs with orgType = 'district').
  */
-export class DistrictRepository extends BaseRepository<District, typeof orgs> {
+export class DistrictRepository extends LtreeRepository<District, typeof orgs> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, orgs);
+    super(db, orgs, orgs.path);
   }
 
   /**
@@ -214,14 +214,17 @@ export class DistrictRepository extends BaseRepository<District, typeof orgs> {
     districtIds: string[],
     includeEnded: boolean,
   ): Promise<Map<string, DistrictCounts>> {
-    // Pre-aggregate user counts per district
+    // Pre-aggregate user counts per district. Join through to `users` so the
+    // count excludes rostering-ended users (#1742) in addition to the existing
+    // enrollment-end filter on the userOrgs junction.
     const userCounts = this.db
       .select({
         districtId: userOrgs.orgId,
         users: countDistinct(userOrgs.userId).as('users'),
       })
       .from(userOrgs)
-      .where(and(inArray(userOrgs.orgId, districtIds), isNull(userOrgs.enrollmentEnd)))
+      .innerJoin(users, eq(users.id, userOrgs.userId))
+      .where(and(inArray(userOrgs.orgId, districtIds), isNull(userOrgs.enrollmentEnd), isActiveRoster(users)))
       .groupBy(userOrgs.orgId)
       .as('user_counts');
 

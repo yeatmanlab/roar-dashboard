@@ -367,6 +367,32 @@ describe('DistrictRepository', () => {
         classes: 0,
       });
     });
+
+    it('excludes rostering-ended users from district user counts (#1742)', async () => {
+      // Two users at a fresh district: one active, one rostering-ended.
+      // embedCounts joins through `users` with isActiveRoster, so the
+      // decommissioned user must not contribute to the user count.
+      const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'District with Rostering-Ended' });
+
+      const activeAdmin = await UserFactory.create({ nameLast: 'ActiveAdminCounts1742' });
+      const endedAdmin = await UserFactory.create({
+        nameLast: 'EndedAdminCounts1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserOrgFactory.create({ userId: activeAdmin.id, orgId: district.id, role: UserRole.ADMINISTRATOR });
+      await UserOrgFactory.create({ userId: endedAdmin.id, orgId: district.id, role: UserRole.ADMINISTRATOR });
+
+      const result = (await repository.listAll({
+        page: 1,
+        perPage: 1000,
+        embedCounts: true,
+      })) as { items: DistrictWithCounts[]; totalItems: number };
+
+      const districtResult = result.items.find((d) => d.id === district.id);
+      expect(districtResult).toBeDefined();
+      expect(districtResult?.counts?.users).toBe(1);
+    });
   });
 
   describe('getUsersByDistrictPath', () => {

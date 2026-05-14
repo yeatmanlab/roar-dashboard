@@ -1,23 +1,24 @@
-import { eq, countDistinct, and, isNull, sql, inArray, asc, desc } from 'drizzle-orm';
-import type { SQL } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { PaginatedResult } from './base.repository';
-import { BaseRepository } from './base.repository';
-import type { Org } from '../db/schema';
-import { orgs, userOrgs, classes, userClasses, users } from '../db/schema';
-import { CoreDbClient } from '../db/clients';
-import type * as CoreDbSchema from '../db/schema/core';
 import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
 import { SortOrder } from '@roar-dashboard/api-contract';
+import type { SQL } from 'drizzle-orm';
+import { and, asc, countDistinct, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+
+import { CoreDbClient } from '../db/clients';
+import type { Org } from '../db/schema';
+import { classes, orgs, userClasses, userOrgs, users } from '../db/schema';
+import type * as CoreDbSchema from '../db/schema/core';
 import { OrgType } from '../enums/org-type.enum';
 import type { UserRole } from '../enums/user-role.enum';
 import type { EnrolledUserEntity, ListEnrolledUsersOptions } from '../types/user';
+import type { PaginatedResult } from './base.repository';
+import { LtreeRepository } from './ltree.repository';
 import {
-  getEnrolledUsersFilterConditions,
   ENROLLED_USERS_SORT_COLUMNS,
+  getEnrolledUsersFilterConditions,
   UserJunctionTable,
 } from './utils/enrolled-users-query.utils';
-import { isEnrollmentActive } from './utils/enrollment.utils';
+import { isEnrollmentActive, isActiveRoster } from './utils/enrollment.utils';
 
 /**
  * School-specific type (Org with orgType = 'school')
@@ -88,9 +89,9 @@ export interface ListAuthorizedOptions {
  * Provides both unrestricted access (for super admins) and FGA-filtered access
  * (for regular users based on their FGA object membership).
  */
-export class SchoolRepository extends BaseRepository<School, typeof orgs> {
+export class SchoolRepository extends LtreeRepository<School, typeof orgs> {
   constructor(db: NodePgDatabase<typeof CoreDbSchema> = CoreDbClient) {
-    super(db, orgs);
+    super(db, orgs, orgs.path);
   }
 
   /**
@@ -156,14 +157,17 @@ export class SchoolRepository extends BaseRepository<School, typeof orgs> {
    * @returns Map of school ID to counts
    */
   private async fetchSchoolCounts(schoolIds: string[], includeEnded: boolean): Promise<Map<string, SchoolCounts>> {
-    // Pre-aggregate user counts per school
+    // Pre-aggregate user counts per school. Join through to `users` so the
+    // count excludes rostering-ended users (#1742) in addition to the
+    // existing enrollment-end filter on the userOrgs junction.
     const userCounts = this.db
       .select({
         schoolId: userOrgs.orgId,
         users: countDistinct(userOrgs.userId).as('users'),
       })
       .from(userOrgs)
-      .where(and(inArray(userOrgs.orgId, schoolIds), isNull(userOrgs.enrollmentEnd)))
+      .innerJoin(users, eq(users.id, userOrgs.userId))
+      .where(and(inArray(userOrgs.orgId, schoolIds), isNull(userOrgs.enrollmentEnd), isActiveRoster(users)))
       .groupBy(userOrgs.orgId)
       .as('user_counts');
 
