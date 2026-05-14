@@ -7,6 +7,8 @@
   "module": "src/index.js",
   "type": "module",
   "scripts": {
+    "//": "WORKAROUND: 'build' aliases build:staging so Turbo's ^build dependency is satisfied before roar-dashboard#dev starts. Vite still processes roar-pa source directly (via 'main'), so this webpack output is not consumed by the dashboard build. Remove once roar-pa exposes a proper ESM library entrypoint.",
+    "build": "npm run build:staging",
     "build:dev": "npx webpack --mode production --env dbmode=development",
     "build:staging": "npx webpack --mode production --env dbmode=staging",
     "build:prod": "npx webpack --mode production --env dbmode=production",
