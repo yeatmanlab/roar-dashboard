@@ -15,7 +15,6 @@ export function createMockFamilyRepository(): MockedObject<FamilyRepository> {
     countActiveMembers: vi.fn(),
     createWithCaretaker: vi.fn(),
     getFamilyIdsForUser: vi.fn(),
-    getUserRolesInFamily: vi.fn(),
     getUsersByFamilyId: vi.fn(),
   } as unknown as MockedObject<FamilyRepository>;
 }

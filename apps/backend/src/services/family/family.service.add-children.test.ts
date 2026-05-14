@@ -27,6 +27,7 @@ import { createMockAuthorizationService } from '../../test-support/services/auth
 import { FamilyFactory } from '../../test-support/factories/family.factory';
 import { GroupFactory } from '../../test-support/factories/group.factory';
 import { ApiError } from '../../errors/api-error';
+import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { FIREBASE_ERROR_CODES } from '../../constants/firebase-error-codes';
 import { logger } from '../../logger';
@@ -82,9 +83,9 @@ describe('FamilyService.addChildren', () => {
     mockRosterRepo = createMockRosterProviderIdRepository();
     mockAuthorizationService = createMockAuthorizationService();
 
-    // Default: family is active, caller is a parent, code resolves, group is active, no email conflicts.
+    // Default: family is active, FGA permits the caller, code resolves, group is active, no email conflicts.
     mockFamilyRepo.getById.mockResolvedValue(FamilyFactory.build({ id: FAMILY_ID, rosteringEnded: null }));
-    mockFamilyRepo.getUserRolesInFamily.mockResolvedValue(['parent']);
+    mockAuthorizationService.requirePermission.mockResolvedValue(undefined);
     mockFamilyRepo.countActiveMembers.mockResolvedValue(1);
     mockCodeRepo.findValidByCode.mockResolvedValue({
       id: 'code-uuid-1',
@@ -138,22 +139,32 @@ describe('FamilyService.addChildren', () => {
       });
     });
 
-    it('returns 403 if the caller is not a parent of the family', async () => {
-      mockFamilyRepo.getUserRolesInFamily.mockResolvedValue(['child']);
+    it('returns 403 if FGA denies the caller can_create_child on the family', async () => {
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
       await expect(
         makeService().addChildren(strangerAuth, FAMILY_ID, { children: [makeChild('1')] }),
       ).rejects.toMatchObject({
         statusCode: StatusCodes.FORBIDDEN,
         code: ApiErrorCode.AUTH_FORBIDDEN,
       });
+      // The FGA call is made with the correct relation/object for non-super-admin callers
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        strangerAuth.userId,
+        'can_create_child',
+        `family:${FAMILY_ID}`,
+      );
     });
 
-    it('allows super admin to add children to any family', async () => {
-      mockFamilyRepo.getUserRolesInFamily.mockResolvedValue([]); // would be 403 for non-super-admin
+    it('allows super admin to add children to any family (FGA check skipped)', async () => {
       const result = await makeService().addChildren(superAdminAuth, FAMILY_ID, { children: [makeChild('1')] });
       expect(result.ids).toEqual([CHILD_ID_1]);
-      // The role check is skipped for super admin
-      expect(mockFamilyRepo.getUserRolesInFamily).not.toHaveBeenCalled();
+      // FGA is skipped for super admin
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
     });
   });
 

@@ -148,24 +148,6 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
   }
 
   /**
-   * Get the active roles a user holds in a family. Used to authorize "is this caller a parent of
-   * the family?" — the service treats `parent` as the supervisory role for family operations.
-   *
-   * Returns an empty array if the user has no active membership.
-   *
-   * @param userId - The user to check
-   * @param familyId - The family to check against
-   * @returns Array of active roles the user holds in this family
-   */
-  async getUserRolesInFamily(userId: string, familyId: string): Promise<UserFamilyRole[]> {
-    const rows = await this.db
-      .select({ role: userFamilies.role })
-      .from(userFamilies)
-      .where(and(eq(userFamilies.userId, userId), eq(userFamilies.familyId, familyId), isNull(userFamilies.leftOn)));
-    return rows.map((r) => r.role);
-  }
-
-  /**
    * Get family IDs for a specific user (active memberships only).
    *
    * @param userId - The user whose families to retrieve

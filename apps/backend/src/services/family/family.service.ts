@@ -514,16 +514,20 @@ export function FamilyService({
     }
 
     // ── Step 2: Authorization (parent of the family, or super admin) ──────────
+    //
+    // Uses FGA `can_create_child` on the family object (which the FGA model defines as
+    // `parent`). This matches every other authorization check in the codebase — the SQL
+    // junction tables are the source of truth that *seeds* FGA tuples, but the runtime
+    // authorization decision goes through FGA. The `POST /v1/families` saga writes the
+    // `(user:caretakerId, parent, family:familyId)` tuple inside the same compensation
+    // boundary as the DB row, so there is no observable window where the DB has the
+    // parent role but FGA doesn't.
     if (!isSuperAdmin) {
-      const roles = await familyRepository.getUserRolesInFamily(userId, familyId);
-      if (!roles.includes(UserFamilyRole.PARENT)) {
-        logger.warn({ userId, familyId, roles }, 'Non-parent attempted to add children to a family');
-        throw new ApiError(ApiErrorMessage.FORBIDDEN, {
-          statusCode: StatusCodes.FORBIDDEN,
-          code: ApiErrorCode.AUTH_FORBIDDEN,
-          context: { userId, familyId },
-        });
-      }
+      await authorizationService.requirePermission(
+        userId,
+        FgaRelation.CAN_CREATE_CHILD,
+        `${FgaType.FAMILY}:${familyId}`,
+      );
     }
 
     // ── Step 3: Resolve activation codes (deduplicated) ───────────────────────

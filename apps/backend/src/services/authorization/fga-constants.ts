@@ -63,6 +63,7 @@ export const FgaRelation = {
   CAN_READ_PROGRESS: 'can_read_progress',
   CAN_CREATE_RUN: 'can_create_run',
   CAN_READ_CHILD: 'can_read_child',
+  CAN_CREATE_CHILD: 'can_create_child',
   CAN_CONSENT_FOR_CHILD: 'can_consent_for_child',
   CAN_CREATE_RUN_FOR_CHILD: 'can_create_run_for_child',
 } as const;
