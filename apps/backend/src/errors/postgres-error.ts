@@ -76,6 +76,32 @@ export function isUniqueViolation(error: unknown): boolean {
 }
 
 /**
+ * Type guard for a PostgreSQL error with a `constraint` field. node-postgres
+ * populates `constraint` on `unique_violation` and other integrity errors,
+ * giving us the offending index/constraint name.
+ */
+export function isPostgresErrorWithConstraint(error: unknown): error is { code: string; constraint: string } {
+  return (
+    isPostgresError(error) && 'constraint' in error && typeof (error as { constraint: unknown }).constraint === 'string'
+  );
+}
+
+/**
+ * Checks if an error is a unique constraint violation on the specified constraint or index name.
+ *
+ * Useful when more than one unique constraint can fire on the same insert and the caller needs to
+ * map each to a different ApiError (e.g. distinguishing an email conflict from a "one family per
+ * caretaker" violation on the same `INSERT INTO families`).
+ *
+ * @param error - The error to check
+ * @param constraintName - The exact constraint or index name from the schema (e.g. `families_created_by_uniq_idx`)
+ * @returns True if the error is a unique violation on that constraint
+ */
+export function isUniqueViolationOnConstraint(error: unknown, constraintName: string): boolean {
+  return isUniqueViolation(error) && isPostgresErrorWithConstraint(error) && error.constraint === constraintName;
+}
+
+/**
  * Checks if an error is a PostgreSQL foreign key constraint violation.
  *
  * @param error - The error to check

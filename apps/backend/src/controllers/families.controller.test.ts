@@ -30,6 +30,7 @@ function expectErrorResponse(
 
 // Mock the services before importing controller
 const mockListUsers = vi.fn();
+const mockCreate = vi.fn();
 vi.mock('../services/family/family.service', () => ({
   FamilyService: vi.fn(),
 }));
@@ -46,6 +47,7 @@ describe('FamiliesController', () => {
     vi.clearAllMocks();
 
     vi.mocked(FamilyService).mockReturnValue({
+      create: mockCreate,
       listUsers: mockListUsers,
     });
   });
@@ -199,6 +201,107 @@ describe('FamiliesController', () => {
           sortOrder: SortOrder.ASC,
         }),
       ).rejects.toThrow('Unexpected error');
+    });
+  });
+
+  describe('create', () => {
+    const validBody = {
+      email: 'parent@example.com',
+      password: 'password123',
+      name: { first: 'Pat', last: 'Parent' },
+    };
+
+    it('returns 201 with the new family id on success', async () => {
+      mockCreate.mockResolvedValue({ id: 'family-new-1' });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+
+      expect(result.status).toBe(StatusCodes.CREATED);
+      const data = (result.body as { data: { id: string } }).data;
+      expect(data).toEqual({ id: 'family-new-1' });
+      expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ email: validBody.email }));
+    });
+
+    it('passes the location through to the service', async () => {
+      mockCreate.mockResolvedValue({ id: 'family-new-1' });
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await Controller.create({
+        ...validBody,
+        location: { city: 'Stanford', country: 'US' },
+      });
+
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ location: { city: 'Stanford', country: 'US' } }),
+      );
+    });
+
+    it('maps an ApiError 409 to a Conflict response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.CONFLICT, {
+          statusCode: StatusCodes.CONFLICT,
+          code: ApiErrorCode.RESOURCE_CONFLICT,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.CONFLICT)).toBeDefined();
+    });
+
+    it('maps an ApiError 422 to an Unprocessable Entity response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+          code: ApiErrorCode.RESOURCE_UNPROCESSABLE,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.UNPROCESSABLE_ENTITY)).toBeDefined();
+    });
+
+    it('maps an ApiError 429 to a Too Many Requests response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.RATE_LIMITED, {
+          statusCode: StatusCodes.TOO_MANY_REQUESTS,
+          code: ApiErrorCode.RATE_LIMITED,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.TOO_MANY_REQUESTS)).toBeDefined();
+    });
+
+    it('maps an ApiError 500 to an Internal Server Error response', async () => {
+      mockCreate.mockRejectedValue(
+        new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        }),
+      );
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      const result = await Controller.create(validBody);
+      expect(expectErrorResponse(result, StatusCodes.INTERNAL_SERVER_ERROR)).toBeDefined();
+    });
+
+    it('re-throws non-ApiError exceptions so the global error handler catches them', async () => {
+      const unexpected = new Error('Unexpected error');
+      mockCreate.mockRejectedValue(unexpected);
+
+      const { FamiliesController: Controller } = await import('./families.controller');
+
+      await expect(Controller.create(validBody)).rejects.toThrow('Unexpected error');
     });
   });
 });

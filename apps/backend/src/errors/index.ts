@@ -2,7 +2,9 @@ export { ApiError } from './api-error';
 export {
   isPostgresError,
   isPostgresErrorCode,
+  isPostgresErrorWithConstraint,
   isUniqueViolation,
+  isUniqueViolationOnConstraint,
   isForeignKeyViolation,
   isNotNullViolation,
 } from './postgres-error';
