@@ -128,7 +128,7 @@ describe('FamilyService.addChildren', () => {
       });
     });
 
-    it('returns 422 if the family has been rostered out', async () => {
+    it('returns 422 if the family has been rostered out (rosteringEnded in the past)', async () => {
       mockFamilyRepo.getById.mockResolvedValue(
         FamilyFactory.build({ id: FAMILY_ID, rosteringEnded: new Date('2020-01-01') }),
       );
@@ -137,6 +137,14 @@ describe('FamilyService.addChildren', () => {
       ).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       });
+    });
+
+    it('still permits add-children when rosteringEnded is set to a future date (scheduled deactivation)', async () => {
+      const oneYearOut = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      mockFamilyRepo.getById.mockResolvedValue(FamilyFactory.build({ id: FAMILY_ID, rosteringEnded: oneYearOut }));
+
+      const result = await makeService().addChildren(parentAuth, FAMILY_ID, { children: [makeChild('1')] });
+      expect(result.ids).toEqual([CHILD_ID_1]);
     });
 
     it('returns 403 if FGA denies the caller can_create_child on the family', async () => {
@@ -178,7 +186,7 @@ describe('FamilyService.addChildren', () => {
       });
     });
 
-    it('returns 422 when an activation code resolves to a rostered-out group', async () => {
+    it('returns 422 when an activation code resolves to a rostered-out group (rosteringEnded in the past)', async () => {
       mockGroupRepo.getById.mockResolvedValue(
         GroupFactory.build({ id: GROUP_ID, rosteringEnded: new Date('2020-01-01') }),
       );
@@ -187,6 +195,14 @@ describe('FamilyService.addChildren', () => {
       ).rejects.toMatchObject({
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
       });
+    });
+
+    it('still permits add-children when the resolved group has rosteringEnded set in the future', async () => {
+      const oneYearOut = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      mockGroupRepo.getById.mockResolvedValue(GroupFactory.build({ id: GROUP_ID, rosteringEnded: oneYearOut }));
+
+      const result = await makeService().addChildren(parentAuth, FAMILY_ID, { children: [makeChild('1')] });
+      expect(result.ids).toEqual([CHILD_ID_1]);
     });
 
     it('deduplicates activation codes — two children sharing a code resolve to one lookup', async () => {

@@ -504,10 +504,16 @@ export function FamilyService({
         context: { userId, familyId },
       });
     }
-    // Strict null check matches the repository's listing filter (`isNull(families.rosteringEnded)`)
-    // and the group check below — any non-null `rosteringEnded` (even a future date) marks the
-    // family as deactivated for add-children purposes.
-    if (family.rosteringEnded !== null) {
+    // Temporal check — `rosteringEnded` represents *when* rostering will end. A null value means
+    // "indefinite" and a future-dated value means "scheduled to end on X" — both are still active
+    // for add-children purposes. This matches the convention used by POST /classes and POST /schools
+    // when verifying that a parent entity is still valid for new child rows.
+    //
+    // The repository's listing filter uses `isNull(families.rosteringEnded)` and treats any
+    // non-null value as deactivated. That's an open inconsistency in the codebase; harmonizing
+    // it (and the equivalent `getActiveById` + listing patterns in other repositories) is a
+    // follow-up that needs a shared SQL helper.
+    if (family.rosteringEnded !== null && family.rosteringEnded <= new Date()) {
       logger.warn({ userId, familyId }, 'Attempted to add children to a rostered-ended family');
       throw new ApiError(ApiErrorMessage.UNPROCESSABLE_ENTITY, {
         statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
@@ -552,9 +558,9 @@ export function FamilyService({
           context: { userId, familyId },
         });
       }
-      // Confirm the resolved group is itself active.
+      // Confirm the resolved group is itself active (temporal check — see the family check above).
       const group = await groupRepository.getById({ id: row.groupId });
-      if (!group || group.rosteringEnded !== null) {
+      if (!group || (group.rosteringEnded !== null && group.rosteringEnded <= new Date())) {
         logger.warn(
           { userId, familyId, code, groupId: row.groupId },
           'Activation code resolved to an inactive or missing group',
