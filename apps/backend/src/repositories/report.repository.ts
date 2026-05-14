@@ -1112,6 +1112,78 @@ export class ReportRepository {
    * reuse the same lookup at district scope without duplicating the two-phase
    * user_orgs → user_classes fallback.
    */
+  /**
+   * Like {@link getSchoolNamesForUsers} but returns `{ schoolId, schoolName }`
+   * tuples. The schoolId is needed by the facets endpoint for stable
+   * client-side keying — school name alone isn't unique across districts.
+   *
+   * Resolution rules and caveats match `getSchoolNamesForUsers`: a user
+   * with multiple school memberships gets their alphabetically-first
+   * school, the user_orgs → orgs path takes precedence over the
+   * user_classes → classes → school fallback, and rostering-ended schools
+   * / classes are excluded. The function uses the NOW()-based
+   * `isEnrollmentActive` predicate deliberately (the single live
+   * user_orgs row schema has no historical snapshot — see the JSDoc on
+   * `getSchoolNamesForUsers` for the past-admin display caveat).
+   */
+  async getSchoolsForUsers(userIds: string[]): Promise<Map<string, { schoolId: string; schoolName: string }>> {
+    const map = new Map<string, { schoolId: string; schoolName: string }>();
+
+    const orgRows = await this.db
+      .selectDistinct({
+        userId: userOrgs.userId,
+        schoolId: orgs.id,
+        schoolName: orgs.name,
+      })
+      .from(userOrgs)
+      .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+      .where(
+        and(
+          inArray(userOrgs.userId, userIds),
+          eq(orgs.orgType, OrgType.SCHOOL),
+          isEnrollmentActive(userOrgs),
+          isNull(orgs.rosteringEnded),
+        ),
+      )
+      .orderBy(asc(orgs.name));
+
+    for (const row of orgRows) {
+      if (!map.has(row.userId)) {
+        map.set(row.userId, { schoolId: row.schoolId, schoolName: row.schoolName });
+      }
+    }
+
+    const missingUserIds = userIds.filter((id) => !map.has(id));
+    if (missingUserIds.length > 0) {
+      const classRows = await this.db
+        .selectDistinct({
+          userId: userClasses.userId,
+          schoolId: orgs.id,
+          schoolName: orgs.name,
+        })
+        .from(userClasses)
+        .innerJoin(classes, eq(userClasses.classId, classes.id))
+        .innerJoin(orgs, eq(classes.schoolId, orgs.id))
+        .where(
+          and(
+            inArray(userClasses.userId, missingUserIds),
+            isEnrollmentActive(userClasses),
+            isNull(classes.rosteringEnded),
+            isNull(orgs.rosteringEnded),
+          ),
+        )
+        .orderBy(asc(orgs.name));
+
+      for (const row of classRows) {
+        if (!map.has(row.userId)) {
+          map.set(row.userId, { schoolId: row.schoolId, schoolName: row.schoolName });
+        }
+      }
+    }
+
+    return map;
+  }
+
   async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
     const rows = await this.db
       .selectDistinct({

@@ -1,9 +1,9 @@
 import { initContract } from '@ts-rest/core';
 import { z } from 'zod';
-import { ReportScopeQuerySchema } from '../common';
 import {
   ScoreOverviewQuerySchema,
   ScoreOverviewResponseSchema,
+  ScoreFacetsQuerySchema,
   ScoreFacetsResponseSchema,
   StudentScoresQuerySchema,
   StudentScoresResponseSchema,
@@ -126,7 +126,7 @@ export const ScoreReportsContract = c.router({
     method: 'GET',
     path: '/:id/reports/scores/facets',
     pathParams: z.object({ id: z.string().uuid() }),
-    query: ReportScopeQuerySchema,
+    query: ScoreFacetsQuerySchema,
     responses: {
       200: SuccessEnvelopeSchema(ScoreFacetsResponseSchema),
       400: ErrorEnvelopeSchema,
@@ -139,12 +139,21 @@ export const ScoreReportsContract = c.router({
     summary: 'Get score distribution facets for an administration',
     description:
       'Returns aggregated support level, raw score, and percentile distributions per task for all students in scope. ' +
-      'Includes grade-level and school-level aggregations. ' +
-      'Not paginated — aggregates across the full population. ' +
-      'Scoped to a specific org, class, or group via scopeType/scopeId.\n\n' +
+      'Includes grade-level and school-level aggregations. At non-district scopes, the school-faceted arrays ' +
+      "(`supportLevelBySchool`, `scoreBinsBySchool`) are returned as empty arrays — the dashboard's school-facet " +
+      'toggle is district-only.\n\n' +
+      'Not paginated — aggregates across the full population. Scoped to a specific org, class, or group via ' +
+      'scopeType/scopeId.\n\n' +
+      'Bin edges are computed once per task from the unfiltered student population in scope, then reused under ' +
+      'filtering — toggling a `taskId` or `user.grade` filter narrows which bars are populated without redrawing ' +
+      'the axis.\n\n' +
+      'Filter support matches what `/reports/scores/overview` actually implements today: `taskId:in` and ' +
+      '`user.grade` (eq/neq/in/gte/lte/contains; gte/lte are grade-ordinal via the shared grade utility). ' +
+      '`user.schoolName` filtering is deferred to a follow-up PR that fixes the overview + students + facets ' +
+      'endpoints in one pass.\n\n' +
       'Status codes:\n' +
       '- 200: Aggregated statistics returned successfully\n' +
-      '- 400: Invalid scope (scopeId not assigned to this administration)\n' +
+      '- 400: Invalid scope (scopeId not assigned to this administration), unknown task ID in filter, or invalid filter\n' +
       '- 401: Missing or invalid authentication token\n' +
       '- 403: User lacks can_read_scores at the requested administration or scope level\n' +
       '- 404: Administration not found\n' +

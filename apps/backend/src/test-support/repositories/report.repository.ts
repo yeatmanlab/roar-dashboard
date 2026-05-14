@@ -19,6 +19,7 @@ export function createMockReportRepository(): MockedObject<ReportRepository> {
     getAllStudentsInScope: vi.fn(),
     getCompletedRunScores: vi.fn(),
     getSchoolNamesForUsers: vi.fn(),
+    getSchoolsForUsers: vi.fn(),
     getStudentScores: vi.fn(),
     verifyStudentInScope: vi.fn(),
     getHistoricalRunsForUser: vi.fn(),

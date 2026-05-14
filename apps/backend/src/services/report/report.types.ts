@@ -133,6 +133,7 @@ export interface ScoreOverviewInput {
 export interface ScoreFacetsInput {
   scopeType: ScopeType;
   scopeId: string;
+  filter: ParsedFilter[];
 }
 
 /** Support level distribution counts for a single category. */
@@ -383,28 +384,44 @@ interface ServiceScoreBin {
   count: number;
 }
 
+/**
+ * Per-task aggregation in `ScoreFacetsResult`.
+ *
+ * `*BySchool` arrays are always returned (never null). They are empty
+ * arrays at non-district scope — the dashboard's school-facet toggle is
+ * district-only, so callers can iterate without null-guarding. The
+ * contract types these the same way (`z.array(...)`, not `.nullable()`).
+ *
+ * `schoolName` is nullable because it is a derived field — for a user
+ * whose org membership doesn't resolve to a school name, the column is
+ * null. Matches `ReportUserInfoSchema.schoolName` convention.
+ *
+ * `grade` uses the raw `users.grade` string (`Kindergarten`, `1`...`12`,
+ * etc.), matching the score-overview and student-scores endpoints so the
+ * frontend can join across them without remapping.
+ */
 export interface ServiceTaskScoreFacet {
   taskId: string;
   taskSlug: string;
   taskName: string;
   orderIndex: number;
   supportLevelByGrade: (ServiceSupportLevelDistribution & { grade: string; totalAssessed: number })[];
-  supportLevelBySchool:
-    | (ServiceSupportLevelDistribution & { schoolId: string; schoolName: string | undefined; totalAssessed: number })[]
-    | null;
+  supportLevelBySchool: (ServiceSupportLevelDistribution & {
+    schoolId: string;
+    schoolName: string | null;
+    totalAssessed: number;
+  })[];
   scoreBinsByGrade: {
     grade: string;
     rawScore: ServiceScoreBin[];
     percentile: ServiceScoreBin[];
   }[];
-  scoreBinsBySchool:
-    | {
-        schoolId: string;
-        schoolName: string | undefined;
-        rawScore: ServiceScoreBin[];
-        percentile: ServiceScoreBin[];
-      }[]
-    | null;
+  scoreBinsBySchool: {
+    schoolId: string;
+    schoolName: string | null;
+    rawScore: ServiceScoreBin[];
+    percentile: ServiceScoreBin[];
+  }[];
 }
 
 /** Return type for getScoreFacets. */
