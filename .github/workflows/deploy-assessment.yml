@@ -19,6 +19,11 @@ on:
         description: "npm script to build the assessment (e.g. build:staging)"
         required: true
         type: string
+      firebase-channel:
+        description: "Firebase Hosting channel to deploy to. Use 'preview' for PR previews, 'default' for permanent deployments."
+        required: false
+        type: string
+        default: default
       run-cypress:
         description: "Whether to run Cypress e2e tests after deployment."
         required: false
@@ -58,10 +63,11 @@ jobs:
       - name: Deploy ${{ inputs.assessment }}
         uses: ./.github/actions/deploy
         with:
-          firebase-channel: default
+          firebase-channel: ${{ inputs.firebase-channel }}
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
           gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           dist-path: apps/assessments/${{ inputs.assessment }}/dist
           firebase-config-path: apps/assessments/${{ inputs.assessment }}/firebase.json
 
