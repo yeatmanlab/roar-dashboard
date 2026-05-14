@@ -170,6 +170,10 @@ module.exports = async (env, args) => {
         FIREBASE_APP_MESSAGING_SENDER_ID: '',
         FIREBASE_APP_APP_ID: '',
         ROAR_API_URL: 'https://localhost:4000',
+        // Points dev builds at the local auth emulator started by researcher-environment:up.
+        // connectAuthEmulator() in serve.js reads this; getFirebaseConfig() uses it to
+        // skip real Firebase credentials and return a minimal emulator-only config.
+        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
       }),
     ],
   };
