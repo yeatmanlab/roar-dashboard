@@ -47,7 +47,7 @@ onAuthStateChanged(auth, (user) => {
     // eslint-disable-next-line no-undef
     const ctx = {
       // eslint-disable-next-line no-undef
-      baseUrl: ROAR_API_URL,
+      baseUrl: `${ROAR_API_URL}/v1`,
       auth: { getToken: () => user.getIdToken() },
       participant: { participantId: user.uid },
     };
