@@ -438,5 +438,22 @@ export interface ServiceTaskScoreFacet {
   }[];
 }
 
-/** Return type for getScoreFacets. */
-export type ScoreFacetsResult = ScoreReportResult<ServiceTaskScoreFacet>;
+/**
+ * Return type for getScoreFacets.
+ *
+ * Standalone rather than `ScoreReportResult<ServiceTaskScoreFacet>` because
+ * the facets endpoint does not expose `exclusions` — the rostering-ended
+ * exclusion count belongs to the list endpoints whose result rows are
+ * paginated against a denominator the user sees. The facets payload is a
+ * fixed-size aggregation; surfacing an exclusion count here would invite
+ * a wrong interpretation (e.g., "Lincoln Elementary's per-grade chart
+ * excludes 7 students" — but those 7 students wouldn't have been visible
+ * in the chart even without rostering-ended). Mirror the contract shape
+ * in `ScoreFacetsResponseSchema` exactly.
+ */
+export interface ScoreFacetsResult {
+  totalStudents: number;
+  tasks: ServiceTaskScoreFacet[];
+  /** ISO 8601 timestamp when the aggregation was computed */
+  computedAt: string;
+}

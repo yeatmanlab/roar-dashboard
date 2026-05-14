@@ -1298,30 +1298,6 @@ export class ReportRepository {
   }
 
   /**
-   * Resolve school names for a set of users by looking up their org memberships.
-   * Returns the name of the school-type org the user belongs to.
-   * If a user belongs to multiple schools, uses the alphabetically first school name
-   * for deterministic results.
-   *
-   * Note: This lookup is not scoped to the administration's assigned orgs — it returns
-   * the user's school from their org membership regardless of which schools are part of
-   * the administration. For a user enrolled in multiple schools, the alphabetically first
-   * school may not be the most relevant one for the current report context.
-   *
-   * Public so that other repository methods (e.g., the student-scores listing) can
-   * reuse the same lookup at district scope without duplicating the two-phase
-   * user_orgs → user_classes fallback.
-   *
-   * **Known issue (cross-district leakage)**: this method does not constrain
-   * the resolved school by the requested scope's ltree path. A user in scope
-   * for district A who also has a live school enrollment in district B may
-   * surface district B's school in district A's report. The sibling
-   * {@link getSchoolsForUsers} accepts a `districtId` parameter and applies
-   * the path filter; this method has not been updated to avoid behavior
-   * changes to `getStudentScores` and `getIndividualStudentReport`. Tracked
-   * as a follow-up alongside the row-level user_orgs history work.
-   */
-  /**
    * Resolve `{ schoolId, schoolName }` tuples for a set of users, scoped to
    * the descendants of a specific district. Used by the facets endpoint at
    * district scope to attach school IDs to the per-school aggregation
@@ -1416,6 +1392,30 @@ export class ReportRepository {
     return map;
   }
 
+  /**
+   * Resolve school names for a set of users by looking up their org memberships.
+   * Returns the name of the school-type org the user belongs to.
+   * If a user belongs to multiple schools, uses the alphabetically first school name
+   * for deterministic results.
+   *
+   * Note: This lookup is not scoped to the administration's assigned orgs — it returns
+   * the user's school from their org membership regardless of which schools are part of
+   * the administration. For a user enrolled in multiple schools, the alphabetically first
+   * school may not be the most relevant one for the current report context.
+   *
+   * Public so that other repository methods (e.g., the student-scores listing) can
+   * reuse the same lookup at district scope without duplicating the two-phase
+   * user_orgs → user_classes fallback.
+   *
+   * **Known issue (cross-district leakage)**: this method does not constrain
+   * the resolved school by the requested scope's ltree path. A user in scope
+   * for district A who also has a live school enrollment in district B may
+   * surface district B's school in district A's report. The sibling
+   * {@link getSchoolsForUsers} accepts a `districtId` parameter and applies
+   * the path filter; this method has not been updated to avoid behavior
+   * changes to `getStudentScores` and `getIndividualStudentReport`. Tracked
+   * as a follow-up alongside the row-level user_orgs history work.
+   */
   async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
     const rows = await this.db
       .selectDistinct({

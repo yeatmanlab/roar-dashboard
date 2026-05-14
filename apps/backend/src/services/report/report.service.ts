@@ -772,6 +772,13 @@ export function ReportService({
       // 3. Group variants by taskId (multi-variant dedup, same as overview).
       const taskGroups = groupVariantsByTaskId(taskMetas);
       if (taskGroups.length === 0) {
+        // TODO(#1782 follow-up): returns totalStudents = 0 when a stale
+        // taskId:in filter excludes every task, rather than the real
+        // in-scope population. Short-circuit fires before step 4's
+        // getAllStudentsInScope call. Minor UX concern (the "X students
+        // in scope" header would lie); behavior is acceptable because
+        // the response's tasks array is also empty so the chart UI
+        // doesn't render a denominator at all.
         return { totalStudents: 0, tasks: [], computedAt: new Date().toISOString() };
       }
 
@@ -2324,7 +2331,7 @@ function aggregateTaskFacet({
     }
   }
 
-  // --- 3. Project tallies into the response shape ---
+  // --- 4. Project tallies into the response shape ---
   const sortedGrades = Array.from(byGrade.keys()).sort(compareGrade);
   const sortedSchoolIds = Array.from(bySchool.keys()).sort((a, b) =>
     (schoolNameById.get(a) ?? '').localeCompare(schoolNameById.get(b) ?? ''),
