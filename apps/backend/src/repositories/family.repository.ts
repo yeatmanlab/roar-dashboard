@@ -5,6 +5,7 @@ import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { Family, NewFamily, NewUser } from '../db/schema';
 import { families, userFamilies, users } from '../db/schema';
+import { UserFamilyRole } from '../enums/user-family-role.enum';
 import { CoreDbClient } from '../db/clients';
 import type { CoreTransaction } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
@@ -76,7 +77,7 @@ export class FamilyRepository extends BaseRepository<Family, typeof families> {
     await transaction.insert(userFamilies).values({
       userId: caretakerId,
       familyId,
-      role: 'parent',
+      role: UserFamilyRole.PARENT,
       joinedOn: new Date(),
     });
 

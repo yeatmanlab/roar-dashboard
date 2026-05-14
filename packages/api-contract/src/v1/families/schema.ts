@@ -27,8 +27,12 @@ export type EnrolledFamilyUsersResponse = z.infer<typeof EnrolledFamilyUsersResp
  *
  * Matches the `app.families.location_*` columns. `coordinates` is intentionally
  * omitted from the create-request shape — the column exists but isn't accepted
- * at create time. Country uses 2-letter ISO 3166-1 alpha-2 codes to match the
- * underlying `varchar(2)` column constraint.
+ * at create time.
+ *
+ * Country uses 2-letter ISO 3166-1 alpha-2 codes to match the underlying
+ * `varchar(2)` column constraint. The schema accepts either upper- or
+ * lower-case input (e.g. both `"US"` and `"us"`) and normalizes to upper-case
+ * before storage, since ISO 3166-1 alpha-2 codes are conventionally upper-case.
  */
 export const FamilyLocationSchema = z.object({
   addressLine1: z.string().optional(),
@@ -38,7 +42,8 @@ export const FamilyLocationSchema = z.object({
   postalCode: z.string().optional(),
   country: z
     .string()
-    .regex(/^[A-Z]{2}$/, 'country must be a 2-letter ISO 3166-1 alpha-2 code')
+    .regex(/^[A-Za-z]{2}$/, 'country must be a 2-letter ISO 3166-1 alpha-2 code')
+    .transform((v) => v.toUpperCase())
     .optional(),
 });
 

@@ -378,6 +378,14 @@ describe('POST /v1/families', () => {
       expect(familyRow!.locationStateProvince).toBe('CA');
       expect(familyRow!.locationCountry).toBe('US');
     });
+
+    it('normalizes a lower-case country code to upper-case', async () => {
+      const body = { ...validBody('lowercase-country'), location: { country: 'us' } };
+      const res = await expectRoute('POST', '/v1/families').unauthenticated().withBody(body).toReturn(201);
+
+      const [familyRow] = await CoreDbClient.select().from(families).where(eq(families.id, res.body.data.id));
+      expect(familyRow!.locationCountry).toBe('US');
+    });
   });
 
   describe('validation', () => {
@@ -448,15 +456,12 @@ describe('POST /v1/families', () => {
   });
 
   describe('atomicity', () => {
-    it('deletes the Firebase account when the DB write fails', async () => {
-      // Cause the Firebase create to succeed, but force a DB write failure by reusing
-      // an existing user email (Firebase mock returns user-not-found so pre-flight
-      // misses the conflict and we hit the DB unique index at insert time).
+    it('pre-flight short-circuits before Firebase when email already exists in DB', async () => {
+      // The Firebase-created-then-DB-fails compensation path is covered by the unit tests;
+      // at the integration level we verify the pre-flight DB check prevents Firebase writes
+      // entirely when the email is already taken — the safer, no-orphan-record path.
       const conflictingUser = await UserFactory.create({ email: makeEmail('conflict-target') });
 
-      // Bypass the DB pre-flight by intercepting only the Firebase pre-flight
-      // and creating the existing-user state directly via the factory above.
-      // The DB pre-flight will catch this first and return 409 without a Firebase write.
       const body = { ...validBody('atomicity'), email: conflictingUser.email! };
       const captured: { createUserCalled: boolean; deleteUserCalled: boolean } = {
         createUserCalled: false,

@@ -230,6 +230,10 @@ export function FamilyService({
       const authRecord = await FirebaseAuthClient.createUser({
         email,
         password,
+        // Middle name is intentionally excluded from the Firebase displayName — Firebase only
+        // uses this for surface UI like email templates, where "First Last" is the right shape.
+        // The full name (including middle) is persisted to `users.nameMiddle` for our own use,
+        // matching the convention in `POST /v1/users`.
         displayName: [name.first, name.last].filter(Boolean).join(' '),
       });
       firebaseUid = authRecord.uid;
@@ -391,7 +395,7 @@ export function FamilyService({
 
       throw new ApiError(ApiErrorMessage.EXTERNAL_SERVICE_UNAVAILABLE, {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
         context: { caretakerId, familyId, email, firebaseUid },
         cause: error,
       });
