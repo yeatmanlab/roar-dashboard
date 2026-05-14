@@ -213,6 +213,36 @@ describe('SchoolRepository', () => {
       });
     });
 
+    it('excludes rostering-ended users from school user counts (#1742)', async () => {
+      // School with one active and one decommissioned user. The user-count
+      // subquery joins through `users` with isActiveRoster, so the ended
+      // user must drop out of the count.
+      const school = await OrgFactory.create({
+        orgType: OrgType.SCHOOL,
+        name: 'School with Rostering-Ended User Counts',
+        parentOrgId: baseFixture.district.id,
+      });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveSchoolStudent1742' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedSchoolStudent1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserOrgFactory.create({ userId: activeStudent.id, orgId: school.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: endedStudent.id, orgId: school.id, role: UserRole.STUDENT });
+
+      const result = (await repository.listAll({
+        page: 1,
+        perPage: 1000,
+        embedCounts: true,
+      })) as { items: SchoolWithCounts[]; totalItems: number };
+
+      const schoolResult = result.items.find((s) => s.id === school.id);
+      expect(schoolResult).toBeDefined();
+      expect(schoolResult?.counts?.users).toBe(1);
+    });
+
     it('includes ended classes in counts when includeEnded=true', async () => {
       // Create a school with one active class and one ended class
       const school = await OrgFactory.create({

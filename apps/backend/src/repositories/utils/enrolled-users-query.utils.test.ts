@@ -24,28 +24,34 @@ describe('enrolled-users-query.utils', () => {
   });
 
   describe('getEnrolledUsersFilterConditions', () => {
-    it('returns empty array when no filters provided', () => {
+    // The base array always includes the `isActiveRoster(users)` predicate
+    // (#1742). Every user-list endpoint must exclude rostering-ended users
+    // unconditionally, so it's wired at the query composition layer rather
+    // than added by each caller. Length assertions below account for it.
+    const BASE_CONDITION_COUNT = 1;
+
+    it('returns only the active-roster condition when no filters provided', () => {
       const options: ListEnrolledUsersOptions = { page: 1, perPage: 10 };
       const conditions = getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES);
-      expect(conditions).toEqual([]);
+      expect(conditions).toHaveLength(BASE_CONDITION_COUNT);
     });
 
-    it('returns grade condition when grade filter provided', () => {
+    it('appends grade condition when grade filter provided', () => {
       const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: ['5'] };
       const conditions = getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES);
-      expect(conditions).toHaveLength(1);
+      expect(conditions).toHaveLength(BASE_CONDITION_COUNT + 1);
     });
 
-    it('returns role condition when role filter provided', () => {
+    it('appends role condition when role filter provided', () => {
       const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, role: UserRole.STUDENT };
       const conditions = getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES);
-      expect(conditions).toHaveLength(1);
+      expect(conditions).toHaveLength(BASE_CONDITION_COUNT + 1);
     });
 
-    it('returns both conditions when grade and role filters provided', () => {
+    it('appends both conditions when grade and role filters provided', () => {
       const options: ListEnrolledUsersOptions = { page: 1, perPage: 10, grade: ['5'], role: UserRole.STUDENT };
       const conditions = getEnrolledUsersFilterConditions(options, UserJunctionTable.USER_CLASSES);
-      expect(conditions).toHaveLength(2);
+      expect(conditions).toHaveLength(BASE_CONDITION_COUNT + 2);
     });
   });
 });
