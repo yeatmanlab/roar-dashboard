@@ -46,6 +46,7 @@ export const UserFactory = Factory.define<User>(({ onCreate }) => {
       hispanicEthnicity: user.hispanicEthnicity,
       homeLanguage: user.homeLanguage,
       isSuperAdmin: user.isSuperAdmin,
+      rosteringEnded: user.rosteringEnded,
     };
 
     const [inserted] = await CoreDbClient.insert(users).values(insertData).returning();

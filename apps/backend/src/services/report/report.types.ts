@@ -72,11 +72,22 @@ export interface ServiceProgressStudent {
   progress: Record<string, ServiceProgressEntry>;
 }
 
+/**
+ * Counts of records filtered out of a reporting response (#1742). Surfaced
+ * alongside `pagination` / `totalItems` so the frontend can caveat sparse
+ * historical reports. Open-ended on purpose — future categories beyond
+ * `rosteringEnded` can be added without a breaking change.
+ */
+export interface ReportExclusions {
+  rosteringEnded: number;
+}
+
 /** Return type for listProgressStudents. */
 export interface ProgressStudentsResult {
   tasks: ServiceTaskMetadata[];
   items: ServiceProgressStudent[];
   totalItems: number;
+  exclusions: ReportExclusions;
 }
 
 /** Query input for getProgressOverview. */
@@ -120,6 +131,7 @@ export interface ProgressOverviewResult {
   studentsCompleted: number;
   byTask: ServiceTaskOverview[];
   computedAt: string;
+  exclusions: ReportExclusions;
 }
 
 /** Query input for getScoreOverview. */
@@ -169,6 +181,7 @@ interface ScoreReportResult<T> {
   tasks: T[];
   /** ISO 8601 timestamp when the aggregation was computed */
   computedAt: string;
+  exclusions: ReportExclusions;
 }
 
 /** Query input for listStudentScores. */
@@ -236,6 +249,7 @@ export interface StudentScoresResult {
   tasks: ServiceTaskMetadata[];
   items: ServiceStudentScoreRow[];
   totalItems: number;
+  exclusions: ReportExclusions;
 }
 
 /** Query input for getIndividualStudentReport. */

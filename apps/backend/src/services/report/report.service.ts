@@ -303,17 +303,34 @@ export function ReportService({
           ? buildFilterConditions(userFilters, PROGRESS_FILTER_FIELDS, { gradeAwareFields: GRADE_AWARE_FIELDS })
           : undefined;
 
-      // 5. Get paginated students with run data.
-      // Progress status sort/filter is handled via LEFT JOIN + CASE in the repository.
-      const result = await reportRepository.getProgressStudents(
-        administrationId,
-        { scopeType, scopeId },
-        taskVariantIds,
-        { page, perPage, sortColumn, sortDirection: sortOrder },
-        filterCondition,
-        progressStatusSort ?? undefined,
-        progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
-      );
+      // 5. Get paginated students with run data and the rostering-ended
+      // exclusion count in parallel. Progress status sort/filter is handled
+      // via LEFT JOIN + CASE in the repository. The exclusion query runs as
+      // a sibling rather than a serial follow-up so the wall-clock cost is
+      // bounded by `max(students-query, exclusion-count-query)` rather than
+      // the sum.
+      const [result, exclusionsRosteringEnded] = await Promise.all([
+        reportRepository.getProgressStudents(
+          administrationId,
+          { scopeType, scopeId },
+          taskVariantIds,
+          { page, perPage, sortColumn, sortDirection: sortOrder },
+          filterCondition,
+          progressStatusSort ?? undefined,
+          progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
+        ),
+        reportRepository.countRosteringEndedExclusions({ scopeType, scopeId }).catch((err) => {
+          // Wrap the parallel branch in `.catch` so a failure here throws
+          // `ApiError` immediately rather than propagating a raw error to
+          // the outer catch (per backend-error-handling.md).
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        }),
+      ]);
 
       // 6. Transform to response shape
       const tasks: ServiceTaskMetadata[] = taskMetas.map((t) => ({
@@ -341,7 +358,12 @@ export function ReportService({
       // Students with an empty progress map (all tasks excluded by conditionsAssignment)
       // are intentionally included — they are enrolled in the scope and the empty row is
       // meaningful to teachers. Excluding them would cause pagination instability.
-      return { tasks, items, totalItems: result.totalItems };
+      return {
+        tasks,
+        items,
+        totalItems: result.totalItems,
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -400,14 +422,22 @@ export function ReportService({
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
 
-      // 3. Get task metadata and run SQL-level aggregation
+      // 3. Get task metadata and run SQL-level aggregation in parallel with
+      // the rostering-ended exclusion count (#1742). The exclusion query
+      // adds one round-trip rather than serializing.
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
-      const { totalStudents, taskStatusCounts, studentCounts } = await reportRepository.getProgressOverviewCounts(
-        administrationId,
-        { scopeType, scopeId },
-        taskMetas,
-      );
+      const [{ totalStudents, taskStatusCounts, studentCounts }, exclusionsRosteringEnded] = await Promise.all([
+        reportRepository.getProgressOverviewCounts(administrationId, { scopeType, scopeId }, taskMetas),
+        reportRepository.countRosteringEndedExclusions({ scopeType, scopeId }).catch((err) => {
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        }),
+      ]);
 
       // 4. Build per-task counters from unique taskIds (preserving order from metadata)
       const taskIdOrder: string[] = [];
@@ -485,6 +515,7 @@ export function ReportService({
         studentsCompleted: studentCounts.studentsCompleted,
         byTask,
         computedAt: new Date().toISOString(),
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
       };
     } catch (error) {
       if (error instanceof ApiError) throw error;
@@ -585,11 +616,29 @@ export function ReportService({
       // filter eliminates every task we can short-circuit without touching the DB.
       const taskGroups = groupVariantsByTaskId(taskMetas);
 
+      // Fetch the rostering-ended exclusion count eagerly so it can be
+      // surfaced in every return path of this function (including the
+      // short-circuit empty-tasks branch immediately below). The count is
+      // a single COUNT(DISTINCT) query — cheap on its own and run before
+      // the heavier `getAllStudentsInScope` so we can include it in early-
+      // return responses.
+      const exclusionsRosteringEnded = await reportRepository
+        .countRosteringEndedExclusions({ scopeType, scopeId })
+        .catch((err) => {
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        });
+
       if (taskGroups.length === 0) {
         return {
           totalStudents: 0,
           tasks: [],
           computedAt: new Date().toISOString(),
+          exclusions: { rosteringEnded: exclusionsRosteringEnded },
         };
       }
 
@@ -604,6 +653,7 @@ export function ReportService({
           totalStudents,
           tasks: taskGroups.map(({ representative }) => buildEmptyTaskOverview(representative)),
           computedAt: new Date().toISOString(),
+          exclusions: { rosteringEnded: exclusionsRosteringEnded },
         };
       }
 
@@ -639,7 +689,12 @@ export function ReportService({
         ),
       );
 
-      return { totalStudents, tasks, computedAt: new Date().toISOString() };
+      return {
+        totalStudents,
+        tasks,
+        computedAt: new Date().toISOString(),
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 
@@ -908,12 +963,26 @@ export function ReportService({
             })
           : undefined;
 
+      // Fetch the rostering-ended exclusion count eagerly so it can be
+      // surfaced in every return path of this function (including the
+      // short-circuit empty-tasks branch immediately below).
+      const exclusionsRosteringEnded = await reportRepository
+        .countRosteringEndedExclusions({ scopeType, scopeId })
+        .catch((err) => {
+          throw new ApiError('Failed to compute rostering-ended exclusion count', {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            code: ApiErrorCode.DATABASE_QUERY_FAILED,
+            context: { userId, administrationId, scopeType, scopeId },
+            cause: err,
+          });
+        });
+
       // Short-circuit: when the taskId filter (or an empty administration) leaves
       // no tasks in scope, no per-task entries can be assembled. Skip the
       // pagination + score JOINs and return an empty page. Matches the analogous
       // short-circuit in getScoreOverview.
       if (taskMetas.length === 0) {
-        return { tasks: [], items: [], totalItems: 0 };
+        return { tasks: [], items: [], totalItems: 0, exclusions: { rosteringEnded: exclusionsRosteringEnded } };
       }
 
       // 9. Determine the static sort column when sorting by a user field.
@@ -970,7 +1039,12 @@ export function ReportService({
         ),
       );
 
-      return { tasks: tasksOrdered, items, totalItems: result.totalItems };
+      return {
+        tasks: tasksOrdered,
+        items,
+        totalItems: result.totalItems,
+        exclusions: { rosteringEnded: exclusionsRosteringEnded },
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
 

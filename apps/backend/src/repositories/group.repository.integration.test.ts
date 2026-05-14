@@ -211,6 +211,34 @@ describe('GroupRepository', () => {
       expect(result.totalItems).toBe(0);
     });
 
+    it('excludes users with rosteringEnded set in the past (#1742)', async () => {
+      // User-level rostering end is an independent boundary — an active group
+      // must still not surface a decommissioned user in its enrolled-users list.
+      const groupForUserListTest = await GroupFactory.create({ name: 'Group with Rostering-Ended User' });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveGroupStudent1742' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedGroupStudent1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserGroupFactory.create({
+        userId: activeStudent.id,
+        groupId: groupForUserListTest.id,
+        role: UserRole.STUDENT,
+      });
+      await UserGroupFactory.create({
+        userId: endedStudent.id,
+        groupId: groupForUserListTest.id,
+        role: UserRole.STUDENT,
+      });
+
+      const result = await repository.getUsersByGroupId(groupForUserListTest.id, { page: 1, perPage: 100 });
+
+      expect(result.totalItems).toBe(1);
+      expect(result.items.map((u) => u.id)).toEqual([activeStudent.id]);
+    });
+
     describe('filters', () => {
       it('filters by role', async () => {
         // Create a group with users having different roles

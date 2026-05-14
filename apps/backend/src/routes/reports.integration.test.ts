@@ -397,6 +397,13 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       expect(data.pagination.page).toBe(1);
       expect(data.pagination.perPage).toBe(25);
       expect(data.pagination.totalItems).toBeGreaterThan(0);
+
+      // Exclusions block — #1742. Always present, defaulting to 0 when no
+      // rostering-ended users would have otherwise been in scope.
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
     });
 
     it('respects pagination parameters', async () => {
@@ -565,6 +572,65 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
         .set('Authorization', 'Bearer token');
 
       expect(res.status).toBe(StatusCodes.BAD_REQUEST);
+    });
+  });
+
+  describe('rostering-ended exclusions (#1742)', () => {
+    /**
+     * End-to-end check that a rostering-ended student is invisible from the
+     * progress students list AND surfaces in `exclusions.rosteringEnded`. This
+     * targets the progress students endpoint specifically; the other three
+     * reporting endpoints share the same service-level wiring and are covered
+     * at the repository level by `countRosteringEndedExclusions` tests.
+     */
+    it('excludes rostering-ended student from items and increments exclusions count', async () => {
+      const { OrgFactory } = await import('../test-support/factories/org.factory');
+      const { UserFactory } = await import('../test-support/factories/user.factory');
+      const { UserOrgFactory } = await import('../test-support/factories/user-org.factory');
+      const { AdministrationFactory } = await import('../test-support/factories/administration.factory');
+      const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
+      const { AdministrationTaskVariantFactory } = await import(
+        '../test-support/factories/administration-task-variant.factory'
+      );
+      const { OrgType } = await import('../enums/org-type.enum');
+      const { UserRole } = await import('../enums/user-role.enum');
+
+      // Isolated district + administration so the count is deterministic.
+      const district = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'District Exclusions Route Test' });
+      const admin = await AdministrationFactory.create({
+        name: 'Admin Exclusions Route Test',
+        createdBy: baseFixture.districtAdmin.id,
+      });
+      await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: district.id });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: admin.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        orderIndex: 0,
+      });
+
+      const activeStudent = await UserFactory.create({ nameLast: 'ActiveStudentForReport1742' });
+      const endedStudent = await UserFactory.create({
+        nameLast: 'EndedStudentForReport1742',
+        rosteringEnded: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      });
+
+      await UserOrgFactory.create({ userId: activeStudent.id, orgId: district.id, role: UserRole.STUDENT });
+      await UserOrgFactory.create({ userId: endedStudent.id, orgId: district.id, role: UserRole.STUDENT });
+
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(admin.id))
+        .query({ scopeType: 'district', scopeId: district.id, page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      const { data } = res.body;
+
+      const itemUserIds = (data.items as Array<{ user: { userId: string } }>).map((row) => row.user.userId);
+      expect(itemUserIds).toContain(activeStudent.id);
+      expect(itemUserIds).not.toContain(endedStudent.id);
+
+      expect(data.exclusions.rosteringEnded).toBe(1);
     });
   });
 
@@ -1078,6 +1144,12 @@ describe('GET /v1/administrations/:id/reports/progress/overview', () => {
       // Convenience totals by requirement axis
       expect(firstTask).toHaveProperty('required');
       expect(firstTask).toHaveProperty('optional');
+
+      // Exclusions block — #1742
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
     });
 
     it('per-task 7-level counts are internally consistent', async () => {
@@ -1662,6 +1734,12 @@ describe('GET /v1/administrations/:id/reports/scores/overview', () => {
       expect(firstTask.supportLevels).toHaveProperty('developingSkill');
       expect(firstTask.supportLevels).toHaveProperty('needsExtraSupport');
       expect(firstTask.supportLevels.achievedSkill).toHaveProperty('count');
+
+      // Exclusions block — #1742
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
     });
 
     it('per-task counts are internally consistent', async () => {
@@ -2558,6 +2636,12 @@ describe('GET /v1/administrations/:id/reports/scores/students', () => {
         expect(row.user).toHaveProperty('userId');
         expect(row.user).toHaveProperty('grade');
       }
+
+      // Exclusions block — #1742
+      expect(data).toHaveProperty('exclusions');
+      expect(data.exclusions).toHaveProperty('rosteringEnded');
+      expect(typeof data.exclusions.rosteringEnded).toBe('number');
+      expect(data.exclusions.rosteringEnded).toBeGreaterThanOrEqual(0);
     });
 
     it('populates schoolName on user info at district scope', async () => {
