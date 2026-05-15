@@ -3,6 +3,7 @@ import { PaginationQuerySchema, PaginationMetaSchema, createDynamicSortQuerySche
 import { ExclusionsSchema } from '../../../common/exclusions';
 import {
   ReportScopeQuerySchema,
+  IncludeUnenrolledStudentsQuerySchema,
   createFilterQuerySchema,
   ReportTaskMetadataSchema,
   ReportUserInfoSchema,
@@ -24,8 +25,10 @@ export type ScoreOverviewFilterField = (typeof SCORE_OVERVIEW_FILTER_FIELDS)[num
 /**
  * Query schema for the score overview endpoint.
  * Combines scope and filter parameters. Not paginated — this is an aggregation.
+ * Accepts the `includeUnenrolledStudents` toggle so overview counts match
+ * the corresponding list endpoint when the toggle is on (#1792).
  */
-export const ScoreOverviewQuerySchema = ReportScopeQuerySchema.merge(
+export const ScoreOverviewQuerySchema = ReportScopeQuerySchema.merge(IncludeUnenrolledStudentsQuerySchema).merge(
   createFilterQuerySchema(SCORE_OVERVIEW_FILTER_FIELDS),
 );
 
@@ -151,6 +154,7 @@ export type StudentScoresFilterField = (typeof STUDENT_SCORES_FILTER_FIELDS)[num
  * Combines pagination, scope, filter, and sort parameters with dynamic score-field support.
  */
 export const StudentScoresQuerySchema = PaginationQuerySchema.merge(ReportScopeQuerySchema)
+  .merge(IncludeUnenrolledStudentsQuerySchema)
   .merge(
     createFilterQuerySchema(STUDENT_SCORES_FILTER_FIELDS, {
       dynamicFieldPatterns: [SCORE_TASK_FIELD_PATTERN],

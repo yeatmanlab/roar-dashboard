@@ -17,6 +17,12 @@ export type ScopeType = 'district' | 'school' | 'class' | 'group';
 /**
  * Query input for listProgressStudents.
  * The controller maps from the contract's ProgressStudentsQuery to this type.
+ *
+ * `includeUnenrolledStudents` (#1792) widens the strict admin-aware overlap
+ * to additionally include students who left mid-window AND have qualifying
+ * `runs` for this administration. Defaults to false at the contract layer,
+ * so omitting the field from the request still produces a typed boolean
+ * by the time it reaches the service.
  */
 export interface ProgressStudentsInput {
   scopeType: ScopeType;
@@ -26,6 +32,14 @@ export interface ProgressStudentsInput {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   filter: ParsedFilter[];
+  /**
+   * Optional at the type boundary so callers running against a stale
+   * api-contract build still type-check; the service defaults it to
+   * `false` (strict admin-aware overlap only) when omitted. The Zod
+   * contract default also resolves it to `false` once parsed, so the
+   * runtime behavior is unchanged either way.
+   */
+  includeUnenrolledStudents?: boolean | undefined;
 }
 
 /** Static sort fields for progress students. */
@@ -94,6 +108,8 @@ export interface ProgressStudentsResult {
 export interface ProgressOverviewInput {
   scopeType: ScopeType;
   scopeId: string;
+  /** See {@link ProgressStudentsInput.includeUnenrolledStudents}. */
+  includeUnenrolledStudents?: boolean | undefined;
 }
 
 /** Per-task aggregation in overview results. */
@@ -139,6 +155,8 @@ export interface ScoreOverviewInput {
   scopeType: ScopeType;
   scopeId: string;
   filter: ParsedFilter[];
+  /** See {@link ProgressStudentsInput.includeUnenrolledStudents}. */
+  includeUnenrolledStudents?: boolean | undefined;
 }
 
 /** Query input for getScoreFacets. */
@@ -193,6 +211,8 @@ export interface StudentScoresInput {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   filter: ParsedFilter[];
+  /** See {@link ProgressStudentsInput.includeUnenrolledStudents}. */
+  includeUnenrolledStudents?: boolean | undefined;
 }
 
 /** Static sort fields for student scores. */

@@ -449,6 +449,15 @@ export type TreeParentEntityType = z.infer<typeof TreeParentEntityTypeSchema>;
  *
  * Invariant: studentsAssigned + studentsStarted + studentsCompleted = studentsWithRequiredTasks.
  * Counts include descendants (e.g., a district includes its schools' and classes' students).
+ *
+ * Admin-aware overlap (#1792): the underlying counts use the administration
+ * window via `LEAST(administration.dateEnd, NOW())`. Unlike the four list
+ * reporting endpoints, the tree embed does NOT accept the
+ * `includeUnenrolledStudents` toggle — it always returns the strict-overlap
+ * counts so navigation totals stay stable as the user drills in. If a
+ * future caller needs the toggle here, see
+ * `IncludeUnenrolledStudentsQuerySchema` in
+ * `./reports/common.ts` and thread it through `getProgressOverviewCountsBulk`.
  */
 export const TreeNodeAssignmentStatsSchema = z.object({
   studentsWithRequiredTasks: z.number().int(),

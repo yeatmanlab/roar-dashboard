@@ -3,6 +3,7 @@ import { PaginationQuerySchema, PaginationMetaSchema, createDynamicSortQuerySche
 import { ExclusionsSchema } from '../../../common/exclusions';
 import {
   ReportScopeQuerySchema,
+  IncludeUnenrolledStudentsQuerySchema,
   createFilterQuerySchema,
   ReportTaskMetadataSchema,
   ReportUserInfoSchema,
@@ -103,6 +104,7 @@ export type ProgressStudentsFilterField = (typeof PROGRESS_STUDENTS_FILTER_FIELD
  * in addition to the static user fields.
  */
 export const ProgressStudentsQuerySchema = PaginationQuerySchema.merge(ReportScopeQuerySchema)
+  .merge(IncludeUnenrolledStudentsQuerySchema)
   .merge(
     createFilterQuerySchema(PROGRESS_STUDENTS_FILTER_FIELDS, {
       dynamicFieldPatterns: [PROGRESS_TASK_STATUS_PATTERN],
@@ -168,8 +170,10 @@ export type ProgressStudentsResponse = z.infer<typeof ProgressStudentsResponseSc
 /**
  * Query schema for the progress overview endpoint.
  * Only requires scope parameters — no pagination, sorting, or filtering.
+ * Accepts the `includeUnenrolledStudents` toggle so overview counts match
+ * the corresponding list endpoint when the toggle is on (#1792).
  */
-export const ProgressOverviewQuerySchema = ReportScopeQuerySchema;
+export const ProgressOverviewQuerySchema = ReportScopeQuerySchema.merge(IncludeUnenrolledStudentsQuerySchema);
 
 export type ProgressOverviewQuery = z.infer<typeof ProgressOverviewQuerySchema>;
 
