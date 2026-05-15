@@ -6,9 +6,10 @@ import {
   SchoolLevelSchema,
   AuthProviderSchema,
   FreeReducedLunchStatusSchema,
+  CreateUserNameSchema,
+  CreateUserDemographicsSchema,
 } from '../common/user';
 import { UserFamilyRoleSchema } from '../families/schema';
-import { IDENTIFIER_WITH_SPACES } from '../common/regex';
 
 /**
  * Response schema for GET /users/:userId
@@ -80,22 +81,6 @@ const FamilyMembershipSchema = z.object({
 
 export const UserMembershipSchema = z.union([OrgMembershipSchema, FamilyMembershipSchema]);
 export type UserMembership = z.infer<typeof UserMembershipSchema>;
-
-const CreateUserNameSchema = z.object({
-  first: z.string().regex(IDENTIFIER_WITH_SPACES),
-  middle: z.string().regex(IDENTIFIER_WITH_SPACES).optional(),
-  last: z.string().regex(IDENTIFIER_WITH_SPACES),
-});
-
-const CreateUserDemographicsSchema = z.object({
-  gender: z.string().nullable().optional(),
-  race: z.string().nullable().optional(),
-  statusEll: z.string().nullable().optional(),
-  statusFrl: FreeReducedLunchStatusSchema.nullable().optional(),
-  statusIep: z.string().nullable().optional(),
-  hispanicEthnicity: z.boolean().nullable().optional(),
-  homeLanguage: z.string().nullable().optional(),
-});
 
 const CreateUserIdentifiersSchema = z.object({
   stateId: z.string().optional(),

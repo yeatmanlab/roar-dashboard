@@ -22,6 +22,12 @@ export function registerFamiliesRoutes(routerInstance: Router) {
     create: {
       handler: async ({ body }) => FamiliesController.create(body),
     },
+    addChildren: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AuthGuardMiddleware],
+      handler: async ({ req: { user }, params: { familyId }, body }) =>
+        FamiliesController.addChildren(user!, familyId, body),
+    },
     listUsers: {
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
