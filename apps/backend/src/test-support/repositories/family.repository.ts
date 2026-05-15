@@ -11,6 +11,8 @@ import type { FamilyRepository } from '../../repositories/family.repository';
 export function createMockFamilyRepository(): MockedObject<FamilyRepository> {
   return {
     ...createMockBaseRepositoryMethods(),
+    addChildren: vi.fn(),
+    countActiveMembers: vi.fn(),
     createWithCaretaker: vi.fn(),
     getFamilyIdsForUser: vi.fn(),
     getUsersByFamilyId: vi.fn(),

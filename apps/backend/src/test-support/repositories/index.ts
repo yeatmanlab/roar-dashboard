@@ -30,4 +30,5 @@ export { createMockDistrictRepository, MockDistrictRepository } from './district
 export { createMockClassRepository, MockClassRepository } from './class.repository';
 export { createMockGroupRepository, MockGroupRepository } from './group.repository';
 export { createMockFamilyRepository, MockFamilyRepository } from './family.repository';
+export { createMockInvitationCodeRepository, MockInvitationCodeRepository } from './invitation-code.repository';
 export { createMockReportRepository, MockReportRepository } from './report.repository';
