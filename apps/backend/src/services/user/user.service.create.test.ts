@@ -545,8 +545,11 @@ describe('UserService.create', () => {
       const authContext = AuthContextFactory.build({ isSuperAdmin: true });
       mockAuthzService.writeTuplesOrThrow.mockRejectedValue(new Error('FGA unavailable'));
 
+      // Locks the error-code contract for the FGA-failure path. The previous code
+      // value (DATABASE_QUERY_FAILED) was incorrect — FGA is not a database query.
       await expect(service.create(authContext, validBody)).rejects.toMatchObject({
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.EXTERNAL_SERVICE_FAILED,
       });
 
       // FGA partial-write compensation
