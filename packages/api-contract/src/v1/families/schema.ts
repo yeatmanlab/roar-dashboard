@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { createPaginatedResponseSchema } from '../common/query';
-import { UserSchema, EnrolledUsersBaseQuerySchema, UserGradeSchema } from '../common/user';
-import { CreateUserDemographicsSchema, CreateUserNameSchema } from '../users/schema';
+import {
+  UserSchema,
+  EnrolledUsersBaseQuerySchema,
+  UserGradeSchema,
+  CreateUserNameSchema,
+  CreateUserDemographicsSchema,
+} from '../common/user';
 
 export const UserFamilyRoleSchema = z.enum(['parent', 'child']);
 
