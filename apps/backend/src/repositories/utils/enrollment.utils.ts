@@ -1,5 +1,6 @@
-import type { AnyColumn } from 'drizzle-orm';
-import { and, lte, gte, or, isNull, sql, gt } from 'drizzle-orm';
+import type { AnyColumn, SQL } from 'drizzle-orm';
+import { and, lte, gte, or, isNull, isNotNull, sql, gt, exists } from 'drizzle-orm';
+import { fdwRuns } from '../../db/schema/assessment-fdw/runs';
 
 /**
  * Builds enrollment date boundary conditions for user membership tables.
@@ -113,4 +114,119 @@ export function isActiveRoster(table: { rosteringEnded: AnyColumn }) {
   // result in contexts that demand a strict `SQL` (e.g., pushing into a
   // typed `SQL[]` array).
   return or(isNull(table.rosteringEnded), gt(table.rosteringEnded, sql`NOW()`))!;
+}
+
+/**
+ * Admin-aware variant of {@link isEnrollmentActive}: checks that the
+ * enrollment was still active as of `LEAST(administrationDateEnd, NOW())`.
+ *
+ * Reporting endpoints (#1792) ask the question "was the student still
+ * enrolled when the administration window closed?" rather than "is the
+ * student enrolled right now?". For past administrations (`dateEnd < NOW()`)
+ * this means the check date is the administration's end, not the wall clock.
+ * For active or future administrations (`dateEnd >= NOW()`), `LEAST` clamps
+ * the check date to `NOW()` so the predicate matches `isEnrollmentActive`'s
+ * present-tense behavior.
+ *
+ * Strict overlap (both sides clamped to `LEAST(adminDateEnd, NOW())`):
+ * - `enrollment.start <= LEAST(adminDateEnd, NOW())` — the student had
+ *   joined by the check date. The clamp matters for active/future admins:
+ *   without it, a student whose `enrollment.start` falls between `NOW()` and
+ *   the admin's `dateEnd` would slip through, even though they aren't
+ *   actually enrolled yet — see #1792.
+ * - `enrollment.end IS NULL` OR `enrollment.end > LEAST(adminDateEnd, NOW())`
+ *   — and either is still enrolled or left after the check date.
+ *
+ * Outside of reporting, callers want "currently active as of NOW()" — keep
+ * using {@link isEnrollmentActive}. This helper is only correct in admin-
+ * scoped contexts where the administration's `dateEnd` is in hand.
+ *
+ * @param table - A user-membership table (userOrgs, userClasses, userGroups)
+ *                with `enrollmentStart` and `enrollmentEnd` columns.
+ * @param administrationDateEnd - The administration's `dateEnd`, either as a
+ *                                column reference (when joined against
+ *                                administrations) or as a SQL expression.
+ * @returns Drizzle SQL condition for admin-aware strict overlap.
+ */
+export function isEnrollmentActiveForAdmin(
+  table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
+  administrationDateEnd: AnyColumn | SQL,
+) {
+  const checkDate = sql`LEAST(${administrationDateEnd}, NOW())`;
+  return and(
+    // Start-side clamp uses the same `LEAST(adminDateEnd, NOW())` check
+    // date as the end-side. The #1792 issue spec writes the start clause
+    // as `enrollment.start <= administration.dateEnd`, but without the
+    // clamp a student whose enrollment starts in the future would pass
+    // for an active/future admin (e.g., enrollmentStart = next week,
+    // adminDateEnd = next month). The clamp keeps the predicate
+    // present-tense for active/future admins and admin-end-tense for
+    // past admins — see the JSDoc table above.
+    lte(table.enrollmentStart, checkDate),
+    or(gt(table.enrollmentEnd, checkDate), isNull(table.enrollmentEnd)),
+  );
+}
+
+/**
+ * "Withdrawn with data" inclusion path for the `includeUnenrolledStudents`
+ * toggle on reporting list endpoints (#1792).
+ *
+ * Matches students whose enrollment overlapped the administration window
+ * but ended before the check date, **and** who have at least one
+ * non-deleted, non-aborted `runs` record for this administration. This is
+ * exactly the set of students who would pass broad overlap but fail strict
+ * overlap, narrowed to those who actually took (or started) the assessment.
+ *
+ * The five enrollment-side predicates expand to:
+ * - `enrollment.start <= LEAST(adminDateEnd, NOW())` — joined by the check
+ *   date. Symmetric with `isEnrollmentActiveForAdmin`; protects against an
+ *   invalid row where `enrollment.start > enrollment.end` (the schema has a
+ *   CHECK for this at write time, but defense-in-depth is cheap).
+ * - `enrollment.end IS NOT NULL`                    — they left
+ * - `enrollment.end > administrationDateStart`      — overlapped the window
+ * - `enrollment.end <= LEAST(adminDateEnd, NOW())`  — left at or before check
+ *
+ * The `EXISTS` clause filters `runs` via the FDW: `deletedAt IS NULL AND
+ * abortedAt IS NULL`. A soft-deleted or aborted run is not evidence the
+ * student took the assessment and must not bring a withdrawn student back.
+ *
+ * This predicate is OR-ed with `isEnrollmentActiveForAdmin` when the toggle
+ * is on; callers must NOT use it on its own (the strict-overlap path is
+ * always part of the in-scope set).
+ *
+ * @param table - User-membership table with `enrollmentStart` / `enrollmentEnd`.
+ * @param administrationDateStart - Admin window start (column or SQL).
+ * @param administrationDateEnd - Admin window end (column or SQL).
+ * @param userIdCol - The user-id column that the `runs` EXISTS subquery
+ *                    should correlate against (e.g., `users.id` in the
+ *                    outer query).
+ * @param administrationIdCol - The administration-id column / expression
+ *                              that pins the EXISTS subquery to this admin.
+ * @returns Drizzle SQL condition for the withdrawn-with-data inclusion path.
+ */
+export function hasWithdrawnWithDataForAdmin(
+  table: { enrollmentStart: AnyColumn; enrollmentEnd: AnyColumn },
+  administrationDateStart: AnyColumn | SQL,
+  administrationDateEnd: AnyColumn | SQL,
+  userIdCol: AnyColumn,
+  administrationIdCol: AnyColumn | SQL,
+) {
+  const checkDate = sql`LEAST(${administrationDateEnd}, NOW())`;
+  return and(
+    lte(table.enrollmentStart, checkDate),
+    isNotNull(table.enrollmentEnd),
+    gt(table.enrollmentEnd, administrationDateStart),
+    lte(table.enrollmentEnd, checkDate),
+    // Drizzle's `exists()` emits `exists ${subquery}` without adding
+    // parentheses — when given a raw `sql` template (rather than a
+    // Drizzle subquery object) we must wrap the inner SELECT in parens
+    // ourselves so PostgreSQL parses it as `EXISTS (SELECT ...)`.
+    exists(
+      sql`(SELECT 1 FROM ${fdwRuns}
+          WHERE ${fdwRuns.userId} = ${userIdCol}
+            AND ${fdwRuns.administrationId} = ${administrationIdCol}
+            AND ${fdwRuns.deletedAt} IS NULL
+            AND ${fdwRuns.abortedAt} IS NULL)`,
+    ),
+  );
 }
