@@ -40,7 +40,7 @@ export const ScoreReportsContract = c.router({
       'Scoped to a specific org, class, or group via scopeType/scopeId.\n\n' +
       'Status codes:\n' +
       '- 200: Aggregated statistics returned successfully\n' +
-      '- 400: Invalid scope (scopeId not assigned to this administration)\n' +
+      '- 400: Invalid scope (scopeId not assigned to this administration), or unknown task ID in filter\n' +
       '- 401: Missing or invalid authentication token\n' +
       '- 403: User lacks can_read_scores at the requested administration or scope level\n' +
       '- 404: Administration not found\n' +

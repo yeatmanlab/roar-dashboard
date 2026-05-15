@@ -69,6 +69,7 @@ import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
+import type { TaskVariantParameter } from '../../db/schema';
 import {
   getScoringConfig,
   getSubscoresConfig,
@@ -591,15 +592,9 @@ export function ReportService({
       // 3. Get task metadata
       let taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
-      // 4. Extract taskId filters (if any) and user-level filters separately.
-      // Multiple `taskId:in:...` filter entries are merged into a single allow-list —
-      // a client passing `?filter=taskId:in:a,b&filter=taskId:in:c` should see all three.
-      // Using filter().flatMap() rather than find() to avoid silently dropping later entries.
-      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
-      if (taskIdFilters.length > 0) {
-        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
-        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
-      }
+      // 4. Apply taskId filter (multi-entry union, validates unknowns as 400 — see
+      //    `applyTaskIdFilter`) and split user-level filters out for SQL translation.
+      taskMetas = applyTaskIdFilter(taskMetas, filter);
 
       const userFilters = filter.filter((f) => f.field !== 'taskId');
       const filterCondition =
@@ -660,15 +655,7 @@ export function ReportService({
       // 7. Fetch scoring versions from task_variant_parameters
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 8. Bulk fetch completed run scores
       const studentIds = students.map((s) => s.userId);
@@ -760,25 +747,20 @@ export function ReportService({
       );
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
-      // 2. Task metadata + taskId filter (merged across multiple entries — see
-      //    getScoreOverview for the rationale).
-      let taskMetas = await reportRepository.getTaskMetadata(administrationId);
-      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
-      if (taskIdFilters.length > 0) {
-        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
-        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
-      }
+      // 2. Apply taskId filter (multi-entry union, validates unknowns as 400 — see
+      //    `applyTaskIdFilter`).
+      const allTaskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const taskMetas = applyTaskIdFilter(allTaskMetas, filter);
 
       // 3. Group variants by taskId (multi-variant dedup, same as overview).
       const taskGroups = groupVariantsByTaskId(taskMetas);
       if (taskGroups.length === 0) {
-        // TODO(#1782 follow-up): returns totalStudents = 0 when a stale
-        // taskId:in filter excludes every task, rather than the real
-        // in-scope population. Short-circuit fires before step 4's
-        // getAllStudentsInScope call. Minor UX concern (the "X students
-        // in scope" header would lie); behavior is acceptable because
-        // the response's tasks array is also empty so the chart UI
-        // doesn't render a denominator at all.
+        // Reachable only when the administration has no task variants
+        // assigned at all — `applyTaskIdFilter` already throws 400 for
+        // unknown taskId filter values, so a stale filter can't get us
+        // here. An "empty admin" is a misconfiguration; reporting
+        // totalStudents = 0 is acceptable since there's no chart to
+        // populate.
         return { totalStudents: 0, tasks: [], computedAt: new Date().toISOString() };
       }
 
@@ -798,15 +780,7 @@ export function ReportService({
       // 5. Scoring versions per variant (drives classification cutoffs).
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Bulk-fetch completed run scores for the full unfiltered population.
       const studentIds = students.map((s) => s.userId);
@@ -908,13 +882,10 @@ export function ReportService({
       );
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
-      // 2. Get task metadata and apply taskId filter (merge multiple entries)
-      let taskMetas = await reportRepository.getTaskMetadata(administrationId);
-      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
-      if (taskIdFilters.length > 0) {
-        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
-        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
-      }
+      // 2. Get task metadata and apply taskId filter (multi-entry union,
+      //    validates unknowns as 400 — see `applyTaskIdFilter`).
+      const allTaskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const taskMetas = applyTaskIdFilter(allTaskMetas, filter);
 
       // 3. Build per-task primary variant map (lowest-orderIndex variant of each task)
       const primaryVariantByTaskId = buildPrimaryVariantMap(taskMetas);
@@ -928,15 +899,7 @@ export function ReportService({
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams =
         taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Resolve scoring rules per variant for SQL CASE generation in the repo
       const scoringRulesByVariant = new Map<string, ResolvedScoringRules>();
@@ -1023,10 +986,16 @@ export function ReportService({
       // 11. Build response — dedupe per taskId, classify, set optional/completed
       const tasksOrdered: ServiceTaskMetadata[] = uniqueTaskMetadataInOrder(taskMetas);
 
-      // Resolve schoolNames for district-scope rows (not auto-populated by repo for that field)
+      // Resolve schoolNames for district-scope rows (not auto-populated by
+      // repo for that field). Pass `scopeId` so the lookup is constrained to
+      // schools under the requested district — without it a student
+      // enrolled cross-district would surface a foreign school's name here.
       let schoolNamesByUser: Map<string, string> | undefined;
       if (scopeType === EntityType.DISTRICT) {
-        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(result.items.map((s) => s.userId));
+        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(
+          result.items.map((s) => s.userId),
+          scopeId,
+        );
       }
 
       // Group taskMetas by taskId once — the grouping is independent of the
@@ -1155,15 +1124,7 @@ export function ReportService({
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams =
         taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Fetch the student's current-admin scores, run metadata, and historical
       // runs/scores in parallel. Run metadata (reliable, engagementFlags) lives
@@ -1376,7 +1337,13 @@ export function ReportService({
         }
       }
 
-      // 3. Resolve the student's set of administrations and school name in parallel
+      // 3. Resolve the student's set of administrations and school name in
+      //    parallel. The guardian report spans the student's history across
+      //    administrations — and potentially districts — so we deliberately
+      //    omit the `districtId` filter on `getSchoolNamesForUsers` and let
+      //    the alphabetically-first ordering pick a school across all the
+      //    student's enrollments. The admin-scoped endpoints
+      //    (getStudentScores, getScoreFacets) pass scopeId to constrain.
       const [adminMetas, schoolNamesMap] = await Promise.all([
         reportRepository.getStudentAdministrations(targetUserId),
         reportRepository.getSchoolNamesForUsers([targetUserId]),
@@ -1416,15 +1383,7 @@ export function ReportService({
       );
       const allParams =
         allVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(allVariantIds) : [];
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Fetch scores + run metadata per admin in parallel.
       // Each admin only fetches its own variants; pinning queries to a single
@@ -1821,6 +1780,69 @@ interface TaskGroup {
  *
  * Exported for independent testing.
  */
+/**
+ * Apply `taskId:in:<uuids>` filters from a parsed filter list to a set of
+ * task metadata rows. Repeatable entries are unioned: a client passing
+ * `?filter=taskId:in:a,b&filter=taskId:in:c` sees all three IDs. Unknown
+ * task IDs (UUIDs not present in `taskMetas`) throw `BAD_REQUEST` — the
+ * three score-reporting endpoints (`overview`, `students`, `facets`) all
+ * promise 400 on unknown filter task IDs and previously silently dropped
+ * them instead (review follow-up on #1782).
+ *
+ * Returns the input `taskMetas` unchanged when no `taskId` filter entries
+ * are present.
+ */
+function applyTaskIdFilter(taskMetas: ReportTaskMeta[], filter: ParsedFilter[]): ReportTaskMeta[] {
+  const taskIdFilters = filter.filter((f) => f.field === 'taskId');
+  if (taskIdFilters.length === 0) return taskMetas;
+
+  const requestedTaskIds = new Set(
+    taskIdFilters.flatMap((f) =>
+      f.value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0),
+    ),
+  );
+  const knownTaskIds = new Set(taskMetas.map((t) => t.taskId));
+
+  for (const requested of requestedTaskIds) {
+    if (!knownTaskIds.has(requested)) {
+      throw new ApiError(`Unknown task ID in filter: ${requested}`, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { unknownTaskId: requested, knownTaskIds: Array.from(knownTaskIds) },
+      });
+    }
+  }
+
+  return taskMetas.filter((t) => requestedTaskIds.has(t.taskId));
+}
+
+/**
+ * Extract a `taskVariantId → scoringVersion` map from `task_variant_parameters`
+ * rows. Used by every score-reporting endpoint to drive version-aware score
+ * classification (`getSupportLevel` resolves cutoffs against the variant's
+ * `scoringVersion`).
+ *
+ * `Number.isInteger` rejects `NaN`, `±Infinity`, and fractional values (e.g.,
+ * a JSONB value of `'1.5'` parses to `1.5`). A `scoringVersion` is always a
+ * non-negative integer in the JSON config; surfacing data corruption here as
+ * "skip the variant" rather than coercing a fractional value into the
+ * scoring-config lookup is cheap and correct.
+ */
+function extractScoringVersions(params: TaskVariantParameter[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const param of params) {
+    if (param.name !== 'scoringVersion') continue;
+    const version = typeof param.value === 'number' ? param.value : Number(param.value);
+    if (Number.isInteger(version)) {
+      map.set(param.taskVariantId, version);
+    }
+  }
+  return map;
+}
+
 export function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] {
   const groups = new Map<string, ReportTaskMeta[]>();
   const orderedTaskIds: string[] = [];

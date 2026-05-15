@@ -1398,25 +1398,38 @@ export class ReportRepository {
    * If a user belongs to multiple schools, uses the alphabetically first school name
    * for deterministic results.
    *
-   * Note: This lookup is not scoped to the administration's assigned orgs — it returns
-   * the user's school from their org membership regardless of which schools are part of
-   * the administration. For a user enrolled in multiple schools, the alphabetically first
-   * school may not be the most relevant one for the current report context.
+   * When `districtId` is supplied, the lookup is constrained to schools under
+   * that district's ltree path on both the `user_orgs → orgs` and
+   * `user_classes → classes → orgs` resolution paths. This prevents
+   * cross-district leakage (a student in scope for district A who also has a
+   * live school enrollment in district B would otherwise surface district B's
+   * school via the alphabetically-first ordering). When `districtId` is
+   * omitted, the lookup is unconstrained — callers that don't have an
+   * unambiguous "current district" (e.g., the guardian student report, which
+   * spans the student's history across districts) should omit it
+   * deliberately.
    *
-   * Public so that other repository methods (e.g., the student-scores listing) can
-   * reuse the same lookup at district scope without duplicating the two-phase
-   * user_orgs → user_classes fallback.
+   * Note: This lookup is not scoped to the administration's assigned orgs — it
+   * returns the user's school from their org membership regardless of which
+   * schools are part of the administration. For a user enrolled in multiple
+   * schools within the same district, the alphabetically first school may not
+   * be the most relevant one for the current report context.
    *
-   * **Known issue (cross-district leakage)**: this method does not constrain
-   * the resolved school by the requested scope's ltree path. A user in scope
-   * for district A who also has a live school enrollment in district B may
-   * surface district B's school in district A's report. The sibling
-   * {@link getSchoolsForUsers} accepts a `districtId` parameter and applies
-   * the path filter; this method has not been updated to avoid behavior
-   * changes to `getStudentScores` and `getIndividualStudentReport`. Tracked
-   * as a follow-up alongside the row-level user_orgs history work.
+   * Public so that other repository methods (e.g., the student-scores listing)
+   * can reuse the same lookup at district scope without duplicating the
+   * two-phase user_orgs → user_classes fallback.
+   *
+   * @param userIds - Users to resolve schools for.
+   * @param districtId - Optional district whose subtree constrains the lookup.
+   *   Pass `scope.scopeId` when the caller knows the request is district-
+   *   scoped. Omit for callers that span districts.
    */
-  async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
+  async getSchoolNamesForUsers(userIds: string[], districtId?: string): Promise<Map<string, string>> {
+    if (userIds.length === 0) return new Map();
+
+    const districtPathFilter =
+      districtId !== undefined ? sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${districtId})` : undefined;
+
     const rows = await this.db
       .selectDistinct({
         userId: userOrgs.userId,
@@ -1430,6 +1443,7 @@ export class ReportRepository {
           eq(orgs.orgType, OrgType.SCHOOL),
           isEnrollmentActive(userOrgs),
           isNull(orgs.rosteringEnded),
+          districtPathFilter,
         ),
       )
       .orderBy(asc(orgs.name));
@@ -1459,6 +1473,7 @@ export class ReportRepository {
             isEnrollmentActive(userClasses),
             isNull(classes.rosteringEnded),
             isNull(orgs.rosteringEnded),
+            districtPathFilter,
           ),
         )
         .orderBy(asc(orgs.name));

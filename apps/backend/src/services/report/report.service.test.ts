@@ -1755,13 +1755,14 @@ describe('ReportService', () => {
       expect(result.tasks[0]!.orderIndex).toBe(0);
     });
 
-    // --- Empty-result short-circuit when taskId filter excludes all tasks ---
+    // --- Unknown taskId in filter (#1782 review follow-up: shared validation) ---
 
-    it('returns empty tasks array when taskId filter excludes every task', async () => {
-      // Filter targets a UUID not present in testTaskMetas — taskMetas becomes []
-      // and taskGroups.length === 0 triggers the short-circuit. Because the short-circuit
-      // is evaluated BEFORE the student-fetch DB call, getAllStudentsInScope is also skipped
-      // and the response carries totalStudents: 0 by definition (no tasks → no aggregation).
+    it('returns 400 when taskId filter references a UUID not assigned to the administration', async () => {
+      // Previously silent-dropped to an empty `tasks: []` response (200).
+      // `applyTaskIdFilter` now validates against the admin's actual task IDs
+      // and throws BAD_REQUEST for unknowns — matching the contract's
+      // long-standing claim that unknown task IDs in filter return 400 and
+      // aligning the three score-reporting endpoints on a single behavior.
       const students = [buildOverviewStudent({ userId: 'student-1' })];
       setupDefaultScoreOverviewMocks(students, []);
 
@@ -1771,15 +1772,14 @@ describe('ReportService', () => {
       };
 
       const service = createService();
-      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery);
-
-      expect(result.tasks).toHaveLength(0);
-      expect(result.totalStudents).toBe(0);
-      expect(typeof result.computedAt).toBe('string');
-      // Short-circuit means we don't touch the student-fetch path or downstream queries
+      await expect(service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        },
+      );
+      // Validation fires before any DB call beyond getTaskMetadata.
       expect(mockReportRepository.getAllStudentsInScope).not.toHaveBeenCalled();
-      expect(mockTaskVariantParameterRepository.getByTaskVariantIds).not.toHaveBeenCalled();
-      expect(mockReportRepository.getCompletedRunScores).not.toHaveBeenCalled();
     });
 
     it('merges multiple taskId filter entries into a single allow-list', async () => {
@@ -2914,11 +2914,12 @@ describe('ReportService', () => {
       expect(seenIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
     });
 
-    it('returns an empty page when taskId filter excludes every task', async () => {
-      // Filter targets a UUID not present in testTaskMetas — taskMetas becomes []
-      // and the empty-task short-circuit returns immediately. No pagination query
-      // is run; totalItems is 0 by definition because no per-task entries can be
-      // assembled when no tasks are in scope.
+    it('returns 400 when taskId filter references a UUID not assigned to the administration', async () => {
+      // Previously silent-dropped to an empty page (200). `applyTaskIdFilter`
+      // now validates against the admin's actual task IDs and throws
+      // BAD_REQUEST for unknowns — matching the contract's claim that
+      // unknown task IDs in filter return 400 and aligning the three
+      // score-reporting endpoints on a single behavior.
       setupDefaultStudentScoresMocks();
 
       const filteredQuery: StudentScoresInput = {
@@ -2927,12 +2928,13 @@ describe('ReportService', () => {
       };
 
       const service = createService();
-      const result = await service.listStudentScores(superAdminAuth, testAdministrationId, filteredQuery);
-
-      expect(result.tasks).toEqual([]);
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
-      // Short-circuit means we don't touch the paginated row fetch or downstream queries
+      await expect(
+        service.listStudentScores(superAdminAuth, testAdministrationId, filteredQuery),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      // Validation fires before any downstream DB call beyond getTaskMetadata.
       expect(mockReportRepository.getStudentScores).not.toHaveBeenCalled();
       expect(mockReportRepository.getSchoolNamesForUsers).not.toHaveBeenCalled();
     });
@@ -3200,6 +3202,23 @@ describe('ReportService', () => {
       const result = await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
 
       expect(result.items[0]!.user.schoolName).toBe('Lincoln Elementary');
+    });
+
+    it('passes scopeId through to getSchoolNamesForUsers so the district ltree filter is applied', async () => {
+      // Regression guard for the cross-district leakage fix on
+      // getSchoolNamesForUsers (#1782 review follow-up): the service must
+      // thread `scope.scopeId` through to the repository so the school
+      // lookup is constrained to the requested district's subtree.
+      // Without it, a student enrolled cross-district could surface a
+      // foreign school's name in the response.
+      const row = buildQueryRow({ userId: 'student-1', grade: '3' });
+      setupDefaultStudentScoresMocks([row], 1);
+      mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(new Map([['student-1', 'Lincoln Elementary']]));
+
+      const service = createService();
+      await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
+
+      expect(mockReportRepository.getSchoolNamesForUsers).toHaveBeenCalledWith(['student-1'], 'district-uuid-1');
     });
 
     it('returns null schoolName for non-district scope', async () => {
