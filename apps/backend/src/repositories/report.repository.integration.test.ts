@@ -6,12 +6,14 @@
  * through the FDW foreign tables in the core DB.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ReportRepository } from './report.repository';
+import { ReportRepository, toReportAdminWindow } from './report.repository';
 import type { ReportScope, ReportTaskMeta, ProgressOverviewCountsResult } from './report.repository';
 import { baseFixture } from '../test-support/fixtures';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { AdministrationFactory } from '../test-support/factories/administration.factory';
 import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationClassFactory } from '../test-support/factories/administration-class.factory';
+import { AdministrationGroupFactory } from '../test-support/factories/administration-group.factory';
 import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { ClassFactory } from '../test-support/factories/class.factory';
@@ -33,6 +35,13 @@ let administrationId: string;
 let allGradesVariantId: string;
 let taskId: string;
 let districtScope: ReportScope;
+/**
+ * Admin window of the base-fixture district administration. Reused by every
+ * test that calls a `buildStudentInScopeQuery`-based method — those methods
+ * are admin-aware (#1792). Tests that exercise specific past/future-admin
+ * behavior construct their own admin window inline.
+ */
+let baseAdminWindow: { id: string; dateStart: Date; dateEnd: Date };
 
 beforeAll(() => {
   repo = new ReportRepository();
@@ -40,6 +49,7 @@ beforeAll(() => {
   allGradesVariantId = baseFixture.variantForAllGrades.id;
   taskId = baseFixture.task.id;
   districtScope = { scopeType: 'district', scopeId: baseFixture.district.id };
+  baseAdminWindow = toReportAdminWindow(baseFixture.administrationAssignedToDistrict);
 });
 
 describe('ReportRepository.getProgressStudents — FDW run queries', () => {
@@ -59,6 +69,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -85,6 +96,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -103,6 +115,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -129,6 +142,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -152,6 +166,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -174,6 +189,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -212,6 +228,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -252,6 +269,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -286,6 +304,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [grade3VariantId(), grade5VariantId()],
         defaultOptions,
       );
@@ -325,6 +344,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [grade3VariantId(), grade5VariantId()],
         defaultOptions,
       );
@@ -376,6 +396,7 @@ describe('ReportRepository.getProgressStudents — FDW run queries', () => {
       const result = await repo.getProgressStudents(
         administrationId,
         districtScope,
+        baseAdminWindow,
         [allGradesVariantId],
         defaultOptions,
       );
@@ -490,7 +511,13 @@ describe('ReportRepository.getProgressOverviewCountsBulk — multi-scope aggrega
     // Execute the bulk query with both scopes
     schoolAScope = { scopeType: 'school', scopeId: baseFixture.schoolA.id };
     schoolBScope = { scopeType: 'school', scopeId: baseFixture.schoolB.id };
-    bulkResult = await bulkRepo.getProgressOverviewCountsBulk(bulkAdminId, [schoolAScope, schoolBScope], bulkTaskMetas);
+    const bulkAdminWindow = toReportAdminWindow(bulkAdmin);
+    bulkResult = await bulkRepo.getProgressOverviewCountsBulk(
+      bulkAdminId,
+      [schoolAScope, schoolBScope],
+      bulkAdminWindow,
+      bulkTaskMetas,
+    );
   });
 
   it('returns results for both scopes', () => {
@@ -625,7 +652,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       });
       await UserOrgFactory.create({ userId: futureEndedStudent.id, orgId: district.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(2);
     });
 
@@ -649,7 +679,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedClass' });
       await UserClassFactory.create({ userId: student.id, classId: endedClass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -682,7 +715,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserClassFactory.create({ userId: student.id, classId: endedClass.id, role: UserRole.STUDENT });
       await UserOrgFactory.create({ userId: student.id, orgId: school.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(0);
     });
 
@@ -710,7 +746,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       });
       await UserClassFactory.create({ userId: doubleExcluded.id, classId: endedClass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -722,7 +761,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveDistrictStudentOnly' });
       await UserOrgFactory.create({ userId: student.id, orgId: district.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(0);
     });
 
@@ -738,7 +780,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserOrgFactory.create({ userId: endedTeacher.id, orgId: district.id, role: UserRole.TEACHER });
       await UserOrgFactory.create({ userId: endedStudent.id, orgId: district.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'district', scopeId: district.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'district', scopeId: district.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
   });
@@ -768,7 +813,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const classOrphanStudent = await UserFactory.create({ nameLast: 'ClassOrphanStudent' });
       await UserClassFactory.create({ userId: classOrphanStudent.id, classId: endedClass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'school', scopeId: school.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'school', scopeId: school.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(2);
     });
   });
@@ -790,7 +838,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserClassFactory.create({ userId: activeStudent.id, classId: klass.id, role: UserRole.STUDENT });
       await UserClassFactory.create({ userId: endedStudent.id, classId: klass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'class', scopeId: klass.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'class', scopeId: klass.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -805,7 +856,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedClassDirect' });
       await UserClassFactory.create({ userId: student.id, classId: endedKlass.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'class', scopeId: endedKlass.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'class', scopeId: endedKlass.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
   });
@@ -823,7 +877,10 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       await UserGroupFactory.create({ userId: activeStudent.id, groupId: group.id, role: UserRole.STUDENT });
       await UserGroupFactory.create({ userId: endedStudent.id, groupId: group.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'group', scopeId: group.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'group', scopeId: group.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
     });
 
@@ -836,8 +893,890 @@ describe('ReportRepository.countRosteringEndedExclusions — #1742', () => {
       const student = await UserFactory.create({ nameLast: 'ActiveStudentInEndedGroup' });
       await UserGroupFactory.create({ userId: student.id, groupId: endedGroup.id, role: UserRole.STUDENT });
 
-      const count = await testRepo.countRosteringEndedExclusions({ scopeType: 'group', scopeId: endedGroup.id });
+      const count = await testRepo.countRosteringEndedExclusions(
+        { scopeType: 'group', scopeId: endedGroup.id },
+        baseAdminWindow,
+      );
       expect(count).toBe(1);
+    });
+  });
+});
+
+describe('ReportRepository admin-aware enrollment overlap — #1792', () => {
+  /**
+   * Direct coverage for the strict admin-aware overlap predicate and the
+   * `includeUnenrolledStudents` toggle introduced by #1792.
+   *
+   * Most reporting tests above happen to satisfy the new predicate (the
+   * `baseFixture` students all have `enrollmentStart = NOW()` and no end
+   * date, so they pass both the legacy and admin-aware checks). The matrix
+   * here exercises the *differences* between the two — past administrations,
+   * mid-window withdrawals, future enrollments, and the toggle-on
+   * withdrawn-with-data path — so any regression in the predicate (e.g.,
+   * forgetting the `LEAST(adminDateEnd, NOW())` clamp on the start side)
+   * surfaces here rather than in subtle production behavior changes.
+   *
+   * Tests are isolated per scenario: each `it` creates its own org / class /
+   * admin / users so they don't pollute the shared `baseFixture` or each
+   * other.
+   */
+  let testRepo: ReportRepository;
+
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const daysAgo = (n: number) => new Date(Date.now() - n * ONE_DAY_MS);
+  const daysFromNow = (n: number) => new Date(Date.now() + n * ONE_DAY_MS);
+
+  beforeAll(() => {
+    testRepo = new ReportRepository();
+  });
+
+  /**
+   * Create a self-contained admin + district + task assignment for a test.
+   * Returns the admin window + scope + variant info the test will need.
+   */
+  async function setupIsolatedAdmin(opts: { dateStart: Date; dateEnd: Date; name: string }) {
+    const district = await OrgFactory.create({
+      orgType: OrgType.DISTRICT,
+      name: `${opts.name} District`,
+    });
+    const admin = await AdministrationFactory.create({
+      name: opts.name,
+      createdBy: baseFixture.districtAdmin.id,
+      dateStart: opts.dateStart,
+      dateEnd: opts.dateEnd,
+    });
+    await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: district.id });
+    await AdministrationTaskVariantFactory.create({
+      administrationId: admin.id,
+      taskVariantId: baseFixture.variantForAllGrades.id,
+      orderIndex: 0,
+    });
+
+    const adminWindow = toReportAdminWindow(admin);
+    const scope: ReportScope = { scopeType: 'district', scopeId: district.id };
+    const taskMetas: ReportTaskMeta[] = await testRepo.getTaskMetadata(admin.id);
+
+    return { admin, district, adminWindow, scope, taskMetas };
+  }
+
+  describe('strict overlap (default — includeUnenrolledStudents=false)', () => {
+    describe('past administration', () => {
+      it('excludes a student who enrolled AFTER the admin closed', async () => {
+        // Legacy `isEnrollmentActive` would have counted this student
+        // (enrolled "now"); the admin-aware predicate must not, because
+        // they weren't enrolled during the admin's window.
+        const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+          name: 'Past admin — late enroller',
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+
+        // Enrolled 10 days ago — 20 days after the admin closed.
+        const lateEnroller = await UserFactory.create({ nameLast: 'PastAdminLateEnroller' });
+        await UserOrgFactory.create({
+          userId: lateEnroller.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(10),
+          enrollmentEnd: null,
+        });
+
+        const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(0);
+      });
+
+      it('includes a student enrolled before the window closed with no end date', async () => {
+        const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+          name: 'Past admin — early enroller, still active',
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+
+        const earlyEnroller = await UserFactory.create({ nameLast: 'PastAdminEarlyEnroller' });
+        await UserOrgFactory.create({
+          userId: earlyEnroller.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+
+        const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+
+      it('excludes a student who left mid-window when the toggle is off', async () => {
+        const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+          name: 'Past admin — withdrew mid-window, no toggle',
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+
+        const withdrawn = await UserFactory.create({ nameLast: 'PastAdminMidWindowWithdrawn' });
+        await UserOrgFactory.create({
+          userId: withdrawn.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: daysAgo(45), // left during admin window
+        });
+
+        // Even though they ran the assessment, the toggle is off, so they
+        // fail strict overlap (`enrollment.end > LEAST(adminDateEnd, NOW())`
+        // → `45d ago > 30d ago` is false).
+        await RunFactory.create({
+          userId: withdrawn.id,
+          taskId: baseFixture.task.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          administrationId: adminWindow.id,
+          useForReporting: true,
+          completedAt: daysAgo(50),
+        });
+
+        const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(0);
+      });
+    });
+
+    describe('active administration', () => {
+      it('excludes a student whose enrollment starts in the future', async () => {
+        // Regression guard for the start-side LEAST clamp: without it, a
+        // student enrolling next week would pass `enrollment.start <=
+        // admin.dateEnd` whenever the admin extends past their start.
+        const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+          name: 'Active admin — future enroller',
+          dateStart: daysAgo(15),
+          dateEnd: daysFromNow(30),
+        });
+
+        const futureEnroller = await UserFactory.create({ nameLast: 'ActiveAdminFutureEnroller' });
+        await UserOrgFactory.create({
+          userId: futureEnroller.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysFromNow(7),
+          enrollmentEnd: null,
+        });
+
+        const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(0);
+      });
+
+      it('includes a currently-enrolled student (matches legacy isEnrollmentActive)', async () => {
+        const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+          name: 'Active admin — current enroller',
+          dateStart: daysAgo(15),
+          dateEnd: daysFromNow(30),
+        });
+
+        const current = await UserFactory.create({ nameLast: 'ActiveAdminCurrentEnroller' });
+        await UserOrgFactory.create({
+          userId: current.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(5),
+          enrollmentEnd: null,
+        });
+
+        const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+    });
+
+    describe('future administration', () => {
+      it('uses LEAST(adminDateEnd, NOW()) = NOW() so currently-enrolled students still count', async () => {
+        // A purely-future admin still asks the present-tense question:
+        // who is enrolled right now? It does not, e.g., narrow to students
+        // whose enrollment starts inside the future window.
+        const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+          name: 'Future admin — current enroller',
+          dateStart: daysFromNow(30),
+          dateEnd: daysFromNow(60),
+        });
+
+        const current = await UserFactory.create({ nameLast: 'FutureAdminCurrentEnroller' });
+        await UserOrgFactory.create({
+          userId: current.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(5),
+          enrollmentEnd: null,
+        });
+
+        const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+    });
+
+    describe('scope branches (acceptance criteria — verify on each scope)', () => {
+      // The admin-aware predicate itself lives in a closure
+      // (`buildEnrollmentPredicate`) applied identically across every UNION
+      // branch of `buildStudentInScopeQuery`, so the district tests above are
+      // enough to pin the predicate's logic. The scenarios here cover the
+      // other half of the contract: that each scope branch applies the
+      // predicate at all (i.e., the closure is actually wired into
+      // `EntityType.SCHOOL`, `EntityType.CLASS`, and `EntityType.GROUP`, not
+      // just the district branch). One past-admin case per scope is enough —
+      // we're verifying the wire-up, not re-deriving the predicate semantics.
+
+      it('school scope: applies admin-aware overlap to user_orgs at school', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'School-scope admin-aware overlap',
+          createdBy: baseFixture.districtAdmin.id,
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+        const school = await OrgFactory.create({
+          orgType: OrgType.SCHOOL,
+          name: 'School-scope admin-aware overlap school',
+          parentOrgId: baseFixture.district.id,
+        });
+        await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: school.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: admin.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        });
+
+        // Enrolled before admin opened, still active — should count.
+        const earlyEnroller = await UserFactory.create({ nameLast: 'SchoolScopeEarlyEnroller' });
+        await UserOrgFactory.create({
+          userId: earlyEnroller.id,
+          orgId: school.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+
+        // Enrolled after admin closed — must NOT count under strict overlap.
+        const lateEnroller = await UserFactory.create({ nameLast: 'SchoolScopeLateEnroller' });
+        await UserOrgFactory.create({
+          userId: lateEnroller.id,
+          orgId: school.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(10),
+          enrollmentEnd: null,
+        });
+
+        const adminWindow = toReportAdminWindow(admin);
+        const scope: ReportScope = { scopeType: 'school', scopeId: school.id };
+        const taskMetas = await testRepo.getTaskMetadata(admin.id);
+
+        const result = await testRepo.getProgressOverviewCounts(admin.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+
+      it('class scope: applies admin-aware overlap to user_classes', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'Class-scope admin-aware overlap',
+          createdBy: baseFixture.districtAdmin.id,
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+        const klass = await ClassFactory.create({
+          name: 'Class-scope admin-aware overlap class',
+          schoolId: baseFixture.schoolA.id,
+          districtId: baseFixture.district.id,
+        });
+        await AdministrationClassFactory.create({ administrationId: admin.id, classId: klass.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: admin.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        });
+
+        // Enrolled before admin opened, still active — should count.
+        const earlyEnroller = await UserFactory.create({ nameLast: 'ClassScopeEarlyEnroller' });
+        await UserClassFactory.create({
+          userId: earlyEnroller.id,
+          classId: klass.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+
+        // Enrolled after admin closed — must NOT count under strict overlap
+        // for a past admin.
+        const lateEnroller = await UserFactory.create({ nameLast: 'ClassScopeLateEnroller' });
+        await UserClassFactory.create({
+          userId: lateEnroller.id,
+          classId: klass.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(10),
+          enrollmentEnd: null,
+        });
+
+        const adminWindow = toReportAdminWindow(admin);
+        const scope: ReportScope = { scopeType: 'class', scopeId: klass.id };
+        const taskMetas = await testRepo.getTaskMetadata(admin.id);
+
+        const result = await testRepo.getProgressOverviewCounts(admin.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+
+      it('group scope: applies admin-aware overlap to user_groups', async () => {
+        const admin = await AdministrationFactory.create({
+          name: 'Group-scope admin-aware overlap',
+          createdBy: baseFixture.districtAdmin.id,
+          dateStart: daysAgo(60),
+          dateEnd: daysAgo(30),
+        });
+        const group = await GroupFactory.create({ name: 'Group-scope admin-aware overlap group' });
+        await AdministrationGroupFactory.create({ administrationId: admin.id, groupId: group.id });
+        await AdministrationTaskVariantFactory.create({
+          administrationId: admin.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          orderIndex: 0,
+        });
+
+        const earlyEnroller = await UserFactory.create({ nameLast: 'GroupScopeEarlyEnroller' });
+        await UserGroupFactory.create({
+          userId: earlyEnroller.id,
+          groupId: group.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+
+        const lateEnroller = await UserFactory.create({ nameLast: 'GroupScopeLateEnroller' });
+        await UserGroupFactory.create({
+          userId: lateEnroller.id,
+          groupId: group.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(10),
+          enrollmentEnd: null,
+        });
+
+        const adminWindow = toReportAdminWindow(admin);
+        const scope: ReportScope = { scopeType: 'group', scopeId: group.id };
+        const taskMetas = await testRepo.getTaskMetadata(admin.id);
+
+        const result = await testRepo.getProgressOverviewCounts(admin.id, scope, adminWindow, taskMetas);
+        expect(result.totalStudents).toBe(1);
+      });
+    });
+  });
+
+  describe('withdrawn-with-data inclusion (includeUnenrolledStudents=true)', () => {
+    it('includes a left-mid-window student with a non-deleted, non-aborted run', async () => {
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Toggle on — withdrew with completed run',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const withdrawn = await UserFactory.create({ nameLast: 'ToggleWithdrawnWithRun' });
+      await UserOrgFactory.create({
+        userId: withdrawn.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+      await RunFactory.create({
+        userId: withdrawn.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        completedAt: daysAgo(50),
+      });
+
+      const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas, true);
+      expect(result.totalStudents).toBe(1);
+    });
+
+    it('does not bring back a withdrawn student whose only run is soft-deleted', async () => {
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Toggle on — deleted run only',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const withdrawn = await UserFactory.create({ nameLast: 'ToggleWithdrawnDeletedRun' });
+      await UserOrgFactory.create({
+        userId: withdrawn.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+      await RunFactory.create({
+        userId: withdrawn.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        completedAt: daysAgo(50),
+        deletedAt: daysAgo(40),
+        // `runs_deleted_by_required` CHECK requires deletedBy when deletedAt is set.
+        deletedBy: baseFixture.districtAdmin.id,
+      });
+
+      const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas, true);
+      expect(result.totalStudents).toBe(0);
+    });
+
+    it('does not bring back a withdrawn student whose only run is aborted', async () => {
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Toggle on — aborted run only',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const withdrawn = await UserFactory.create({ nameLast: 'ToggleWithdrawnAbortedRun' });
+      await UserOrgFactory.create({
+        userId: withdrawn.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+      await RunFactory.create({
+        userId: withdrawn.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        abortedAt: daysAgo(50),
+      });
+
+      const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas, true);
+      expect(result.totalStudents).toBe(0);
+    });
+
+    it('does not bring back a withdrawn student with no run at all', async () => {
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Toggle on — no run',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const withdrawn = await UserFactory.create({ nameLast: 'ToggleWithdrawnNoRun' });
+      await UserOrgFactory.create({
+        userId: withdrawn.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+
+      const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas, true);
+      expect(result.totalStudents).toBe(0);
+    });
+
+    it('uses strict gt() for end > check vs strict lte() for end <= check at the exact boundary', async () => {
+      // `isEnrollmentActiveForAdmin` uses `gt(end, LEAST(adminEnd, NOW()))`
+      // and `hasWithdrawnWithDataForAdmin` uses `lte(end, LEAST(...))`.
+      // At the exact boundary (`enrollment.end === admin.dateEnd` and
+      // adminDateEnd in the past so LEAST=adminEnd), the strict overlap
+      // branch rejects (gt is false) and only the toggle-on path accepts.
+      // This is the "left on closing day" cohort — encoded in operator
+      // choice, easy to flip silently, worth pinning.
+      const dateEnd = daysAgo(30);
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Toggle on — boundary equality',
+        dateStart: daysAgo(60),
+        dateEnd,
+      });
+
+      const boundary = await UserFactory.create({ nameLast: 'BoundaryEqualityStudent' });
+      await UserOrgFactory.create({
+        userId: boundary.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: dateEnd, // exactly on admin.dateEnd
+      });
+      await RunFactory.create({
+        userId: boundary.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        completedAt: daysAgo(45),
+      });
+
+      // Toggle off: strict gt rejects.
+      const strict = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas);
+      expect(strict.totalStudents).toBe(0);
+
+      // Toggle on: withdrawn-with-data lte accepts.
+      const withToggle = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas, true);
+      expect(withToggle.totalStudents).toBe(1);
+    });
+
+    it('does not double-count a strict-overlap student who also has a qualifying run', async () => {
+      // Strict overlap + withdrawn-with-data are UNION-ed (not UNION ALL):
+      // a student who passes both branches must be counted once.
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Toggle on — strict + withdrawn dedup',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const active = await UserFactory.create({ nameLast: 'ToggleDedupActive' });
+      await UserOrgFactory.create({
+        userId: active.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: null,
+      });
+      await RunFactory.create({
+        userId: active.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        completedAt: daysAgo(50),
+      });
+
+      const result = await testRepo.getProgressOverviewCounts(adminWindow.id, scope, adminWindow, taskMetas, true);
+      expect(result.totalStudents).toBe(1);
+    });
+  });
+
+  describe('verifyStudentInScope — per-student endpoint always permits withdrawn-with-data', () => {
+    it('returns true for a currently-enrolled student (strict overlap)', async () => {
+      const { adminWindow, scope, district } = await setupIsolatedAdmin({
+        name: 'verifyStudentInScope — strict student',
+        dateStart: daysAgo(60),
+        dateEnd: daysFromNow(30),
+      });
+
+      const student = await UserFactory.create({ nameLast: 'VerifyStrictStudent' });
+      await UserOrgFactory.create({
+        userId: student.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(10),
+        enrollmentEnd: null,
+      });
+
+      const ok = await testRepo.verifyStudentInScope(scope, adminWindow, student.id);
+      expect(ok).toBe(true);
+    });
+
+    it('returns true for a withdrawn-with-data student even though the list endpoints would default to off', async () => {
+      // The per-student endpoint always allows the withdrawn-with-data
+      // path — it does not honor the `includeUnenrolledStudents` toggle.
+      const { adminWindow, scope, district } = await setupIsolatedAdmin({
+        name: 'verifyStudentInScope — withdrawn with run',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const withdrawn = await UserFactory.create({ nameLast: 'VerifyWithdrawnWithRun' });
+      await UserOrgFactory.create({
+        userId: withdrawn.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+      await RunFactory.create({
+        userId: withdrawn.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        completedAt: daysAgo(50),
+      });
+
+      const ok = await testRepo.verifyStudentInScope(scope, adminWindow, withdrawn.id);
+      expect(ok).toBe(true);
+    });
+
+    it('returns false for a withdrawn student with no qualifying run', async () => {
+      const { adminWindow, scope, district } = await setupIsolatedAdmin({
+        name: 'verifyStudentInScope — withdrawn no run',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const withdrawn = await UserFactory.create({ nameLast: 'VerifyWithdrawnNoRun' });
+      await UserOrgFactory.create({
+        userId: withdrawn.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+
+      const ok = await testRepo.verifyStudentInScope(scope, adminWindow, withdrawn.id);
+      expect(ok).toBe(false);
+    });
+
+    it('returns false for a withdrawn student whose only run is soft-deleted', async () => {
+      const { adminWindow, scope, district } = await setupIsolatedAdmin({
+        name: 'verifyStudentInScope — withdrawn deleted run',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const withdrawn = await UserFactory.create({ nameLast: 'VerifyWithdrawnDeletedRun' });
+      await UserOrgFactory.create({
+        userId: withdrawn.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+      await RunFactory.create({
+        userId: withdrawn.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        completedAt: daysAgo(50),
+        deletedAt: daysAgo(40),
+        // `runs_deleted_by_required` CHECK requires deletedBy when deletedAt is set.
+        deletedBy: baseFixture.districtAdmin.id,
+      });
+
+      const ok = await testRepo.verifyStudentInScope(scope, adminWindow, withdrawn.id);
+      expect(ok).toBe(false);
+    });
+
+    it('does NOT return true for a student enrolled only in a different district that shares the admin', async () => {
+      // Regression guard for the cross-scope leak surfaced in #1792 review.
+      // An earlier version routed the "always permits withdrawn-with-data"
+      // path through a bare `(userId, administrationId)` EXISTS that didn't
+      // know about scope — so a student enrolled in District A who had runs
+      // for an admin also assigned to District B would pass a
+      // District-B-scoped per-student lookup. The fix routes the predicate
+      // through `buildStudentInScopeQuery` so both branches stay
+      // scope-gated.
+      const admin = await AdministrationFactory.create({
+        name: 'verifyStudentInScope — cross-scope leak guard',
+        createdBy: baseFixture.districtAdmin.id,
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+      const districtA = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'CrossScopeLeak A' });
+      const districtB = await OrgFactory.create({ orgType: OrgType.DISTRICT, name: 'CrossScopeLeak B' });
+      await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: districtA.id });
+      await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: districtB.id });
+      await AdministrationTaskVariantFactory.create({
+        administrationId: admin.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        orderIndex: 0,
+      });
+
+      const student = await UserFactory.create({ nameLast: 'CrossScopeStudentInA' });
+      // Enrollment ONLY in district A.
+      await UserOrgFactory.create({
+        userId: student.id,
+        orgId: districtA.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: null,
+      });
+      // Qualifying run for the shared admin.
+      await RunFactory.create({
+        userId: student.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: admin.id,
+        useForReporting: true,
+        completedAt: daysAgo(50),
+      });
+
+      const adminWindow = toReportAdminWindow(admin);
+
+      // Sanity: lookup under district A passes.
+      const inA = await testRepo.verifyStudentInScope(
+        { scopeType: 'district', scopeId: districtA.id },
+        adminWindow,
+        student.id,
+      );
+      expect(inA).toBe(true);
+
+      // The actual regression assertion: must NOT leak across to district B.
+      const inB = await testRepo.verifyStudentInScope(
+        { scopeType: 'district', scopeId: districtB.id },
+        adminWindow,
+        student.id,
+      );
+      expect(inB).toBe(false);
+    });
+
+    it('returns false for a rostering-ended student even with a qualifying run (#1742 hard boundary)', async () => {
+      // The rostering-ended boundary (#1742) is a harder filter than the
+      // enrollment-overlap check (#1792). Even when a student would
+      // otherwise pass the withdrawn-with-data path, ended rostering keeps
+      // them out — they're decommissioned, not just unenrolled.
+      const { adminWindow, scope, district } = await setupIsolatedAdmin({
+        name: 'verifyStudentInScope — rostering-ended + run',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const ended = await UserFactory.create({
+        nameLast: 'VerifyRosteringEndedWithRun',
+        rosteringEnded: daysAgo(1),
+      });
+      await UserOrgFactory.create({
+        userId: ended.id,
+        orgId: district.id,
+        role: UserRole.STUDENT,
+        enrollmentStart: daysAgo(90),
+        enrollmentEnd: daysAgo(45),
+      });
+      await RunFactory.create({
+        userId: ended.id,
+        taskId: baseFixture.task.id,
+        taskVariantId: baseFixture.variantForAllGrades.id,
+        administrationId: adminWindow.id,
+        useForReporting: true,
+        completedAt: daysAgo(50),
+      });
+
+      const ok = await testRepo.verifyStudentInScope(scope, adminWindow, ended.id);
+      expect(ok).toBe(false);
+    });
+  });
+
+  describe('pagination × includeUnenrolledStudents', () => {
+    it('widens totalItems and pages without duplicates when the toggle is on', async () => {
+      // Pagination contract under #1792: enabling the toggle monotonically
+      // adds rows to the in-scope set (withdrawn-with-data students), so
+      // `totalItems` widens and the union of pages must cover both cohorts
+      // without duplicating anyone.
+      //
+      // Setup: 3 strict-overlap students + 2 withdrawn-with-data students
+      // under a past admin. perPage = 2 forces 2 pages on toggle-off and
+      // 3 on toggle-on; the assertions pin (a) per-page counts, (b)
+      // totalItems, (c) deduped union across pages.
+      const { adminWindow, scope, district, taskMetas } = await setupIsolatedAdmin({
+        name: 'Pagination × toggle',
+        dateStart: daysAgo(60),
+        dateEnd: daysAgo(30),
+      });
+
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+
+      // 3 strict-overlap students: currently enrolled, no end date, sorted
+      // by lastName to keep page order deterministic.
+      const strictNames = ['PageStrictA', 'PageStrictB', 'PageStrictC'];
+      const strictIds: string[] = [];
+      for (const name of strictNames) {
+        const user = await UserFactory.create({ nameLast: name });
+        strictIds.push(user.id);
+        await UserOrgFactory.create({
+          userId: user.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: null,
+        });
+      }
+
+      // 2 withdrawn-with-data students: left mid-window, completed run for
+      // this admin. Strict overlap rejects them; toggle-on accepts.
+      const withdrawnNames = ['PageWithdrawnD', 'PageWithdrawnE'];
+      const withdrawnIds: string[] = [];
+      for (const name of withdrawnNames) {
+        const user = await UserFactory.create({ nameLast: name });
+        withdrawnIds.push(user.id);
+        await UserOrgFactory.create({
+          userId: user.id,
+          orgId: district.id,
+          role: UserRole.STUDENT,
+          enrollmentStart: daysAgo(90),
+          enrollmentEnd: daysAgo(45),
+        });
+        await RunFactory.create({
+          userId: user.id,
+          taskId: baseFixture.task.id,
+          taskVariantId: baseFixture.variantForAllGrades.id,
+          administrationId: adminWindow.id,
+          useForReporting: true,
+          completedAt: daysAgo(50),
+        });
+      }
+
+      const options = { page: 1, perPage: 2 };
+
+      // --- Toggle off: 3 strict-overlap students across 2 pages ---
+      const offPage1 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 1 },
+        undefined,
+        undefined,
+        undefined,
+        false,
+      );
+      const offPage2 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 2 },
+        undefined,
+        undefined,
+        undefined,
+        false,
+      );
+
+      expect(offPage1.totalItems).toBe(3);
+      expect(offPage2.totalItems).toBe(3);
+      expect(offPage1.items).toHaveLength(2);
+      expect(offPage2.items).toHaveLength(1);
+
+      const offUnion = new Set([...offPage1.items, ...offPage2.items].map((r) => r.userId));
+      expect(offUnion.size).toBe(3);
+      expect([...offUnion].sort()).toEqual([...strictIds].sort());
+
+      // --- Toggle on: 5 students across 3 pages, no duplicates ---
+      const onPage1 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 1 },
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+      const onPage2 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 2 },
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+      const onPage3 = await testRepo.getProgressStudents(
+        adminWindow.id,
+        scope,
+        adminWindow,
+        taskVariantIds,
+        { ...options, page: 3 },
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+
+      expect(onPage1.totalItems).toBe(5);
+      expect(onPage2.totalItems).toBe(5);
+      expect(onPage3.totalItems).toBe(5);
+      expect(onPage1.items).toHaveLength(2);
+      expect(onPage2.items).toHaveLength(2);
+      expect(onPage3.items).toHaveLength(1);
+
+      const onUnion = new Set([...onPage1.items, ...onPage2.items, ...onPage3.items].map((r) => r.userId));
+      expect(onUnion.size).toBe(5);
+      expect([...onUnion].sort()).toEqual([...strictIds, ...withdrawnIds].sort());
     });
   });
 });

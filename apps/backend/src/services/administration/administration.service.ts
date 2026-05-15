@@ -42,7 +42,7 @@ import type {
 import { AdministrationRepository } from '../../repositories/administration.repository';
 import type { AdministrationTask } from '../../repositories/administration-task-variant.repository';
 import { AdministrationTaskVariantRepository } from '../../repositories/administration-task-variant.repository';
-import { ReportRepository } from '../../repositories/report.repository';
+import { ReportRepository, toReportAdminWindow } from '../../repositories/report.repository';
 import type { ReportScope } from '../../repositories/report.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import type { AuthContext } from '../../types/auth-context';
@@ -997,8 +997,14 @@ export function AdministrationService({
     }
 
     try {
-      // Verify administration exists and user has access (404 before 403)
-      await verifyAdministrationAccess(authContext, administrationId);
+      // Verify administration exists and user has access (404 before 403).
+      // Capture the admin record so we can pass its date window to
+      // `getProgressOverviewCountsBulk` for admin-aware enrollment overlap
+      // (#1792). The tree-stats embed does not accept the
+      // `includeUnenrolledStudents` toggle — default behavior only, per the
+      // ticket — so we always pass `false` below.
+      const administration = await verifyAdministrationAccess(authContext, administrationId);
+      const adminWindow = toReportAdminWindow(administration);
 
       // Build FGA-scoped accessible IDs (undefined = no filter for super admins)
       let accessibleIds: AccessibleIds | undefined;
@@ -1097,8 +1103,13 @@ export function AdministrationService({
         scopeId: node.id,
       }));
 
-      // 3. Fetch bulk stats for all nodes in one query
-      const statsMap = await reportRepository.getProgressOverviewCountsBulk(administrationId, scopes, taskMetas);
+      // 3. Fetch bulk stats for all nodes in one query (admin-aware overlap, #1792)
+      const statsMap = await reportRepository.getProgressOverviewCountsBulk(
+        administrationId,
+        scopes,
+        adminWindow,
+        taskMetas,
+      );
 
       // 4. Extract per-student assignment-level counts per node
       const itemsWithStats = result.items.map((node) => {
