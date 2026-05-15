@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseRepository } from './base.repository';
 import type { InvitationCode } from '../db/schema';
@@ -24,7 +24,13 @@ export class InvitationCodeRepository extends BaseRepository<InvitationCode, typ
    * Filters by:
    * - `code` matches exactly (case-sensitive — codes are opaque)
    * - `validFrom <= NOW()`
-   * - `validTo >= NOW() OR validTo IS NULL`
+   * - `validTo > NOW() OR validTo IS NULL`
+   *
+   * The `validTo` check is strict (`>`, not `>=`) to match the convention in
+   * `isActiveRoster` and the rest of the codebase: a timestamp marks the
+   * *first instant* the resource is no longer valid, not the last instant it
+   * is. The boundary case is unobservably narrow in practice but consistency
+   * matters.
    *
    * Used by `POST /v1/families/:familyId/users` to resolve the caller-supplied
    * activation code to a group before enrolling a child. Returns `null` for
@@ -43,7 +49,7 @@ export class InvitationCodeRepository extends BaseRepository<InvitationCode, typ
         and(
           eq(invitationCodes.code, code),
           lte(invitationCodes.validFrom, now),
-          or(gte(invitationCodes.validTo, now), isNull(invitationCodes.validTo)),
+          or(gt(invitationCodes.validTo, now), isNull(invitationCodes.validTo)),
         ),
       )
       .limit(1);
@@ -57,9 +63,10 @@ export class InvitationCodeRepository extends BaseRepository<InvitationCode, typ
    * Filters by:
    * - groupId matches
    * - validFrom <= NOW()
-   * - validTo >= NOW() OR validTo IS NULL (no expiration)
+   * - validTo > NOW() OR validTo IS NULL (no expiration)
    *
-   * Orders by created_at DESC and returns the most recent one.
+   * Orders by created_at DESC and returns the most recent one. The `validTo`
+   * check is strict (`>`) — see `findValidByCode` for rationale.
    *
    * @param groupId - Group UUID
    * @returns The latest valid invitation code or null if none found
@@ -74,7 +81,7 @@ export class InvitationCodeRepository extends BaseRepository<InvitationCode, typ
         and(
           eq(invitationCodes.groupId, groupId),
           lte(invitationCodes.validFrom, now),
-          or(gte(invitationCodes.validTo, now), isNull(invitationCodes.validTo)),
+          or(gt(invitationCodes.validTo, now), isNull(invitationCodes.validTo)),
         ),
       )
       .orderBy(desc(invitationCodes.createdAt))

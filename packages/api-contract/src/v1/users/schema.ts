@@ -81,13 +81,24 @@ const FamilyMembershipSchema = z.object({
 export const UserMembershipSchema = z.union([OrgMembershipSchema, FamilyMembershipSchema]);
 export type UserMembership = z.infer<typeof UserMembershipSchema>;
 
-const CreateUserNameSchema = z.object({
+/**
+ * Name shape shared across user-creation endpoints (POST /v1/users,
+ * POST /v1/families, POST /v1/families/:familyId/users).
+ *
+ * Exported so sibling contracts can reuse rather than duplicate.
+ */
+export const CreateUserNameSchema = z.object({
   first: z.string().regex(IDENTIFIER_WITH_SPACES),
   middle: z.string().regex(IDENTIFIER_WITH_SPACES).optional(),
   last: z.string().regex(IDENTIFIER_WITH_SPACES),
 });
 
-const CreateUserDemographicsSchema = z.object({
+/**
+ * Optional demographic fields shared across user-creation endpoints.
+ *
+ * Exported so sibling contracts can reuse rather than duplicate.
+ */
+export const CreateUserDemographicsSchema = z.object({
   gender: z.string().nullable().optional(),
   race: z.string().nullable().optional(),
   statusEll: z.string().nullable().optional(),

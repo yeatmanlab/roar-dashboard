@@ -1,12 +1,7 @@
 import { z } from 'zod';
-import { IDENTIFIER_WITH_SPACES } from '../common/regex';
 import { createPaginatedResponseSchema } from '../common/query';
-import {
-  UserSchema,
-  EnrolledUsersBaseQuerySchema,
-  UserGradeSchema,
-  FreeReducedLunchStatusSchema,
-} from '../common/user';
+import { UserSchema, EnrolledUsersBaseQuerySchema, UserGradeSchema } from '../common/user';
+import { CreateUserDemographicsSchema, CreateUserNameSchema } from '../users/schema';
 
 export const UserFamilyRoleSchema = z.enum(['parent', 'child']);
 
@@ -55,16 +50,6 @@ export const FamilyLocationSchema = z.object({
 export type FamilyLocation = z.infer<typeof FamilyLocationSchema>;
 
 /**
- * Name schema for the caretaker registering a new family. Reuses the same
- * regex as POST /users to keep validation consistent across signup paths.
- */
-const CreateFamilyCaretakerNameSchema = z.object({
-  first: z.string().regex(IDENTIFIER_WITH_SPACES),
-  middle: z.string().regex(IDENTIFIER_WITH_SPACES).optional(),
-  last: z.string().regex(IDENTIFIER_WITH_SPACES),
-});
-
-/**
  * Request body for POST /families.
  *
  * This endpoint registers a new caretaker (a `users` row with
@@ -72,6 +57,9 @@ const CreateFamilyCaretakerNameSchema = z.object({
  * family they're the parent of. The flat field shape mirrors POST /users
  * rather than wrapping caretaker fields in a `caretakerData` envelope — the
  * server already knows everything in the body belongs to the caretaker.
+ *
+ * `name` reuses the canonical `CreateUserNameSchema` from the users contract
+ * to keep validation rules consistent across signup paths.
  *
  * Excluded from this schema:
  * - userType / authProvider — server-set to caregiver / [password]
@@ -86,7 +74,7 @@ export const CreateFamilyRequestSchema = z
   .object({
     email: z.string().email().max(255),
     password: z.string().min(8),
-    name: CreateFamilyCaretakerNameSchema,
+    name: CreateUserNameSchema,
     location: FamilyLocationSchema.optional(),
   })
   .strict();
@@ -120,31 +108,10 @@ export type CreateFamilyResponse = z.infer<typeof CreateFamilyResponseSchema>;
 export const FAMILY_SIZE_LIMIT = 12;
 
 /**
- * Name schema for a child being added to a family. Same regex as the caretaker
- * (and POST /users) for consistency across signup paths.
- */
-const AddChildNameSchema = z.object({
-  first: z.string().regex(IDENTIFIER_WITH_SPACES),
-  middle: z.string().regex(IDENTIFIER_WITH_SPACES).optional(),
-  last: z.string().regex(IDENTIFIER_WITH_SPACES),
-});
-
-/**
- * Optional demographic fields for a child. Mirrors `CreateUserDemographicsSchema`
- * in the users contract; defined here to keep the families contract self-contained.
- */
-const AddChildDemographicsSchema = z.object({
-  gender: z.string().nullable().optional(),
-  race: z.string().nullable().optional(),
-  statusEll: z.string().nullable().optional(),
-  statusFrl: FreeReducedLunchStatusSchema.nullable().optional(),
-  statusIep: z.string().nullable().optional(),
-  hispanicEthnicity: z.boolean().nullable().optional(),
-  homeLanguage: z.string().nullable().optional(),
-});
-
-/**
  * Per-child input for `POST /v1/families/:familyId/users`.
+ *
+ * `name` and `demographics` reuse the canonical shapes from the users contract
+ * — every user-creation path on the platform validates these fields the same way.
  *
  * `activationCode` is required and must resolve to an active group via the
  * `invitation_codes` table at the service layer. `dob` must be a valid past
@@ -155,11 +122,11 @@ export const AddChildSchema = z
   .object({
     email: z.string().email().max(255),
     password: z.string().min(8),
-    name: AddChildNameSchema,
+    name: CreateUserNameSchema,
     dob: z.string().date(),
     grade: UserGradeSchema,
     activationCode: z.string().min(1),
-    demographics: AddChildDemographicsSchema.optional(),
+    demographics: CreateUserDemographicsSchema.optional(),
   })
   .strict();
 
