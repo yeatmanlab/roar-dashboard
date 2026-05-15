@@ -36,7 +36,17 @@ export const AdministrationFactory = Factory.define<Administration>(({ onCreate 
     return inserted;
   });
 
-  const dateStart = faker.date.past();
+  // Pin the window so it always contains NOW(): dateStart in the recent past
+  // and dateEnd in the near future. Earlier defaults used unbounded
+  // `faker.date.past()` + `faker.date.future({ refDate: dateStart })`, which
+  // would occasionally land both endpoints before NOW() — fine under the
+  // legacy `isEnrollmentActive` predicate (it only compared against `NOW()`),
+  // but flaky under the admin-aware strict overlap introduced in #1792 which
+  // requires `enrollmentStart <= administration.dateEnd`. Freshly-rostered
+  // students (enrollmentStart = NOW()) would otherwise be excluded from a
+  // randomly-past admin's reports.
+  const dateStart = faker.date.recent({ days: 30 });
+  const dateEnd = faker.date.soon({ days: 30, refDate: new Date(Date.now() + 24 * 60 * 60 * 1000) });
   const administrationName = faker.word.words(3).replace(/\b\w/g, (c) => c.toUpperCase());
 
   return {
@@ -45,7 +55,7 @@ export const AdministrationFactory = Factory.define<Administration>(({ onCreate 
     name: `${administrationName} Internal`,
     description: faker.lorem.sentence(),
     dateStart,
-    dateEnd: faker.date.future({ refDate: dateStart }),
+    dateEnd,
     isOrdered: faker.datatype.boolean(),
     excludedFromResearch: null,
     excludedFromResearchBy: null,
