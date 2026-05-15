@@ -1,0 +1,3 @@
+ALTER TABLE "app"."families" ADD COLUMN "created_by" uuid;--> statement-breakpoint
+ALTER TABLE "app"."families" ADD CONSTRAINT "families_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "app"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "families_created_by_uniq_idx" ON "app"."families" USING btree ("created_by") WHERE "app"."families"."created_by" IS NOT NULL;

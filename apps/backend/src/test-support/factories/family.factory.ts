@@ -18,6 +18,7 @@ export const FamilyFactory = Factory.define<Family>(({ onCreate }) => {
   onCreate(async (family) => {
     const insertData: NewFamily = {
       id: family.id,
+      createdBy: family.createdBy,
       locationAddressLine1: family.locationAddressLine1,
       locationAddressLine2: family.locationAddressLine2,
       locationCity: family.locationCity,
@@ -35,6 +36,7 @@ export const FamilyFactory = Factory.define<Family>(({ onCreate }) => {
 
   return {
     id: faker.string.uuid(),
+    createdBy: null,
     locationAddressLine1: null,
     locationAddressLine2: null,
     locationCity: null,
