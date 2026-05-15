@@ -1429,11 +1429,11 @@ export class ReportRepository {
    * district gets their alphabetically-first school; the user_orgs → orgs
    * path takes precedence over the user_classes → classes → school
    * fallback; rostering-ended schools / classes are excluded. Uses the
-   * NOW()-based `isEnrollmentActive` predicate deliberately — the single
-   * live user_orgs row schema has no historical snapshot. See the JSDoc
-   * on `getSchoolNamesForUsers` for the past-admin display caveat (which
-   * also applies here, though the older method has not yet been
-   * scope-filtered — tracked as a follow-up).
+   * NOW()-based `isEnrollmentActive` predicate deliberately — see the
+   * "#1792 caveat" on {@link getSchoolNamesForUsers} for the past-admin
+   * display semantics (which apply here too: a transferred student shows
+   * their current school within the district, not the school they
+   * attended during a past admin's window).
    *
    * @param userIds - Users to resolve schools for.
    * @param districtId - The district whose subtree constrains the school
@@ -1532,6 +1532,21 @@ export class ReportRepository {
    * Public so that other repository methods (e.g., the student-scores listing)
    * can reuse the same lookup at district scope without duplicating the
    * two-phase user_orgs → user_classes fallback.
+   *
+   * **#1792 caveat — DO NOT switch the enrollment predicate to
+   * `isEnrollmentActiveForAdmin`.** This method deliberately uses the
+   * NOW-based `isEnrollmentActive` even when called from a past-admin
+   * report. The schema stores only a single live `user_orgs` row per
+   * (user, org) pair — the primary key on those two columns enforces it,
+   * and there is no `user_org_history` table or analog. So there is no
+   * historical snapshot of a student's school affiliation during a past
+   * administration. A transferred student therefore shows their CURRENT
+   * school in past-admin reports rather than the school they attended at
+   * the time. Switching the predicate to admin-aware would just return
+   * empty `schoolName` for any student who has since moved schools, which
+   * is strictly worse than the current behavior. If/when we add a
+   * `user_org_history` table or equivalent, this is the call site to
+   * update.
    *
    * @param userIds - Users to resolve schools for.
    * @param districtId - Optional district whose subtree constrains the lookup.

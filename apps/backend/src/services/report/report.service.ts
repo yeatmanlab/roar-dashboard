@@ -766,13 +766,17 @@ export function ReportService({
     const { scopeType, scopeId, filter } = query;
 
     try {
-      // 1. Administration-level + scope-level can_read_scores
-      await administrationService.verifyAdministrationAccess(
+      // 1. Administration-level + scope-level can_read_scores.
+      //    `verifyAdministrationAccess` returns the admin record so we can
+      //    thread `adminWindow` through the admin-aware overlap predicate
+      //    introduced by #1792.
+      const administration = await administrationService.verifyAdministrationAccess(
         authContext,
         administrationId,
         FgaRelation.CAN_READ_SCORES,
       );
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
+      const adminWindow = toReportAdminWindow(administration);
 
       // 2. Apply taskId filter (multi-entry union, validates unknowns as 400 — see
       //    `applyTaskIdFilter`).
@@ -793,8 +797,14 @@ export function ReportService({
 
       // 4. Fetch UNFILTERED population in scope. Bin edges (step 8) need the
       //    unfiltered set per the #1782 bin-edge-stability contract; filters
-      //    are applied in JS in step 7.
-      const { totalStudents, students } = await reportRepository.getAllStudentsInScope({ scopeType, scopeId });
+      //    are applied in JS in step 7. The admin window is threaded through
+      //    so the strict overlap predicate is applied (#1792); facets does
+      //    not accept the `includeUnenrolledStudents` toggle, so the default
+      //    `false` is correct — see the #1782 ticket for the rationale.
+      const { totalStudents, students } = await reportRepository.getAllStudentsInScope(
+        { scopeType, scopeId },
+        adminWindow,
+      );
 
       if (totalStudents === 0) {
         return {
