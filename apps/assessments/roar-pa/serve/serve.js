@@ -54,10 +54,10 @@ onAuthStateChanged(auth, async (user) => {
       participant: { participantId: data.id },
     };
 
-    const firekit = new RoarAppkit({
-      firebaseProject: appKit,
-      taskInfo,
-      userInfo,
+    initFirekitCompat(ctx, {
+      variantId: resolvedVariantId,
+      taskVersion,
+      isAnonymous: true,
     });
 
     const roarApp = new RoarPA(firekit, gameParams, userParams);
