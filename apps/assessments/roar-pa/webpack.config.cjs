@@ -168,7 +168,6 @@ module.exports = async (env, args) => {
         FIREBASE_APP_STORAGE_BUCKET: '',
         FIREBASE_APP_MESSAGING_SENDER_ID: '',
         FIREBASE_APP_APP_ID: '',
-        FIREBASE_APP_RECAPTCHA_SITE_KEY: '',
       }),
     ],
   };
