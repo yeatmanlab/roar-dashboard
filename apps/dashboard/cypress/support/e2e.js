@@ -26,7 +26,7 @@ beforeEach(() => {
   // rostering-ended / unsigned-TOS / server-error paths should call
   // `cy.intercept('GET', '**/me', ...)` again before `cy.visit(...)` to
   // override this default.
-  cy.intercept('GET', '**/me', {
+  cy.intercept('GET', /\/me\/?(\?.*)?$/, {
     statusCode: 200,
     body: {
       data: {
