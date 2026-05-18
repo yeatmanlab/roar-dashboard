@@ -254,7 +254,6 @@ export default defineConfig(({ mode }) => {
             firekit: ['@bdelab/roar-firekit'],
             letter: ['@bdelab/roar-letter'],
             multichoice: ['@bdelab/roar-multichoice'],
-            phoneme: ['@roar-dashboard/roar-pa'],
             sre: ['@bdelab/roar-sre'],
             swr: ['@bdelab/roar-swr'],
             utils: ['@bdelab/roar-utils'],
