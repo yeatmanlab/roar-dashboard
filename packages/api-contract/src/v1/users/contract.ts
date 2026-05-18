@@ -9,6 +9,7 @@ import {
   RecordUserAgreementRequestBodySchema,
   RecordUserAgreementResponseSchema,
 } from './schema';
+
 import {
   AdministrationsListQuerySchema,
   AdministrationsListResponseSchema,
@@ -180,6 +181,23 @@ export const UsersContract = c.router(
     },
     // Nest guardian / longitudinal score report sub-router under /users
     scoreReports: GuardianStudentReportContract,
+    createAnonymous: {
+      method: 'POST',
+      path: '/anonymous',
+      body: z.object({}),
+      responses: {
+        200: SuccessEnvelopeSchema(CreateUserResponseSchema),
+        401: ErrorEnvelopeSchema,
+        500: ErrorEnvelopeSchema,
+      },
+      strictStatusCodes: true,
+      summary: 'Register or retrieve anonymous guest user',
+      description:
+        'Creates a minimal ROAR user record for an anonymous Firebase user, or returns the existing record if one was already created. ' +
+        'Requires a valid Firebase anonymous ID token in the Authorization header. ' +
+        'The call is idempotent — repeated calls for the same Firebase UID return the same ROAR user ID. ' +
+        'Used by standalone assessment apps that support guest (anonymous) play.',
+    },
   },
   { pathPrefix: '/users' },
 );
