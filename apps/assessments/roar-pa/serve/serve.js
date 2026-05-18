@@ -51,7 +51,7 @@ onAuthStateChanged(auth, async (user) => {
       // eslint-disable-next-line no-undef
       baseUrl: ROAR_API_URL,
       auth: { getToken: () => user.getIdToken() },
-      participant: { participantId: user.uid },
+      participant: { participantId: data.id },
     };
 
     const firekit = new RoarAppkit({
