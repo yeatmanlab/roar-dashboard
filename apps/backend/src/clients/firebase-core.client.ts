@@ -52,6 +52,16 @@ export class FirebaseCoreClient {
       return this.appInstance;
     }
 
+    // When the Auth emulator is active, the Admin SDK routes token verification to localhost
+    // and does not validate credentials. applicationDefault() returns a lazy credential object
+    // that defers ADC lookup until getAccessToken() is called — which the emulator never needs.
+    // This allows initialization to succeed even without gcloud credentials (e.g., under sudo).
+    if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      const projectId = process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT ?? 'demo-roar';
+      this.appInstance = initializeApp({ credential: applicationDefault(), projectId });
+      return this.appInstance;
+    }
+
     const credential = this.getCredentials();
     this.appInstance = initializeApp({ credential });
     return this.appInstance;
