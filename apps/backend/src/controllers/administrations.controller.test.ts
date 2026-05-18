@@ -1477,6 +1477,7 @@ describe('AdministrationsController', () => {
       sortBy: 'user.lastName',
       sortOrder: 'asc',
       filter: [],
+      includeUnenrolledStudents: false,
     };
 
     const testTasks: ReportTaskMetadata[] = [
@@ -1616,7 +1617,11 @@ describe('AdministrationsController', () => {
 
   describe('getProgressOverview', () => {
     const testAdminId = 'admin-uuid-123';
-    const testQuery = { scopeType: 'district' as const, scopeId: 'district-uuid-1' };
+    const testQuery = {
+      scopeType: 'district' as const,
+      scopeId: 'district-uuid-1',
+      includeUnenrolledStudents: false,
+    };
 
     it('returns 200 with overview data', async () => {
       const mockResult = {
@@ -1907,6 +1912,7 @@ describe('AdministrationsController', () => {
       scopeType: 'district',
       scopeId: 'district-uuid-1',
       filter: [],
+      includeUnenrolledStudents: false,
     };
 
     const testScoreResult = {
@@ -2026,6 +2032,7 @@ describe('AdministrationsController', () => {
       sortBy: 'user.lastName',
       sortOrder: 'asc',
       filter: [],
+      includeUnenrolledStudents: false,
     };
 
     const testStudentScoresResult = {

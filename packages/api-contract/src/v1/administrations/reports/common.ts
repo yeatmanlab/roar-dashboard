@@ -28,6 +28,40 @@ export const ReportScopeQuerySchema = z.object({
   scopeId: z.string().uuid(),
 });
 
+/**
+ * Opt-in toggle for the administration-aware enrollment overlap rule
+ * (#1792). Defaults to `false` (strict overlap as of
+ * `LEAST(administrations.dateEnd, NOW())`).
+ *
+ * When `true`, list and overview reporting endpoints additionally include
+ * students whose enrollment overlapped the administration window but ended
+ * before the check date **and** who have at least one non-deleted,
+ * non-aborted `runs` record for this administration. This preserves the
+ * "Johnny took the test before he left" case without bringing back the
+ * noisy "exited student who never started" case.
+ *
+ * Mirrored across the four list reporting endpoints (progress students,
+ * progress overview, scores overview, student scores) so callers see the
+ * same shape on both report families. The per-student endpoint and the
+ * tree-stats embed do not accept this parameter — see the ticket for the
+ * rationale.
+ *
+ * Coercion: we accept JSON booleans, the literal strings `'true'` /
+ * `'false'`, missing (defaults to `false`), and reject anything else with a
+ * `REQUEST_VALIDATION_FAILED`. We deliberately do NOT use
+ * `z.coerce.boolean()` — that calls `Boolean(value)`, so any non-empty
+ * string (including `'false'`, `'0'`, and `'no'`) coerces to `true`,
+ * silently turning a misconfigured frontend into a privacy bug.
+ */
+export const IncludeUnenrolledStudentsQuerySchema = z.object({
+  includeUnenrolledStudents: z
+    .union([z.boolean(), z.literal('true'), z.literal('false')])
+    .transform((v) => v === true || v === 'true')
+    .default(false),
+});
+
+export type IncludeUnenrolledStudentsQuery = z.infer<typeof IncludeUnenrolledStudentsQuerySchema>;
+
 export type ReportScopeQuery = z.infer<typeof ReportScopeQuerySchema>;
 
 /**

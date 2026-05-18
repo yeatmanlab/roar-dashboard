@@ -46,7 +46,11 @@ import { logger } from '../../logger';
 import { users } from '../../db/schema';
 import { EntityType } from '../../types/entity-type';
 import { AdministrationService } from '../administration/administration.service';
-import { ReportRepository, REPORT_CONDITION_FIELD_MAP } from '../../repositories/report.repository';
+import {
+  ReportRepository,
+  REPORT_CONDITION_FIELD_MAP,
+  toReportAdminWindow,
+} from '../../repositories/report.repository';
 import type {
   ReportTaskMeta,
   StudentProgressRow,
@@ -249,10 +253,10 @@ export function ReportService({
    * 1. **Administration progress access** (AdministrationService.verifyAdministrationAccess
    *    with `CAN_READ_PROGRESS`):
    *    Checks existence (404 before 403) then verifies `can_read_progress` on the
-   *    administration via FGA. This replaces the old 3-step pattern (administration
-   *    access → Reports.Progress.READ → hasSupervisoryRole) with a single call.
-   *    `can_read_progress: supervisory_tier_group` in the FGA model grants access
-   *    only to admin-tier and educator-tier roles, denying students and caregivers.
+   *    administration via FGA. `can_read_progress: supervisory_tier_group` in the FGA
+   *    model grants access only to admin-tier and educator-tier roles, denying students
+   *    and caregivers — the model composes the role-classification + permission check
+   *    that earlier service code had to do by hand.
    *
    * 2. **Scope-level authorization** (authorizeScopeAccess):
    *    Validates the scope is assigned to the administration (business rule), then
@@ -274,15 +278,18 @@ export function ReportService({
     query: ProgressStudentsInput,
   ): Promise<ProgressStudentsResult> {
     const { userId } = authContext;
-    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
+    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter, includeUnenrolledStudents = false } = query;
 
     try {
-      // 1. Verify administration exists and user has can_read_progress
-      await administrationService.verifyAdministrationAccess(
+      // 1. Verify administration exists and user has can_read_progress.
+      //    Captures the admin record once so we can pass its date window
+      //    (#1792) to every repo call below.
+      const administration = await administrationService.verifyAdministrationAccess(
         authContext,
         administrationId,
         FgaRelation.CAN_READ_PROGRESS,
       );
+      const adminWindow = toReportAdminWindow(administration);
 
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
@@ -310,23 +317,27 @@ export function ReportService({
         reportRepository.getProgressStudents(
           administrationId,
           { scopeType, scopeId },
+          adminWindow,
           taskVariantIds,
           { page, perPage, sortColumn, sortDirection: sortOrder },
           filterCondition,
           progressStatusSort ?? undefined,
           progressStatusFilters.length > 0 ? progressStatusFilters : undefined,
+          includeUnenrolledStudents,
         ),
-        reportRepository.countRosteringEndedExclusions({ scopeType, scopeId }).catch((err) => {
-          // Wrap the parallel branch in `.catch` so a failure here throws
-          // `ApiError` immediately rather than propagating a raw error to
-          // the outer catch (per backend-error-handling.md).
-          throw new ApiError('Failed to compute rostering-ended exclusion count', {
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            code: ApiErrorCode.DATABASE_QUERY_FAILED,
-            context: { userId, administrationId, scopeType, scopeId },
-            cause: err,
-          });
-        }),
+        reportRepository
+          .countRosteringEndedExclusions({ scopeType, scopeId }, adminWindow, includeUnenrolledStudents)
+          .catch((err) => {
+            // Wrap the parallel branch in `.catch` so a failure here throws
+            // `ApiError` immediately rather than propagating a raw error to
+            // the outer catch (per backend-error-handling.md).
+            throw new ApiError('Failed to compute rostering-ended exclusion count', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, scopeType, scopeId },
+              cause: err,
+            });
+          }),
       ]);
 
       // 6. Transform to response shape
@@ -406,15 +417,18 @@ export function ReportService({
     query: ProgressOverviewInput,
   ): Promise<ProgressOverviewResult> {
     const { userId } = authContext;
-    const { scopeType, scopeId } = query;
+    const { scopeType, scopeId, includeUnenrolledStudents = false } = query;
 
     try {
-      // 1. Verify administration exists and user has can_read_progress
-      await administrationService.verifyAdministrationAccess(
+      // 1. Verify administration exists and user has can_read_progress.
+      //    Capture the admin record so we can pass its date window into
+      //    every admin-aware repo call (#1792).
+      const administration = await administrationService.verifyAdministrationAccess(
         authContext,
         administrationId,
         FgaRelation.CAN_READ_PROGRESS,
       );
+      const adminWindow = toReportAdminWindow(administration);
 
       // 2. Validate scope and authorize can_read_progress on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId);
@@ -425,15 +439,23 @@ export function ReportService({
       const taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
       const [{ totalStudents, taskStatusCounts, studentCounts }, exclusionsRosteringEnded] = await Promise.all([
-        reportRepository.getProgressOverviewCounts(administrationId, { scopeType, scopeId }, taskMetas),
-        reportRepository.countRosteringEndedExclusions({ scopeType, scopeId }).catch((err) => {
-          throw new ApiError('Failed to compute rostering-ended exclusion count', {
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            code: ApiErrorCode.DATABASE_QUERY_FAILED,
-            context: { userId, administrationId, scopeType, scopeId },
-            cause: err,
-          });
-        }),
+        reportRepository.getProgressOverviewCounts(
+          administrationId,
+          { scopeType, scopeId },
+          adminWindow,
+          taskMetas,
+          includeUnenrolledStudents,
+        ),
+        reportRepository
+          .countRosteringEndedExclusions({ scopeType, scopeId }, adminWindow, includeUnenrolledStudents)
+          .catch((err) => {
+            throw new ApiError('Failed to compute rostering-ended exclusion count', {
+              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+              code: ApiErrorCode.DATABASE_QUERY_FAILED,
+              context: { userId, administrationId, scopeType, scopeId },
+              cause: err,
+            });
+          }),
       ]);
 
       // 4. Build per-task counters from unique taskIds (preserving order from metadata)
@@ -572,15 +594,18 @@ export function ReportService({
     query: ScoreOverviewInput,
   ): Promise<ScoreOverviewResult> {
     const { userId } = authContext;
-    const { scopeType, scopeId, filter } = query;
+    const { scopeType, scopeId, filter, includeUnenrolledStudents = false } = query;
 
     try {
-      // 1. Verify administration exists and user has can_read_scores
-      await administrationService.verifyAdministrationAccess(
+      // 1. Verify administration exists and user has can_read_scores.
+      //    Capture the admin record so we can pass its date window into
+      //    every admin-aware repo call (#1792).
+      const administration = await administrationService.verifyAdministrationAccess(
         authContext,
         administrationId,
         FgaRelation.CAN_READ_SCORES,
       );
+      const adminWindow = toReportAdminWindow(administration);
 
       // 2. Validate scope and authorize can_read_scores on the scope entity
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
@@ -620,7 +645,7 @@ export function ReportService({
       // the heavier `getAllStudentsInScope` so we can include it in early-
       // return responses.
       const exclusionsRosteringEnded = await reportRepository
-        .countRosteringEndedExclusions({ scopeType, scopeId })
+        .countRosteringEndedExclusions({ scopeType, scopeId }, adminWindow, includeUnenrolledStudents)
         .catch((err) => {
           throw new ApiError('Failed to compute rostering-ended exclusion count', {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -642,7 +667,9 @@ export function ReportService({
       // 6. Get all students in scope (no pagination — overview aggregates the full population)
       const { totalStudents, students } = await reportRepository.getAllStudentsInScope(
         { scopeType, scopeId },
+        adminWindow,
         filterCondition,
+        includeUnenrolledStudents,
       );
 
       if (totalStudents === 0) {
@@ -739,15 +766,17 @@ export function ReportService({
     query: StudentScoresInput,
   ): Promise<StudentScoresResult> {
     const { userId } = authContext;
-    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter } = query;
+    const { scopeType, scopeId, page, perPage, sortBy, sortOrder, filter, includeUnenrolledStudents = false } = query;
 
     try {
-      // 1. Authorization
-      await administrationService.verifyAdministrationAccess(
+      // 1. Authorization. Capture the admin record so we can pass its date
+      //    window into every admin-aware repo call (#1792).
+      const administration = await administrationService.verifyAdministrationAccess(
         authContext,
         administrationId,
         FgaRelation.CAN_READ_SCORES,
       );
+      const adminWindow = toReportAdminWindow(administration);
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
       // 2. Get task metadata and apply taskId filter (merge multiple entries)
@@ -816,7 +845,7 @@ export function ReportService({
       // surfaced in every return path of this function (including the
       // short-circuit empty-tasks branch immediately below).
       const exclusionsRosteringEnded = await reportRepository
-        .countRosteringEndedExclusions({ scopeType, scopeId })
+        .countRosteringEndedExclusions({ scopeType, scopeId }, adminWindow, includeUnenrolledStudents)
         .catch((err) => {
           throw new ApiError('Failed to compute rostering-ended exclusion count', {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
@@ -854,12 +883,14 @@ export function ReportService({
       const result = await reportRepository.getStudentScores(
         administrationId,
         { scopeType, scopeId },
+        adminWindow,
         taskMetas,
         { page, perPage, sortColumn: staticSortColumn, sortDirection: sortOrder },
         filterCondition,
         sortField,
         scoreFieldFilters,
         scoringRulesByVariant,
+        includeUnenrolledStudents,
       );
 
       // 11. Build response — dedupe per taskId, classify, set optional/completed
@@ -966,8 +997,17 @@ export function ReportService({
       // 2. Scope-level authorization
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
-      // 3. Student-in-scope check (also enforces user.rosteringEnded IS NULL)
-      const studentInScope = await reportRepository.verifyStudentInScope({ scopeType, scopeId }, targetUserId);
+      // 3. Student-in-scope check (also enforces user.rosteringEnded IS NULL).
+      //    The per-student endpoint always permits a withdrawn-with-data
+      //    lookup (#1792): if the target passes admin-aware strict overlap
+      //    OR has at least one non-deleted, non-aborted run for this
+      //    administration, the check passes. Otherwise 404.
+      const adminWindow = toReportAdminWindow(administration);
+      const studentInScope = await reportRepository.verifyStudentInScope(
+        { scopeType, scopeId },
+        adminWindow,
+        targetUserId,
+      );
       if (!studentInScope) {
         // Use the generic NOT_FOUND message — distinguishing "student doesn't
         // exist" from "student isn't in this scope" would leak scope membership.

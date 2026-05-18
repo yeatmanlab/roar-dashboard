@@ -17,6 +17,14 @@ import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { RunFactory } from '../test-support/factories/run.factory';
 import { RunScoreFactory } from '../test-support/factories/run-score.factory';
+import { AdministrationFactory } from '../test-support/factories/administration.factory';
+import { AdministrationOrgFactory } from '../test-support/factories/administration-org.factory';
+import { AdministrationTaskVariantFactory } from '../test-support/factories/administration-task-variant.factory';
+import { OrgFactory } from '../test-support/factories/org.factory';
+import { UserFactory } from '../test-support/factories/user.factory';
+import { UserOrgFactory } from '../test-support/factories/user-org.factory';
+import { OrgType } from '../enums/org-type.enum';
+import { UserRole } from '../enums/user-role.enum';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -2669,6 +2677,187 @@ describe('GET /v1/administrations/:id/reports/scores/students/:userId', () => {
       expect(data.student.userId).toBe(baseFixture.groupStudent.id);
       // Group administration has no task variants assigned — tasks empty but query 200s
       expect(data.tasks).toEqual([]);
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// includeUnenrolledStudents toggle wiring (#1792)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * End-to-end coverage for the `includeUnenrolledStudents` toggle.
+ *
+ * Repository-level overlap semantics are covered exhaustively in
+ * `report.repository.integration.test.ts`. These route tests just verify
+ * that the toggle is wired all the way through the contract / controller /
+ * service layers — flipping it on actually changes the returned data.
+ *
+ * The shared fixture is a past administration with one student who left
+ * mid-window but has a completed run for the admin: strict overlap fails,
+ * the withdrawn-with-data path passes. The four list endpoints should
+ * therefore show 0 students by default and 1 with the toggle on. The
+ * per-student endpoint (which always permits withdrawn-with-data) should
+ * return 200 regardless of the toggle.
+ */
+describe('includeUnenrolledStudents toggle wiring — #1792', () => {
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const daysAgo = (n: number) => new Date(Date.now() - n * ONE_DAY_MS);
+
+  let pastAdminId: string;
+  let pastDistrictId: string;
+  let withdrawnStudentId: string;
+
+  beforeAll(async () => {
+    const district = await OrgFactory.create({
+      orgType: OrgType.DISTRICT,
+      name: 'Toggle wiring district',
+    });
+    pastDistrictId = district.id;
+
+    const admin = await AdministrationFactory.create({
+      name: 'Toggle wiring past admin',
+      createdBy: baseFixture.districtAdmin.id,
+      dateStart: daysAgo(60),
+      dateEnd: daysAgo(30),
+    });
+    pastAdminId = admin.id;
+    await AdministrationOrgFactory.create({ administrationId: admin.id, orgId: district.id });
+    await AdministrationTaskVariantFactory.create({
+      administrationId: admin.id,
+      taskVariantId: baseFixture.variantForAllGrades.id,
+      orderIndex: 0,
+    });
+
+    const withdrawn = await UserFactory.create({ nameLast: 'ToggleWiringWithdrawn' });
+    withdrawnStudentId = withdrawn.id;
+    await UserOrgFactory.create({
+      userId: withdrawn.id,
+      orgId: district.id,
+      role: UserRole.STUDENT,
+      enrollmentStart: daysAgo(90),
+      enrollmentEnd: daysAgo(45),
+    });
+    await RunFactory.create({
+      userId: withdrawn.id,
+      taskId: baseFixture.task.id,
+      taskVariantId: baseFixture.variantForAllGrades.id,
+      administrationId: admin.id,
+      useForReporting: true,
+      completedAt: daysAgo(50),
+    });
+  });
+
+  const scope = () => ({ scopeType: 'district' as const, scopeId: pastDistrictId });
+
+  describe('progress overview', () => {
+    it('returns 0 students by default (strict overlap)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(pastAdminId))
+        .query(scope())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.totalStudents).toBe(0);
+    });
+
+    it('returns 1 student when includeUnenrolledStudents=true', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressOverviewPath(pastAdminId))
+        .query({ ...scope(), includeUnenrolledStudents: 'true' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.totalStudents).toBe(1);
+    });
+  });
+
+  describe('progress students list', () => {
+    it('returns 0 items by default (strict overlap)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(pastAdminId))
+        .query({ ...scope(), page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(0);
+    });
+
+    it('returns the withdrawn-with-data student when includeUnenrolledStudents=true', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(progressStudentsPath(pastAdminId))
+        .query({ ...scope(), page: 1, perPage: 25, includeUnenrolledStudents: 'true' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.items[0].user.userId).toBe(withdrawnStudentId);
+    });
+  });
+
+  describe('score overview', () => {
+    it('returns 0 students by default (strict overlap)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreOverviewPath(pastAdminId))
+        .query(scope())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.totalStudents).toBe(0);
+    });
+
+    it('returns 1 student when includeUnenrolledStudents=true', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(scoreOverviewPath(pastAdminId))
+        .query({ ...scope(), includeUnenrolledStudents: 'true' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.totalStudents).toBe(1);
+    });
+  });
+
+  describe('student scores list', () => {
+    it('returns 0 items by default (strict overlap)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(pastAdminId))
+        .query({ ...scope(), page: 1, perPage: 25 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(0);
+    });
+
+    it('returns the withdrawn-with-data student when includeUnenrolledStudents=true', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(studentScoresPath(pastAdminId))
+        .query({ ...scope(), page: 1, perPage: 25, includeUnenrolledStudents: 'true' })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.items[0].user.userId).toBe(withdrawnStudentId);
+    });
+  });
+
+  describe('individual student report (per-student endpoint)', () => {
+    it('returns 200 for the withdrawn-with-data student regardless of toggle (always permits)', async () => {
+      authenticateAs(tiers.superAdmin);
+      const res = await request(app)
+        .get(individualStudentReportPath(pastAdminId, withdrawnStudentId))
+        .query(scope())
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.student.userId).toBe(withdrawnStudentId);
     });
   });
 });
