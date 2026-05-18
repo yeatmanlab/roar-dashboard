@@ -1,4 +1,10 @@
-import { str as crc32 } from 'crc-32';
+import { createRequire } from 'node:module';
+
+// crc-32 is CJS-only; named ESM imports fail at runtime when the module is externalized.
+// createRequire loads it as CJS and avoids TypeScript organize-imports rewriting the call.
+const { str: crc32 } = createRequire(import.meta.url)('crc-32') as {
+  str: (data: string, seed?: number) => number;
+};
 
 /**
  * Generate a CRC32 hex checksum of a string.
