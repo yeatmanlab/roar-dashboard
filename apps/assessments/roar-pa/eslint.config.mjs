@@ -39,7 +39,6 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
-        __dirname: 'readonly',
       },
     },
   },

@@ -9,6 +9,10 @@ permissions:
   id-token: write
   pull-requests: write
 
+concurrency:
+  group: preview-roar-pa-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   preview-roar-pa:
     if: ${{ github.event.label.name == 'preview:roar-pa' }}
@@ -19,3 +23,4 @@ jobs:
       assessment: roar-pa
       build-script: build:staging
       firebase-channel: preview
+      expires: 7d
