@@ -163,12 +163,7 @@ module.exports = async (env, args) => {
   const devFirebaseConfig = {
     plugins: [
       new webpack.EnvironmentPlugin({
-        FIREBASE_APP_API_KEY: '',
-        FIREBASE_APP_AUTH_DOMAIN: '',
-        FIREBASE_APP_PROJECT_ID: '',
-        FIREBASE_APP_STORAGE_BUCKET: '',
-        FIREBASE_APP_MESSAGING_SENDER_ID: '',
-        FIREBASE_APP_APP_ID: '',
+
         ROAR_API_URL: 'https://localhost:4000',
         // Points dev builds at the local auth emulator started by researcher-environment:up.
         // connectAuthEmulator() in serve.js reads this; getFirebaseConfig() uses it to
