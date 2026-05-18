@@ -22,8 +22,26 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@babel/core": "^7.19.0",
+    "@babel/preset-env": "^7.19.0",
+    "@sentry/webpack-plugin": "^2.14.0",
+    "babel-loader": "^8.2.5",
+    "concurrently": "^9.1.0",
+    "css-loader": "^6.7.1",
+    "csv-loader": "^3.0.5",
+    "dotenv": "^16.3.1",
+    "file-loader": "^6.2.0",
+    "fkill-cli": "^8.0.0",
+    "html-webpack-plugin": "^5.5.0",
+    "path-browserify": "^1.0.1",
     "prettier": "^3.6.0",
-    "turbo": "^2.5.8"
+    "process": "^0.11.10",
+    "style-loader": "^3.3.1",
+    "turbo": "^2.5.8",
+    "webpack": "^5.74.0",
+    "webpack-cli": "5.1.4",
+    "webpack-dev-server": "^4.11.0",
+    "webpack-merge": "^5.8.0"
   },
   "engines": {
     "node": ">=20"
