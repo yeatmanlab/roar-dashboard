@@ -32,6 +32,10 @@ inputs:
     description: "Path to the firebase.json hosting configuration file."
     required: false
     default: "build/apps/dashboard/firebase/admin/firebase.json"
+  expires:
+    description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Ignored for default channel deployments."
+    required: false
+    default: "7d"
 
 runs:
   using: composite
@@ -79,6 +83,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         repoToken: "${{ inputs.github-token }}"
         projectId: "${{ inputs.firebase-project-id }}"
+        expires: "${{ inputs.expires }}"
         entryPoint: ./app
 
     - name: Deploy application
