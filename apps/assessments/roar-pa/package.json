@@ -62,7 +62,6 @@
     "@babel/preset-env": "^7.19.0",
     "@roar-dashboard/eslint-config": "*",
     "@roar-dashboard/prettier-config": "*",
-    "@sentry/webpack-plugin": "^2.14.0",
     "@types/node": "^20.9.0",
     "babel-loader": "^8.2.5",
     "concurrently": "^9.1.0",
