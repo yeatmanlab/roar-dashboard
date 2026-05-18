@@ -194,9 +194,6 @@ export default defineConfig(({ mode }) => {
     ],
 
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
       // Ensure a single jspsych instance across all manually-chunked assessment packages.
       // Without this, Rollup may create multiple copies whose ParameterType enums initialize
       // in an undefined order, causing "Cannot read properties of undefined (reading 'BOOL')".
