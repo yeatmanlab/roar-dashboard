@@ -11,7 +11,7 @@ const app = express();
 // In development, allow any localhost origin so assessment webpack dev servers (:8000)
 // and the dashboard Vite dev server (:5173) can reach the backend without CORS errors.
 // In production, callers are either same-origin or must supply ALLOWED_ORIGINS.
-const LOCALHOST_ORIGIN = /^https?:\/\/localhost(:\d+)?$/;
+const LOCALHOST_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 const ALLOWED_ORIGINS_PROD = (process.env.ALLOWED_ORIGINS ?? '').split(',').filter(Boolean);
 
 app.use((req: Request, res: Response, next: NextFunction) => {
