@@ -1436,27 +1436,22 @@ export function UserService({
   }
 
   /**
-   * Create a minimal user record for an anonymous Firebase user on first authentication.
+   * Create a minimal user record for an anonymous Firebase user.
    *
    * Anonymous standalone users have no name, email, or org memberships. They are
-   * created as `student` type with only their Firebase UID stored. Called by the
-   * auth guard the first time an anonymous token is seen without a matching DB record.
+   * created as `student` type with only their Firebase UID stored.
    *
    * @param authId - The Firebase UID of the anonymous user
-   * @returns The newly created user record
+   * @returns The newly created user's ROAR UUID
    * @throws {ApiError} If the database insert fails
    */
-  async function createAnonymousUser(authId: string): Promise<User> {
+  async function createAnonymousUser(authId: string): Promise<{ id: string }> {
     try {
-      const [user] = await userRepository.create({ userType: UserType.STUDENT, authId });
-      if (!user) {
-        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
-          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          code: ApiErrorCode.DATABASE_QUERY_FAILED,
-          context: { authId },
-        });
-      }
-      return user;
+      const existing = await userRepository.findByAuthId(authId);
+      if (existing) return { id: existing.id };
+
+      const assessmentPid = generateAssessmentPid({ userId: authId });
+      return await userRepository.create({ data: { userType: UserType.STUDENT, authId, assessmentPid } });
     } catch (error) {
       if (error instanceof ApiError) throw error;
       logger.error({ err: error, context: { authId } }, 'Failed to create anonymous user');

@@ -42,14 +42,31 @@ const isAdaptive = urlParams.get('isAdaptive') === 'true';
 const itemSelect = urlParams.get('itemSelect') ?? 'fixed';
 const abilityMethod = urlParams.get('abilityMethod')?.toLocaleLowerCase() ?? 'eap';
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
+    const token = await user.getIdToken();
+
+    // Provision (or retrieve) the ROAR PostgreSQL user record for this anonymous Firebase user.
+    // Returns the stable ROAR UUID that the SDK uses as participantId.
+    // eslint-disable-next-line no-undef
+    const res = await fetch(`${ROAR_API_URL}/v1/users/anonymous`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      console.error('POST /users/anonymous failed:', res.status, json);
+      return;
+    }
+    const { data } = json;
+
     // eslint-disable-next-line no-undef
     const ctx = {
       // eslint-disable-next-line no-undef
       baseUrl: `${ROAR_API_URL}/v1`,
       auth: { getToken: () => user.getIdToken() },
-      participant: { participantId: user.uid },
+      participant: { participantId: data.id },
     };
 
     initFirekitCompat(ctx, {
