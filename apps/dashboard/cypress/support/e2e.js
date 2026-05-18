@@ -21,11 +21,12 @@ beforeEach(() => {
   // query fail, set `globalError` to `server-error`, and get redirected to
   // `GenericError` — masking the actual page under test.
   //
-  // The default response is a successful "no unsigned agreements" payload
-  // so the TOS guard stays disengaged. Tests that need to exercise the
-  // rostering-ended / unsigned-TOS / server-error paths should call
-  // `cy.intercept('GET', '**/me', ...)` again before `cy.visit(...)` to
-  // override this default.
+  // The default response is a successful "no unsigned agreements" payload so
+  // the TOS guard stays disengaged. Tests that need to exercise the
+  // rostering-ended / unsigned-TOS / server-error paths should register their
+  // own `cy.intercept('GET', /\/me\/?(\?.*)?$/, ...)` in their test body before
+  // navigating; Cypress picks the last-registered matching intercept, so the
+  // new registration takes precedence over this default.
   cy.intercept('GET', /\/me\/?(\?.*)?$/, {
     statusCode: 200,
     body: {
