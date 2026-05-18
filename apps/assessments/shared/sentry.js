@@ -1,5 +1,9 @@
-import * as Sentry from '@sentry/browser';
-import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
+import * as Sentry from "@sentry/browser";
+import {
+  captureConsoleIntegration,
+  contextLinesIntegration,
+  extraErrorDataIntegration,
+} from "@sentry/integrations";
 
 /**
  * Initialize Sentry for a ROAR assessment app.
@@ -17,9 +21,11 @@ export function initSentry({ dsn, game, gameShortened }) {
   // Replay integration throws if initialized more than once in a session (e.g. during Cypress reruns).
   if (Sentry.getClient()) return;
 
-  const regexRoarApp = new RegExp(`^https:\\/\\/${game}--pr\\d+-\\w+\\.web\\.app\\/`);
+  const regexRoarApp = new RegExp(
+    `^https:\\/\\/${game}--pr\\d+-[\\w-]+\\.web\\.app\\/`,
+  );
   const regexRoarStaging = new RegExp(
-    `^https:\\/\\/roar-staging\\.web\\.app\\/game\\/${gameShortened}|https:\\/\\/roar-staging--pr\\d+-\\w+\\.web\\.app\\/`,
+    `^https:\\/\\/roar-staging\\.web\\.app\\/game\\/${gameShortened}|https:\\/\\/roar-staging--pr\\d+-[\\w-]+\\.web\\.app\\/`,
   );
 
   Sentry.init({
@@ -31,7 +37,7 @@ export function initSentry({ dsn, game, gameShortened }) {
       }),
       Sentry.browserTracingIntegration(),
       captureConsoleIntegration({
-        levels: ['warning', 'error', 'debug', 'assert'],
+        levels: ["warning", "error", "debug", "assert"],
       }),
       contextLinesIntegration(),
       extraErrorDataIntegration(),
@@ -42,12 +48,9 @@ export function initSentry({ dsn, game, gameShortened }) {
       regexRoarApp,
       regexRoarStaging,
       `https://roar.education/game/${gameShortened}`,
-      'localhost',
+      "localhost",
     ],
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    beforeSend(event) {
-      return event;
-    },
   });
 }

@@ -19,10 +19,8 @@ const commonConfig = {
           name(module) {
             // get the name. E.g. node_modules/packageName/not/this/part.js
             // or node_modules/packageName
-            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
-
-            // npm package names are URL-safe, but some servers don't like @ symbols
-            return `npm.${packageName.replace('@', '')}`;
+            const packageName = module.request?.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
+            return packageName ? `npm.${packageName.replace('@', '')}` : 'vendor';
           },
           chunks: 'all',
         },
@@ -149,7 +147,6 @@ module.exports = async (env, args) => {
 
   const envDependentConfig = {
     plugins: [
-      new webpack.ids.HashedModuleIdsPlugin(), // so that file hashes don't change unexpectedly
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
         ROAR_API_URL: JSON.stringify(process.env.ROAR_API_URL || 'https://localhost:4000'),

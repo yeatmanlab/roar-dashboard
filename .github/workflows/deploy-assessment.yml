@@ -24,6 +24,11 @@ on:
         required: false
         type: string
         default: default
+      expires:
+        description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Ignored for default channel deployments."
+        required: false
+        type: string
+        default: 7d
       run-cypress:
         description: "Whether to run Cypress e2e tests after deployment."
         required: false
@@ -60,10 +65,20 @@ jobs:
         working-directory: apps/assessments/${{ inputs.assessment }}
         run: npm run ${{ inputs.build-script }}
 
+      - name: Set Sentry environment in firebase.json
+        # firebase.json hardcodes sentry_environment=production in Report-To and CSP headers.
+        # For non-default channels (e.g. PR previews), patch it to the channel name so Sentry
+        # groups these events separately from production issues.
+        if: inputs.firebase-channel != 'default'
+        run: |
+          sed -i "s/sentry_environment=production/sentry_environment=${{ inputs.firebase-channel }}/g" \
+            apps/assessments/${{ inputs.assessment }}/firebase.json
+
       - name: Deploy ${{ inputs.assessment }}
         uses: ./.github/actions/deploy
         with:
           firebase-channel: ${{ inputs.firebase-channel }}
+          expires: ${{ inputs.expires }}
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
           gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
