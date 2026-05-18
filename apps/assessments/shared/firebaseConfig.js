@@ -21,7 +21,6 @@ export async function getFirebaseConfig() {
       storageBucket: process.env.FIREBASE_APP_STORAGE_BUCKET,
       messagingSenderId: process.env.FIREBASE_APP_MESSAGING_SENDER_ID,
       appId: process.env.FIREBASE_APP_APP_ID,
-      siteKey: process.env.FIREBASE_APP_RECAPTCHA_SITE_KEY,
     };
   }
   return fetch('/__/firebase/init.json').then((r) => r.json());
