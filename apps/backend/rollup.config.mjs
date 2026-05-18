@@ -21,9 +21,6 @@ export default defineConfig({
         dir: 'dist',
         format: 'esm',
         sourcemap: 'inline',
-        preserveModules: true,
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
         exports: 'auto',
       }
     : {
