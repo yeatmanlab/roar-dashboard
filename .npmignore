@@ -3,7 +3,8 @@ node_modules
 **/.Rproj.user
 **/.ipynb_checkpoints
 .idea
-.DS_Store.firebase/*.cache
+.DS_Store
+.firebase/*.cache
 **/.DS_Store
 .firebaserc
 .gitignore
