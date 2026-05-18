@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { pa } from '@roar-dashboard/assessment-schema';
 import RoarPA from '../src/index';
@@ -30,6 +30,12 @@ const skipInstructions = urlParams.get('skip') !== 'false';
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// eslint-disable-next-line no-undef
+if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  // eslint-disable-next-line no-undef
+  connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
+}
 
 const earlyStopping = urlParams.get('earlyStopping')?.toLocaleLowerCase() ?? null;
 const threshold = urlParams.get('threshold') ?? null;
