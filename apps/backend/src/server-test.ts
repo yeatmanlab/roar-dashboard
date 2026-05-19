@@ -1,23 +1,37 @@
 /**
  * Test Server Entrypoint
  *
- * Dedicated server for SDK integration tests. Composes existing backend test-support utilities
- * into a runnable server without modifying production code.
+ * Dedicated server for SDK integration tests and Cypress e2e runs.
+ * Composes existing backend test-support utilities into a runnable server
+ * without modifying production code.
  *
  * This server:
  * 1. Initializes database pools and runs migrations
  * 2. Truncates all tables and seeds baseFixture test data
  * 3. Initializes OpenFGA store, deploys authorization model, and syncs tuples
- * 4. Mocks AuthService to accept test tokens (token string = Firebase UID)
- * 5. Writes fixture data to a temp JSON file for SDK tests to discover
- * 6. Starts Express server on the specified port
+ * 4. Swaps `AuthService.provider` for either:
+ *    - `TestAuthProvider` (default): token string == Firebase UID, no
+ *      signature verification. Used by SDK integration tests.
+ *    - `FirebaseAuthProvider`: real Admin SDK verification, pointed at the
+ *      Firebase Auth emulator when `FIREBASE_AUTH_EMULATOR_HOST` is set.
+ *      Used by Cypress e2e so the auth path mirrors production.
+ * 5. Seeds the Firebase Auth emulator (when in emulator mode) with users
+ *    mirroring baseFixture's authIds, and writes a Cypress-side fixture
+ *    file with the deterministic credentials
+ * 6. Writes the SDK fixture data to a temp JSON file for SDK tests to discover
+ * 7. Starts Express server on the specified port
  *
  * Environment variables:
  * - PORT: Server port (default: 4000)
  * - CORE_DATABASE_URL: Core database connection string (required)
  * - ASSESSMENT_DATABASE_URL: Assessment database connection string (required)
  * - FGA_API_URL: OpenFGA server URL (default: http://localhost:8080)
- * - TEST_FIXTURE_FILE: Path to write fixture data JSON (default: /tmp/roar-test-fixture.json)
+ * - TEST_FIXTURE_FILE: Path to write SDK fixture JSON (default: /tmp/roar-test-fixture.json)
+ * - FIREBASE_AUTH_EMULATOR_HOST: When set, switches to real Firebase Admin
+ *   SDK verification against the emulator, seeds emulator users, and writes
+ *   the Cypress fixture file
+ * - CYPRESS_FIXTURE_FILE: Path to write Cypress fixture JSON (default: /tmp/roar-cypress-fixture.json).
+ *   Ignored when `FIREBASE_AUTH_EMULATOR_HOST` is not set.
  *
  * Usage:
  *   NODE_ENV=production node dist/server-test.js
@@ -30,26 +44,122 @@ import type { Express } from 'express';
 import type { TestFixture } from '@roar-dashboard/api-contract/test-fixture.type';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { truncateAllTables, runMigrations } from './test-support/db';
-import { seedBaseFixture } from './test-support/fixtures';
+import { seedBaseFixture, type BaseFixture } from './test-support/fixtures';
 import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from './test-support/fga';
+import {
+  seedFirebaseAuthEmulator,
+  type SeedableEmulatorUser,
+  type SeededEmulatorUser,
+} from './test-support/firebase-emulator';
 import { AuthService } from './services/auth/auth.service';
 import { TestAuthProvider } from './services/auth/providers/test-auth.provider';
+import { FirebaseAuthProvider } from './services/auth/providers/firebase-auth.provider';
 import { logger } from './logger';
 
-const { PORT = '4000', TEST_FIXTURE_FILE = '/tmp/roar-test-fixture.json' } = process.env;
+const {
+  PORT = '4000',
+  TEST_FIXTURE_FILE = '/tmp/roar-test-fixture.json',
+  CYPRESS_FIXTURE_FILE = '/tmp/roar-cypress-fixture.json',
+} = process.env;
+
+/**
+ * Which baseFixture users to seed into the Firebase Auth emulator and expose
+ * in the Cypress fixture file. Each key here becomes a logical user name that
+ * Cypress can pass to `cy.loginAsTestUser(...)`. Adding a new tier of user
+ * means: extend `baseFixture` (or pick an existing one), add the key here,
+ * and migration specs can sign in as that user.
+ */
+const CYPRESS_FIXTURE_USER_KEYS = [
+  'districtAdmin',
+  'schoolAAdmin',
+  'schoolATeacher',
+  'schoolAStudent',
+  'classATeacher',
+  'classAStudent',
+  'groupStudent',
+  'districtBAdmin',
+] as const satisfies ReadonlyArray<keyof BaseFixture>;
 
 let server: http.Server;
 
 /**
- * Mock AuthService to use TestAuthProvider for SDK tests.
+ * Swap the AuthService provider based on whether we're booting against the
+ * Firebase Auth emulator.
  *
- * This allows SDK tests to use simple test tokens (token string = Firebase UID)
- * without requiring real Firebase credentials or environment setup.
+ * - With `FIREBASE_AUTH_EMULATOR_HOST` set: use the real
+ *   `FirebaseAuthProvider`. The Admin SDK detects the emulator host and
+ *   skips signature verification on emulator-issued tokens, so Cypress can
+ *   sign in via the Firebase Web SDK and have the resulting ID token verify
+ *   through the same code path as production.
+ * - Otherwise: use `TestAuthProvider` (token string == Firebase UID). This
+ *   is the path the assessment SDK integration tests take.
  */
 function mockAuthService(): void {
-  // Replace the provider with TestAuthProvider
-  // @ts-expect-error Accessing private static field for testing purposes
-  AuthService.provider = new TestAuthProvider();
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+    // @ts-expect-error Accessing private static field for testing purposes
+    AuthService.provider = new FirebaseAuthProvider();
+    logger.info('[server-test] AuthService using FirebaseAuthProvider (emulator mode)');
+  } else {
+    // @ts-expect-error Accessing private static field for testing purposes
+    AuthService.provider = new TestAuthProvider();
+    logger.info('[server-test] AuthService using TestAuthProvider (UID-as-token mode)');
+  }
+}
+
+/**
+ * Collect the subset of baseFixture users that should be seeded into the
+ * Firebase Auth emulator and exposed in the Cypress fixture.
+ */
+function collectSeedableUsers(fixture: BaseFixture): SeedableEmulatorUser[] {
+  return CYPRESS_FIXTURE_USER_KEYS.map((key) => {
+    const user = fixture[key];
+    return {
+      authId: user.authId,
+      nameFirst: user.nameFirst,
+      nameLast: user.nameLast,
+    };
+  });
+}
+
+/**
+ * Write the Cypress fixture file with one entry per seeded user.
+ *
+ * Cypress reads this from `/tmp/roar-cypress-fixture.json` (or
+ * `CYPRESS_FIXTURE_FILE`) to resolve a fixture key like 'schoolATeacher' to
+ * the email + password pair the helper uses to sign in via the Firebase
+ * Auth emulator.
+ */
+function writeCypressFixtureFile(
+  fixture: BaseFixture,
+  seeded: SeededEmulatorUser[],
+  fixtureFile: string,
+): void {
+  const byAuthId = new Map(seeded.map((u) => [u.authId, u]));
+
+  const users = Object.fromEntries(
+    CYPRESS_FIXTURE_USER_KEYS.map((key) => {
+      const user = fixture[key];
+      const creds = byAuthId.get(user.authId);
+      if (!creds) {
+        throw new Error(`[server-test] Missing seeded credentials for fixture key "${key}"`);
+      }
+      return [
+        key,
+        {
+          id: user.id,
+          authId: user.authId,
+          email: creds.email,
+          password: creds.password,
+          nameFirst: user.nameFirst,
+          nameLast: user.nameLast,
+          userType: user.userType,
+        },
+      ];
+    }),
+  );
+
+  fs.writeFileSync(fixtureFile, JSON.stringify({ users }, null, 2));
+  logger.info({ fixtureFile, userCount: seeded.length }, '[server-test] Cypress fixture written');
 }
 
 /**
@@ -159,7 +269,7 @@ async function startTestServer(): Promise<void> {
     // 4. Truncate all tables and seed baseFixture
     logger.info('[server-test] Truncating tables and seeding baseFixture...');
     await truncateAllTables();
-    await seedBaseFixture();
+    const fixture = await seedBaseFixture();
 
     // 5. Initialize FGA store, deploy model, and sync tuples
     logger.info('[server-test] Initializing FGA test store...');
@@ -168,9 +278,19 @@ async function startTestServer(): Promise<void> {
     logger.info('[server-test] Syncing FGA tuples from Postgres...');
     await syncFgaTuplesFromPostgres();
 
-    // 6. Mock AuthService to use TestAuthProvider
-    logger.info('[server-test] Mocking AuthService with TestAuthProvider...');
+    // 6. Swap AuthService.provider (chooses FirebaseAuthProvider when
+    // FIREBASE_AUTH_EMULATOR_HOST is set; TestAuthProvider otherwise).
+    logger.info('[server-test] Configuring AuthService provider...');
     mockAuthService();
+
+    // 6b. In emulator mode, seed the Firebase Auth emulator with users
+    // matching baseFixture.authId and write the Cypress fixture file.
+    if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      logger.info('[server-test] Seeding Firebase Auth emulator...');
+      const seedable = collectSeedableUsers(fixture);
+      const seeded = await seedFirebaseAuthEmulator(seedable);
+      writeCypressFixtureFile(fixture, seeded, CYPRESS_FIXTURE_FILE);
+    }
 
     // 7. Write fixture data to file
     logger.info('[server-test] Writing fixture data to file...');
