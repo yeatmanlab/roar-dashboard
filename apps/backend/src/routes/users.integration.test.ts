@@ -2673,3 +2673,56 @@ describe('GET /v1/users/:userId/reports/scores', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POST /v1/users/anonymous
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('POST /v1/users/anonymous', () => {
+  // AnonTokenMiddleware checks claims.firebase.sign_in_provider — the shared
+  // authenticateAs() helper sets claims: {} which would fail that check.
+  // expectRoute().asAnonymous(uid) sets the full anonymous claims instead.
+
+  it('returns 401 when Authorization header is absent', async () => {
+    const res = await expectRoute('POST', '/v1/users/anonymous').unauthenticated().toReturn(401);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+  });
+
+  it('returns 401 when the token is from a non-anonymous provider', async () => {
+    // authenticateAs sets claims: {} (no firebase key), so isAnonymousToken returns
+    // false and AnonTokenMiddleware rejects the request as non-anonymous.
+    const res = await expectRoute('POST', '/v1/users/anonymous').as(tiers.student).withBody({}).toReturn(401);
+
+    expect(res.body.error.code).toBe(ApiErrorCode.AUTH_REQUIRED);
+  });
+
+  it('returns 200 with { data: { id: <uuid> } } on first call for a new anonymous user', async () => {
+    const uid = `anon-uid-${Date.now()}`;
+
+    const res = await expectRoute('POST', '/v1/users/anonymous').asAnonymous(uid).withBody({}).toReturn(200);
+
+    expect(res.body.data).toMatchObject({
+      id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    });
+  });
+
+  it('returns 200 with the same UUID on a second call for the same Firebase UID (idempotency)', async () => {
+    const uid = `anon-uid-idempotent-${Date.now()}`;
+
+    const first = await expectRoute('POST', '/v1/users/anonymous').asAnonymous(uid).withBody({}).toReturn(200);
+    const second = await expectRoute('POST', '/v1/users/anonymous').asAnonymous(uid).withBody({}).toReturn(200);
+
+    expect(second.body.data.id).toBe(first.body.data.id);
+  });
+
+  it('returns 200 even when no body is provided in the request', async () => {
+    const uid = `anon-uid-nobody-${Date.now()}`;
+
+    const res = await expectRoute('POST', '/v1/users/anonymous').asAnonymous(uid).toReturn(200);
+
+    expect(res.body.data).toMatchObject({
+      id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    });
+  });
+});
