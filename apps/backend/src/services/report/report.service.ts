@@ -16,6 +16,9 @@ import type {
   ScoreOverviewInput,
   ScoreOverviewResult,
   ServiceTaskScoreOverview,
+  ScoreFacetsInput,
+  ScoreFacetsResult,
+  ServiceTaskScoreFacet,
   StudentScoresInput,
   StudentScoresSortField,
   StudentScoresFilterField,
@@ -70,6 +73,7 @@ import { TaskService } from '../task/task.service';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { FgaType, FgaRelation } from '../authorization/fga-constants';
 import { TaskVariantParameterRepository } from '../../repositories/task-variant-parameter.repository';
+import type { TaskVariantParameter } from '../../db/schema';
 import {
   getScoringConfig,
   getSubscoresConfig,
@@ -84,7 +88,7 @@ import { UserRepository } from '../../repositories/user.repository';
 import { Permissions } from '../../constants/permissions';
 import { rolesForPermission } from '../../constants/role-permissions';
 import { filterSupervisoryRoles } from '../../repositories/utils/supervisory-roles.utils';
-import { getGradeAsNumber } from '../../utils/get-grade-as-number.util';
+import { getGradeAsNumber, getGradesInRange } from '../../utils/get-grade-as-number.util';
 import { conditionToSql } from '../../utils/condition-to-sql';
 import type { Condition, ConditionEvaluationUser } from '../../types/condition';
 import type { AuthContext } from '../../types/auth-context';
@@ -613,15 +617,9 @@ export function ReportService({
       // 3. Get task metadata
       let taskMetas = await reportRepository.getTaskMetadata(administrationId);
 
-      // 4. Extract taskId filters (if any) and user-level filters separately.
-      // Multiple `taskId:in:...` filter entries are merged into a single allow-list —
-      // a client passing `?filter=taskId:in:a,b&filter=taskId:in:c` should see all three.
-      // Using filter().flatMap() rather than find() to avoid silently dropping later entries.
-      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
-      if (taskIdFilters.length > 0) {
-        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
-        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
-      }
+      // 4. Apply taskId filter (multi-entry union, validates unknowns as 400 — see
+      //    `applyTaskIdFilter`) and split user-level filters out for SQL translation.
+      taskMetas = applyTaskIdFilter(taskMetas, filter);
 
       const userFilters = filter.filter((f) => f.field !== 'taskId');
       const filterCondition =
@@ -684,15 +682,7 @@ export function ReportService({
       // 7. Fetch scoring versions from task_variant_parameters
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 8. Bulk fetch completed run scores
       const studentIds = students.map((s) => s.userId);
@@ -728,6 +718,158 @@ export function ReportService({
       );
 
       throw new ApiError('Failed to retrieve score overview', {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, administrationId, scopeType, scopeId },
+        cause: error,
+      });
+    }
+  }
+
+  /**
+   * Get faceted score distributions for an administration — per-task
+   * support-level counts and score-bin histograms, split by grade and (at
+   * district scope) by school. Powers the two distribution charts on the
+   * score report page (#1782).
+   *
+   * Authorization mirrors {@link getScoreOverview}: administration-level
+   * `can_read_scores` plus scope-level `can_read_scores`. The class-level
+   * FGA model already enforces that a school-rostered teacher who is not
+   * on `user_classes` for a specific class cannot access that class's
+   * scope — no extra check needed here.
+   *
+   * Bin-edge stability (#1782): bin edges are computed once per task from
+   * the UNFILTERED student population in scope, then reused under
+   * filtering. Filters narrow which cells are populated but do not change
+   * the axes. This keeps the histogram axes stable as the user toggles a
+   * `taskId` or `user.grade` filter.
+   *
+   * At non-district scopes, `supportLevelBySchool` and `scoreBinsBySchool`
+   * are returned as empty arrays. The dashboard's school-facet toggle is
+   * district-only in the UI; empty arrays let the client iterate without
+   * null-guarding.
+   *
+   * Filter applied in JS rather than SQL: bin edges must come from the
+   * unfiltered population, which forces fetching the unfiltered set
+   * anyway. Filtering once in JS over that set is cleaner than a two-pass
+   * SQL approach (one unfiltered for bin edges, one filtered for counts).
+   * It is a deliberate departure from the sibling endpoints' filter-in-SQL
+   * pattern — bounded by the in-scope population size, not by tasks ×
+   * students.
+   */
+  async function getScoreFacets(
+    authContext: AuthContext,
+    administrationId: string,
+    query: ScoreFacetsInput,
+  ): Promise<ScoreFacetsResult> {
+    const { userId } = authContext;
+    const { scopeType, scopeId, filter } = query;
+
+    try {
+      // 1. Administration-level + scope-level can_read_scores.
+      //    `verifyAdministrationAccess` returns the admin record so we can
+      //    thread `adminWindow` through the admin-aware overlap predicate
+      //    introduced by #1792.
+      const administration = await administrationService.verifyAdministrationAccess(
+        authContext,
+        administrationId,
+        FgaRelation.CAN_READ_SCORES,
+      );
+      await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
+      const adminWindow = toReportAdminWindow(administration);
+
+      // 2. Apply taskId filter (multi-entry union, validates unknowns as 400 — see
+      //    `applyTaskIdFilter`).
+      const allTaskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const taskMetas = applyTaskIdFilter(allTaskMetas, filter);
+
+      // 3. Group variants by taskId (multi-variant dedup, same as overview).
+      const taskGroups = groupVariantsByTaskId(taskMetas);
+      if (taskGroups.length === 0) {
+        // Reachable only when the administration has no task variants
+        // assigned at all — `applyTaskIdFilter` already throws 400 for
+        // unknown taskId filter values, so a stale filter can't get us
+        // here. An "empty admin" is a misconfiguration; reporting
+        // totalStudents = 0 is acceptable since there's no chart to
+        // populate.
+        return { totalStudents: 0, tasks: [], computedAt: new Date().toISOString() };
+      }
+
+      // 4. Fetch UNFILTERED population in scope. Bin edges (step 8) need the
+      //    unfiltered set per the #1782 bin-edge-stability contract; filters
+      //    are applied in JS in step 7. The admin window is threaded through
+      //    so the strict overlap predicate is applied (#1792); facets does
+      //    not accept the `includeUnenrolledStudents` toggle, so the default
+      //    `false` is correct — see the #1782 ticket for the rationale.
+      const { totalStudents, students } = await reportRepository.getAllStudentsInScope(
+        { scopeType, scopeId },
+        adminWindow,
+      );
+
+      if (totalStudents === 0) {
+        return {
+          totalStudents,
+          tasks: taskGroups.map(({ representative }) => buildEmptyTaskFacet(representative)),
+          computedAt: new Date().toISOString(),
+        };
+      }
+
+      // 5. Scoring versions per variant (drives classification cutoffs).
+      const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
+      const allParams = await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds);
+      const scoringVersionByVariant = extractScoringVersions(allParams);
+
+      // 6. Bulk-fetch completed run scores for the full unfiltered population.
+      const studentIds = students.map((s) => s.userId);
+      const scoreRows = await reportRepository.getCompletedRunScores(administrationId, studentIds, taskVariantIds);
+      const scoresByStudentTask = buildScoreLookup(scoreRows);
+
+      // 7. Apply user-level filters in JS. The contract restricts userFilters
+      //    to `user.grade` (via `SCORE_FACETS_FILTER_FIELDS`), so the JS
+      //    predicate only needs to handle that field — defensive default
+      //    rejects unknown fields if they somehow slip through.
+      const userFilters = filter.filter((f) => f.field !== 'taskId');
+      const filteredStudents =
+        userFilters.length > 0
+          ? students.filter((s) => userFilters.every((f) => studentMatchesUserFilter(s, f)))
+          : students;
+
+      // 8. School resolution at district scope. The `scopeId` (the
+      //    district's UUID) is required for `getSchoolsForUsers` to apply
+      //    its ltree path filter — without it, a student enrolled in a
+      //    school outside the requested district would surface in the
+      //    per-school breakdown (review finding #1 on #1782). At non-
+      //    district scopes the map stays empty and `aggregateTaskFacet`
+      //    emits empty *BySchool arrays per the contract.
+      const isDistrictScope = scopeType === EntityType.DISTRICT;
+      const schoolsByUser = isDistrictScope
+        ? await reportRepository.getSchoolsForUsers(studentIds, scopeId)
+        : new Map<string, { schoolId: string; schoolName: string }>();
+
+      // 9. Aggregate per task — bin edges from unfiltered, counts from filtered.
+      const tasks: ServiceTaskScoreFacet[] = taskGroups.map(({ representative, variants }) =>
+        aggregateTaskFacet({
+          representative,
+          variants,
+          unfilteredStudents: students,
+          filteredStudents,
+          scoresByStudentTask,
+          scoringVersionByVariant,
+          schoolsByUser,
+          isDistrictScope,
+        }),
+      );
+
+      return { totalStudents, tasks, computedAt: new Date().toISOString() };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error(
+        { err: error, context: { userId, administrationId, scopeType, scopeId } },
+        'Failed to retrieve score facets',
+      );
+
+      throw new ApiError('Failed to retrieve score facets', {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         code: ApiErrorCode.DATABASE_QUERY_FAILED,
         context: { userId, administrationId, scopeType, scopeId },
@@ -779,13 +921,10 @@ export function ReportService({
       const adminWindow = toReportAdminWindow(administration);
       await authorizeScopeAccess(authContext, administrationId, scopeType, scopeId, FgaRelation.CAN_READ_SCORES);
 
-      // 2. Get task metadata and apply taskId filter (merge multiple entries)
-      let taskMetas = await reportRepository.getTaskMetadata(administrationId);
-      const taskIdFilters = filter.filter((f) => f.field === 'taskId');
-      if (taskIdFilters.length > 0) {
-        const allowedTaskIds = new Set(taskIdFilters.flatMap((f) => f.value.split(',').map((v) => v.trim())));
-        taskMetas = taskMetas.filter((t) => allowedTaskIds.has(t.taskId));
-      }
+      // 2. Get task metadata and apply taskId filter (multi-entry union,
+      //    validates unknowns as 400 — see `applyTaskIdFilter`).
+      const allTaskMetas = await reportRepository.getTaskMetadata(administrationId);
+      const taskMetas = applyTaskIdFilter(allTaskMetas, filter);
 
       // 3. Build per-task primary variant map (lowest-orderIndex variant of each task)
       const primaryVariantByTaskId = buildPrimaryVariantMap(taskMetas);
@@ -799,15 +938,7 @@ export function ReportService({
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams =
         taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Resolve scoring rules per variant for SQL CASE generation in the repo
       const scoringRulesByVariant = new Map<string, ResolvedScoringRules>();
@@ -896,10 +1027,16 @@ export function ReportService({
       // 11. Build response — dedupe per taskId, classify, set optional/completed
       const tasksOrdered: ServiceTaskMetadata[] = uniqueTaskMetadataInOrder(taskMetas);
 
-      // Resolve schoolNames for district-scope rows (not auto-populated by repo for that field)
+      // Resolve schoolNames for district-scope rows (not auto-populated by
+      // repo for that field). Pass `scopeId` so the lookup is constrained to
+      // schools under the requested district — without it a student
+      // enrolled cross-district would surface a foreign school's name here.
       let schoolNamesByUser: Map<string, string> | undefined;
       if (scopeType === EntityType.DISTRICT) {
-        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(result.items.map((s) => s.userId));
+        schoolNamesByUser = await reportRepository.getSchoolNamesForUsers(
+          result.items.map((s) => s.userId),
+          scopeId,
+        );
       }
 
       // Group taskMetas by taskId once — the grouping is independent of the
@@ -1037,15 +1174,7 @@ export function ReportService({
       const taskVariantIds = taskMetas.map((t) => t.taskVariantId);
       const allParams =
         taskVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(taskVariantIds) : [];
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Fetch the student's current-admin scores, run metadata, and historical
       // runs/scores in parallel. Run metadata (reliable, engagementFlags) lives
@@ -1258,7 +1387,13 @@ export function ReportService({
         }
       }
 
-      // 3. Resolve the student's set of administrations and school name in parallel
+      // 3. Resolve the student's set of administrations and school name in
+      //    parallel. The guardian report spans the student's history across
+      //    administrations — and potentially districts — so we deliberately
+      //    omit the `districtId` filter on `getSchoolNamesForUsers` and let
+      //    the alphabetically-first ordering pick a school across all the
+      //    student's enrollments. The admin-scoped endpoints
+      //    (getStudentScores, getScoreFacets) pass scopeId to constrain.
       const [adminMetas, schoolNamesMap] = await Promise.all([
         reportRepository.getStudentAdministrations(targetUserId),
         reportRepository.getSchoolNamesForUsers([targetUserId]),
@@ -1298,15 +1433,7 @@ export function ReportService({
       );
       const allParams =
         allVariantIds.length > 0 ? await taskVariantParameterRepository.getByTaskVariantIds(allVariantIds) : [];
-      const scoringVersionByVariant = new Map<string, number>();
-      for (const param of allParams) {
-        if (param.name === 'scoringVersion') {
-          const version = typeof param.value === 'number' ? param.value : Number(param.value);
-          if (!isNaN(version)) {
-            scoringVersionByVariant.set(param.taskVariantId, version);
-          }
-        }
-      }
+      const scoringVersionByVariant = extractScoringVersions(allParams);
 
       // 6. Fetch scores + run metadata per admin in parallel.
       // Each admin only fetches its own variants; pinning queries to a single
@@ -1452,6 +1579,7 @@ export function ReportService({
     listProgressStudents,
     getProgressOverview,
     getScoreOverview,
+    getScoreFacets,
     listStudentScores,
     getIndividualStudentReport,
     getGuardianStudentReport,
@@ -1702,6 +1830,69 @@ interface TaskGroup {
  *
  * Exported for independent testing.
  */
+/**
+ * Apply `taskId:in:<uuids>` filters from a parsed filter list to a set of
+ * task metadata rows. Repeatable entries are unioned: a client passing
+ * `?filter=taskId:in:a,b&filter=taskId:in:c` sees all three IDs. Unknown
+ * task IDs (UUIDs not present in `taskMetas`) throw `BAD_REQUEST` — the
+ * three score-reporting endpoints (`overview`, `students`, `facets`) all
+ * promise 400 on unknown filter task IDs and previously silently dropped
+ * them instead (review follow-up on #1782).
+ *
+ * Returns the input `taskMetas` unchanged when no `taskId` filter entries
+ * are present.
+ */
+function applyTaskIdFilter(taskMetas: ReportTaskMeta[], filter: ParsedFilter[]): ReportTaskMeta[] {
+  const taskIdFilters = filter.filter((f) => f.field === 'taskId');
+  if (taskIdFilters.length === 0) return taskMetas;
+
+  const requestedTaskIds = new Set(
+    taskIdFilters.flatMap((f) =>
+      f.value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0),
+    ),
+  );
+  const knownTaskIds = new Set(taskMetas.map((t) => t.taskId));
+
+  for (const requested of requestedTaskIds) {
+    if (!knownTaskIds.has(requested)) {
+      throw new ApiError(`Unknown task ID in filter: ${requested}`, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        context: { unknownTaskId: requested, knownTaskIds: Array.from(knownTaskIds) },
+      });
+    }
+  }
+
+  return taskMetas.filter((t) => requestedTaskIds.has(t.taskId));
+}
+
+/**
+ * Extract a `taskVariantId → scoringVersion` map from `task_variant_parameters`
+ * rows. Used by every score-reporting endpoint to drive version-aware score
+ * classification (`getSupportLevel` resolves cutoffs against the variant's
+ * `scoringVersion`).
+ *
+ * `Number.isInteger` rejects `NaN`, `±Infinity`, and fractional values (e.g.,
+ * a JSONB value of `'1.5'` parses to `1.5`). A `scoringVersion` is always a
+ * non-negative integer in the JSON config; surfacing data corruption here as
+ * "skip the variant" rather than coercing a fractional value into the
+ * scoring-config lookup is cheap and correct.
+ */
+function extractScoringVersions(params: TaskVariantParameter[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const param of params) {
+    if (param.name !== 'scoringVersion') continue;
+    const version = typeof param.value === 'number' ? param.value : Number(param.value);
+    if (Number.isInteger(version)) {
+      map.set(param.taskVariantId, version);
+    }
+  }
+  return map;
+}
+
 export function groupVariantsByTaskId(taskMetas: ReportTaskMeta[]): TaskGroup[] {
   const groups = new Map<string, ReportTaskMeta[]>();
   const orderedTaskIds: string[] = [];
@@ -1917,6 +2108,362 @@ function aggregateTaskGroup(
       developingSkill: { count: developingCount },
       needsExtraSupport: { count: needsSupportCount },
     },
+  };
+}
+
+// --- Score-facets helpers (#1782) ---
+
+/**
+ * Number of raw-score bins per task. Percentile bins are fixed at 10
+ * (width 10, covering 0–100). Raw-score bin width is computed per task
+ * from the unfiltered min/max so the histogram adapts to task scale.
+ */
+const RAW_SCORE_BIN_COUNT = 20;
+
+/** Fixed percentile bins: 10 half-open intervals covering 0–100. */
+function buildPercentileBins(): { binStart: number; binEnd: number }[] {
+  const bins: { binStart: number; binEnd: number }[] = [];
+  for (let i = 0; i < 10; i++) {
+    bins.push({ binStart: i * 10, binEnd: (i + 1) * 10 });
+  }
+  return bins;
+}
+
+/**
+ * Build raw-score bins covering `[min, max]` with `RAW_SCORE_BIN_COUNT`
+ * equal-width intervals. Returns `[]` when no scored students exist in
+ * the unfiltered population (caller emits empty bin arrays in that case);
+ * returns a single degenerate bin `[min, min]` when all scores collapse
+ * to the same value, so the histogram renders coherently without the bin
+ * label implying a wider range than the data spans. `assignBin` handles
+ * the degenerate-bin case via its "last bin is closed at the top" rule
+ * (`value >= binStart && value <= binEnd`).
+ */
+function buildRawScoreBins(min: number, max: number): { binStart: number; binEnd: number }[] {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+  if (min === max) return [{ binStart: min, binEnd: min }];
+  const step = (max - min) / RAW_SCORE_BIN_COUNT;
+  const bins: { binStart: number; binEnd: number }[] = [];
+  for (let i = 0; i < RAW_SCORE_BIN_COUNT; i++) {
+    bins.push({ binStart: min + i * step, binEnd: min + (i + 1) * step });
+  }
+  return bins;
+}
+
+/**
+ * Assign a numeric value to a bin index. Bins are half-open `[binStart,
+ * binEnd)` except the last bin, which is closed at the top so the maximum
+ * observed value (and percentile = 100) falls into the final bin instead
+ * of being dropped. Returns `-1` when the value sits outside the bin
+ * range (shouldn't happen when bins are derived from min/max but
+ * defensive).
+ */
+function assignBin(value: number, bins: { binStart: number; binEnd: number }[]): number {
+  for (let i = 0; i < bins.length; i++) {
+    const { binStart, binEnd } = bins[i]!;
+    const isLast = i === bins.length - 1;
+    if (value >= binStart && (isLast ? value <= binEnd : value < binEnd)) return i;
+  }
+  return -1;
+}
+
+/**
+ * JS-side filter predicate. The contract restricts user filters on the
+ * facets endpoint to `user.grade` (via `SCORE_FACETS_FILTER_FIELDS`), so
+ * this only needs to handle that field — defensive default rejects
+ * unknowns. Mirrors the SQL semantics in `buildFilterConditions` /
+ * `getGradesInRange` so a request returning row R via this endpoint
+ * also returns row R via the overview / students endpoints when the same
+ * `user.grade` filter is applied.
+ *
+ * Parity gotchas the JS path is responsible for matching the SQL path on:
+ * - `in` drops empty values after trim, matching `buildOperatorCondition`
+ *   which uses `inArray` with the empties filtered out
+ * - invalid `gte`/`lte` reference grades (e.g., `Foobar`) throw
+ *   `BAD_REQUEST` rather than silently dropping every student — matches
+ *   the SQL path which throws when `getGradesInRange` returns null
+ */
+function studentMatchesUserFilter(student: StudentOverviewRow, filter: ParsedFilter): boolean {
+  if (filter.field !== 'user.grade') return false;
+  const grade = student.grade;
+  if (grade === null) return false;
+
+  switch (filter.operator) {
+    case 'eq':
+      return grade === filter.value;
+    case 'neq':
+      return grade !== filter.value;
+    case 'in':
+      return filter.value
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0)
+        .includes(grade);
+    case 'contains':
+      return grade.toLowerCase().includes(filter.value.toLowerCase());
+    case 'gte':
+    case 'lte': {
+      const allowed = getGradesInRange(filter.operator, filter.value);
+      if (allowed === null) {
+        throw new ApiError(`Invalid grade value for ${filter.operator} filter: ${filter.value}`, {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        });
+      }
+      return allowed.includes(grade);
+    }
+    default:
+      return false;
+  }
+}
+
+/** Zero-state facet for a task with no students in scope. */
+function buildEmptyTaskFacet(task: ReportTaskMeta): ServiceTaskScoreFacet {
+  return {
+    taskId: task.taskId,
+    taskSlug: task.taskSlug,
+    taskName: task.taskName,
+    orderIndex: task.orderIndex,
+    supportLevelByGrade: [],
+    supportLevelBySchool: [],
+    scoreBinsByGrade: [],
+    scoreBinsBySchool: [],
+  };
+}
+
+/** Per-(grade or schoolId) running tally state used inside `aggregateTaskFacet`. */
+type FacetTally = {
+  totalAssessed: number;
+  achievedSkill: number;
+  developingSkill: number;
+  needsExtraSupport: number;
+  rawScoreBinCounts: number[];
+  percentileBinCounts: number[];
+};
+
+function emptyTally(rawBinLen: number, pctBinLen: number): FacetTally {
+  return {
+    totalAssessed: 0,
+    achievedSkill: 0,
+    developingSkill: 0,
+    needsExtraSupport: 0,
+    rawScoreBinCounts: new Array(rawBinLen).fill(0),
+    percentileBinCounts: new Array(pctBinLen).fill(0),
+  };
+}
+
+/** Sort grades by numeric value; unparseable grades go to the end. */
+function compareGrade(a: string, b: string): number {
+  const na = getGradeAsNumber(a) ?? Number.POSITIVE_INFINITY;
+  const nb = getGradeAsNumber(b) ?? Number.POSITIVE_INFINITY;
+  return na - nb;
+}
+
+/**
+ * Aggregate one task into a `ServiceTaskScoreFacet`. Bin edges come from
+ * the unfiltered population (`unfilteredStudents`) so axes stay stable
+ * under filtering; counts come from `filteredStudents`.
+ *
+ * Students without a scored variant are excluded from this task's
+ * breakdown — the facets endpoint reports the assessed cohort only.
+ * Students with a null grade are excluded from `*ByGrade` tallies;
+ * district-scope students with no resolvable school are excluded from
+ * `*BySchool` tallies.
+ *
+ * `rawScore` and `percentile` bins are independently empty when no
+ * scored student in the unfiltered population had that score type — a
+ * raw-only task returns `percentile: []`, a percentile-only task returns
+ * `rawScore: []` per the contract.
+ */
+function aggregateTaskFacet({
+  representative,
+  variants,
+  unfilteredStudents,
+  filteredStudents,
+  scoresByStudentTask,
+  scoringVersionByVariant,
+  schoolsByUser,
+  isDistrictScope,
+}: {
+  representative: ReportTaskMeta;
+  variants: ReportTaskMeta[];
+  unfilteredStudents: StudentOverviewRow[];
+  filteredStudents: StudentOverviewRow[];
+  scoresByStudentTask: ScoreLookup;
+  scoringVersionByVariant: Map<string, number>;
+  schoolsByUser: Map<string, { schoolId: string; schoolName: string }>;
+  isDistrictScope: boolean;
+}): ServiceTaskScoreFacet {
+  // --- 1. Resolve each unfiltered student's scored variant once. Both
+  //         passes below reuse the cached result — `findScoredVariant`
+  //         walks every variant for a task on each call, so caching cuts
+  //         the per-student cost in half at district scale (review
+  //         finding #11 on #1782). The cache also stores the student's
+  //         numeric grade level so field-name resolution stays
+  //         grade-aware in both passes.
+  type ScoredEntry = { variant: ReportTaskMeta; scores: Map<string, string>; gradeLevel: number | null };
+  const scoredByUserId = new Map<string, ScoredEntry>();
+  for (const student of unfilteredStudents) {
+    const scored = findScoredVariant(student.userId, variants, scoresByStudentTask);
+    if (scored) {
+      scoredByUserId.set(student.userId, { ...scored, gradeLevel: getGradeAsNumber(student.grade) });
+    }
+  }
+
+  // --- 2. Compute bin edges from the unfiltered scored cohort ---
+  // Walk the cache once to find min/max raw score and to detect whether
+  // percentile is defined for this task at all. Tasks where every scored
+  // student emits null for a given score type return an empty bin array
+  // for that mode.
+  let rawScoreMin = Number.POSITIVE_INFINITY;
+  let rawScoreMax = Number.NEGATIVE_INFINITY;
+  let anyPercentileSeen = false;
+
+  for (const [, scored] of scoredByUserId) {
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, scored.gradeLevel);
+    const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
+    const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
+    if (rawScore !== null) {
+      if (rawScore < rawScoreMin) rawScoreMin = rawScore;
+      if (rawScore > rawScoreMax) rawScoreMax = rawScore;
+    }
+    if (percentile !== null) anyPercentileSeen = true;
+  }
+
+  const rawScoreBins = buildRawScoreBins(rawScoreMin, rawScoreMax);
+  const percentileBins = anyPercentileSeen ? buildPercentileBins() : [];
+
+  // --- 3. Walk filtered students, tallying per-grade and per-school ---
+  const byGrade = new Map<string, FacetTally>();
+  const bySchool = new Map<string, FacetTally>();
+  const schoolNameById = new Map<string, string>();
+
+  for (const student of filteredStudents) {
+    const scored = scoredByUserId.get(student.userId);
+    if (!scored) continue;
+
+    const scoringVersion = scoringVersionByVariant.get(scored.variant.taskVariantId) ?? null;
+    const gradeLevel = getGradeAsNumber(student.grade);
+    const fieldNames = resolveScoreFieldNames(scored.variant.taskSlug, gradeLevel);
+    const percentile = resolveNumericScore(scored.scores, fieldNames.percentileFieldNames);
+    const rawScore = resolveNumericScore(scored.scores, fieldNames.rawScoreFieldNames);
+    const assessmentSupportLevel = resolveStringScore(scored.scores, ASSESSMENT_SUPPORT_LEVEL_FIELDS);
+
+    const supportLevel = getSupportLevel({
+      grade: student.grade,
+      percentile,
+      rawScore,
+      taskSlug: scored.variant.taskSlug,
+      scoringVersion,
+      assessmentSupportLevel,
+    });
+
+    const tallyBuckets: FacetTally[] = [];
+
+    if (student.grade !== null) {
+      let tally = byGrade.get(student.grade);
+      if (!tally) {
+        tally = emptyTally(rawScoreBins.length, percentileBins.length);
+        byGrade.set(student.grade, tally);
+      }
+      tallyBuckets.push(tally);
+    }
+
+    if (isDistrictScope) {
+      const school = schoolsByUser.get(student.userId);
+      if (school) {
+        schoolNameById.set(school.schoolId, school.schoolName);
+        let tally = bySchool.get(school.schoolId);
+        if (!tally) {
+          tally = emptyTally(rawScoreBins.length, percentileBins.length);
+          bySchool.set(school.schoolId, tally);
+        }
+        tallyBuckets.push(tally);
+      }
+    }
+
+    for (const tally of tallyBuckets) {
+      tally.totalAssessed++;
+      if (supportLevel === 'achievedSkill') tally.achievedSkill++;
+      else if (supportLevel === 'developingSkill') tally.developingSkill++;
+      else if (supportLevel === 'needsExtraSupport') tally.needsExtraSupport++;
+      // null / 'optional' support levels: counted in totalAssessed but not
+      // in a support-level bucket. `optional` shouldn't surface here for
+      // students with completed runs — `getSupportLevel` returns one of
+      // the three classifiable levels (or null) when a score is present.
+
+      if (rawScore !== null && rawScoreBins.length > 0) {
+        const i = assignBin(rawScore, rawScoreBins);
+        if (i >= 0) tally.rawScoreBinCounts[i] = (tally.rawScoreBinCounts[i] ?? 0) + 1;
+      }
+      if (percentile !== null && percentileBins.length > 0) {
+        const i = assignBin(percentile, percentileBins);
+        if (i >= 0) tally.percentileBinCounts[i] = (tally.percentileBinCounts[i] ?? 0) + 1;
+      }
+    }
+  }
+
+  // --- 4. Project tallies into the response shape ---
+  const sortedGrades = Array.from(byGrade.keys()).sort(compareGrade);
+  const sortedSchoolIds = Array.from(bySchool.keys()).sort((a, b) =>
+    (schoolNameById.get(a) ?? '').localeCompare(schoolNameById.get(b) ?? ''),
+  );
+
+  const supportLevelByGrade = sortedGrades.map((grade) => {
+    const t = byGrade.get(grade)!;
+    return {
+      grade,
+      totalAssessed: t.totalAssessed,
+      achievedSkill: { count: t.achievedSkill },
+      developingSkill: { count: t.developingSkill },
+      needsExtraSupport: { count: t.needsExtraSupport },
+    };
+  });
+
+  const scoreBinsByGrade = sortedGrades.map((grade) => {
+    const t = byGrade.get(grade)!;
+    return {
+      grade,
+      rawScore: rawScoreBins.map((bin, i) => ({ ...bin, count: t.rawScoreBinCounts[i] ?? 0 })),
+      percentile: percentileBins.map((bin, i) => ({ ...bin, count: t.percentileBinCounts[i] ?? 0 })),
+    };
+  });
+
+  const supportLevelBySchool = isDistrictScope
+    ? sortedSchoolIds.map((schoolId) => {
+        const t = bySchool.get(schoolId)!;
+        return {
+          schoolId,
+          schoolName: schoolNameById.get(schoolId) ?? null,
+          totalAssessed: t.totalAssessed,
+          achievedSkill: { count: t.achievedSkill },
+          developingSkill: { count: t.developingSkill },
+          needsExtraSupport: { count: t.needsExtraSupport },
+        };
+      })
+    : [];
+
+  const scoreBinsBySchool = isDistrictScope
+    ? sortedSchoolIds.map((schoolId) => {
+        const t = bySchool.get(schoolId)!;
+        return {
+          schoolId,
+          schoolName: schoolNameById.get(schoolId) ?? null,
+          rawScore: rawScoreBins.map((bin, i) => ({ ...bin, count: t.rawScoreBinCounts[i] ?? 0 })),
+          percentile: percentileBins.map((bin, i) => ({ ...bin, count: t.percentileBinCounts[i] ?? 0 })),
+        };
+      })
+    : [];
+
+  return {
+    taskId: representative.taskId,
+    taskSlug: representative.taskSlug,
+    taskName: representative.taskName,
+    orderIndex: representative.orderIndex,
+    supportLevelByGrade,
+    supportLevelBySchool,
+    scoreBinsByGrade,
+    scoreBinsBySchool,
   };
 }
 

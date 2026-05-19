@@ -1412,32 +1412,153 @@ export class ReportRepository {
   }
 
   /**
+   * Resolve `{ schoolId, schoolName }` tuples for a set of users, scoped to
+   * the descendants of a specific district. Used by the facets endpoint at
+   * district scope to attach school IDs to the per-school aggregation
+   * (schoolId is needed for stable client-side keying — school name alone
+   * isn't unique across districts).
+   *
+   * The `districtId` ltree filter is load-bearing for correctness, not
+   * defense-in-depth. Without it, a student in scope for district A who
+   * *also* has a live school enrollment in district B would surface
+   * district B's school in district A's per-school breakdown — leaking a
+   * foreign school's identity into the wrong district's report (review
+   * finding #1 on #1782).
+   *
+   * Resolution rules: a user with multiple school memberships within the
+   * district gets their alphabetically-first school; the user_orgs → orgs
+   * path takes precedence over the user_classes → classes → school
+   * fallback; rostering-ended schools / classes are excluded. Uses the
+   * NOW()-based `isEnrollmentActive` predicate deliberately — see the
+   * "#1792 caveat" on {@link getSchoolNamesForUsers} for the past-admin
+   * display semantics (which apply here too: a transferred student shows
+   * their current school within the district, not the school they
+   * attended during a past admin's window).
+   *
+   * @param userIds - Users to resolve schools for.
+   * @param districtId - The district whose subtree constrains the school
+   *   lookup. Schools outside this district's ltree path are excluded
+   *   from the result.
+   */
+  async getSchoolsForUsers(
+    userIds: string[],
+    districtId: string,
+  ): Promise<Map<string, { schoolId: string; schoolName: string }>> {
+    const map = new Map<string, { schoolId: string; schoolName: string }>();
+    if (userIds.length === 0) return map;
+
+    const districtPath = sql`(SELECT path FROM app.orgs WHERE id = ${districtId})`;
+
+    const orgRows = await this.db
+      .selectDistinct({
+        userId: userOrgs.userId,
+        schoolId: orgs.id,
+        schoolName: orgs.name,
+      })
+      .from(userOrgs)
+      .innerJoin(orgs, eq(userOrgs.orgId, orgs.id))
+      .where(
+        and(
+          inArray(userOrgs.userId, userIds),
+          eq(orgs.orgType, OrgType.SCHOOL),
+          isEnrollmentActive(userOrgs),
+          isNull(orgs.rosteringEnded),
+          sql`${orgs.path} <@ ${districtPath}`,
+        ),
+      )
+      .orderBy(asc(orgs.name));
+
+    for (const row of orgRows) {
+      if (!map.has(row.userId)) {
+        map.set(row.userId, { schoolId: row.schoolId, schoolName: row.schoolName });
+      }
+    }
+
+    const missingUserIds = userIds.filter((id) => !map.has(id));
+    if (missingUserIds.length > 0) {
+      const classRows = await this.db
+        .selectDistinct({
+          userId: userClasses.userId,
+          schoolId: orgs.id,
+          schoolName: orgs.name,
+        })
+        .from(userClasses)
+        .innerJoin(classes, eq(userClasses.classId, classes.id))
+        .innerJoin(orgs, eq(classes.schoolId, orgs.id))
+        .where(
+          and(
+            inArray(userClasses.userId, missingUserIds),
+            isEnrollmentActive(userClasses),
+            isNull(classes.rosteringEnded),
+            isNull(orgs.rosteringEnded),
+            sql`${orgs.path} <@ ${districtPath}`,
+          ),
+        )
+        .orderBy(asc(orgs.name));
+
+      for (const row of classRows) {
+        if (!map.has(row.userId)) {
+          map.set(row.userId, { schoolId: row.schoolId, schoolName: row.schoolName });
+        }
+      }
+    }
+
+    return map;
+  }
+
+  /**
    * Resolve school names for a set of users by looking up their org memberships.
    * Returns the name of the school-type org the user belongs to.
    * If a user belongs to multiple schools, uses the alphabetically first school name
    * for deterministic results.
    *
-   * Note: This lookup is not scoped to the administration's assigned orgs — it returns
-   * the user's school from their org membership regardless of which schools are part of
-   * the administration. For a user enrolled in multiple schools, the alphabetically first
-   * school may not be the most relevant one for the current report context.
+   * When `districtId` is supplied, the lookup is constrained to schools under
+   * that district's ltree path on both the `user_orgs → orgs` and
+   * `user_classes → classes → orgs` resolution paths. This prevents
+   * cross-district leakage (a student in scope for district A who also has a
+   * live school enrollment in district B would otherwise surface district B's
+   * school via the alphabetically-first ordering). When `districtId` is
+   * omitted, the lookup is unconstrained — callers that don't have an
+   * unambiguous "current district" (e.g., the guardian student report, which
+   * spans the student's history across districts) should omit it
+   * deliberately.
    *
-   * Public so that other repository methods (e.g., the student-scores listing) can
-   * reuse the same lookup at district scope without duplicating the two-phase
-   * user_orgs → user_classes fallback.
+   * Note: This lookup is not scoped to the administration's assigned orgs — it
+   * returns the user's school from their org membership regardless of which
+   * schools are part of the administration. For a user enrolled in multiple
+   * schools within the same district, the alphabetically first school may not
+   * be the most relevant one for the current report context.
    *
-   * #1792 caveat — DO NOT switch to `isEnrollmentActiveForAdmin`. This function
-   * deliberately uses NOW()-based `isEnrollmentActive` even when called from a
-   * past-admin report. The schema stores only a single live `user_orgs` row per
-   * (user, org) pair — there is no historical snapshot of a student's school
-   * affiliation during a past administration. The display will therefore show a
-   * transferred student's CURRENT school name, not the one they attended during
-   * the admin. That's a known limitation of the row-level design; switching to
-   * the admin-aware predicate here would just return empty schoolNames for
-   * students who have since moved schools, which is worse. If/when we add a
-   * `user_org_history` table or equivalent, this is the call site to update.
+   * Public so that other repository methods (e.g., the student-scores listing)
+   * can reuse the same lookup at district scope without duplicating the
+   * two-phase user_orgs → user_classes fallback.
+   *
+   * **#1792 caveat — DO NOT switch the enrollment predicate to
+   * `isEnrollmentActiveForAdmin`.** This method deliberately uses the
+   * NOW-based `isEnrollmentActive` even when called from a past-admin
+   * report. The schema stores only a single live `user_orgs` row per
+   * (user, org) pair — the primary key on those two columns enforces it,
+   * and there is no `user_org_history` table or analog. So there is no
+   * historical snapshot of a student's school affiliation during a past
+   * administration. A transferred student therefore shows their CURRENT
+   * school in past-admin reports rather than the school they attended at
+   * the time. Switching the predicate to admin-aware would just return
+   * empty `schoolName` for any student who has since moved schools, which
+   * is strictly worse than the current behavior. If/when we add a
+   * `user_org_history` table or equivalent, this is the call site to
+   * update.
+   *
+   * @param userIds - Users to resolve schools for.
+   * @param districtId - Optional district whose subtree constrains the lookup.
+   *   Pass `scope.scopeId` when the caller knows the request is district-
+   *   scoped. Omit for callers that span districts.
    */
-  async getSchoolNamesForUsers(userIds: string[]): Promise<Map<string, string>> {
+  async getSchoolNamesForUsers(userIds: string[], districtId?: string): Promise<Map<string, string>> {
+    if (userIds.length === 0) return new Map();
+
+    const districtPathFilter =
+      districtId !== undefined ? sql`${orgs.path} <@ (SELECT path FROM app.orgs WHERE id = ${districtId})` : undefined;
+
     const rows = await this.db
       .selectDistinct({
         userId: userOrgs.userId,
@@ -1451,6 +1572,7 @@ export class ReportRepository {
           eq(orgs.orgType, OrgType.SCHOOL),
           isEnrollmentActive(userOrgs),
           isNull(orgs.rosteringEnded),
+          districtPathFilter,
         ),
       )
       .orderBy(asc(orgs.name));
@@ -1480,6 +1602,7 @@ export class ReportRepository {
             isEnrollmentActive(userClasses),
             isNull(classes.rosteringEnded),
             isNull(orgs.rosteringEnded),
+            districtPathFilter,
           ),
         )
         .orderBy(asc(orgs.name));

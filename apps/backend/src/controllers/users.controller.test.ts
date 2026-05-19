@@ -89,6 +89,7 @@ describe('UsersController', () => {
       listProgressStudents: vi.fn(),
       getProgressOverview: vi.fn(),
       getScoreOverview: vi.fn(),
+      getScoreFacets: vi.fn(),
       listStudentScores: vi.fn(),
       getIndividualStudentReport: vi.fn(),
       getGuardianStudentReport: mockGetGuardianStudentReport,

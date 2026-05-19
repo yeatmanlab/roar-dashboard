@@ -17,6 +17,7 @@ import type {
   ProgressStudentsQuery,
   ReportTaskMetadata,
   ScoreOverviewQuery,
+  ScoreFacetsQuery,
   StudentScoresQuery,
   StudentScoreRow,
   UpdateAdministrationRequest,
@@ -459,6 +460,42 @@ export const AdministrationsController = {
   getScoreOverview: async (authContext: AuthContext, administrationId: string, query: ScoreOverviewQuery) => {
     try {
       const result = await reportService.getScoreOverview(authContext, administrationId, query);
+
+      return {
+        status: StatusCodes.OK as const,
+        body: {
+          data: result,
+        },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [
+          StatusCodes.BAD_REQUEST,
+          StatusCodes.FORBIDDEN,
+          StatusCodes.NOT_FOUND,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        ]);
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get faceted score distributions for an administration (#1782).
+   *
+   * Delegates to ReportService for authorization, support-level
+   * classification, and per-grade / per-school aggregation. The service
+   * returns `ServiceTaskScoreFacet` rows whose shape is structurally
+   * equivalent to the contract's `TaskScoreFacet`, so the result is
+   * returned directly.
+   *
+   * @param authContext - User's auth context
+   * @param administrationId - The administration to report on
+   * @param query - Query parameters (scopeType, scopeId, optional filter)
+   */
+  getScoreFacets: async (authContext: AuthContext, administrationId: string, query: ScoreFacetsQuery) => {
+    try {
+      const result = await reportService.getScoreFacets(authContext, administrationId, query);
 
       return {
         status: StatusCodes.OK as const,
