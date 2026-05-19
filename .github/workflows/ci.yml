@@ -167,13 +167,13 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
-      # Build workspace dependencies the dashboard imports at runtime.
-      # The Cypress action runs `npm run build` inside `apps/dashboard/`,
-      # which bypasses turbo's workspace dependency graph — without this
-      # step, Vite can't resolve `@roar-dashboard/api-contract` because
-      # its `dist/` artifacts don't exist yet.
-      - name: Build api-contract package
-        run: npm run build -w packages/api-contract
+      # Build the dashboard via turbo so transitive workspace dependencies
+      # (`@roar-dashboard/api-contract` and any others declared via `dependsOn`
+      # in `turbo.json`) are built in the right order. We do this here rather
+      # than letting the Cypress action run `npm run build` from
+      # `apps/dashboard/`, because that path bypasses turbo's workspace graph.
+      - name: Build dashboard via turbo
+        run: npx turbo build --filter=roar-dashboard
 
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
@@ -184,7 +184,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           install: false
-          build: npm run build
+          # The dashboard is pre-built via turbo above; skip the action's
+          # default build step (which would re-build only the dashboard,
+          # bypassing turbo).
+          build: 'true'
           start: npm run preview -- --host
           tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
@@ -227,11 +230,10 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
-      # Build workspace dependencies the dashboard imports at runtime.
-      # See the equivalent step in the `e2e-tests` job above for the
-      # full rationale.
-      - name: Build api-contract package
-        run: npm run build -w packages/api-contract
+      # Build the dashboard via turbo. See the equivalent step in the
+      # `e2e-tests` job above for the full rationale.
+      - name: Build dashboard via turbo
+        run: npx turbo build --filter=roar-dashboard
 
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
@@ -243,7 +245,8 @@ jobs:
         with:
           component: true
           install: false
-          build: npm run build
+          # The dashboard is pre-built via turbo above.
+          build: 'true'
           start: npm run preview -- --host
           tag: ${{ github.event_name }},component,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
