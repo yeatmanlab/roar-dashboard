@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref, readonly } from 'vue';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 
 // Shared spy state for useGlobalError — lets us verify setGlobalError calls
-// while sharing the same module-scoped ref that plugins.js will use.
+// while sharing the same module-scoped ref that queryClient.js will use.
 const globalError = ref(null);
 const setGlobalError = vi.fn((error) => {
   globalError.value = error;
@@ -53,23 +54,7 @@ vi.mock('@/utils/api-errors', () => {
   return { API_ERROR_CODES, getApiErrorCode, isRosteringEndedError, isTerminalAuthError };
 });
 
-// Mock all other module-level dependencies of plugins.js
-vi.mock('primevue/config', () => ({ default: {} }));
-vi.mock('primevue/confirmationservice', () => ({ default: {} }));
-vi.mock('primevue/toastservice', () => ({ default: {} }));
-vi.mock('@/router/index.js', () => ({ default: {} }));
-vi.mock('vue3-text-clamp', () => ({ default: {} }));
-vi.mock('vue-google-maps-community-fork', () => ({ default: {} }));
-vi.mock('@unhead/vue', () => ({ createHead: () => ({}) }));
-vi.mock('@/translations/i18n.js', () => ({ i18n: {} }));
-vi.mock('pinia', () => ({
-  createPinia: () => ({ use: () => ({}) }),
-}));
-vi.mock('pinia-plugin-persistedstate', () => ({ default: {} }));
-vi.mock('@primevue/themes', () => ({ definePreset: () => ({}) }));
-vi.mock('@primevue/themes/aura', () => ({ default: {} }));
-
-describe('TanStack Query onError callback', () => {
+describe('queryClient QueryCache onError', () => {
   /** @type {Function} */
   let onErrorCallback;
 
@@ -77,36 +62,35 @@ describe('TanStack Query onError callback', () => {
     vi.clearAllMocks();
     globalError.value = null;
 
-    // Import plugins to extract the onError callback.
-    // No resetModules() needed — the useGlobalError mock above uses a shared ref
-    // so both plugins.js and this test operate on the same state.
-    const { default: plugins } = await import('./plugins');
-    const vueQueryEntry = plugins.find((entry) => Array.isArray(entry) && entry[1]?.queryClientConfig?.queryCache);
-    onErrorCallback = vueQueryEntry[1].queryClientConfig.queryCache.config.onError;
+    // Pull the onError callback off the live QueryCache config. Same shared
+    // useGlobalError ref is used by both the queryClient module and this
+    // test, so setGlobalError() effects are observable here.
+    const { queryClient } = await import('./queryClient');
+    onErrorCallback = queryClient.getQueryCache().config.onError;
   });
 
-  it('sets rostering-ended global error on auth/rostering-ended', () => {
+  it('sets ROSTERING_ENDED global error on auth/rostering-ended', () => {
     const error = { body: { error: { code: 'auth/rostering-ended' } } };
     onErrorCallback(error);
 
-    expect(setGlobalError).toHaveBeenCalledWith({ type: 'rostering-ended' });
-    expect(globalError.value).toEqual({ type: 'rostering-ended' });
+    expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+    expect(globalError.value).toEqual({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
   });
 
-  it('sets auth-expired global error on auth/token-expired', () => {
+  it('sets AUTH_EXPIRED global error on auth/token-expired', () => {
     const error = { body: { error: { code: 'auth/token-expired' } } };
     onErrorCallback(error);
 
-    expect(setGlobalError).toHaveBeenCalledWith({ type: 'auth-expired' });
-    expect(globalError.value).toEqual({ type: 'auth-expired' });
+    expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    expect(globalError.value).toEqual({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
   });
 
-  it('sets auth-expired global error on auth/required', () => {
+  it('sets AUTH_EXPIRED global error on auth/required', () => {
     const error = { body: { error: { code: 'auth/required' } } };
     onErrorCallback(error);
 
-    expect(setGlobalError).toHaveBeenCalledWith({ type: 'auth-expired' });
-    expect(globalError.value).toEqual({ type: 'auth-expired' });
+    expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    expect(globalError.value).toEqual({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
   });
 
   it('does not set global error for unrecognized error codes', () => {
