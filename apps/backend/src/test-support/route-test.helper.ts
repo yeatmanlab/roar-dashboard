@@ -128,6 +128,21 @@ export function authenticateAs(user: { authId: string | null }) {
   });
 }
 
+/**
+ * Mocks Firebase token verification to resolve as an anonymous user.
+ *
+ * Unlike `authenticateAs`, this sets `claims.firebase.sign_in_provider = 'anonymous'`
+ * so the request passes `AnonTokenMiddleware` (used by POST /users/anonymous).
+ *
+ * @param uid - The Firebase UID to use as the anonymous user's identity
+ */
+export function authenticateAsAnonymous(uid: string) {
+  vi.spyOn(AuthService, 'verifyToken').mockResolvedValue({
+    uid,
+    claims: { firebase: { sign_in_provider: 'anonymous' } },
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Tier Users
 // ═══════════════════════════════════════════════════════════════════════════
@@ -268,6 +283,27 @@ export function createRouteHelper(app: express.Application) {
           },
         };
         return authenticatedChain;
+      },
+      asAnonymous(uid: string) {
+        const anonymousChain = {
+          withBody(body: object) {
+            return {
+              async toReturn(expectedStatus: number): Promise<request.Response> {
+                authenticateAsAnonymous(uid);
+                const res = await request(app)[httpMethod](path).set('Authorization', 'Bearer token').send(body);
+                expect(res.status).toBe(expectedStatus);
+                return res;
+              },
+            };
+          },
+          async toReturn(expectedStatus: number): Promise<request.Response> {
+            authenticateAsAnonymous(uid);
+            const res = await request(app)[httpMethod](path).set('Authorization', 'Bearer token');
+            expect(res.status).toBe(expectedStatus);
+            return res;
+          },
+        };
+        return anonymousChain;
       },
       unauthenticated() {
         const unauthenticatedChain = {
