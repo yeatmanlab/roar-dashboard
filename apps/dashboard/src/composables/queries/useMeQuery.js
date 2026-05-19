@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/vue-query';
+import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { useAuthStore } from '@/store/auth';
@@ -27,6 +28,10 @@ const MAX_RETRIES = 3;
  * `plugins.js`) so the router can redirect to AccessEnded / SignIn / GenericError
  * pages without spinning on retries first.
  *
+ * The non-retriable-error policy and the access-token gate are intentionally
+ * placed **after** `...options` in the `useQuery` call so a caller-supplied
+ * `enabled` or `retry` can't silently override them.
+ *
  * Errors thrown by this query reach the caller via the standard TanStack Query
  * `error` ref. Callers wire a watcher in `App.vue` that translates `/me` failures
  * into a global error state for the router to react to.
@@ -45,7 +50,7 @@ const useMeQuery = (queryOptions = undefined) => {
       const client = getRoarApiClient();
       const result = await client.me.get();
 
-      if (result.status === 200) {
+      if (result.status === StatusCodes.OK) {
         return result.body.data;
       }
 
@@ -58,6 +63,7 @@ const useMeQuery = (queryOptions = undefined) => {
       error.body = result.body;
       throw error;
     },
+    ...options,
     enabled: isQueryEnabled,
     retry: (failureCount, error) => {
       // Rostering-ended and terminal auth errors are not transient; retrying
@@ -67,7 +73,6 @@ const useMeQuery = (queryOptions = undefined) => {
       }
       return failureCount < MAX_RETRIES;
     },
-    ...options,
   });
 };
 
