@@ -1,0 +1,130 @@
+name: Deploy Assessment
+
+# Reusable workflow for building and deploying a ROAR assessment to Firebase Hosting.
+# Convention: each assessment lives at apps/assessments/<name>/ with a firebase.json,
+# a dist/ output dir after build, and npm scripts: build:staging, build:prod.
+
+on:
+  workflow_call:
+    secrets:
+      SENTRY_AUTH_TOKEN:
+        required: false
+      FIREBASE_PROJECT_ID:
+        required: true
+      GCP_WORKLOAD_IDENTITY_PROVIDER:
+        required: true
+      FIREBASE_HOSTING_SERVICE_ACCOUNT_ID:
+        required: true
+      CYPRESS_RECORD_KEY:
+        required: false
+    inputs:
+      environment:
+        description: "GitHub environment to deploy to (e.g. platform:staging)"
+        required: true
+        type: string
+      assessment:
+        description: "Assessment directory name under apps/assessments/ (e.g. roar-pa)"
+        required: true
+        type: string
+      build-script:
+        description: "npm script to build the assessment (e.g. build:staging)"
+        required: true
+        type: string
+      firebase-channel:
+        description: "Firebase Hosting channel to deploy to. Use 'preview' for PR previews, 'default' for permanent deployments."
+        required: false
+        type: string
+        default: default
+      expires:
+        description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Ignored for default channel deployments."
+        required: false
+        type: string
+        default: 7d
+      run-cypress:
+        description: "Whether to run Cypress e2e tests after deployment."
+        required: false
+        type: boolean
+        default: false
+      cypress-base-url:
+        description: "Base URL for Cypress to run tests against. Required when run-cypress is true."
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.assessment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 15
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache-dependency-path: "package-lock.json"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build ${{ inputs.assessment }}
+        working-directory: apps/assessments/${{ inputs.assessment }}
+        run: npm run ${{ inputs.build-script }}
+
+      - name: Set Sentry environment in firebase.json
+        # firebase.json hardcodes sentry_environment=production in Report-To and CSP headers.
+        # For non-default channels (e.g. PR previews), patch it to the channel name so Sentry
+        # groups these events separately from production issues.
+        if: inputs.firebase-channel != 'default'
+        run: |
+          sed -i "s/sentry_environment=production/sentry_environment=${{ inputs.firebase-channel }}/g" \
+            apps/assessments/${{ inputs.assessment }}/firebase.json
+
+      - name: Deploy ${{ inputs.assessment }}
+        uses: ./.github/actions/deploy
+        with:
+          firebase-channel: ${{ inputs.firebase-channel }}
+          expires: ${{ inputs.expires }}
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dist-path: apps/assessments/${{ inputs.assessment }}/dist
+          firebase-config-path: apps/assessments/${{ inputs.assessment }}/firebase.json
+
+  cypress:
+    name: Cypress ${{ inputs.assessment }}
+    if: ${{ inputs.run-cypress }}
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    # Long timeout to accommodate long running assessments such as roar-pa
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, edge]
+        containers: [1, 2]
+    env:
+      CYPRESS_BASE_URL: ${{ inputs.cypress-base-url }}
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          working-directory: apps/assessments/${{ inputs.assessment }}
+          wait-on: ${{ inputs.cypress-base-url }}
+          wait-on-timeout: 60
+          record: true
+          parallel: true
+          spec: cypress/e2e/**/*
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
