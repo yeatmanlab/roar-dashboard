@@ -5,12 +5,7 @@ import i18next from 'i18next';
 import _isUndefined from 'lodash/isUndefined';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import { pa } from '@roar-dashboard/assessment-schema';
-import {
-  writeTrial,
-  finishRun,
-  addInteraction,
-  updateUser,
-} from '@yeatmanlab/assessment-sdk/compat/firekit';
+import { writeTrial, finishRun, addInteraction, updateUser } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
 import { RoarScores } from '../scores';
@@ -20,7 +15,7 @@ import { paValidityEvaluator } from '../experiment';
 const makePid = () => {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-   
+
   for (let i = 0; i < 16; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -57,7 +52,6 @@ const getStoryOption = (opt, grade) => {
       story = true;
     }
     // Note: we use == instead of === in order to compare against both undefined and null
-     
   } else if (opt == undefined) {
     story = true;
   } else if (opt === true) {
@@ -171,9 +165,8 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-       
       fn.apply(fn, arguments);
-       
+
       code.apply(fn, arguments);
     };
 
@@ -200,7 +193,6 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: getUserDataTimeline,
     on_timeline_finish: async () => {
-       
       config.pid = config.pid || makePid();
       try {
         await updateUser({
