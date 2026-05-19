@@ -9,6 +9,11 @@ WORKDIR /app
 
 # Copy package manifests for every workspace so npm ci can install and hoist correctly.
 # These layers are cached as long as lock files and package.json files are unchanged.
+#
+# Source files are intentionally excluded for all workspaces except assessment-schema
+# (copied below) and config-typescript (also copied below). The remaining workspaces
+# are present for npm workspace graph resolution only — none of their source is imported
+# at migration or seed time, so their package.json stubs are sufficient.
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json                    apps/backend/
 COPY apps/assessments/roar-pa/package.json        apps/assessments/roar-pa/
