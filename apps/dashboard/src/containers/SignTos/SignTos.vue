@@ -8,7 +8,17 @@ import { useAuthStore } from '@/store/auth';
 import { useTosSigningFlow } from './composables/useTosSigningFlow';
 import useAgreementVersionContentQuery from '@/composables/queries/useAgreementVersionContentQuery';
 import useRecordUserAgreementMutation from '@/composables/mutations/useRecordUserAgreementMutation';
-import { APP_ROUTES } from '@/constants/routes';
+import { APP_ROUTES, APP_ROUTE_NAMES } from '@/constants/routes';
+
+/**
+ * Matches well-formed internal application paths only:
+ *   - Begins with `/` followed by at least one safe path character
+ *   - Allows alphanumeric, `-`, `_`, `.`, `~`, `/`, `%` (for percent-encoded segments)
+ *   - Optional query string: `?` followed by safe query characters
+ *   - No protocol, no `//` prefix, no fragment, no whitespace
+ * Anything that doesn't match falls back to `APP_ROUTES.HOME`.
+ */
+const INTERNAL_PATH_REGEX = /^\/[A-Za-z0-9\-_.~/%]+(\?[A-Za-z0-9\-_.~%=&]*)?$/;
 
 const authStore = useAuthStore();
 const { currentUserId, hasUnsignedTos } = storeToRefs(authStore);
@@ -33,18 +43,18 @@ const recordAgreementMutation = useRecordUserAgreementMutation();
  * Compute the destination to return to after all agreements are signed.
  *
  * The router pushes `?next=<originalPath>` when the TOS guard intercepts a
- * navigation. Restrictions:
- *   - Must start with `/` (no absolute external URLs, no `javascript:` etc.)
- *   - Must not start with `//` (protocol-relative URLs are external)
- *   - Must not point back at SignTos itself or the sign-in flow
+ * navigation. The candidate must:
+ *   - Match the strict internal-path regex (rules out absolute URLs,
+ *     protocol-relative `//evil.com`, `javascript:`, whitespace, fragments,
+ *     and anything Vue Router doesn't already handle as a known path)
+ *   - Not point back at SignTos itself or the sign-in flow (avoids loops)
  * Otherwise fall back to the home route.
  */
 const nextDestination = computed(() => {
   const next = typeof route.query.next === 'string' ? route.query.next : null;
   if (
     !next ||
-    !next.startsWith('/') ||
-    next.startsWith('//') ||
+    !INTERNAL_PATH_REGEX.test(next) ||
     next.startsWith(APP_ROUTES.SIGN_TOS) ||
     next.startsWith(APP_ROUTES.SIGN_IN)
   ) {
@@ -84,7 +94,7 @@ async function handleAccept() {
 watch(
   hasUnsignedTos,
   (hasAny) => {
-    if (!hasAny && route.name === 'SignTos') {
+    if (!hasAny && route.name === APP_ROUTE_NAMES.SIGN_TOS) {
       router.replace(nextDestination.value);
     }
   },
