@@ -134,12 +134,6 @@ jobs:
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Deploy assessments
+  # Assessments are intentionally not deployed to development environments
+  # All assessment development and testing happens on local machines
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  deploy-roar-pa:
-    uses: ./.github/workflows/deploy-assessment.yml
-    secrets: inherit
-    with:
-      environment: platform:development
-      assessment: roar-pa
-      build-script: build:dev
