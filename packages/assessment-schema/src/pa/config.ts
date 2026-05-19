@@ -21,5 +21,6 @@ export const PA_SUBTASK_KEYS = ["FSM", "LSM", "DEL"] as const;
 
 export type PaSubtaskKey = (typeof PA_SUBTASK_KEYS)[number];
 
+// Currently only used by the PA scoring service, but may be used by other services in the future
 export const PA_SCORE_TABLE_URL = (version: PaScoringVersion): string =>
   `https://storage.googleapis.com/roar-pa/scores/pa_lookup_v${version}.csv`;
