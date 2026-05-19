@@ -141,21 +141,58 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # End-to-end tests
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  #
+  # Runs the (post-migration) Cypress e2e smoke spec against a fully local
+  # stack: Postgres + OpenFGA + Firebase Auth emulator + backend
+  # (server-test.ts) + dashboard Vite preview. The Cypress login helper
+  # signs in via the Firebase Web SDK against the emulator (no firekit),
+  # and the backend verifies the resulting ID token through
+  # FirebaseAuthProvider with `FIREBASE_AUTH_EMULATOR_HOST` set. Legacy e2e
+  # specs are `describe.skip`-ed pending per-domain migration — see
+  # `cypress/e2e/README.md` and `.ai/rules/frontend-e2e-testing-pattern.md`.
+  #
+  # The job runs inside the cypress/browsers container; Postgres is reached
+  # via the service-container hostname (`postgres:5432`) while OpenFGA, the
+  # Firebase Auth emulator, and the backend are background processes inside
+  # the same container reachable on `127.0.0.1`.
   e2e-tests:
     name: End-to-end tests
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         browser: [chrome, edge]
-        containers: [1, 2, 3, 4]
     container:
       image: cypress/browsers:node-20.18.0-chrome-130.0.6723.69-1-ff-131.0.3-edge-130.0.2849.52-1
       options: --user 1001
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
+      # Backend → Postgres uses the service-container hostname.
+      CORE_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/roar_core_test
+      ASSESSMENT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/roar_assessment_test
+      POSTGRES_ADMIN_URL: postgresql://postgres:postgres@postgres:5432/postgres
+      # OpenFGA and the Firebase Auth emulator both run as background
+      # processes inside the job container.
+      FGA_API_URL: http://127.0.0.1:8080
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      GCLOUD_PROJECT: demo-roar-test
+      # The dashboard bakes these into its bundle at build time; both the
+      # dashboard and the Cypress helper read them at runtime.
+      VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000
+      VITE_FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
 
     steps:
       - name: Checkout repository
@@ -164,8 +201,53 @@ jobs:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
 
+      - name: Install OpenFGA
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
+        with:
+          repo: openfga/openfga
+          tag: v1.12.1
+          cache: enable
+
+      - name: Start OpenFGA
+        run: openfga run &
+
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
+
+      # The Auth emulator is the only one we need; everything else (Firestore,
+      # Functions, etc.) is irrelevant once firekit is gone. The temp config
+      # tells the emulator to bind on all interfaces so the backend and
+      # browser can both reach it on 127.0.0.1.
+      - name: Install firebase-tools and start Auth emulator
+        run: |
+          npm install --no-save firebase-tools
+          cat > /tmp/firebase.json <<EOF
+          {
+            "emulators": {
+              "auth": { "host": "0.0.0.0", "port": 9099 },
+              "ui": { "enabled": false }
+            }
+          }
+          EOF
+          ./node_modules/.bin/firebase emulators:start \
+            --only auth \
+            --project demo-roar-test \
+            --config /tmp/firebase.json &
+          npx --yes wait-on tcp:127.0.0.1:9099 --timeout 60000
+
+      - name: Create test databases
+        run: npm run db:create-test-dbs -w apps/backend
+
+      - name: Build backend (with server-test entry)
+        run: BUILD_TEST_SERVER=true npx turbo build --filter=roar-backend
+
+      - name: Start backend server-test
+        run: |
+          node apps/backend/dist/server-test.js &
+          # server-test.ts seeds Postgres + OpenFGA + the Firebase Auth
+          # emulator before binding to port 4000, so a successful TCP
+          # connect is sufficient proof of full readiness.
+          npx --yes wait-on tcp:127.0.0.1:4000 --timeout 90000
 
       # Build the dashboard via turbo so transitive workspace dependencies
       # (`@roar-dashboard/api-contract` and any others declared via `dependsOn`
@@ -182,6 +264,11 @@ jobs:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Read by Cypress via `Cypress.env(...)`. The auth helper uses
+          # these to talk to the emulator and resolve fixture user keys.
+          CYPRESS_FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          CYPRESS_FIREBASE_PROJECT_ID: demo-roar-test
+          CYPRESS_FIXTURE_FILE: /tmp/roar-cypress-fixture.json
         with:
           install: false
           # The dashboard is pre-built via turbo above; skip the action's
@@ -193,14 +280,14 @@ jobs:
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
-          parallel: true
+          # No `containers` matrix any more — only the smoke spec runs, so
+          # parallel splitting across containers would be wasted overhead.
+          parallel: false
           browser: ${{ matrix.browser }}
           ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
           working-directory: apps/dashboard
           spec: |
-            cypress/e2e/parent/default-tests/**/*.cy.js
-            cypress/e2e/participant/default-tests/**/*.cy.js
-            cypress/e2e/partner-admin/default-tests/**/*.cy.js
+            cypress/e2e/smoke/**/*.cy.js
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Component Tests
