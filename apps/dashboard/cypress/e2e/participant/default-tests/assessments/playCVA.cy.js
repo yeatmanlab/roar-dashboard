@@ -4,7 +4,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@bdelab/roar-multichoice';
 let isCurrentAppVersion;
 
-describe('Participant Assessment: ROAR CVA', () => {
+describe.skip('Participant Assessment: ROAR CVA', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });

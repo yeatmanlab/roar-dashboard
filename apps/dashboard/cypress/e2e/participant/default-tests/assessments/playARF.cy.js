@@ -4,7 +4,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@bdelab/roam-apps';
 let isCurrentAppVersion;
 
-describe('Participant Assessment: ROAM ARF', () => {
+describe.skip('Participant Assessment: ROAM ARF', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });

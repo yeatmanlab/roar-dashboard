@@ -662,6 +662,51 @@ describe('firekit compat', () => {
       expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
+    it('accepts snake_case assessment_stage for backward compatibility', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-snake-case');
+
+      const trialData: TrialData = {
+        assessment_stage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify fetch was called with the trial event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-snake-case/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('trial'),
+        }),
+      );
+    });
+
+    it('prefers camelCase assessmentStage over snake_case assessment_stage when both present', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-both-formats');
+
+      const trialData: TrialData = {
+        assessmentStage: 'test',
+        assessment_stage: 'practice', // Should be ignored
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      };
+
+      await expect(writeTrial(trialData)).resolves.toBeUndefined();
+
+      // Verify the request body contains 'test' (camelCase value), not 'practice' (snake_case value)
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-both-formats/event'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"assessmentStage":"test"'),
+        }),
+      );
+    });
+
     it('matches Firekit signature (with optional computed score callback)', () => {
       // runtime assertion to satisfy vitest/expect-expect
       expect(typeof writeTrial).toBe('function');

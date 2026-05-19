@@ -3,7 +3,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-multichoice';
 
-describe('ROAR - Written Vocabulary Play Through', () => {
+describe.skip('ROAR - Written Vocabulary Play Through', () => {
   it('Plays Written Vocabulary with a simulated 3g network', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

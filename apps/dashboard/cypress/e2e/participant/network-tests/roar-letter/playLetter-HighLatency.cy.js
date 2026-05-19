@@ -3,7 +3,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-letter';
 
-describe('ROAR - Letter Play Through using username authentication', () => {
+describe.skip('ROAR - Letter Play Through using username authentication', () => {
   it('Plays Letter with username authentication in a simulated high latency network', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

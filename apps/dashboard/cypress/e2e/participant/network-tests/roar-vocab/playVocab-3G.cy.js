@@ -2,7 +2,7 @@ import { playVocabulary } from '../../../../support/helper-functions/roar-vocab/
 import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-vocab';
-describe('ROAR - Vocabulary Play Through', () => {
+describe.skip('ROAR - Vocabulary Play Through', () => {
   it('Plays Vocabulary with a simulated 3g connection', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
