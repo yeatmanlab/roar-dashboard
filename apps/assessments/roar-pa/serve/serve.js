@@ -42,86 +42,91 @@ const abilityMethod = urlParams.get('abilityMethod')?.toLocaleLowerCase() ?? 'ea
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const token = await user.getIdToken();
+    try {
+      const token = await user.getIdToken();
 
-    // Provision (or retrieve) the ROAR PostgreSQL user record for this anonymous Firebase user.
-    // Returns the stable ROAR UUID that the SDK uses as participantId.
-    // eslint-disable-next-line no-undef
-    const res = await fetch(`${ROAR_API_URL}/v1/users/anonymous`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      console.error('POST /users/anonymous failed:', res.status, json);
-      return;
-    }
-    const { data } = json;
-
-    // Resolve variantId: use URL param if provided, otherwise fall back to the
-    // first published variant for this task.
-    // TODO: Replace with a proper "default variant" concept once the task_variants
-    // schema supports marking a single variant as default per task.
-    // See: https://github.com/yeatmanlab/roar-project-management/issues/1794
-    let resolvedVariantId = variantId;
-    if (!resolvedVariantId) {
+      // Raw fetch is intentional here: the SDK requires a participantId (ROAR UUID) to
+      // initialize, but this call is what provisions that UUID. The SDK can't bootstrap
+      // itself, so we call the endpoint directly before handing control to initFirekitCompat.
       // eslint-disable-next-line no-undef
-      const variantRes = await fetch(`${ROAR_API_URL}/v1/tasks/roar-pa/variants?perPage=1`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${ROAR_API_URL}/v1/users/anonymous`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
       });
-      const variantJson = await variantRes.json();
-      resolvedVariantId = variantJson?.data?.items?.[0]?.id ?? null;
-      if (!resolvedVariantId) {
-        console.error('Could not resolve a roar-pa task variant:', variantJson);
+      const json = await res.json();
+      if (!res.ok) {
+        console.error('POST /users/anonymous failed:', res.status, json);
         return;
       }
+      const { data } = json;
+
+      // Resolve variantId: use URL param if provided, otherwise fall back to the
+      // first published variant for this task.
+      // TODO: Replace with a proper "default variant" concept once the task_variants
+      // schema supports marking a single variant as default per task.
+      // See: https://github.com/yeatmanlab/roar-project-management/issues/1794
+      let resolvedVariantId = variantId;
+      if (!resolvedVariantId) {
+        // eslint-disable-next-line no-undef
+        const variantRes = await fetch(`${ROAR_API_URL}/v1/tasks/roar-pa/variants?perPage=1`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const variantJson = await variantRes.json();
+        resolvedVariantId = variantJson?.data?.items?.[0]?.id ?? null;
+        if (!resolvedVariantId) {
+          console.error('Could not resolve a roar-pa task variant:', variantJson);
+          return;
+        }
+      }
+
+      const ctx = {
+        // eslint-disable-next-line no-undef
+        baseUrl: `${ROAR_API_URL}/v1`,
+        auth: { getToken: () => user.getIdToken() },
+        participant: { participantId: data.id },
+      };
+
+      initFirekitCompat(ctx, {
+        variantId: resolvedVariantId,
+        taskVersion,
+        isAnonymous: true,
+      });
+
+      const userParams = {
+        assessmentPid,
+        labId,
+        grade,
+        birthMonth,
+        birthYear,
+        age,
+        ageMonths,
+      };
+
+      const gameParams = {
+        userMode,
+        recruitment,
+        skipInstructions,
+        consent,
+        story,
+        storyOption,
+        numTestItems,
+        earlyStopping,
+        threshold,
+        patience,
+        tolerance,
+        logicalOperation,
+        randomSeed,
+        isAdaptive,
+        itemSelect,
+        abilityMethod,
+      };
+
+      const roarApp = new RoarPA(gameParams, userParams);
+      roarApp.run();
+    } catch (err) {
+      console.error('Failed to initialize assessment:', err);
     }
-
-    const ctx = {
-      // eslint-disable-next-line no-undef
-      baseUrl: `${ROAR_API_URL}/v1`,
-      auth: { getToken: () => user.getIdToken() },
-      participant: { participantId: data.id },
-    };
-
-    initFirekitCompat(ctx, {
-      variantId: resolvedVariantId,
-      taskVersion,
-      isAnonymous: true,
-    });
-
-    const userParams = {
-      assessmentPid,
-      labId,
-      grade,
-      birthMonth,
-      birthYear,
-      age,
-      ageMonths,
-    };
-
-    const gameParams = {
-      userMode,
-      recruitment,
-      skipInstructions,
-      consent,
-      story,
-      storyOption,
-      numTestItems,
-      earlyStopping,
-      threshold,
-      patience,
-      tolerance,
-      logicalOperation,
-      randomSeed,
-      isAdaptive,
-      itemSelect,
-      abilityMethod,
-    };
-
-    const roarApp = new RoarPA(gameParams, userParams);
-    roarApp.run();
   }
 });
 
