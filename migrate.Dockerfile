@@ -24,8 +24,9 @@ COPY packages/config-typescript/package.json      packages/config-typescript/
 # which fails on Node 24's ABI and is not needed for migrations.
 RUN npm ci --ignore-scripts
 
-# Copy config-typescript JSON files — the npm symlink resolves to this directory,
-# so tsc fails if the JSON files aren't present alongside the package.json.
+# Copy the full config-typescript directory now that npm ci has run. The package.json
+# was copied above so that a change here doesn't invalidate the npm ci cache layer —
+# only a change to package.json or package-lock.json does.
 COPY packages/config-typescript/  packages/config-typescript/
 
 # Build assessment-schema so the seed script can import from it.
