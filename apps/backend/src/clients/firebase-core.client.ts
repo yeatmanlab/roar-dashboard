@@ -52,6 +52,20 @@ export class FirebaseCoreClient {
       return this.appInstance;
     }
 
+    // Emulator mode: when FIREBASE_AUTH_EMULATOR_HOST is set, the Admin SDK
+    // talks to the local Auth emulator and skips signature verification on
+    // emulator-issued tokens. In that mode we don't need (and don't have) a
+    // real Google credential — `applicationDefault()` would attempt a metadata
+    // server lookup and fail in CI. Initialize with project ID only.
+    //
+    // Used by `apps/backend/src/server-test.ts` when CI sets the env var to
+    // boot the backend against a Firebase Auth emulator container.
+    if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+      const projectId = process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT ?? 'demo-roar-test';
+      this.appInstance = initializeApp({ projectId });
+      return this.appInstance;
+    }
+
     const credential = this.getCredentials();
     this.appInstance = initializeApp({ credential });
     return this.appInstance;
