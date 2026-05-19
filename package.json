@@ -55,8 +55,5 @@
   "dependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2"
-  },
-  "devDependencies": {
-    "optimization-js": "github:yeatmanlab/optimization-js#e1a4e10b0491d57ee8a6d984029b64d3c9f03550"
   }
 }
