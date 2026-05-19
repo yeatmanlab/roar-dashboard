@@ -1,3 +1,8 @@
+# NOTE
+# This workflow does not currently function as expected.
+# Since it does not run on push or merge (only on manual label), we can leave it
+# for now and revisit when we have developed a more robust PR preview strategy
+
 name: PR Preview — Assessments
 
 on:
