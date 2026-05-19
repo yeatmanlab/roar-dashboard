@@ -13,7 +13,7 @@
  */
 
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Pool } from 'pg';
 import { pa } from '@roar-dashboard/assessment-schema';
 import * as CoreDbSchema from '../src/db/schema/core';
@@ -76,6 +76,19 @@ async function seed() {
   }
 
   for (const { name, description, params } of DEFAULT_VARIANTS) {
+    // Query-first: the unique index on task_variants is a functional partial index
+    // (lower(name) WHERE name IS NOT NULL), which Drizzle cannot target in
+    // onConflictDoNothing — so we check existence explicitly rather than relying
+    // on a bare conflict clause that would silently swallow unexpected errors.
+    const existing = await db.query.taskVariants.findFirst({
+      where: and(eq(taskVariants.taskId, task.id), eq(taskVariants.name, name)),
+    });
+
+    if (existing) {
+      console.log(`Variant "${name}" already exists (${existing.id}), skipping.`);
+      continue;
+    }
+
     const [variant] = await db
       .insert(taskVariants)
       .values({
@@ -84,13 +97,9 @@ async function seed() {
         description,
         status: 'published',
       })
-      .onConflictDoNothing()
       .returning();
 
-    if (!variant) {
-      console.log(`Variant "${name}" already exists, skipping.`);
-      continue;
-    }
+    if (!variant) throw new Error(`Failed to insert variant "${name}"`);
 
     console.log(`Inserted variant "${name}": ${variant.id}`);
 
@@ -103,7 +112,7 @@ async function seed() {
           value,
         })),
       )
-      .onConflictDoNothing();
+      .onConflictDoNothing({ target: [taskVariantParameters.taskVariantId, taskVariantParameters.name] });
 
     console.log(`Inserted ${Object.keys(params).length} parameters for "${name}"`);
   }
