@@ -6,6 +6,17 @@ name: Deploy Assessment
 
 on:
   workflow_call:
+    secrets:
+      SENTRY_AUTH_TOKEN:
+        required: false
+      FIREBASE_PROJECT_ID:
+        required: true
+      GCP_WORKLOAD_IDENTITY_PROVIDER:
+        required: true
+      FIREBASE_HOSTING_SERVICE_ACCOUNT_ID:
+        required: true
+      CYPRESS_RECORD_KEY:
+        required: false
     inputs:
       environment:
         description: "GitHub environment to deploy to (e.g. platform:staging)"
