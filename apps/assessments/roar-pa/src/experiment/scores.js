@@ -152,9 +152,21 @@ export class RoarScores {
         thetaSERaw: store.session.get('thetaSEs').composite,
       };
 
+      const compositeFoundationalThetas = {
+        thetaEstimate: store.session.get('thetas').composite_foundational,
+        thetaSE: store.session.get('thetaSEs').composite_foundational,
+        thetaEstimateRaw: store.session.get('thetas').composite_foundational,
+        thetaSERaw: store.session.get('thetaSEs').composite_foundational,
+      };
+
       computedScores.composite = {
         ...computedScores.composite,
         ...compositeThetas,
+      };
+
+      computedScores.composite_foundational = {
+        ...computedScores.composite_foundational,
+        ...compositeFoundationalThetas,
       };
     }
 

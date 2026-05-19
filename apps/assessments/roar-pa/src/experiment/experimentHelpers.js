@@ -87,6 +87,13 @@ export const initClowder = (config) => {
       ...hyperMap.composite,
       randomSeed: 'seed-composite',
     },
+    composite_foundational: {
+      method: config.abilityMethod,
+      itemSelect: config.itemSelect,
+      priorDist: 'norm',
+      ...hyperMap.composite,
+      randomSeed: 'seed-composite-foundational',
+    },
   };
 
   let earlyStopping;
@@ -116,7 +123,7 @@ export const initClowder = (config) => {
 
   const clowderCorpus = prepareClowderCorpus(
     combinedCorpus,
-    ['practiceFSM', 'practiceLSM', 'practiceDEL', 'fsm', 'lsm', 'del', 'composite'],
+    ['practiceFSM', 'practiceLSM', 'practiceDEL', 'fsm', 'lsm', 'del', 'composite', 'composite_foundational'],
     '.',
   );
 
@@ -138,7 +145,7 @@ export const moveToNextBlock = () => {
 const safeGetCatIndex = () => {
   let catIndex = store.session.get('currentCatIndex');
 
-  if (catIndex == undefined) {
+  if (catIndex === undefined) {
     store.session.set('currentCatIndex', 0);
     catIndex = 0;
   }
@@ -161,6 +168,7 @@ export const setNextStimulus = (ignorePreviousItem = false) => {
 
   if (!isPractice) {
     catsToUpdate.push('composite');
+    catsToUpdate.push('composite_foundational');
   }
 
   const catToEvaluateEarlyStopping = isPractice ? catToSelect : catName;
@@ -259,11 +267,14 @@ export const saveTrialData = (data, source) => {
     const thetaSERaw = clowder.seMeasurement.composite;
     const thetaScaled = thetaRaw * transformationScale + transformationShift;
     const thetaSEScaled = thetaSERaw * Math.abs(transformationScale);
+    const thetaRawFoundational = clowder.theta.composite_foundational;
+    const thetaSERawFoundational = clowder.seMeasurement.composite_foundational;
 
     const thetas = _omitBy(
       {
         ...clowder.theta,
         composite: thetaRaw,
+        composite_foundational: thetaRawFoundational,
         scaled: thetaScaled,
       },
       (value, key) => isPracticeCat(key),
@@ -274,6 +285,7 @@ export const saveTrialData = (data, source) => {
         {
           ...clowder.seMeasurement,
           composite: thetaSERaw,
+          composite_foundational: thetaSERawFoundational,
           scaled: thetaSEScaled,
         },
         (value, key) => isPracticeCat(key),
@@ -486,11 +498,13 @@ export const testLoopFunction = (subskill) => {
   }
 
   if (store.session('config').isAdaptive) {
+    // eslint-disable-next-line eqeqeq
     return store.session('currentStimulus') != undefined;
   }
 
   const numItems = store.session.get('numItems');
   const maxNumber = store.session('config').numTestItems ?? numItems[`numItems${subskill.toUpperCase()}`];
+  // eslint-disable-next-line no-eq-null, eqeqeq
   if (store.session('trialNumBlock') < maxNumber) {
     return true;
   }
