@@ -138,7 +138,6 @@ export const moveToNextBlock = () => {
 const safeGetCatIndex = () => {
   let catIndex = store.session.get('currentCatIndex');
 
-   
   if (catIndex == undefined) {
     store.session.set('currentCatIndex', 0);
     catIndex = 0;
@@ -487,7 +486,6 @@ export const testLoopFunction = (subskill) => {
   }
 
   if (store.session('config').isAdaptive) {
-     
     return store.session('currentStimulus') != undefined;
   }
 
