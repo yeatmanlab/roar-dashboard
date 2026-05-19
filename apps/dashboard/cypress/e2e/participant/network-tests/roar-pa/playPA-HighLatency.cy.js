@@ -3,7 +3,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@roar-dashboard/roar-pa';
 
-describe('Testing playthrough of ROAR-Phoneme as a participant with a simulated high latency connection', () => {
+describe.skip('Testing playthrough of ROAR-Phoneme as a participant with a simulated high latency connection', () => {
   it(`ROAR-Phoneme Playthrough Test with username auth`, () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

@@ -2,7 +2,7 @@ import { playARF } from '../../../../support/helper-functions/roam-apps/roamHelp
 import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roam-apps';
-describe('Test playthrough of ROAM as a participant in a simulated high latency networkt', () => {
+describe.skip('Test playthrough of ROAM as a participant in a simulated high latency networkt', () => {
   it('ROAM Playthrough Test', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

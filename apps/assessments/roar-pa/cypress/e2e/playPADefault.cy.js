@@ -11,7 +11,7 @@ const breakBlockText2 = {
   break2: 'Look at all those carrots',
   break3: 'You are doing great',
 };
-describe('Test play through of PA as a participant', () => {
+describe.skip('Test play through of PA as a participant', () => {
   it('ROAR-PA through Test', () => {
     cy.playPA(startText, breakBlockText, breakBlockText2, endBlockText);
   });

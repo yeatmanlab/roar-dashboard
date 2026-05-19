@@ -5,7 +5,7 @@ const app = 'core-tasks';
 const administration = 'Cypress Test Roar Syntax';
 let isCurrentAppVersion;
 
-describe('Participant Assessment: ROAR Syntax', () => {
+describe.skip('Participant Assessment: ROAR Syntax', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });

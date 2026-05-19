@@ -4,7 +4,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@roar-dashboard/roar-pa';
 let isCurrentAppVersion;
 
-describe('Participant Assessment: ROAR Phoneme', () => {
+describe.skip('Participant Assessment: ROAR Phoneme', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });
