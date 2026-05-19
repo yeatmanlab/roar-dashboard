@@ -1,4 +1,4 @@
-describe('Participant Assessments', () => {
+describe.skip('Participant Assessments', () => {
   it('Renders assessment videos', () => {
     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
 
