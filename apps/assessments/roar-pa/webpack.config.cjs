@@ -164,10 +164,10 @@ module.exports = async (env, args) => {
     plugins: [
       new webpack.EnvironmentPlugin({
         ROAR_API_URL: 'https://localhost:4000',
-        // Points dev builds at the local auth emulator started by researcher-environment:up.
-        // connectAuthEmulator() in serve.js reads this; getFirebaseConfig() uses it to
-        // skip real Firebase credentials and return a minimal emulator-only config.
-        FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+        // Empty string by default — connectAuthEmulator() in serve.js only fires when
+        // this is explicitly set (e.g. by researcher-environment:up). Regular dev builds
+        // connecting to a real Firebase project are unaffected.
+        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };
