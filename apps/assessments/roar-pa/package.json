@@ -22,7 +22,6 @@
   "dependencies": {
     "@roar-dashboard/assessment-schema": "*",
     "@yeatmanlab/assessment-sdk": "*",
-
     "@bdelab/jscat": "^5.2.2",
     "@bdelab/roar-utils": "^1.2.2",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.0",
