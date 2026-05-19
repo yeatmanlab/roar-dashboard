@@ -1,4 +1,4 @@
-/* eslint-disable import/extensions */
+ 
 import { startRun, abortRun } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { initConfig } from './experiment/config/config';
 import { buildExperiment } from './experiment/experiment';

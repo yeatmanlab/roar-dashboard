@@ -41,7 +41,8 @@
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "env": ["ROAR_API_URL"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
