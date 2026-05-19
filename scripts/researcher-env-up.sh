@@ -5,6 +5,14 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 FIREBASE_CONFIG="$REPO_ROOT/apps/assessments/shared/firebase.json"
 
+# Validate certs exist — the dev backend requires HTTPS (NODE_ENV=development reads them synchronously).
+for cert_file in "$REPO_ROOT/certs/roar-local.key" "$REPO_ROOT/certs/roar-local.crt"; do
+  if [[ ! -f "$cert_file" ]]; then
+    echo "Error: $cert_file not found. Run: npm run dev:setup:certs" >&2
+    exit 1
+  fi
+done
+
 # Tear down any existing researcher-db to prevent port 5432 conflicts from orphaned containers.
 docker compose -f "$COMPOSE_FILE" rm -sf researcher-db 2>/dev/null || true
 
@@ -20,4 +28,4 @@ npx concurrently \
    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
    npm run dev -w apps/backend" \
   "docker compose -f $COMPOSE_FILE run --rm -T researcher-db-migrate \
-   && npm run dev -w apps/assessments/roar-pa"
+   && ROAR_API_URL=https://localhost:4000 npm run dev -w apps/assessments/roar-pa"
