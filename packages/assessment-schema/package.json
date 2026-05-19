@@ -16,10 +16,13 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@roar-dashboard/typescript-config": "*",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
   }
 }
