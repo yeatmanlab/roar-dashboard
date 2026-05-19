@@ -69,6 +69,12 @@ runs:
         rm -rf build/apps/dashboard/env-configs
         cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs build/apps/dashboard/env-configs
 
+    # Build workspace packages (assessment-sdk, api-contract, etc.) before the dashboard
+    - name: Build workspace packages
+      working-directory: build
+      shell: bash
+      run: npx turbo run build --filter='./packages/*'
+
     # Build the application
     - name: Build application
       working-directory: build/apps/dashboard
