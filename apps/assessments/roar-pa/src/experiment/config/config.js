@@ -20,7 +20,7 @@ import { paValidityEvaluator } from '../experiment';
 const makePid = () => {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  // eslint-disable-next-line max-len, no-plusplus
+   
   for (let i = 0; i < 16; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -57,7 +57,7 @@ const getStoryOption = (opt, grade) => {
       story = true;
     }
     // Note: we use == instead of === in order to compare against both undefined and null
-    // eslint-disable-next-line eqeqeq
+     
   } else if (opt == undefined) {
     story = true;
   } else if (opt === true) {
@@ -171,9 +171,9 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
+       
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+       
       code.apply(fn, arguments);
     };
 
@@ -200,7 +200,7 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: getUserDataTimeline,
     on_timeline_finish: async () => {
-      // eslint-disable-next-line no-param-reassign
+       
       config.pid = config.pid || makePid();
       try {
         await updateUser({
