@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
-import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
+import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
@@ -855,25 +856,25 @@ router.beforeEach(async (to, from, next) => {
 
   // Handle global error state — route to error pages before auth check
   if (globalError.value) {
-    if (globalError.value.type === 'rostering-ended' && to.name !== 'AccessEnded') {
-      next({ name: 'AccessEnded' });
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.ROSTERING_ENDED && to.name !== APP_ROUTE_NAMES.ACCESS_ENDED) {
+      next({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
       return;
     }
-    if (globalError.value.type === 'auth-expired' && to.name !== 'SignIn') {
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.AUTH_EXPIRED && to.name !== APP_ROUTE_NAMES.SIGN_IN) {
       // Clear the error before redirecting so we don't loop after successful sign-in
       clearGlobalError();
-      next({ name: 'SignIn' });
+      next({ name: APP_ROUTE_NAMES.SIGN_IN });
       return;
     }
-    if (globalError.value.type === 'server-error' && to.name !== 'GenericError') {
-      next({ name: 'GenericError' });
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.SERVER_ERROR && to.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+      next({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
       return;
     }
   }
 
   // If navigating to an error page but no error exists, redirect to home
-  if ((to.name === 'AccessEnded' || to.name === 'GenericError') && !globalError.value) {
-    next({ name: 'Home' });
+  if ((to.name === APP_ROUTE_NAMES.ACCESS_ENDED || to.name === APP_ROUTE_NAMES.GENERIC_ERROR) && !globalError.value) {
+    next({ name: APP_ROUTE_NAMES.HOME });
     return;
   }
   // Check if user is signed in. If not, go to signin
@@ -918,12 +919,12 @@ router.beforeEach(async (to, from, next) => {
   // invalidating `/me`), this guard releases entirely.
   if (
     store.hasUnsignedTos &&
-    to.name !== 'SignTos' &&
-    to.name !== 'SignIn' &&
-    to.name !== 'AccessEnded' &&
-    to.name !== 'GenericError'
+    to.name !== APP_ROUTE_NAMES.SIGN_TOS &&
+    to.name !== APP_ROUTE_NAMES.SIGN_IN &&
+    to.name !== APP_ROUTE_NAMES.ACCESS_ENDED &&
+    to.name !== APP_ROUTE_NAMES.GENERIC_ERROR
   ) {
-    next({ name: 'SignTos', query: { next: to.fullPath } });
+    next({ name: APP_ROUTE_NAMES.SIGN_TOS, query: { next: to.fullPath } });
     return;
   }
 

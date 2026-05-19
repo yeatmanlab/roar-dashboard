@@ -44,6 +44,8 @@ import { i18n } from '@/translations/i18n';
 import useMeQuery from '@/composables/queries/useMeQuery';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
+import { APP_ROUTE_NAMES } from '@/constants/routes';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
@@ -91,8 +93,8 @@ watch(meData, (data) => {
   clearGlobalError();
 
   const hasUnsignedTos = (data.unsignedAgreements?.length ?? 0) > 0;
-  if (hasUnsignedTos && route.name !== 'SignTos' && route.name !== 'SignIn') {
-    router.replace({ name: 'SignTos', query: { next: route.fullPath } });
+  if (hasUnsignedTos && route.name !== APP_ROUTE_NAMES.SIGN_TOS && route.name !== APP_ROUTE_NAMES.SIGN_IN) {
+    router.replace({ name: APP_ROUTE_NAMES.SIGN_TOS, query: { next: route.fullPath } });
   }
 });
 
@@ -104,19 +106,19 @@ watch(meData, (data) => {
 watch(meError, (err) => {
   if (!err) return;
   if (isRosteringEndedError(err)) {
-    setGlobalError({ type: 'rostering-ended' });
-    if (route.name !== 'AccessEnded') {
-      router.replace({ name: 'AccessEnded' });
+    setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
+    if (route.name !== APP_ROUTE_NAMES.ACCESS_ENDED) {
+      router.replace({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
     }
   } else if (isTerminalAuthError(err)) {
-    setGlobalError({ type: 'auth-expired' });
-    if (route.name !== 'SignIn') {
-      router.replace({ name: 'SignIn' });
+    setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+    if (route.name !== APP_ROUTE_NAMES.SIGN_IN) {
+      router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
     }
   } else {
-    setGlobalError({ type: 'server-error' });
-    if (route.name !== 'GenericError') {
-      router.replace({ name: 'GenericError' });
+    setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+    if (route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+      router.replace({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
     }
   }
 });
