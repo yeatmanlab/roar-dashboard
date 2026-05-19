@@ -1,4 +1,4 @@
-/* eslint-disable import/prefer-default-export */
+ 
 import _mapValues from 'lodash/mapValues';
 import _omit from 'lodash/omit';
 import _reduce from 'lodash/reduce';
@@ -33,7 +33,7 @@ export class RoarScores {
       const ageInMonths = store.session.get('config').userMetadata?.ageMonths;
       const grade = getGrade(store.session.get('config').userMetadata?.grade);
 
-      // eslint-disable-next-line eqeqeq
+       
       if (ageInMonths == undefined && grade == undefined) reject();
 
       const ageMin = this.irtScoring ? 60 : 48;
@@ -164,7 +164,7 @@ export class RoarScores {
     const grade = getGrade(userMetadata?.grade);
     const ageMonths = userMetadata?.ageMonths;
 
-    // eslint-disable-next-line eqeqeq
+     
     if (grade != undefined || ageMonths != undefined) {
       if (!this.tableLoaded) {
         await this.initTable();

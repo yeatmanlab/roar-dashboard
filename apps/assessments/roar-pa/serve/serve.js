@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
-import i18next from 'i18next';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
@@ -26,7 +25,6 @@ const consent = urlParams.get('consent') !== 'false';
 const storyOption = urlParams.get('storyoption');
 const story = urlParams.get('story') ? urlParams.get('story').toLocaleLowerCase() !== 'false' : null;
 const skipInstructions = urlParams.get('skip') !== 'false';
-const { language } = i18next;
 
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -80,7 +78,7 @@ onAuthStateChanged(auth, async (user) => {
       }
     }
 
-    // eslint-disable-next-line no-undef
+     
     const ctx = {
       // eslint-disable-next-line no-undef
       baseUrl: `${ROAR_API_URL}/v1`,

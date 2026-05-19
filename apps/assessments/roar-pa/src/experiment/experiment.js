@@ -1,7 +1,7 @@
-/* eslint-disable import/no-mutable-exports */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable no-plusplus */
-/* eslint-disable no-param-reassign */
+ 
+ 
+ 
+ 
 import store from 'store2';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
