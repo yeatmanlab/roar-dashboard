@@ -10,32 +10,17 @@ import { extractJwt } from '../auth-guard/jwt-extractor';
 const ANONYMOUS_SIGN_IN_PROVIDER = 'anonymous';
 
 /**
- * Narrows `claims['firebase']` once and returns both the sign-in provider string
- * and whether it indicates an anonymous sign-in.
- *
- * Centralising the narrowing here prevents the same `typeof firebase` guard from
- * being duplicated across the boolean check and the log-context extraction.
- */
-function parseFirebaseClaims(claims: Record<string, unknown>): {
-  isAnonymous: boolean;
-  signInProvider: string | undefined;
-} {
-  const firebase = claims['firebase'];
-  if (typeof firebase !== 'object' || firebase === null) {
-    return { isAnonymous: false, signInProvider: undefined };
-  }
-  const provider = (firebase as Record<string, unknown>)['sign_in_provider'];
-  const signInProvider = typeof provider === 'string' ? provider : undefined;
-  return { isAnonymous: signInProvider === ANONYMOUS_SIGN_IN_PROVIDER, signInProvider };
-}
-
-/**
  * Returns true when the decoded token's Firebase claims indicate an anonymous sign-in.
+ *
+ * `claims['firebase']` is `unknown` at runtime; this function narrows it safely
+ * rather than relying on a bare `as` cast at the call site.
  *
  * @param claims - The raw claims object from the decoded Firebase token.
  */
 export function isAnonymousToken(claims: Record<string, unknown>): boolean {
-  return parseFirebaseClaims(claims).isAnonymous;
+  const firebase = claims['firebase'];
+  if (typeof firebase !== 'object' || firebase === null) return false;
+  return (firebase as Record<string, unknown>)['sign_in_provider'] === ANONYMOUS_SIGN_IN_PROVIDER;
 }
 
 /**
@@ -68,7 +53,12 @@ export async function AnonTokenMiddleware(req: Request, res: Response, next: Nex
     const decodedUser = await AuthService.verifyToken(token);
     const { isAnonymous, signInProvider } = parseFirebaseClaims(decodedUser.claims);
 
-    if (!isAnonymous) {
+    if (!isAnonymousToken(decodedUser.claims)) {
+      const firebase = decodedUser.claims['firebase'];
+      const signInProvider =
+        typeof firebase === 'object' && firebase !== null
+          ? (firebase as Record<string, unknown>)['sign_in_provider']
+          : undefined;
       logger.warn(
         { uid: decodedUser.uid, signInProvider },
         'Non-anonymous token presented to anonymous-only endpoint — likely a client misconfiguration',
