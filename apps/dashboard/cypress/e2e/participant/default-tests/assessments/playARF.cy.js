@@ -4,12 +4,12 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@bdelab/roam-apps';
 let isCurrentAppVersion;
 
-describe('Participant Assessment: ROAM ARF', () => {
+describe.skip('Participant Assessment: ROAM ARF', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });
 
-  describe('EN', () => {
+  describe.skip('EN', () => {
     it('Completes assessment with username/password authentication', () => {
       if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
@@ -29,7 +29,7 @@ describe('Participant Assessment: ROAM ARF', () => {
     });
   });
 
-  describe('ES', () => {
+  describe.skip('ES', () => {
     const administration = Cypress.env('testSpanishRoarAppsAdministration');
     const language = 'es';
     const task = 'fluency-arf-es';

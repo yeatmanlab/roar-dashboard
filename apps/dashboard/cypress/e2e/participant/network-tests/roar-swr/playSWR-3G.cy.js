@@ -5,7 +5,7 @@ const administration = Cypress.env('testRoarAppsAdministration');
 const language = 'en';
 const app = '@bdelab/roar-swr';
 
-describe('ROAR - Word Play Through in a simulated 2G network', () => {
+describe.skip('ROAR - Word Play Through in a simulated 2G network', () => {
   it('Plays Word', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

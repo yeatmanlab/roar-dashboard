@@ -15,32 +15,15 @@ beforeEach(() => {
     win.localStorage.setItem('__E2E__', 'true');
   });
 
-  // Default `/me` intercept. The dashboard's app initialization calls
-  // `GET /me` on every page load (via `useMeQuery` in `App.vue`); without
-  // this stub, tests that don't have a real backend reachable would see the
-  // query fail, set `globalError` to `server-error`, and get redirected to
-  // `GenericError` — masking the actual page under test.
+  // NOTE: As of the backend-API migration (#1774 Phase 3), all legacy e2e
+  // specs in this directory are `describe.skip`-ed and the previous default
+  // `/me` cy.intercept stub has been removed. Active e2e specs run against
+  // a real local backend booted via `apps/backend/src/server-test.ts`,
+  // authenticate via the Firebase Auth emulator (no firekit), and call
+  // `cy.visit(...)` explicitly after signing in. See
+  // `.ai/rules/frontend-e2e-testing-pattern.md` for the new contract.
   //
-  // The default response is a successful "no unsigned agreements" payload so
-  // the TOS guard stays disengaged. Tests that need to exercise the
-  // rostering-ended / unsigned-TOS / server-error paths should register their
-  // own `cy.intercept('GET', /\/me\/?(\?.*)?$/, ...)` in their test body before
-  // navigating; Cypress picks the last-registered matching intercept, so the
-  // new registration takes precedence over this default.
-  cy.intercept('GET', /\/me\/?(\?.*)?$/, {
-    statusCode: 200,
-    body: {
-      data: {
-        id: '00000000-0000-0000-0000-000000000000',
-        userType: 'admin',
-        nameFirst: 'E2E',
-        nameLast: 'Test',
-        unsignedAgreements: [],
-      },
-    },
-  }).as('getMe');
-
-  cy.visit('/');
+  // Tests must not rely on this `beforeEach` to visit the dashboard for them.
 
   // Simulate different network conditions based on test file name.
   if (Cypress.spec.name.includes('4G')) {

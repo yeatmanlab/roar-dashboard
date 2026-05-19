@@ -4,12 +4,12 @@ import { isCurrentVersion } from '../../../../support/utils';
 optionalGames.forEach((game) => {
   let isCurrentAppVersion;
 
-  describe(`Optional Participant Assessment: ${game.name}`, () => {
+  describe.skip(`Optional Participant Assessment: ${game.name}`, () => {
     before(async () => {
       isCurrentAppVersion = await isCurrentVersion(game.app);
     });
 
-    describe('EN', () => {
+    describe.skip('EN', () => {
       const administration = Cypress.env('testOptionalRoarAppsAdministration');
       const language = 'en';
       const optional = true;

@@ -3,7 +3,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-sre';
 
-describe('ROAR - Sentence Play Through', () => {
+describe.skip('ROAR - Sentence Play Through', () => {
   it('Plays SRE with a simulated 3g connection', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
