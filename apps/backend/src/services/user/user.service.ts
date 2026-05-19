@@ -1441,6 +1441,13 @@ export function UserService({
    * Anonymous standalone users have no name, email, or org memberships. They are
    * created as `student` type with only their Firebase UID stored.
    *
+   * FGA is intentionally skipped. Anonymous users hold no org, class, group, or
+   * family memberships, so there are no FGA tuples to check or write. This is
+   * consistent with how anonymous runs are handled in `run.service.ts` — the
+   * `isAnonymous` flag bypasses `can_create_run` checks there for the same reason.
+   * Authentication is enforced upstream by `AnonTokenMiddleware`, which verifies
+   * the Firebase anonymous token before this method is ever reached.
+   *
    * @param authId - The Firebase UID of the anonymous user
    * @returns The newly created user's ROAR UUID
    * @throws {ApiError} If the database insert fails
