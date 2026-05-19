@@ -73,6 +73,10 @@ onAuthStateChanged(auth, async (user) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const variantJson = await variantRes.json();
+        if (!variantRes.ok) {
+          console.error('Failed to fetch roar-pa task variants:', variantRes.status, variantJson);
+          return;
+        }
         resolvedVariantId = variantJson?.data?.items?.[0]?.id ?? null;
         if (!resolvedVariantId) {
           console.error('Could not resolve a roar-pa task variant:', variantJson);
