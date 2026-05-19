@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { StatusCodes } from 'http-status-codes';
 import { getRoarApiClient } from '@/clients/roar-api';
-import { RECORD_USER_AGREEMENT_MUTATION_KEY } from '@/constants/mutationKeys';
+import { USER_AGREEMENT_RECORD_MUTATION_KEY } from '@/constants/mutationKeys';
 import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
@@ -23,7 +24,7 @@ const useRecordUserAgreementMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationKey: [RECORD_USER_AGREEMENT_MUTATION_KEY],
+    mutationKey: [USER_AGREEMENT_RECORD_MUTATION_KEY],
     mutationFn: async ({ userId, agreementVersionId }) => {
       const client = getRoarApiClient();
       const result = await client.users.recordUserAgreement({
@@ -31,7 +32,7 @@ const useRecordUserAgreementMutation = () => {
         body: { agreementVersionId },
       });
 
-      if (result.status === 201) {
+      if (result.status === StatusCodes.CREATED) {
         return result.body.data;
       }
 
@@ -53,7 +54,7 @@ const useRecordUserAgreementMutation = () => {
       // That's not a real error — the backend is in sync, the frontend just
       // had stale state. Invalidate `/me` so the agreement drops off the
       // queue and the flow can advance.
-      if (error?.status === 409) {
+      if (error?.status === StatusCodes.CONFLICT) {
         queryClient.invalidateQueries({ queryKey: [ME_QUERY_KEY] });
       }
     },

@@ -1,5 +1,6 @@
 import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
+import { StatusCodes } from 'http-status-codes';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getRoarApiClient } from '@/clients/roar-api';
 import { AGREEMENT_VERSION_CONTENT_QUERY_KEY } from '@/constants/queryKeys';
@@ -35,7 +36,7 @@ const useAgreementVersionContentQuery = (agreementId, versionId, queryOptions = 
         },
       });
 
-      if (result.status === 200) {
+      if (result.status === StatusCodes.OK) {
         return result.body.data;
       }
 
@@ -44,8 +45,10 @@ const useAgreementVersionContentQuery = (agreementId, versionId, queryOptions = 
       error.body = result.body;
       throw error;
     },
-    enabled: isQueryEnabled,
+    // Caller options first, then the access guards last so a caller-supplied
+    // `enabled` can't silently override the agreement/version readiness check.
     ...options,
+    enabled: isQueryEnabled,
   });
 };
 
