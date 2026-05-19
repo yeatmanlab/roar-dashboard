@@ -39,6 +39,7 @@ This directory contains modular, enforceable engineering rules for the ROAR Plat
 | [frontend-layer-architecture](frontend-layer-architecture.md) | HIGH | Container/presentational pattern, directory structure, PrimeVue Pv prefix |
 | [frontend-state-management](frontend-state-management.md) | HIGH | Pinia for client state, TanStack Query for server state |
 | [frontend-composable-patterns](frontend-composable-patterns.md) | MEDIUM | Query, mutation, logic, and utility composables |
+| [frontend-e2e-testing-pattern](frontend-e2e-testing-pattern.md) | HIGH | Cypress e2e against seeded local backend (Postgres + OpenFGA + Auth emulator + server-test.ts); how to bring skipped specs back online |
 
 ### Quality
 
