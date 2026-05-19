@@ -78,9 +78,7 @@ export default defineConfig({
           find: /^@roar-dashboard\/assessment-schema(\/[^/]+)?$/,
           replacement:
             new URL(
-              isDev
-                ? '../../packages/assessment-schema/src'
-                : '../../packages/assessment-schema/dist',
+              isDev ? '../../packages/assessment-schema/src' : '../../packages/assessment-schema/dist',
               import.meta.url,
             ).pathname + `$1/index.${isDev ? 'ts' : 'js'}`,
         },
