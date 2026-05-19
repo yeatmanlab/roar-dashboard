@@ -188,6 +188,11 @@ export const UsersContract = c.router(
       responses: {
         200: SuccessEnvelopeSchema(CreateUserResponseSchema),
         401: ErrorEnvelopeSchema,
+        // 429 is intentionally absent: the project has no Express-level rate limiter yet.
+        // createAnonymousUser makes no Firebase Auth Admin API calls, so Firebase's own
+        // TOO_MANY_REQUESTS quota (which covers /users POST) cannot fire here. The endpoint
+        // is also idempotent — repeated calls for the same UID are DB no-ops. A server-side
+        // rate limiter (e.g. express-rate-limit) should be added before declaring 429 here.
         500: ErrorEnvelopeSchema,
       },
       strictStatusCodes: true,

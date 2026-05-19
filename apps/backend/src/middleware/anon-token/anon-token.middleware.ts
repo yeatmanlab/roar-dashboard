@@ -3,10 +3,25 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';
+import { logger } from '../../logger';
 import { AuthService } from '../../services/auth/auth.service';
 import { extractJwt } from '../auth-guard/jwt-extractor';
 
 const ANONYMOUS_SIGN_IN_PROVIDER = 'anonymous';
+
+/**
+ * Returns true when the decoded token's Firebase claims indicate an anonymous sign-in.
+ *
+ * `claims['firebase']` is `unknown` at runtime; this function narrows it safely
+ * rather than relying on a bare `as` cast at the call site.
+ *
+ * @param claims - The raw claims object from the decoded Firebase token.
+ */
+export function isAnonymousToken(claims: Record<string, unknown>): boolean {
+  const firebase = claims['firebase'];
+  if (typeof firebase !== 'object' || firebase === null) return false;
+  return (firebase as Record<string, unknown>)['sign_in_provider'] === ANONYMOUS_SIGN_IN_PROVIDER;
+}
 
 /**
  * Middleware for the POST /users/anonymous endpoint.
@@ -37,8 +52,16 @@ export async function AnonTokenMiddleware(req: Request, res: Response, next: Nex
 
     const decodedUser = await AuthService.verifyToken(token);
 
-    const firebaseClaims = decodedUser.claims['firebase'] as Record<string, unknown> | undefined;
-    if (firebaseClaims?.sign_in_provider !== ANONYMOUS_SIGN_IN_PROVIDER) {
+    if (!isAnonymousToken(decodedUser.claims)) {
+      const firebase = decodedUser.claims['firebase'];
+      const signInProvider =
+        typeof firebase === 'object' && firebase !== null
+          ? (firebase as Record<string, unknown>)['sign_in_provider']
+          : undefined;
+      logger.warn(
+        { uid: decodedUser.uid, signInProvider },
+        'Non-anonymous token presented to anonymous-only endpoint — likely a client misconfiguration',
+      );
       return next(
         new ApiError(ApiErrorMessage.UNAUTHORIZED, {
           statusCode: StatusCodes.UNAUTHORIZED,
