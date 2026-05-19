@@ -21,7 +21,9 @@
     "FGA_API_URL",
     "BACKEND_PORT",
     "BUILD_TEST_SERVER",
-    "RUN_INTEGRATION_TESTS"
+    "RUN_INTEGRATION_TESTS",
+    "SENTRY_AUTH_TOKEN",
+    "CYPRESS_BASE_URL"
   ],
   "globalDependencies": [".env"],
   "tasks": {
@@ -39,7 +41,8 @@
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "env": ["ROAR_API_URL"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
