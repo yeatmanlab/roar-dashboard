@@ -1,7 +1,3 @@
- 
- 
- 
- 
 import store from 'store2';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';

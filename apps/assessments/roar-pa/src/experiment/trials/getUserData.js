@@ -16,7 +16,6 @@ const getLabId = {
   ],
   css_classes: ['jspsych-content-modified'],
   on_finish: (data) => {
-     
     store.session.get('config').labId = data.response.labId;
   },
 };
@@ -44,7 +43,6 @@ const getPid = {
   ],
   css_classes: ['jspsych-content-modified'],
   on_finish: (data) => {
-     
     store.session.get('config').pid = data.response.pid;
   },
 };
@@ -175,7 +173,7 @@ const surveyPID = {
   autocomplete: true,
   on_finish: (data) => {
     const tmpMetadata = {};
-     
+
     for (const field in data.response) {
       if (data.response[field] === '') {
         tmpMetadata[field] = null;
