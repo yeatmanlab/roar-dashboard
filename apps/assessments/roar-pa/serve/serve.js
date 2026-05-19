@@ -78,7 +78,6 @@ onAuthStateChanged(auth, async (user) => {
       }
     }
 
-     
     const ctx = {
       // eslint-disable-next-line no-undef
       baseUrl: `${ROAR_API_URL}/v1`,
