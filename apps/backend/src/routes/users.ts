@@ -57,8 +57,8 @@ export function registerUserRoutes(routerInstance: Router) {
       },
     },
     createAnonymous: {
-      middleware: [AnonTokenMiddleware],
       // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AnonTokenMiddleware],
       handler: async ({ req: { decodedAnonymousUser } }) => UsersController.createAnonymous(decodedAnonymousUser!.uid),
     },
   });
