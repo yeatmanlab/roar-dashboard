@@ -69,32 +69,24 @@ runs:
         rm -rf build/apps/dashboard/env-configs
         cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs build/apps/dashboard/env-configs
 
-    # Build the dashboard in two passes so the Vite-only `--mode` flag
-    # doesn't leak into upstream workspace builds.
+    # Build the dashboard via turbo so transitive workspace dependencies
+    # (`@roar-dashboard/api-contract` and any others declared via
+    # `dependsOn` in `turbo.json`) are built automatically in the right
+    # order. The Vite mode is threaded through the `MODE` env var — the
+    # dashboard's `build` script reads `${MODE:-development}` and forwards
+    # it to `vite build --mode`. `MODE` is declared in `turbo.json`'s
+    # `globalEnv`, so turbo passes it to every task AND includes it in
+    # the cache key (staging and production builds hash separately).
     #
-    # Pass 1: turbo builds every dependency of roar-dashboard (currently
-    # @roar-dashboard/api-contract; anything else added later via
-    # `dependsOn` in `turbo.json` lands here automatically) without any
-    # extra CLI args. Earlier this step ran turbo as
-    # `npx turbo build --filter=roar-dashboard -- --mode <env>`, but
-    # turbo forwards `-- args` to every matched package's build script.
-    # api-contract's build chain ends in `tsc -p tsconfig.build.types.json`,
-    # which rejects the Vite-style `--mode` flag with TS5023.
-    #
-    # Pass 2: build the dashboard directly so `--mode` reaches only `vite
-    # build` (where it selects the `.env.<mode>` file and sets
-    # `import.meta.env.MODE`). At this point the dashboard's transitive
-    # `dist/` artifacts already exist from pass 1.
-    - name: Build roar-dashboard dependencies
+    # Previously this step used `npx turbo build --filter=roar-dashboard
+    # -- --mode <env>`, but turbo's `-- args` passthrough forwards CLI
+    # arguments to every package in the build graph. api-contract's
+    # build ends in `tsc -p tsconfig.build.types.json`, which rejects
+    # the Vite-only `--mode` flag with TS5023 ('Unknown compiler option').
+    - name: Build application
       working-directory: build
       env:
         NODE_OPTIONS: '--max_old_space_size=8192'
+        MODE: ${{ inputs.environment }}
       shell: bash
-      run: npx turbo build --filter='...^roar-dashboard'
-
-    - name: Build roar-dashboard
-      working-directory: build
-      env:
-        NODE_OPTIONS: '--max_old_space_size=8192'
-      shell: bash
-      run: npm run build -w apps/dashboard -- --mode ${{ inputs.environment }}
+      run: npx turbo build --filter=roar-dashboard
