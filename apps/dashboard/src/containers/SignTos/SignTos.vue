@@ -1,10 +1,9 @@
 <script setup>
 import { computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import AppSpinner from '@/components/AppSpinner.vue';
 import ConsentModal from '@/components/ConsentModal.vue';
-import { useAuthStore } from '@/store/auth';
+import useCurrentUser from '@/composables/useCurrentUser';
 import { useTosSigningFlow } from './composables/useTosSigningFlow';
 import useAgreementVersionContentQuery from '@/composables/queries/useAgreementVersionContentQuery';
 import useRecordUserAgreementMutation from '@/composables/mutations/useRecordUserAgreementMutation';
@@ -20,8 +19,7 @@ import { APP_ROUTES, APP_ROUTE_NAMES } from '@/constants/routes';
  */
 const INTERNAL_PATH_REGEX = /^\/[A-Za-z0-9\-_.~/%]+(\?[A-Za-z0-9\-_.~%=&]*)?$/;
 
-const authStore = useAuthStore();
-const { currentUserId, hasUnsignedTos } = storeToRefs(authStore);
+const { currentUserId, hasUnsignedTos } = useCurrentUser();
 const route = useRoute();
 const router = useRouter();
 
