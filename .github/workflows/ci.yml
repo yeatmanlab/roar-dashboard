@@ -242,6 +242,13 @@ jobs:
         run: BUILD_TEST_SERVER=true npx turbo build --filter=roar-backend
 
       - name: Start backend server-test
+        # `NODE_ENV=production` selects the structured-JSON logger branch
+        # in `apps/backend/src/logger.ts`. The dev branch wires `pino-pretty`
+        # in as a worker-thread transport, whose bundled output calls
+        # `__dirname` — undefined in ESM scope — and crashes immediately.
+        # Production deployments set this env var; CI hadn't been.
+        env:
+          NODE_ENV: production
         run: |
           node apps/backend/dist/server-test.js &
           # server-test.ts seeds Postgres + OpenFGA + the Firebase Auth
