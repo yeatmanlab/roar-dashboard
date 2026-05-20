@@ -17,7 +17,17 @@
 
     <Navigation />
 
-    <router-view :key="$route.fullPath" />
+    <!--
+      Gate router-view on `/me` settlement. Once the user has an access
+      token, useMeQuery is enabled; we hold the destination page back
+      until the query has settled so the protected route doesn't paint
+      with stale store values or before the TOS / error redirects below
+      have a chance to fire. Unauthenticated routes (Sign-In, error
+      pages) render immediately because `accessToken` is null, so
+      `isMeSettling` is false.
+    -->
+    <AppSpinner v-if="isMeSettling" />
+    <router-view v-else :key="$route.fullPath" />
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
   </div>
@@ -32,6 +42,7 @@ import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
 import PvToast from 'primevue/toast';
 import Navigation from '@/containers/Navigation/Navigation.vue';
+import AppSpinner from '@/components/AppSpinner.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
@@ -67,29 +78,45 @@ useRecaptchaProvider();
 // `useMeQuery` is internally gated on `authStore.accessToken`, so no
 // caller-side `enabled` is needed here. The composable also handles retry
 // (3x on transient failures, skip on rostering-ended / terminal auth).
-const { data: meData, error: meError } = useMeQuery();
+//
+// `/me` data lives in TanStack Query — consumers read it via
+// `useCurrentUser` (or `queryClient.getQueryData([ME_QUERY_KEY])` from
+// non-component code). Nothing copies it into the auth store any more.
+const { data: meData, error: meError, isFetching: isMeFetching } = useMeQuery();
 
-// Push the resolved `/me` payload into the auth store so consumers can read it
-// via `storeToRefs(authStore).meData` / the `hasUnsignedTos` / `currentUserId`
-// getters. Done via watcher rather than `onSuccess` so the store stays in sync
-// across `/me` refetches (e.g., after the TOS-signing mutation invalidates it).
+/**
+ * Hold back router-view until `/me` settles for authenticated users.
+ *
+ * Three states matter here:
+ *   - No access token: useMeQuery is disabled; we render immediately so
+ *     unauthenticated routes (Sign-In, error pages) paint without delay.
+ *   - Access token present, /me still in flight (no data, no error yet):
+ *     show a spinner so the destination page can't flash before any TOS /
+ *     error redirects below get a chance to fire.
+ *   - /me has resolved or errored: render the destination; the error
+ *     watcher below has already issued any necessary redirect.
+ */
+const isMeSettling = computed(
+  () => Boolean(authStore.accessToken) && isMeFetching.value && !meData.value && !meError.value,
+);
+
+// Watch the `/me` payload for two boot-time side effects that the router
+// can't handle on its own:
 //
-// A successful refetch after a prior failure also clears any stale
-// `globalError` set by the error watcher below — without this, a transient
-// 500 followed by a successful retry would leave the user stuck on
-// `GenericError` because the router's global-error guard would keep firing.
-//
-// Initial-load redirect: `/me` resolves *after* the router has already
-// resolved the current route, so the `beforeEach` TOS guard doesn't fire on
-// the initial render. If the resolved payload has unsigned agreements and
-// the user is sitting on a non-SignTos route, push them to SignTos
-// explicitly so they can't see the protected content. The guard handles
-// subsequent navigations correctly; this watcher just closes the boot-time
-// gap.
+//   1. Clear any stale `globalError` left over from a prior failed fetch.
+//      A transient 500 followed by a successful retry would otherwise leave
+//      the user stuck on GenericError because the router's global-error
+//      guard would keep firing.
+//   2. Push the user to SignTos if the resolved payload has unsigned
+//      agreements and they're sitting on a non-SignTos route. `/me`
+//      typically resolves *after* the router has already navigated, so the
+//      `beforeEach` TOS guard doesn't fire on the initial render — this
+//      watcher closes that boot-time gap. Subsequent navigations are
+//      handled by the guard, which reads the same cached payload via the
+//      queryClient.
 const { setGlobalError, clearGlobalError } = useGlobalError();
 watch(meData, (data) => {
   if (!data) return;
-  authStore.setMeData(data);
   clearGlobalError();
 
   const hasUnsignedTos = (data.unsignedAgreements?.length ?? 0) > 0;
@@ -132,8 +159,9 @@ onBeforeMount(async () => {
     // in order for SSO to work and cannot currently be changed without significant refactoring.
     //
     // The Firestore-based fetches below populate legacy `userData` / `userClaims` fields for existing
-    // consumers. The `useMeQuery` composable (above) populates the canonical `meData` field in parallel
-    // — new consumers should read from `meData`. Legacy consumers will migrate incrementally.
+    // consumers. The `useMeQuery` composable (above) is the canonical source for the authenticated
+    // user — new consumers should read from `useCurrentUser` (which wraps it). Legacy consumers
+    // will migrate incrementally.
     if (authStore.uid) {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.userClaims = userClaims;
