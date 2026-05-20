@@ -17,8 +17,7 @@
  */
 import { Client } from 'pg';
 
-const ADMIN_URL =
-  process.env.POSTGRES_ADMIN_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5432/postgres';
+const ADMIN_URL = process.env.POSTGRES_ADMIN_URL ?? 'postgresql://postgres:postgres@127.0.0.1:5432/postgres';
 
 const DEFAULT_DATABASE_NAMES = ['roar_core_test', 'roar_assessment_test'] as const;
 
@@ -35,10 +34,9 @@ async function createDatabaseIfMissing(client: Client, dbName: string): Promise<
     throw new Error(`[create-test-databases] Invalid database name: ${dbName}`);
   }
 
-  const existing = await client.query<{ datname: string }>(
-    'SELECT datname FROM pg_database WHERE datname = $1',
-    [dbName],
-  );
+  const existing = await client.query<{ datname: string }>('SELECT datname FROM pg_database WHERE datname = $1', [
+    dbName,
+  ]);
   if ((existing.rowCount ?? 0) > 0) {
     console.log(`[create-test-databases] Database already exists: ${dbName}`);
     return;
@@ -49,8 +47,9 @@ async function createDatabaseIfMissing(client: Client, dbName: string): Promise<
 }
 
 async function main(): Promise<void> {
-  const dbNames = (process.env.TEST_DATABASE_NAMES?.split(',').map((s) => s.trim()).filter(Boolean) ??
-    DEFAULT_DATABASE_NAMES) as string[];
+  const dbNames = (process.env.TEST_DATABASE_NAMES?.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean) ?? DEFAULT_DATABASE_NAMES) as string[];
 
   const client = new Client({ connectionString: ADMIN_URL });
   await client.connect();

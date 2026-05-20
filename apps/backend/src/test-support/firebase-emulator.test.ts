@@ -1,11 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Mock } from 'vitest';
 import { FirebaseAuthClient } from '../clients/firebase-auth.clients';
-import {
-  EMULATOR_TEST_PASSWORD,
-  emulatorEmailFor,
-  seedFirebaseAuthEmulator,
-} from './firebase-emulator';
+import { EMULATOR_TEST_PASSWORD, emulatorEmailFor, seedFirebaseAuthEmulator } from './firebase-emulator';
 
 const createUserMock = FirebaseAuthClient.createUser as unknown as Mock;
 
@@ -86,9 +82,7 @@ describe('seedFirebaseAuthEmulator', () => {
 
   it('treats auth/uid-already-exists as success (idempotent re-seed)', async () => {
     setEmulatorEnv();
-    createUserMock.mockRejectedValueOnce(
-      Object.assign(new Error('exists'), { code: 'auth/uid-already-exists' }),
-    );
+    createUserMock.mockRejectedValueOnce(Object.assign(new Error('exists'), { code: 'auth/uid-already-exists' }));
 
     const result = await seedFirebaseAuthEmulator([{ authId: 'uid-existing' }]);
 
@@ -99,22 +93,16 @@ describe('seedFirebaseAuthEmulator', () => {
 
   it('treats auth/email-already-exists as success (idempotent re-seed)', async () => {
     setEmulatorEnv();
-    createUserMock.mockRejectedValueOnce(
-      Object.assign(new Error('exists'), { code: 'auth/email-already-exists' }),
-    );
+    createUserMock.mockRejectedValueOnce(Object.assign(new Error('exists'), { code: 'auth/email-already-exists' }));
 
     const result = await seedFirebaseAuthEmulator([{ authId: 'uid-x' }]);
 
-    expect(result).toEqual([
-      { authId: 'uid-x', email: 'uid-x@test.local', password: EMULATOR_TEST_PASSWORD },
-    ]);
+    expect(result).toEqual([{ authId: 'uid-x', email: 'uid-x@test.local', password: EMULATOR_TEST_PASSWORD }]);
   });
 
   it('rethrows unexpected createUser errors', async () => {
     setEmulatorEnv();
-    createUserMock.mockRejectedValueOnce(
-      Object.assign(new Error('server down'), { code: 'auth/internal-error' }),
-    );
+    createUserMock.mockRejectedValueOnce(Object.assign(new Error('server down'), { code: 'auth/internal-error' }));
 
     await expect(seedFirebaseAuthEmulator([{ authId: 'uid-fail' }])).rejects.toThrow(/server down/);
   });
