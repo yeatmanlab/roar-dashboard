@@ -66,13 +66,9 @@ const EXISTING_USER_ERROR_CODES = new Set(['auth/uid-already-exists', 'auth/emai
  * @param users - The users to seed (typically extracted from `baseFixture`)
  * @returns The credential pairs that callers can write into a Cypress fixture
  */
-export async function seedFirebaseAuthEmulator(
-  users: SeedableEmulatorUser[],
-): Promise<SeededEmulatorUser[]> {
+export async function seedFirebaseAuthEmulator(users: SeedableEmulatorUser[]): Promise<SeededEmulatorUser[]> {
   if (!process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-    throw new Error(
-      '[seedFirebaseAuthEmulator] refusing to seed: FIREBASE_AUTH_EMULATOR_HOST is not set',
-    );
+    throw new Error('[seedFirebaseAuthEmulator] refusing to seed: FIREBASE_AUTH_EMULATOR_HOST is not set');
   }
 
   const seeded: SeededEmulatorUser[] = [];
@@ -104,10 +100,7 @@ export async function seedFirebaseAuthEmulator(
     seeded.push({ authId: user.authId, email, password: EMULATOR_TEST_PASSWORD });
   }
 
-  logger.info(
-    { created, skipped, total: users.length },
-    '[seedFirebaseAuthEmulator] Emulator seed complete',
-  );
+  logger.info({ created, skipped, total: users.length }, '[seedFirebaseAuthEmulator] Emulator seed complete');
 
   return seeded;
 }

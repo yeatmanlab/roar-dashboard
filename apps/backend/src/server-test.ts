@@ -129,11 +129,7 @@ function collectSeedableUsers(fixture: BaseFixture): SeedableEmulatorUser[] {
  * the email + password pair the helper uses to sign in via the Firebase
  * Auth emulator.
  */
-function writeCypressFixtureFile(
-  fixture: BaseFixture,
-  seeded: SeededEmulatorUser[],
-  fixtureFile: string,
-): void {
+function writeCypressFixtureFile(fixture: BaseFixture, seeded: SeededEmulatorUser[], fixtureFile: string): void {
   const byAuthId = new Map(seeded.map((u) => [u.authId, u]));
 
   const users = Object.fromEntries(
