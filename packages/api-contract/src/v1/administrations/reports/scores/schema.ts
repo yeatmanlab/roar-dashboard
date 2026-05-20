@@ -43,6 +43,12 @@ export const SupportLevelEntrySchema = z.object({
 
 export type SupportLevelEntry = z.infer<typeof SupportLevelEntrySchema>;
 
+const SupportLevelSchema = z.object({
+  achievedSkill: SupportLevelEntrySchema,
+  developingSkill: SupportLevelEntrySchema,
+  needsExtraSupport: SupportLevelEntrySchema,
+});
+
 /**
  * Per-task score overview with support level distribution.
  */
@@ -55,11 +61,7 @@ export const TaskScoreOverviewSchema = ReportTaskMetadataSchema.extend({
     optional: z.number().int(),
   }),
   /** Support level distribution (only for assessed students) */
-  supportLevels: z.object({
-    achievedSkill: SupportLevelEntrySchema,
-    developingSkill: SupportLevelEntrySchema,
-    needsExtraSupport: SupportLevelEntrySchema,
-  }),
+  supportLevels: SupportLevelSchema,
 });
 
 export type TaskScoreOverview = z.infer<typeof TaskScoreOverviewSchema>;
@@ -392,3 +394,97 @@ export type IndividualStudentReportResponse = z.infer<typeof IndividualStudentRe
 export const IndividualStudentReportQuerySchema = ReportScopeQuerySchema;
 
 export type IndividualStudentReportQuery = z.infer<typeof IndividualStudentReportQuerySchema>;
+
+// --- Score Facets schemas ---
+
+/**
+ * Filter fields for the score facets endpoint. Matches the actual filter
+ * surface of `/reports/scores/overview` so callers can transfer queries
+ * between the two endpoints without translation.
+ *
+ * - `taskId`: limit which tasks are included in the aggregation (`in` operator)
+ * - `user.grade`: filter the student population by grade before aggregation
+ *
+ * Note: `user.schoolName` filtering is deferred to a follow-up that fixes
+ * the overview + students + facets endpoints in one pass (per #1782 ticket
+ * rewrite). Aliased to `SCORE_OVERVIEW_FILTER_FIELDS` for now; split the
+ * alias when divergence becomes necessary.
+ */
+export const SCORE_FACETS_FILTER_FIELDS = SCORE_OVERVIEW_FILTER_FIELDS;
+
+export type ScoreFacetsFilterField = (typeof SCORE_FACETS_FILTER_FIELDS)[number];
+
+/**
+ * Query schema for the score facets endpoint.
+ * Combines scope and filter parameters. Not paginated — this is an aggregation.
+ */
+export const ScoreFacetsQuerySchema = ReportScopeQuerySchema.merge(createFilterQuerySchema(SCORE_FACETS_FILTER_FIELDS));
+
+export type ScoreFacetsQuery = z.infer<typeof ScoreFacetsQuerySchema>;
+
+/**
+ * Per-grade aggregation entry. Each entry covers students with a completed
+ * run for the task at the given grade. `grade` uses the raw `users.grade`
+ * representation (`Kindergarten`, `1`...`12`, etc.) — matches sibling
+ * endpoints so the frontend can join across them without remapping.
+ */
+const SupportLevelByGradeSchema = SupportLevelSchema.extend({
+  grade: z.string(),
+  totalAssessed: z.number().int(),
+});
+
+/**
+ * Per-school aggregation entry. `schoolName` is nullable because it is a
+ * derived field — see `ReportUserInfoSchema` for the precedent. The entry
+ * itself is always present when the school appears in the aggregation;
+ * the field is nullable for users whose org/class membership can't resolve
+ * a school name.
+ */
+const SupportLevelBySchoolSchema = SupportLevelSchema.extend({
+  schoolId: z.string().uuid(),
+  schoolName: z.string().nullable(),
+  totalAssessed: z.number().int(),
+});
+
+const ScoreBinSchema = z.object({
+  binStart: z.number(),
+  binEnd: z.number(),
+  count: z.number().int(),
+});
+
+const ScoreBinsByGradeSchema = z.object({
+  grade: z.string(),
+  rawScore: z.array(ScoreBinSchema),
+  percentile: z.array(ScoreBinSchema),
+});
+
+const ScoreBinsBySchoolSchema = z.object({
+  schoolId: z.string().uuid(),
+  schoolName: z.string().nullable(),
+  rawScore: z.array(ScoreBinSchema),
+  percentile: z.array(ScoreBinSchema),
+});
+
+/**
+ * Per-task aggregation. The `*BySchool` arrays are intentionally returned
+ * as empty arrays at non-district scope (the dashboard's school-facet
+ * toggle is district-only in the UI), not as null and not omitted — this
+ * keeps the contract shape stable and lets callers iterate without
+ * null-guarding.
+ */
+const TaskScoreFacetSchema = ReportTaskMetadataSchema.extend({
+  supportLevelByGrade: z.array(SupportLevelByGradeSchema),
+  supportLevelBySchool: z.array(SupportLevelBySchoolSchema),
+  scoreBinsByGrade: z.array(ScoreBinsByGradeSchema),
+  scoreBinsBySchool: z.array(ScoreBinsBySchoolSchema),
+});
+
+/**
+ * Response schema for score distribution facets endpoint
+ */
+export const ScoreFacetsResponseSchema = z.object({
+  totalStudents: z.number().int(),
+  tasks: z.array(TaskScoreFacetSchema),
+  /** Server timestamp when the aggregation was computed (ISO 8601) */
+  computedAt: z.string().datetime(),
+});

@@ -559,7 +559,7 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * - Supports optional computed score callback (not yet implemented)
  *
  * **Required trial data fields:**
- * - `assessmentStage`: ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, or ASSESSMENT_STAGE_TEST_RESPONSE
+ * - `assessmentStage` or `assessment_stage`: ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, or ASSESSMENT_STAGE_TEST_RESPONSE (supports both camelCase and snake_case for backward compatibility)
  * - `correct`: 1 (correct), 0 (incorrect), or boolean (true/false)
  *
  * **Optional trial data fields:**
@@ -574,7 +574,7 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  *
  * @throws {SDKError}
  * - If no active run exists (call appkit.startRun() first)
- * - If assessmentStage is missing or not a string
+ * - If assessmentStage (or assessment_stage) is missing or not a string
  * - If assessmentStage is not one of the valid values (ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, ASSESSMENT_STAGE_TEST_RESPONSE)
  * - If correct is missing or not a number/boolean
  * - If the backend request fails
@@ -629,8 +629,11 @@ export async function writeTrial(
 
   // Validate required fields to prevent silent failures
   const trialDataRecord = trialData as Record<string, unknown>;
-  if (typeof trialDataRecord['assessmentStage'] !== 'string') {
-    throw new SDKError('writeTrial requires assessmentStage in trial data.', {
+
+  // Support both camelCase (assessmentStage) and snake_case (assessment_stage) for backward compatibility
+  const assessmentStageValue = trialDataRecord['assessmentStage'] ?? trialDataRecord['assessment_stage'];
+  if (typeof assessmentStageValue !== 'string') {
+    throw new SDKError('writeTrial requires assessmentStage (or assessment_stage) in trial data.', {
       code: SdkErrorCode.WRITE_TRIAL_FAILED,
     });
   }
@@ -641,15 +644,15 @@ export async function writeTrial(
     ASSESSMENT_STAGE_TEST,
     ASSESSMENT_STAGE_TEST_RESPONSE,
   ] as const;
-  if (!validStages.includes(trialDataRecord['assessmentStage'] as (typeof validStages)[number])) {
+  if (!validStages.includes(assessmentStageValue as (typeof validStages)[number])) {
     throw new SDKError(
-      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${trialDataRecord['assessmentStage']}`,
+      `writeTrial requires assessmentStage to be one of: ${validStages.join(', ')}. Got: ${assessmentStageValue}`,
       {
         code: SdkErrorCode.WRITE_TRIAL_FAILED,
       },
     );
   }
-  const assessmentStage = trialDataRecord['assessmentStage'] as WriteTrialAssessmentStage;
+  const assessmentStage = assessmentStageValue as WriteTrialAssessmentStage;
 
   if (typeof trialDataRecord['correct'] !== 'number' && typeof trialDataRecord['correct'] !== 'boolean') {
     throw new SDKError('writeTrial requires correct in trial data.', {

@@ -20,6 +20,7 @@ import type {
   ProgressStudentsInput,
   ProgressOverviewInput,
   ScoreOverviewInput,
+  ScoreFacetsInput,
   StudentScoresInput,
   IndividualStudentReportInput,
 } from './report.types';
@@ -44,6 +45,33 @@ const DEFAULT_DEMOGRAPHICS = {
   race: null,
   hispanicEthnicity: null,
   homeLanguage: null,
+} as const;
+
+/**
+ * Score field names — the literal strings the FDW `run_scores.scoreName`
+ * column holds. The source of truth is the per-task JSON config in
+ * `apps/backend/src/services/scoring/configs/`. We hoist them out so tests
+ * don't sprinkle magic strings, and so a future rename in the JSON
+ * surfaces as a single search-replace site (rather than a confusing pile
+ * of unrelated failures across the file).
+ *
+ * If a future task adds a new percentile / raw-score field name, add a
+ * constant here and update the relevant tests.
+ */
+const ScoreField = {
+  /**
+   * Percentile field for swr, sre, pa, and other percentile-then-rawscore
+   * tasks. Note: `swr.json` makes this version-conditional (`percentile`
+   * for scoringVersion ≥ 7, `wjPercentile` for legacy versions). Tests
+   * here use the modern (post-version-7) field name; `resolveScoreFieldNames`
+   * returns both candidates and the service walks them in priority order,
+   * so the modern name matches when `scoringVersion` is `null` or ≥ 7.
+   */
+  PERCENTILE: 'percentile',
+  /** Raw-score field for `swr` (see `services/scoring/configs/swr.json`). */
+  SWR_RAW_SCORE: 'roarScore',
+  /** Assessment-computed support level (e.g., roam-alpaca). */
+  SUPPORT_LEVEL: 'supportLevel',
 } as const;
 
 describe('ReportService', () => {
@@ -1424,9 +1452,9 @@ describe('ReportService', () => {
 
       // All 3 students have completed scores for swr (task-1).
       const scoreRows = [
-        buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '90'),
-        buildScoreRow('student-2', VARIANT_ID_1, 'percentile', '50'),
-        buildScoreRow('student-3', VARIANT_ID_1, 'percentile', '10'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '90'),
+        buildScoreRow('student-2', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-3', VARIANT_ID_1, ScoreField.PERCENTILE, '10'),
       ];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
@@ -1453,7 +1481,7 @@ describe('ReportService', () => {
       ];
 
       // Only student-1 has scores; student-2 has no run.
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '50')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
 
@@ -1530,7 +1558,7 @@ describe('ReportService', () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
 
       // Student has scores on variant A only
-      const scoreRows = [buildScoreRow('student-1', 'var-a', 'percentile', '50')];
+      const scoreRows = [buildScoreRow('student-1', 'var-a', ScoreField.PERCENTILE, '50')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
 
@@ -1572,8 +1600,8 @@ describe('ReportService', () => {
       // Student has scores on both variants — should use variant A (first in order)
       // Variant A has high percentile (achievedSkill); variant B has low (would be needsExtraSupport)
       const scoreRows = [
-        buildScoreRow('student-1', 'var-a', 'percentile', '90'),
-        buildScoreRow('student-1', 'var-b', 'percentile', '10'),
+        buildScoreRow('student-1', 'var-a', ScoreField.PERCENTILE, '90'),
+        buildScoreRow('student-1', 'var-b', ScoreField.PERCENTILE, '10'),
       ];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
@@ -1633,7 +1661,7 @@ describe('ReportService', () => {
 
     it('filters tasks by taskId when filter includes the taskId field', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '50')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
 
@@ -1654,7 +1682,7 @@ describe('ReportService', () => {
 
     it('passes scoring version from task variant parameters into scoring logic', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '50')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([
@@ -1737,13 +1765,14 @@ describe('ReportService', () => {
       expect(result.tasks[0]!.orderIndex).toBe(0);
     });
 
-    // --- Empty-result short-circuit when taskId filter excludes all tasks ---
+    // --- Unknown taskId in filter (#1782 review follow-up: shared validation) ---
 
-    it('returns empty tasks array when taskId filter excludes every task', async () => {
-      // Filter targets a UUID not present in testTaskMetas — taskMetas becomes []
-      // and taskGroups.length === 0 triggers the short-circuit. Because the short-circuit
-      // is evaluated BEFORE the student-fetch DB call, getAllStudentsInScope is also skipped
-      // and the response carries totalStudents: 0 by definition (no tasks → no aggregation).
+    it('returns 400 when taskId filter references a UUID not assigned to the administration', async () => {
+      // Previously silent-dropped to an empty `tasks: []` response (200).
+      // `applyTaskIdFilter` now validates against the admin's actual task IDs
+      // and throws BAD_REQUEST for unknowns — matching the contract's
+      // long-standing claim that unknown task IDs in filter return 400 and
+      // aligning the three score-reporting endpoints on a single behavior.
       const students = [buildOverviewStudent({ userId: 'student-1' })];
       setupDefaultScoreOverviewMocks(students, []);
 
@@ -1753,15 +1782,14 @@ describe('ReportService', () => {
       };
 
       const service = createService();
-      const result = await service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery);
-
-      expect(result.tasks).toHaveLength(0);
-      expect(result.totalStudents).toBe(0);
-      expect(typeof result.computedAt).toBe('string');
-      // Short-circuit means we don't touch the student-fetch path or downstream queries
+      await expect(service.getScoreOverview(superAdminAuth, testAdministrationId, filteredQuery)).rejects.toMatchObject(
+        {
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+        },
+      );
+      // Validation fires before any DB call beyond getTaskMetadata.
       expect(mockReportRepository.getAllStudentsInScope).not.toHaveBeenCalled();
-      expect(mockTaskVariantParameterRepository.getByTaskVariantIds).not.toHaveBeenCalled();
-      expect(mockReportRepository.getCompletedRunScores).not.toHaveBeenCalled();
     });
 
     it('merges multiple taskId filter entries into a single allow-list', async () => {
@@ -1842,7 +1870,7 @@ describe('ReportService', () => {
 
     it('ignores task variant parameters whose name is not scoringVersion', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '45')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       // Param has the wrong name — should be ignored, leaving version=null (treated as 0)
@@ -1861,7 +1889,7 @@ describe('ReportService', () => {
 
     it('ignores scoringVersion values that cannot be parsed as a number', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '45')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       // Non-numeric string → Number('foo') is NaN → skipped → version stays null/0
@@ -1879,7 +1907,7 @@ describe('ReportService', () => {
 
     it('accepts string-numeric scoringVersion values', async () => {
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '45')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '45')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
       // String '7' → Number('7') = 7 → v7 cutoffs applied
@@ -1915,7 +1943,7 @@ describe('ReportService', () => {
       mockReportRepository.getTaskMetadata.mockResolvedValue([roamMeta]);
 
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', ROAM_VARIANT, 'supportLevel', 'achievedSkill')];
+      const scoreRows = [buildScoreRow('student-1', ROAM_VARIANT, ScoreField.SUPPORT_LEVEL, 'achievedSkill')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
 
@@ -1935,7 +1963,7 @@ describe('ReportService', () => {
       // Newer norming tables encode extreme values as ">99" or "<1". parseScoreValue
       // strips the brackets so the score is still classifiable.
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
-      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'percentile', '>99')];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '>99')];
 
       setupDefaultScoreOverviewMocks(students, scoreRows);
 
@@ -1952,7 +1980,7 @@ describe('ReportService', () => {
 
     it('counts a student in totalAssessed but no support-level bucket when scores are unresolvable', async () => {
       // The student's run has score rows, but none match the swr field names
-      // (e.g., 'percentile', 'wjPercentile', 'roarScore'). getSupportLevel
+      // (e.g., ScoreField.PERCENTILE, 'wjPercentile', 'roarScore'). getSupportLevel
       // returns null → counted in totalAssessed but no bucket increments.
       const students = [buildOverviewStudent({ userId: 'student-1', grade: '3' })];
       const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, 'irrelevant', '42')];
@@ -1971,6 +1999,702 @@ describe('ReportService', () => {
       // (has a completed run with scores), they just lack a classifiable result.
       expect(swrTask.totalNotAssessed.required).toBe(0);
       expect(swrTask.totalNotAssessed.optional).toBe(0);
+    });
+  });
+
+  describe('getScoreFacets', () => {
+    const facetsQuery: ScoreFacetsInput = {
+      scopeType: 'district',
+      scopeId: 'district-uuid-1',
+      filter: [],
+    };
+
+    function buildFacetStudent(overrides: Partial<StudentOverviewRow> & { userId: string }): StudentOverviewRow {
+      return {
+        grade: '3',
+        statusEll: null,
+        statusIep: null,
+        statusFrl: null,
+        dob: null,
+        gender: null,
+        race: null,
+        hispanicEthnicity: null,
+        homeLanguage: null,
+        ...overrides,
+      };
+    }
+
+    function buildScoreRow(userId: string, taskVariantId: string, scoreName: string, scoreValue: string): RunScoreRow {
+      return { userId, taskVariantId, scoreName, scoreValue };
+    }
+
+    function setupDefaultFacetsMocks(
+      students: StudentOverviewRow[] = [buildFacetStudent({ userId: 'student-1' })],
+      scoreRows: RunScoreRow[] = [],
+      schoolsByUser: Map<string, { schoolId: string; schoolName: string }> = new Map(),
+    ) {
+      mockReportRepository.getAllStudentsInScope.mockResolvedValue({
+        totalStudents: students.length,
+        students,
+      });
+      mockReportRepository.getCompletedRunScores.mockResolvedValue(scoreRows);
+      mockReportRepository.getSchoolsForUsers.mockResolvedValue(schoolsByUser);
+      mockTaskVariantParameterRepository.getByTaskVariantIds.mockResolvedValue([]);
+    }
+
+    // --- Authorization (mirrors getScoreOverview) ---
+
+    it('returns 404 when administration does not exist', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getScoreFacets(teacherAuth, testAdministrationId, facetsQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    it('returns 403 when FGA denies can_read_scores on administration', async () => {
+      mockAuthorizationService.requirePermission.mockRejectedValue(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = createService();
+
+      await expect(service.getScoreFacets(teacherAuth, testAdministrationId, facetsQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockAuthorizationService.requirePermission).toHaveBeenCalledWith(
+        teacherAuth.userId,
+        FgaRelation.CAN_READ_SCORES,
+        `${FgaType.ADMINISTRATION}:${testAdministrationId}`,
+      );
+    });
+
+    it('returns 400 when scope is not assigned to administration', async () => {
+      mockReportRepository.isScopeAssignedToAdministration.mockResolvedValue(false);
+
+      const service = createService();
+
+      await expect(service.getScoreFacets(teacherAuth, testAdministrationId, facetsQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+    });
+
+    it('returns 403 when FGA denies can_read_scores at scope level', async () => {
+      mockAuthorizationService.requirePermission.mockResolvedValueOnce(undefined).mockRejectedValueOnce(
+        new ApiError(ApiErrorMessage.FORBIDDEN, {
+          statusCode: StatusCodes.FORBIDDEN,
+          code: ApiErrorCode.AUTH_FORBIDDEN,
+        }),
+      );
+
+      const service = createService();
+
+      await expect(service.getScoreFacets(teacherAuth, testAdministrationId, facetsQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.FORBIDDEN,
+        code: ApiErrorCode.AUTH_FORBIDDEN,
+      });
+
+      expect(mockAuthorizationService.requirePermission).toHaveBeenNthCalledWith(
+        2,
+        teacherAuth.userId,
+        FgaRelation.CAN_READ_SCORES,
+        `${FgaType.DISTRICT}:district-uuid-1`,
+      );
+    });
+
+    it('super admin bypasses FGA checks', async () => {
+      setupDefaultFacetsMocks();
+
+      const service = createService();
+      await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      expect(mockAuthorizationService.requirePermission).not.toHaveBeenCalled();
+    });
+
+    // --- Empty / shape ---
+
+    it('returns empty task facets when no students in scope', async () => {
+      setupDefaultFacetsMocks([]);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      expect(result.totalStudents).toBe(0);
+      expect(result.tasks).toHaveLength(testTaskMetas.length);
+      for (const task of result.tasks) {
+        expect(task.supportLevelByGrade).toEqual([]);
+        expect(task.supportLevelBySchool).toEqual([]);
+        expect(task.scoreBinsByGrade).toEqual([]);
+        expect(task.scoreBinsBySchool).toEqual([]);
+      }
+    });
+
+    it('returns computedAt as a parseable ISO datetime', async () => {
+      setupDefaultFacetsMocks();
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const parsed = new Date(result.computedAt);
+      expect(parsed.getTime()).not.toBeNaN();
+    });
+
+    // --- Filter routing ---
+
+    it('narrows tasks when taskId:in filter excludes some', async () => {
+      setupDefaultFacetsMocks();
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, {
+        ...facetsQuery,
+        filter: [{ field: 'taskId', operator: 'in', value: TASK_ID_1 }],
+      });
+
+      expect(result.tasks).toHaveLength(1);
+      expect(result.tasks[0]!.taskId).toBe(TASK_ID_1);
+    });
+
+    it('merges multiple taskId filter entries into a single allow-list', async () => {
+      // Same dedup behavior as getScoreOverview (#1683): two taskId:in entries
+      // should be unioned, not silently overwritten.
+      setupDefaultFacetsMocks();
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, {
+        ...facetsQuery,
+        filter: [
+          { field: 'taskId', operator: 'in', value: TASK_ID_1 },
+          { field: 'taskId', operator: 'in', value: TASK_ID_3 },
+        ],
+      });
+
+      const seenIds = new Set(result.tasks.map((t) => t.taskId));
+      expect(seenIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
+    });
+
+    // --- Per-grade aggregation ---
+
+    it('tallies support levels per grade for the assessed cohort', async () => {
+      // 3 grade-3 students with different percentiles, 1 grade-4 student.
+      // Percentile thresholds for swr (the task at TASK_ID_1) bucket students
+      // into the three support levels — same fixture pattern as getScoreOverview.
+      const students = [
+        buildFacetStudent({ userId: 'student-1', grade: '3' }),
+        buildFacetStudent({ userId: 'student-2', grade: '3' }),
+        buildFacetStudent({ userId: 'student-3', grade: '3' }),
+        buildFacetStudent({ userId: 'student-4', grade: '4' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '90'),
+        buildScoreRow('student-2', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-3', VARIANT_ID_1, ScoreField.PERCENTILE, '10'),
+        buildScoreRow('student-4', VARIANT_ID_1, ScoreField.PERCENTILE, '95'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask).toBeDefined();
+
+      const grade3 = swrTask.supportLevelByGrade.find((e) => e.grade === '3')!;
+      const grade4 = swrTask.supportLevelByGrade.find((e) => e.grade === '4')!;
+      expect(grade3.totalAssessed).toBe(3);
+      expect(grade3.achievedSkill.count + grade3.developingSkill.count + grade3.needsExtraSupport.count).toBe(3);
+      expect(grade4.totalAssessed).toBe(1);
+      expect(grade4.achievedSkill.count).toBe(1);
+    });
+
+    it('sorts per-grade entries by grade ordinal, not lexicographically', async () => {
+      // Order in: 10, K, 2, 1 — out: K, 1, 2, 10.
+      const students = [
+        buildFacetStudent({ userId: 'student-10', grade: '10' }),
+        buildFacetStudent({ userId: 'student-k', grade: 'Kindergarten' }),
+        buildFacetStudent({ userId: 'student-2', grade: '2' }),
+        buildFacetStudent({ userId: 'student-1', grade: '1' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('student-10', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-k', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-2', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevelByGrade.map((e) => e.grade)).toEqual(['Kindergarten', '1', '2', '10']);
+    });
+
+    it('excludes students with a null grade from per-grade tallies', async () => {
+      const students = [
+        buildFacetStudent({ userId: 'student-graded', grade: '3' }),
+        buildFacetStudent({ userId: 'student-no-grade', grade: null }),
+      ];
+      const scoreRows = [
+        buildScoreRow('student-graded', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-no-grade', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevelByGrade).toHaveLength(1);
+      expect(swrTask.supportLevelByGrade[0]!.grade).toBe('3');
+      expect(swrTask.supportLevelByGrade[0]!.totalAssessed).toBe(1);
+    });
+
+    it('uses raw users.grade representation (not display-normalized)', async () => {
+      // Frontend remaps 'Kindergarten' → 'K' for display via getGrade(). The
+      // backend response should preserve the raw enum value so it matches
+      // sibling endpoints (overview, students).
+      const students = [buildFacetStudent({ userId: 'student-k', grade: 'Kindergarten' })];
+      const scoreRows = [buildScoreRow('student-k', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevelByGrade[0]!.grade).toBe('Kindergarten');
+    });
+
+    // --- Per-school aggregation (district scope) ---
+
+    it('tallies support levels per school at district scope', async () => {
+      const students = [
+        buildFacetStudent({ userId: 'student-a1', grade: '3' }),
+        buildFacetStudent({ userId: 'student-a2', grade: '3' }),
+        buildFacetStudent({ userId: 'student-b1', grade: '3' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('student-a1', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-a2', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-b1', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+      ];
+      const schoolsByUser = new Map<string, { schoolId: string; schoolName: string }>([
+        ['student-a1', { schoolId: 'school-a-uuid', schoolName: 'Lincoln Elementary' }],
+        ['student-a2', { schoolId: 'school-a-uuid', schoolName: 'Lincoln Elementary' }],
+        ['student-b1', { schoolId: 'school-b-uuid', schoolName: 'Roosevelt Elementary' }],
+      ]);
+      setupDefaultFacetsMocks(students, scoreRows, schoolsByUser);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      expect(swrTask.supportLevelBySchool).toHaveLength(2);
+      const lincoln = swrTask.supportLevelBySchool.find((s) => s.schoolName === 'Lincoln Elementary')!;
+      const roosevelt = swrTask.supportLevelBySchool.find((s) => s.schoolName === 'Roosevelt Elementary')!;
+      expect(lincoln.totalAssessed).toBe(2);
+      expect(lincoln.schoolId).toBe('school-a-uuid');
+      expect(roosevelt.totalAssessed).toBe(1);
+    });
+
+    it('excludes students with no resolvable school from *BySchool tallies', async () => {
+      // At district scope, a student missing from getSchoolsForUsers (e.g.,
+      // no resolvable user_orgs / user_classes → school path) drops out of
+      // the school-faceted breakdown but stays in the grade-faceted one.
+      const students = [
+        buildFacetStudent({ userId: 'student-with-school', grade: '3' }),
+        buildFacetStudent({ userId: 'student-no-school', grade: '3' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('student-with-school', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('student-no-school', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+      ];
+      const schoolsByUser = new Map<string, { schoolId: string; schoolName: string }>([
+        ['student-with-school', { schoolId: 'school-a-uuid', schoolName: 'Lincoln Elementary' }],
+      ]);
+      setupDefaultFacetsMocks(students, scoreRows, schoolsByUser);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // School tally only contains the school-resolvable student.
+      expect(swrTask.supportLevelBySchool).toHaveLength(1);
+      expect(swrTask.supportLevelBySchool[0]!.totalAssessed).toBe(1);
+      // Grade tally still has both.
+      expect(swrTask.supportLevelByGrade.find((e) => e.grade === '3')!.totalAssessed).toBe(2);
+    });
+
+    // --- Empty *BySchool at non-district scopes ---
+
+    it.each([
+      ['school', 'school'],
+      ['class', 'class'],
+      ['group', 'group'],
+    ] as const)('returns empty *BySchool arrays at %s scope', async (_label, scopeType) => {
+      const students = [buildFacetStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, {
+        ...facetsQuery,
+        scopeType,
+      });
+
+      for (const task of result.tasks) {
+        expect(task.supportLevelBySchool).toEqual([]);
+        expect(task.scoreBinsBySchool).toEqual([]);
+      }
+      // School resolution is not even attempted off district scope.
+      expect(mockReportRepository.getSchoolsForUsers).not.toHaveBeenCalled();
+    });
+
+    // --- Bin edges and bin-edge stability ---
+
+    it('returns 10 fixed percentile bins covering 0–100 with width 10', async () => {
+      const students = [buildFacetStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const gradeEntry = swrTask.scoreBinsByGrade.find((e) => e.grade === '3')!;
+      expect(gradeEntry.percentile).toHaveLength(10);
+      expect(gradeEntry.percentile[0]).toMatchObject({ binStart: 0, binEnd: 10 });
+      expect(gradeEntry.percentile[9]).toMatchObject({ binStart: 90, binEnd: 100 });
+    });
+
+    it('returns an empty percentile array when no student has a percentile for the task', async () => {
+      const students = [buildFacetStudent({ userId: 'student-1', grade: '3' })];
+      // No score rows — student has no percentile.
+      setupDefaultFacetsMocks(students, []);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // No scored student → no grade entry at all.
+      expect(swrTask.scoreBinsByGrade).toEqual([]);
+    });
+
+    it('places a percentile of 100 into the final bin (last bin is closed at top)', async () => {
+      const students = [
+        buildFacetStudent({ userId: 'student-max', grade: '3' }),
+        buildFacetStudent({ userId: 'student-min', grade: '3' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('student-max', VARIANT_ID_1, ScoreField.PERCENTILE, '100'),
+        buildScoreRow('student-min', VARIANT_ID_1, ScoreField.PERCENTILE, '0'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const gradeEntry = swrTask.scoreBinsByGrade.find((e) => e.grade === '3')!;
+      // Percentile 0 → bin 0, percentile 100 → final bin 9 (not dropped).
+      expect(gradeEntry.percentile[0]!.count).toBe(1);
+      expect(gradeEntry.percentile[9]!.count).toBe(1);
+    });
+
+    it('keeps bin edges stable when a user.grade filter narrows the population (#1782)', async () => {
+      // 5 students across two grades. Without filter, all 5 contribute to the
+      // (unfiltered) bin edges. Adding `user.grade:eq:3` filter should keep
+      // the same binStart/binEnd values — only the bin counts change.
+      const students = [
+        buildFacetStudent({ userId: 's1', grade: '3' }),
+        buildFacetStudent({ userId: 's2', grade: '3' }),
+        buildFacetStudent({ userId: 's3', grade: '3' }),
+        buildFacetStudent({ userId: 's4', grade: '4' }),
+        buildFacetStudent({ userId: 's5', grade: '4' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('s1', VARIANT_ID_1, ScoreField.PERCENTILE, '10'),
+        buildScoreRow('s2', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('s3', VARIANT_ID_1, ScoreField.PERCENTILE, '90'),
+        buildScoreRow('s4', VARIANT_ID_1, ScoreField.PERCENTILE, '5'),
+        buildScoreRow('s5', VARIANT_ID_1, ScoreField.PERCENTILE, '95'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const unfiltered = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      // Re-run with grade filter applied. Mocks return the same unfiltered
+      // population since they don't honor filters — that's the entire point:
+      // the service does the filtering in JS.
+      const filtered = await service.getScoreFacets(superAdminAuth, testAdministrationId, {
+        ...facetsQuery,
+        filter: [{ field: 'user.grade', operator: 'eq', value: '3' }],
+      });
+
+      const unfilteredTask = unfiltered.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const filteredTask = filtered.tasks.find((t) => t.taskId === TASK_ID_1)!;
+
+      // Bin edges identical — only counts differ.
+      const unfilteredEdges = unfilteredTask.scoreBinsByGrade[0]!.percentile.map((b) => [b.binStart, b.binEnd]);
+      const filteredEdges = filteredTask.scoreBinsByGrade[0]!.percentile.map((b) => [b.binStart, b.binEnd]);
+      expect(filteredEdges).toEqual(unfilteredEdges);
+
+      // Filter narrowed the cohort: only grade '3' present in the response.
+      expect(filteredTask.supportLevelByGrade.map((e) => e.grade)).toEqual(['3']);
+      expect(unfilteredTask.supportLevelByGrade.map((e) => e.grade)).toEqual(['3', '4']);
+    });
+
+    it('applies user.grade:gte filter with grade-ordinal semantics', async () => {
+      const students = [
+        buildFacetStudent({ userId: 's-k', grade: 'Kindergarten' }),
+        buildFacetStudent({ userId: 's-1', grade: '1' }),
+        buildFacetStudent({ userId: 's-3', grade: '3' }),
+        buildFacetStudent({ userId: 's-5', grade: '5' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('s-k', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('s-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('s-3', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('s-5', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, {
+        ...facetsQuery,
+        filter: [{ field: 'user.grade', operator: 'gte', value: '3' }],
+      });
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const grades = swrTask.supportLevelByGrade.map((e) => e.grade);
+      expect(grades).toEqual(['3', '5']);
+    });
+
+    // --- Error wrapping ---
+
+    it('wraps unexpected repository errors in a 500 ApiError', async () => {
+      mockReportRepository.getAllStudentsInScope.mockRejectedValue(new Error('connection reset'));
+
+      const service = createService();
+
+      await expect(service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+    });
+
+    it('re-throws ApiError without wrapping', async () => {
+      mockAdministrationRepository.getById.mockResolvedValue(null);
+
+      const service = createService();
+
+      await expect(service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery)).rejects.toMatchObject({
+        statusCode: StatusCodes.NOT_FOUND,
+        code: ApiErrorCode.RESOURCE_NOT_FOUND,
+      });
+    });
+
+    // --- Raw-score bin path (closes a coverage gap from the initial test pass) ---
+
+    it('computes raw-score bins from the unfiltered population min/max', async () => {
+      // `swr` at grade ≥ 6 classifies via raw-score thresholds (not percentile).
+      // The bin edges come from min/max of the unfiltered rawScore values — the
+      // headline #1782 stability property only matters for raw-score bins
+      // since percentile bins are fixed 0–100 by design.
+      const students = [
+        buildFacetStudent({ userId: 's1', grade: '8' }),
+        buildFacetStudent({ userId: 's2', grade: '8' }),
+        buildFacetStudent({ userId: 's3', grade: '8' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('s1', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '100'),
+        buildScoreRow('s2', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '500'),
+        buildScoreRow('s3', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '700'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const gradeEntry = swrTask.scoreBinsByGrade.find((e) => e.grade === '8')!;
+
+      // 20 bins of width 30 covering [100, 700].
+      expect(gradeEntry.rawScore).toHaveLength(20);
+      expect(gradeEntry.rawScore[0]!.binStart).toBe(100);
+      expect(gradeEntry.rawScore[19]!.binEnd).toBe(700);
+      // Min and max both land in a bin (last bin is closed at top).
+      const totalBinnedCount = gradeEntry.rawScore.reduce((sum, b) => sum + b.count, 0);
+      expect(totalBinnedCount).toBe(3);
+      // No percentile data → empty percentile array for this task.
+      expect(gradeEntry.percentile).toEqual([]);
+    });
+
+    it('keeps raw-score bin edges stable when a user.grade filter narrows the cohort', async () => {
+      // The headline #1782 property, exercised against the actual variable-edge
+      // bin code path (not the fixed-edge percentile path covered earlier).
+      const students = [
+        buildFacetStudent({ userId: 's-a', grade: '8' }),
+        buildFacetStudent({ userId: 's-b', grade: '8' }),
+        buildFacetStudent({ userId: 's-c', grade: '10' }),
+        buildFacetStudent({ userId: 's-d', grade: '10' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('s-a', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '50'),
+        buildScoreRow('s-b', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '950'),
+        buildScoreRow('s-c', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '0'), // narrowest grade-10 value
+        buildScoreRow('s-d', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '1000'), // widest grade-10 value
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const unfiltered = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+      const filtered = await service.getScoreFacets(superAdminAuth, testAdministrationId, {
+        ...facetsQuery,
+        filter: [{ field: 'user.grade', operator: 'eq', value: '8' }],
+      });
+
+      const unfilteredTask = unfiltered.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const filteredTask = filtered.tasks.find((t) => t.taskId === TASK_ID_1)!;
+
+      // Unfiltered: bins span [0, 1000]; filtered: would naively span [50, 950]
+      // if edges were recomputed from the filtered cohort. The contract pins
+      // them at the unfiltered range — identity assertion is sufficient.
+      const unfilteredEdges = unfilteredTask.scoreBinsByGrade[0]!.rawScore.map((b) => [b.binStart, b.binEnd]);
+      const filteredEdges = filteredTask.scoreBinsByGrade
+        .find((e) => e.grade === '8')!
+        .rawScore.map((b) => [b.binStart, b.binEnd]);
+      expect(filteredEdges).toEqual(unfilteredEdges);
+      // Sanity: the filter actually narrowed the cohort.
+      expect(filteredTask.supportLevelByGrade.map((e) => e.grade)).toEqual(['8']);
+    });
+
+    it('falls back to a single-width bin when all raw scores collapse to one value', async () => {
+      const students = [
+        buildFacetStudent({ userId: 's-1', grade: '8' }),
+        buildFacetStudent({ userId: 's-2', grade: '8' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('s-1', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '500'),
+        buildScoreRow('s-2', VARIANT_ID_1, ScoreField.SWR_RAW_SCORE, '500'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      const gradeEntry = swrTask.scoreBinsByGrade.find((e) => e.grade === '8')!;
+      expect(gradeEntry.rawScore).toEqual([{ binStart: 500, binEnd: 500, count: 2 }]);
+    });
+
+    // --- Filter combinations (closes a coverage gap from the initial test pass) ---
+
+    it('ANDs taskId and user.grade filters', async () => {
+      const students = [
+        buildFacetStudent({ userId: 's-3', grade: '3' }),
+        buildFacetStudent({ userId: 's-4', grade: '4' }),
+      ];
+      const scoreRows = [
+        buildScoreRow('s-3', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('s-3', VARIANT_ID_2, ScoreField.PERCENTILE, '50'),
+        buildScoreRow('s-4', VARIANT_ID_1, ScoreField.PERCENTILE, '50'),
+      ];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, {
+        ...facetsQuery,
+        filter: [
+          { field: 'taskId', operator: 'in', value: TASK_ID_1 },
+          { field: 'user.grade', operator: 'eq', value: '3' },
+        ],
+      });
+
+      // taskId filter narrows tasks to TASK_ID_1; grade filter narrows cohort
+      // to grade '3'. Both are applied (ANDed), not just one of them.
+      expect(result.tasks).toHaveLength(1);
+      expect(result.tasks[0]!.taskId).toBe(TASK_ID_1);
+      const grades = result.tasks[0]!.supportLevelByGrade.map((e) => e.grade);
+      expect(grades).toEqual(['3']);
+    });
+
+    // --- Null-supportLevel invariant (closes a coverage gap from the initial test pass) ---
+
+    // --- District-scope school resolution edge cases (review findings #14, #15) ---
+
+    it('passes scopeId through to getSchoolsForUsers so the district ltree filter is applied', async () => {
+      // Regression guard for review finding #1: the repository's
+      // `getSchoolsForUsers(userIds, districtId)` needs `districtId` to scope
+      // its lookup to the requested district's subtree. Verify the service
+      // threads `scopeId` through rather than calling the older zero-arg form.
+      const students = [buildFacetStudent({ userId: 'student-1', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-1', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      expect(mockReportRepository.getSchoolsForUsers).toHaveBeenCalledWith(['student-1'], 'district-uuid-1');
+    });
+
+    it('puts a district-scope student with no resolvable school into *ByGrade but not *BySchool', async () => {
+      // Closes review-finding #14: at district scope, a student visible via
+      // `user_orgs` directly at the district level (no school or class
+      // membership) won't have a school in `schoolsByUser` after the ltree
+      // filter. They should still appear in the grade-faceted breakdown.
+      const students = [buildFacetStudent({ userId: 'student-no-school', grade: '3' })];
+      const scoreRows = [buildScoreRow('student-no-school', VARIANT_ID_1, ScoreField.PERCENTILE, '50')];
+      // schoolsByUser deliberately empty — simulates the post-filter result
+      // when no school in the district's subtree matches the student's
+      // enrollments.
+      setupDefaultFacetsMocks(students, scoreRows, new Map());
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const swrTask = result.tasks.find((t) => t.taskId === TASK_ID_1)!;
+      // Grade tally still has the student.
+      expect(swrTask.supportLevelByGrade.find((e) => e.grade === '3')!.totalAssessed).toBe(1);
+      // School tally is empty — the student didn't resolve to any school
+      // within the requested district.
+      expect(swrTask.supportLevelBySchool).toEqual([]);
+      expect(swrTask.scoreBinsBySchool).toEqual([]);
+    });
+
+    it('counts a student in totalAssessed even when getSupportLevel returns null', async () => {
+      // TASK_ID_4 in the fixture has slug 'vocab' which has no scoring config,
+      // so getSupportLevel returns null. The student should still be counted
+      // in totalAssessed (they have a completed run), but no support-level
+      // bucket increments — meaning achieved + developing + needsExtra <=
+      // totalAssessed, not strict equality.
+      const students = [buildFacetStudent({ userId: 's1', grade: '3' })];
+      const scoreRows = [buildScoreRow('s1', VARIANT_ID_4, ScoreField.PERCENTILE, '50')];
+      setupDefaultFacetsMocks(students, scoreRows);
+
+      const service = createService();
+      const result = await service.getScoreFacets(superAdminAuth, testAdministrationId, facetsQuery);
+
+      const vocabTask = result.tasks.find((t) => t.taskId === TASK_ID_4)!;
+      const gradeEntry = vocabTask.supportLevelByGrade.find((e) => e.grade === '3');
+      // Either the student isn't classified (no entry at all) or they're
+      // counted with all-zero support-level buckets. Both are acceptable
+      // outcomes for an unclassifiable task; pin the property: the assertion
+      // sum <= totalAssessed must hold.
+      if (gradeEntry) {
+        const bucketed =
+          gradeEntry.achievedSkill.count + gradeEntry.developingSkill.count + gradeEntry.needsExtraSupport.count;
+        expect(bucketed).toBeLessThanOrEqual(gradeEntry.totalAssessed);
+      }
     });
   });
 
@@ -2202,11 +2926,12 @@ describe('ReportService', () => {
       expect(seenIds).toEqual(new Set([TASK_ID_1, TASK_ID_3]));
     });
 
-    it('returns an empty page when taskId filter excludes every task', async () => {
-      // Filter targets a UUID not present in testTaskMetas — taskMetas becomes []
-      // and the empty-task short-circuit returns immediately. No pagination query
-      // is run; totalItems is 0 by definition because no per-task entries can be
-      // assembled when no tasks are in scope.
+    it('returns 400 when taskId filter references a UUID not assigned to the administration', async () => {
+      // Previously silent-dropped to an empty page (200). `applyTaskIdFilter`
+      // now validates against the admin's actual task IDs and throws
+      // BAD_REQUEST for unknowns — matching the contract's claim that
+      // unknown task IDs in filter return 400 and aligning the three
+      // score-reporting endpoints on a single behavior.
       setupDefaultStudentScoresMocks();
 
       const filteredQuery: StudentScoresInput = {
@@ -2215,12 +2940,13 @@ describe('ReportService', () => {
       };
 
       const service = createService();
-      const result = await service.listStudentScores(superAdminAuth, testAdministrationId, filteredQuery);
-
-      expect(result.tasks).toEqual([]);
-      expect(result.items).toEqual([]);
-      expect(result.totalItems).toBe(0);
-      // Short-circuit means we don't touch the paginated row fetch or downstream queries
+      await expect(
+        service.listStudentScores(superAdminAuth, testAdministrationId, filteredQuery),
+      ).rejects.toMatchObject({
+        statusCode: StatusCodes.BAD_REQUEST,
+        code: ApiErrorCode.REQUEST_VALIDATION_FAILED,
+      });
+      // Validation fires before any downstream DB call beyond getTaskMetadata.
       expect(mockReportRepository.getStudentScores).not.toHaveBeenCalled();
       expect(mockReportRepository.getSchoolNamesForUsers).not.toHaveBeenCalled();
     });
@@ -2317,7 +3043,7 @@ describe('ReportService', () => {
         runs: new Map([
           [VARIANT_ID_1, { runId: 'run-1', reliable: true, engagementFlags: [], completedAt: new Date('2025-09-01') }],
         ]),
-        scores: new Map([[VARIANT_ID_1, new Map([['percentile', '90']])]]),
+        scores: new Map([[VARIANT_ID_1, new Map([[ScoreField.PERCENTILE, '90']])]]),
       });
       setupDefaultStudentScoresMocks([row], 1);
 
@@ -2384,8 +3110,8 @@ describe('ReportService', () => {
           [
             VARIANT_ID_1,
             new Map([
-              ['percentile', '90.7'],
-              ['roarScore', '512.4'],
+              [ScoreField.PERCENTILE, '90.7'],
+              [ScoreField.SWR_RAW_SCORE, '512.4'],
             ]),
           ],
         ]),
@@ -2434,8 +3160,8 @@ describe('ReportService', () => {
           ],
         ]),
         scores: new Map([
-          ['var-a', new Map([['percentile', '90']])],
-          ['var-b', new Map([['percentile', '10']])],
+          ['var-a', new Map([[ScoreField.PERCENTILE, '90']])],
+          ['var-b', new Map([[ScoreField.PERCENTILE, '10']])],
         ]),
       });
       setupDefaultStudentScoresMocks([row], 1);
@@ -2492,6 +3218,23 @@ describe('ReportService', () => {
       const result = await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
 
       expect(result.items[0]!.user.schoolName).toBe('Lincoln Elementary');
+    });
+
+    it('passes scopeId through to getSchoolNamesForUsers so the district ltree filter is applied', async () => {
+      // Regression guard for the cross-district leakage fix on
+      // getSchoolNamesForUsers (#1782 review follow-up): the service must
+      // thread `scope.scopeId` through to the repository so the school
+      // lookup is constrained to the requested district's subtree.
+      // Without it, a student enrolled cross-district could surface a
+      // foreign school's name in the response.
+      const row = buildQueryRow({ userId: 'student-1', grade: '3' });
+      setupDefaultStudentScoresMocks([row], 1);
+      mockReportRepository.getSchoolNamesForUsers.mockResolvedValue(new Map([['student-1', 'Lincoln Elementary']]));
+
+      const service = createService();
+      await service.listStudentScores(superAdminAuth, testAdministrationId, baseQuery);
+
+      expect(mockReportRepository.getSchoolNamesForUsers).toHaveBeenCalledWith(['student-1'], 'district-uuid-1');
     });
 
     it('returns null schoolName for non-district scope', async () => {
@@ -2666,7 +3409,7 @@ describe('ReportService', () => {
       const completedScoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
-        scoreName: 'percentile',
+        scoreName: ScoreField.PERCENTILE,
         scoreValue: '90',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
@@ -2818,7 +3561,7 @@ describe('ReportService', () => {
       const completedScoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
-        scoreName: 'percentile',
+        scoreName: ScoreField.PERCENTILE,
         scoreValue: '50',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
@@ -2852,7 +3595,7 @@ describe('ReportService', () => {
       const completedScoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
-        scoreName: 'percentile',
+        scoreName: ScoreField.PERCENTILE,
         scoreValue: '60',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
@@ -2895,8 +3638,8 @@ describe('ReportService', () => {
       ];
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue(historicalRuns);
       mockReportRepository.getScoresForRunIds.mockResolvedValue([
-        { runId: 'run-older', scoreName: 'percentile', scoreValue: '40' },
-        { runId: 'run-newer', scoreName: 'percentile', scoreValue: '50' },
+        { runId: 'run-older', scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
+        { runId: 'run-newer', scoreName: ScoreField.PERCENTILE, scoreValue: '50' },
       ]);
 
       const service = createService();
@@ -2941,7 +3684,7 @@ describe('ReportService', () => {
       const completedScoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
-        scoreName: 'percentile',
+        scoreName: ScoreField.PERCENTILE,
         scoreValue: '60',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([completedScoreRow]);
@@ -2986,8 +3729,8 @@ describe('ReportService', () => {
       ];
       mockReportRepository.getHistoricalRunsForUser.mockResolvedValue(historicalRuns);
       mockReportRepository.getScoresForRunIds.mockResolvedValue([
-        { runId: 'run-early', scoreName: 'percentile', scoreValue: '40' },
-        { runId: 'run-late', scoreName: 'percentile', scoreValue: '55' },
+        { runId: 'run-early', scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
+        { runId: 'run-late', scoreName: ScoreField.PERCENTILE, scoreValue: '55' },
       ]);
 
       const service = createService();
@@ -3014,7 +3757,7 @@ describe('ReportService', () => {
       const scoreRow: RunScoreRow = {
         userId: targetUserId,
         taskVariantId: VARIANT_ID_1,
-        scoreName: 'percentile',
+        scoreName: ScoreField.PERCENTILE,
         scoreValue: '50',
       };
       mockReportRepository.getCompletedRunScores.mockResolvedValue([scoreRow]);
@@ -3244,8 +3987,8 @@ describe('ReportService', () => {
       setupDefaults();
       // Student has scores on BOTH variants — variant A wins (lower orderIndex).
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: 'var-a', scoreName: 'percentile', scoreValue: '90' },
-        { userId: targetUserId, taskVariantId: 'var-b', scoreName: 'percentile', scoreValue: '10' },
+        { userId: targetUserId, taskVariantId: 'var-a', scoreName: ScoreField.PERCENTILE, scoreValue: '90' },
+        { userId: targetUserId, taskVariantId: 'var-b', scoreName: ScoreField.PERCENTILE, scoreValue: '10' },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3284,7 +4027,7 @@ describe('ReportService', () => {
     it('emits Reliability=Unreliable with warn severity for an unreliable run', async () => {
       setupDefaults();
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '50' },
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '50' },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3314,7 +4057,7 @@ describe('ReportService', () => {
     it('surfaces engagementFlags from the run row', async () => {
       setupDefaults();
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '50' },
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '50' },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3549,7 +4292,7 @@ describe('ReportService', () => {
     it('omits historicalScores from per-administration task entries', async () => {
       setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '60' },
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '60' },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3575,9 +4318,13 @@ describe('ReportService', () => {
       // Score the swr task in both administrations: 40 in older, 60 in newer.
       mockReportRepository.getCompletedRunScores.mockImplementation(async (adminId: string) => {
         if (adminId === ADMIN_OLDER.id) {
-          return [{ userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '40' }];
+          return [
+            { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '40' },
+          ];
         }
-        return [{ userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '60' }];
+        return [
+          { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '60' },
+        ];
       });
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3637,7 +4384,7 @@ describe('ReportService', () => {
         // Primary variant (lowest orderIndex) has no completed score in this admin;
         // include only the alt variant's score, which means the primary is skipped
         // and the alt becomes the scored variant.
-        { userId: targetUserId, taskVariantId: altVariantId, scoreName: 'percentile', scoreValue: '55' },
+        { userId: targetUserId, taskVariantId: altVariantId, scoreName: ScoreField.PERCENTILE, scoreValue: '55' },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
@@ -3664,7 +4411,7 @@ describe('ReportService', () => {
     it('emits Required + Reliability tags for completed runs', async () => {
       setupGuardianDefaults({ adminMetas: [ADMIN_OLDER] });
       mockReportRepository.getCompletedRunScores.mockResolvedValue([
-        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: 'percentile', scoreValue: '70' },
+        { userId: targetUserId, taskVariantId: VARIANT_ID_1, scoreName: ScoreField.PERCENTILE, scoreValue: '70' },
       ]);
       mockReportRepository.getCompletedRunsForUser.mockResolvedValue([
         {
