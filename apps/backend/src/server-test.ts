@@ -120,9 +120,7 @@ function collectSeedableUsers(fixture: BaseFixture): SeedableEmulatorUser[] {
   return CYPRESS_FIXTURE_USER_KEYS.map((key) => {
     const user = fixture[key];
     if (!user.authId) {
-      throw new Error(
-        `[server-test] Fixture user "${key}" has no authId — cannot seed Firebase Auth emulator`,
-      );
+      throw new Error(`[server-test] Fixture user "${key}" has no authId — cannot seed Firebase Auth emulator`);
     }
     return {
       authId: user.authId,
