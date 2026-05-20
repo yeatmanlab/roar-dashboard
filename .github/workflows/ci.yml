@@ -189,13 +189,6 @@ jobs:
       FGA_API_URL: http://127.0.0.1:8080
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
       GCLOUD_PROJECT: demo-roar-test
-      # Absolute path to the FGA authorization-model DSL. The default in
-      # `apps/backend/src/test-support/fga/index.ts` is
-      # `path.resolve(__dirname, '../../../../../packages/authz/authorization-model.fga')`,
-      # which works from the TypeScript source layout but climbs out of
-      # the repo when `__dirname` is the bundled `apps/backend/dist/` dir.
-      # Set the env var explicitly so the FGA seeder bypasses that fallback.
-      AUTHZ_MODEL_PATH: ${{ github.workspace }}/packages/authz/authorization-model.fga
       # The dashboard bakes these into its bundle at build time; both the
       # dashboard and the Cypress helper read them at runtime.
       VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000
@@ -249,17 +242,8 @@ jobs:
         run: BUILD_TEST_SERVER=true npx turbo build --filter=roar-backend
 
       - name: Start backend server-test
-        # `runMigrations()` in test-support/db/migrate.ts uses
-        # `migrationsFolder: './migrations/core'` — a cwd-relative path.
-        # The vitest integration tests work because they run from
-        # `apps/backend/`; running the bundled `dist/server-test.js`
-        # from the repo root would resolve to `<repo>/migrations/core`,
-        # which doesn't exist. cd into apps/backend so the relative
-        # paths line up. `AUTHZ_MODEL_PATH` is set absolutely at the
-        # job level, so it's unaffected by this change of cwd.
-        working-directory: apps/backend
         run: |
-          node dist/server-test.js &
+          node apps/backend/dist/server-test.js &
           # server-test.ts seeds Postgres + OpenFGA + the Firebase Auth
           # emulator before binding to port 4000, so a successful TCP
           # connect is sufficient proof of full readiness.
