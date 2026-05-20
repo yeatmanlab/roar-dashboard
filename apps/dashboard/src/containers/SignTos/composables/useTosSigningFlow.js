@@ -1,7 +1,6 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth';
+import useCurrentUser from '@/composables/useCurrentUser';
 
 const FALLBACK_LOCALE = 'en-US';
 
@@ -47,7 +46,7 @@ function pickVersionForLocale(versions, currentLocale) {
  * Orchestrates the TOS signing flow for the SignTos container.
  *
  * Exposes:
- *   - `unsignedAgreements`: ref to the raw list from `meData`.
+ *   - `unsignedAgreements`: ref to the raw list from `/me`.
  *   - `currentAgreement`: the next unsigned agreement to display (the first
  *     element of `unsignedAgreements`, or `null` if the list is empty).
  *   - `selectedVersion`: the version of `currentAgreement` whose locale best
@@ -61,11 +60,8 @@ function pickVersionForLocale(versions, currentLocale) {
  * navigates to the originally-requested route (or home).
  */
 export function useTosSigningFlow() {
-  const authStore = useAuthStore();
-  const { meData } = storeToRefs(authStore);
+  const { unsignedAgreements } = useCurrentUser();
   const i18n = useI18n();
-
-  const unsignedAgreements = computed(() => meData.value?.unsignedAgreements ?? []);
 
   const currentAgreement = computed(() => unsignedAgreements.value[0] ?? null);
 

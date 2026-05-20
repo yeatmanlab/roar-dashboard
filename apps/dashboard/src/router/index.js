@@ -4,9 +4,11 @@ import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/transl
 import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
+import { queryClient } from '@/queryClient';
 const { Permissions } = usePermissions();
 const { logNavEvent } = useSentryLogging();
 
@@ -911,14 +913,22 @@ router.beforeEach(async (to, from, next) => {
   // want to accept), and the error pages (AccessEnded / GenericError). The
   // error pages must be allowed through because the `meError` watcher in
   // `App.vue` calls `router.replace()` to them when `/me` fails — without
-  // these in the allowlist, a user with both `hasUnsignedTos === true` (from
-  // a prior successful response) and a subsequent `/me` failure would enter
-  // a navigation loop: meError → router.replace(GenericError) → this guard
+  // these in the allowlist, a user with both unsigned agreements (from a
+  // prior successful response) and a subsequent `/me` failure would enter a
+  // navigation loop: meError → router.replace(GenericError) → this guard
   // redirects to SignTos → global-error guard redirects back to GenericError.
   // Once `unsignedAgreements` is empty (via `useRecordUserAgreementMutation`
   // invalidating `/me`), this guard releases entirely.
+  //
+  // Read the cached `/me` payload directly off the TanStack queryClient
+  // — `meData` no longer lives in the auth store. `getQueryData` returns
+  // `undefined` until the query has resolved at least once, which means
+  // navigation isn't blocked on the very first paint before `useMeQuery`
+  // has had a chance to settle.
+  const meData = queryClient.getQueryData([ME_QUERY_KEY]);
+  const hasUnsignedTos = (meData?.unsignedAgreements?.length ?? 0) > 0;
   if (
-    store.hasUnsignedTos &&
+    hasUnsignedTos &&
     to.name !== APP_ROUTE_NAMES.SIGN_TOS &&
     to.name !== APP_ROUTE_NAMES.SIGN_IN &&
     to.name !== APP_ROUTE_NAMES.ACCESS_ENDED &&

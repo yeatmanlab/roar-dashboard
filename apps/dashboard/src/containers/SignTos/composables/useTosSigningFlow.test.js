@@ -1,8 +1,6 @@
-import { nextTick } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { setActivePinia, createPinia } from 'pinia';
 import { withSetup } from '@/test-support/withSetup.js';
-import { useAuthStore } from '@/store/auth';
 import { useTosSigningFlow } from './useTosSigningFlow';
 
 vi.mock('vue-i18n', () => ({
@@ -11,9 +9,20 @@ vi.mock('vue-i18n', () => ({
   }),
 }));
 
+// Stand-in for the `/me` query payload. `useCurrentUser` is mocked to derive
+// `unsignedAgreements` from this ref, so tests drive the same reactivity the
+// production code sees from TanStack Query by writing to `mockMeData.value`.
+const mockMeData = ref(null);
+
+vi.mock('@/composables/useCurrentUser', () => ({
+  default: () => ({
+    unsignedAgreements: computed(() => mockMeData.value?.unsignedAgreements ?? []),
+  }),
+}));
+
 describe('useTosSigningFlow', () => {
   beforeEach(() => {
-    setActivePinia(createPinia());
+    mockMeData.value = null;
   });
 
   describe('pickVersionForLocale', () => {
@@ -68,7 +77,7 @@ describe('useTosSigningFlow', () => {
   });
 
   describe('currentAgreement / selectedVersion', () => {
-    it('returns null when the auth store has no unsigned agreements', () => {
+    it('returns null when /me has no unsigned agreements', () => {
       const [result] = withSetup(() => useTosSigningFlow());
       expect(result.currentAgreement.value).toBeNull();
       expect(result.selectedVersion.value).toBeNull();
@@ -77,10 +86,9 @@ describe('useTosSigningFlow', () => {
     it('advances through the queue as agreements are signed', async () => {
       // Seed two unsigned agreements; the flow should expose the first as
       // `currentAgreement`, then the second after the first is removed from
-      // `meData`. The container relies on this reactivity to drive the
-      // sign-each-then-navigate behavior.
+      // the `/me` payload. The container relies on this reactivity to drive
+      // the sign-each-then-navigate behavior.
       const [result] = withSetup(() => useTosSigningFlow());
-      const authStore = useAuthStore();
 
       const firstAgreement = {
         agreementId: 'agreement-1',
@@ -93,13 +101,13 @@ describe('useTosSigningFlow', () => {
         versions: [{ versionId: 'v2-en', locale: 'en-US' }],
       };
 
-      authStore.setMeData({
+      mockMeData.value = {
         id: 'u1',
         userType: 'student',
         nameFirst: 'A',
         nameLast: 'B',
         unsignedAgreements: [firstAgreement, secondAgreement],
-      });
+      };
       await nextTick();
 
       expect(result.currentAgreement.value).toEqual(firstAgreement);
@@ -107,26 +115,26 @@ describe('useTosSigningFlow', () => {
 
       // Simulate a successful sign: the `/me` invalidation refetches with one
       // fewer unsigned agreement.
-      authStore.setMeData({
+      mockMeData.value = {
         id: 'u1',
         userType: 'student',
         nameFirst: 'A',
         nameLast: 'B',
         unsignedAgreements: [secondAgreement],
-      });
+      };
       await nextTick();
 
       expect(result.currentAgreement.value).toEqual(secondAgreement);
       expect(result.selectedVersion.value).toEqual({ versionId: 'v2-en', locale: 'en-US' });
 
       // Final sign — queue is empty.
-      authStore.setMeData({
+      mockMeData.value = {
         id: 'u1',
         userType: 'student',
         nameFirst: 'A',
         nameLast: 'B',
         unsignedAgreements: [],
-      });
+      };
       await nextTick();
 
       expect(result.currentAgreement.value).toBeNull();
