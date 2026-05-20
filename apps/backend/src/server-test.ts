@@ -109,10 +109,21 @@ function mockAuthService(): void {
 /**
  * Collect the subset of baseFixture users that should be seeded into the
  * Firebase Auth emulator and exposed in the Cypress fixture.
+ *
+ * Throws if any selected user is missing an `authId`. The DB schema allows
+ * `authId` to be null (rostering can produce users with no Firebase tie
+ * yet), but every key in `CYPRESS_FIXTURE_USER_KEYS` points at a `baseFixture`
+ * row that the factory always populates. A null here is therefore a fixture
+ * regression worth failing loudly on rather than silently skipping.
  */
 function collectSeedableUsers(fixture: BaseFixture): SeedableEmulatorUser[] {
   return CYPRESS_FIXTURE_USER_KEYS.map((key) => {
     const user = fixture[key];
+    if (!user.authId) {
+      throw new Error(
+        `[server-test] Fixture user "${key}" has no authId — cannot seed Firebase Auth emulator`,
+      );
+    }
     return {
       authId: user.authId,
       nameFirst: user.nameFirst,
@@ -135,6 +146,12 @@ function writeCypressFixtureFile(fixture: BaseFixture, seeded: SeededEmulatorUse
   const users = Object.fromEntries(
     CYPRESS_FIXTURE_USER_KEYS.map((key) => {
       const user = fixture[key];
+      // `collectSeedableUsers` already threw if any selected user had a null
+      // authId, so this re-check is defensive — and it narrows `user.authId`
+      // from `string | null` to `string` for the Map lookup below.
+      if (!user.authId) {
+        throw new Error(`[server-test] Fixture user "${key}" has no authId`);
+      }
       const creds = byAuthId.get(user.authId);
       if (!creds) {
         throw new Error(`[server-test] Missing seeded credentials for fixture key "${key}"`);
