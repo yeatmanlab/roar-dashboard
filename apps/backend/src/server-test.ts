@@ -43,7 +43,7 @@ import http from 'http';
 import type { Express } from 'express';
 import type { TestFixture } from '@roar-dashboard/api-contract/test-fixture.type';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
-import { truncateAllTables, runMigrations } from './test-support/db';
+import { truncateAllTables, runMigrations, setupFdwForTests } from './test-support/db';
 import { seedBaseFixture, type BaseFixture } from './test-support/fixtures';
 import { initializeFgaTestStore, syncFgaTuplesFromPostgres } from './test-support/fga';
 import {
@@ -273,28 +273,36 @@ async function startTestServer(): Promise<void> {
     logger.info('[server-test] Initializing database pools...');
     await initializeDatabasePools();
 
-    // 3. Run migrations
+    // 3. Provision FDW prerequisites (extension, assessment_server, user mappings).
+    // Required before migrations because migration 0056 creates foreign tables that
+    // reference assessment_server. Uses a TS helper rather than shelling out to
+    // scripts/setup-fdw-local.sh so this works in environments without psql on the
+    // PATH (notably the cypress/browsers e2e CI container).
+    logger.info('[server-test] Provisioning FDW prerequisites...');
+    await setupFdwForTests();
+
+    // 4. Run migrations
     logger.info('[server-test] Running migrations...');
     await runMigrations();
 
-    // 4. Truncate all tables and seed baseFixture
+    // 5. Truncate all tables and seed baseFixture
     logger.info('[server-test] Truncating tables and seeding baseFixture...');
     await truncateAllTables();
     const fixture = await seedBaseFixture();
 
-    // 5. Initialize FGA store, deploy model, and sync tuples
+    // 6. Initialize FGA store, deploy model, and sync tuples
     logger.info('[server-test] Initializing FGA test store...');
     await initializeFgaTestStore();
 
     logger.info('[server-test] Syncing FGA tuples from Postgres...');
     await syncFgaTuplesFromPostgres();
 
-    // 6. Swap AuthService.provider (chooses FirebaseAuthProvider when
+    // 7. Swap AuthService.provider (chooses FirebaseAuthProvider when
     // FIREBASE_AUTH_EMULATOR_HOST is set; TestAuthProvider otherwise).
     logger.info('[server-test] Configuring AuthService provider...');
     mockAuthService();
 
-    // 6b. In emulator mode, seed the Firebase Auth emulator with users
+    // 7b. In emulator mode, seed the Firebase Auth emulator with users
     // matching baseFixture.authId and write the Cypress fixture file.
     if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
       logger.info('[server-test] Seeding Firebase Auth emulator...');
@@ -303,15 +311,15 @@ async function startTestServer(): Promise<void> {
       writeCypressFixtureFile(fixture, seeded, CYPRESS_FIXTURE_FILE);
     }
 
-    // 7. Write fixture data to file
+    // 8. Write fixture data to file
     logger.info('[server-test] Writing fixture data to file...');
     await writeFixtureFile(TEST_FIXTURE_FILE);
 
-    // 8. Dynamic import app AFTER all setup is complete
+    // 9. Dynamic import app AFTER all setup is complete
     logger.info('[server-test] Importing Express app...');
     const { default: app }: { default: Express } = await import('./app');
 
-    // 9. Start HTTP server
+    // 10. Start HTTP server
     const port = parseInt(PORT, 10);
     app.set('port', port);
 
@@ -323,7 +331,7 @@ async function startTestServer(): Promise<void> {
     server.on('error', (err) => onError(err, port));
     server.on('listening', onListening);
 
-    // 10. Graceful shutdown
+    // 11. Graceful shutdown
     const shutdown = (signal: string) => {
       logger.info(`[server-test] ${signal} received: shutting down server`);
       server.close(() => {
