@@ -99,7 +99,7 @@ jobs:
       - name: Run all tests
         run: npm run test
         env:
-          RUN_INTEGRATION_TESTS: 'true'
+          RUN_INTEGRATION_TESTS: "true"
 
       - name: Report dashboard coverage
         if: success()
@@ -177,6 +177,15 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+      # OpenFGA runs as a service container — same pattern as Postgres.
+      # Previously this was an in-container background process started by
+      # `openfga run &`, but background processes started in one step of a
+      # container job aren't guaranteed to survive subsequent docker exec
+      # cycles, and we hit `socket hang up` errors several minutes after
+      # the start step. The official image's default CMD is `run` (memory
+      # storage engine, HTTP on 8080), so no overrides are required.
+      openfga:
+        image: openfga/openfga:v1.12.1
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
@@ -184,9 +193,10 @@ jobs:
       CORE_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/roar_core_test
       ASSESSMENT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/roar_assessment_test
       POSTGRES_ADMIN_URL: postgresql://postgres:postgres@postgres:5432/postgres
-      # OpenFGA and the Firebase Auth emulator both run as background
-      # processes inside the job container.
-      FGA_API_URL: http://127.0.0.1:8080
+      # Backend → OpenFGA uses the service-container hostname.
+      FGA_API_URL: http://openfga:8080
+      # The Firebase Auth emulator still runs as a background process inside
+      # the job container (no official emulator-only Docker image).
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
       GCLOUD_PROJECT: demo-roar-test
       # The dashboard bakes these into its bundle at build time; both the
@@ -200,16 +210,6 @@ jobs:
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
-
-      - name: Install OpenFGA
-        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
-        with:
-          repo: openfga/openfga
-          tag: v1.12.1
-          cache: enable
-
-      - name: Start OpenFGA
-        run: openfga run &
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
@@ -274,7 +274,7 @@ jobs:
           # The dashboard is pre-built via turbo above; skip the action's
           # default build step (which would re-build only the dashboard,
           # bypassing turbo).
-          build: 'true'
+          build: "true"
           start: npm run preview -- --host
           tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
@@ -333,7 +333,7 @@ jobs:
           component: true
           install: false
           # The dashboard is pre-built via turbo above.
-          build: 'true'
+          build: "true"
           start: npm run preview -- --host
           tag: ${{ github.event_name }},component,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
