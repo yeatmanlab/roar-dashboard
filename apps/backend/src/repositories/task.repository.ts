@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as CoreDbSchema from '../db/schema/core';
 import type { Column, SQL } from 'drizzle-orm';
-import { eq, and, or, ilike, asc, desc, count } from 'drizzle-orm';
+import { eq, and, or, ilike, asc, desc, count, sql } from 'drizzle-orm';
 import type { Task } from '../db/schema';
 import { tasks } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
@@ -14,12 +14,20 @@ import { escapeLikePattern } from '../utils/escape-like-pattern.util';
 /**
  * Explicit mapping from API sort field names to task table columns.
  * This ensures only valid columns are used for sorting, even if API validation is bypassed.
+ *
+ * `name` and `slug` sort case-insensitively. Postgres 18 ships with the
+ * builtin C.UTF-8 locale by default, which sorts text bytewise — uppercase
+ * letters precede lowercase ones (`'Z' < 'a'`). Earlier versions used
+ * libc `en_US.utf8`, which sorted case-insensitively at the primary level.
+ * Wrapping the text columns in `LOWER(...)` restores the human-friendly
+ * ordering the dashboard expects and keeps the integration test (which
+ * compares JS `.toLowerCase()`) in agreement with the database.
  */
-const TASK_SORT_COLUMNS: Record<TaskSortFieldType, Column> = {
+const TASK_SORT_COLUMNS: Record<TaskSortFieldType, Column | SQL> = {
   createdAt: tasks.createdAt,
   updatedAt: tasks.updatedAt,
-  name: tasks.name,
-  slug: tasks.slug,
+  name: sql`LOWER(${tasks.name})`,
+  slug: sql`LOWER(${tasks.slug})`,
 };
 
 /**
@@ -114,7 +122,7 @@ export class TaskRepository extends BaseRepository<Task, typeof tasks> {
     // Use explicit column mapping for type safety
     // Cast is safe because API contract validates the sort field before reaching repository
     const sortField = orderBy?.field as TaskSortFieldType | undefined;
-    const sortColumn = (sortField && TASK_SORT_COLUMNS[sortField]) ?? tasks.name;
+    const sortColumn = (sortField && TASK_SORT_COLUMNS[sortField]) ?? TASK_SORT_COLUMNS.name;
     const sortDirection = (orderBy?.direction ?? SortOrder.ASC) === SortOrder.ASC ? asc(sortColumn) : desc(sortColumn);
 
     // Data query
