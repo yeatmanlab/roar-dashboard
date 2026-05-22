@@ -223,6 +223,9 @@ jobs:
       # the static binary on the fly. The host docker socket is already
       # mounted into the container at `/var/run/docker.sock`.
       - name: Start OpenFGA
+        # cypress/browsers has bash but GHA picks `sh -e` by default for
+        # container jobs, and the script below relies on pipefail. Pin it.
+        shell: bash
         run: |
           set -euo pipefail
           if ! command -v docker > /dev/null 2>&1; then
