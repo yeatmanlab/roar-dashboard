@@ -28,4 +28,4 @@ npx concurrently \
    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
    npm run dev" \
   "docker compose -f $COMPOSE_FILE run --rm -T researcher-db-migrate \
-   && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 ROAR_API_URL=https://localhost:4000 npm run dev"
+   && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev"
