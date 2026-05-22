@@ -132,15 +132,3 @@ jobs:
           gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
 
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Deploy assessments
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  deploy-roar-pa:
-    uses: ./.github/workflows/deploy-assessment.yml
-    secrets: inherit
-    with:
-      environment: platform:staging
-      assessment: roar-pa
-      build-script: build:staging
-      run-cypress: true
-      cypress-base-url: https://roar-phoneme-staging.web.app/

@@ -44,7 +44,7 @@ jobs:
         run: |
           # Determine version
           VERSION="${{ inputs.version }}"
-          
+
           # Verify platform tags exist and are on main
           # Note: api-contract is independently versioned and may have a different version
           for PREFIX in backend dashboard; do
@@ -208,15 +208,3 @@ jobs:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
           version: ${{ inputs.version }}
-
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Deploy assessments
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  deploy-roar-pa:
-    needs: [approval]
-    uses: ./.github/workflows/deploy-assessment.yml
-    secrets: inherit
-    with:
-      environment: platform:production
-      assessment: roar-pa
-      build-script: build:prod
