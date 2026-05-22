@@ -58,6 +58,7 @@
     "@types/node": "^20.9.0",
     "babel-loader": "^8.2.5",
     "concurrently": "^9.1.0",
+    "firebase-tools": "^15.18.0",
     "css-loader": "^6.7.1",
     "csv-loader": "^3.0.5",
     "cypress": "^13.6.4",
