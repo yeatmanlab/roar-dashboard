@@ -215,6 +215,15 @@ export default defineConfig(({ mode }) => {
               cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
             }
           : false,
+      // Proxy /v1 to the local backend so the browser sees same-origin requests —
+      // mirrors how Firebase Hosting proxies to Cloud Run in staging/production.
+      proxy: {
+        '/v1': {
+          target: 'https://localhost:4000',
+          secure: false,
+          changeOrigin: true,
+        },
+      },
     },
 
     preview: {
