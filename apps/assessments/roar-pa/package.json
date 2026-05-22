@@ -11,6 +11,8 @@
     "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
     "predev": "fkill :8000 -f || true",
     "dev": "npx webpack serve --open --mode development --env dbmode=development",
+    "researcher-environment:up": "bash ../../../scripts/researcher-env-up.sh",
+    "researcher-environment:down": "bash ../../../scripts/researcher-env-down.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
