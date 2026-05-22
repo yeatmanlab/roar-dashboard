@@ -131,4 +131,3 @@ jobs:
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
           gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
-
