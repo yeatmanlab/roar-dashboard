@@ -7,7 +7,6 @@
   "version": "3.26.0",
   "scripts": {
     "dev": "turbo run dev --filter=!./apps/assessments/*",
-    "dev:pa": "turbo run dev --filter=./apps/assessments/roar-pa",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",
