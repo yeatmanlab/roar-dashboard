@@ -9,8 +9,7 @@
   "scripts": {
     "//": "build is a no-op: Vite resolves imports via 'main' (src/index.js) directly, so no webpack output is needed for dashboard#dev.",
     "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
-    "build:dev": "npx webpack --mode production --env dbmode=development",
-    "predev": "fkill :8000 -f || true",
+"predev": "fkill :8000 -f || true",
     "dev": "npx webpack serve --open --mode development --env dbmode=development",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
