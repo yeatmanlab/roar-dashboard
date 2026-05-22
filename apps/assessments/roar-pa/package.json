@@ -12,7 +12,7 @@
     "build:dev": "npx webpack --mode production --env dbmode=development",
     "predev": "fkill :8000 -f || true",
     "dev": "npx webpack serve --open --mode development --env dbmode=development",
-"lint": "eslint .",
+    "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
     "format:check": "prettier . --check",
