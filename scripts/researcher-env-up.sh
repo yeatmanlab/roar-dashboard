@@ -21,11 +21,11 @@ npx concurrently \
   --names emulator,backend,pa \
   --prefix-colors cyan,yellow,green \
   "npx firebase emulators:start --only auth --project demo-roar --config $FIREBASE_CONFIG" \
-  "NODE_ENV=development \
+  "cd $REPO_ROOT/apps/backend && NODE_ENV=development \
    GOOGLE_CLOUD_PROJECT=demo-roar \
    CORE_DATABASE_URL=postgresql://postgres@localhost:5432/roar_core \
    ASSESSMENT_DATABASE_URL=postgresql://postgres@localhost:5432/roar_assessment \
    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
-   npm run dev -w apps/backend" \
+   npm run dev" \
   "docker compose -f $COMPOSE_FILE run --rm -T researcher-db-migrate \
-   && ROAR_API_URL=https://localhost:4000 npm run dev -w apps/assessments/roar-pa"
+   && ROAR_API_URL=https://localhost:4000 npm run dev"
