@@ -5,19 +5,10 @@ import AppSpinner from '@/components/AppSpinner.vue';
 import ConsentModal from '@/components/ConsentModal.vue';
 import useCurrentUser from '@/composables/useCurrentUser';
 import { useTosSigningFlow } from './composables/useTosSigningFlow';
+import { isInternalPath } from './isInternalPath';
 import useAgreementVersionContentQuery from '@/composables/queries/useAgreementVersionContentQuery';
 import useRecordUserAgreementMutation from '@/composables/mutations/useRecordUserAgreementMutation';
 import { APP_ROUTES, APP_ROUTE_NAMES } from '@/constants/routes';
-
-/**
- * Matches well-formed internal application paths only:
- *   - Begins with `/` followed by at least one safe path character
- *   - Allows alphanumeric, `-`, `_`, `.`, `~`, `/`, `%` (for percent-encoded segments)
- *   - Optional query string: `?` followed by safe query characters
- *   - No protocol, no `//` prefix, no fragment, no whitespace
- * Anything that doesn't match falls back to `APP_ROUTES.HOME`.
- */
-const INTERNAL_PATH_REGEX = /^\/[A-Za-z0-9\-_.~/%]+(\?[A-Za-z0-9\-_.~%=&]*)?$/;
 
 const { currentUserId, hasUnsignedTos } = useCurrentUser();
 const route = useRoute();
@@ -41,21 +32,19 @@ const recordAgreementMutation = useRecordUserAgreementMutation();
  * Compute the destination to return to after all agreements are signed.
  *
  * The router pushes `?next=<originalPath>` when the TOS guard intercepts a
- * navigation. The candidate must:
- *   - Match the strict internal-path regex (rules out absolute URLs,
- *     protocol-relative `//evil.com`, `javascript:`, whitespace, fragments,
- *     and anything Vue Router doesn't already handle as a known path)
- *   - Not point back at SignTos itself or the sign-in flow (avoids loops)
- * Otherwise fall back to the home route.
+ * navigation. `isInternalPath` parses the value with the WHATWG URL parser
+ * and rejects anything that doesn't resolve to the current origin with a
+ * `/`-prefixed pathname. We additionally guard against loops back into the
+ * TOS / sign-in flow, since those would never have triggered the guard in
+ * the first place. Anything else falls back to the home route.
  */
 const nextDestination = computed(() => {
-  const next = typeof route.query.next === 'string' ? route.query.next : null;
-  if (
-    !next ||
-    !INTERNAL_PATH_REGEX.test(next) ||
-    next.startsWith(APP_ROUTES.SIGN_TOS) ||
-    next.startsWith(APP_ROUTES.SIGN_IN)
-  ) {
+  const next = route.query.next;
+  if (!isInternalPath(next)) return APP_ROUTES.HOME;
+  // After `isInternalPath`, `next` is a non-empty string. Reject loops back
+  // into the TOS / sign-in flow — those would never have triggered the guard
+  // in the first place.
+  if (next.startsWith(APP_ROUTES.SIGN_TOS) || next.startsWith(APP_ROUTES.SIGN_IN)) {
     return APP_ROUTES.HOME;
   }
   return next;
