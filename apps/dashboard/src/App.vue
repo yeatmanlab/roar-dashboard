@@ -143,14 +143,19 @@ onBeforeMount(async () => {
   await authStore.initFirekit();
 
   await authStore.initStateFromRedirect().then(async () => {
-    // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
-    // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
-    // in order for SSO to work and cannot currently be changed without significant refactoring.
+    // TODO(post-/me): retire once useUserClaimsQuery is migrated; see frontend migration plan.
     //
-    // The Firestore-based fetches below populate legacy `userData` / `userClaims` fields for existing
-    // consumers. The `useMeQuery` composable (above) is the canonical source for the authenticated
-    // user — new consumers should read from `useCurrentUser` (which wraps it). Legacy consumers
-    // will migrate incrementally.
+    // The Firestore-based fetches below populate the legacy `userData` /
+    // `userClaims` fields on the auth store for existing consumers. The
+    // `useMeQuery` composable (above) is the canonical source for the
+    // authenticated user — new consumers should read from `useCurrentUser`
+    // (which wraps it). Legacy consumers (`useUserType`, `usePermissions`,
+    // and the components that still read `authStore.userData` directly)
+    // will migrate incrementally as their ts-rest equivalents land.
+    //
+    // Out of scope for this PR: the SSO flow still needs the Firestore user
+    // ID at this point, so deleting the fetches here would break sign-in
+    // before the migration is complete.
     if (authStore.uid) {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.userClaims = userClaims;
