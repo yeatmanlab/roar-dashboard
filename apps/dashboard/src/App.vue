@@ -52,7 +52,7 @@ const VueQueryDevtools = defineAsyncComponent(() =>
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
-import useMeQuery from '@/composables/queries/useMeQuery';
+import useCurrentUser from '@/composables/useCurrentUser';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { APP_ROUTE_NAMES } from '@/constants/routes';
@@ -74,14 +74,15 @@ const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authS
 
 useRecaptchaProvider();
 
-// `useMeQuery` is internally gated on `authStore.accessToken`, so no
-// caller-side `enabled` is needed here. The composable also handles retry
-// (3x on transient failures, skip on rostering-ended / terminal auth).
+// `useCurrentUser` is the single read-path for the authenticated user across
+// the dashboard — it wraps `useMeQuery`, which is internally gated on
+// `authStore.accessToken` and handles retry (3x on transient failures, skip
+// on rostering-ended / terminal auth).
 //
 // `/me` data lives in TanStack Query — consumers read it via
 // `useCurrentUser` (or `queryClient.getQueryData([ME_QUERY_KEY])` from
 // non-component code). Nothing copies it into the auth store any more.
-const { data: meData, error: meError, isFetching: isMeFetching } = useMeQuery();
+const { data: meData, error: meError, isFetching: isMeFetching } = useCurrentUser();
 
 /**
  * Hold back router-view until `/me` settles for authenticated users.

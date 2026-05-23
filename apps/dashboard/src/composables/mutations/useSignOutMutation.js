@@ -25,10 +25,11 @@ const useSignOutMutation = () => {
       // freshly-reset store.
       await queryClient.cancelQueries();
 
-      // Reset store state (`$reset` covers `meData` since it's part of state).
-      // The explicit `sessionStorage` removals defend against persisted state
-      // surviving the reset on environments where the Pinia persistence
-      // plugin races the redirect.
+      // Reset store state. `meData` is no longer part of the auth store — it
+      // lives in TanStack Query and is dropped by the `queryClient.clear()`
+      // call below. The explicit `sessionStorage` removals defend against
+      // persisted state surviving the reset on environments where the Pinia
+      // persistence plugin races the redirect.
       authStore.$reset();
       sessionStorage.removeItem('authStore');
       sessionStorage.removeItem('gameStore');

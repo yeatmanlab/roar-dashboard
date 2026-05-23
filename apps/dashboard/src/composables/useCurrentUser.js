@@ -25,6 +25,7 @@ import useMeQuery from '@/composables/queries/useMeQuery';
  *   data: import('vue').Ref<unknown>,
  *   status: import('vue').Ref<'pending' | 'error' | 'success'>,
  *   isPending: import('vue').Ref<boolean>,
+ *   isFetching: import('vue').Ref<boolean>,
  *   isError: import('vue').Ref<boolean>,
  *   isSuccess: import('vue').Ref<boolean>,
  *   error: import('vue').Ref<Error | null>,
@@ -34,7 +35,7 @@ import useMeQuery from '@/composables/queries/useMeQuery';
  * }}
  */
 export default function useCurrentUser() {
-  const { data, status, isPending, isError, isSuccess, error } = useMeQuery();
+  const { data, status, isPending, isFetching, isError, isSuccess, error } = useMeQuery();
 
   const currentUserId = computed(() => data.value?.id);
   const hasUnsignedTos = computed(() => (data.value?.unsignedAgreements?.length ?? 0) > 0);
@@ -44,6 +45,7 @@ export default function useCurrentUser() {
     data,
     status,
     isPending,
+    isFetching,
     isError,
     isSuccess,
     error,
