@@ -1,6 +1,6 @@
 ---
 title: Frontend E2E Testing Pattern
-description: How to write Cypress e2e specs after the legacy stack was retired. Specs run against a seeded local backend (Postgres + OpenFGA + Firebase Auth emulator + server-test.ts), not real dev Firebase. Migration PRs bring skipped specs back online by re-writing them under this pattern, not by porting them mechanically.
+description: How to write Cypress e2e specs against the seeded local backend (Postgres + OpenFGA + Firebase Auth emulator + server-test.ts) — not real dev Firebase. Specs that originated against the legacy roarfirekit / Cloud Functions / Firestore REST stack are skipped at the file level and brought back online one at a time by re-writing them under this pattern, not by porting them mechanically.
 impact: HIGH
 scope: frontend
 tags: cypress, e2e, testing, auth, fixtures
@@ -8,14 +8,12 @@ tags: cypress, e2e, testing, auth, fixtures
 
 ## Frontend e2e testing pattern
 
-The dashboard is migrating from `roarfirekit` + Cloud Functions + Firestore REST
-to the new ts-rest backend. As of #1774 every legacy Cypress e2e spec under
-`apps/dashboard/cypress/e2e/` is `describe.skip`-ed. Active specs run against
-a fully local stack stood up by the `e2e-tests` CI job and bypass firekit
-entirely — firekit is deprecated and will be removed once migration completes.
-
-This rule is the contract migration PRs must follow when bringing a spec back
-online. Reference implementation: `cypress/e2e/smoke/me.cy.js`.
+Cypress e2e specs run against a fully local stack stood up by the `e2e-tests`
+CI job: Postgres, OpenFGA, the Firebase Auth emulator, and `server-test.ts`.
+The dashboard talks to the ts-rest backend; `roarfirekit` is deprecated and
+not in the test path. Specs under `apps/dashboard/cypress/e2e/` that pre-date
+this stack are `describe.skip`-ed at the file level until someone re-writes
+them under this pattern. Reference implementation: `cypress/e2e/smoke/me.cy.js`.
 
 ### The local stack
 
@@ -83,11 +81,13 @@ Faster, more deterministic, and bypasses every dashboard concern.
 
 **Dashboard-aware specs** — when the test is about UI behavior (a form
 flow, a table interaction, a navigation guard). These need an authenticated
-in-browser session, which means plumbing the emulator-issued token through
-the dashboard's auth store around firekit. The first migration PR to need
-this should introduce the helper (`cy.loginAsTestUser(fixtureKey)`) in
-`cypress/support/commands.js`. Until then, prefer the backend-only path
-where it covers the behavior under test.
+in-browser session, which means plumbing the emulator-issued token into the
+dashboard's auth bootstrap. The helper for this — `cy.loginAsTestUser(fixtureKey)`
+in `cypress/support/commands.js` — is introduced by the first spec that
+genuinely needs an authenticated browser session, alongside the matching
+`connectAuthEmulator(...)` wiring in the dashboard's Firebase init. Until
+that helper exists, prefer the backend-only path where it covers the
+behavior under test.
 
 ### Incorrect
 
@@ -168,26 +168,24 @@ describe('Smoke: /me returns the seeded teacher', () => {
    relied on `cy.login` clicking through the UI; none of that applies any
    more.
 4. **Remove the `.skip` from the top-level `describe` / `context`, and from
-   any nested `describe.skip` in the same file.** The bulk skip pass in
-   #1774 added `.skip` at every depth; partial un-skip just confuses the
-   next reader.
+   any nested `describe.skip` in the same file.** The bulk skip pass added
+   `.skip` at every depth; partial un-skip just confuses the next reader.
 5. **If the spec needs a new fixture user**, extend `CYPRESS_FIXTURE_USER_KEYS`
    in `apps/backend/src/server-test.ts` (and confirm the key exists on
    `baseFixture`).
-6. **If the spec needs the dashboard auth helper that doesn't exist yet**,
+6. **If the spec needs the dashboard auth helper and it doesn't exist yet**,
    add it in the same PR — don't ship a "TODO: build the helper" comment.
 
 ### Component tests are unaffected
 
 Component tests under `apps/dashboard/src/**/*.cy.js` mount Vue components
-in isolation and don't depend on a backend at all. The migration cutover
-doesn't touch them.
+in isolation and don't depend on a backend at all. This rule doesn't apply
+to them.
 
 ### The principle
 
 Stubs and clicked-through login flows let specs pass against a fictitious
 world — they decouple test coverage from real backend behavior, which is
 exactly the opposite of what an e2e suite should do. A seeded local stack
-removes the temptation. Migration PRs that re-introduce specs by following
-this pattern protect us from drift between what the dashboard expects and
-what the backend actually returns.
+removes the temptation. Specs that follow this pattern protect us from drift
+between what the dashboard expects and what the backend actually returns.
