@@ -34,28 +34,20 @@ export async function setupFdwForTests(): Promise<void> {
     }
   }
 
-  const coreUrl = new URL(process.env.CORE_DATABASE_URL!);
-  const assessmentUrl = new URL(process.env.ASSESSMENT_DATABASE_URL!);
+  const core = parseConnectionUrl(process.env.CORE_DATABASE_URL!);
+  const assessment = parseConnectionUrl(process.env.ASSESSMENT_DATABASE_URL!);
 
-  const coreHost = coreUrl.hostname;
-  const corePort = coreUrl.port || '5432';
-  const assessmentHost = assessmentUrl.hostname;
-  const assessmentPort = assessmentUrl.port || '5432';
+  assertSameHostPort(core, assessment);
 
-  if (coreHost !== assessmentHost || corePort !== assessmentPort) {
-    throw new Error(
-      `[setup-fdw] CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL must share the same host:port. ` +
-        `Got core=${coreHost}:${corePort}, assessment=${assessmentHost}:${assessmentPort}`,
-    );
-  }
-
+  const coreHost = core.host;
+  const corePort = core.port;
   // Mirror the bash script's `${PG_USER:-postgres}` default — local-dev URLs that
   // rely on peer/trust auth often omit the username, but the FDW user mapping
   // needs a non-empty role name. CI URLs always include `postgres` explicitly.
-  const pgUser = coreUrl.username ? decodeURIComponent(coreUrl.username) : 'postgres';
-  const pgPassword = coreUrl.password ? decodeURIComponent(coreUrl.password) : '';
-  const coreDb = coreUrl.pathname.slice(1);
-  const assessmentDb = assessmentUrl.pathname.slice(1);
+  const pgUser = core.user;
+  const pgPassword = core.password;
+  const coreDb = core.database;
+  const assessmentDb = assessment.database;
 
   const client = new Client({
     host: coreHost,
@@ -148,7 +140,54 @@ export async function setupFdwForTests(): Promise<void> {
  * wraps `$PG_HOST` etc. in single quotes — the values flow into plpgsql
  * `DECLARE`d constants and are then re-quoted via `format(..., %L)` when
  * building the dynamic DDL.
+ *
+ * Exported for unit testing. The single-quote doubling is the only escape
+ * PostgreSQL string literals need (no backslash interpretation in the default
+ * `standard_conforming_strings = on` mode).
  */
-function literal(value: string): string {
+export function literal(value: string): string {
   return `'${value.replace(/'/g, "''")}'`;
+}
+
+/**
+ * Parse a PostgreSQL connection URL into the connection settings the setup
+ * routine consumes. Exported for unit testing of the URL-handling branches
+ * (missing username falls back to `postgres`, empty password becomes `''`,
+ * the database name is the leading `/` stripped off the pathname).
+ */
+export function parseConnectionUrl(rawUrl: string): {
+  host: string;
+  port: string;
+  user: string;
+  password: string;
+  database: string;
+} {
+  const url = new URL(rawUrl);
+  return {
+    host: url.hostname,
+    port: url.port || '5432',
+    user: url.username ? decodeURIComponent(url.username) : 'postgres',
+    password: url.password ? decodeURIComponent(url.password) : '',
+    database: url.pathname.slice(1),
+  };
+}
+
+/**
+ * Throw if the core and assessment connection URLs do not share the same
+ * `host:port`. postgres_fdw only knows how to talk to the assessment server
+ * at the address encoded in the foreign-server bootstrap; configurations
+ * where the two URLs disagree would silently produce a broken FDW.
+ *
+ * Exported for unit testing.
+ */
+export function assertSameHostPort(
+  core: { host: string; port: string },
+  assessment: { host: string; port: string },
+): void {
+  if (core.host !== assessment.host || core.port !== assessment.port) {
+    throw new Error(
+      `[setup-fdw] CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL must share the same host:port. ` +
+        `Got core=${core.host}:${core.port}, assessment=${assessment.host}:${assessment.port}`,
+    );
+  }
 }
