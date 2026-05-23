@@ -263,6 +263,7 @@ jobs:
         # lived in its own earlier step. Co-locating them with the backend
         # — the only consumer — keeps the whole FGA flow inside a single
         # bash lifecycle, which is reliable.
+        shell: bash
         run: |
           openfga run > /tmp/openfga.log 2>&1 &
           npx --yes wait-on tcp:127.0.0.1:8080 --timeout 30000
