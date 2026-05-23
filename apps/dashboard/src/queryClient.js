@@ -2,6 +2,7 @@ import { QueryCache, QueryClient } from '@tanstack/vue-query';
 import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
  * Singleton TanStack Query client.
@@ -15,22 +16,31 @@ import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
  *   - `router/index.js`, which inspects the `/me` cache to decide whether
  *     to redirect to the SignTos flow.
  *
- * The QueryCache's `onError` is the bridge between terminal API errors and
- * `useGlobalError` — when a query exhausts retries on `auth/rostering-ended`
- * or terminal auth codes, we surface the matching `GLOBAL_ERROR_TYPES` value
- * so the router can redirect to the appropriate error page.
+ * The QueryCache's `onError` is the **single** bridge between API errors and
+ * `useGlobalError`. App.vue's `meError` watcher only handles navigation; it
+ * does not write to global error state. Keeping the mapping in one place
+ * prevents two surfaces from competing to set or clear the same flag.
  *
  * `useGlobalError` is module-scoped (its state is a `ref` outside any
  * component), so calling it from this non-component context is safe.
  */
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error) => {
+    onError: (error, query) => {
       const { setGlobalError } = useGlobalError();
       if (isRosteringEndedError(error)) {
         setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
-      } else if (isTerminalAuthError(error)) {
+        return;
+      }
+      if (isTerminalAuthError(error)) {
         setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
+        return;
+      }
+      // Only treat the `/me` query as a global server error. Other queries
+      // may have their own UI affordances for failure (retry buttons,
+      // toasts, empty states) and shouldn't take the whole app down.
+      if (Array.isArray(query.queryKey) && query.queryKey[0] === ME_QUERY_KEY) {
+        setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
       }
     },
   }),

@@ -56,7 +56,6 @@ import useMeQuery from '@/composables/queries/useMeQuery';
 import { useGlobalError } from '@/composables/useGlobalError';
 import { isRosteringEndedError, isTerminalAuthError } from '@/utils/api-errors';
 import { APP_ROUTE_NAMES } from '@/constants/routes';
-import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 
 const isAuthStoreReady = ref(false);
 const showDevtools = ref(false);
@@ -110,34 +109,33 @@ const isMeSettling = computed(
 // `ensureQueryData([ME_QUERY_KEY])` on the initial navigation and reads the
 // cached payload on subsequent navigations. Duplicating the redirect here
 // produced a race where both surfaces tried to push to SignTos at once.
-const { setGlobalError, clearGlobalError } = useGlobalError();
+const { clearGlobalError } = useGlobalError();
 watch(meData, (data) => {
   if (!data) return;
   clearGlobalError();
 });
 
-// Translate `/me` failures into the global error state and navigate to the
-// matching error page. The router's `beforeEach` guard handles subsequent
-// transitions, but `/me` typically resolves *after* the initial route is
-// rendered — without an explicit `router.replace()` here, the user would see
-// the requested page briefly before any later navigation triggered the guard.
+// Translate `/me` failures into a `router.replace()` so the user lands on
+// the matching error page without first flashing the route they originally
+// requested. The router's `beforeEach` guard handles subsequent transitions
+// once `globalError` is set; this watcher exists only to cover the boot
+// window where `/me` resolves *after* the first navigation has already
+// completed.
+//
+// All `setGlobalError` mapping lives in `queryClient.js`'s `QueryCache`
+// `onError` hook — this watcher does not touch global error state.
 watch(meError, (err) => {
   if (!err) return;
   if (isRosteringEndedError(err)) {
-    setGlobalError({ type: GLOBAL_ERROR_TYPES.ROSTERING_ENDED });
     if (route.name !== APP_ROUTE_NAMES.ACCESS_ENDED) {
       router.replace({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
     }
   } else if (isTerminalAuthError(err)) {
-    setGlobalError({ type: GLOBAL_ERROR_TYPES.AUTH_EXPIRED });
     if (route.name !== APP_ROUTE_NAMES.SIGN_IN) {
       router.replace({ name: APP_ROUTE_NAMES.SIGN_IN });
     }
-  } else {
-    setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
-    if (route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
-      router.replace({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
-    }
+  } else if (route.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+    router.replace({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
   }
 });
 
