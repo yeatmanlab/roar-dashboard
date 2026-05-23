@@ -152,15 +152,18 @@ jobs:
   # `cypress/e2e/README.md` and `.ai/rules/frontend-e2e-testing-pattern.md`.
   #
   # The job runs inside the cypress/browsers container. Postgres runs as a
-  # service container reachable via `postgres:5432`. OpenFGA can't use the
-  # same pattern — the official `openfga/openfga` image has only `/openfga`
-  # as ENTRYPOINT (no CMD), and GitHub Actions service-container `options:`
-  # can't append a command argument after the image, so the container would
-  # exit immediately after printing help. We start OpenFGA via `docker run`
-  # in a step below, attached to the job's docker network with the
-  # `openfga` alias so it's reachable as `openfga:8080` from the backend.
-  # The Firebase Auth emulator and the backend run as background processes
-  # inside the job container and are reachable on `127.0.0.1`.
+  # service container reachable via `postgres:5432`. OpenFGA can't run as a
+  # service container (the official `openfga/openfga` image has only
+  # `/openfga` as ENTRYPOINT and no CMD, and `services.<id>.options` can't
+  # supply the `run` argument). We also can't reach for `docker run` from
+  # inside the job: `cypress/browsers` doesn't ship curl/wget/docker, and
+  # the container runs as user 1001 with no access to the mounted docker
+  # socket. So OpenFGA is installed as a binary and started as a
+  # background process *in the same step* as the backend — that way the
+  # process doesn't need to survive across `docker exec` step boundaries,
+  # which is what bit us when openfga was started in its own step. The
+  # backend, the Auth emulator, and OpenFGA are all reachable on
+  # `127.0.0.1` inside the job container.
   e2e-tests:
     name: End-to-end tests
     runs-on: ubuntu-latest
@@ -184,7 +187,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
       # OpenFGA can't go here — see the job-level comment above for why.
-      # It's started via `docker run` in a step below instead.
+      # It runs as a background process inside the job container.
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
@@ -192,9 +195,8 @@ jobs:
       CORE_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/roar_core_test
       ASSESSMENT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/roar_assessment_test
       POSTGRES_ADMIN_URL: postgresql://postgres:postgres@postgres:5432/postgres
-      # Backend → OpenFGA uses the docker-network alias set by the
-      # `Start OpenFGA` step below.
-      FGA_API_URL: http://openfga:8080
+      # Backend → OpenFGA inside the job container.
+      FGA_API_URL: http://127.0.0.1:8080
       # The Firebase Auth emulator still runs as a background process inside
       # the job container (no official emulator-only Docker image).
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
@@ -214,40 +216,17 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
-      # Start OpenFGA as a sibling docker container attached to the same
-      # docker network as this job container, with the `openfga` alias so
-      # the backend can reach it as `openfga:8080`. See the job-level
-      # comment above for why this can't be a `services:` entry.
-      #
-      # `cypress/browsers` doesn't ship with the docker CLI, so we install
-      # the static binary on the fly. The host docker socket is already
-      # mounted into the container at `/var/run/docker.sock`.
-      - name: Start OpenFGA
-        # cypress/browsers has bash but GHA picks `sh -e` by default for
-        # container jobs, and the script below relies on pipefail. Pin it.
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! command -v docker > /dev/null 2>&1; then
-            curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.3.1.tgz \
-              | tar xz -C /tmp
-            export PATH="/tmp/docker:$PATH"
-            echo "/tmp/docker" >> "$GITHUB_PATH"
-          fi
-          docker version
-          docker run -d --name openfga \
-            --network "${{ job.container.network }}" \
-            --network-alias openfga \
-            openfga/openfga:v1.12.1 run
-          # Wait for OpenFGA's HTTP server to accept connections on the
-          # network alias the backend will use.
-          npx --yes wait-on tcp:openfga:8080 --timeout 30000
-          # Sanity-check that the container is still running — if /openfga
-          # exited (wrong args, port conflict, etc.) the alias resolves
-          # briefly and then disappears, which is exactly what bit us
-          # before. Failing here is cheaper than failing in server-test.
-          docker ps --filter name=openfga --filter status=running --format '{{.Names}}' \
-            | grep -qx openfga || { docker logs openfga; exit 1; }
+      # Install the OpenFGA binary. We download via the action (which uses
+      # node-fetch under the hood, so it works even though cypress/browsers
+      # ships without curl), and start it later in the same step as the
+      # backend. See the job-level comment for why the binary path is the
+      # only one that works in this container.
+      - name: Install OpenFGA
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
+        with:
+          repo: openfga/openfga
+          tag: v1.12.1
+          cache: enable
 
       # The Auth emulator is the only one we need; everything else (Firestore,
       # Functions, etc.) is irrelevant once firekit is gone. The temp config
@@ -276,8 +255,17 @@ jobs:
       - name: Build backend (with server-test entry)
         run: BUILD_TEST_SERVER=true npx turbo build --filter=roar-backend
 
-      - name: Start backend server-test
+      - name: Start OpenFGA and backend server-test
+        # OpenFGA and server-test are started in the same step on purpose:
+        # background processes started by `bash &` survive across `docker
+        # exec` step boundaries in theory (PID 1 of the container reaps
+        # them), but in practice we hit `socket hang up` when openfga
+        # lived in its own earlier step. Co-locating them with the backend
+        # — the only consumer — keeps the whole FGA flow inside a single
+        # bash lifecycle, which is reliable.
         run: |
+          openfga run > /tmp/openfga.log 2>&1 &
+          npx --yes wait-on tcp:127.0.0.1:8080 --timeout 30000
           node apps/backend/dist/server-test.js &
           # server-test.ts seeds Postgres + OpenFGA + the Firebase Auth
           # emulator before binding to port 4000, so a successful TCP
