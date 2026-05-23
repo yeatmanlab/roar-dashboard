@@ -1,4 +1,5 @@
 import pino from 'pino';
+import pretty from 'pino-pretty';
 
 /**
  * GCP Cloud Logging severity levels mapped to pino levels.
@@ -21,25 +22,28 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 /**
  * Creates the pino logger instance.
  *
- * In development: Uses pino-pretty for human-readable output.
+ * In development: Uses pino-pretty as a synchronous destination stream for
+ * human-readable output. We deliberately do not use the `transport` option
+ * here — that form spawns pino-pretty in a worker thread, and the worker's
+ * own loader uses `__dirname` to locate its entry script. Because the
+ * backend is bundled as ESM (`"type": "module"` in package.json),
+ * `__dirname` is undefined and the worker crashes on first log call. The
+ * sync sink runs in the main thread and avoids the worker boundary
+ * entirely; perf overhead is negligible for local dev.
+ *
  * In production: Outputs structured JSON compatible with GCP Cloud Logging.
+ * No transport / stream override, so pino writes directly to stdout.
  */
 function createLogger() {
   const level = process.env.LOG_LEVEL || 'info';
 
   if (isDevelopment) {
-    // Development: pretty-printed logs
-    return pino({
-      level,
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'SYS:standard',
-          ignore: 'pid,hostname',
-        },
-      },
+    const prettyStream = pretty({
+      colorize: true,
+      translateTime: 'SYS:standard',
+      ignore: 'pid,hostname',
     });
+    return pino({ level }, prettyStream);
   }
 
   // Production: structured JSON for GCP Cloud Logging

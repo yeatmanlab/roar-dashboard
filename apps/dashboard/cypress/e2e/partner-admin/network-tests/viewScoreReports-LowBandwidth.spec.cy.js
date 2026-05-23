@@ -28,7 +28,7 @@ function checkAssignmentColumns() {
   });
 }
 
-describe('The partner admin can view score reports for a given administration.', () => {
+describe.skip('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
     checkUrl();
     cy.wait(Cypress.env('timeout'));

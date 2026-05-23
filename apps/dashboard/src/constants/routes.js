@@ -39,6 +39,7 @@ export const GAME_ROUTES = {
 export const APP_ROUTES = {
   HOME: '/',
   // ACCOUNT_PROFILE: '/profile',
+  ACCESS_ENDED: '/access-ended',
   AUTH_CLASSLINK: '/auth-classlink',
   AUTH_CLEVER: '/auth-clever',
   AUTH_EMAIL_LINK: '/auth-email-link',
@@ -47,6 +48,7 @@ export const APP_ROUTES = {
   CREATE_ADMINISTRATION: '/administration/create',
   DUPLICATE_ADMINISTRATION: '/administration/:formType/:adminId',
   EDIT_ADMINISTRATION: '/administration/:formType/:adminId',
+  GENERIC_ERROR: '/error',
   LAUNCH: '/launch/:launchId',
   ORGS_CREATE: '/create-orgs',
   ORGS_LIST: '/list-orgs',
@@ -55,8 +57,22 @@ export const APP_ROUTES = {
   SCORE_REPORT: '/scores/:administrationId/:orgType/:orgId',
   SCORE_REPORT_STUDENT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
   SIGN_IN: '/signin',
+  SIGN_TOS: '/sign-tos',
   SSO: '/sso',
   UNAUTHORIZED: '/unauthorized',
+};
+
+/**
+ * Named-route identifiers used with `route.name` / `router.push({ name })` /
+ * `router.replace({ name })`. Mirrors the `name` declared on each route in
+ * `router/index.js`. Keep in sync with that file.
+ */
+export const APP_ROUTE_NAMES = {
+  ACCESS_ENDED: 'AccessEnded',
+  GENERIC_ERROR: 'GenericError',
+  HOME: 'Home',
+  SIGN_IN: 'SignIn',
+  SIGN_TOS: 'SignTos',
 };
 
 export const ADMINISTRATION_FORM_TYPES = {

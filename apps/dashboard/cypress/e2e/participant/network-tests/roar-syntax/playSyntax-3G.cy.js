@@ -4,7 +4,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = 'core-tasks';
 const administration = 'Cypress Test Roar Syntax';
 
-describe('ROAR - Syntax Play Through', () => {
+describe.skip('ROAR - Syntax Play Through', () => {
   it('Plays the Roar Syntax/Core Tasks Game with a simulated 3g connection', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {

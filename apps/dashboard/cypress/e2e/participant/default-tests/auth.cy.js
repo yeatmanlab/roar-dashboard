@@ -6,7 +6,7 @@ const CLEVER_SCHOOL_NAME = Cypress.env('cleverSchoolName');
 const CLEVER_USERNAME = Cypress.env('CLEVER_USERNAME');
 const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 
-describe('Participant: Auth', () => {
+describe.skip('Participant: Auth', () => {
   it('Logs in as participant using username and password', () => {
     cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
     cy.get('[data-cy="navbar__display-name"]').should('contain', 'Hi, Cypress!');

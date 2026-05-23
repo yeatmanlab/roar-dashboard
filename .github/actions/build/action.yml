@@ -69,10 +69,24 @@ runs:
         rm -rf build/apps/dashboard/env-configs
         cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs build/apps/dashboard/env-configs
 
-    # Build the application
+    # Build the dashboard via turbo so transitive workspace dependencies
+    # (`@roar-dashboard/api-contract` and any others declared via
+    # `dependsOn` in `turbo.json`) are built automatically in the right
+    # order. The Vite mode is threaded through the `MODE` env var — the
+    # dashboard's `build` script reads `${MODE:-development}` and forwards
+    # it to `vite build --mode`. `MODE` is declared in `turbo.json`'s
+    # `globalEnv`, so turbo passes it to every task AND includes it in
+    # the cache key (staging and production builds hash separately).
+    #
+    # Previously this step used `npx turbo build --filter=roar-dashboard
+    # -- --mode <env>`, but turbo's `-- args` passthrough forwards CLI
+    # arguments to every package in the build graph. api-contract's
+    # build ends in `tsc -p tsconfig.build.types.json`, which rejects
+    # the Vite-only `--mode` flag with TS5023 ('Unknown compiler option').
     - name: Build application
-      working-directory: build/apps/dashboard
+      working-directory: build
       env:
         NODE_OPTIONS: '--max_old_space_size=8192'
+        MODE: ${{ inputs.environment }}
       shell: bash
-      run: npm run build -- --mode ${{ inputs.environment }}
+      run: npx turbo build --filter=roar-dashboard
