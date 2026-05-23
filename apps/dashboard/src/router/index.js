@@ -921,11 +921,34 @@ router.beforeEach(async (to, from, next) => {
   // invalidating `/me`), this guard releases entirely.
   //
   // Read the cached `/me` payload directly off the TanStack queryClient
-  // — `meData` no longer lives in the auth store. `getQueryData` returns
-  // `undefined` until the query has resolved at least once, which means
-  // navigation isn't blocked on the very first paint before `useMeQuery`
-  // has had a chance to settle.
-  const meData = queryClient.getQueryData([ME_QUERY_KEY]);
+  // — `meData` no longer lives in the auth store. On the very first
+  // navigation after sign-in the cache is empty, so we await the in-flight
+  // `useMeQuery` (via `ensureQueryData`) up to a short timeout. The 5s race
+  // is a safety valve: if `/me` is unusually slow we'd rather let the
+  // navigation through and re-evaluate on the next one than freeze the
+  // router. App.vue's `AppSpinner` gates render on `isMeSettling` in the
+  // meantime, so the user never sees a flash of the wrong page.
+  let meData;
+  if (store.isAuthenticated) {
+    try {
+      meData = await Promise.race([
+        queryClient.ensureQueryData({
+          queryKey: [ME_QUERY_KEY],
+          staleTime: 60_000,
+        }),
+        new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
+      ]);
+    } catch {
+      // ensureQueryData throws on terminal `/me` failures (rostering-ended,
+      // auth-expired). Those are surfaced via the QueryCache → globalError
+      // bridge, which the early-return guard above handles. Treat the
+      // payload as unavailable and let navigation continue.
+      meData = undefined;
+    }
+  }
+  if (!meData) {
+    meData = queryClient.getQueryData([ME_QUERY_KEY]);
+  }
   const hasUnsignedTos = (meData?.unsignedAgreements?.length ?? 0) > 0;
   if (
     hasUnsignedTos &&

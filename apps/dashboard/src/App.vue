@@ -100,29 +100,20 @@ const isMeSettling = computed(
   () => Boolean(authStore.accessToken) && isMeFetching.value && !meData.value && !meError.value,
 );
 
-// Watch the `/me` payload for two boot-time side effects that the router
-// can't handle on its own:
+// Clear any stale `globalError` left over from a prior failed fetch when
+// `/me` resolves successfully. A transient 500 followed by a successful
+// retry would otherwise leave the user stuck on GenericError because the
+// router's global-error guard would keep firing.
 //
-//   1. Clear any stale `globalError` left over from a prior failed fetch.
-//      A transient 500 followed by a successful retry would otherwise leave
-//      the user stuck on GenericError because the router's global-error
-//      guard would keep firing.
-//   2. Push the user to SignTos if the resolved payload has unsigned
-//      agreements and they're sitting on a non-SignTos route. `/me`
-//      typically resolves *after* the router has already navigated, so the
-//      `beforeEach` TOS guard doesn't fire on the initial render — this
-//      watcher closes that boot-time gap. Subsequent navigations are
-//      handled by the guard, which reads the same cached payload via the
-//      queryClient.
+// TOS routing is intentionally NOT handled here. The router's `beforeEach`
+// guard (in `router/index.js`) is the single source of truth: it awaits
+// `ensureQueryData([ME_QUERY_KEY])` on the initial navigation and reads the
+// cached payload on subsequent navigations. Duplicating the redirect here
+// produced a race where both surfaces tried to push to SignTos at once.
 const { setGlobalError, clearGlobalError } = useGlobalError();
 watch(meData, (data) => {
   if (!data) return;
   clearGlobalError();
-
-  const hasUnsignedTos = (data.unsignedAgreements?.length ?? 0) > 0;
-  if (hasUnsignedTos && route.name !== APP_ROUTE_NAMES.SIGN_TOS && route.name !== APP_ROUTE_NAMES.SIGN_IN) {
-    router.replace({ name: APP_ROUTE_NAMES.SIGN_TOS, query: { next: route.fullPath } });
-  }
 });
 
 // Translate `/me` failures into the global error state and navigate to the
