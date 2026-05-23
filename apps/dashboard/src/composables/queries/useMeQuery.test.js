@@ -224,4 +224,31 @@ describe('useMeQuery', () => {
     const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
     expect(enabledRef.value).toBe(true);
   });
+
+  it('stays disabled when caller passes `enabled: true` but no token is available', () => {
+    // The internal `accessToken` gate is AND'd with the caller's `enabled`,
+    // never replaced by it. A caller that asks to be enabled cannot bypass
+    // the token requirement — otherwise the query would fire with no auth.
+    mockUseAuthStore.mockReturnValue({ accessToken: null });
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useMeQuery({ enabled: true }), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(false);
+  });
+
+  it('is enabled when caller passes `enabled: true` AND a token is available', () => {
+    mockUseAuthStore.mockReturnValue({ accessToken: 'live-token' });
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useMeQuery({ enabled: true }), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    const enabledRef = VueQuery.useQuery.mock.calls[0][0].enabled;
+    expect(enabledRef.value).toBe(true);
+  });
 });
