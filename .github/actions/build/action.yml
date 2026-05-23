@@ -69,6 +69,16 @@ runs:
         rm -rf build/apps/dashboard/env-configs
         cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs build/apps/dashboard/env-configs
 
+    # Build workspace dependencies the dashboard imports at runtime. Without this
+    # step, the dashboard's Vite build fails to resolve `@roar-dashboard/api-contract`
+    # because its `dist/` artifacts don't exist yet. (Running `npm run build`
+    # from the dashboard's working directory bypasses turbo, so transitive
+    # workspace builds aren't triggered automatically.)
+    - name: Build api-contract package
+      working-directory: build
+      shell: bash
+      run: npm run build -w packages/api-contract
+
     # Build the application
     - name: Build application
       working-directory: build/apps/dashboard
