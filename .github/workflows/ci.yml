@@ -171,7 +171,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chrome, edge]
+        # Only chrome until dashboard-aware specs exist. The smoke spec runs
+        # backend-only via cy.request, so a second browser would add CI time
+        # without exercising different browser code paths.
+        browser: [chrome]
     container:
       image: cypress/browsers:node-20.18.0-chrome-130.0.6723.69-1-ff-131.0.3-edge-130.0.2849.52-1
       options: --user 1001
@@ -201,10 +204,9 @@ jobs:
       # the job container (no official emulator-only Docker image).
       FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
       GCLOUD_PROJECT: demo-roar-test
-      # The dashboard bakes these into its bundle at build time; both the
-      # dashboard and the Cypress helper read them at runtime.
+      # The dashboard bakes this into its bundle at build time so it can
+      # reach the locally-running backend.
       VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000
-      VITE_FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
 
     steps:
       - name: Checkout repository
@@ -293,6 +295,10 @@ jobs:
           CYPRESS_FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           CYPRESS_FIREBASE_PROJECT_ID: demo-roar-test
           CYPRESS_FIXTURE_FILE: /tmp/roar-cypress-fixture.json
+          # Backend-only specs (cy.request) read this to reach server-test.
+          # Set explicitly so smoke specs don't fall back to the default
+          # in their helper modules.
+          CYPRESS_ROAR_API_BASE_URL: http://127.0.0.1:4000
         with:
           install: false
           # The dashboard is pre-built via turbo above; skip the action's
