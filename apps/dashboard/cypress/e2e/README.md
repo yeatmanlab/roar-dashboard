@@ -26,9 +26,14 @@ mechanics of the legacy specs don't translate.
    the legacy specs are better expressed as component tests now that the
    container/presentational split is wider — don't reach for an e2e spec
    if a component test would do.
-3. Replace the spec's body with the new pattern: `cy.loginAsTestUser(...)`
-   → `cy.visit(...)` → assertions against real `/me` and resource
-   responses. Drop the legacy login helpers (`cy.login`, `cy.performCleverOAuth`).
+3. Replace the spec's body with the new pattern. For **backend-only** specs
+   (authorization, error handling, score correctness), reach for `cy.request`
+   directly — see `cypress/e2e/smoke/me.cy.js` for the canonical shape. For
+   **dashboard-aware** specs that need an authenticated in-browser session,
+   first introduce `cy.loginAsTestUser(fixtureKey)` in
+   `cypress/support/commands.js` (it doesn't exist yet — see the rule for the
+   auth model the helper has to bridge). Drop the legacy login helpers
+   (`cy.login`, `cy.performCleverOAuth`).
 4. Remove the `.skip` from this spec's top-level `describe` /
    `context`, and from any nested `describe.skip` calls inside it.
 5. If the spec covers a workflow no other coverage handles, document why
