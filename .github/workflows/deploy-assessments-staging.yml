@@ -68,6 +68,12 @@ jobs:
           site=$(jq -r '.roar.hosting.staging' apps/assessments/${{ matrix.assessment }}/package.json)
           echo "site=$site" >> $GITHUB_OUTPUT
 
+      - name: Read hosting site name
+        id: hosting
+        run: |
+          site=$(jq -r '.roar.hosting.staging' apps/assessments/${{ matrix.assessment }}/package.json)
+          echo "site=$site" >> $GITHUB_OUTPUT
+
       - name: Build assessment
         uses: ./.github/actions/build-assessment
         with:
