@@ -18,6 +18,9 @@ Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment
 - **Docker** with Compose v2 (`docker compose version` should work)
 - **Java** (required by the Firebase Auth emulator) — `brew install openjdk` on macOS
 - **Local TLS certificates** — run once from the repo root: `npm run dev:setup:certs`
+- **Port 5432 free** — the researcher database binds to the standard Postgres port. If you have a local Postgres instance running, stop it first:
+  - macOS (Homebrew): `brew services stop postgresql@<version>`
+  - Ubuntu/Debian: `sudo systemctl stop postgresql`
 
 ## Starting the environment
 
