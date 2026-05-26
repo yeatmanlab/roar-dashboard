@@ -30,7 +30,9 @@ From `apps/assessments/roar-pa`:
 npm run researcher-environment:up
 ```
 
-To stop and remove the database volume:
+To stop the dev servers without losing data, press **Ctrl+C**. The database container keeps running and your data is preserved — you can restart the dev servers later and pick up where you left off.
+
+To stop everything **and permanently delete the database**:
 
 ```bash
 npm run researcher-environment:down
