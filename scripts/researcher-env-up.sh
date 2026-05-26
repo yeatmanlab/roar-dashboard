@@ -5,6 +5,16 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 FIREBASE_CONFIG="$REPO_ROOT/apps/assessments/shared/firebase.json"
 
+# Check global dependencies.
+if ! docker compose version &>/dev/null; then
+  echo "Error: 'docker compose' (v2) is required. Install Docker Desktop or Docker Engine with the Compose plugin." >&2
+  exit 1
+fi
+if ! command -v java &>/dev/null; then
+  echo "Error: Java is required for the Firebase Auth emulator. Install a JRE (e.g. brew install openjdk)." >&2
+  exit 1
+fi
+
 # Validate certs exist — the dev backend requires HTTPS (NODE_ENV=development reads them synchronously).
 for cert_file in "$REPO_ROOT/certs/roar-local.key" "$REPO_ROOT/certs/roar-local.crt"; do
   if [[ ! -f "$cert_file" ]]; then
