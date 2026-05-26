@@ -1,0 +1,48 @@
+import { Router } from 'express';
+import { StatusCodes } from 'http-status-codes';
+import { runHealthChecks } from './health-checks';
+import { isShuttingDown } from './shutdown-state';
+
+export const healthRouter = Router();
+
+/**
+ * Liveness probe — confirms the process is running.
+ * No dependency checks, no JSON body.
+ */
+healthRouter.get('/health/live', (_req, res) => {
+  res.sendStatus(StatusCodes.OK);
+});
+
+/**
+ * Startup probe — confirms all dependencies are reachable.
+ * Returns 200 when all checks pass, 503 otherwise.
+ */
+healthRouter.get('/health/startup', async (_req, res) => {
+  try {
+    const result = await runHealthChecks();
+    const status = result.status === 'ok' ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE;
+    res.status(status).json(result);
+  } catch {
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({ status: 'error' });
+  }
+});
+
+/**
+ * Readiness probe — confirms the instance can accept traffic.
+ * Returns 503 immediately during graceful shutdown so Cloud Run
+ * stops routing new requests to this instance.
+ */
+healthRouter.get('/health/ready', async (_req, res) => {
+  if (isShuttingDown()) {
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({ status: 'shutting_down' });
+    return;
+  }
+
+  try {
+    const result = await runHealthChecks();
+    const status = result.status === 'ok' ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE;
+    res.status(status).json(result);
+  } catch {
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({ status: 'error' });
+  }
+});
