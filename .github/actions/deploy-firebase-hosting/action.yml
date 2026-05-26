@@ -1,9 +1,9 @@
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
-# roar-dashboard/deploy
+# roar-dashboard/deploy-firebase-hosting
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
 
-name: Deploy
-description: Deploys the ROAR Dashboard to Firebase Hosting.
+name: Deploy Firebase Hosting
+description: Deploys a ROAR application to Firebase Hosting.
 outputs:
   deployment-url:
     description: "The URL of the deployed application."
