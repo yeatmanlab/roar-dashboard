@@ -2,7 +2,9 @@
 
 A local developer environment for running and querying ROAR assessments against a real PostgreSQL database.
 
-## What it starts
+> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own `researcher-environment:up` and `researcher-environment:down` scripts. The Firebase Auth emulator, backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server and its port differ.
+
+## What it starts (PA)
 
 | Process | URL |
 |---------|-----|
@@ -24,7 +26,7 @@ Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment
 
 ## Starting the environment
 
-From `apps/assessments/roar-pa`:
+From the assessment's directory (e.g. `apps/assessments/roar-pa` for PA):
 
 ```bash
 npm run researcher-environment:up
