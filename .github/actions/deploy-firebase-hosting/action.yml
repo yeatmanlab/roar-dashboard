@@ -30,6 +30,10 @@ inputs:
   firebase-config-path:
     description: "Path to the firebase.json config file, relative to the repository root."
     required: true
+  firebase-hosting-site:
+    description: "Firebase Hosting site ID to deploy to (e.g. roar-phoneme-staging). Required when the Firebase project hosts multiple sites."
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -64,6 +68,9 @@ runs:
         mkdir app
         cp -r ${{ inputs.dist-path }} app/dist
         cp ${{ inputs.firebase-config-path }} app/firebase.json
+        if [ -n "${{ inputs.firebase-hosting-site }}" ]; then
+          jq --arg site "${{ inputs.firebase-hosting-site }}" '.hosting.site = $site' app/firebase.json > app/firebase.tmp.json && mv app/firebase.tmp.json app/firebase.json
+        fi
         cd app && pwd && ls -la
 
     # Deploy application
