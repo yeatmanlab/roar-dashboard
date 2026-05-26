@@ -57,6 +57,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Read hosting site name
+        id: hosting
+        run: |
+          site=$(jq -r '.roar.hosting.staging' apps/assessments/${{ matrix.assessment }}/package.json)
+          echo "site=$site" >> $GITHUB_OUTPUT
+
       - name: Build assessment
         uses: ./.github/actions/build-assessment
         with:
@@ -72,3 +78,4 @@ jobs:
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
           dist-path: apps/assessments/${{ matrix.assessment }}/dist
           firebase-config-path: apps/assessments/${{ matrix.assessment }}/firebase.json
+          firebase-hosting-site: ${{ steps.hosting.outputs.site }}

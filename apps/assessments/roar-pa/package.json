@@ -6,6 +6,12 @@
   "main": "src/index.js",
   "module": "src/index.js",
   "type": "module",
+  "roar": {
+    "hosting": {
+      "staging": "roar-phoneme-staging",
+      "production": "roar-phoneme"
+    }
+  },
   "scripts": {
     "//": "build is a no-op: Vite resolves imports via 'main' (src/index.js) directly, so no webpack output is needed for dashboard#dev.",
     "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
