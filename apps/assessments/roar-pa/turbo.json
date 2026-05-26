@@ -2,6 +2,9 @@
   "$schema": "https://turborepo.com/schema.json",
   "extends": ["//"],
   "tasks": {
+    "build": {
+      "env": ["ROAR_API_URL"]
+    },
     "lint": {
       "dependsOn": ["^build"]
     }
