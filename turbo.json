@@ -23,7 +23,9 @@
     "BUILD_TEST_SERVER",
     "RUN_INTEGRATION_TESTS",
     "SENTRY_AUTH_TOKEN",
-    "CYPRESS_BASE_URL"
+    "CYPRESS_BASE_URL",
+    "FIREBASE_AUTH_EMULATOR_HOST",
+    "AUTHZ_MODEL_PATH"
   ],
   "globalDependencies": [".env"],
   "tasks": {
