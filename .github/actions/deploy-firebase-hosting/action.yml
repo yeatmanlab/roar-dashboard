@@ -1,9 +1,9 @@
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
-# roar-dashboard/deploy
+# roar-dashboard/deploy-firebase-hosting
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
 
-name: Deploy
-description: Deploys the ROAR Dashboard to Firebase Hosting.
+name: Deploy Firebase Hosting
+description: Deploys a ROAR application to Firebase Hosting.
 outputs:
   deployment-url:
     description: "The URL of the deployed application."
@@ -24,6 +24,12 @@ inputs:
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
+  dist-path:
+    description: "Path to the built dist directory, relative to the repository root."
+    required: true
+  firebase-config-path:
+    description: "Path to the firebase.json config file, relative to the repository root."
+    required: true
 
 runs:
   using: composite
@@ -56,8 +62,8 @@ runs:
       shell: bash
       run: |
         mkdir app
-        cp -r build/apps/dashboard/dist app/dist
-        cp build/apps/dashboard/firebase/admin/firebase.json app/firebase.json
+        cp -r ${{ inputs.dist-path }} app/dist
+        cp ${{ inputs.firebase-config-path }} app/firebase.json
         cd app && pwd && ls -la
 
     # Deploy application
