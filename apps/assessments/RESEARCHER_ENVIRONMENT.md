@@ -75,9 +75,17 @@ pgweb --url "postgres://postgres@localhost:5432/roar_assessment?sslmode=disable"
 
 ---
 
+### Database layout
+
+All tables live in the `app` schema — prefix every table name with `app.`.
+
+User and task data (`app.users`, `app.tasks`, `app.task_variants`) lives in **`roar_core`**.
+Trial and score data (`app.run_trials`, `app.run_scores`) lives in **`roar_assessment`**.
+Run records (`app.runs`) live in **`roar_assessment`** but are also accessible from `roar_core` via a foreign data wrapper at `app_assessment_fdw.runs` — use that when you need to join runs against users or tasks.
+
 ### Useful queries
 
-**All runs for the PA task:**
+**All runs for the PA task** — run in `roar_core`:
 
 ```sql
 SELECT
@@ -86,15 +94,16 @@ SELECT
   u.name_last,
   r.completed_at,
   r.reliable_run
-FROM runs r
-JOIN users u ON u.id = r.user_id
-JOIN task_variants tv ON tv.id = r.task_variant_id
-JOIN tasks t ON t.id = tv.task_id
+FROM app_assessment_fdw.runs r
+JOIN app.users u ON u.id = r.user_id
+JOIN app.task_variants tv ON tv.id = r.task_variant_id
+JOIN app.tasks t ON t.id = tv.task_id
 WHERE t.slug = 'pa'
+  AND r.deleted_at IS NULL
 ORDER BY r.created_at DESC;
 ```
 
-**Trial-level data for a specific run:**
+**Trial-level data for a specific run** — run in `roar_assessment`:
 
 ```sql
 SELECT
@@ -104,12 +113,12 @@ SELECT
   response,
   response_time_ms,
   subtask
-FROM run_trials
+FROM app.run_trials
 WHERE run_id = '<your-run-id>'
 ORDER BY trial_num_total;
 ```
 
-**Scores for completed runs:**
+**Scores for completed runs** — run in `roar_assessment`:
 
 ```sql
 SELECT
@@ -118,9 +127,10 @@ SELECT
   s.name,
   s.value,
   s.category_score
-FROM run_scores s
-JOIN runs r ON r.id = s.run_id
+FROM app.run_scores s
+JOIN app.runs r ON r.id = s.run_id
 WHERE r.completed_at IS NOT NULL
+  AND r.deleted_at IS NULL
 ORDER BY r.completed_at DESC;
 ```
 
