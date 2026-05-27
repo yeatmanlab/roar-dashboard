@@ -56,7 +56,7 @@ onAuthStateChanged(auth, async (user) => {
       // initialize, but this call is what provisions that UUID. The SDK can't bootstrap
       // itself, so we call the endpoint directly before handing control to initFirekitCompat.
       // eslint-disable-next-line no-undef
-      const res = await fetch(`${ROAR_API_URL}/v1/users/anonymous`, {
+      const res = await fetch(`${ROAR_API_BASE_URL}/users/anonymous`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -75,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
       let resolvedVariantId = variantId;
       if (!resolvedVariantId) {
         // eslint-disable-next-line no-undef
-        const variantRes = await fetch(`${ROAR_API_URL}/v1/tasks/${pa.PA_TASK_ID}/variants?perPage=1`, {
+        const variantRes = await fetch(`${ROAR_API_BASE_URL}/tasks/${pa.PA_TASK_ID}/variants?perPage=1`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const variantJson = await variantRes.json();
@@ -92,7 +92,7 @@ onAuthStateChanged(auth, async (user) => {
 
       const ctx = {
         // eslint-disable-next-line no-undef
-        baseUrl: `${ROAR_API_URL}/v1`,
+        baseUrl: ROAR_API_BASE_URL,
         auth: { getToken: () => user.getIdToken() },
         participant: { participantId: data.id },
       };
