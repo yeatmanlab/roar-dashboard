@@ -160,9 +160,9 @@ module.exports = async (env, args) => {
     plugins: [
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        // Default to '' so dev builds use relative URLs proxied by webpack-dev-server.
+        // Default to '/v1' so dev builds use relative URLs proxied by webpack-dev-server.
         // Set ROAR_API_BASE_URL for production — full URL including /v1.
-        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? ''),
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
