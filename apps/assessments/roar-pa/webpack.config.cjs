@@ -161,8 +161,8 @@ module.exports = async (env, args) => {
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
         // Default to '' so dev builds use relative URLs proxied by webpack-dev-server.
-        // Set ROAR_API_URL explicitly for production to point at the Cloud Run backend.
-        ROAR_API_URL: JSON.stringify(process.env.ROAR_API_URL ?? ''),
+        // Set ROAR_API_BASE_URL for production — full URL including /v1.
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL ?? ''),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
