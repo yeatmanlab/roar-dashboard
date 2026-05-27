@@ -77,7 +77,7 @@
                   </p>
                 </div>
 
-                <div v-if="game.taskId === 'teacher-survey' || game.taskId === 'caregiver-survey'" class="mt-4 mb-4">
+                <div v-if="isAdultSurveyTask(game.taskId)" class="mt-4 mb-4">
                   <div class="flex align-items-center mb-2">
                     <span class="mr-2 w-4"
                       ><b>{{ $t('gameTabs.surveyProgressGeneral') }} </b> -
@@ -340,6 +340,9 @@ const normalizedRoarTaskIds = new Set(ROAR_TASK_IDS.map((taskId) => toCamelCase(
 
 const isLevanteTask = (taskId: string): boolean => normalizedLevanteTaskIds.has(toCamelCase(taskId));
 const isRoarTask = (taskId: string): boolean => normalizedRoarTaskIds.has(toCamelCase(taskId));
+const isSurveyTask = (taskId: string): boolean => taskId.toLowerCase().includes('survey');
+const isAdultSurveyTask = (taskId: string): boolean =>
+  isSurveyTask(taskId) && (props.userData.userType === 'teacher' || props.userData.userType === 'parent');
 
 const getTaskName = (taskId: string, taskName: string): string => {
   // Translate Levante task names. The task name is not the same as the taskId.
@@ -465,7 +468,7 @@ const returnVideoOptions = (videoURL: string): VideoOptions => {
 };
 
 const isTaskComplete = (gameCompletedTime: string | Date | undefined, taskId: string): boolean => {
-  if (taskId === 'teacher-survey' || taskId === 'caregiver-survey') {
+  if (isSurveyTask(taskId)) {
     if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
       if (!surveyStore.isGeneralSurveyComplete) {
         return false;
