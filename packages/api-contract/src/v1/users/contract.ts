@@ -184,7 +184,7 @@ export const UsersContract = c.router(
     createAnonymous: {
       method: 'POST',
       path: '/anonymous',
-      body: z.object({}),
+      body: c.noBody(),
       responses: {
         200: SuccessEnvelopeSchema(CreateUserResponseSchema),
         401: ErrorEnvelopeSchema,

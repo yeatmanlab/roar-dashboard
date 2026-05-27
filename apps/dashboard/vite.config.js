@@ -117,6 +117,18 @@ const buildFirebaseConfig = (mode = 'development') => {
   const cspTemplate = replaceEnvVars(fs.readFileSync(cspTemplatePath, 'utf8'));
   const cspObj = JSON.parse(cspTemplate);
 
+  // Append the ROAR backend origin to connect-src so the ts-rest API client can reach it.
+  // Derives the origin from VITE_ROAR_API_BASE_URL (which includes the /v1 path prefix).
+  const roarApiBaseUrl = process.env.VITE_ROAR_API_BASE_URL;
+  if (roarApiBaseUrl) {
+    try {
+      const roarApiOrigin = new URL(roarApiBaseUrl).origin;
+      cspObj['connect-src'] = [...(cspObj['connect-src'] ?? []), roarApiOrigin];
+    } catch {
+      console.warn(`VITE_ROAR_API_BASE_URL is not a valid URL: ${roarApiBaseUrl}`);
+    }
+  }
+
   // Join arrays into single-line policy
   const cspPolicy = Object.entries(cspObj)
     .map(([dir, vals]) => `${dir} ${vals.join(' ')}`)
@@ -217,13 +229,17 @@ export default defineConfig(({ mode }) => {
           : false,
       // Proxy /v1 to the local backend so the browser sees same-origin requests —
       // mirrors how Firebase Hosting proxies to Cloud Run in staging/production.
-      proxy: {
-        '/v1': {
-          target: 'https://localhost:4000',
-          secure: false,
-          changeOrigin: true,
-        },
-      },
+      ...(process.env.NODE_ENV === 'development'
+        ? {
+            proxy: {
+              '/v1': {
+                target: 'https://localhost:4000',
+                secure: false,
+                changeOrigin: true,
+              },
+            },
+          }
+        : {}),
     },
 
     preview: {

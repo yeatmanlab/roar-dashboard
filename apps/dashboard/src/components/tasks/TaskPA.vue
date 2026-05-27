@@ -11,8 +11,10 @@ import '@roar-dashboard/roar-pa/src/experiment/styles/roar.css';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
+import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import { getRoarApiClient } from '@/clients/roar-api';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import { version } from '@roar-dashboard/roar-pa/package.json';
 
@@ -117,7 +119,76 @@ async function startTask(selectedAdmin) {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    // Initialize the new assessment SDK for the dashboard execution path.
+    // Fetches the PA task UUID, the current user's Postgres UUID, and the participant's
+    // administrations in parallel to resolve the correct administrationId and variantId.
+    //
+    // authStore.roarUid is a Firestore UID, not a Postgres UUID. GET /me resolves the
+    // Postgres UUID for the currently authenticated user (self-launch path).
+    // TODO: resolve the participant's Postgres UUID for the proxy-launch path (launchId set).
+    //
+    // NOTE: Until the dashboard migrates its administration queries to the new REST API,
+    // selectedAdmin.value.id is a Firestore document ID and will not match any administration
+    // in the new backend. The fallback (matching by PA task UUID within embedded tasks)
+    // is used until that migration is complete.
+    const roarApiClient = getRoarApiClient();
+
+    const [taskRes, meRes] = await Promise.all([
+      roarApiClient.tasks.get({ params: { taskId: 'pa' } }),
+      roarApiClient.me.get(),
+    ]);
+
+    if (taskRes.status !== 200) {
+      throw new Error(`pa task not found in the ROAR backend (status ${taskRes.status}).`);
+    }
+    if (meRes.status !== 200) {
+      throw new Error(`Failed to resolve current user from the ROAR backend (status ${meRes.status}).`);
+    }
+
+    // Use the Postgres UUID from /me for self-launch; launchId for proxy-launch (admin-initiated).
+    // TODO: resolve participant's Postgres UUID when launchId is set.
+    const participantId = props.launchId ?? meRes.body.data.id;
+
+    const adminsRes = await roarApiClient.users.listUserAdministrations({
+      params: { userId: participantId },
+      query: { embed: 'tasks', perPage: 50 },
+    });
+
+    if (adminsRes.status !== 200) {
+      throw new Error(`Failed to fetch administrations from the ROAR backend (status ${adminsRes.status}).`);
+    }
+
+    const paTaskUuid = taskRes.body.data.id;
+    const backendAdmins = adminsRes.body.data.items;
+
+    const matchedAdmin =
+      backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
+      backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === paTaskUuid));
+
+    if (!matchedAdmin) {
+      throw new Error('No administration containing the pa task found in the ROAR backend.');
+    }
+
+    const paTaskVariant = (matchedAdmin.tasks ?? []).find((t) => t.taskId === paTaskUuid);
+    if (!paTaskVariant) {
+      throw new Error('No pa task variant found in the matched administration.');
+    }
+
+    initFirekitCompat(
+      {
+        baseUrl: import.meta.env.VITE_ROAR_API_BASE_URL,
+        auth: { getToken: () => Promise.resolve(authStore.accessToken) },
+        participant: { participantId },
+      },
+      {
+        variantId: paTaskVariant.variantId,
+        taskVersion: version,
+        administrationId: matchedAdmin.id,
+        isAnonymous: false,
+      },
+    );
+
+    const roarApp = new TaskLauncher(gameParams, userParams, 'jspsych-target');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.

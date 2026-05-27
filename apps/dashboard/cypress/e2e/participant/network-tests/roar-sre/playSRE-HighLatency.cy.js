@@ -3,6 +3,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roar-sre';
 
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
 describe.skip('ROAR - Sentence Play Through', () => {
   it('Plays SRE with a simulated high latency connection', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {

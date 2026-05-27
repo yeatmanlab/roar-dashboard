@@ -14,11 +14,13 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
+      "require": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
     "./compat/firekit": {
       "types": "./dist/compat/firekit.d.ts",
       "import": "./dist/compat/firekit.mjs",
+      "require": "./dist/compat/firekit.mjs",
       "default": "./dist/compat/firekit.mjs"
     }
   },

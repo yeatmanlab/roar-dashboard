@@ -24,7 +24,13 @@ import request from 'supertest';
 import { StatusCodes } from 'http-status-codes';
 import { faker } from '@faker-js/faker';
 import { randomUUID } from 'crypto';
-import { authenticateAs, createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
+import {
+  authenticateAs,
+  authenticateAsAnonymous,
+  createTestApp,
+  createRouteHelper,
+  createTierUsers,
+} from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
@@ -32,6 +38,7 @@ import { TaskVariantRepository } from '../repositories/task-variant.repository';
 import { TaskVariantParameterRepository } from '../repositories/task-variant-parameter.repository';
 import { TaskVariantFactory } from '../test-support/factories/task-variant.factory';
 import { TaskFactory } from '../test-support/factories/task.factory';
+import { UserFactory } from '../test-support/factories/user.factory';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup
@@ -1814,6 +1821,82 @@ describe('GET /v1/tasks/:taskId/variants', () => {
         .set('Authorization', 'Bearer token');
 
       expect(resMixed.status).toBe(StatusCodes.NOT_FOUND);
+    });
+  });
+
+  // serve.js (standalone anonymous mode) calls this endpoint with an anonymous
+  // Firebase bearer token to resolve a default variant ID before initializing
+  // the SDK. These tests confirm that an anonymous token with a provisioned ROAR
+  // user record can reach the endpoint and that the response shape the caller
+  // depends on (items[0].id) is actually present.
+  // See: https://github.com/yeatmanlab/roar-project-management/issues/1828
+  describe('anonymous bearer access', () => {
+    it('returns 200 with published variants for a user with an anonymous Firebase token', async () => {
+      const testTask = await TaskFactory.create({ slug: `anon-access-${getUniqueSlugSuffix()}` });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'published',
+      });
+
+      // Simulate a ROAR user provisioned by POST /v1/users/anonymous — they have
+      // a user record in PostgreSQL but no org memberships.
+      const anonUser = await UserFactory.create({ isSuperAdmin: false });
+      authenticateAsAnonymous(anonUser.authId!);
+
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.items[0]!.id).toBe(publishedVariant.id);
+    });
+
+    it('returns the variant id field that serve.js reads from items[0].id', async () => {
+      const testTask = await TaskFactory.create({ slug: `anon-id-field-${getUniqueSlugSuffix()}` });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'published',
+      });
+
+      const anonUser = await UserFactory.create({ isSuperAdmin: false });
+      authenticateAsAnonymous(anonUser.authId!);
+
+      const res = await request(app)
+        .get(`/v1/tasks/${testTask.id}/variants`)
+        .query({ perPage: 1 })
+        .set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items[0]!).toHaveProperty('id', publishedVariant.id);
+    });
+
+    it('does not expose draft variants to an anonymous bearer', async () => {
+      const testTask = await TaskFactory.create({ slug: `anon-draft-${getUniqueSlugSuffix()}` });
+      await TaskVariantFactory.create({ taskId: testTask.id, status: 'draft' });
+
+      const anonUser = await UserFactory.create({ isSuperAdmin: false });
+      authenticateAsAnonymous(anonUser.authId!);
+
+      const res = await request(app).get(`/v1/tasks/${testTask.id}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items).toHaveLength(0);
+    });
+
+    it('resolves by task slug as well as by task UUID', async () => {
+      const uniqueSlug = `anon-slug-${getUniqueSlugSuffix()}`;
+      const testTask = await TaskFactory.create({ slug: uniqueSlug });
+      const publishedVariant = await TaskVariantFactory.create({
+        taskId: testTask.id,
+        status: 'published',
+      });
+
+      const anonUser = await UserFactory.create({ isSuperAdmin: false });
+      authenticateAsAnonymous(anonUser.authId!);
+
+      const res = await request(app).get(`/v1/tasks/${uniqueSlug}/variants`).set('Authorization', 'Bearer token');
+
+      expect(res.status).toBe(StatusCodes.OK);
+      expect(res.body.data.items[0]!.id).toBe(publishedVariant.id);
     });
   });
 });

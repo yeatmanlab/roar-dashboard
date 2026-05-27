@@ -3,6 +3,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 
 const app = '@bdelab/roam-apps';
 
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
 describe.skip('Test playthrough of ROAM as a participant in a simulated 3G network', () => {
   it('ROAM Playthrough Test', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
