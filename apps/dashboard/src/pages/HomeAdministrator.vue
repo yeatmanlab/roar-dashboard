@@ -222,13 +222,15 @@ watch(
     generateAutoCompleteSearchTokens();
 
     // Set the filtered administrations based on the search value.
-    if (!search.value) {
-      filteredAdministrations.value = updatedAdministrationsData;
-    } else {
-      filteredAdministrations.value = updatedAdministrationsData?.filter((item) =>
+    let filtered = updatedAdministrationsData;
+    if (search.value) {
+      filtered = updatedAdministrationsData.filter((item) =>
         item.name.toLowerCase().includes(search.value.toLowerCase()),
       );
     }
+
+    // Re-apply the current sort after data refresh
+    filteredAdministrations.value = applySort(filtered);
   },
   { immediate: true },
 );
@@ -313,19 +315,13 @@ const sortOrder = ref(1);
 const sortField = ref('name');
 const dataViewKey = ref(0);
 
-watch([sortField, sortOrder], () => {
-  if (!filteredAdministrations.value || !sortField.value) return;
+const applySort = (items) => {
+  if (!items || !sortField.value) return items;
 
-  const sorted = [...filteredAdministrations.value];
+  const sorted = [...items];
   sorted.sort((a, b) => {
     let aVal = sortField.value.split('.').reduce((obj, key) => obj?.[key], a);
     let bVal = sortField.value.split('.').reduce((obj, key) => obj?.[key], b);
-
-    // Fall back to name if publicName is missing
-    if (sortField.value === 'publicName') {
-      aVal = aVal ?? a.name;
-      bVal = bVal ?? b.name;
-    }
 
     if (aVal == null && bVal == null) return 0;
     if (aVal == null) return sortOrder.value === 1 ? 1 : -1;
@@ -336,8 +332,17 @@ watch([sortField, sortOrder], () => {
     return 0;
   });
 
-  filteredAdministrations.value = sorted;
-});
+  return sorted;
+};
+
+watch(
+  [sortField, sortOrder],
+  () => {
+    if (!filteredAdministrations.value) return;
+    filteredAdministrations.value = applySort(filteredAdministrations.value);
+  },
+  { immediate: true },
+);
 
 /**
  * Clear the search input and reset the filtered administrations list.
@@ -346,7 +351,7 @@ watch([sortField, sortOrder], () => {
 const clearSearch = () => {
   search.value = '';
   searchInput.value = '';
-  filteredAdministrations.value = administrations.value;
+  filteredAdministrations.value = applySort(administrations.value);
 };
 
 /**
@@ -355,12 +360,10 @@ const clearSearch = () => {
  */
 const onSearch = () => {
   search.value = searchInput.value;
-  if (!search.value) filteredAdministrations.value = administrations.value;
-  else {
-    filteredAdministrations.value = administrations.value.filter((item) =>
-      item.name.toLowerCase().includes(search.value.toLowerCase()),
-    );
-  }
+  const filtered = !search.value
+    ? administrations.value
+    : administrations.value.filter((item) => item.name.toLowerCase().includes(search.value.toLowerCase()));
+  filteredAdministrations.value = applySort(filtered);
 };
 
 /**
@@ -386,7 +389,7 @@ const onSortChange = (event) => {
   if (!isSuperAdmin.value && sortConfig?.field?.fieldPath === 'name') {
     sortField.value = 'publicName';
   } else {
-    sortField.value = sortConfig?.field?.fieldPath;
+    sortField.value = sortConfig?.field?.fieldPath ?? 'name';
   }
 
   sortOrder.value = sortConfig?.direction === 'DESCENDING' ? -1 : 1;
