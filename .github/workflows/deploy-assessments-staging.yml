@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - ref/1794/monorepo-deployment-strategy
   workflow_dispatch:
     inputs:
       assessment:
