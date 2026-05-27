@@ -344,7 +344,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           install: false
-          start: npm run dev -w apps/assessments/${{ matrix.assessment }}
+          start: npm run dev
           browser: ${{ matrix.browser }}
           working-directory: apps/assessments/${{ matrix.assessment }}
           wait-on: 'http://localhost:8000'
