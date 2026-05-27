@@ -8,7 +8,7 @@
   "type": "module",
   "roar": {
     "hosting": {
-      "staging": "roar-phoneme-staging",
+      "staging": "roar-phoneme-monorepo",
       "production": "roar-phoneme"
     }
   },
