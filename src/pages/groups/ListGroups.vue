@@ -209,7 +209,6 @@ import { ref, computed, onMounted, onUnmounted, watch, watchEffect } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useRouter } from 'vue-router';
 import PvButton from 'primevue/button';
 import PvDialog from 'primevue/dialog';
 import PvSelect from 'primevue/select';
@@ -244,11 +243,9 @@ import { ROLES } from '@/constants/roles';
 import { normalizeToLowercase } from '@/helpers';
 import _useDistrictsQuery from '@/composables/queries/_useDistrictsQuery';
 import _useSchoolsQuery from '@/composables/queries/_useSchoolsQuery';
-import { usePermissions } from '@/composables/usePermissions';
 import { ORG_TYPES, SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
-const router = useRouter();
 const initialized = ref(false);
 const selectedDistrict = ref(undefined);
 const selectedSchoolId = ref(undefined);
@@ -302,11 +299,15 @@ const activeIndex = ref(0);
 
 const activeOrgType = computed({
   get() {
-    return Object.keys(orgHeaders.value)[activeIndex.value];
+    const keys = Object.keys(orgHeaders.value);
+    const tab = history.state?.tab;
+    if (typeof tab === 'string' && keys.includes(tab)) return tab;
+    return keys[activeIndex.value];
   },
   set(value) {
     const keys = Object.keys(orgHeaders.value);
-    activeIndex.value = keys.indexOf(value);
+    const index = keys.indexOf(value);
+    if (index !== -1) activeIndex.value = index;
   },
 });
 
@@ -676,6 +677,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
+  history.replaceState({}, '');
 });
 
 onUnmounted(() => {

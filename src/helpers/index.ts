@@ -310,6 +310,40 @@ export const isObject = (obj: unknown): boolean => obj !== null && typeof obj ==
 // This one just accept plain objects
 export const isPlainObject = (obj: unknown): boolean => Object.prototype.toString.call(obj) === '[object Object]';
 
+// Convert dates to Date objects, handling both timestamp strings and Date objects
+export const convertToDate = (dateValue?: unknown): Date | null => {
+  if (!dateValue) return null;
+
+  // Already a Date
+  if (dateValue instanceof Date) {
+    return isNaN(dateValue.getTime()) ? null : dateValue;
+  }
+
+  // Firestore Timestamp (preferred way)
+  if (
+    typeof dateValue === 'object' &&
+    dateValue !== null &&
+    'toDate' in dateValue &&
+    typeof (dateValue as any).toDate === 'function'
+  ) {
+    return (dateValue as any).toDate();
+  }
+
+  // Firestore raw format fallback
+  if (typeof dateValue === 'object' && dateValue !== null && '_seconds' in dateValue) {
+    const { _seconds = 0, _nanoseconds = 0 } = dateValue as any;
+    return new Date(_seconds * 1000 + _nanoseconds / 1_000_000);
+  }
+
+  // String or number fallback
+  if (typeof dateValue === 'string' || typeof dateValue === 'number') {
+    const parsed = new Date(dateValue);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+};
+
 export const isEmailValid = (email: string): boolean => {
   const re =
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

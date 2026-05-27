@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import type { UseMutationReturnType } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import { USER_UPDATE_MUTATION_KEY } from '@/constants/mutationKeys';
+import { SITE_OVERVIEW_QUERY_KEY, USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { useAuthStore } from '@/store/auth';
 
 interface UpdateUserParams {
   userId: string;
@@ -30,6 +30,8 @@ const useUpdateUserMutation = (): UseMutationReturnType<void, Error, UpdateUserP
       await authStore.roarfirekit.updateUserData(userId, userData);
     },
     onSuccess: (): void => {
+      // NB: This invalidation is too broad, but siteId is not available w/o refactoring
+      queryClient.invalidateQueries({ queryKey: [SITE_OVERVIEW_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [USER_DATA_QUERY_KEY] });
     },
   });

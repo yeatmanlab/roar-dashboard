@@ -113,6 +113,7 @@ onUnmounted((): void => {
 
 const computedItems = computed((): MenuItem[] => {
   const items: MenuItem[] = [];
+
   // Groups only has one associated page and therefore is not nested within items
   const groupsAction = rawActions.value.find((action) => action.category === 'Groups');
   if (groupsAction) {
@@ -202,14 +203,8 @@ nav {
 .levante-logo {
   display: block;
   width: 100%;
-  max-width: 200px;
+  max-width: 150px;
   margin: 0;
   padding: 0;
-}
-
-@media screen and (max-width: 768px) {
-  .levante-logo :deep(img) {
-    width: 160px !important;
-  }
 }
 </style>

@@ -140,6 +140,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/view-assignments',
+    name: 'ViewAssignments',
+    component: () => import('@/pages/ViewAssignments.vue'),
+    meta: {
+      pageTitle: 'View Assignments',
+      allowedRoles: [ROLES.RESEARCH_ASSISTANT, ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
+    },
+  },
+  {
     path: '/create-assignment',
     name: 'CreateAssignment',
     component: () => import('@/pages/CreateAssignment.vue'),

@@ -2,6 +2,7 @@ import * as Papa from 'papaparse';
 import { createPinia, setActivePinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import Tooltip from 'primevue/tooltip';
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
@@ -93,7 +94,10 @@ const mockFileUploadEvent = (content: string) => ({
 const mountAddUsers = () =>
   mount(AddUsers, {
     global: {
-      plugins: [PrimeVue],
+      plugins: [
+        PrimeVue,
+        [VueQueryPlugin, { queryClient: new QueryClient({ defaultOptions: { queries: { retry: false } } }) }],
+      ],
       directives: { tooltip: Tooltip },
       stubs: {
         AddUsersInfo: true,

@@ -1,7 +1,7 @@
+import { doc, getDoc, type DocumentData } from 'firebase/firestore';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { Repository } from '@/firebase/Repository';
 import { FirebaseService } from '@/firebase/Service';
-import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
-import { doc, getDoc, type DocumentData } from 'firebase/firestore';
 import { logger } from '@/logger';
 
 interface GetAdministrationsParams {
@@ -53,10 +53,7 @@ class AdministrationsRepository extends Repository {
     }
   }
 
-  async fetchOrgBySingularRouteType(
-    orgType: string,
-    orgId: string,
-  ): Promise<(DocumentData & { id: string }) | null> {
+  async fetchOrgBySingularRouteType(orgType: string, orgId: string): Promise<(DocumentData & { id: string }) | null> {
     const collectionId = ORG_COLLECTION_BY_ROUTE_TYPE[orgType];
     if (!collectionId) {
       throw new Error(`Unsupported org type for Firestore fetch: ${orgType}`);

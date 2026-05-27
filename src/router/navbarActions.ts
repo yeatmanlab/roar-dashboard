@@ -25,7 +25,7 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
   {
     title: 'View Assignments',
     icon: 'pi pi-list',
-    buttonLink: { name: 'Home' },
+    buttonLink: { name: 'ViewAssignments' },
     allowedRoles: [ROLES.RESEARCH_ASSISTANT, ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     category: 'Assignments',
   },
@@ -55,7 +55,7 @@ const navbarActionOptions: Readonly<NavbarAction>[] = [
     buttonLink: { name: 'ManageResearchers' },
     allowedRoles: [ROLES.RESEARCH_ASSISTANT, ROLES.ADMIN, ROLES.SITE_ADMIN, ROLES.SUPER_ADMIN],
     category: 'Researchers',
-  }
+  },
 ] as const;
 
 interface GetNavbarActionsParams {

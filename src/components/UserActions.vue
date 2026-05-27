@@ -133,11 +133,10 @@ const handleProfileChange = (e: DropdownChangeEvent): void => {
 </script>
 
 <style lang="scss">
-.options-wrapper {
-  @media (max-width: 768px) {
-    .p-select-dropdown {
-      display: none;
-    }
+.options-help,
+.options-settings {
+  .p-select-dropdown {
+    display: none;
   }
 }
 </style>

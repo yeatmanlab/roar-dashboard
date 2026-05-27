@@ -5,6 +5,7 @@ import { logger } from '@/logger';
 import { fetchOrgsBySite } from './orgs';
 import { administrationsRepository } from '@/firebase/repositories/AdministrationsRepository';
 import { usersRepository } from '@/firebase/repositories/UsersRepository';
+import { convertToDate } from '@/helpers';
 
 export function getTitle(item, isSuperAdmin) {
   if (isSuperAdmin) {
@@ -14,27 +15,6 @@ export function getTitle(item, isSuperAdmin) {
     return item.publicName ?? item.name;
   }
 }
-
-// Convert dates to Date objects, handling both timestamp strings and Date objects
-export const convertToDate = (dateValue) => {
-  if (!dateValue) return null;
-  if (dateValue instanceof Date) return dateValue;
-
-  // If it's already a Date object, return it
-  if (dateValue instanceof Date) {
-    return isNaN(dateValue.getTime()) ? null : dateValue;
-  }
-
-  // If it's a Firestore Timestamp object with toDate method
-  if (typeof dateValue === 'object' && typeof dateValue.toDate === 'function') {
-    return dateValue.toDate();
-  }
-  if (typeof dateValue === 'object' && typeof dateValue._seconds === 'number') {
-    const seconds = dateValue._seconds || 0;
-    const nanoseconds = dateValue._nanoseconds || 0;
-    return new Date(seconds * 1000 + nanoseconds / 1000000);
-  }
-};
 
 // TODO: Remove this function. Fields that we want should be passed into the query, not filtered from the whole data of the document on the client side.
 // Netowrk call should be done in the query function, not here.

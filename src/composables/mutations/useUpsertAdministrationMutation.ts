@@ -1,13 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import type { UseMutationReturnType } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
 import { ADMINISTRATION_UPSERT_MUTATION_KEY } from '@/constants/mutationKeys';
 import {
   ADMINISTRATIONS_QUERY_KEY,
   ADMINISTRATIONS_LIST_QUERY_KEY,
   ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+  SITE_OVERVIEW_QUERY_KEY,
 } from '@/constants/queryKeys';
 import { logger } from '@/logger';
+import { useAuthStore } from '@/store/auth';
 
 interface AdministrationData {
   [key: string]: any;
@@ -42,6 +43,8 @@ const useUpsertAdministrationMutation = (): UseMutationReturnType<void, Error, A
       queryClient.invalidateQueries({
         queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY],
       });
+      // NB: This invalidation is too broad, but siteId is not available w/o refactoring
+      queryClient.invalidateQueries({ queryKey: [SITE_OVERVIEW_QUERY_KEY] });
       logger.capture('Admin: Create Administration', { data });
     },
     onError: (error: Error, data: AdministrationData): void => {

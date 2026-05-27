@@ -3,7 +3,7 @@ import { ref, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import * as VueQuery from '@tanstack/vue-query';
-import HomeAdministrator from '@/pages/HomeAdministrator.vue';
+import ViewAssignments from '@/pages/ViewAssignments.vue';
 import PrimeVue from 'primevue/config';
 import ConfirmService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
@@ -102,7 +102,7 @@ const mockAdministration = {
   },
 };
 
-describe('HomeAdministrator', () => {
+describe('ViewAssignments', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
 
@@ -167,6 +167,15 @@ describe('HomeAdministrator', () => {
       })),
     }));
 
+    // mocking PvChart since it is used within CardAdministration and throwing errors.
+    // if we do want to test the chart's functionality we should revisit or test in
+    // CardAdministration's unit test
+    vi.mock('primevue/chart', () => ({
+      default: {
+        template: '<div />',
+      },
+    }));
+
     vi.mock('vue-router', () => ({
       useRouter: () => ({
         push: vi.fn(),
@@ -185,6 +194,7 @@ describe('HomeAdministrator', () => {
         template: '<div data-cy="h2-card-admin"><h2 data-cy="h2-card-admin-title">{{ title }}</h2></div>',
         props: [
           'title',
+          'stats',
           'dates',
           'assignees',
           'assessments',
@@ -220,7 +230,7 @@ describe('HomeAdministrator', () => {
       isSuccess: ref(true),
     });
 
-    const wrapper = mount(HomeAdministrator, {
+    const wrapper = mount(ViewAssignments, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue],
       },
@@ -254,7 +264,7 @@ describe('HomeAdministrator', () => {
       isSuccess: ref(false),
     });
 
-    const wrapper = mount(HomeAdministrator, {
+    const wrapper = mount(ViewAssignments, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue],
       },
@@ -277,7 +287,7 @@ describe('HomeAdministrator', () => {
       isSuccess: ref(true),
     });
 
-    const wrapper = mount(HomeAdministrator, {
+    const wrapper = mount(ViewAssignments, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService],
         components: {
@@ -306,7 +316,7 @@ describe('HomeAdministrator', () => {
       isSuccess: ref(true),
     });
 
-    const wrapper = mount(HomeAdministrator, {
+    const wrapper = mount(ViewAssignments, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService],
         components: {
@@ -357,7 +367,7 @@ describe('HomeAdministrator', () => {
       isSuccess: ref(true),
     });
 
-    const wrapper = mount(HomeAdministrator, {
+    const wrapper = mount(ViewAssignments, {
       global: {
         plugins: [VueQuery.VueQueryPlugin, PrimeVue, ConfirmService, ToastService],
         components: {

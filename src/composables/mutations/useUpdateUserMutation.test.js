@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
 import * as VueQuery from '@tanstack/vue-query';
+import { SITE_OVERVIEW_QUERY_KEY, USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import { useAuthStore } from '@/store/auth';
 import useUpdateUserMutation from './useUpdateUserMutation';
 
@@ -66,7 +67,8 @@ describe('useUpdateUserMutation', () => {
     await mutateAsync(mockUser);
 
     expect(isSuccess.value).toBe(true);
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['user'] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: [SITE_OVERVIEW_QUERY_KEY] });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: [USER_DATA_QUERY_KEY] });
   });
 
   it('should not invalidate task queries upon mutation failure', async () => {

@@ -89,6 +89,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQueryClient } from '@tanstack/vue-query';
 import _chunk from 'lodash/chunk';
 import _cloneDeep from 'lodash/cloneDeep';
 import { storeToRefs } from 'pinia';
@@ -111,6 +112,7 @@ import CsvTable from '@/components/CsvTable.vue';
 import CsvUploader from '@/components/CsvUploader.vue';
 import AddUsersInfo from '@/components/userInfo/AddUsersInfo.vue';
 import { NORMALIZED_USER_CSV_HEADERS, USER_CSV_HEADERS } from '@/constants/csv';
+import { SITE_OVERVIEW_QUERY_KEY } from '@/constants/queryKeys';
 import { CreateUsersPayload, usersRepository } from '@/firebase/repositories/UsersRepository';
 import { normalizeToLowercase } from '@/helpers';
 import { deriveNextCsvFilename, downloadCsv, parseCsvFile, unparseCsvFile } from '@/helpers/csv';
@@ -128,6 +130,10 @@ const levanteStore = useLevanteStore();
 const { setShouldUserConfirm } = levanteStore;
 
 const router = useRouter();
+// @TODO: createUsers is called directly on usersRepository rather than through a mutation composable (unlike
+// useUpsertAdministrationMutation etc.), so cache invalidation has to be done manually here instead of in onSuccess.
+// Consider wrapping usersRepository.createUsers in a useCreateUsersMutation composable for consistency.
+const queryClient = useQueryClient();
 
 const isSubmitting = ref(false);
 const newUsers = ref<UserCsvType | null>(null);
@@ -486,6 +492,7 @@ const submitUsers = async () => {
     status.value = { message: 'Users created successfully.', severity: 'success' };
     setShouldUserConfirm(false);
     downloadRegisteredUsers();
+    queryClient.invalidateQueries({ queryKey: [SITE_OVERVIEW_QUERY_KEY, selectedSiteId] });
   } catch (error) {
     logger.error('Error Registering Users', { error });
     const message = error instanceof Error ? error.message : String(error);

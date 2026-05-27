@@ -1,557 +1,490 @@
 <template>
-  <main class="container main">
-    <section class="main-body">
-      <div>
-        <div class="flex flex-column">
-          <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
-            <div class="flex flex-1 flex-column gap-2">
-              <div class="page-title-row flex align-items-center justify-content-start gap-2 mb-2">
-                <div class="admin-page-header m-0">View Assignments</div>
-                <DocsButton href="https://researcher.levante-network.org/dashboard/monitor-completion" label="Documentation" />
-              </div>
+  <LevanteSpinner v-if="isLoading" fullscreen />
 
-              <div class="text-md text-gray-500 mb-1 line-height-3">
-                This page lists all the assignments that are administered to your users. You can view and monitor
-                completion and create new bundles of tasks, surveys, and questionnaires to be administered as
-                assignments.
-              </div>
-            </div>
-            <div class="flex flex-1 justify-content-end align-items-center gap-2 mt-2">
-              <div class="flex gap-3 align-items-stretch justify-content-start">
-                <div class="flex flex-column gap-1">
-                  <small id="search-help" class="text-gray-400">Search by name</small>
-                  <div class="flex align-items-center">
-                    <PvInputGroup>
-                      <PvAutoComplete
-                        v-model="searchInput"
-                        placeholder="Search Assignments"
-                        :suggestions="searchSuggestions"
-                        data-cy="search-input"
-                        @complete="autocomplete"
-                        @keyup.enter="onSearch"
-                      />
-                      <PvButton
-                        icon="pi pi-search"
-                        class="text-xs bg-primary border-none text-white pl-3 pr-3"
-                        @click="onSearch"
-                      />
-                    </PvInputGroup>
-                  </div>
-                </div>
-              </div>
+  <div v-else class="text-color">
+    <div class="w-full px-5 my-5">
+      <div class="text-2xl">{{ userName ? 'Welcome,' : 'Welcome!' }}</div>
+      <div v-if="userName" class="font-bold text-3xl">{{ userName }}</div>
+    </div>
 
-              <div class="flex flex-column gap-1">
-                <small for="dd-sort" class="text-gray-400">Sort by</small>
-                <PvSelect
-                  v-model="sortKey"
-                  input-id="dd-sort"
-                  :options="sortOptions"
-                  option-label="label"
-                  data-cy="dropdown-sort-administrations"
-                  @change="onSortChange($event)"
-                />
-              </div>
+    <div class="w-full px-5 mb-5">
+      <div class="info">
+        <i class="pi pi-exclamation-circle" />
 
-              <div class="flex flex-column gap-1">
-                <small for="dd-sort" class="text-gray-400">Status</small>
-                <PvSelect
-                  v-model="filterKey"
-                  input-id="dd-filter"
-                  :options="filterOptions"
-                  option-label="label"
-                  data-cy="dropdown-filter-administrations"
-                  @change="onFilterChange($event)"
-                />
-              </div>
-            </div>
-          </div>
+        <div class="mr-auto">
+          First things first, let's read the quick documentation to get a better overview of the LEVANTE Platform.
 
-  
-
-          <div
-            v-if="search.length > 0"
-            class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 rounded"
-          >
-            <div>
-              You searched for <strong>{{ search }}</strong>
-            </div>
-            <PvButton
-              text
-              class="text-xs p-2 border-none border-round text-primary hover:surface-200"
-              @click="clearSearch"
-            >
-              Clear Search
-            </PvButton>
+          <div class="font-semibold">
+            Always remember: create a group, add some users to it, and finally create an assignment.
           </div>
         </div>
 
-        <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
-          <div
-            style="
-              width: 100%;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              margin-top: 100px;
-              margin-bottom: 50px;
-            "
-          >
-            <LevanteSpinner :size="200" />
-          </div>
-          <span class="uppercase font-light text-sm text-gray-600">
-            <template v-if="fetchTestAdministrations">Fetching Test Assignments</template>
-            <template v-else>Fetching Assignments</template>
-          </span>
-        </div>
-        <div v-else>
-          <PvBlockUI>
-            <PvDataView
-              :key="dataViewKey"
-              v-model:first="dataViewFirst"
-              :rows-per-page-options="[3, 5, 10, 25]"
-              :rows="pageLimit"
-              :sort-field="sortField"
-              :sort-order="sortOrder"
-              :total-records="filteredAdministrations?.length"
-              :value="filteredAdministrations"
-              data-key="id"
-              paginator
-              paginator-position="both"
-            >
-              <template v-if="filteredAdministrations?.length" #paginatorend>
-                <span class="text-sm">
-                  <span class="font-semibold">Total:</span> {{ filteredAdministrations?.length }}
-                </span>
-              </template>
-
-              <template #list="slotProps">
-                <div class="mb-2 w-full">
-                  <CardAdministration
-                    v-for="(item, cardIndexInPage) in slotProps.items"
-                    :id="item.id"
-                    :key="item.id"
-                    :card-index-in-page="cardIndexInPage"
-                    :current-page="currentPage"
-                    :rows-per-page="pageLimit"
-                    :title="getTitle(item, isUserSuperAdmin())"
-                    :dates="item.dates"
-                    :assignees="item.assignedOrgs"
-                    :assessments="item.assessments"
-                    :public-name="item.publicName ?? item.name"
-                    :show-params="isUserSuperAdmin()"
-                    :is-super-admin="isUserSuperAdmin()"
-                    :creator-name="item.creatorName"
-                    :sync-status="item.syncStatus"
-                    data-cy="h2-card-admin"
-                  />
-                </div>
-              </template>
-
-              <template #empty>
-                <div class="flex flex-column align-items-center justify-content-center py-8">
-                  <h1 class="text-xl font-bold mb-4">No Assignments Yet</h1>
-                  <p class="text-center text-gray-500 mb-4">Go create your first assignment to get started.</p>
-                  <PvButton
-                    label="Create Assignment"
-                    class="bg-primary border-none text-white"
-                    @click="$router.push({ name: 'CreateAssignment' })"
-                  />
-                </div>
-              </template>
-            </PvDataView>
-          </PvBlockUI>
+        <div class="docs-button-wrapper">
+          <DocsButton href="https://researcher.levante-network.org/dashboard/add-users" label="Documentation" />
         </div>
       </div>
-    </section>
-  </main>
+    </div>
+
+    <div v-if="showSelectSitePrompt" class="w-full px-5 mb-5 -mt-4">
+      <div class="info info--site-not-selected">
+        <i class="pi pi-exclamation-circle" />
+        <div class="font-medium">Select a site to see stats</div>
+      </div>
+    </div>
+
+    <div class="w-full px-5 mb-5">
+      <div class="flex align-items-center gap-4">
+        <div class="font-medium text-2xl">Users</div>
+
+        <div class="divider" />
+
+        <div class="flex align-items-center gap-1 font-medium">
+          <small>Total:</small>
+          <small class="text-color-secondary">{{ isSiteSelected ? numOfUsers : '-' }}</small>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mt-3">
+        <div v-for="[key, value] in Object.entries(users)" :key="key" class="user-type">
+          <div>{{ value.label }}</div>
+          <PvBadge :value="isSiteSelected ? value.numOf : '-'" class="badge" />
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full px-5 mb-5">
+      <div class="flex align-items-center gap-4">
+        <div class="font-medium text-2xl">Assignments</div>
+
+        <div class="divider" />
+
+        <div class="flex align-items-center gap-1 font-medium">
+          <small>Total:</small>
+          <small class="text-color-secondary">{{ isSiteSelected ? numOfAssignments : '-' }}</small>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-4 mt-3">
+        <div v-for="[key, value] in Object.entries(assignments)" :key="key" class="assignment-card">
+          <div class="flex justify-content-between">
+            <div>
+              <div class="text-2xl">{{ isSiteSelected ? value.numOf : '-' }}</div>
+              <div class="text-color-secondary">{{ `${value.label} Assignments` }}</div>
+            </div>
+
+            <div :class="`assignment-icon-wrapper assignment-icon-wrapper--${key}`">
+              <i v-if="key === 'open'" class="pi pi-play" />
+              <i v-if="key === 'upcoming'" class="pi pi-clock" />
+              <i v-if="key === 'closed'" class="pi pi-briefcase" />
+            </div>
+          </div>
+
+          <div v-if="isSiteSelected">
+            <div class="assignment-card-footer">
+              <RouterLink
+                v-if="value.numOf"
+                :to="{
+                  name: 'ViewAssignments',
+                  state: { status: key },
+                }"
+                class="inline-flex align-items-center gap-2 font-semibold text-sm text-color no-underline"
+              >
+                <span>View {{ key }}</span>
+                <i class="pi pi-arrow-right text-xs" />
+              </RouterLink>
+
+              <div
+                v-else
+                class="inline-flex align-items-center gap-2 font-semibold text-sm text-color no-underline opacity-50 select-none"
+              >
+                <span>View {{ key }}</span>
+                <i class="pi pi-arrow-right text-xs" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full px-5 mb-5">
+      <div class="flex align-items-center gap-4">
+        <div class="font-medium text-2xl">Groups</div>
+
+        <div class="divider" />
+
+        <div class="flex align-items-center gap-1 font-medium">
+          <small>Total:</small>
+          <small class="text-color-secondary">{{ isSiteSelected ? numOfGroups : '-' }}</small>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap align-items-start gap-4 w-full h-auto mt-3">
+        <div class="group-card">
+          <div class="group-card-header">
+            <div class="flex align-items-center gap-2">
+              <div class="font-semibold">Schools</div>
+              <PvBadge :value="isSiteSelected ? schools.length : '-'" class="badge" />
+            </div>
+
+            <div v-if="isSiteSelected">
+              <RouterLink
+                :to="{
+                  name: 'ListGroups',
+                  state: { tab: 'schools' },
+                }"
+                class="inline-flex align-items-center gap-2 font-semibold text-sm text-color no-underline"
+              >
+                <span v-if="schools.length">View schools</span>
+                <span v-else>Create</span>
+                <i v-if="schools.length" class="pi pi-arrow-right text-xs" />
+                <i v-else class="pi pi-plus text-xs" />
+              </RouterLink>
+            </div>
+          </div>
+
+          <div v-if="isSiteSelected">
+            <div v-if="schools.length">
+              <div v-for="school in schools" :key="school?.id" class="group-item">
+                <div>{{ school?.name }}</div>
+                <RouterLink :to="`/list-users/schools/${school?.id}/${school?.name}`" class="group-item-link">
+                  <i class="pi pi-users" />
+                </RouterLink>
+              </div>
+            </div>
+
+            <div v-else>
+              <div class="p-3 text-sm text-color-secondary">There are no schools yet</div>
+            </div>
+          </div>
+
+          <div v-else>
+            <div class="p-3 text-sm text-color-secondary">Select a site to see stats</div>
+          </div>
+        </div>
+
+        <div class="group-card">
+          <div class="group-card-header">
+            <div class="flex align-items-center gap-2">
+              <div class="font-semibold">Classes</div>
+              <PvBadge :value="isSiteSelected ? classes.length : '-'" class="badge" />
+            </div>
+
+            <div v-if="isSiteSelected">
+              <RouterLink
+                :to="{
+                  name: 'ListGroups',
+                  state: { tab: 'classes' },
+                }"
+                class="inline-flex align-items-center gap-2 font-semibold text-sm text-color no-underline"
+              >
+                <span v-if="classes.length">View classes</span>
+                <span v-else>Create</span>
+
+                <i v-if="classes.length" class="pi pi-arrow-right text-xs" />
+                <i v-else class="pi pi-plus text-xs" />
+              </RouterLink>
+            </div>
+          </div>
+
+          <div v-if="isSiteSelected">
+            <div v-if="classes.length">
+              <div v-for="_class in classes" :key="_class?.id" class="group-item">
+                <div class="flex flex-column">
+                  <small class="text-color-secondary">{{ getParentSchoolName(_class?.schoolId) }}</small>
+                  <div>{{ _class?.name }}</div>
+                </div>
+                <RouterLink :to="`/list-users/classes/${_class?.id}/${_class?.name}`" class="group-item-link">
+                  <i class="pi pi-users" />
+                </RouterLink>
+              </div>
+            </div>
+
+            <div v-else>
+              <div class="p-3 text-sm text-color-secondary">There are no classes yet</div>
+            </div>
+          </div>
+
+          <div v-else>
+            <div class="p-3 text-sm text-color-secondary">Select a site to see stats</div>
+          </div>
+        </div>
+
+        <div class="group-card">
+          <div class="group-card-header">
+            <div class="flex align-items-center gap-2">
+              <div class="font-semibold">Cohorts</div>
+              <PvBadge :value="isSiteSelected ? cohorts.length : '-'" class="badge" />
+            </div>
+
+            <div v-if="isSiteSelected">
+              <!-- `tab: 'groups'` is the legacy id for the Cohorts tab. -->
+              <RouterLink
+                :to="{
+                  name: 'ListGroups',
+                  state: { tab: 'groups' },
+                }"
+                class="inline-flex align-items-center gap-2 font-semibold text-sm text-color no-underline"
+              >
+                <span v-if="cohorts.length">View cohorts</span>
+                <span v-else>Create</span>
+
+                <i v-if="cohorts.length" class="pi pi-arrow-right text-xs" />
+                <i v-else class="pi pi-plus text-xs" />
+              </RouterLink>
+            </div>
+          </div>
+
+          <div v-if="isSiteSelected">
+            <div v-if="cohorts.length">
+              <div v-for="cohort in cohorts" :key="cohort?.id" class="group-item">
+                <div>{{ cohort?.name }}</div>
+                <RouterLink :to="`/list-users/groups/${cohort?.id}/${cohort?.name}`" class="group-item-link">
+                  <i class="pi pi-users" />
+                </RouterLink>
+              </div>
+            </div>
+
+            <div v-else>
+              <div class="p-3 text-sm text-color-secondary">There are no cohorts yet</div>
+            </div>
+          </div>
+
+          <div v-else>
+            <div class="p-3 text-sm text-color-secondary">Select a site to see stats</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
-<script setup>
-import { computed, onMounted, ref, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import PvAutoComplete from 'primevue/autocomplete';
-import PvBlockUI from 'primevue/blockui';
-import PvButton from 'primevue/button';
-import PvDataView from 'primevue/dataview';
-import PvSelect from 'primevue/select';
-import PvInputGroup from 'primevue/inputgroup';
-import { useAuthStore } from '@/store/auth';
-import { orderByNameASC } from '@/helpers/query/utils';
-import { getTitle } from '@/helpers/query/administrations';
-import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
-import CardAdministration from '@/components/CardAdministration.vue';
+<script setup lang="ts">
 import DocsButton from '@/components/DocsButton.vue';
 import LevanteSpinner from '@/components/LevanteSpinner.vue';
-import { useLevanteStore } from '@/store/levante';
-import { isCurrent, isPast, isUpcoming } from '@/helpers/assignments';
+import { useGetSiteOverviewQuery } from '@/composables/queries/useGetSiteOverviewQuery';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+import PvBadge from 'primevue/badge';
+import { computed } from 'vue';
+import { RouterLink } from 'vue-router';
 
-const initialized = ref(false);
-const pageLimit = ref(10);
-const page = ref(0);
-const dataViewFirst = ref(0);
-const currentPage = computed(() =>
-  pageLimit.value > 0 ? Math.floor(dataViewFirst.value / pageLimit.value) + 1 : 1,
-);
-
-const orderBy = ref(orderByNameASC);
-const searchSuggestions = ref([]);
-const searchTokens = ref([]);
-const searchInput = ref('');
-const search = ref('');
-
-const filteredAdministrations = ref([]);
-const fetchTestAdministrations = ref(false);
-
-const levanteStore = useLevanteStore();
-const { assignmentsSelectedFilter, assignmentsSelectedSorting } = storeToRefs(levanteStore);
-const { setAssignmentsSelectedFilter, setAssignmentsSelectedSorting } = levanteStore;
 const authStore = useAuthStore();
-const { currentSite, roarfirekit } = storeToRefs(authStore);
-const { isUserSuperAdmin } = authStore;
+const { currentSite, userData } = storeToRefs(authStore);
 
-let unsubscribeInitializer;
-const init = () => {
-  if (unsubscribeInitializer) unsubscribeInitializer();
-  initialized.value = true;
-};
-
-unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-});
-
-/**
- * Generate search tokens for autocomplete.
- *
- * Using the administrations data, generates search tokens for the autocomplete search feature by splitting the
- * invididual administration names into separate tokens. For example, the administration "Partner Test Administration"
- * would be split into three tokens: "partner", "test", and "administration".
- *
- * @returns {void}
- */
-const generateAutoCompleteSearchTokens = () => {
-  if (!administrations.value?.length) return;
-
-  // Set search tokens based on each administration's name.
-  for (const item of administrations.value) {
-    searchTokens.value.push(...item.name.toLowerCase().split(' '));
-  }
-
-  // Remove duplicates from array.
-  searchTokens.value = [...new Set(searchTokens.value)];
-};
-
-const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(
-  currentSite,
-  orderBy,
-  fetchTestAdministrations,
-  {
-    enabled: initialized,
-    staleTime: 0,
-    gcTime: 0,
-  },
+const isSiteSelected = computed(() => !!currentSite.value && currentSite.value !== 'any');
+const showSelectSitePrompt = computed(() => !!userData.value && !isSiteSelected.value);
+const { data: siteOverview, isLoading } = useGetSiteOverviewQuery(() =>
+  isSiteSelected.value ? (currentSite.value as string) : '',
 );
 
-/**
- * Administration data watcher
- *
- * Watches the administrations data, and once data is available, generates search tokens and sets the filtered
- * administrations based on the search value.
- *
- * @returns {void}
- */
-watch(
-  administrations,
-  (updatedAdministrationsData) => {
-    if (!updatedAdministrationsData) return;
+const userName = computed(() => {
+  const displayName = userData.value?.displayName;
+  if (displayName) return displayName;
 
-    // Generate auto-complete search tokens based on the data.
-    generateAutoCompleteSearchTokens();
+  const name = userData.value?.name as
+    | {
+        first?: string;
+        middle?: string;
+        last?: string;
+      }
+    | undefined;
+  return [name?.first, name?.middle, name?.last].filter(Boolean).join(' ');
+});
 
-    // Set the filtered administrations based on the search value.
-    if (!search.value) {
-      filteredAdministrations.value = updatedAdministrationsData;
-    } else {
-      filteredAdministrations.value = updatedAdministrationsData?.filter((item) =>
-        item.name.toLowerCase().includes(search.value.toLowerCase()),
-      );
-    }
-  },
-  { immediate: true },
+const userCounts = computed(() => siteOverview.value?.counts.users ?? { teachers: 0, caregivers: 0, children: 0 });
+
+const assignmentCounts = computed(() => siteOverview.value?.counts.assignments ?? { open: 0, upcoming: 0, closed: 0 });
+
+const users = computed(() => ({
+  teachers: { label: 'Teachers', numOf: userCounts.value.teachers },
+  caregivers: { label: 'Caregivers', numOf: userCounts.value.caregivers },
+  children: { label: 'Children', numOf: userCounts.value.children },
+}));
+
+const numOfUsers = computed(() => userCounts.value.teachers + userCounts.value.caregivers + userCounts.value.children);
+
+const assignments = computed(() => ({
+  open: { label: 'Open', numOf: assignmentCounts.value.open },
+  upcoming: { label: 'Upcoming', numOf: assignmentCounts.value.upcoming },
+  closed: { label: 'Past', numOf: assignmentCounts.value.closed },
+}));
+
+const numOfAssignments = computed(
+  () => assignmentCounts.value.open + assignmentCounts.value.upcoming + assignmentCounts.value.closed,
 );
 
-const filterOptions = ref([
-  { label: 'All', value: null },
-  { label: 'Open', value: 'open' },
-  { label: 'Upcoming', value: 'upcoming' },
-  { label: 'Closed', value: 'closed' },
-]);
+const sortByName = <T extends { name: string }>(items: readonly T[]): T[] =>
+  [...items].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
-const getAssignmentsSelectedFilter = () => {
-  if (assignmentsSelectedFilter.value) return assignmentsSelectedFilter.value;
+const schools = computed(() => sortByName(siteOverview.value?.schools ?? []));
+const classes = computed(() => sortByName(siteOverview.value?.classes ?? []));
+const cohorts = computed(() => sortByName(siteOverview.value?.cohorts ?? []));
 
-  const defaultLabel = 'All';
-  const defaultOption = filterOptions.value.find((option) => option.label === defaultLabel) || filterOptions.value[0];
+const numOfGroups = computed(() => schools.value.length + classes.value.length + cohorts.value.length);
 
-  setAssignmentsSelectedFilter(defaultOption);
-
-  return defaultOption;
-};
-
-const filterKey = ref(getAssignmentsSelectedFilter());
-
-// Table sort options
-const sortOptions = ref([
-  {
-    label: 'Name (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'name' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Name (descending)',
-    value: [
-      {
-        field: { fieldPath: 'name' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Start date (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.start' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Start date (descending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.start' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
-  {
-    label: 'End date (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.end' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'End date (descending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.end' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Creation date (ascending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.created' },
-        direction: 'ASCENDING',
-      },
-    ],
-  },
-  {
-    label: 'Creation date (descending)',
-    value: [
-      {
-        field: { fieldPath: 'dates.created' },
-        direction: 'DESCENDING',
-      },
-    ],
-  },
-]);
-
-const getAssignmentsSelectedSorting = () => {
-  if (assignmentsSelectedSorting.value) return assignmentsSelectedSorting.value;
-
-  const defaultLabel = 'Start date (descending)';
-  const defaultOption = sortOptions.value.find((option) => option.label === defaultLabel) || sortOptions.value[0];
-
-  setAssignmentsSelectedSorting(defaultOption);
-
-  return defaultOption;
-};
-
-const sortKey = ref(getAssignmentsSelectedSorting());
-const sortOrder = ref();
-const sortField = ref();
-const dataViewKey = ref(0);
-
-/**
- * Clear the search input and reset the filtered administrations list.
- * @returns {void}
- */
-const clearSearch = () => {
-  search.value = '';
-  searchInput.value = '';
-  filteredAdministrations.value = administrations.value;
-};
-
-/**
- * Perform a search based on the search input value.
- * @returns {void}
- */
-const onSearch = () => {
-  search.value = searchInput.value;
-  if (!search.value) filteredAdministrations.value = administrations.value;
-  else {
-    filteredAdministrations.value = administrations.value.filter((item) =>
-      item.name.toLowerCase().includes(search.value.toLowerCase()),
-    );
-  }
-};
-
-/**
- * Perform an autocomplete search based on the search input value.
- * @returns {void}
- */
-const autocomplete = () => {
-  searchSuggestions.value = searchTokens.value.filter((item) => {
-    return item.toLowerCase().includes(searchInput.value.toLowerCase());
-  });
-};
-
-const onFilterChange = (event) => {
-  dataViewKey.value += 1;
-  page.value = 0;
-  dataViewFirst.value = 0;
-  const filterValue = event.value;
-
-  filteredAdministrations.value = administrations.value?.filter((assignment) => {
-    switch (filterValue.value) {
-      case 'open':
-        return isCurrent(assignment) && assignment;
-      case 'upcoming':
-        return isUpcoming(assignment) && assignment;
-      case 'closed':
-        return isPast(assignment) && assignment;
-      default:
-        return assignment;
-    }
-  });
-
-  setAssignmentsSelectedFilter(filterValue);
-};
-
-/**
- * Sort change event handler
- * @param {*} event – The sort event object emitted by PrimeVue
- * @returns {void}
- */
-const onSortChange = (event) => {
-  dataViewKey.value += 1;
-  page.value = 0;
-  dataViewFirst.value = 0;
-  const value = event.value.value;
-  const sortValue = event.value;
-
-  sortField.value = value[0].field?.fieldPath;
-  sortOrder.value = value[0].direction === 'DESCENDING' ? -1 : 1;
-  sortKey.value = sortValue;
-
-  setAssignmentsSelectedSorting(sortValue);
-};
-
-onFilterChange({ value: filterKey.value });
-onSortChange({ value: sortKey.value });
+const getParentSchoolName = (schoolId: string): string =>
+  schools.value.find((school) => school.id === schoolId)?.name ?? '';
 </script>
 
-<style lang="scss" scoped>
-.page-title-row :deep(.docs-button) {
-  font-size: 0.875rem;
-  padding: 0.375rem 0.75rem;
-}
+<style scoped lang="scss">
+.info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+  background: var(--gray-100);
+  border-radius: 12px;
+  color: var(--gray-500);
 
-.how-to-section {
-  background-color: #f8f9fa;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  margin: 2rem 0;
+  &.info--site-not-selected {
+    background: rgba(var(--bright-yellow-rgb), 0.1);
+    color: var(--bright-yellow);
+  }
 
-  h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: var(--primary-color);
-    font-size: 1.2rem;
-    font-weight: bold;
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
-</style>
 
-<style lang="scss">
-.p-autocomplete-panel {
-  background: var(--surface-a);
-  color: var(--text-color);
-  border: 0 none;
-  border-radius: var(--border-radius);
-  box-shadow:
-    0 0 rgba(0, 0, 0, 0),
-    0 0 rgba(0, 0, 0, 0),
-    0 10px 15px -3px rgba(0, 0, 0, 0.1019607843),
-    0 4px 6px -2px rgba(0, 0, 0, 0.0509803922);
+.docs-button-wrapper {
+  border: 4px solid var(--docs-btn-hover);
+  border-radius: 10px;
 }
 
-.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
-  margin: 0;
-  padding: var(--inline-spacing-larger) 1rem;
-  border: 0 none;
-  color: var(--text-color);
-  background: transparent;
-  transition: none;
-  border-radius: 0;
-}
-
-.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
-  background-color: gainsboro;
-}
-
-button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 20%;
-  width: 3rem;
-}
-
-.card-container {
-  display: flex;
-  flex-direction: row;
-  margin: 0 0 2rem;
+.divider {
+  display: block;
   flex: 1;
-  gap: 1rem;
+  height: 1px;
+  background: var(--gray-200);
 }
 
-.card-wrapper {
-  width: 100%;
-  text-decoration: none;
-  color: inherit;
+.user-type {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 175px;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.5rem;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 }
 
-.card-button {
+.badge {
+  color: var(--bright-red);
+  background: rgba(var(--bright-red-rgb), 0.1);
+}
+
+.assignment-card {
+  display: block;
+  width: 320px;
+  height: auto;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.5rem;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+.assignment-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 100%;
+
+  .pi {
+    font-size: 20px;
+  }
+
+  &.assignment-icon-wrapper--open {
+    background: rgba(var(--bright-green-rgb), 0.1);
+    color: var(--bright-green);
+  }
+
+  &.assignment-icon-wrapper--upcoming {
+    background: rgba(var(--bright-yellow-rgb), 0.1);
+    color: var(--bright-yellow);
+  }
+
+  &.assignment-icon-wrapper--closed {
+    background: rgba(var(--bright-red-rgb), 0.1);
+    color: var(--bright-red);
+  }
+}
+
+.assignment-card-footer {
   display: flex;
   justify-content: flex-end;
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--gray-200);
 }
 
-.loading-container {
+.group-card {
+  display: block;
+  width: calc((100% - 48px) / 3);
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+.group-card-header {
+  display: flex;
+  justify-content: space-between;
   width: 100%;
-  text-align: center;
+  height: auto;
+  margin: 0;
+  padding: 1.125rem;
+  border-bottom: 3px solid var(--primary-color);
+}
+
+.group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  padding: 0.75rem 1.125rem;
+  border-top: 1px solid var(--gray-200);
+  transition: background 0.2s ease-out;
+
+  &:first-of-type {
+    border-top: none;
+  }
+
+  &:hover {
+    background-color: var(--gray-100);
+  }
+}
+
+.group-item-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  padding: 0;
+  background-color: var(--gray-200);
+  border-radius: 0.33rem;
+  color: var(--text-color);
+  text-decoration: none;
 }
 </style>

@@ -2,6 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import * as VueQuery from '@tanstack/vue-query';
+import {
+  ADMINISTRATION_ASSIGNMENTS_QUERY_KEY,
+  ADMINISTRATIONS_LIST_QUERY_KEY,
+  ADMINISTRATIONS_QUERY_KEY,
+  SITE_OVERVIEW_QUERY_KEY,
+} from '@/constants/queryKeys';
 import { useAuthStore } from '@/store/auth';
 import useDeleteAdministrationMutation from './useDeleteAdministrationMutation';
 
@@ -65,13 +71,16 @@ describe('useDeleteAdministrationMutation', () => {
 
     expect(isSuccess.value).toBe(true);
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['administrations'],
+      queryKey: [ADMINISTRATIONS_QUERY_KEY],
     });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['administrations-list'],
+      queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY],
     });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['administration-assignments'],
+      queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY],
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: [SITE_OVERVIEW_QUERY_KEY],
     });
   });
 
