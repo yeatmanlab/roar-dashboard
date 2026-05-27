@@ -167,6 +167,8 @@ export class RoarScores {
       computedScores.composite_foundational = {
         ...computedScores.composite_foundational,
         ...compositeFoundationalThetas,
+        roarScoreKind: this.roarScoreKind,
+        scoringVersion: this.scoringVersion,
       };
     }
 
