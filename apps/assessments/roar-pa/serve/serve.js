@@ -51,8 +51,7 @@ onAuthStateChanged(auth, async (user) => {
       // eslint-disable-next-line no-undef
       const res = await fetch(`${ROAR_API_URL}/v1/users/anonymous`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
       if (!res.ok) {
@@ -65,7 +64,7 @@ onAuthStateChanged(auth, async (user) => {
       // first published variant for this task.
       // TODO: Replace with a proper "default variant" concept once the task_variants
       // schema supports marking a single variant as default per task.
-      // See: https://github.com/yeatmanlab/roar-project-management/issues/1794
+      // See: https://github.com/yeatmanlab/roar-project-management/issues/1828
       let resolvedVariantId = variantId;
       if (!resolvedVariantId) {
         // eslint-disable-next-line no-undef
