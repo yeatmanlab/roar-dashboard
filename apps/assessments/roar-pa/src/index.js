@@ -23,7 +23,10 @@ class RoarPA {
   async run() {
     const { jsPsych, timeline } = await this.init();
     this.jsPsych = jsPsych;
-    this.jsPsych.run(timeline);
+    // jsPsych.run() resolves after the full timeline completes (including on_finish),
+    // which is when finishRun() fires. Awaiting it preserves the completion contract
+    // that callers (e.g. TaskPA.vue) depend on to call completeAssessment and navigate.
+    await this.jsPsych.run(timeline);
   }
 
   async abort() {
