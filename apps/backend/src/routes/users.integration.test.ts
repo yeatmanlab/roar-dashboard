@@ -2733,14 +2733,23 @@ describe('POST /v1/users/anonymous', () => {
     const res = await expectRoute('POST', '/v1/users/anonymous').asAnonymous(uid).toReturn(200);
     const roarUserId: string = res.body.data.id;
 
-    // Query all tuples where the new ROAR user ID appears as either the user or the object.
+    // OpenFGA read requires an object type when filtering by user, so scan each
+    // membership-bearing type separately (empty id = all objects of that type).
     const fga = FgaClient.getClient();
-    const [asUser, asObject] = await Promise.all([
-      fga.read({ user: `${FgaType.USER}:${roarUserId}` }),
-      fga.read({ object: `${FgaType.USER}:${roarUserId}` }),
-    ]);
+    const membershipTypes = [
+      FgaType.DISTRICT,
+      FgaType.SCHOOL,
+      FgaType.CLASS,
+      FgaType.GROUP,
+      FgaType.FAMILY,
+      FgaType.ADMINISTRATION,
+    ] as const;
 
-    expect(asUser.tuples).toHaveLength(0);
-    expect(asObject.tuples).toHaveLength(0);
+    const reads = await Promise.all(
+      membershipTypes.map((type) => fga.read({ user: `${FgaType.USER}:${roarUserId}`, object: `${type}:` })),
+    );
+
+    const allTuples = reads.flatMap((r) => r.tuples ?? []);
+    expect(allTuples).toHaveLength(0);
   });
 });
