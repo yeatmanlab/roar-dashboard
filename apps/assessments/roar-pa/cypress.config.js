@@ -1,7 +1,7 @@
 import { defineConfig } from 'cypress';
 
 export default defineConfig({
-  projectId: process.env.CYPRESS_PROJECT_ID,
+  projectId: process.env.CYPRESS_PROJECT_ID ?? undefined,
   e2e: {
     experimentalRunAllSpecs: true,
     retries: 2,
