@@ -4,6 +4,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@bdelab/roam-apps';
 let isCurrentAppVersion;
 
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
 describe.skip('Participant Assessment: ROAM ARF', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);

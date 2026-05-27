@@ -5,6 +5,7 @@ const app = 'core-tasks';
 const administration = 'Cypress Test Roar Syntax';
 let isCurrentAppVersion;
 
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
 describe.skip('Participant Assessment: ROAR Syntax', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
