@@ -323,6 +323,12 @@ const applySort = (items) => {
     let aVal = sortField.value.split('.').reduce((obj, key) => obj?.[key], a);
     let bVal = sortField.value.split('.').reduce((obj, key) => obj?.[key], b);
 
+    // Fall back to name if publicName is missing
+    if (sortField.value === 'publicName') {
+      aVal = aVal ?? a.name;
+      bVal = bVal ?? b.name;
+    }
+
     if (aVal == null && bVal == null) return 0;
     if (aVal == null) return sortOrder.value === 1 ? 1 : -1;
     if (bVal == null) return sortOrder.value === 1 ? -1 : 1;
