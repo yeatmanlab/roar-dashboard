@@ -20,6 +20,8 @@ jobs:
       dashboard_release_created: ${{ steps.release.outputs.dashboard--release_created }}
       api_contract_release_created: ${{ steps.release.outputs.api-contract--release_created }}
       assessment_sdk_release_created: ${{ steps.release.outputs.assessment-sdk--release_created }}
+      assessment_schema_release_created: ${{ steps.release.outputs.assessment-schema--release_created }}
+      roar_pa_release_created: ${{ steps.release.outputs.roar-pa--release_created }}
       backend_tag_name: ${{ steps.release.outputs.backend--tag_name }}
       dashboard_tag_name: ${{ steps.release.outputs.dashboard--tag_name }}
       api_contract_tag_name: ${{ steps.release.outputs.api-contract--tag_name }}
@@ -36,6 +38,83 @@ jobs:
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.GITHUB_TOKEN }}
           target-branch: main
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Publish assessment packages to npm
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  publish-assessment-packages:
+    name: Publish assessment packages to npm
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      deployed_assessments: ${{ steps.publish.outputs.deployed_assessments }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js environment
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Build packages
+        run: npx turbo run build --filter='./packages/*'
+
+      - name: Publish new versions and collect deployed assessments
+        id: publish
+        # To add a new publishable package, append its workspace path to PUBLISHABLE_WORKSPACES.
+        # Assessment apps (apps/assessments/*) are also queued for Firebase production deployment.
+        # TODO: Replace NODE_AUTH_TOKEN with OIDC Trusted Publishers once configured for @roar-platform.
+        run: |
+          PUBLISHABLE_WORKSPACES=(
+            packages/assessment-schema
+            packages/assessment-sdk
+            apps/assessments/roar-pa
+          )
+
+          deployed=()
+          for workspace in "${PUBLISHABLE_WORKSPACES[@]}"; do
+            pkg=$(node -p "require('./${workspace}/package.json').name")
+            ver=$(node -p "require('./${workspace}/package.json').version")
+            if npm view "${pkg}@${ver}" version &>/dev/null; then
+              echo "✓ ${pkg}@${ver} already on npm, skipping"
+            else
+              echo "Publishing ${pkg}@${ver}..."
+              npm publish -w "${workspace}" --provenance
+              if [[ "$workspace" == apps/assessments/* ]]; then
+                deployed+=("${workspace#apps/assessments/}")
+              fi
+            fi
+          done
+
+          if [ ${#deployed[@]} -gt 0 ]; then
+            echo "deployed_assessments=$(jq -c -n '$ARGS.positional' --args "${deployed[@]}")" >> $GITHUB_OUTPUT
+          else
+            echo "deployed_assessments=[]" >> $GITHUB_OUTPUT
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Trigger assessment production deployments on release
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  trigger-assessment-production-deployments:
+    name: Trigger Assessment Production Deployments
+    needs: [release-please, publish-assessment-packages]
+    if: needs.publish-assessment-packages.outputs.deployed_assessments != '[]' && needs.publish-assessment-packages.outputs.deployed_assessments != ''
+    uses: ./.github/workflows/deploy-assessments-production.yml
+    with:
+      assessments: ${{ needs.publish-assessment-packages.outputs.deployed_assessments }}
+    secrets:
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      FIREBASE_HOSTING_SERVICE_ACCOUNT_ID: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+      ROAR_API_BASE_URL: ${{ secrets.ROAR_API_BASE_URL }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Trigger platform deployment on release

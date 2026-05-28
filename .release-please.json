@@ -5,6 +5,9 @@
       "type": "linked-versions",
       "groupName": "platform",
       "components": ["backend", "dashboard"]
+    },
+    {
+      "type": "node-workspace"
     }
   ],
   "changelog-sections": [
@@ -67,6 +70,18 @@
       "release-type": "node",
       "component": "assessment-sdk",
       "release-as": "0.1.0"
+    },
+    "packages/assessment-schema": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "assessment-schema"
+    },
+    "apps/assessments/roar-pa": {
+      "changelog-path": "CHANGELOG.md",
+      "version-file": "package.json",
+      "release-type": "node",
+      "component": "roar-pa"
     }
   },
   "group-pull-request-title-pattern": "chore: release ${version}",

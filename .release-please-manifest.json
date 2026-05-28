@@ -2,5 +2,7 @@
   "apps/backend": "3.26.0",
   "apps/dashboard": "3.26.0",
   "packages/api-contract": "3.26.0",
-  "packages/assessment-sdk": "0.1.0"
+  "packages/assessment-sdk": "0.1.0",
+  "packages/assessment-schema": "0.1.0",
+  "apps/assessments/roar-pa": "0.1.0"
 }
