@@ -1,0 +1,63 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/detect-assessment-changes
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Detect Assessment Changes
+description: >
+  Determines which assessments need to be built and deployed. If an assessment name is
+  provided, it is used directly (manual trigger). Otherwise, change detection runs via
+  dorny/paths-filter and a matrix is built from the results.
+inputs:
+  assessment:
+    description: "Assessment to target directly, bypassing change detection (e.g. roar-pa). Leave empty to detect from changed files."
+    required: false
+    default: ''
+outputs:
+  matrix:
+    description: "JSON array of assessment directory names to process (e.g. [\"roar-pa\"])."
+    value: ${{ steps.matrix.outputs.matrix }}
+
+runs:
+  using: composite
+  steps:
+    # Only runs when no assessment is specified — i.e. triggered by a push, not manually.
+    - name: Detect changes
+      id: filter
+      if: inputs.assessment == ''
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          # Shared dependencies. When any of these change, ALL assessments are included.
+          # No changes needed here when adding a new assessment.
+          shared:
+            - 'apps/assessments/shared/**'
+            - 'packages/assessment-sdk/**'
+            - 'packages/assessment-schema/**'
+
+          # Per-assessment filters.
+          # When adding a new assessment, add an entry here (e.g. roar-swr):
+          #   roar-swr:
+          #     - 'apps/assessments/roar-swr/**'
+          roar-pa:
+            - 'apps/assessments/roar-pa/**'
+
+    - name: Build matrix
+      id: matrix
+      shell: bash
+      # Three cases:
+      #   1. Manual trigger (assessment input provided) — use it directly.
+      #   2. Shared deps changed — include ALL assessments.
+      #   3. Only individual assessments changed — dorny's 'changes' output is already a
+      #      JSON array of matched filter names, which map directly to assessment directory names.
+      #
+      # When adding a new assessment (e.g. roar-swr):
+      #   - Add a filter entry above: roar-swr: - 'apps/assessments/roar-swr/**'
+      #   - Add its name to the shared-changed list below: echo 'matrix=["roar-pa","roar-swr"]'
+      run: |
+        if [ -n "${{ inputs.assessment }}" ]; then
+          echo 'matrix=["${{ inputs.assessment }}"]' >> $GITHUB_OUTPUT
+        elif [ "${{ steps.filter.outputs.shared }}" == "true" ]; then
+          echo 'matrix=["roar-pa"]' >> $GITHUB_OUTPUT
+        else
+          echo 'matrix=${{ steps.filter.outputs.changes }}' >> $GITHUB_OUTPUT
+        fi

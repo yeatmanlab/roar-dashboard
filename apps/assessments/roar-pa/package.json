@@ -6,11 +6,20 @@
   "main": "src/index.js",
   "module": "src/index.js",
   "type": "module",
+  "roar": {
+    "hosting": {
+      "staging": "roar-phoneme-monorepo-abc",
+      "production": "roar-phoneme",
+      "test": "test"
+    }
+  },
   "scripts": {
     "//": "build is a no-op: Vite resolves imports via 'main' (src/index.js) directly, so no webpack output is needed for dashboard#dev.",
     "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
     "predev": "fkill :8000 -f || true",
     "dev": "npx webpack serve --open --mode development --env dbmode=development",
+    "build:staging": "npx webpack --mode production --env dbmode=staging",
+    "build:production": "npx webpack --mode production --env dbmode=production",
     "researcher-environment:up": "bash ../../../scripts/researcher-env-up.sh",
     "researcher-environment:down": "bash ../../../scripts/researcher-env-down.sh",
     "lint": "eslint .",
