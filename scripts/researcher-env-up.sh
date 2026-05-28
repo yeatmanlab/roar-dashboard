@@ -52,5 +52,5 @@ npx concurrently \
    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
    npm run dev" \
   "docker compose -f $COMPOSE_FILE run --rm -T researcher-db-migrate \
-   && npx --yes wait-on tcp:localhost:4000 --timeout 60000 \
+   && bash $REPO_ROOT/scripts/wait-for-port.sh 4000 60 \
    && cd $REPO_ROOT/apps/assessments/roar-pa && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev"
