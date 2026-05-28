@@ -3,13 +3,9 @@ name: Deploy Assessments to Staging
 on:
   push:
     branches:
+      # TODO: Remove once backend refactor is complete
+      - project/backend-refactor
       - main
-      - ref/1794/monorepo-deployment-strategy
-  workflow_dispatch:
-    inputs:
-      assessment:
-        description: "Assessment to deploy (e.g. roar-pa). Leave empty to detect from changed files."
-        required: false
 
 concurrency:
   # Queue concurrent runs — never interrupt an in-flight deploy.
