@@ -7,6 +7,12 @@ on:
       - project/backend-refactor
       - main
 
+  workflow_dispatch:
+    inputs:
+      assessment:
+        description: "Assessment to deploy (e.g. roar-pa). Leave empty to detect from changed files."
+        required: false
+
 concurrency:
   # Queue concurrent runs — never interrupt an in-flight deploy.
   group: ${{ github.workflow }}
