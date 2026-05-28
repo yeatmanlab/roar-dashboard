@@ -30,11 +30,15 @@ class RoarPA {
   }
 
   async abort() {
-    abortRun();
     document.querySelectorAll('audio').forEach((el) => el.pause());
     if (this.jsPsych) {
       this.jsPsych.endExperiment();
     }
+    // Order so that UI teardown is synchronous; backend abort is best-effort,
+    // but log on failure so we know the server's run state may be stale.
+    abortRun().catch((err) => {
+      console.warn('abortRun failed; backend run state may be stale', err);
+    });
   }
 }
 
