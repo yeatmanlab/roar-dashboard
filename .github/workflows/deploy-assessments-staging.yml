@@ -71,6 +71,7 @@ jobs:
         with:
           assessment: ${{ matrix.assessment }}
           build-script: build:staging
+          roar-api-base-url: ${{ secrets.ROAR_API_BASE_URL }}
 
       - name: Deploy to Firebase Hosting
         uses: ./.github/actions/deploy-firebase-hosting

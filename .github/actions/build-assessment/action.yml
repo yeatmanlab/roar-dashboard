@@ -11,6 +11,9 @@ inputs:
   build-script:
     description: "npm script to run for the build (e.g. build:staging, build:production)."
     required: true
+  roar-api-base-url:
+    description: "Full base URL for the ROAR backend API, including /v1 (e.g. https://api.staging.roar.education/v1). Baked into the bundle at build time."
+    required: true
 
 runs:
   using: composite
@@ -24,4 +27,6 @@ runs:
 
     - name: Build assessment
       shell: bash
+      env:
+        ROAR_API_BASE_URL: ${{ inputs.roar-api-base-url }}
       run: npm run ${{ inputs.build-script }} -w apps/assessments/${{ inputs.assessment }}
