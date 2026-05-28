@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
@@ -67,7 +67,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -98,7 +98,7 @@ jobs:
       - name: Run all tests
         run: npm run test
         env:
-          RUN_INTEGRATION_TESTS: 'true'
+          RUN_INTEGRATION_TESTS: "true"
           DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
 
       - name: Report dashboard coverage
@@ -127,7 +127,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -159,7 +159,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -173,6 +173,7 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
+          # Run tests against development environment to catch regressions before deployment
           CYPRESS_BASE_URL: "http://127.0.0.1:4173"
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
@@ -213,7 +214,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -259,7 +260,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build preview app
         uses: ./.github/actions/build
@@ -307,7 +308,7 @@ jobs:
       matrix: ${{ steps.detect.outputs.matrix }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -335,7 +336,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
@@ -350,7 +351,7 @@ jobs:
           start: npm run dev
           browser: ${{ matrix.browser }}
           working-directory: apps/assessments/${{ matrix.assessment }}
-          wait-on: 'http://localhost:8000'
+          wait-on: "http://localhost:8000"
           wait-on-timeout: 120
           record: true
           parallel: true
