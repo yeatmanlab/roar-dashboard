@@ -13,15 +13,10 @@ import {
 
 export class RoarScores {
   constructor() {
-    const { isAdaptive } = store.session.get('config');
-    this.irtScoring = Boolean(isAdaptive);
-    if (this.irtScoring) {
-      this.scoringVersion = PA_SCORING_VERSION.ADAPTIVE;
-      this.roarScoreKind = PA_SCORE_KIND.ADAPTIVE;
-    } else {
-      this.scoringVersion = PA_SCORING_VERSION.FIXED;
-      this.roarScoreKind = PA_SCORE_KIND.FIXED;
-    }
+    this.scoringVersion = PA_SCORING_VERSION.ADAPTIVE;
+    this.roarScoreKind = PA_SCORE_KIND.ADAPTIVE;
+    this.scoringVersion = PA_SCORING_VERSION.FIXED;
+    this.roarScoreKind = PA_SCORE_KIND.FIXED;
     this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
     this.lookupTable = [];
     this.tableLoaded = false;
