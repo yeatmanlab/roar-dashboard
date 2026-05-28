@@ -9,8 +9,8 @@ import type {
   TreeParentEntityType,
   CreateAdministrationRequest,
   UpdateAdministrationRequest,
-} from '@roar-dashboard/api-contract';
-import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
+import { AdministrationEmbedOption, TreeEmbedOption } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import type { Administration } from '../../db/schema';
 import { AuthorizationService } from '../authorization/authorization.service';

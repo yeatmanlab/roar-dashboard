@@ -1,6 +1,6 @@
 import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
-import { UsersContract } from '@roar-dashboard/api-contract';
+import { UsersContract } from '@roar-platform/api-contract';
 import { UsersController } from '../controllers/users.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 import { AnonTokenMiddleware } from '../middleware/anon-token/anon-token.middleware';

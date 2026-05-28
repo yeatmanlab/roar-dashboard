@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GroupTypeSchema } from '@roar-dashboard/api-contract';
+import { GroupTypeSchema } from '@roar-platform/api-contract';
 import { groupTypeEnum } from '../db/schema/enums';
 
 describe('GroupType enum', () => {

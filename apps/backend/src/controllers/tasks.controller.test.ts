@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { AuthContext } from '../types/auth-context';
-import type { CreateTaskVariantRequestBody, UpdateTaskVariantRequestBody } from '@roar-dashboard/api-contract';
+import type { CreateTaskVariantRequestBody, UpdateTaskVariantRequestBody } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { TaskVariantStatus } from '../enums/task-variant-status.enum';
 import { MockTaskService } from '../test-support/services/task.service';

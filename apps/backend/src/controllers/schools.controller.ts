@@ -8,8 +8,8 @@ import type {
   SchoolClassesListQuery,
   SchoolClass as ApiSchoolClass,
   EnrolledUsersQuery,
-} from '@roar-dashboard/api-contract';
-import { SchoolEmbedOption } from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
+import { SchoolEmbedOption } from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';

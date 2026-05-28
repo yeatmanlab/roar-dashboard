@@ -21,7 +21,7 @@ import type { AuthContext } from '../../types/auth-context';
 import type { Condition } from '../../types/condition';
 import { Operator } from '../../types/condition';
 import type { User } from '../../db/schema';
-import { SortOrder, TaskSortField } from '@roar-dashboard/api-contract';
+import { SortOrder, TaskSortField } from '@roar-platform/api-contract';
 import type { CoreTransaction } from '../../db/clients';
 
 describe('TaskService', () => {

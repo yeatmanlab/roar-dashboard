@@ -1,5 +1,5 @@
-import type { SchoolSortFieldType } from '@roar-dashboard/api-contract';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import type { SchoolSortFieldType } from '@roar-platform/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import type { SQL } from 'drizzle-orm';
 import { and, asc, countDistinct, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';

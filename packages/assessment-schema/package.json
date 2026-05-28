@@ -1,5 +1,5 @@
 {
-  "name": "@roar-dashboard/assessment-schema",
+  "name": "@roar-platform/assessment-schema",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -22,7 +22,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@roar-dashboard/typescript-config": "*",
+    "@roar-platform/typescript-config": "*",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
   }

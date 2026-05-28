@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateRunRequestBody, RunEventBody } from '@roar-dashboard/api-contract';
-import { RunEventTypeSchema } from '@roar-dashboard/api-contract';
+import type { CreateRunRequestBody, RunEventBody } from '@roar-platform/api-contract';
+import { RunEventTypeSchema } from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import { RunService } from '../services/run/run.service';

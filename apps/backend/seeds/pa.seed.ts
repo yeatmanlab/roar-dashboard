@@ -15,7 +15,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { and, eq } from 'drizzle-orm';
 import { Pool } from 'pg';
-import { pa } from '@roar-dashboard/assessment-schema';
+import { pa } from '@roar-platform/assessment-schema';
 import * as CoreDbSchema from '../src/db/schema/core';
 import { tasks, taskVariants, taskVariantParameters } from '../src/db/schema/core';
 

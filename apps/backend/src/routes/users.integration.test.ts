@@ -48,7 +48,7 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import type express from 'express';
 import { StatusCodes } from 'http-status-codes';
-import type { Administration } from '@roar-dashboard/api-contract';
+import type { Administration } from '@roar-platform/api-contract';
 import { createTestApp, createRouteHelper, createTierUsers } from '../test-support/route-test.helper';
 import type { TierUsers } from '../test-support/route-test.helper';
 import { baseFixture } from '../test-support/fixtures';

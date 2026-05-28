@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AssessmentStageSchema, RunTrialInteractionEventSchema } from '@roar-dashboard/api-contract';
+import { AssessmentStageSchema, RunTrialInteractionEventSchema } from '@roar-platform/api-contract';
 import { assessmentStageEnum, trialInteractionTypeEnum } from '../db/schema/enums';
 import { AssessmentStage, TrialInteractionType } from './run.enum';
 

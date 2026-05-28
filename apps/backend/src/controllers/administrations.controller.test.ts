@@ -13,7 +13,7 @@ import type {
   ScoreOverviewQuery,
   StudentScoresQuery,
   IndividualStudentReportQuery,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../enums/api-error-message.enum';
