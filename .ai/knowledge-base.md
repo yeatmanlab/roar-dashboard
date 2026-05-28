@@ -165,19 +165,19 @@ A client SDK for assessment operations, structured around the GoF Command patter
 - `Invoker` — runs commands with retry logic (retries only if `idempotent: true`)
 - `SDKError` — structured error type with a `code` field; always use instead of raw `Error`
 
-Dependencies: `@ts-rest/core`, `@roar-dashboard/api-contract`.
+Dependencies: `@ts-rest/core`, `@roar-platform/api-contract`.
 
 ### apps/backend
 
 Implements the 5-layer architecture (Contract, Route, Controller, Service, Repository). Uses Drizzle ORM for database access, Express for HTTP, Pino for structured logging, and Firebase Admin for auth.
 
-Dependencies: `@roar-dashboard/api-contract`, `@ts-rest/express`, `drizzle-orm`, `firebase-admin`, `pg`, `pino`, `zod`.
+Dependencies: `@roar-platform/api-contract`, `@ts-rest/express`, `drizzle-orm`, `firebase-admin`, `pg`, `pino`, `zod`.
 
 ### apps/dashboard
 
 The user-facing Vue 3 application. Uses Pinia for client state (auth, session) and TanStack Query for server state (API data). The dashboard is migrating from legacy Firestore queries to the new ts-rest API client built on `api-contract`.
 
-Dependencies: `@roar-dashboard/api-contract`, `@roar-dashboard/assessment-sdk`, Vue 3, PrimeVue, Pinia, TanStack Query, TailwindCSS.
+Dependencies: `@roar-platform/api-contract`, `@roar-platform/assessment-sdk`, Vue 3, PrimeVue, Pinia, TanStack Query, TailwindCSS.
 
 ### packages/config-typescript
 

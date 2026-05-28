@@ -24,7 +24,7 @@ const result = items as any;
 const roles = rolesForPermission('administrations.read');
 
 // Mixing type-only and runtime imports on one line
-import { type EnrolledUser, UserRole } from '@roar-dashboard/api-contract';
+import { type EnrolledUser, UserRole } from '@roar-platform/api-contract';
 ```
 
 ### Correct
@@ -65,8 +65,8 @@ import type { AuthContext, ListOptions } from '../types/auth-context';
 import { StatusCodes } from 'http-status-codes';
 
 // When a module provides both, split into two imports
-import type { EnrolledUser, EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
-import { UserRole, SortOrder } from '@roar-dashboard/api-contract';
+import type { EnrolledUser, EnrolledUsersSortFieldType } from '@roar-platform/api-contract';
+import { UserRole, SortOrder } from '@roar-platform/api-contract';
 
 // When everything from a module is type-only, use a single import type
 import type { AccessControlFilter } from './utils/parse-access-control-filter.utils';
