@@ -159,7 +159,6 @@ describe('ViewAssignments', () => {
               classes: [],
             },
             roarUid: 'zbTRSOS70cNGWyu2Ecc4T2aOU2y2',
-            assessmentUid: 'mlrlu8rqPYh3IeXKHT83UpVMtzE2',
             admin: true,
             adminUid: 'zbTRSOS70cNGWyu2Ecc4T2aOU2y2',
           },
