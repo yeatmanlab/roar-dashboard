@@ -351,6 +351,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
+          tag: ${{ github.event_name }},${{ matrix.assessment }},${{ matrix.browser }}
           spec: cypress/e2e/**/*
           ci-build-id: ${{ github.run_id }}-${{ matrix.assessment }}-${{ matrix.browser }}
         env:
