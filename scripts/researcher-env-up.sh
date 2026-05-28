@@ -5,6 +5,9 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/docker-compose.yml"
 FIREBASE_CONFIG="$REPO_ROOT/apps/assessments/shared/firebase.json"
 
+# Canonical value: packages/assessment-schema/src/researcher-environment.ts (RESEARCHER_LOCAL_FIREBASE_PROJECT_ID)
+RESEARCHER_LOCAL_FIREBASE_PROJECT_ID="demo-roar"
+
 # Check global dependencies.
 if ! docker compose version &>/dev/null; then
   echo "Error: 'docker compose' (v2) is required. Install Docker Desktop or Docker Engine with the Compose plugin." >&2
@@ -41,12 +44,13 @@ npx concurrently \
   --kill-others-on-fail \
   --names emulator,backend,pa \
   --prefix-colors cyan,yellow,green \
-  "npx firebase emulators:start --only auth --project demo-roar --config $FIREBASE_CONFIG" \
+  "npx firebase emulators:start --only auth --project $RESEARCHER_LOCAL_FIREBASE_PROJECT_ID --config $FIREBASE_CONFIG" \
   "cd $REPO_ROOT/apps/backend && NODE_ENV=development \
-   GOOGLE_CLOUD_PROJECT=demo-roar \
+   GOOGLE_CLOUD_PROJECT=$RESEARCHER_LOCAL_FIREBASE_PROJECT_ID \
    CORE_DATABASE_URL=postgresql://postgres@localhost:5432/roar_core \
    ASSESSMENT_DATABASE_URL=postgresql://postgres@localhost:5432/roar_assessment \
    FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
    npm run dev" \
   "docker compose -f $COMPOSE_FILE run --rm -T researcher-db-migrate \
+   && npx --yes wait-on tcp:localhost:4000 --timeout 60000 \
    && cd $REPO_ROOT/apps/assessments/roar-pa && FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev"
