@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     branches:
+      # TODO: Remove once backend refactor is complete
+      - project/backend-refactor
       - main
 
 permissions:
@@ -37,7 +39,8 @@ jobs:
           config-file: .release-please.json
           manifest-file: .release-please-manifest.json
           token: ${{ secrets.GITHUB_TOKEN }}
-          target-branch: main
+          # TODO: Target main once backend refactor is complete
+          target-branch: ${{ github.ref_name }}
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Publish assessment packages to npm
@@ -59,8 +62,8 @@ jobs:
       - name: Setup Node.js for npm publish
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          registry-url: 'https://registry.npmjs.org'
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Build packages
         run: npx turbo run build --filter='./packages/*' --filter='./apps/assessments/*'
