@@ -19,7 +19,7 @@ import { pa } from '@roar-dashboard/assessment-schema';
 import * as CoreDbSchema from '../src/db/schema/core';
 import { tasks, taskVariants, taskVariantParameters } from '../src/db/schema/core';
 
-const { PA_TASK_ID } = pa;
+const { PA_TASK_ID, PA_VARIANT_KINDS, PA_LANGUAGES } = pa;
 
 const CORE_DATABASE_URL = process.env.CORE_DATABASE_URL;
 if (!CORE_DATABASE_URL) throw new Error('CORE_DATABASE_URL is required');
@@ -27,26 +27,19 @@ if (!CORE_DATABASE_URL) throw new Error('CORE_DATABASE_URL is required');
 const pool = new Pool({ connectionString: CORE_DATABASE_URL });
 const db = drizzle(pool, { schema: CoreDbSchema, casing: 'snake_case' });
 
-const DEFAULT_VARIANTS = [
-  {
-    name: 'English Fixed',
-    description: 'Standard English fixed-form assessment',
+const DEFAULT_VARIANTS = Object.values(PA_LANGUAGES).flatMap((lang) =>
+  Object.values(PA_VARIANT_KINDS).map((kind) => ({
+    name: `${lang.label} ${kind.label}`,
+    description: `${kind.description} (${lang.label})`,
     params: {
-      language: 'en',
-      isAdaptive: false,
-      itemSelect: 'fixed',
+      language: lang.code,
+      isAdaptive: kind.isAdaptive,
+      itemSelect: kind.itemSelect,
+      scoringVersion: kind.scoringVersion,
+      scoreKind: kind.scoreKind,
     },
-  },
-  {
-    name: 'English Adaptive',
-    description: 'English adaptive (IRT-based) assessment',
-    params: {
-      language: 'en',
-      isAdaptive: true,
-      itemSelect: 'mfi',
-    },
-  },
-] as const;
+  })),
+);
 
 async function seed() {
   console.log('Seeding PA task...');
@@ -80,6 +73,7 @@ async function seed() {
     // (lower(name) WHERE name IS NOT NULL), which Drizzle cannot target in
     // onConflictDoNothing — so we check existence explicitly rather than relying
     // on a bare conflict clause that would silently swallow unexpected errors.
+    // Safe in this script because researcher-db-migrate runs as a one-shot via docker compose; concurrent invocation would race each other.
     const existing = await db.query.taskVariants.findFirst({
       where: and(eq(taskVariants.taskId, task.id), eq(taskVariants.name, name)),
     });

@@ -4,14 +4,25 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import { PA_TASK_ID } from '@roar-dashboard/assessment-schema/pa';
+import {
+  PA_TASK_ID,
+  PA_SCORING_VERSION,
+  PA_SCORE_KIND,
+  PA_SCORE_TABLE_URL,
+} from '@roar-dashboard/assessment-schema/pa';
 
 export class RoarScores {
   constructor() {
-    // reference: Table_theta_brs_model_0.4.csv
-    this.scoringVersion = parseInt(store.session.get('config').scoringVersion, 10);
-    this.roarScoreKind = this.isAdaptiveScoring() ? 'scaled_irt' : 'raw_total_correct';
-    this.tableURL = `https://storage.googleapis.com/roar-pa/scores/pa_lookup_v${this.scoringVersion}.csv`;
+    const { isAdaptive } = store.session.get('config');
+    this.irtScoring = Boolean(isAdaptive);
+    if (this.irtScoring) {
+      this.scoringVersion = PA_SCORING_VERSION.ADAPTIVE;
+      this.roarScoreKind = PA_SCORE_KIND.ADAPTIVE;
+    } else {
+      this.scoringVersion = PA_SCORING_VERSION.FIXED;
+      this.roarScoreKind = PA_SCORE_KIND.FIXED;
+    }
+    this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
     this.lookupTable = [];
     this.tableLoaded = false;
   }

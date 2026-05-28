@@ -145,7 +145,7 @@ const developmentConfig = merge(webConfig, {
     proxy: [
       {
         context: ['/v1'],
-        target: 'https://localhost:4000',
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
         secure: false,
         changeOrigin: true,
       },

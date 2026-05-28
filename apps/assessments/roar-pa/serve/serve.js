@@ -132,7 +132,6 @@ onAuthStateChanged(auth, async (user) => {
         isAdaptive,
         itemSelect,
         abilityMethod,
-        scoringVersion,
       };
 
       const roarApp = new RoarPA(gameParams, userParams);
