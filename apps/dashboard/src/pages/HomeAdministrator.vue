@@ -89,6 +89,8 @@
               :rows="pageLimit"
               :rows-per-page-options="[3, 5, 10, 25]"
               data-key="id"
+              :sort-order="sortOrder"
+              :sort-field="sortField"
             >
               <template #list="slotProps">
                 <div class="mb-2 w-full" data-cy="administrations-list">
@@ -222,15 +224,13 @@ watch(
     generateAutoCompleteSearchTokens();
 
     // Set the filtered administrations based on the search value.
-    let filtered = updatedAdministrationsData;
-    if (search.value) {
-      filtered = updatedAdministrationsData.filter((item) =>
+    if (!search.value) {
+      filteredAdministrations.value = updatedAdministrationsData;
+    } else {
+      filteredAdministrations.value = updatedAdministrationsData?.filter((item) =>
         item.name.toLowerCase().includes(search.value.toLowerCase()),
       );
     }
-
-    // Re-apply the current sort after data refresh
-    filteredAdministrations.value = applySort(filtered);
   },
   { immediate: true },
 );
@@ -311,44 +311,9 @@ const sortOptions = ref([
   },
 ]);
 const sortKey = ref(sortOptions.value[0]);
-const sortOrder = ref(1);
-const sortField = ref('name');
+const sortOrder = ref();
+const sortField = ref();
 const dataViewKey = ref(0);
-
-const applySort = (items) => {
-  if (!items || !sortField.value) return items;
-
-  const sorted = [...items];
-  sorted.sort((a, b) => {
-    let aVal = sortField.value.split('.').reduce((obj, key) => obj?.[key], a);
-    let bVal = sortField.value.split('.').reduce((obj, key) => obj?.[key], b);
-
-    // Fall back to name if publicName is missing
-    if (sortField.value === 'publicName') {
-      aVal = aVal ?? a.name;
-      bVal = bVal ?? b.name;
-    }
-
-    if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return sortOrder.value === 1 ? 1 : -1;
-    if (bVal == null) return sortOrder.value === 1 ? -1 : 1;
-
-    if (aVal < bVal) return sortOrder.value === 1 ? -1 : 1;
-    if (aVal > bVal) return sortOrder.value === 1 ? 1 : -1;
-    return 0;
-  });
-
-  return sorted;
-};
-
-watch(
-  [sortField, sortOrder],
-  () => {
-    if (!filteredAdministrations.value) return;
-    filteredAdministrations.value = applySort(filteredAdministrations.value);
-  },
-  { immediate: true },
-);
 
 /**
  * Clear the search input and reset the filtered administrations list.
@@ -357,7 +322,7 @@ watch(
 const clearSearch = () => {
   search.value = '';
   searchInput.value = '';
-  filteredAdministrations.value = applySort(administrations.value);
+  filteredAdministrations.value = administrations.value;
 };
 
 /**
@@ -366,10 +331,12 @@ const clearSearch = () => {
  */
 const onSearch = () => {
   search.value = searchInput.value;
-  const filtered = !search.value
-    ? administrations.value
-    : administrations.value.filter((item) => item.name.toLowerCase().includes(search.value.toLowerCase()));
-  filteredAdministrations.value = applySort(filtered);
+  if (!search.value) filteredAdministrations.value = administrations.value;
+  else {
+    filteredAdministrations.value = administrations.value.filter((item) =>
+      item.name.toLowerCase().includes(search.value.toLowerCase()),
+    );
+  }
 };
 
 /**
@@ -390,16 +357,22 @@ const autocomplete = () => {
 const onSortChange = (event) => {
   dataViewKey.value += 1;
   page.value = 0;
-  const sortConfig = event.value.value[0];
+  const value = event.value.value;
+  const sortValue = event.value;
 
-  if (!isSuperAdmin.value && sortConfig?.field?.fieldPath === 'name') {
+  if (!isSuperAdmin.value && value[0].field.fieldPath === 'name') {
+    // catches edge case where a partner admin should sort by the public name attribute
     sortField.value = 'publicName';
   } else {
-    sortField.value = sortConfig?.field?.fieldPath ?? 'name';
+    sortField.value = value[0].field?.fieldPath;
+  }
+  if (value[0].direction === 'DESCENDING') {
+    sortOrder.value = -1;
+  } else {
+    sortOrder.value = 1;
   }
 
-  sortOrder.value = sortConfig?.direction === 'DESCENDING' ? -1 : 1;
-  sortKey.value = event.value;
+  sortKey.value = sortValue;
 };
 </script>
 
