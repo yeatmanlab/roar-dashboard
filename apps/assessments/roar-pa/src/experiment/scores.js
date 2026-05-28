@@ -4,27 +4,20 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import {
-  PA_TASK_ID,
-  PA_SCORING_VERSION,
-  PA_SCORE_KIND,
-  PA_SCORE_TABLE_URL,
-} from '@roar-dashboard/assessment-schema/pa';
+import { PA_TASK_ID } from '@roar-dashboard/assessment-schema/pa';
 
 export class RoarScores {
   constructor() {
-    const { isAdaptive } = store.session.get('config');
-    this.irtScoring = Boolean(isAdaptive);
-    if (this.irtScoring) {
-      this.scoringVersion = PA_SCORING_VERSION.ADAPTIVE;
-      this.roarScoreKind = PA_SCORE_KIND.ADAPTIVE;
-    } else {
-      this.scoringVersion = PA_SCORING_VERSION.FIXED;
-      this.roarScoreKind = PA_SCORE_KIND.FIXED;
-    }
-    this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
+    // reference: Table_theta_brs_model_0.4.csv
+    this.scoringVersion = parseInt(store.session.get('config').scoringVersion, 10);
+    this.roarScoreKind = this.isAdaptiveScoring() ? 'scaled_irt' : 'raw_total_correct';
+    this.tableURL = `https://storage.googleapis.com/roar-pa/scores/pa_lookup_v${this.scoringVersion}.csv`;
     this.lookupTable = [];
     this.tableLoaded = false;
+  }
+
+  isAdaptiveScoring() {
+    return this.scoringVersion >= 4;
   }
 
   async initTable() {
@@ -34,8 +27,8 @@ export class RoarScores {
 
       if (ageInMonths == undefined && grade == undefined) reject();
 
-      const ageMin = this.irtScoring ? 60 : 48;
-      const ageMax = this.irtScoring ? 120 : 144;
+      const ageMin = this.isAdaptiveScoring() ? 60 : 48;
+      const ageMax = this.isAdaptiveScoring() ? 120 : 144;
 
       this.ageForScore = ageInMonths;
       if (ageInMonths < ageMin) this.ageForScore = ageMin;
@@ -47,7 +40,7 @@ export class RoarScores {
         dynamicTyping: true,
         skipEmptyLines: true,
         step: (row) => {
-          if (this.irtScoring && this.ageForScore === Number(row.data.ageMonths)) {
+          if (this.isAdaptiveScoring() && this.ageForScore === Number(row.data.ageMonths)) {
             // If adaptive, lookup scores by age only.
             this.lookupTable.push(_omit(row.data, ['', 'X']));
           } else if (grade && grade >= 6) {
@@ -127,7 +120,7 @@ export class RoarScores {
       const { numCorrect = 0, numAttempted = 0 } = subtaskScores.test ?? {};
       const percentCorrect = numAttempted > 0 ? Math.round((100 * numCorrect) / numAttempted) : 0;
       return {
-        ...(this.irtScoring ? {} : { roarScore: numCorrect }),
+        ...(this.isAdaptiveScoring() ? {} : { roarScore: numCorrect }),
         numCorrect,
         percentCorrect,
         roarScoreKind: this.roarScoreKind,
@@ -137,9 +130,13 @@ export class RoarScores {
 
     // computedScores should now have keys for lsm, fsm, and del.
     // But we also want to update the total score so we add up all of the others.
-    const totalScore = _reduce(_omit(computedScores, ['composite']), (sum, score) => sum + score.roarScore, 0);
+    const totalScore = _reduce(
+      _omit(computedScores, ['composite', 'composite_foundational']),
+      (sum, score) => sum + score.roarScore,
+      0,
+    );
 
-    if (this.irtScoring) {
+    if (this.isAdaptiveScoring()) {
       for (const key of Object.keys(computedScores)) {
         computedScores[key].thetaEstimate = store.session.get('thetas')[key.toLowerCase()];
         computedScores[key].thetaSE = store.session.get('thetaSEs')[key.toLowerCase()];
@@ -185,7 +182,7 @@ export class RoarScores {
       let myRow;
       const { ageForScore } = this;
 
-      if (this.irtScoring) {
+      if (this.isAdaptiveScoring()) {
         const thetaEstimate = store.session.get('thetas').scaled;
         const roundedTheta = Number(thetaEstimate.toFixed(1));
         myRow = this.lookupTable.find(
@@ -206,7 +203,7 @@ export class RoarScores {
           ...computedScores.composite,
           ...normedScores,
           // If adaptive, conditionally insert roarScore into the computed scores
-          ...(this.irtScoring ? { roarScore } : {}),
+          ...(this.isAdaptiveScoring() ? { roarScore } : {}),
           roarScoreKind: this.roarScoreKind,
           scoringVersion: this.scoringVersion,
         };
