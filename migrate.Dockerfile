@@ -26,7 +26,7 @@ COPY packages/config-prettier/package.json        packages/config-prettier/
 COPY packages/config-typescript/package.json      packages/config-typescript/
 
 # Install dependencies. --ignore-scripts skips native addon compilation (e.g. canvas)
-# which fails on Node 24's ABI and is not needed for migrations.
+# which is not needed for migrations.
 RUN npm ci --ignore-scripts
 
 # Copy the full config-typescript directory now that npm ci has run. The package.json

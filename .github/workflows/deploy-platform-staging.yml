@@ -30,7 +30,7 @@ jobs:
       image-version: ${{ steps.docker-build.outputs.image-version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build and push image
         id: docker-build
@@ -57,7 +57,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run core database migrations
         uses: ./.github/actions/migrate-database
@@ -86,7 +86,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Deploy to Cloud Run
         uses: ./.github/actions/deploy-cloud-run
@@ -115,7 +115,7 @@ jobs:
       DOTENV_PRIVATE_KEY_STAGING: ${{ secrets.DOTENV_PRIVATE_KEY }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build app
         uses: ./.github/actions/build
