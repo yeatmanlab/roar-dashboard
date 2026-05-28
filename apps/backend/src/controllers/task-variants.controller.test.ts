@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import type { TaskVariantsListQuery } from '@roar-dashboard/api-contract';
+import type { TaskVariantsListQuery } from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { TaskVariantParameterFactory } from '../test-support/factories/task-variant-parameter.factory';

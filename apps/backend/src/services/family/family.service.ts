@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { FAMILY_SIZE_LIMIT } from '@roar-dashboard/api-contract';
+import { FAMILY_SIZE_LIMIT } from '@roar-platform/api-contract';
 import { FamilyRepository, FAMILIES_CREATED_BY_UNIQ_IDX } from '../../repositories/family.repository';
 import { UserRepository } from '../../repositories/user.repository';
 import { GroupRepository } from '../../repositories/group.repository';

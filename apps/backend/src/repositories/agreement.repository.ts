@@ -1,10 +1,10 @@
 import { and, asc, count, desc, eq, inArray, notInArray } from 'drizzle-orm';
 import type { Column } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { AgreementSortFieldType } from '@roar-dashboard/api-contract';
+import type { AgreementSortFieldType } from '@roar-platform/api-contract';
 import type { AgreementType } from '../enums/agreement-type.enum';
 import type * as CoreDbSchema from '../db/schema/core';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { CoreDbClient } from '../db/clients';
 import { agreements, agreementVersions, userAgreements, type Agreement, type AgreementVersion } from '../db/schema';
 import { AgreementType as AgreementTypeEnum } from '../enums/agreement-type.enum';

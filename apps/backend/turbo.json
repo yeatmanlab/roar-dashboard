@@ -2,7 +2,7 @@
   "extends": ["//"],
   "tasks": {
     "dev": {
-      "with": ["@roar-dashboard/api-contract#dev"]
+      "with": ["@roar-platform/api-contract#dev"]
     },
     "build": {
       "env": [
@@ -22,7 +22,7 @@
       ]
     },
     "lint": {
-      "dependsOn": ["^@roar-dashboard/api-contract#build"]
+      "dependsOn": ["^@roar-platform/api-contract#build"]
     }
   }
 }

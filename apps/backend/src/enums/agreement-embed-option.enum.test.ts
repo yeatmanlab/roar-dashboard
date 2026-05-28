@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AgreementEmbedOption as ContractAgreementEmbedOption } from '@roar-dashboard/api-contract';
+import { AgreementEmbedOption as ContractAgreementEmbedOption } from '@roar-platform/api-contract';
 import { AgreementEmbedOption } from './agreement-embed-option.enum';
 
 describe('AgreementEmbedOption enum', () => {

@@ -31,7 +31,7 @@ import { UserRole } from '../enums/user-role.enum';
 import { UserType } from '../enums/user-type.enum';
 import { UserFactory } from '../test-support/factories/user.factory';
 import { UserOrgFactory } from '../test-support/factories/user-org.factory';
-import type { EnrolledUser } from '@roar-dashboard/api-contract';
+import type { EnrolledUser } from '@roar-platform/api-contract';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Test setup

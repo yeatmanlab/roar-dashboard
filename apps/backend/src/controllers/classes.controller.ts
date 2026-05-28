@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateClassRequest, EnrolledUsersQuery } from '@roar-dashboard/api-contract';
+import type { CreateClassRequest, EnrolledUsersQuery } from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { CreateClassServiceInput } from '../services/class/class.service';

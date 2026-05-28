@@ -1,4 +1,4 @@
-import { PA_SCORE_NAMES, PA_TASK_ID, PA_SUBSCORE_DEFS } from '@roar-dashboard/assessment-schema/pa';
+import { PA_SCORE_NAMES, PA_TASK_ID, PA_SUBSCORE_DEFS } from '@roar-platform/assessment-schema/pa';
 
 export default {
   taskSlugs: [PA_TASK_ID],

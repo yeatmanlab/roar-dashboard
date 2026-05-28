@@ -1,5 +1,5 @@
-import { SortOrder } from '@roar-dashboard/api-contract';
-import type { GroupType } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
+import type { GroupType } from '@roar-platform/api-contract';
 import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { CoreDbClient } from '../db/clients';

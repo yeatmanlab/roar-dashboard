@@ -4,7 +4,7 @@ import type {
   Agreement as ContractAgreement,
   AgreementVersionBase,
   AgreementVersionContentParams,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import type { AgreementVersion } from '../db/schema';
 import type { AgreementWithEmbeds } from '../services/agreement/agreement.service';
 import { AgreementService } from '../services/agreement/agreement.service';

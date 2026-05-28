@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
+import type { CreateRunRequestBody } from '@roar-platform/api-contract';
 import { ApiError } from '../../errors/api-error';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';

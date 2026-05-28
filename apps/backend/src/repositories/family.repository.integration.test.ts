@@ -5,7 +5,7 @@
  * real database. Families have a flat structure with no hierarchy.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { FamilyRepository } from './family.repository';
 import { CoreDbClient } from '../test-support/db';
 import { FamilyFactory } from '../test-support/factories/family.factory';

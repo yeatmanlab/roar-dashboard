@@ -1,5 +1,5 @@
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
-import { ApiContractV1 } from '@roar-dashboard/api-contract';
+import { ApiContractV1 } from '@roar-platform/api-contract';
 import type { CommandContext } from '../command/command';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums/sdk-error-code.enum';

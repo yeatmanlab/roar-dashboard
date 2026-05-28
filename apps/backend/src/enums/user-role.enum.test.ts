@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { UserRoleSchema } from '@roar-dashboard/api-contract';
+import { UserRoleSchema } from '@roar-platform/api-contract';
 import { userRoleEnum } from '../db/schema/enums';
 
 describe('UserRole enum', () => {

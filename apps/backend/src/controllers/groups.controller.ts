@@ -4,7 +4,7 @@ import type {
   CreateGroupRequest,
   InvitationCode as ApiInvitationCode,
   EnrolledUsersQuery,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import type { InvitationCode } from '../db/schema';
 import type { CreateGroupServiceInput } from '../services/group/group.service';
 import { GroupService } from '../services/group/group.service';

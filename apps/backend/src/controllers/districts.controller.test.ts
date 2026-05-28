@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { EnrolledUserFactory } from '../test-support/factories/user.factory';
