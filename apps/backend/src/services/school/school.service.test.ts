@@ -5,7 +5,7 @@ import { ClassFactory } from '../../test-support/factories/class.factory';
 import { EnrolledUserFactory } from '../../test-support/factories/user.factory';
 import { OrgType } from '../../enums/org-type.enum';
 import { UserRole } from '../../enums/user-role.enum';
-import { SortOrder, SchoolDetailSortField } from '@roar-dashboard/api-contract';
+import { SortOrder, SchoolDetailSortField } from '@roar-platform/api-contract';
 import {
   createMockSchoolRepository,
   createMockClassRepository,

@@ -1,4 +1,4 @@
-import { startRun, abortRun } from '@yeatmanlab/assessment-sdk/compat/firekit';
+import { startRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
 import { initConfig } from './experiment/config/config';
 import { buildExperiment } from './experiment/experiment';
 import './experiment/styles/roar.css';

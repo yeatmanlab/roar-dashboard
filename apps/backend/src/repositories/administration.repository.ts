@@ -38,8 +38,8 @@ import type {
   AdministrationAgreementSortFieldType,
   AdministrationStatus,
   TreeParentEntityType,
-} from '@roar-dashboard/api-contract';
-import { SortOrder, TreeNodeEntityType } from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
+import { SortOrder, TreeNodeEntityType } from '@roar-platform/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { BaseGetAllParams, BasePaginatedQueryParams } from './interfaces/base.repository.interface';

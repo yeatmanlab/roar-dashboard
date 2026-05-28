@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { FAMILY_SIZE_LIMIT } from '@roar-dashboard/api-contract';
+import { FAMILY_SIZE_LIMIT } from '@roar-platform/api-contract';
 
 vi.mock('../../clients/firebase-auth.clients', () => ({
   FirebaseAuthClient: {

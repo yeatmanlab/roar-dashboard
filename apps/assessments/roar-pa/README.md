@@ -4,13 +4,13 @@ Phonological Awareness (PA) assessment — a 3-AFC jsPsych task.
 
 ## How the dashboard resolves this package
 
-The dashboard depends on `@roar-dashboard/roar-pa` via the monorepo workspace.
+The dashboard depends on `@roar-platform/roar-pa` via the monorepo workspace.
 Because `package.json` sets `"main": "src/index.js"` and `"module": "src/index.js"`,
 Vite resolves all imports directly from source at dev time — no compiled output is
 needed. The dashboard imports the package in two places:
 
-- `TaskPA.vue` — dynamic `import('@roar-dashboard/roar-pa')` resolves to `src/index.js`
-- `TaskPA.vue` — `import '@roar-dashboard/roar-pa/src/experiment/styles/roar.css'` is
+- `TaskPA.vue` — dynamic `import('@roar-platform/roar-pa')` resolves to `src/index.js`
+- `TaskPA.vue` — `import '@roar-platform/roar-pa/src/experiment/styles/roar.css'` is
   resolved by Vite through the workspace symlink
 
 `dist/` is not used by the dashboard and does not need to be up to date for

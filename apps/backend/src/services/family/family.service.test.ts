@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { FamilyService } from './family.service';
 import { FamilyFactory } from '../../test-support/factories/family.factory';
 import { EnrolledFamilyUserFactory } from '../../test-support/factories/user.factory';

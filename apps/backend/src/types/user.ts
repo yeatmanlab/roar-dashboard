@@ -4,7 +4,7 @@ import type {
   UserFamilyRole,
   GradeFilter,
   SortOrder,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import type { User } from '../db/schema';
 
 // Export types for repo and service usage
@@ -14,7 +14,7 @@ export type {
   EnrolledFamilyUsersQuery,
   EnrolledUsersQuery,
   EnrolledUsersSortFieldType,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 
 interface BaseListEnrolledUsersOptions {
   page: number;

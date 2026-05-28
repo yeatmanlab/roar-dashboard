@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TaskVariantStatusSchema } from '@roar-dashboard/api-contract';
+import { TaskVariantStatusSchema } from '@roar-platform/api-contract';
 import { taskVariantStatusEnum } from '../db/schema/enums';
 
 describe('TaskVariantStatusEnum', () => {

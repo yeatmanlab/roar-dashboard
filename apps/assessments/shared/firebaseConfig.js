@@ -1,4 +1,4 @@
-import { RESEARCHER_LOCAL_FIREBASE_PROJECT_ID, RESEARCHER_LOCAL_FIREBASE_API_KEY } from '@roar-dashboard/assessment-schema';
+import { RESEARCHER_LOCAL_FIREBASE_PROJECT_ID, RESEARCHER_LOCAL_FIREBASE_API_KEY } from '@roar-platform/assessment-schema';
 
 /**
  * Returns the Firebase config for the current environment.
