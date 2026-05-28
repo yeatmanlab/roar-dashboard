@@ -75,13 +75,15 @@
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
-      "component": "assessment-schema"
+      "component": "assessment-schema",
+      "release-as": "0.1.0"
     },
     "apps/assessments/roar-pa": {
       "changelog-path": "CHANGELOG.md",
       "version-file": "package.json",
       "release-type": "node",
-      "component": "roar-pa"
+      "component": "roar-pa",
+      "release-as": "0.1.0"
     }
   },
   "group-pull-request-title-pattern": "chore: release ${version}",

@@ -63,7 +63,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Build packages
-        run: npx turbo run build --filter='./packages/*'
+        run: npx turbo run build --filter='./packages/*' --filter='./apps/assessments/*'
 
       - name: Publish new versions and collect deployed assessments
         id: publish
