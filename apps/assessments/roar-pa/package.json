@@ -9,8 +9,9 @@
   "scripts": {
     "//": "build is a no-op: Vite resolves imports via 'main' (src/index.js) directly, so no webpack output is needed for dashboard#dev.",
     "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
-    "predev": "if lsof -i :8000 -sTCP:LISTEN >/dev/null 2>&1; then echo 'Error: port 8000 is already in use. Stop that process before starting the dev server.' >&2; exit 1; fi",
-    "dev": "npx webpack serve --open --mode development --env dbmode=development",
+    "predev:server": "if lsof -i :8000 -sTCP:LISTEN >/dev/null 2>&1; then echo 'Error: port 8000 is already in use. Stop that process before starting the dev server.' >&2; exit 1; fi",
+    "dev": "bash ../../../scripts/dev-platform.sh",
+    "dev:server": "npx webpack serve --open --mode development --env dbmode=development",
     "researcher-environment:up": "bash ../../../scripts/researcher-env-up.sh",
     "researcher-environment:down": "docker compose -f ../../../docker-compose.researcher.yml down -v",
     "lint": "eslint .",
