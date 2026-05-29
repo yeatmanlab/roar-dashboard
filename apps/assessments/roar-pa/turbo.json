@@ -5,6 +5,9 @@
     "build": {
       "env": ["ROAR_API_URL"]
     },
+    "dev": {
+      "passThroughEnv": ["BACKEND_URL", "FIREBASE_AUTH_EMULATOR_HOST"]
+    },
     "lint": {
       "dependsOn": ["^build"]
     }
