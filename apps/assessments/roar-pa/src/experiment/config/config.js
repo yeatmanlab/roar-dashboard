@@ -5,12 +5,7 @@ import i18next from 'i18next';
 import _isUndefined from 'lodash/isUndefined';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import { pa } from '@roar-dashboard/assessment-schema';
-import {
-  writeTrial,
-  finishRun,
-  addInteraction,
-  updateUser,
-} from '@yeatmanlab/assessment-sdk/compat/firekit';
+import { writeTrial, finishRun, addInteraction, updateUser } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
 import { RoarScores } from '../scores';
