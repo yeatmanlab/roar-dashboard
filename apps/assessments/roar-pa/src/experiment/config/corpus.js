@@ -7,7 +7,9 @@ import { standardizeItemComponent } from '../experimentHelpers';
 export function processCSV(config = {}) {
   const { isAdaptive, numTestItems } = config;
   const csvAssets = {
-    test: isAdaptive ? corpusTranslations[i18next.language].testCat : corpusTranslations[i18next.language].test,
+    test: isAdaptive
+      ? corpusTranslations[i18next.language].testCatFoundational
+      : corpusTranslations[i18next.language].test,
     practice: isAdaptive
       ? corpusTranslations[i18next.language].practiceCat
       : corpusTranslations[i18next.language].practice,
@@ -37,7 +39,16 @@ export function processCSV(config = {}) {
         feedback_foil2: row.feedback_foil2 ? standardizeItemComponent(row.feedback_foil2) : null,
       };
       if (isAdaptive) {
-        ['practiceFSM', 'practiceLSM', 'practiceDEL', 'fsm', 'lsm', 'del', 'composite'].forEach((op) => {
+        [
+          'practiceFSM',
+          'practiceLSM',
+          'practiceDEL',
+          'fsm',
+          'lsm',
+          'del',
+          'composite',
+          'composite_foundational',
+        ].forEach((op) => {
           ['a', 'b', 'c', 'd'].forEach((suffix) => {
             const key = `${op}.${suffix}`;
             newRow[key] = row[key]; // Assign the value from csvInput

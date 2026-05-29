@@ -92,6 +92,7 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     isAdaptive = false,
     itemSelect = 'fixed',
     abilityMethod = 'eap',
+    scoringVersion = 5,
   } = cleanParams;
 
   let computedStoryParam;
@@ -129,6 +130,7 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     isAdaptive: isAdaptive || false,
     itemSelect: itemSelect ?? 'fixed',
     abilityMethod: abilityMethod ?? 'eap',
+    scoringVersion,
   };
 
   const updatedGameParams = Object.fromEntries(
