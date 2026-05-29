@@ -9,7 +9,7 @@ A local developer environment for running and querying ROAR assessments against 
 | Process | URL |
 |---------|-----|
 | Firebase Auth emulator | http://localhost:9099 |
-| ROAR backend (HTTPS) | https://localhost:4000 |
+| ROAR backend (HTTP) | http://localhost:4000 |
 | PA assessment dev server | http://localhost:8000 |
 | PostgreSQL | localhost:5432 |
 
@@ -18,8 +18,6 @@ Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment
 ## Prerequisites
 
 - **Docker** with Compose v2 (`docker compose version` should work)
-- **Java** (required by the Firebase Auth emulator) — `brew install openjdk` on macOS
-- **Local TLS certificates** — run once from the repo root: `npm run dev:setup:certs`
 - **Port 5432 free** — the researcher database binds to the standard Postgres port. If you have a local Postgres instance running, stop it first:
   - macOS (Homebrew): `brew services stop postgresql@<version>`
   - Ubuntu/Debian: `sudo systemctl stop postgresql`
@@ -32,9 +30,9 @@ From the assessment's directory (e.g. `apps/assessments/roar-pa` for PA):
 npm run researcher-environment:up
 ```
 
-To stop the dev servers without losing data, press **Ctrl+C**. The database container keeps running and your data is preserved — you can restart the dev servers later and pick up where you left off.
+**Ctrl+C** stops only the assessment dev server. The Docker services (database, backend, Firebase emulator) keep running in the background — your data is preserved. Run `researcher-environment:up` again to restart the dev server against the same database.
 
-To stop everything **and permanently delete the database**:
+To stop all Docker services **and permanently delete the database**:
 
 ```bash
 npm run researcher-environment:down
