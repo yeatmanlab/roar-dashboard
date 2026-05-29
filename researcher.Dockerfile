@@ -72,7 +72,7 @@ COPY --from=builder /app/packages                       ./packages
 
 # Migration tooling: Drizzle configs, migration SQL, DB schema source, seed scripts
 COPY --from=builder /app/apps/backend/migrations                   ./apps/backend/migrations
-COPY --from=builder /app/apps/backend/scripts                      ./apps/backend/scripts
+COPY --from=builder /app/apps/backend/seeds                        ./apps/backend/seeds
 COPY --from=builder /app/apps/backend/drizzle.core.config.ts       ./apps/backend/drizzle.core.config.ts
 COPY --from=builder /app/apps/backend/drizzle.assessment.config.ts ./apps/backend/drizzle.assessment.config.ts
 COPY --from=builder /app/apps/backend/tsconfig.json                ./apps/backend/tsconfig.json
