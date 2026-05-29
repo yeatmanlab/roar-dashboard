@@ -1,4 +1,4 @@
-import { RESEARCHER_LOCAL_FIREBASE_PROJECT_ID, RESEARCHER_LOCAL_FIREBASE_API_KEY } from '@roar-dashboard/assessment-schema';
+import { FIREBASE_EMULATOR_PROJECT_ID, FIREBASE_EMULATOR_API_KEY } from '@roar-dashboard/assessment-schema';
 
 /**
  * Returns the Firebase config for the current environment.
@@ -15,7 +15,7 @@ export async function getFirebaseConfig() {
   if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
     // The client SDK requires apiKey to be non-empty before calling getAuth(), but the
     // emulator never validates it. A placeholder satisfies the check without real credentials.
-    return { projectId: RESEARCHER_LOCAL_FIREBASE_PROJECT_ID, apiKey: RESEARCHER_LOCAL_FIREBASE_API_KEY };
+    return { projectId: FIREBASE_EMULATOR_PROJECT_ID, apiKey: FIREBASE_EMULATOR_API_KEY };
   }
   return fetch('/__/firebase/init.json').then((r) => r.json());
 }
