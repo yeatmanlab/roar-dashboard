@@ -4,20 +4,12 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import {
-  PA_TASK_ID,
-  PA_SCORING_VERSION,
-  PA_SCORE_KIND,
-  PA_SCORE_TABLE_URL,
-} from '@roar-dashboard/assessment-schema/pa';
 
 export class RoarScores {
   constructor() {
-    this.scoringVersion = PA_SCORING_VERSION.ADAPTIVE;
-    this.roarScoreKind = PA_SCORE_KIND.ADAPTIVE;
-    this.scoringVersion = PA_SCORING_VERSION.FIXED;
-    this.roarScoreKind = PA_SCORE_KIND.FIXED;
-    this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
+    this.scoringVersion = parseInt(store.session.get('config').scoringVersion, 10);
+    this.roarScoreKind = this.isAdaptiveScoring() ? 'scaled_irt' : 'raw_total_correct';
+    this.tableURL = `https://storage.googleapis.com/roar-pa/scores/pa_lookup_v${this.scoringVersion}.csv`;
     this.lookupTable = [];
     this.tableLoaded = false;
   }
@@ -118,7 +110,7 @@ export class RoarScores {
    */
   computedScoreCallback = async (rawScores) => {
     const { taskId } = store.session.get('config');
-    if (taskId !== PA_TASK_ID) return null;
+    if (taskId !== 'pa') return null;
 
     // This returns an object with the same top-level keys as the input raw scores
     // But the values are the number of correct trials, not including practice trials.
