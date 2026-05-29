@@ -9,7 +9,6 @@
 #   - Local PostgreSQL running on port 5432
 #   - Backend running on port 4000 with FIREBASE_AUTH_EMULATOR_HOST set in apps/backend/.env
 #   - TLS certs generated (npm run dev:setup:certs)
-#   - Java installed (required by the Firebase Auth emulator)
 #
 # Usage (from any assessment package.json):
 #   "dev:platform": "bash ../../../scripts/dev-platform.sh"
@@ -22,12 +21,6 @@ FIREBASE_CONFIG="$REPO_ROOT/apps/assessments/shared/firebase.json"
 EMULATOR_PROJECT_ID="demo-roar"
 EMULATOR_HOST="127.0.0.1:9099"
 BACKEND_ENV="$REPO_ROOT/apps/backend/.env"
-
-# Java is required by the Firebase Auth emulator.
-if ! command -v java &>/dev/null; then
-  echo "Error: Java is required for the Firebase Auth emulator. Install a JRE (e.g. brew install openjdk)." >&2
-  exit 1
-fi
 
 # TLS certs are required by the backend in NODE_ENV=development.
 for cert_file in "$REPO_ROOT/certs/roar-local.key" "$REPO_ROOT/certs/roar-local.crt"; do
@@ -80,4 +73,4 @@ npx concurrently \
   --prefix-colors cyan,green \
   "npx firebase emulators:start --only auth --project $EMULATOR_PROJECT_ID --config $FIREBASE_CONFIG" \
   "until curl -s http://localhost:9099/ >/dev/null 2>&1; do sleep 1; done \
-   && cd $ASSESSMENT_DIR && FIREBASE_AUTH_EMULATOR_HOST=$EMULATOR_HOST npm run dev:server"
+   && cd $ASSESSMENT_DIR && FIREBASE_AUTH_EMULATOR_HOST=$EMULATOR_HOST npx webpack serve --open --mode development --env dbmode=development"

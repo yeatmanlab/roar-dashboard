@@ -42,4 +42,4 @@ cd "$ASSESSMENT_DIR"
 exec env \
   FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
   BACKEND_URL=http://localhost:4000 \
-  npm run dev:server
+  npx webpack serve --open --mode development --env dbmode=development
