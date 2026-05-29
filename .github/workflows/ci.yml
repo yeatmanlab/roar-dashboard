@@ -167,6 +167,9 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
+      - name: Build
+        run: npm run build
+
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
@@ -176,7 +179,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           install: false
-          build: npm run build
           start: npm run preview -- --host
           tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}
@@ -219,6 +221,9 @@ jobs:
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
 
+      - name: Build
+        run: npm run build
+
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
@@ -229,7 +234,6 @@ jobs:
         with:
           component: true
           install: false
-          build: npm run build
           start: npm run preview -- --host
           tag: ${{ github.event_name }},component,${{ matrix.browser }}
           wait-on: ${{ env.CYPRESS_BASE_URL }}

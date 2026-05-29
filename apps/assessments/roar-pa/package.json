@@ -9,7 +9,6 @@
   "scripts": {
     "//": "build is a no-op: Vite resolves imports via 'main' (src/index.js) directly, so no webpack output is needed for dashboard#dev.",
     "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
-    "build:dev": "npx webpack --mode production --env dbmode=development",
     "predev": "fkill :8000 -f || true",
     "dev": "npx webpack serve --open --mode development --env dbmode=development",
     "lint": "eslint .",
@@ -20,8 +19,9 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
+    "@roar-dashboard/assessment-schema": "*",
+    "@yeatmanlab/assessment-sdk": "*",
     "@bdelab/jscat": "^5.2.2",
-    "@bdelab/roar-firekit": "9.11.0",
     "@bdelab/roar-utils": "^1.2.2",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.0",
     "@jspsych/plugin-audio-button-response": "^1.1.2",

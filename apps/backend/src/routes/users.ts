@@ -3,6 +3,7 @@ import { initServer, createExpressEndpoints } from '@ts-rest/express';
 import { UsersContract } from '@roar-dashboard/api-contract';
 import { UsersController } from '../controllers/users.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
+import { AnonTokenMiddleware } from '../middleware/anon-token/anon-token.middleware';
 
 const s = initServer();
 
@@ -54,6 +55,11 @@ export function registerUserRoutes(routerInstance: Router) {
         handler: async ({ req: { user }, params: { userId } }) =>
           UsersController.getGuardianStudentReport(user!, userId),
       },
+    },
+    createAnonymous: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      middleware: [AnonTokenMiddleware],
+      handler: async ({ req: { decodedAnonymousUser } }) => UsersController.createAnonymous(decodedAnonymousUser!.uid),
     },
   });
 

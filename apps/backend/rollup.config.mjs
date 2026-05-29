@@ -101,7 +101,7 @@ export default defineConfig({
 
     isDev &&
       run({
-        execArgv: ['--enable-source-maps'],
+        execArgv: ['--enable-source-maps', '--use-system-ca'],
       }),
   ].filter(Boolean),
 

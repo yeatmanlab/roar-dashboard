@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import jsPsychAudioButtonResponse from '@jspsych/plugin-audio-button-response';
 import store from 'store2';
 import i18next from 'i18next';
