@@ -1,7 +1,5 @@
 export const PA_TASK_ID = "pa" as const;
 
-export const PA_DEV_PORT = 8000 as const;
-
 export const PA_SCORING_VERSION = {
   V3_FIXED: 3,
   V4_ADAPTIVE: 4,
