@@ -12,6 +12,7 @@ import enCorpusTestCat from './config/corpus/en/test-cat.csv';
 import deCorpusTest from './config/corpus/de/test.csv';
 import deCorpusPractice from './config/corpus/de/practice.csv';
 import deTranslations from '../locales/de/translation.json';
+import enCorpusTestCatFoundational from './config/corpus/en/phoneme_foundational_composite.csv';
 
 export const corpusTranslations = {
   en: {
@@ -19,6 +20,7 @@ export const corpusTranslations = {
     practice: enCorpusPractice,
     practiceCat: enCorpusPracticeCat,
     testCat: enCorpusTestCat,
+    testCatFoundational: enCorpusTestCatFoundational,
   },
   es: {
     test: esCorpusTest,

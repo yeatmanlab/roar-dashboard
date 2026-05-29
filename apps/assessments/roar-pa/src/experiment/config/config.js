@@ -5,7 +5,12 @@ import i18next from 'i18next';
 import _isUndefined from 'lodash/isUndefined';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import { pa } from '@roar-dashboard/assessment-schema';
-import { writeTrial, finishRun, addInteraction, updateUser } from '@yeatmanlab/assessment-sdk/compat/firekit';
+import {
+  writeTrial,
+  finishRun,
+  addInteraction,
+  updateUser,
+} from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
 import { RoarScores } from '../scores';
@@ -15,7 +20,7 @@ import { paValidityEvaluator } from '../experiment';
 const makePid = () => {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
+  // eslint-disable-next-line max-len, no-plusplus
   for (let i = 0; i < 16; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -52,6 +57,7 @@ const getStoryOption = (opt, grade) => {
       story = true;
     }
     // Note: we use == instead of === in order to compare against both undefined and null
+    // eslint-disable-next-line eqeqeq
   } else if (opt == undefined) {
     story = true;
   } else if (opt === true) {
@@ -92,6 +98,7 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     isAdaptive = false,
     itemSelect = 'fixed',
     abilityMethod = 'eap',
+    scoringVersion = 4,
   } = cleanParams;
 
   let computedStoryParam;
@@ -129,6 +136,7 @@ export const initConfig = async (gameParams, userParams, displayElement) => {
     isAdaptive: isAdaptive || false,
     itemSelect: itemSelect ?? 'fixed',
     abilityMethod: abilityMethod ?? 'eap',
+    scoringVersion: scoringVersion ?? 4,
   };
 
   const updatedGameParams = Object.fromEntries(
@@ -165,8 +173,9 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
+      // eslint-disable-next-line prefer-rest-params
       fn.apply(fn, arguments);
-
+      // eslint-disable-next-line prefer-rest-params
       code.apply(fn, arguments);
     };
 
@@ -193,6 +202,7 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: getUserDataTimeline,
     on_timeline_finish: async () => {
+      // eslint-disable-next-line no-param-reassign
       config.pid = config.pid || makePid();
       try {
         await updateUser({
