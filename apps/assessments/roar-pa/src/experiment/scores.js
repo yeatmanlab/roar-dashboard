@@ -102,6 +102,15 @@ export class RoarScores {
    *     roarScore: x + y + z;
    *     standardScore: number;
    *     percentile: number;
+   *     roarScoreKind: string;
+   *     scoringVersion: number;
+   *   },
+   *   composite_foundational: {
+   *     roarScore: x + y + z;
+   *     standardScore: number;
+   *     percentile: number;
+   *     roarScoreKind: string;
+   *     scoringVersion: number;
    *   }
    * }
    *
