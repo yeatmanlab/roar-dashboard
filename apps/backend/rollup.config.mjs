@@ -21,9 +21,6 @@ export default defineConfig({
         dir: 'dist',
         format: 'esm',
         sourcemap: 'inline',
-        preserveModules: true,
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
         exports: 'auto',
       }
     : {
@@ -48,29 +45,18 @@ export default defineConfig({
         chunkFileNames: '[name]-[hash].js',
       },
   plugins: [
-    // In dev, externalize node_modules to keep rebuilds fast.
-    // In production, skip externals entirely so rollup bundles everything into a single server.js — no node_modules
-    // needed at runtime.
-    isDev &&
-      externals({
-        exclude: [
-          // Workspace package — must be compiled from TS source via the alias below
-          '@roar-dashboard/api-contract',
-          // CJS package without an `exports` field — Node's ESM resolver can't
-          // resolve the bare specifier at runtime, so we bundle it through the
-          // commonjs() plugin instead
-          '@openfga/sdk',
-        ],
-      }),
-
+    // Alias runs before externals so that workspace-package imports are rewritten to TS source
+    // paths before the externals plugin ever sees them. Without this ordering, externals would
+    // mark e.g. `@roar-dashboard/assessment-schema/pa` as external (it's a valid node_module
+    // symlink), and the alias would never get a chance to redirect it to the TS source.
     alias({
       entries: [
         // Convenience alias used across the backend source code
         { find: '@', replacement: new URL('./src', import.meta.url).pathname },
 
-        // In dev, point the local monorepo package to its src/ instead of dist/. This makes Rollup compile it with
-        // esbuild, watch for changes, and restart the server when internal package source files change. In production
-        // the package resolves to its built dist/ via normal node resolution, but is still bundled (not externalized).
+        // In dev, point @roar-dashboard/api-contract to its TS source so Rollup compiles it
+        // with esbuild and watches for changes. In production it resolves to its built dist/
+        // via normal node resolution (single `.` export, nodeResolve handles it fine).
         ...(isDev
           ? [
               {
@@ -79,8 +65,44 @@ export default defineConfig({
               },
             ]
           : []),
+
+        // @roar-dashboard/assessment-schema is always aliased because nodeResolve does
+        // not reliably follow subpath exports through workspace symlinks. A regex find
+        // handles the bare specifier and all subpath imports (e.g. /pa, /swr) in a
+        // single entry — new assessment subpaths work automatically without changes here.
+        //
+        // How the replacement works: the capture group `(\/[^/]+)?` is either the
+        // subpath (e.g. "/pa") or empty string, and `$1` splices it into the output
+        // path via standard JS regex replacement — giving e.g. `.../src/pa/index.ts`.
+        {
+          find: /^@roar-dashboard\/assessment-schema(\/[^/]+)?$/,
+          replacement:
+            new URL(
+              isDev ? '../../packages/assessment-schema/src' : '../../packages/assessment-schema/dist',
+              import.meta.url,
+            ).pathname + `$1/index.${isDev ? 'ts' : 'js'}`,
+        },
       ],
     }),
+
+    // In dev, externalize node_modules to keep rebuilds fast.
+    // In production, skip externals entirely so rollup bundles everything into a single server.js — no node_modules
+    // needed at runtime.
+    isDev &&
+      externals({
+        exclude: [
+          // Workspace packages — rewritten to TS source by the alias plugin above, then
+          // compiled by esbuild. Must be excluded from externalization so Rollup doesn't
+          // short-circuit them before the alias runs (alias is first, but externals would
+          // still match the resolved file path if we didn't exclude these).
+          '@roar-dashboard/api-contract',
+          '@roar-dashboard/assessment-schema',
+          // CJS packages — Node's ESM runtime can't load these as named-export
+          // imports, so we bundle them through the commonjs() plugin instead.
+          '@openfga/sdk',
+          'crc-32',
+        ],
+      }),
 
     nodeResolve({
       preferBuiltins: true,

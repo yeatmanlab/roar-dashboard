@@ -12,6 +12,7 @@
         "PORT",
         "KEEP_ALIVE_TIMEOUT",
         "FIREBASE_SERVICE_ACCOUNT_CREDENTIALS",
+        "FIREBASE_AUTH_EMULATOR_HOST",
         "GOOGLE_APPLICATION_CREDENTIALS",
         "GCLOUD_PROJECT",
         "GOOGLE_CLOUD_PROJECT",
@@ -20,6 +21,9 @@
         "FGA_MODEL_ID",
         "FGA_OIDC_AUDIENCE"
       ]
+    },
+    "test": {
+      "env": ["AUTHZ_MODEL_PATH"]
     },
     "lint": {
       "dependsOn": ["^@roar-dashboard/api-contract#build"]

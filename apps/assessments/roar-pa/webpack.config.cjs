@@ -139,6 +139,17 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    // Proxy /v1 to the local backend so the browser sees a same-origin request —
+    // no CORS headers needed on the backend. Mirrors how Firebase Hosting proxies
+    // to Cloud Run in staging/production.
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
@@ -149,7 +160,9 @@ module.exports = async (env, args) => {
     plugins: [
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
-        ROAR_API_URL: JSON.stringify(process.env.ROAR_API_URL || 'https://localhost:4000'),
+        // Default to '' so dev builds use relative URLs proxied by webpack-dev-server.
+        // Set ROAR_API_URL explicitly for production to point at the Cloud Run backend.
+        ROAR_API_URL: JSON.stringify(process.env.ROAR_API_URL ?? ''),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -163,13 +176,10 @@ module.exports = async (env, args) => {
   const devFirebaseConfig = {
     plugins: [
       new webpack.EnvironmentPlugin({
-        FIREBASE_APP_API_KEY: '',
-        FIREBASE_APP_AUTH_DOMAIN: '',
-        FIREBASE_APP_PROJECT_ID: '',
-        FIREBASE_APP_STORAGE_BUCKET: '',
-        FIREBASE_APP_MESSAGING_SENDER_ID: '',
-        FIREBASE_APP_APP_ID: '',
-        ROAR_API_URL: 'https://localhost:4000',
+        // Empty string by default — connectAuthEmulator() in serve.js only fires when
+        // this is explicitly set (e.g. by researcher-environment:up). Regular dev builds
+        // connecting to a real Firebase project are unaffected.
+        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };
