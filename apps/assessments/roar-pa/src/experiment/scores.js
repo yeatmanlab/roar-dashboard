@@ -16,10 +16,10 @@ export class RoarScores {
     const { isAdaptive } = store.session.get('config');
     this.irtScoring = Boolean(isAdaptive);
     if (this.irtScoring) {
-      this.scoringVersion = PA_SCORING_VERSION.ADAPTIVE;
+      this.scoringVersion = PA_SCORING_VERSION.V4_ADAPTIVE;
       this.roarScoreKind = PA_SCORE_KIND.ADAPTIVE;
     } else {
-      this.scoringVersion = PA_SCORING_VERSION.FIXED;
+      this.scoringVersion = PA_SCORING_VERSION.V3_FIXED;
       this.roarScoreKind = PA_SCORE_KIND.FIXED;
     }
     this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
