@@ -4,6 +4,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { config } from '@dotenvx/dotenvx';
+import dsv from '@rollup/plugin-dsv';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
@@ -167,6 +168,7 @@ export default defineConfig(({ mode }) => {
           process: true,
         },
       }),
+      dsv(),
       UnheadVite(),
       ...(process.env.NODE_ENV !== 'development'
         ? [
@@ -183,6 +185,10 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
+      // Ensure a single jspsych instance across all manually-chunked assessment packages.
+      // Without this, Rollup may create multiple copies whose ParameterType enums initialize
+      // in an undefined order, causing "Cannot read properties of undefined (reading 'BOOL')".
+      dedupe: ['jspsych'],
     },
 
     server: {
@@ -216,11 +222,13 @@ export default defineConfig(({ mode }) => {
             tanstack: ['@tanstack/vue-query'],
             chartJs: ['chart.js'],
             sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
+            // jspsych must be its own chunk so it initializes (and exports ParameterType) before
+            // any assessment plugin chunk that accesses ParameterType at module evaluation time.
+            jspsych: ['jspsych'],
             roam: ['@bdelab/roam-apps'],
             firekit: ['@bdelab/roar-firekit'],
             letter: ['@bdelab/roar-letter'],
             multichoice: ['@bdelab/roar-multichoice'],
-            phoneme: ['@bdelab/roar-pa'],
             sre: ['@bdelab/roar-sre'],
             swr: ['@bdelab/roar-swr'],
             utils: ['@bdelab/roar-utils'],

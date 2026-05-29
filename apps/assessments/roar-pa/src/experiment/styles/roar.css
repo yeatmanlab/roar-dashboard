@@ -1,0 +1,711 @@
+/* CSS Document */
+.this-is-roar {
+  content: 'is a game';
+}
+
+.jspsych-display-element {
+  width: 60%;
+  margin: auto;
+  text-align: center;
+  touch-action: manipulation;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Old versions of Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently
+									supported by Chrome, Edge, Opera and Firefox */
+}
+
+.jspsych-display-element h1 {
+  margin-top: 10%;
+  margin-right: 10%;
+  margin-left: 10%;
+  text-align: center;
+  padding-inline: 10px;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-weight: semi-bold;
+  font-size: 5vh;
+  color: rgba(76, 101, 139, 1);
+}
+
+.jspsych-display-element h2 {
+  text-align: center;
+  margin-top: 5%;
+  margin-right: 10%;
+  margin-left: 10%;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: regular;
+  font-size: 4vh;
+  color: rgba(76, 101, 139, 1);
+}
+
+.jspsych-display-element h3 {
+  text-align: center;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: regular;
+  font-size: 3vh;
+  color: rgba(76, 101, 139, 1);
+}
+
+.jspsych-display-element h4 {
+  margin-top: 5%;
+  margin-right: 10%;
+  margin-left: 10%;
+  text-align: center;
+  padding-inline: 10px;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-weight: semi-bold;
+  font-size: 6vh;
+  color: rgba(76, 101, 139, 1);
+}
+
+.jspsych-display-element p {
+  text-align: center;
+  vertical-align: middle;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: normal;
+  font-size: 3vh;
+  color: rgba(0, 0, 0, 1);
+}
+
+.jspsych-display-element img {
+  -khtml-user-select: none;
+  -o-user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.consent_form_title {
+  margin-right: 10%;
+  margin-left: 10%;
+  font-size: 3vh;
+}
+
+.consent_form_text {
+  margin: 10%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.survey_form_text {
+  text-align: center;
+  font-size: 3vh;
+}
+
+.consent_form_agree {
+  margin: 5%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.debrief_text {
+  margin: 20%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.jspsych-survey-multi-select-option {
+  font-size: 2vh;
+  text-align: center;
+}
+
+.stimulus {
+  text-align: center;
+  vertical-align: middle;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 5vh;
+  line-height: 5vh;
+  color: rgba(0, 0, 0, 1);
+}
+
+.full_screen {
+  text-align: center;
+  font-style: normal;
+  font-weight: normal;
+  font-size: 32px;
+  line-height: 32px;
+  padding-top: 300px;
+  color: rgba(0, 0, 0, 1);
+}
+
+.feedback {
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  text-align: center;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 3vh;
+  line-height: 3vh;
+  color: rgba(0, 0, 0, 1);
+}
+
+.jspsych-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.transparent {
+  background: rgba(255, 255, 255, 0);
+  border-color: rgba(255, 255, 255, 0);
+}
+
+.center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.star-center {
+  margin: 0;
+  position: absolute;
+  top: 45%;
+  left: 51%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.vertical-center {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+.jspsych-video-button-response-stimulus {
+  margin: 0;
+  position: absolute;
+  top: 45%;
+  height: 90%;
+  -ms-transform: translateY(-45%);
+  transform: translateY(-45%);
+}
+
+.stimulus_div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.text_div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 60%;
+}
+
+.center {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.middle {
+  position: relative;
+  text-align: left;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.lower {
+  position: fixed;
+  bottom: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 7vh;
+}
+
+.orange {
+  color: rgba(219, 97, 69, 1);
+}
+
+.blue {
+  color: rgba(66, 152, 181, 1);
+}
+
+.yellow {
+  color: rgba(255, 202, 97, 1);
+}
+
+.row {
+  display: flex;
+}
+
+.column_1 {
+  padding: 0 2vh 0 2vh;
+  flex: 33%;
+}
+
+.column_2_upper {
+  margin-top: 5%;
+  padding: 0 2vh 0 2vh;
+  flex: 50%;
+  margin-right: 5%;
+  margin-left: 5%;
+}
+
+.column_2_lower {
+  padding: 0 2vh 0 2vh;
+  flex: 50%;
+  margin-right: 5%;
+  margin-left: 5%;
+}
+
+.column_3 {
+  padding: 0 2vh 0 2vh;
+  flex: 67%;
+  margin-right: 10%;
+}
+
+.button {
+  left: 0;
+  right: 0;
+  background-color: rgb(255, 255, 255);
+  text-align: center;
+  vertical-align: middle;
+  padding: 2vh;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  font-style: normal;
+  font-weight: bold;
+  font-size: 3vh;
+  color: rgb(0, 0, 0);
+  position: fixed;
+  display: block;
+  bottom: 0;
+}
+
+.story-scene {
+  width: 100%;
+  position: fixed;
+  display: block;
+  bottom: 5vh;
+}
+
+.scene {
+  position: fixed;
+  bottom: 5vh;
+  width: 100%;
+  display: block;
+}
+
+.characterleft {
+  text-align: center;
+  position: relative;
+  top: 30%;
+  height: 30vh;
+}
+
+.jspsych-audio-button-response-button {
+  cursor: pointer !important; /* Override cursor style */
+  display: inline-block !important; /* Override display style */
+  margin: 0 !important; /* Override margin style */
+}
+
+.imageUnderInstruction {
+  text-align: center;
+  position: relative;
+  top: 50%;
+  height: 40vh;
+}
+
+.testImageUp {
+  text-align: center;
+  position: relative;
+  margin: 1.5vh;
+  /* border: 1.5vh solid rgba(255, 202, 97, 0); */
+  height: 20vh;
+  border: 1px solid;
+}
+
+.testImageDown {
+  text-align: center;
+  margin: 1.5vh;
+  position: relative;
+  /* border: 1.5vh solid rgba(255, 202, 97, 0); */
+  height: 20vh;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.testImageCenter {
+  text-align: center;
+  margin: 1.5vh;
+  position: relative;
+  height: 20vh;
+  box-shadow: 0 0 0 1.5vh rgba(255, 202, 97, 1);
+  z-index: 999;
+}
+
+.highlight {
+  margin: 1.5vh;
+  box-shadow: 0 0 0 1.5vh rgba(255, 202, 97, 1) !important;
+}
+
+.instructionCanvas {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  height: 50vh;
+  bottom: 4vh;
+  justify-content: center;
+}
+
+.instructionCanvasNS {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  height: 45vh;
+  bottom: 0vh;
+  justify-content: center;
+}
+
+.coin {
+  position: relative;
+  top: 5vh;
+  height: 15vh;
+}
+
+.cues {
+  position: relative;
+  top: 5vh;
+  margin-bottom: 5vh;
+  height: 15vh;
+}
+
+.reward_feedback {
+  position: fixed;
+  top: 15vh;
+  right: 20vh;
+  width: 40vh;
+  z-index: 1;
+}
+
+.wizard {
+  position: relative;
+  height: 30vh;
+  display: inline-block;
+  right: 20%;
+  bottom: 4vh;
+}
+
+.guardian {
+  position: relative;
+  height: 30vh;
+  bottom: 4vh;
+  display: inline-flex;
+}
+
+#gate {
+  height: 40vh;
+  left: 50vh;
+  display: inline-flex;
+}
+
+.normal_center_text {
+  text-align: center;
+  position: relative;
+  top: 50%;
+}
+
+.key {
+  vertical-align: middle;
+  text-align: center;
+  position: relative;
+  top: 600px;
+}
+
+#replay {
+  font-size: 2vh;
+  bottom: 80%;
+  position: fixed;
+}
+
+/* jsPsych progress bar */
+
+#jspsych-progressbar-container {
+  color: #555;
+  border-bottom: 0.1em solid #dedede;
+  background-color: #f9f9f9;
+  text-align: center;
+  padding: 0.5em 0em;
+  width: 100%;
+  line-height: 1em;
+}
+#jspsych-progressbar-container span {
+  font-size: 2vh;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  padding-right: 2vh;
+}
+#jspsych-progressbar-outer {
+  background-color: #eee;
+  width: 50%;
+  margin: auto;
+  height: 2vh;
+  display: inline-block;
+  vertical-align: middle;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+#jspsych-progressbar-inner {
+  background-color: #aaa;
+  width: 0%;
+  height: 100%;
+}
+
+/* Control appearance of jsPsych.data.displayData() */
+#jspsych-data-display {
+  text-align: left;
+}
+
+/* borrowing Bootstrap style for btn elements, but combining styles a bit */
+
+.mep-stimulus {
+  display: inline-block;
+  width: 1.65vw;
+  height: 1.65vw;
+  margin: 0.13vw;
+  padding: 0px 0px 0.825vw 0px;
+  background: white;
+  border-style: solid;
+  border-width: 0px 0px 8px 0px;
+  border-color: rgba(255, 255, 255, 0);
+}
+
+.bottom-border-blue {
+  border-bottom-color: blue !important;
+}
+
+#jspsych-html-button-response-stimulus {
+  margin-bottom: 25vw;
+}
+
+#jspsych-html-multi-response-button-2 {
+  margin: 0;
+}
+
+#fixation-prompt {
+  margin-bottom: 0.825%;
+}
+
+.jspsych-html-button-response-button {
+  display: inline-block;
+  width: 4vw;
+  height: 4vw;
+  margin: 0.75vw;
+}
+
+.jspsych-html-button-response-button {
+  display: inline-block;
+  width: 4vw;
+  height: 4vw;
+  margin: 0.75vw;
+}
+
+#jspsych-audio-button-response-btngroup {
+  display: flex;
+  flex-flow: row wrap;
+  position: fixed;
+  /* justify-content: space-around; */
+  bottom: 25%;
+  z-index: 999;
+}
+
+#jspsych-html-multi-response-btngroup {
+  display: flex;
+  flex-flow: row wrap;
+  position: fixed;
+  justify-content: space-around;
+  bottom: 25%;
+  z-index: 999;
+}
+
+.jspsych-btn {
+  z-index: 100;
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(76, 101, 139, 1);
+  border-color: darkgrey;
+  display: inline-block;
+  padding: 1vh 2vh;
+  margin: 1vh 1vh 1vh 1vh;
+  font-size: 4vh;
+  font-weight: bold;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  cursor: pointer;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  background-image: none;
+  border-radius: 1vh;
+  border-width: 1vh;
+}
+
+#jspsych-fullscreen-btn {
+  position: fixed;
+  bottom: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.loader {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: block;
+  margin: 15px auto;
+  position: relative;
+  color: rgb(43, 69, 215);
+  box-sizing: border-box;
+  animation: animloader 1s linear infinite alternate;
+}
+
+@keyframes animloader {
+  0% {
+    box-shadow:
+      -38px -12px,
+      -14px 0,
+      14px 0,
+      38px 0;
+  }
+
+  33% {
+    box-shadow:
+      -38px 0px,
+      -14px -12px,
+      14px 0,
+      38px 0;
+  }
+
+  66% {
+    box-shadow:
+      -38px 0px,
+      -14px 0,
+      14px -12px,
+      38px 0;
+  }
+
+  100% {
+    box-shadow:
+      -38px 0,
+      -14px 0,
+      14px 0,
+      38px -12px;
+  }
+}
+
+.continue {
+  position: fixed;
+  bottom: 5vh;
+  height: 15vh;
+  right: 5vh;
+  z-index: 999;
+}
+
+.consent_form_title {
+  margin-right: 10%;
+  margin-left: 10%;
+  font-size: 3vh;
+}
+
+.consent_form_text {
+  margin: 3%;
+  text-align: left;
+  font-size: 1.7vh;
+}
+
+.survey_form_text {
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  margin: 3%;
+  text-align: center;
+  font-size: 3vh;
+}
+
+.consent_form_agree {
+  margin: 5%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.debrief_text {
+  margin: 20%;
+  text-align: left;
+  font-size: 2vh;
+}
+
+.jspsych-survey-multi-select-option {
+  font-size: 2vh;
+  text-align: center;
+}
+
+.jspsych-survey-html-form {
+  position: sticky;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(76, 101, 139, 1);
+  border-color: darkgrey;
+  padding: 1vh 2vh;
+  margin: 4vh 1vh 1vh 1vh;
+  font-size: 3vh;
+  font-weight: bold;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  cursor: pointer;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  background-image: none;
+  border: 1vh solid transparent;
+  border-radius: 1vh;
+}
+
+#jspsych-survey-multi-select-next {
+  position: sticky;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 1);
+  background-color: rgba(76, 101, 139, 1);
+  border-color: darkgrey;
+  padding: 1vh 2vh;
+  margin: 4vh 1vh 1vh 1vh;
+  font-size: 3vh;
+  font-weight: bold;
+  font-family: 'Source Sans Pro', Gotham, 'Helvetica Neue', Helvetica, Arial, 'sans-serif';
+  cursor: pointer;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  background-image: none;
+  border: 1vh solid transparent;
+  border-radius: 1vh;
+}
+.scrollable-consent-form {
+  max-height: 60vh; /* Adjust the height according to your design */
+  border: #555 solid 2px;
+  max-width: 120vh;
+  overflow-y: auto;
+}
