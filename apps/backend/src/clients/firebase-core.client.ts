@@ -7,7 +7,7 @@ import {
   cert,
   getApps,
 } from 'firebase-admin/app';
-import { RESEARCHER_LOCAL_FIREBASE_PROJECT_ID } from '@roar-dashboard/assessment-schema';
+import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-dashboard/assessment-schema';
 import { logger } from '../logger';
 
 /**
@@ -56,8 +56,7 @@ export class FirebaseCoreClient {
     // When the Auth emulator is active, the Admin SDK routes token verification to localhost
     // and does not validate credentials — no credential object needed.
     if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-      const projectId =
-        process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT ?? RESEARCHER_LOCAL_FIREBASE_PROJECT_ID;
+      const projectId = process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT ?? FIREBASE_EMULATOR_PROJECT_ID;
       this.appInstance = initializeApp({ projectId });
       return this.appInstance;
     }
