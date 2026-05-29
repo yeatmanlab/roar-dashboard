@@ -12,7 +12,7 @@
     "predev": "fkill :8000 -f || true",
     "dev": "npx webpack serve --open --mode development --env dbmode=development",
     "researcher-environment:up": "bash ../../../scripts/researcher-env-up.sh",
-    "researcher-environment:down": "bash ../../../scripts/researcher-env-down.sh",
+    "researcher-environment:down": "docker compose -f ../../../docker-compose.researcher.yml down -v",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
