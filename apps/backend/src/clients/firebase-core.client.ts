@@ -55,9 +55,10 @@ export class FirebaseCoreClient {
 
     // When the Auth emulator is active, the Admin SDK routes token verification to localhost
     // and does not validate credentials — no credential object needed.
+    // The project ID must match the emulator's --project flag exactly; GOOGLE_CLOUD_PROJECT
+    // may hold a real project ID and must not override it here.
     if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-      const projectId = process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT ?? FIREBASE_EMULATOR_PROJECT_ID;
-      this.appInstance = initializeApp({ projectId });
+      this.appInstance = initializeApp({ projectId: FIREBASE_EMULATOR_PROJECT_ID });
       return this.appInstance;
     }
 
