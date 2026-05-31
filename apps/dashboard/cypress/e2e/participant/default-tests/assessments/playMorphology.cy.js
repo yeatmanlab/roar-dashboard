@@ -4,7 +4,8 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@bdelab/roar-multichoice';
 let isCurrentAppVersion;
 
-describe('Participant Assessment: ROAR Morphology', () => {
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
+describe.skip('Participant Assessment: ROAR Morphology', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });

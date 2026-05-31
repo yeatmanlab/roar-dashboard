@@ -6,7 +6,7 @@
   },
   "version": "3.26.0",
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=!./apps/assessments/*",
     "dev:setup:certs": "setup-certs",
     "watch": "turbo watch dev",
     "build": "turbo run build",
@@ -21,7 +21,6 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "prettier": "^3.6.0",
     "turbo": "^2.5.8"
   },
   "engines": {
@@ -30,6 +29,7 @@
   "packageManager": "npm@10.8.2",
   "workspaces": [
     "apps/*",
+    "apps/assessments/*",
     "packages/*"
   ],
   "dependencies": {
