@@ -118,7 +118,7 @@ async function buildBackendIfNeeded(backendDir: string): Promise<void> {
  * Waits for the backend to be ready by polling the health endpoint and fixture file.
  */
 async function waitForBackendHealth(port: string, fixtureFile: string, maxAttempts = 30): Promise<void> {
-  const healthUrl = `http://localhost:${port}/health`;
+  const healthUrl = `http://localhost:${port}/health/startup`;
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
