@@ -24,18 +24,18 @@ afterEach(() => {
 
 describe('checkPostgres', () => {
   it('returns "ok" when SELECT 1 succeeds', async () => {
-    const mockQuery = vi.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] });
-    vi.mocked(getCoreDbClient).mockReturnValue({ $client: { query: mockQuery } } as never);
+    const mockExecute = vi.fn().mockResolvedValue([{ '?column?': 1 }]);
+    vi.mocked(getCoreDbClient).mockReturnValue({ execute: mockExecute } as never);
 
     const result = await checkPostgres();
 
     expect(result).toBe('ok');
-    expect(mockQuery).toHaveBeenCalledWith('SELECT 1');
+    expect(mockExecute).toHaveBeenCalled();
   });
 
   it('returns "error" when the query throws', async () => {
-    const mockQuery = vi.fn().mockRejectedValue(new Error('Connection refused'));
-    vi.mocked(getCoreDbClient).mockReturnValue({ $client: { query: mockQuery } } as never);
+    const mockExecute = vi.fn().mockRejectedValue(new Error('Connection refused'));
+    vi.mocked(getCoreDbClient).mockReturnValue({ execute: mockExecute } as never);
 
     const result = await checkPostgres();
 
@@ -54,8 +54,8 @@ describe('checkPostgres', () => {
 
   it('returns "timeout" when the query takes too long', async () => {
     const neverResolve = new Promise(() => {});
-    const mockQuery = vi.fn().mockReturnValue(neverResolve);
-    vi.mocked(getCoreDbClient).mockReturnValue({ $client: { query: mockQuery } } as never);
+    const mockExecute = vi.fn().mockReturnValue(neverResolve);
+    vi.mocked(getCoreDbClient).mockReturnValue({ execute: mockExecute } as never);
 
     vi.useFakeTimers();
     const resultPromise = checkPostgres();
@@ -64,8 +64,6 @@ describe('checkPostgres', () => {
 
     const result = await resultPromise;
     expect(result).toBe('timeout');
-
-    vi.useRealTimers();
   });
 });
 
@@ -110,17 +108,15 @@ describe('checkOpenFga', () => {
 
     const result = await resultPromise;
     expect(result).toBe('timeout');
-
-    vi.useRealTimers();
   });
 });
 
 describe('runHealthChecks', () => {
   function setupMocks(postgresOk: boolean, openfgaOk: boolean) {
-    const mockQuery = postgresOk
-      ? vi.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] })
+    const mockExecute = postgresOk
+      ? vi.fn().mockResolvedValue([{ '?column?': 1 }])
       : vi.fn().mockRejectedValue(new Error('Connection refused'));
-    vi.mocked(getCoreDbClient).mockReturnValue({ $client: { query: mockQuery } } as never);
+    vi.mocked(getCoreDbClient).mockReturnValue({ execute: mockExecute } as never);
 
     const mockReadAuthorizationModel = openfgaOk
       ? vi.fn().mockResolvedValue({ authorization_model: {} })
@@ -203,7 +199,5 @@ describe('runHealthChecks', () => {
     const second = await runHealthChecks();
     expect(second.status).toBe('error');
     expect(second.checks.postgres).toBe('error');
-
-    vi.useRealTimers();
   });
 });

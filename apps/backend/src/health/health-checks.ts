@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { getCoreDbClient } from '../db/clients';
 import { FgaClient } from '../clients/fga.client';
 import { logger } from '../logger';
@@ -54,8 +55,8 @@ let cachedAt = 0;
  */
 export async function checkPostgres(): Promise<DependencyStatus> {
   try {
-    const pool = getCoreDbClient().$client;
-    await withTimeout(pool.query('SELECT 1'), HEALTH_CHECK_TIMEOUT_MS, 'Postgres');
+    const db = getCoreDbClient();
+    await withTimeout(db.execute(sql`SELECT 1`), HEALTH_CHECK_TIMEOUT_MS, 'Postgres');
     return 'ok';
   } catch (err) {
     if (err instanceof HealthCheckTimeoutError) {

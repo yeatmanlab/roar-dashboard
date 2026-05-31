@@ -1,9 +1,28 @@
 import { Router } from 'express';
+import type { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { runHealthChecks } from './health-checks';
 import { isShuttingDown } from './shutdown-state';
+import { logger } from '../logger';
 
 export const healthRouter = Router();
+
+/**
+ * Runs health checks and sends the appropriate response.
+ * Shared by the startup and readiness probes.
+ *
+ * @param res - Express response object
+ */
+async function respondWithHealthCheck(res: Response): Promise<void> {
+  try {
+    const result = await runHealthChecks();
+    const status = result.status === 'ok' ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE;
+    res.status(status).json(result);
+  } catch (err) {
+    logger.error({ err }, 'Unexpected error from runHealthChecks');
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({ status: 'error' });
+  }
+}
 
 /**
  * Liveness probe — confirms the process is running.
@@ -18,13 +37,7 @@ healthRouter.get('/health/live', (_req, res) => {
  * Returns 200 when all checks pass, 503 otherwise.
  */
 healthRouter.get('/health/startup', async (_req, res) => {
-  try {
-    const result = await runHealthChecks();
-    const status = result.status === 'ok' ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE;
-    res.status(status).json(result);
-  } catch {
-    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({ status: 'error' });
-  }
+  await respondWithHealthCheck(res);
 });
 
 /**
@@ -38,11 +51,5 @@ healthRouter.get('/health/ready', async (_req, res) => {
     return;
   }
 
-  try {
-    const result = await runHealthChecks();
-    const status = result.status === 'ok' ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE;
-    res.status(status).json(result);
-  } catch {
-    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({ status: 'error' });
-  }
+  await respondWithHealthCheck(res);
 });

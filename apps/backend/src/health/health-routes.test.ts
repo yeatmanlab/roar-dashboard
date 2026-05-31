@@ -21,6 +21,7 @@ const app = express();
 app.use(healthRouter);
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.mocked(isShuttingDown).mockReturnValue(false);
 });
 
