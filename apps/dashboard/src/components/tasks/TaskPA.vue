@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
+import { PA_TASK_ID } from '@roar-dashboard/assessment-schema/pa';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { getRoarApiClient } from '@/clients/roar-api';
@@ -19,7 +20,7 @@ import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQue
 import { version } from '@roar-dashboard/roar-pa/package.json';
 
 const props = defineProps({
-  taskId: { type: String, default: 'pa' },
+  taskId: { type: String, default: PA_TASK_ID },
   language: { type: String, default: 'en' },
   launchId: { type: String, default: null },
 });
@@ -134,7 +135,7 @@ async function startTask(selectedAdmin) {
     const roarApiClient = getRoarApiClient();
 
     const [taskRes, meRes] = await Promise.all([
-      roarApiClient.tasks.get({ params: { taskId: 'pa' } }),
+      roarApiClient.tasks.get({ params: { taskId: props.taskId } }),
       roarApiClient.me.get(),
     ]);
 
@@ -149,6 +150,7 @@ async function startTask(selectedAdmin) {
     // TODO: resolve participant's Postgres UUID when launchId is set.
     const participantId = props.launchId ?? meRes.body.data.id;
 
+    // Fetch the participant's administrations from the ROAR POSTGRES backend.
     const adminsRes = await roarApiClient.users.listUserAdministrations({
       params: { userId: participantId },
       query: { embed: 'tasks', perPage: 50 },
@@ -161,6 +163,9 @@ async function startTask(selectedAdmin) {
     const paTaskUuid = taskRes.body.data.id;
     const backendAdmins = adminsRes.body.data.items;
 
+    // TODO: Remove this matching step once the frontend has fully integrated with the ROAR POSTGRES backend.
+    // Until then, we need to match the Postgres backend admin to the selected admin from Firestore.
+    // ISSUE: https://github.com/yeatmanlab/roar-project-management/issues/1839
     const matchedAdmin =
       backendAdmins.find((a) => a.id === selectedAdmin.value.id) ??
       backendAdmins.find((a) => (a.tasks ?? []).some((t) => t.taskId === paTaskUuid));

@@ -39,6 +39,7 @@
     "@primevue/core": "^4.2.4",
     "@primevue/themes": "^4.2.4",
     "@roar-dashboard/api-contract": "*",
+    "@roar-dashboard/assessment-schema": "*",
     "@roar-dashboard/roar-pa": "*",
     "@yeatmanlab/assessment-sdk": "*",
     "@sentry/browser": "^8.0.0",
