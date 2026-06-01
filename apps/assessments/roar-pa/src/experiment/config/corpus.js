@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import store from 'store2';
 import _shuffle from 'lodash/shuffle';
-import { PA_TRIAL_TYPES, PA_CATS } from '@roar-dashboard/assessment-schema/pa';
+import { PA_TRIAL_TYPES, PA_CATS, PA_CORPUS_TYPES } from '@roar-dashboard/assessment-schema/pa';
 import { corpusTranslations } from '../i18n';
 import { standardizeItemComponent } from '../experimentHelpers';
 
@@ -107,18 +107,18 @@ export function processCSV(config = {}) {
   store.session.set('numItems', numItems);
 
   const corpus = {
-    test_FSM: transformCSV('test').slice(0, test[PA_TRIAL_TYPES.FSM]),
-    test_LSM: transformCSV('test').slice(test[PA_TRIAL_TYPES.FSM], test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM]),
-    test_DEL: transformCSV('test').slice(
+    test_FSM: transformCSV(PA_CORPUS_TYPES.TEST).slice(0, test[PA_TRIAL_TYPES.FSM]),
+    test_LSM: transformCSV(PA_CORPUS_TYPES.TEST).slice(test[PA_TRIAL_TYPES.FSM], test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM]),
+    test_DEL: transformCSV(PA_CORPUS_TYPES.TEST).slice(
       test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM],
       test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM] + test[PA_TRIAL_TYPES.DEL],
     ),
-    practice_FSM: transformCSV('practice').slice(0, practice[PA_TRIAL_TYPES.FSM]),
-    practice_LSM: transformCSV('practice').slice(
+    practice_FSM: transformCSV(PA_CORPUS_TYPES.PRACTICE).slice(0, practice[PA_TRIAL_TYPES.FSM]),
+    practice_LSM: transformCSV(PA_CORPUS_TYPES.PRACTICE).slice(
       practice[PA_TRIAL_TYPES.FSM],
       practice[PA_TRIAL_TYPES.FSM] + practice[PA_TRIAL_TYPES.LSM],
     ),
-    practice_DEL: transformCSV('practice').slice(
+    practice_DEL: transformCSV(PA_CORPUS_TYPES.PRACTICE).slice(
       practice[PA_TRIAL_TYPES.FSM] + practice[PA_TRIAL_TYPES.LSM],
       practice[PA_TRIAL_TYPES.FSM] + practice[PA_TRIAL_TYPES.LSM] + practice[PA_TRIAL_TYPES.DEL],
     ),

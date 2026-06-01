@@ -4,13 +4,13 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import { PA_TASK_ID } from '@roar-dashboard/assessment-schema/pa';
+import { PA_TASK_ID, PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL, PA_SCORE_TABLE_URL } from '@roar-dashboard/assessment-schema/pa';
 
 export class RoarScores {
   constructor() {
     this.scoringVersion = parseInt(store.session.get('config').scoringVersion, 10);
     this.roarScoreKind = this.isAdaptiveScoring() ? 'scaled_irt' : 'raw_total_correct';
-    this.tableURL = `https://storage.googleapis.com/roar-pa/scores/pa_lookup_v${this.scoringVersion}.csv`;
+    this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
     this.lookupTable = [];
     this.tableLoaded = false;
   }
@@ -139,7 +139,7 @@ export class RoarScores {
     // computedScores should now have keys for lsm, fsm, and del.
     // But we also want to update the total score so we add up all of the others.
     const totalScore = _reduce(
-      _omit(computedScores, ['composite', 'composite_foundational']),
+      _omit(computedScores, [PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL]),
       (sum, score) => sum + score.roarScore,
       0,
     );
