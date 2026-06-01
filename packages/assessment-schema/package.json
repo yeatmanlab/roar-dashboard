@@ -10,7 +10,8 @@
     },
     "./pa": {
       "types": "./dist/pa/index.d.ts",
-      "import": "./dist/pa/index.js"
+      "import": "./dist/pa/index.js",
+      "default": "./dist/pa/index.js"
     }
   },
   "main": "./dist/index.js",
