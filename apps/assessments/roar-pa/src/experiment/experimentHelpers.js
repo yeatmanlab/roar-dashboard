@@ -6,19 +6,11 @@ import _clamp from 'lodash/clamp';
 import _mapValues from 'lodash/mapValues';
 import _omitBy from 'lodash/omitBy';
 import { camelize } from '@bdelab/roar-utils';
+import { PA_CATS, PA_CAT_ORDER } from '@roar-dashboard/assessment-schema/pa';
 import { jsPsych } from './jsPsych';
 import { mediaAssets, paValidityEvaluator } from './experiment';
 import './i18n';
 import irtHyperparameters from './config/corpus/en/irt_hyperparameters.csv';
-
-const catOrderMap = {
-  0: 'practiceFSM',
-  1: 'fsm',
-  2: 'practiceLSM',
-  3: 'lsm',
-  4: 'practiceDEL',
-  5: 'del',
-};
 
 let clowder;
 
@@ -123,7 +115,7 @@ export const initClowder = (config) => {
 
   const clowderCorpus = prepareClowderCorpus(
     combinedCorpus,
-    ['practiceFSM', 'practiceLSM', 'practiceDEL', 'fsm', 'lsm', 'del', 'composite', 'composite_foundational'],
+    PA_CATS,
     '.',
   );
 
@@ -157,19 +149,14 @@ const isPracticeCat = (catName) => catName.includes('practice');
 
 export const setNextStimulus = (ignorePreviousItem = false) => {
   const catIndex = safeGetCatIndex();
-  const catName = catOrderMap[catIndex];
+  const catName = PA_CAT_ORDER[catIndex];
   const previousItem = ignorePreviousItem ? undefined : store.session.get('previousItem');
   const previousAnswer = ignorePreviousItem ? undefined : store.session.get('previousAnswer');
 
   const isPractice = isPracticeCat(catName);
   const catToSelect = isPractice ? catName : 'composite';
 
-  const catsToUpdate = ['practiceFSM', 'fsm', 'practiceLSM', 'lsm', 'practiceDEL', 'del'];
-
-  if (!isPractice) {
-    catsToUpdate.push('composite');
-    catsToUpdate.push('composite_foundational');
-  }
+  const catsToUpdate = PA_CATS;
 
   const catToEvaluateEarlyStopping = isPractice ? catToSelect : catName;
 
@@ -247,7 +234,7 @@ export const saveTrialData = (data, source) => {
 
   if (store.session('config').isAdaptive) {
     const catIndex = safeGetCatIndex();
-    const catName = catOrderMap[catIndex];
+    const catName = PA_CAT_ORDER[catIndex];
     const isPractice = isPracticeCat(catName);
     const ignorePreviousItem = isPractice && store.session('response') === 0;
 

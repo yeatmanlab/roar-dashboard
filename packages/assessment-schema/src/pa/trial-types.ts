@@ -18,3 +18,12 @@ export const PA_CATS = [
 ] as const;
 
 export type PaCat = (typeof PA_CATS)[number];
+
+export const PA_CAT_ORDER = {
+  0: 'practiceFSM',
+  1: 'fsm',
+  2: 'practiceLSM',
+  3: 'lsm',
+  4: 'practiceDEL',
+  5: 'del',
+} as const;
