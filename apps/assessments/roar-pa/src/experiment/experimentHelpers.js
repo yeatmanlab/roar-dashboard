@@ -113,11 +113,7 @@ export const initClowder = (config) => {
     ...corpus.test_LSM,
   ];
 
-  const clowderCorpus = prepareClowderCorpus(
-    combinedCorpus,
-    PA_CATS,
-    '.',
-  );
+  const clowderCorpus = prepareClowderCorpus(combinedCorpus, PA_CATS, '.');
 
   store.session.set('corpusClowder', clowderCorpus);
 
