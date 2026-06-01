@@ -227,6 +227,12 @@ interface TaskSection {
 
 const getTaskId = (task: VariantObject['task']): string => (task as unknown as { id: string }).id;
 
+const LANGUAGE_PREFIX_MATCH_TASK_IDS = new Set(['swr', 'sre', 'pa']);
+
+function getLanguagePrefix(locale: string): string {
+  return locale.split('-')[0] ?? locale.slice(0, 2);
+}
+
 const groupedTasks: Record<string, string[]> = {
   Introduction: ['Instructions'],
   'Language and Literacy': [
@@ -256,7 +262,7 @@ const { isUserSuperAdmin } = authStore;
 
 const languages = computed(() =>
   Object.entries(languageOptions).map(([key, options]) => ({
-    name: options.languageMenu,
+    name: options.languageTaskPicker,
     value: key,
   })),
 );
@@ -299,6 +305,12 @@ const variantsByLanguage = (variants: VariantObject[] = []): VariantObject[] => 
     if (variantLanguage === 'all languages') return true;
 
     const formattedVariantLanguage = formatVariantLanguage(variantLanguage);
+    const taskId = getTaskId(variant.task).toLowerCase();
+
+    if (LANGUAGE_PREFIX_MATCH_TASK_IDS.has(taskId)) {
+      return getLanguagePrefix(selectedLang) === getLanguagePrefix(formattedVariantLanguage);
+    }
+
     const exactLangMatch = formattedVariantLanguage === selectedLang;
     const langPrefixMatch = selectedLang.includes(formattedVariantLanguage);
 
