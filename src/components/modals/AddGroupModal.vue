@@ -288,7 +288,7 @@ const resetForm = () => {
   orgName.value = '';
   orgType.value = isDistrictTabActive.value && !isUserSuperAdmin.value ? undefined : props.activeTabOrg;
   tags.value = [];
-  parentSchool.value = undefined;
+  parentSchool.value = props.preSelectedSchool;
   v$.value.$reset();
 };
 
@@ -390,9 +390,7 @@ watch(
       }
     }
 
-    if (preSelectedSchool) {
-      parentSchool.value = preSelectedSchool;
-    }
+    parentSchool.value = preSelectedSchool ?? undefined;
   },
   { immediate: true },
 );
