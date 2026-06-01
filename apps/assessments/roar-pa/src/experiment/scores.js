@@ -4,6 +4,7 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
+import { PA_TASK_ID } from '@roar-dashboard/assessment-schema/pa';
 
 export class RoarScores {
   constructor() {
@@ -119,7 +120,7 @@ export class RoarScores {
    */
   computedScoreCallback = async (rawScores) => {
     const { taskId } = store.session.get('config');
-    if (taskId !== 'pa') return null;
+    if (taskId !== PA_TASK_ID) return null;
 
     // This returns an object with the same top-level keys as the input raw scores
     // But the values are the number of correct trials, not including practice trials.

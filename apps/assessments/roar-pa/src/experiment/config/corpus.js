@@ -1,6 +1,7 @@
 import i18next from 'i18next';
 import store from 'store2';
 import _shuffle from 'lodash/shuffle';
+import { PA_TRIAL_TYPES, PA_CATS } from '@roar-dashboard/assessment-schema/pa';
 import { corpusTranslations } from '../i18n';
 import { standardizeItemComponent } from '../experimentHelpers';
 
@@ -39,16 +40,7 @@ export function processCSV(config = {}) {
         feedback_foil2: row.feedback_foil2 ? standardizeItemComponent(row.feedback_foil2) : null,
       };
       if (isAdaptive) {
-        [
-          'practiceFSM',
-          'practiceLSM',
-          'practiceDEL',
-          'fsm',
-          'lsm',
-          'del',
-          'composite',
-          'composite_foundational',
-        ].forEach((op) => {
+        PA_CATS.forEach((op) => {
           ['a', 'b', 'c', 'd'].forEach((suffix) => {
             const key = `${op}.${suffix}`;
             newRow[key] = row[key]; // Assign the value from csvInput
@@ -70,13 +62,13 @@ export function processCSV(config = {}) {
     document.forEach((row) => {
       // Check the trial type of the row
       switch (row.trial_type) {
-        case 'FSM':
+        case PA_TRIAL_TYPES.FSM:
           fsmCount += 1;
           break;
-        case 'LSM':
+        case PA_TRIAL_TYPES.LSM:
           lsmCount += 1;
           break;
-        case 'DEL':
+        case PA_TRIAL_TYPES.DEL:
           delCount += 1;
           break;
         default:
@@ -87,9 +79,9 @@ export function processCSV(config = {}) {
 
     // Return an object containing the counts for each trial type
     return {
-      FSM: fsmCount,
-      LSM: lsmCount,
-      DEL: delCount,
+      [PA_TRIAL_TYPES.FSM]: fsmCount,
+      [PA_TRIAL_TYPES.LSM]: lsmCount,
+      [PA_TRIAL_TYPES.DEL]: delCount,
     };
   }
 
@@ -100,29 +92,35 @@ export function processCSV(config = {}) {
   // If the experiment is adaptive or the number of test items is not specified, use the full corpus
   if (isAdaptive || !numTestItems) {
     numItems = {
-      numItemsFSM: test.FSM,
-      numItemsLSM: test.LSM,
-      numItemsDEL: test.DEL,
+      numItemsFSM: test[PA_TRIAL_TYPES.FSM],
+      numItemsLSM: test[PA_TRIAL_TYPES.LSM],
+      numItemsDEL: test[PA_TRIAL_TYPES.DEL],
     };
   } else {
     numItems = {
       numItemsFSM: numTestItems,
       numItemsLSM: numTestItems,
-      numItemsDEL: test.DEL > 0 ? numTestItems : 0,
+      numItemsDEL: test[PA_TRIAL_TYPES.DEL] > 0 ? numTestItems : 0,
     };
   }
 
   store.session.set('numItems', numItems);
 
   const corpus = {
-    test_FSM: transformCSV('test').slice(0, test.FSM),
-    test_LSM: transformCSV('test').slice(test.FSM, test.FSM + test.LSM),
-    test_DEL: transformCSV('test').slice(test.FSM + test.LSM, test.FSM + test.LSM + test.DEL),
-    practice_FSM: transformCSV('practice').slice(0, practice.FSM),
-    practice_LSM: transformCSV('practice').slice(practice.FSM, practice.FSM + practice.LSM),
+    test_FSM: transformCSV('test').slice(0, test[PA_TRIAL_TYPES.FSM]),
+    test_LSM: transformCSV('test').slice(test[PA_TRIAL_TYPES.FSM], test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM]),
+    test_DEL: transformCSV('test').slice(
+      test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM],
+      test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM] + test[PA_TRIAL_TYPES.DEL],
+    ),
+    practice_FSM: transformCSV('practice').slice(0, practice[PA_TRIAL_TYPES.FSM]),
+    practice_LSM: transformCSV('practice').slice(
+      practice[PA_TRIAL_TYPES.FSM],
+      practice[PA_TRIAL_TYPES.FSM] + practice[PA_TRIAL_TYPES.LSM],
+    ),
     practice_DEL: transformCSV('practice').slice(
-      practice.FSM + practice.LSM,
-      practice.FSM + practice.LSM + practice.DEL,
+      practice[PA_TRIAL_TYPES.FSM] + practice[PA_TRIAL_TYPES.LSM],
+      practice[PA_TRIAL_TYPES.FSM] + practice[PA_TRIAL_TYPES.LSM] + practice[PA_TRIAL_TYPES.DEL],
     ),
   };
 
