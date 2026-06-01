@@ -4,12 +4,12 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import { PA_TASK_ID, PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL, PA_SCORE_TABLE_URL } from '@roar-dashboard/assessment-schema/pa';
+import { PA_TASK_ID, PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL, PA_SCORE_TABLE_URL, PA_SCORE_KIND } from '@roar-dashboard/assessment-schema/pa';
 
 export class RoarScores {
   constructor() {
     this.scoringVersion = parseInt(store.session.get('config').scoringVersion, 10);
-    this.roarScoreKind = this.isAdaptiveScoring() ? 'scaled_irt' : 'raw_total_correct';
+    this.roarScoreKind = this.isAdaptiveScoring() ? PA_SCORE_KIND.SCALED_IRT : PA_SCORE_KIND.RAW_TOTAL_CORRECT;
     this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
     this.lookupTable = [];
     this.tableLoaded = false;

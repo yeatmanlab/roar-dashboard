@@ -38,3 +38,10 @@ export type PaCorpusType = (typeof PA_CORPUS_TYPES)[keyof typeof PA_CORPUS_TYPES
 export const PA_COMPOSITE = 'composite' as const;
 
 export const PA_COMPOSITE_FOUNDATIONAL = 'composite_foundational' as const;
+
+export const PA_SCORE_KIND = {
+  SCALED_IRT: 'scaled_irt',
+  RAW_TOTAL_CORRECT: 'raw_total_correct',
+} as const;
+
+export type PaScoreKind = (typeof PA_SCORE_KIND)[keyof typeof PA_SCORE_KIND];
