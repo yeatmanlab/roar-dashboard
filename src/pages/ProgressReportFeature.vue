@@ -146,7 +146,7 @@
                   <div class="w-8">
                     <PvFloatLabel>
                       <PvInputText v-model="searchInput" class="w-full" :maxlength="50" />
-                      <label>Search UID...</label>
+                      <label>Search login...</label>
                     </PvFloatLabel>
                   </div>
                   <div class="w-5">
@@ -362,13 +362,9 @@ const progressUsers = computed(() => progressPayload.value?.users ?? []);
 const orderedTaskIds = computed(() => {
   const fromAdmin = administration.value?.assessments?.map((a) => a.taskId.toLowerCase());
   if (fromAdmin?.length) {
-    return [...fromAdmin].sort(
-      (a, b) => (taskDisplayNames[a]?.order ?? 0) - (taskDisplayNames[b]?.order ?? 0),
-    );
+    return [...fromAdmin].sort((a, b) => (taskDisplayNames[a]?.order ?? 0) - (taskDisplayNames[b]?.order ?? 0));
   }
-  const fromProgress = [
-    ...new Set((progressPayload.value?.taskProgress ?? []).map((r) => r.taskId.toLowerCase())),
-  ];
+  const fromProgress = [...new Set((progressPayload.value?.taskProgress ?? []).map((r) => r.taskId.toLowerCase()))];
   return fromProgress.sort((a, b) => (taskDisplayNames[a]?.order ?? 0) - (taskDisplayNames[b]?.order ?? 0));
 });
 
@@ -408,12 +404,7 @@ const displayOrgType = computed(() => {
   }
 });
 
-const isPageLoading = computed(
-  () =>
-    !initialized.value ||
-    isFetchingProgress.value ||
-    isLoadingTasksDictionary.value,
-);
+const isPageLoading = computed(() => !initialized.value || isFetchingProgress.value || isLoadingTasksDictionary.value);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
@@ -492,7 +483,7 @@ const appendTaskProgressColumns = (row, progress = {}) => {
 
 const buildProgressExportRow = (user, progress = {}) => {
   const tableRow = {
-    Username: _get(user, 'username') ?? '',
+    'User Login': _get(user, 'username') ?? '',
     'User Type': _startCase(normalizeUserTypeForDisplay(_get(user, 'userType') ?? '')),
   };
 
@@ -559,7 +550,8 @@ const progressReportColumns = computed(() => {
   if (isLoadingTasksDictionary.value || progressPayload.value === undefined) return [];
 
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', sort: true, filter: true },
+    { field: 'user.userId', header: 'UID', dataType: 'text', sort: true, filter: true },
+    { field: 'user.username', header: 'User Login', dataType: 'text', sort: true, filter: true },
     { field: 'user.userType', header: 'User Type', dataType: 'text', sort: true, filter: true },
   ];
 
