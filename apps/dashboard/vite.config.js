@@ -272,7 +272,7 @@ export default defineConfig(({ mode }) => {
             crowding: ['@bdelab/roav-crowding'],
             'roav-mep': ['@bdelab/roav-mep'],
             'roar-readaloud': ['@bdelab/roar-readaloud'],
-            phoneme: ['@roar-dashboard/roar-pa'],
+            phoneme: ['@roar-platform/roar-pa'],
           },
         },
       },

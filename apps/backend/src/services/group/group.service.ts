@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { PaginatedResult, GroupType } from '@roar-dashboard/api-contract';
+import type { PaginatedResult, GroupType } from '@roar-platform/api-contract';
 import { ApiErrorCode } from '../../enums/api-error-code.enum';
 import { ApiErrorMessage } from '../../enums/api-error-message.enum';
 import { ApiError } from '../../errors/api-error';

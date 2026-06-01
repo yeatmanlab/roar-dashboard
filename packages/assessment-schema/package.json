@@ -8,10 +8,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./pa": {
-      "types": "./dist/pa/index.d.ts",
-      "import": "./dist/pa/index.js",
-      "default": "./dist/pa/index.js"
+    "./roar-pa": {
+      "types": "./dist/roar-pa/index.d.ts",
+      "import": "./dist/roar-pa/index.js",
+      "default": "./dist/roar-pa/index.js"
     }
   },
   "main": "./dist/index.js",
