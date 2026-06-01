@@ -49,7 +49,7 @@
     "@bdelab/roar-sre": "3.0.2",
     "@bdelab/roar-swr": "1.15.0",
     "@bdelab/roar-utils": "^1.2.1",
-    "@levante-framework/core-tasks": "^1.2.1",
+    "@levante-framework/core-tasks": "^1.3.2",
     "@levante-framework/firekit": "^9.5.0",
     "@levante-framework/levante-zod": "^1.1.1",
     "@levante-framework/permissions-core": "^1.2.0",
