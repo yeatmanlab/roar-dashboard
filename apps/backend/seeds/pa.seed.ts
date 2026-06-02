@@ -73,7 +73,7 @@ async function seed() {
     // (lower(name) WHERE name IS NOT NULL), which Drizzle cannot target in
     // onConflictDoNothing — so we check existence explicitly rather than relying
     // on a bare conflict clause that would silently swallow unexpected errors.
-    // Safe in this script because researcher-db-migrate runs as a one-shot via docker compose; concurrent invocation would race each other.
+    // Safe in this script because assessment-db-migrate runs as a one-shot via docker compose; concurrent invocation would race each other.
     const existing = await db.query.taskVariants.findFirst({
       where: and(eq(taskVariants.taskId, task.id), eq(taskVariants.name, name)),
     });

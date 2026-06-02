@@ -1,14 +1,14 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# researcher.Dockerfile
+# assessment.Dockerfile
 #
-# Dual-role image for the local researcher environment.
+# Dual-role image for the local assessment environment.
 # Two independent targets are produced from a single build context:
 #
-#   researcher-runtime  — runs DB migrations (CMD override in compose) or
+#   assessment-runtime  — runs DB migrations (CMD override in compose) or
 #                         serves the backend API (default CMD).
 #   firebase-emulator   — runs the Firebase Auth emulator.
 #
-# Used exclusively by docker-compose.researcher.yml.
+# Used exclusively by docker-compose.assessment.yml.
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -49,10 +49,10 @@ COPY turbo.json                   ./
 RUN turbo build --filter=roar-backend
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Stage 2 — Researcher runtime
-# Serves as both migration runner and API server in docker-compose.researcher.yml.
+# Stage 2 — Assessment runtime
+# Serves as both migration runner and API server in docker-compose.assessment.yml.
 # ──────────────────────────────────────────────────────────────────────────────
-FROM node:22-slim AS researcher-runtime
+FROM node:22-slim AS assessment-runtime
 
 RUN apt-get update -qq \
     && apt-get install -y --no-install-recommends curl postgresql-client \
