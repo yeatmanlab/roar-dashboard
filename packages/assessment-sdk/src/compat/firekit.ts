@@ -22,7 +22,7 @@ import type {
   WriteTrialCommandInput,
 } from '../types';
 import { RUN_EVENT_ABORT, RUN_EVENT_COMPLETE, RUN_EVENT_TRIAL, RUN_EVENT_ENGAGEMENT } from '../types/run-event-status';
-import type { Json } from '@roar-dashboard/api-contract';
+import type { Json, ScoreEntry } from '@roar-dashboard/api-contract';
 import { Invoker } from '../command/invoker';
 import { RoarApi } from '../receiver/roar-api';
 import { StartRunCommand } from '../commands/start-run.command';
@@ -233,7 +233,7 @@ export class FirekitFacade {
    * Returns undefined by default; can be overridden by assessment-specific implementations.
    * @internal
    */
-  _getScoreAdapter(): ((scores: ComputedScores) => any[]) | undefined {
+  _getScoreAdapter(): ((scores: ComputedScores) => ScoreEntry[]) | undefined {
     return undefined;
   }
 
@@ -695,7 +695,7 @@ export async function writeTrial(
   const cmd = new WriteTrialCommand(api, ctx.participant.participantId);
 
   // Invoke computed score callback if provided and map to ScoreEntry[] for persistence
-  let scores: any[] | undefined;
+  let scores: ScoreEntry[] | undefined;
   if (computedScoreCallback) {
     try {
       const rawScores = facade._getRawScores?.();

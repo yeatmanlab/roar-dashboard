@@ -70,10 +70,11 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('data.id');
-      if (response.status === 201 && 'data' in response.body) {
-        const id = response.body.data?.id;
-        expect(id).toMatch(/^[0-9a-f-]{36}$/); // UUID format
+      if (response.status !== 201 || !('data' in response.body)) {
+        throw new Error('Expected 201 with data in response');
       }
+      const id = response.body.data?.id;
+      expect(id).toMatch(/^[0-9a-f-]{36}$/); // UUID format
     });
 
     it('should create a run with metadata', async () => {
@@ -92,9 +93,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(response.status).toBe(201);
-      if (response.status === 201 && 'data' in response.body) {
-        expect(response.body.data?.id).toBeDefined();
+      if (response.status !== 201 || !('data' in response.body)) {
+        throw new Error('Expected 201 with data in response');
       }
+      expect(response.body.data?.id).toBeDefined();
     });
 
     it('should return 422 for invalid task variant ID', async () => {
@@ -167,9 +169,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(completeResponse.status).toBe(200);
-      if (completeResponse.status === 200 && 'data' in completeResponse.body) {
-        expect(completeResponse.body.data?.status).toBe('ok');
+      if (completeResponse.status !== 200 || !('data' in completeResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(completeResponse.body.data?.status).toBe('ok');
     });
 
     it('should write a trial to a run', async () => {
@@ -215,9 +218,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(trialResponse.status).toBe(200);
-      if (trialResponse.status === 200 && 'data' in trialResponse.body) {
-        expect(trialResponse.body.data?.status).toBe('ok');
+      if (trialResponse.status !== 200 || !('data' in trialResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(trialResponse.body.data?.status).toBe('ok');
     });
 
     it('should abort a run', async () => {
@@ -248,9 +252,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(abortResponse.status).toBe(200);
-      if (abortResponse.status === 200 && 'data' in abortResponse.body) {
-        expect(abortResponse.body.data?.status).toBe('ok');
+      if (abortResponse.status !== 200 || !('data' in abortResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(abortResponse.body.data?.status).toBe('ok');
     });
 
     it('should update engagement flags', async () => {
@@ -288,9 +293,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(engagementResponse.status).toBe(200);
-      if (engagementResponse.status === 200 && 'data' in engagementResponse.body) {
-        expect(engagementResponse.body.data?.status).toBe('ok');
+      if (engagementResponse.status !== 200 || !('data' in engagementResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(engagementResponse.body.data?.status).toBe('ok');
     });
 
     it('should return 404 for non-existent run', async () => {
@@ -412,9 +418,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(completeResponse.status).toBe(200);
-      if (completeResponse.status === 200 && 'data' in completeResponse.body) {
-        expect(completeResponse.body.data?.status).toBe('ok');
+      if (completeResponse.status !== 200 || !('data' in completeResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(completeResponse.body.data?.status).toBe('ok');
     });
   });
 
@@ -444,11 +451,12 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       // Should succeed because the user has FGA permission to the administration
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('data.id');
-      if (response.status === 201 && 'data' in response.body) {
-        const runId = response.body.data?.id;
-        expect(runId).toBeDefined();
-        expect(runId).toMatch(/^[0-9a-f-]{36}$/); // UUID format
+      if (response.status !== 201 || !('data' in response.body)) {
+        throw new Error('Expected 201 with data in response');
       }
+      const runId = response.body.data?.id;
+      expect(runId).toBeDefined();
+      expect(runId).toMatch(/^[0-9a-f-]{36}$/); // UUID format
     });
 
     it('should return 403 for administration outside user hierarchy', async () => {
@@ -583,9 +591,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(trialResponse.status).toBe(200);
-      if (trialResponse.status === 200 && 'data' in trialResponse.body) {
-        expect(trialResponse.body.data?.status).toBe('ok');
+      if (trialResponse.status !== 200 || !('data' in trialResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(trialResponse.body.data?.status).toBe('ok');
     });
 
     it('should handle trial event without scores', async () => {
@@ -622,9 +631,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(trialResponse.status).toBe(200);
-      if (trialResponse.status === 200 && 'data' in trialResponse.body) {
-        expect(trialResponse.body.data?.status).toBe('ok');
+      if (trialResponse.status !== 200 || !('data' in trialResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(trialResponse.body.data?.status).toBe('ok');
     });
 
     it('should handle empty scores array', async () => {
@@ -662,9 +672,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(trialResponse.status).toBe(200);
-      if (trialResponse.status === 200 && 'data' in trialResponse.body) {
-        expect(trialResponse.body.data?.status).toBe('ok');
+      if (trialResponse.status !== 200 || !('data' in trialResponse.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(trialResponse.body.data?.status).toBe('ok');
     });
 
     it('should upsert scores by natural key on re-send', async () => {
@@ -732,9 +743,10 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(secondWrite.status).toBe(200);
-      if (secondWrite.status === 200 && 'data' in secondWrite.body) {
-        expect(secondWrite.body.data?.status).toBe('ok');
+      if (secondWrite.status !== 200 || !('data' in secondWrite.body)) {
+        throw new Error('Expected 200 with data in response');
       }
+      expect(secondWrite.body.data?.status).toBe('ok');
     });
   });
 });
