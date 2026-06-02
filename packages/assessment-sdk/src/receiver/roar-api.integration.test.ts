@@ -515,4 +515,226 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       expect(response.body).toHaveProperty('error');
     });
   });
+
+  describe('POST /v1/runs/{runId}/event with scores (computed score persistence)', () => {
+    it('should persist computed scores with trial event', async () => {
+      const userId = getTestUserId();
+
+      // Create a run
+      const createResponse = await api.client.runs.create({
+        params: { userId },
+        body: {
+          taskVariantId,
+          taskVersion: '1.0.0',
+          isAnonymous: true,
+        },
+      });
+
+      expect(createResponse.status).toBe(201);
+      if (createResponse.status !== 201 || !('data' in createResponse.body)) {
+        throw new Error('Failed to create run');
+      }
+      const runId = createResponse.body.data?.id;
+      expect(runId).toBeDefined();
+
+      // Write a trial with computed scores
+      const trialResponse = await api.client.runs.event({
+        params: { userId, runId: runId! },
+        body: {
+          type: 'trial',
+          trial: {
+            assessmentStage: 'test',
+            correct: 1,
+            responseTime: 2500,
+          },
+          scores: [
+            {
+              type: 'computed',
+              domain: 'pa',
+              name: 'fsmCorrect',
+              value: '10',
+            },
+            {
+              type: 'computed',
+              domain: 'pa',
+              name: 'fsmAttempted',
+              value: '15',
+            },
+            {
+              type: 'computed',
+              domain: 'pa',
+              name: 'fsmPercentCorrect',
+              value: '67',
+            },
+            {
+              type: 'computed',
+              domain: 'pa',
+              name: 'roarScore',
+              value: '30',
+            },
+            {
+              type: 'computed',
+              domain: 'pa',
+              name: 'percentile',
+              value: '60',
+            },
+          ],
+        },
+      });
+
+      expect(trialResponse.status).toBe(200);
+      if (trialResponse.status === 200 && 'data' in trialResponse.body) {
+        expect(trialResponse.body.data?.status).toBe('ok');
+      }
+    });
+
+    it('should handle trial event without scores', async () => {
+      const userId = getTestUserId();
+
+      // Create a run
+      const createResponse = await api.client.runs.create({
+        params: { userId },
+        body: {
+          taskVariantId,
+          taskVersion: '1.0.0',
+          isAnonymous: true,
+        },
+      });
+
+      expect(createResponse.status).toBe(201);
+      if (createResponse.status !== 201 || !('data' in createResponse.body)) {
+        throw new Error('Failed to create run');
+      }
+      const runId = createResponse.body.data?.id;
+      expect(runId).toBeDefined();
+
+      // Write a trial without scores (backward compatibility)
+      const trialResponse = await api.client.runs.event({
+        params: { userId, runId: runId! },
+        body: {
+          type: 'trial',
+          trial: {
+            assessmentStage: 'test',
+            correct: 1,
+            responseTime: 2500,
+          },
+        },
+      });
+
+      expect(trialResponse.status).toBe(200);
+      if (trialResponse.status === 200 && 'data' in trialResponse.body) {
+        expect(trialResponse.body.data?.status).toBe('ok');
+      }
+    });
+
+    it('should handle empty scores array', async () => {
+      const userId = getTestUserId();
+
+      // Create a run
+      const createResponse = await api.client.runs.create({
+        params: { userId },
+        body: {
+          taskVariantId,
+          taskVersion: '1.0.0',
+          isAnonymous: true,
+        },
+      });
+
+      expect(createResponse.status).toBe(201);
+      if (createResponse.status !== 201 || !('data' in createResponse.body)) {
+        throw new Error('Failed to create run');
+      }
+      const runId = createResponse.body.data?.id;
+      expect(runId).toBeDefined();
+
+      // Write a trial with empty scores array
+      const trialResponse = await api.client.runs.event({
+        params: { userId, runId: runId! },
+        body: {
+          type: 'trial',
+          trial: {
+            assessmentStage: 'test',
+            correct: 1,
+            responseTime: 2500,
+          },
+          scores: [],
+        },
+      });
+
+      expect(trialResponse.status).toBe(200);
+      if (trialResponse.status === 200 && 'data' in trialResponse.body) {
+        expect(trialResponse.body.data?.status).toBe('ok');
+      }
+    });
+
+    it('should upsert scores by natural key on re-send', async () => {
+      const userId = getTestUserId();
+
+      // Create a run
+      const createResponse = await api.client.runs.create({
+        params: { userId },
+        body: {
+          taskVariantId,
+          taskVersion: '1.0.0',
+          isAnonymous: true,
+        },
+      });
+
+      expect(createResponse.status).toBe(201);
+      if (createResponse.status !== 201 || !('data' in createResponse.body)) {
+        throw new Error('Failed to create run');
+      }
+      const runId = createResponse.body.data?.id;
+      expect(runId).toBeDefined();
+
+      // Write a trial with initial scores
+      const firstWrite = await api.client.runs.event({
+        params: { userId, runId: runId! },
+        body: {
+          type: 'trial',
+          trial: {
+            assessmentStage: 'test',
+            correct: 1,
+            responseTime: 2500,
+          },
+          scores: [
+            {
+              type: 'computed',
+              domain: 'pa',
+              name: 'roarScore',
+              value: '30',
+            },
+          ],
+        },
+      });
+
+      expect(firstWrite.status).toBe(200);
+
+      // Re-send the same score with updated value (should upsert, not duplicate)
+      const secondWrite = await api.client.runs.event({
+        params: { userId, runId: runId! },
+        body: {
+          type: 'trial',
+          trial: {
+            assessmentStage: 'test',
+            correct: 1,
+            responseTime: 2500,
+          },
+          scores: [
+            {
+              type: 'computed',
+              domain: 'pa',
+              name: 'roarScore',
+              value: '35', // Updated value
+            },
+          ],
+        },
+      });
+
+      expect(secondWrite.status).toBe(200);
+      if (secondWrite.status === 200 && 'data' in secondWrite.body) {
+        expect(secondWrite.body.data?.status).toBe('ok');
+      }
+    });
+  });
 });

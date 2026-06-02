@@ -1,4 +1,4 @@
-import type { Json } from '@roar-dashboard/api-contract';
+import type { Json, ScoreEntry } from '@roar-dashboard/api-contract';
 import { RUN_EVENT_TRIAL } from './run-event-status';
 
 /**
@@ -32,8 +32,18 @@ export interface TrialData {
 /**
  * Raw scores passed to the computed score callback.
  *
- * Contains unprocessed score data that can be transformed by the callback function.
- * Not yet implemented in the SDK.
+ * Contains unprocessed score data from the assessment (e.g., per-subtask trial counts,
+ * theta estimates, etc.) that can be transformed by the callback function.
+ *
+ * For PA (Phonological Awareness), raw scores are organized by subtask:
+ * ```
+ * {
+ *   fsm: { practice: { numCorrect, numAttempted, ... }, test: { ... } },
+ *   lsm: { practice: { ... }, test: { ... } },
+ *   del: { practice: { ... }, test: { ... } },
+ *   composite: { practice: { ... }, test: { ... } }
+ * }
+ * ```
  */
 export interface RawScores {
   [key: string]: unknown;
@@ -42,8 +52,23 @@ export interface RawScores {
 /**
  * Computed scores returned from the callback function.
  *
- * Contains processed score data after transformation by the callback.
- * Not yet implemented in the SDK.
+ * Contains processed/aggregate score data after transformation by the callback.
+ * The callback is responsible for converting raw scores to the nested structure
+ * expected by the assessment, which the SDK then maps to ScoreEntry[] for persistence.
+ *
+ * For PA, computed scores are organized by subtask and composite:
+ * ```
+ * {
+ *   fsm: { numCorrect, numAttempted, percentCorrect, roarScore?, ... },
+ *   lsm: { numCorrect, numAttempted, percentCorrect, roarScore?, ... },
+ *   del: { numCorrect, numAttempted, percentCorrect, roarScore?, ... },
+ *   composite: { roarScore, percentile, standardScore, ... },
+ *   composite_foundational?: { roarScore, percentile, standardScore, ... }
+ * }
+ * ```
+ *
+ * The SDK will map these to ScoreEntry[] using assessment-specific adapters
+ * (e.g., toPaScoreEntries for PA) before sending to the backend.
  */
 export interface ComputedScores {
   [key: string]: unknown;
@@ -112,6 +137,8 @@ export interface WriteTrialCommandInput {
   trial: WriteTrialTrialCommandInput;
   /** Optional array of interaction events that occurred during the trial */
   interactions?: WriteTrialInteractionCommandInput[];
+  /** Optional array of computed score snapshots produced by this trial; each entry upserts the corresponding row in run_scores by natural key */
+  scores?: ScoreEntry[];
 }
 
 /**

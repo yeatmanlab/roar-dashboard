@@ -218,6 +218,33 @@ export class FirekitFacade {
   _pushInteraction(interaction: AddInteractionInput): void {
     this.#interactionBuffer.push(interaction);
   }
+
+  /**
+   * Internal getter for raw scores.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   */
+  _getRawScores(): RawScores | undefined {
+    return undefined;
+  }
+
+  /**
+   * Internal getter for score adapter function.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   */
+  _getScoreAdapter(): ((scores: ComputedScores) => any[]) | undefined {
+    return undefined;
+  }
+
+  /**
+   * Internal getter for logger.
+   * Returns the logger from the CommandContext if available.
+   * @internal
+   */
+  getLogger() {
+    return this.#ctx?.logger;
+  }
 }
 
 /**
@@ -612,8 +639,6 @@ export async function writeTrial(
   trialData: TrialData,
   computedScoreCallback?: (rawScores: RawScores) => Promise<ComputedScores>,
 ): WriteTrialOutput {
-  void computedScoreCallback;
-
   const facade = getFirekitCompat();
   const runId = facade._getRunId();
 
@@ -669,11 +694,38 @@ export async function writeTrial(
 
   const cmd = new WriteTrialCommand(api, ctx.participant.participantId);
 
+  // Invoke computed score callback if provided and map to ScoreEntry[] for persistence
+  let scores: any[] | undefined;
+  if (computedScoreCallback) {
+    try {
+      const rawScores = facade._getRawScores?.();
+      if (rawScores) {
+        const computedScores = await computedScoreCallback(rawScores);
+        if (computedScores) {
+          // Map computed scores to ScoreEntry[] using assessment-specific adapter
+          // For PA, this uses toPaScoreEntries; other assessments would have their own adapters
+          const scoreAdapter = facade._getScoreAdapter?.();
+          if (scoreAdapter) {
+            scores = scoreAdapter(computedScores);
+          }
+        }
+      }
+    } catch (error) {
+      // Log callback error but don't fail the trial write
+      // The trial data is still valuable even if score computation fails
+      const logger = facade.getLogger?.();
+      if (logger) {
+        logger.warn({ err: error }, 'Computed score callback failed; trial will be recorded without scores');
+      }
+    }
+  }
+
   try {
     await invoker.run(cmd, {
       runId,
       type: RUN_EVENT_TRIAL,
       interactions: bufferedInteractions.length > 0 ? bufferedInteractions : undefined,
+      scores: scores && scores.length > 0 ? scores : undefined,
       trial: {
         assessmentStage,
         ...trialData,
