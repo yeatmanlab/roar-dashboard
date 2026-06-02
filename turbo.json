@@ -71,7 +71,11 @@
     },
     "format": {},
     "format:check": {},
-    "lint": {},
-    "lint:fix": {}
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "lint:fix": {
+      "dependsOn": ["^build"]
+    }
   }
 }
