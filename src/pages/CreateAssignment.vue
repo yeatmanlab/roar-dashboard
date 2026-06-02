@@ -271,17 +271,13 @@ const findVariantWithParams = (variants, params) => {
 
 function resolveVariantForAssessment(assessment, allVariantInfo) {
   const taskId = String(assessment?.taskId ?? '').toLowerCase();
-  const forTask = _filter(allVariantInfo, (variant) =>
-    String(variant.task?.id ?? '').toLowerCase() === taskId,
-  );
+  const forTask = _filter(allVariantInfo, (variant) => String(variant.task?.id ?? '').toLowerCase() === taskId);
 
   let found = findVariantWithParams(forTask, assessment.params ?? {});
 
   const variantId = assessment.variantId;
   if (!found && variantId) {
-    found =
-      _find(forTask, (v) => v.id === variantId) ??
-      _find(allVariantInfo, (v) => v.id === variantId);
+    found = _find(forTask, (v) => v.id === variantId) ?? _find(allVariantInfo, (v) => v.id === variantId);
   }
 
   return found;
@@ -322,7 +318,7 @@ watch(
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
         summary: 'Failed to fetch assignment',
-        detail: 'We could not fetch this assignment\'s data. Please try again later',
+        detail: "We could not fetch this assignment's data. Please try again later",
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
 
@@ -472,8 +468,7 @@ const handleVariantsChanged = (newVariants) => {
 };
 
 const handleConsentSelected = (newConsentAssent) => {
-  const isNoConsent =
-    typeof newConsentAssent === 'string' && newConsentAssent.toLowerCase() === 'no consent';
+  const isNoConsent = typeof newConsentAssent === 'string' && newConsentAssent.toLowerCase() === 'no consent';
   if (!isNoConsent) {
     noConsent.value = '';
     state.consent = newConsentAssent.consent;
@@ -791,7 +786,7 @@ const submit = async () => {
       life: TOAST_DEFAULT_LIFE_DURATION,
     });
 
-    return router.push({ path: APP_ROUTES.HOME });
+    return router.push({ path: APP_ROUTES.VIEW_ASSIGNMENTS });
   }
 
   const { data: assignmentExists } = await refetchAssignmentExists();
@@ -820,7 +815,7 @@ const submit = async () => {
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [DSGF_ORGS_QUERY_KEY] });
 
-      router.push({ path: APP_ROUTES.HOME });
+      router.push({ path: APP_ROUTES.VIEW_ASSIGNMENTS });
     },
     onError: (error) => {
       toast.add({
@@ -940,11 +935,7 @@ function applyAdministrationMetadataToForm(adminInfo) {
 
   const mo = minimalOrgsFromDoc(adminInfo);
   const expectsFetchedOrgs =
-    (mo.districts?.length ?? 0) +
-      (mo.schools?.length ?? 0) +
-      (mo.classes?.length ?? 0) +
-      (mo.groups?.length ?? 0) >
-    0;
+    (mo.districts?.length ?? 0) + (mo.schools?.length ?? 0) + (mo.classes?.length ?? 0) + (mo.groups?.length ?? 0) > 0;
 
   if (expectsFetchedOrgs) {
     state.districts = existingDistrictsData.value ?? [];
