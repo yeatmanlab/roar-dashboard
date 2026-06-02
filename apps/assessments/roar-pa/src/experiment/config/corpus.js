@@ -108,7 +108,10 @@ export function processCSV(config = {}) {
 
   const corpus = {
     test_FSM: transformCSV(PA_CORPUS_TYPES.TEST).slice(0, test[PA_TRIAL_TYPES.FSM]),
-    test_LSM: transformCSV(PA_CORPUS_TYPES.TEST).slice(test[PA_TRIAL_TYPES.FSM], test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM]),
+    test_LSM: transformCSV(PA_CORPUS_TYPES.TEST).slice(
+      test[PA_TRIAL_TYPES.FSM],
+      test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM],
+    ),
     test_DEL: transformCSV(PA_CORPUS_TYPES.TEST).slice(
       test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM],
       test[PA_TRIAL_TYPES.FSM] + test[PA_TRIAL_TYPES.LSM] + test[PA_TRIAL_TYPES.DEL],
