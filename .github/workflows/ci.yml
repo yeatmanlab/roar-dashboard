@@ -330,9 +330,6 @@ jobs:
       matrix:
         assessment: ${{ fromJson(needs.detect-assessment-changes.outputs.matrix) }}
         browser: [chrome, edge]
-    container:
-      image: cypress/browsers:node-20.18.0-chrome-130.0.6723.69-1-ff-131.0.3-edge-130.0.2849.52-1
-      options: --user 1001
 
     steps:
       - name: Checkout repository
@@ -344,11 +341,15 @@ jobs:
       - name: Build workspace packages
         run: npx turbo run build --filter='./packages/*'
 
+      - name: Start researcher infrastructure
+        run: docker compose -f docker-compose.researcher.yml up -d --wait
+        timeout-minutes: 10
+
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
           install: false
-          start: npm run dev
+          start: npm run dev:ci
           browser: ${{ matrix.browser }}
           working-directory: apps/assessments/${{ matrix.assessment }}
           wait-on: "http://localhost:8000"
@@ -359,6 +360,8 @@ jobs:
           spec: cypress/e2e/**/*
           ci-build-id: ${{ github.run_id }}-${{ matrix.assessment }}-${{ matrix.browser }}
         env:
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          BACKEND_URL: http://localhost:4000
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
           COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
