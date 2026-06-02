@@ -22,6 +22,11 @@ export class RoarScores {
   }
 
   isAdaptiveScoring() {
+    if (!Number.isFinite(this.scoringVersion)) {
+      throw new Error(
+        `Invalid scoringVersion: ${this.scoringVersion}. Expected a finite number >= 4 for adaptive scoring or < 4 for fixed scoring.`,
+      );
+    }
     return this.scoringVersion >= 4;
   }
 

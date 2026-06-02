@@ -46,7 +46,7 @@ const randomSeed = urlParams.get('random') ?? null;
 const isAdaptive = urlParams.get('isAdaptive') === 'true';
 const itemSelect = urlParams.get('itemSelect') ?? 'fixed';
 const abilityMethod = urlParams.get('abilityMethod')?.toLocaleLowerCase() ?? 'eap';
-const scoringVersionParams = parseInt(urlParams.get('scoringVersion') ?? 4, 10);
+const scoringVersionParams = parseInt(urlParams.get('scoringVersion') ?? 5, 10);
 const scoringVersion = Number.isNaN(scoringVersionParams) ? 5 : scoringVersionParams;
 
 onAuthStateChanged(auth, async (user) => {
