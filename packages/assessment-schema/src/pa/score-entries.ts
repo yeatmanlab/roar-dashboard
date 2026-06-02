@@ -5,7 +5,7 @@ import { PA_SUBTASK_KEYS, PA_SUBSCORE_DEFS, PA_SCORE_NAMES, PA_TASK_ID, type PaS
  * Mirrors the shape of the api-contract ScoreEntry type but kept local
  * to avoid coupling assessment-schema to api-contract.
  */
-interface ComputedScoreEntry {
+export interface ComputedScoreEntry {
   type: 'computed';
   domain: string;
   name: PaScoreName;

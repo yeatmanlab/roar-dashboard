@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { toPaScoreEntries } from './score-entries';
-import type { ComputedScoreEntry } from './score-entries';
-import { PA_SCORE_NAMES } from './index';
+import { toPaScoreEntries } from './score-entries.js';
+import type { ComputedScoreEntry } from './score-entries.js';
+import { PA_SCORE_NAMES } from './index.js';
 
 describe('toPaScoreEntries', () => {
   describe('subtask scores (FSM, LSM, DEL)', () => {
