@@ -77,6 +77,12 @@ runs:
       shell: bash
       run: npx turbo run build --filter='./packages/*'
 
+    # Build assessment packages that the dashboard imports at runtime
+    - name: Build assessment packages
+      working-directory: build
+      shell: bash
+      run: npx turbo run build --filter='./apps/assessments/*'
+
     # Build the application
     - name: Build application
       working-directory: build/apps/dashboard

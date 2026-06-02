@@ -341,6 +341,15 @@ jobs:
       - name: Build workspace packages
         run: npx turbo run build --filter='./packages/*'
 
+      - name: Pull Docker images
+        run: |
+          for i in 1 2 3; do
+            docker pull postgres:17 && break
+            echo "Attempt $i failed, retrying in 15s..."
+            sleep 15
+          done
+        timeout-minutes: 5
+
       - name: Start assessment infrastructure
         run: docker compose -f docker-compose.assessment.yml up -d --wait
         timeout-minutes: 10
