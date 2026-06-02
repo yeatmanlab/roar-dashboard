@@ -20,7 +20,10 @@ async function respondWithHealthCheck(res: Response): Promise<void> {
     res.status(status).json(result);
   } catch (err) {
     logger.error({ err }, 'Unexpected error from runHealthChecks');
-    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({ status: 'error' });
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+      status: 'error',
+      checks: { postgres: 'error', openfga: 'error' },
+    });
   }
 }
 

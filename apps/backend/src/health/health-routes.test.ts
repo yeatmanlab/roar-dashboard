@@ -88,7 +88,7 @@ describe('GET /health/startup', () => {
     const res = await request(app).get('/health/startup');
 
     expect(res.status).toBe(StatusCodes.SERVICE_UNAVAILABLE);
-    expect(res.body).toEqual({ status: 'error' });
+    expect(res.body).toEqual({ status: 'error', checks: { postgres: 'error', openfga: 'error' } });
   });
 });
 
@@ -139,6 +139,6 @@ describe('GET /health/ready', () => {
     const res = await request(app).get('/health/ready');
 
     expect(res.status).toBe(StatusCodes.SERVICE_UNAVAILABLE);
-    expect(res.body).toEqual({ status: 'error' });
+    expect(res.body).toEqual({ status: 'error', checks: { postgres: 'error', openfga: 'error' } });
   });
 });
