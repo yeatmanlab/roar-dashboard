@@ -8,7 +8,6 @@ import enCorpusPracticeCat from './config/corpus/en/practice-cat.csv';
 import esCorpusPractice from './config/corpus/es/practice.csv';
 import esCorpusTest from './config/corpus/es/test.csv';
 import { processCSV } from './config/corpus';
-import enCorpusTestCat from './config/corpus/en/test-cat.csv';
 import deCorpusTest from './config/corpus/de/test.csv';
 import deCorpusPractice from './config/corpus/de/practice.csv';
 import deTranslations from '../locales/de/translation.json';
@@ -19,7 +18,6 @@ export const corpusTranslations = {
     test: enCorpusTest,
     practice: enCorpusPractice,
     practiceCat: enCorpusPracticeCat,
-    testCat: enCorpusTestCat,
     testCatFoundational: enCorpusTestCatFoundational,
   },
   es: {

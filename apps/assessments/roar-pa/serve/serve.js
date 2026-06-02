@@ -6,6 +6,7 @@ import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
+import { PA_SCORING_VERSION } from '../../../../packages/assessment-schema/dist/pa/config';
 
 const queryString = new URL(window.location).search;
 const urlParams = new URLSearchParams(queryString);
@@ -46,8 +47,8 @@ const randomSeed = urlParams.get('random') ?? null;
 const isAdaptive = urlParams.get('isAdaptive') === 'true';
 const itemSelect = urlParams.get('itemSelect') ?? 'fixed';
 const abilityMethod = urlParams.get('abilityMethod')?.toLocaleLowerCase() ?? 'eap';
-const scoringVersionParams = parseInt(urlParams.get('scoringVersion') ?? 5, 10);
-const scoringVersion = Number.isNaN(scoringVersionParams) ? 5 : scoringVersionParams;
+const scoringVersionParams = parseInt(urlParams.get('scoringVersion') ?? PA_SCORING_VERSION.V5_ADAPTIVE, 10);
+const scoringVersion = Number.isNaN(scoringVersionParams) ? PA_SCORING_VERSION.V5_ADAPTIVE : scoringVersionParams;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {

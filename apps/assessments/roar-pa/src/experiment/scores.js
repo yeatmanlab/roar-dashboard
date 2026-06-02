@@ -8,6 +8,7 @@ import {
   PA_TASK_ID,
   PA_SCORE_KIND,
   PA_SCORE_TABLE_URL,
+  PA_SCORING_VERSION,
   PA_COMPOSITE,
   PA_COMPOSITE_FOUNDATIONAL,
 } from '@roar-dashboard/assessment-schema/pa';
@@ -24,10 +25,10 @@ export class RoarScores {
   isAdaptiveScoring() {
     if (!Number.isFinite(this.scoringVersion)) {
       throw new Error(
-        `Invalid scoringVersion: ${this.scoringVersion}. Expected a finite number >= 4 for adaptive scoring or < 4 for fixed scoring.`,
+        `Invalid scoringVersion: ${this.scoringVersion}. Expected a finite number >= ${PA_SCORING_VERSION.V4_ADAPTIVE} for adaptive scoring or < ${PA_SCORING_VERSION.V4_ADAPTIVE} for fixed scoring.`,
       );
     }
-    return this.scoringVersion >= 4;
+    return this.scoringVersion >= PA_SCORING_VERSION.V4_ADAPTIVE;
   }
 
   async initTable() {

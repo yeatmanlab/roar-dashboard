@@ -83,7 +83,7 @@ export const initClowder = (config) => {
       method: config.abilityMethod,
       itemSelect: config.itemSelect,
       priorDist: 'norm',
-      ...hyperMap.composite,
+      ...hyperMap.composite_foundational,
       randomSeed: 'seed-composite-foundational',
     },
   };
@@ -152,6 +152,8 @@ export const setNextStimulus = (ignorePreviousItem = false) => {
   const isPractice = isPracticeCat(catName);
   const catToSelect = isPractice ? catName : 'composite';
 
+  // Update all CATs (including composite and composite_foundational) on every trial.
+  // This ensures both composite scores track practice responses, not just test responses.
   const catsToUpdate = PA_CATS;
 
   const catToEvaluateEarlyStopping = isPractice ? catToSelect : catName;
