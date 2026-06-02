@@ -1,12 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
-import { pa } from '@roar-dashboard/assessment-schema';
+import { pa, PA_SCORING_VERSION } from '@roar-dashboard/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
-import { PA_SCORING_VERSION } from '../../../../packages/assessment-schema/dist/pa/config';
 
 const queryString = new URL(window.location).search;
 const urlParams = new URLSearchParams(queryString);

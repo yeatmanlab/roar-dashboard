@@ -221,6 +221,7 @@ export class RoarScores {
 
         computedScores.composite = {
           ...computedScores.composite,
+          ...computedScores.composite_foundational,
           ...normedScores,
           // If adaptive, conditionally insert roarScore into the computed scores
           ...(this.isAdaptiveScoring() ? { roarScore } : {}),
