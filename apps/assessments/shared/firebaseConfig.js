@@ -3,7 +3,7 @@ import { FIREBASE_EMULATOR_PROJECT_ID, FIREBASE_EMULATOR_API_KEY } from '@roar-d
 /**
  * Returns the Firebase config for the current environment.
  *
- * When the Auth emulator is active (researcher environment), only a projectId is
+ * When the Auth emulator is active (assessment environment), only a projectId is
  * needed — the emulator doesn't validate API keys or auth domains.
  *
  * In staging/production, Firebase Hosting serves the config at
