@@ -12,7 +12,7 @@ vi.mock('../clients/fga.client', () => ({
 
 import { getCoreDbClient } from '../db/clients';
 import { FgaClient } from '../clients/fga.client';
-import { checkPostgres, checkOpenFga, runHealthChecks, clearHealthCheckCache } from './health-checks';
+import { checkPostgres, checkOpenFga, runReadinessChecks, clearHealthCheckCache } from './health-checks';
 
 beforeEach(() => {
   clearHealthCheckCache();
@@ -111,7 +111,7 @@ describe('checkOpenFga', () => {
   });
 });
 
-describe('runHealthChecks', () => {
+describe('runReadinessChecks', () => {
   function setupMocks(postgresOk: boolean, openfgaOk: boolean) {
     const mockExecute = postgresOk
       ? vi.fn().mockResolvedValue([{ '?column?': 1 }])
@@ -127,7 +127,7 @@ describe('runHealthChecks', () => {
   it('returns status "ok" when all checks pass', async () => {
     setupMocks(true, true);
 
-    const result = await runHealthChecks();
+    const result = await runReadinessChecks();
 
     expect(result).toEqual({
       status: 'ok',
@@ -138,7 +138,7 @@ describe('runHealthChecks', () => {
   it('returns status "error" when postgres fails', async () => {
     setupMocks(false, true);
 
-    const result = await runHealthChecks();
+    const result = await runReadinessChecks();
 
     expect(result).toEqual({
       status: 'error',
@@ -149,7 +149,7 @@ describe('runHealthChecks', () => {
   it('returns status "error" when openfga fails', async () => {
     setupMocks(true, false);
 
-    const result = await runHealthChecks();
+    const result = await runReadinessChecks();
 
     expect(result).toEqual({
       status: 'error',
@@ -160,12 +160,12 @@ describe('runHealthChecks', () => {
   it('returns cached result within TTL when healthy', async () => {
     setupMocks(true, true);
 
-    const first = await runHealthChecks();
+    const first = await runReadinessChecks();
 
     // Make the mocks fail — the cached result should still be returned
     setupMocks(false, false);
 
-    const second = await runHealthChecks();
+    const second = await runReadinessChecks();
 
     expect(second).toBe(first);
     expect(second.status).toBe('ok');
@@ -174,13 +174,13 @@ describe('runHealthChecks', () => {
   it('does not cache error results', async () => {
     setupMocks(false, true);
 
-    const first = await runHealthChecks();
+    const first = await runReadinessChecks();
     expect(first.status).toBe('error');
 
     // Recovery: make all deps healthy again — should return fresh ok result
     setupMocks(true, true);
 
-    const second = await runHealthChecks();
+    const second = await runReadinessChecks();
     expect(second.status).toBe('ok');
     expect(second).not.toBe(first);
   });
@@ -189,14 +189,14 @@ describe('runHealthChecks', () => {
     vi.useFakeTimers();
 
     setupMocks(true, true);
-    const first = await runHealthChecks();
+    const first = await runReadinessChecks();
     expect(first.status).toBe('ok');
 
     // Advance past the cache TTL (3000ms)
     vi.advanceTimersByTime(3001);
 
     setupMocks(false, true);
-    const second = await runHealthChecks();
+    const second = await runReadinessChecks();
     expect(second.status).toBe('error');
     expect(second.checks.postgres).toBe('error');
   });

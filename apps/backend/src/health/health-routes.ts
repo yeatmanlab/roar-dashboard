@@ -1,25 +1,25 @@
 import { Router } from 'express';
 import type { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { runHealthChecks } from './health-checks';
+import { runReadinessChecks } from './health-checks';
 import { isShuttingDown } from './shutdown-state';
 import { logger } from '../logger';
 
 export const healthRouter = Router();
 
 /**
- * Runs health checks and sends the appropriate response.
- * Shared by the startup and readiness probes.
+ * Runs readiness checks and sends the appropriate response.
+ * Used only by the readiness probe.
  *
  * @param res - Express response object
  */
-async function respondWithHealthCheck(res: Response): Promise<void> {
+async function respondWithReadinessCheck(res: Response): Promise<void> {
   try {
-    const result = await runHealthChecks();
+    const result = await runReadinessChecks();
     const status = result.status === 'ok' ? StatusCodes.OK : StatusCodes.SERVICE_UNAVAILABLE;
     res.status(status).json(result);
   } catch (err) {
-    logger.error({ err }, 'Unexpected error from runHealthChecks');
+    logger.error({ err }, 'Unexpected error from runReadinessChecks');
     res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
       status: 'error',
       checks: { postgres: 'error', openfga: 'error' },
@@ -36,11 +36,13 @@ healthRouter.get('/health/live', (_req, res) => {
 });
 
 /**
- * Startup probe — confirms all dependencies are reachable.
- * Returns 200 when all checks pass, 503 otherwise.
+ * Startup probe — confirms the process has started.
+ * No dependency checks — external service outages should not
+ * kill and restart the container. Dependency checks belong in
+ * the readiness probe.
  */
-healthRouter.get('/health/startup', async (_req, res) => {
-  await respondWithHealthCheck(res);
+healthRouter.get('/health/startup', (_req, res) => {
+  res.sendStatus(StatusCodes.OK);
 });
 
 /**
@@ -54,5 +56,5 @@ healthRouter.get('/health/ready', async (_req, res) => {
     return;
   }
 
-  await respondWithHealthCheck(res);
+  await respondWithReadinessCheck(res);
 });

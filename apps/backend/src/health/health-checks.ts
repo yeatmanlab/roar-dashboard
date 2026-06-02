@@ -4,11 +4,15 @@ import { FgaClient } from '../clients/fga.client';
 import { logger } from '../logger';
 
 const HEALTH_CHECK_TIMEOUT_MS = 2000;
+
+// Cache TTL should stay below the readiness probe interval configured in Cloud Run.
+// At the default 10-second interval, a 3-second TTL ensures each probe gets a
+// reasonably fresh result without hammering dependencies on every call.
 const HEALTH_CHECK_CACHE_TTL_MS = 3000;
 
 export type DependencyStatus = 'ok' | 'error' | 'timeout';
 
-export interface HealthCheckResult {
+export interface ReadinessCheckResult {
   status: 'ok' | 'error';
   checks: {
     postgres: DependencyStatus;
@@ -45,7 +49,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
   }
 }
 
-let cachedResult: HealthCheckResult | null = null;
+let cachedResult: ReadinessCheckResult | null = null;
 let cachedAt = 0;
 
 /**
@@ -93,14 +97,16 @@ export async function checkOpenFga(): Promise<DependencyStatus> {
 
 /**
  * Run all dependency checks and return an aggregate result.
+ * Used exclusively by the readiness probe — startup and liveness
+ * probes return unconditional 200s and do not check dependencies.
  *
  * Only successful results are cached to avoid masking recovery —
  * a stale error cache would cause probes to report failure even
  * after the dependency recovers.
  *
- * @returns Aggregate health check result with per-dependency status
+ * @returns Aggregate readiness check result with per-dependency status
  */
-export async function runHealthChecks(): Promise<HealthCheckResult> {
+export async function runReadinessChecks(): Promise<ReadinessCheckResult> {
   const now = Date.now();
   if (cachedResult && now - cachedAt < HEALTH_CHECK_CACHE_TTL_MS) {
     return cachedResult;
@@ -110,10 +116,12 @@ export async function runHealthChecks(): Promise<HealthCheckResult> {
   // Promise.allSettled is a defensive guard in case that contract changes.
   const [postgresResult, openfgaResult] = await Promise.allSettled([checkPostgres(), checkOpenFga()]);
 
+  /* c8 ignore next -- defensive: checkPostgres catches internally and never rejects */
   const postgres = postgresResult.status === 'fulfilled' ? postgresResult.value : 'error';
+  /* c8 ignore next -- defensive: checkOpenFga catches internally and never rejects */
   const openfga = openfgaResult.status === 'fulfilled' ? openfgaResult.value : 'error';
 
-  const result: HealthCheckResult = {
+  const result: ReadinessCheckResult = {
     status: postgres === 'ok' && openfga === 'ok' ? 'ok' : 'error',
     checks: { postgres, openfga },
   };
