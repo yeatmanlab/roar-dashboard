@@ -107,7 +107,8 @@ services:
     healthcheck:
       # curl returns 0 on any HTTP response — just checks that the port is accepting
       # connections, which is sufficient to confirm the emulator is ready.
-      test: ["CMD-SHELL", "curl --silent http://localhost:9099/ --output /dev/null"]
+      test:
+        ["CMD-SHELL", "curl --silent http://localhost:9099/ --output /dev/null"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -131,6 +132,8 @@ services:
       PORT: "4000"
       CORE_DATABASE_URL: postgres://postgres@researcher-db:5432/roar_core
       ASSESSMENT_DATABASE_URL: postgres://postgres@researcher-db:5432/roar_assessment
+      # Canonical project identifier for emulated Firebase projects
+      # Should match FIREBASE_EMULATOR_PROJECT_ID constant in @assessment-schema/src/firebase-emulator.ts
       GOOGLE_CLOUD_PROJECT: demo-roar
       FIREBASE_AUTH_EMULATOR_HOST: firebase-auth-emulator:9099
       # Placeholder FGA config — the FGA client must be initialized at startup
