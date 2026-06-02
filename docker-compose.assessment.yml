@@ -1,21 +1,21 @@
-name: roar-researcher
+name: roar-assessment
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Researcher environment — full local stack for running ROAR assessments.
+# Assessment environment — full local stack for running ROAR assessments.
 #
 # Start:
-#   npm run researcher-environment:up -w apps/assessments/roar-pa
-#   (or: bash scripts/researcher-env-up.sh)
+#   npm run assessment-environment:up -w apps/assessments/roar-pa
+#   (or: bash scripts/assessment-env-up.sh)
 #
 # Stop and delete data:
-#   npm run researcher-environment:down -w apps/assessments/roar-pa
-#   (or: bash scripts/researcher-env-down.sh)
+#   npm run assessment-environment:down -w apps/assessments/roar-pa
+#   (or: bash scripts/assessment-env-down.sh)
 #
 # Rebuild images after pulling new code:
-#   docker compose -f docker-compose.researcher.yml build
+#   docker compose -f docker-compose.assessment.yml build
 #
 # Service dependency order:
-#   researcher-db (healthy) → researcher-db-migrate (completed)
+#   assessment-db (healthy) → assessment-db-migrate (completed)
 #                           → firebase-auth-emulator (healthy)
 #                           → backend (healthy)
 #                           → assessment dev server (on host)
@@ -29,12 +29,12 @@ services:
   # Hosts roar_core and roar_assessment (created by the entrypoint init script).
   #
   # Binds to the standard Postgres port. If you have a local PostgreSQL instance
-  # running, stop it before starting the researcher environment:
+  # running, stop it before starting the assessment environment:
   #   macOS (Homebrew): brew services stop postgresql@<version>
   #   Ubuntu/Debian:    sudo systemctl stop postgresql
   # ────────────────────────────────────────────────────────────────────────────
-  researcher-db:
-    container_name: researcher-db
+  assessment-db:
+    container_name: assessment-db
     image: postgres:17
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -49,7 +49,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./scripts/init-researcher-db.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+      - ./scripts/init-assessment-db.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
     restart: unless-stopped
 
   # ────────────────────────────────────────────────────────────────────────────
@@ -57,12 +57,12 @@ services:
   # Sets up postgres_fdw prerequisites, applies all Drizzle migrations, and
   # seeds the PA task data. Exits 0 on success — backend waits for this.
   # ────────────────────────────────────────────────────────────────────────────
-  researcher-db-migrate:
-    container_name: researcher-db-migrate
+  assessment-db-migrate:
+    container_name: assessment-db-migrate
     build:
       context: .
-      dockerfile: researcher.Dockerfile
-      target: researcher-runtime
+      dockerfile: assessment.Dockerfile
+      target: assessment-runtime
     working_dir: /app
     command: >
       sh -c "
@@ -72,15 +72,15 @@ services:
         npm run db:seed:pa
       "
     environment:
-      CORE_DATABASE_URL: postgres://postgres@researcher-db:5432/roar_core
-      ASSESSMENT_DATABASE_URL: postgres://postgres@researcher-db:5432/roar_assessment
+      CORE_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_core
+      ASSESSMENT_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_assessment
       CORE_DB: roar_core
       ASSESSMENT_DB: roar_assessment
-      PG_HOST: researcher-db
+      PG_HOST: assessment-db
       PG_PORT: "5432"
       PG_USER: postgres
     depends_on:
-      researcher-db:
+      assessment-db:
         condition: service_healthy
     # One-shot service — no restart policy.
 
@@ -93,7 +93,7 @@ services:
     container_name: firebase-auth-emulator
     build:
       context: .
-      dockerfile: researcher.Dockerfile
+      dockerfile: assessment.Dockerfile
       target: firebase-emulator
     volumes:
       - ./apps/assessments/shared/firebase.json:/app/firebase.json:ro
@@ -107,7 +107,8 @@ services:
     healthcheck:
       # curl returns 0 on any HTTP response — just checks that the port is accepting
       # connections, which is sufficient to confirm the emulator is ready.
-      test: ["CMD-SHELL", "curl --silent http://localhost:9099/ --output /dev/null"]
+      test:
+        ["CMD-SHELL", "curl --silent http://localhost:9099/ --output /dev/null"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -117,32 +118,34 @@ services:
   # ────────────────────────────────────────────────────────────────────────────
   # Backend API server.
   # Runs in production mode (HTTP, no TLS) on port 4000.
-  # FGA vars are set to placeholder values — anonymous researcher runs do not
+  # FGA vars are set to placeholder values — anonymous assessment runs do not
   # trigger FGA calls (same-user access check short-circuits before any FGA call).
   # ────────────────────────────────────────────────────────────────────────────
   backend:
-    container_name: researcher-backend
+    container_name: assessment-backend
     build:
       context: .
-      dockerfile: researcher.Dockerfile
-      target: researcher-runtime
+      dockerfile: assessment.Dockerfile
+      target: assessment-runtime
     environment:
       NODE_ENV: production
       PORT: "4000"
-      CORE_DATABASE_URL: postgres://postgres@researcher-db:5432/roar_core
-      ASSESSMENT_DATABASE_URL: postgres://postgres@researcher-db:5432/roar_assessment
+      CORE_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_core
+      ASSESSMENT_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_assessment
+      # Canonical project identifier for emulated Firebase projects
+      # Should match FIREBASE_EMULATOR_PROJECT_ID constant in @assessment-schema/src/firebase-emulator.ts
       GOOGLE_CLOUD_PROJECT: demo-roar
       FIREBASE_AUTH_EMULATOR_HOST: firebase-auth-emulator:9099
       # Placeholder FGA config — the FGA client must be initialized at startup
       # (module-level service instantiation), but FGA is never actually called
-      # for anonymous researcher runs.
+      # for anonymous assessment runs.
       FGA_API_URL: http://placeholder:5050
       FGA_STORE_ID: "00000000000000000000000000"
       FGA_MODEL_ID: "00000000000000000000000000"
     ports:
       - "4000:4000"
     depends_on:
-      researcher-db-migrate:
+      assessment-db-migrate:
         condition: service_completed_successfully
       firebase-auth-emulator:
         condition: service_healthy

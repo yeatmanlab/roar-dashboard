@@ -1,8 +1,8 @@
-# Researcher Environment
+# Assessment Environment
 
 A local developer environment for running and querying ROAR assessments against a real PostgreSQL database.
 
-> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own `researcher-environment:up` and `researcher-environment:down` scripts. The Firebase Auth emulator, backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server and its port differ.
+> **This guide covers the PA assessment.** Each assessment in the monorepo has its own directory (e.g. `apps/assessments/roar-pa/`) with its own `assessment-environment:up` and `assessment-environment:down` scripts. The Firebase Auth emulator, backend, and PostgreSQL databases are shared across all assessments; only the assessment dev server and its port differ.
 
 ## What it starts (PA)
 
@@ -18,7 +18,7 @@ Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment
 ## Prerequisites
 
 - **Docker** with Compose v2 (`docker compose version` should work)
-- **Port 5432 free** — the researcher database binds to the standard Postgres port. If you have a local Postgres instance running, stop it first:
+- **Port 5432 free** — the assessment database binds to the standard Postgres port. If you have a local Postgres instance running, stop it first:
   - macOS (Homebrew): `brew services stop postgresql@<version>`
   - Ubuntu/Debian: `sudo systemctl stop postgresql`
 
@@ -27,15 +27,15 @@ Two databases are created: `roar_core` (users, tasks, runs) and `roar_assessment
 From the assessment's directory (e.g. `apps/assessments/roar-pa` for PA):
 
 ```bash
-npm run researcher-environment:up
+npm run assessment-environment:up
 ```
 
-**Ctrl+C** stops only the assessment dev server. The Docker services (database, backend, Firebase emulator) keep running in the background — your data is preserved. Run `researcher-environment:up` again to restart the dev server against the same database.
+**Ctrl+C** stops only the assessment dev server. The Docker services (database, backend, Firebase emulator) keep running in the background — your data is preserved. Run `assessment-environment:up` again to restart the dev server against the same database.
 
 To stop all Docker services **and permanently delete the database**:
 
 ```bash
-npm run researcher-environment:down
+npm run assessment-environment:down
 ```
 
 ---
