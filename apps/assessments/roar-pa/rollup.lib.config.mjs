@@ -15,10 +15,7 @@ export default defineConfig({
   },
   // Workspace deps are externalized — external researchers install them separately.
   // Everything else (jspsych, firebase, i18next, etc.) is bundled for a self-contained package.
-  external: [
-    /^@roar-platform\/assessment-sdk(\/.*)?$/,
-    /^@roar-platform\/assessment-schema(\/.*)?$/,
-  ],
+  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@roar-platform\/assessment-schema(\/.*)?$/],
   plugins: [
     postcss({
       inject: true,
