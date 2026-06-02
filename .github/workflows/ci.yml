@@ -341,8 +341,8 @@ jobs:
       - name: Build workspace packages
         run: npx turbo run build --filter='./packages/*'
 
-      - name: Start researcher infrastructure
-        run: docker compose -f docker-compose.researcher.yml up -d --wait
+      - name: Start assessment infrastructure
+        run: docker compose -f docker-compose.assessment.yml up -d --wait
         timeout-minutes: 10
 
       - name: Run Cypress tests
