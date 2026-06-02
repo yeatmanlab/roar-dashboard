@@ -22,8 +22,8 @@
     "BACKEND_PORT",
     "BUILD_TEST_SERVER",
     "RUN_INTEGRATION_TESTS",
-    "SENTRY_AUTH_TOKEN",
     "CYPRESS_BASE_URL",
+    "CYPRESS_PROJECT_ID",
     "FIREBASE_AUTH_EMULATOR_HOST",
     "AUTHZ_MODEL_PATH",
     "BACKEND_URL",
@@ -45,7 +45,8 @@
     "build": {
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
@@ -54,7 +55,11 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env.test"],
       "outputs": ["coverage/**"],
-      "passThroughEnv": ["CORE_DATABASE_URL", "ASSESSMENT_DATABASE_URL", "VITEST_PROJECT"]
+      "passThroughEnv": [
+        "CORE_DATABASE_URL",
+        "ASSESSMENT_DATABASE_URL",
+        "VITEST_PROJECT"
+      ]
     },
     "@yeatmanlab/assessment-sdk#test": {
       "dependsOn": ["roar-backend#test", "^build"],
