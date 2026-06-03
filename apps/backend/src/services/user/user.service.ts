@@ -1435,5 +1435,41 @@ export function UserService({
     }
   }
 
-  return { findByAuthId, getById, create, update, recordUserAgreement, getUnsignedTosAgreements };
+  /**
+   * Create a minimal user record for an anonymous Firebase user.
+   *
+   * Anonymous standalone users have no name, email, or org memberships. They are
+   * created as `student` type with only their Firebase UID stored.
+   *
+   * FGA is intentionally skipped. Anonymous users hold no org, class, group, or
+   * family memberships, so there are no FGA tuples to check or write. This is
+   * consistent with how anonymous runs are handled in `run.service.ts` — the
+   * `isAnonymous` flag bypasses `can_create_run` checks there for the same reason.
+   * Authentication is enforced upstream by `AnonTokenMiddleware`, which verifies
+   * the Firebase anonymous token before this method is ever reached.
+   *
+   * @param authId - The Firebase UID of the anonymous user
+   * @returns The newly created user's ROAR UUID
+   * @throws {ApiError} If the database insert fails
+   */
+  async function createAnonymousUser(authId: string): Promise<{ id: string }> {
+    try {
+      const existing = await userRepository.findByAuthId(authId);
+      if (existing) return { id: existing.id };
+
+      const assessmentPid = generateAssessmentPid({ userId: authId });
+      return await userRepository.create({ data: { userType: UserType.STUDENT, authId, assessmentPid } });
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      logger.error({ err: error, context: { authId } }, 'Failed to create anonymous user');
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { authId },
+        cause: error,
+      });
+    }
+  }
+
+  return { findByAuthId, getById, create, update, recordUserAgreement, getUnsignedTosAgreements, createAnonymousUser };
 }

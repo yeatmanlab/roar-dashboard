@@ -142,6 +142,7 @@ const SubscoreFieldEntrySchema = z.object({
   correctName: z.string(),
   attemptedName: z.string(),
   percentCorrectName: z.string().optional(),
+  label: z.string().optional(),
 });
 
 /**
