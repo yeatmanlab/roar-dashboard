@@ -138,7 +138,6 @@ export const moveToNextBlock = () => {
 const safeGetCatIndex = () => {
   let catIndex = store.session.get('currentCatIndex');
 
-  // eslint-disable-next-line eqeqeq
   if (catIndex == undefined) {
     store.session.set('currentCatIndex', 0);
     catIndex = 0;
@@ -487,7 +486,6 @@ export const testLoopFunction = (subskill) => {
   }
 
   if (store.session('config').isAdaptive) {
-    // eslint-disable-next-line eqeqeq
     return store.session('currentStimulus') != undefined;
   }
 

@@ -191,6 +191,9 @@ export interface CommandContext {
     getToken(): Promise<string | undefined>;
     refreshToken?(): Promise<string | undefined>;
   };
+  participant: {
+    participantId: string;
+  };
   requestId?: () => string;
   fetchImpl?: typeof fetch;
   logger?: Logger;
