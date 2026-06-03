@@ -136,6 +136,11 @@ const buildFirebaseConfig = (mode = 'development') => {
   if (!header) throw new Error('CSP header not found');
   header.value = cspPolicy;
 
+  // Enforce strict CSP in staging and production, Report-Only elsewhere
+  if (['staging', 'production'].includes(mode)) {
+    header.key = 'Content-Security-Policy';
+  }
+
   // Write output
   const outPath = path.join(root, 'firebase', 'admin', 'firebase.json');
   fs.writeFileSync(outPath, JSON.stringify(fbObj, null, 2));
