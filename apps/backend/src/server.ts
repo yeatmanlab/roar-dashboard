@@ -5,7 +5,11 @@ import https from 'https';
 import type { Express } from 'express';
 import { FgaClient } from './clients/fga.client';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
+import { setShuttingDown } from './health/shutdown-state';
 import { logger } from './logger';
+
+/** Maximum time to wait for graceful shutdown before force-exiting. */
+const SHUTDOWN_GRACE_MS = 10_000;
 
 const { NODE_ENV = 'development', PORT = '4000', KEEP_ALIVE_TIMEOUT = '75000' } = process.env;
 
@@ -111,6 +115,14 @@ async function startServer(): Promise<void> {
    */
   const shutdown = (signal: string) => {
     logger.info(`${signal} received: shutting down server`);
+    setShuttingDown();
+
+    // Safety net: force-exit if graceful shutdown takes too long
+    setTimeout(() => {
+      logger.error('Graceful shutdown timed out — forcing exit');
+      process.exit(1);
+    }, SHUTDOWN_GRACE_MS).unref();
+
     server.close(() => {
       closeDatabasePools()
         .then(() => {
