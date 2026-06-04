@@ -1,0 +1,30 @@
+name: PR Preview — Assessments
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+concurrency:
+  group: preview-roar-pa-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview-roar-pa:
+    if: ${{ github.event.label.name == 'preview:roar-pa' && github.event.pull_request.head.repo.full_name == github.repository }}
+    uses: ./.github/workflows/deploy-assessment.yml
+    secrets:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      FIREBASE_HOSTING_SERVICE_ACCOUNT_ID: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+    with:
+      environment: platform:staging
+      assessment: roar-pa
+      build-script: build:staging
+      firebase-channel: preview
+      expires: 7d
