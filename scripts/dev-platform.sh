@@ -60,7 +60,7 @@ if ! grep -qE "^FIREBASE_AUTH_EMULATOR_HOST=.+" "$BACKEND_ENV"; then
 fi
 
 # The backend must be running before the assessment dev server starts.
-if ! curl -sfk "https://localhost:4000/health" >/dev/null 2>&1; then
+if ! curl -sfk "https://localhost:4000/health/live" >/dev/null 2>&1; then
   echo "Error: backend not detected on https://localhost:4000." >&2
   echo "  Start it with: NODE_ENV=development npm run dev -w apps/backend" >&2
   echo "  Ensure apps/backend/.env has FIREBASE_AUTH_EMULATOR_HOST=$EMULATOR_HOST" >&2
