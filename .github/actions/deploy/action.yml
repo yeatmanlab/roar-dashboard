@@ -24,6 +24,10 @@ inputs:
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
+  firebase-site:
+    description: "The Firebase Hosting site to deploy to. Defaults to the project's default Hosting site."
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -52,12 +56,21 @@ runs:
     # Note: As the project relies on two simultaneous Firebase projects and the configs are stored in the /firebase
     # directory, we prepare the deployment by ensuring that the Firebase config and dist directory are located on the
     # same path. Otherwise, the firebaseextended/action-hosting-deploy action fails to deploy the application.
+    # Note: When a named Hosting site is requested via the firebase-site input, we inject it as the "site" key of the
+    # hosting config so the Firebase CLI deploys to that site instead of the project's default Hosting site.
     - name: Prepare deployment
       shell: bash
+      env:
+        FIREBASE_SITE: ${{ inputs.firebase-site }}
       run: |
         mkdir app
         cp -r build/apps/dashboard/dist app/dist
         cp build/apps/dashboard/firebase/admin/firebase.json app/firebase.json
+        if [ -n "$FIREBASE_SITE" ]; then
+          jq --arg site "$FIREBASE_SITE" '.hosting.site = $site' app/firebase.json > app/firebase.json.tmp
+          mv app/firebase.json.tmp app/firebase.json
+          echo "Deploying to named Firebase Hosting site: $FIREBASE_SITE"
+        fi
         cd app && pwd && ls -la
 
     # Deploy application
@@ -71,6 +84,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         repoToken: "${{ inputs.github-token }}"
         projectId: "${{ inputs.firebase-project-id }}"
+        target: "${{ inputs.firebase-site }}"
         entryPoint: ./app
 
     - name: Deploy application
@@ -80,6 +94,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         projectId: "${{ inputs.firebase-project-id }}"
         channelId: "live"
+        target: "${{ inputs.firebase-site }}"
         entryPoint: ./app
 
     # Output deployment URL
