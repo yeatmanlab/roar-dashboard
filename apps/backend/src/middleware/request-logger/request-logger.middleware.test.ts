@@ -47,8 +47,8 @@ describe('requestLogger', () => {
   });
 
   describe('excluded routes', () => {
-    it('should skip logging for /health route', () => {
-      const healthReq = { ...mockReq, path: '/health' };
+    it('should skip logging for /health/live route', () => {
+      const healthReq = { ...mockReq, path: '/health/live' };
 
       requestLogger(healthReq as Request, mockRes as Response, mockNext);
 
@@ -56,8 +56,17 @@ describe('requestLogger', () => {
       expect(mockRes.on).not.toHaveBeenCalled();
     });
 
-    it('should skip logging for /ready route', () => {
-      const readyReq = { ...mockReq, path: '/ready' };
+    it('should skip logging for /health/startup route', () => {
+      const startupReq = { ...mockReq, path: '/health/startup' };
+
+      requestLogger(startupReq as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalled();
+      expect(mockRes.on).not.toHaveBeenCalled();
+    });
+
+    it('should skip logging for /health/ready route', () => {
+      const readyReq = { ...mockReq, path: '/health/ready' };
 
       requestLogger(readyReq as Request, mockRes as Response, mockNext);
 
