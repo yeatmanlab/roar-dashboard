@@ -1,9 +1,9 @@
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
-# roar-dashboard/deploy
+# roar-dashboard/deploy-firebase-hosting
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
 
-name: Deploy
-description: Deploys the ROAR Dashboard to Firebase Hosting.
+name: Deploy Firebase Hosting
+description: Deploys a ROAR application to Firebase Hosting.
 outputs:
   deployment-url:
     description: "The URL of the deployed application."
@@ -15,10 +15,6 @@ inputs:
   firebase-project-id:
     description: "The Firebase project ID to deploy to."
     required: true
-  firebase-site:
-    description: "The Firebase Hosting site to deploy to. Defaults to the project's default Hosting site."
-    required: false
-    default: ""
   gcp-workload-identity-provider:
     description: "The GCP workload identity provider to authenticate with."
     required: true
@@ -33,13 +29,12 @@ inputs:
     required: false
     default: "build/apps/dashboard/dist"
   firebase-config-path:
-    description: "Path to the firebase.json hosting configuration file."
+    description: "Path to the firebase.json config file, relative to the repository root."
+    required: true
+  firebase-hosting-site:
+    description: "Firebase Hosting site ID to deploy to (e.g. roar-phoneme-staging). Required when the Firebase project hosts multiple sites."
     required: false
-    default: "build/apps/dashboard/firebase/admin/firebase.json"
-  expires:
-    description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Ignored for default channel deployments."
-    required: false
-    default: "7d"
+    default: ''
 
 runs:
   using: composite
@@ -68,20 +63,21 @@ runs:
     # Note: As the project relies on two simultaneous Firebase projects and the configs are stored in the /firebase
     # directory, we prepare the deployment by ensuring that the Firebase config and dist directory are located on the
     # same path. Otherwise, the firebaseextended/action-hosting-deploy action fails to deploy the application.
-    # Note: When a named Hosting site is requested via the firebase-site input, we inject it as the "site" key of the
-    # hosting config so the Firebase CLI deploys to that site instead of the project's default Hosting site.
+    # Note: When a named Hosting site is requested via the firebase-hosting-site input, we inject it as the "site"
+    # key of the hosting config so the Firebase CLI deploys to that site instead of the project's default site. The
+    # input is read through an environment variable as it can carry runtime-derived values (e.g. step outputs).
     - name: Prepare deployment
       shell: bash
       env:
-        FIREBASE_SITE: ${{ inputs.firebase-site }}
+        FIREBASE_HOSTING_SITE: ${{ inputs.firebase-hosting-site }}
       run: |
         mkdir app
         cp -r ${{ inputs.dist-path }} app/dist
         cp ${{ inputs.firebase-config-path }} app/firebase.json
-        if [ -n "$FIREBASE_SITE" ]; then
-          jq --arg site "$FIREBASE_SITE" '.hosting.site = $site' app/firebase.json > app/firebase.json.tmp
-          mv app/firebase.json.tmp app/firebase.json
-          echo "Deploying to named Firebase Hosting site: $FIREBASE_SITE"
+        if [ -n "$FIREBASE_HOSTING_SITE" ]; then
+          jq --arg site "$FIREBASE_HOSTING_SITE" '.hosting.site = $site' app/firebase.json > app/firebase.tmp.json
+          mv app/firebase.tmp.json app/firebase.json
+          echo "Deploying to named Firebase Hosting site: $FIREBASE_HOSTING_SITE"
         fi
         cd app && pwd && ls -la
 
@@ -96,7 +92,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         repoToken: "${{ inputs.github-token }}"
         projectId: "${{ inputs.firebase-project-id }}"
-        target: "${{ inputs.firebase-site }}"
+        target: "${{ inputs.firebase-hosting-site }}"
         expires: "${{ inputs.expires }}"
         entryPoint: ./app
 
@@ -107,7 +103,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         projectId: "${{ inputs.firebase-project-id }}"
         channelId: "live"
-        target: "${{ inputs.firebase-site }}"
+        target: "${{ inputs.firebase-hosting-site }}"
         entryPoint: ./app
 
     # Output deployment URL
