@@ -15,6 +15,10 @@ inputs:
   firebase-project-id:
     description: "The Firebase project ID to deploy to."
     required: true
+  firebase-site:
+    description: "The Firebase Hosting site to deploy to. Defaults to the project's default Hosting site."
+    required: false
+    default: ""
   gcp-workload-identity-provider:
     description: "The GCP workload identity provider to authenticate with."
     required: true
@@ -24,10 +28,6 @@ inputs:
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
-  firebase-site:
-    description: "The Firebase Hosting site to deploy to. Defaults to the project's default Hosting site."
-    required: false
-    default: ""
 
 runs:
   using: composite

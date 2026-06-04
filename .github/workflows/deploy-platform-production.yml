@@ -189,7 +189,6 @@ jobs:
 
       - name: Deploy app
         uses: ./.github/actions/deploy
-        id: deployment
         with:
           firebase-channel: default
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -206,4 +205,8 @@ jobs:
         with:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
-          version: ${{ inputs.version }}
+          # Push-triggered runs (temporary, during the backend refactor) have no release version,
+          # so fall back to the commit SHA. release.yml-driven runs pass an explicit version.
+          version: ${{ inputs.version || github.sha }}
+          # Don't fail the release when the previous release commit is unreachable (shallow checkout).
+          ignore_missing: true
