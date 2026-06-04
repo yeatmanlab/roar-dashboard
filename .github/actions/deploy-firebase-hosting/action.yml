@@ -35,6 +35,10 @@ inputs:
     description: "Firebase Hosting site ID to deploy to (e.g. roar-phoneme-staging). Required when the Firebase project hosts multiple sites."
     required: false
     default: ''
+  expires:
+    description: "How long a preview channel deployment lives, e.g. 7d. Defaults to the Firebase CLI default."
+    required: false
+    default: ''
 
 runs:
   using: composite
