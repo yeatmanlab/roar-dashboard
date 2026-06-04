@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
+import { pa } from '@roar-dashboard/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
@@ -29,6 +30,12 @@ const skipInstructions = urlParams.get('skip') !== 'false';
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// eslint-disable-next-line no-undef
+if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
+  // eslint-disable-next-line no-undef
+  connectAuthEmulator(auth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}`, { disableWarnings: true });
+}
 
 const earlyStopping = urlParams.get('earlyStopping')?.toLocaleLowerCase() ?? null;
 const threshold = urlParams.get('threshold') ?? null;
@@ -68,7 +75,7 @@ onAuthStateChanged(auth, async (user) => {
       let resolvedVariantId = variantId;
       if (!resolvedVariantId) {
         // eslint-disable-next-line no-undef
-        const variantRes = await fetch(`${ROAR_API_URL}/v1/tasks/roar-pa/variants?perPage=1`, {
+        const variantRes = await fetch(`${ROAR_API_URL}/v1/tasks/${pa.PA_TASK_ID}/variants?perPage=1`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const variantJson = await variantRes.json();

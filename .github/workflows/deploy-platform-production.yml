@@ -44,7 +44,7 @@ jobs:
         run: |
           # Determine version
           VERSION="${{ inputs.version }}"
-          
+
           # Verify platform tags exist and are on main
           # Note: api-contract is independently versioned and may have a different version
           for PREFIX in backend dashboard; do
