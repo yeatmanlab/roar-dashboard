@@ -38,6 +38,17 @@ on:
         description: "Base URL for Cypress to run tests against. Required when run-cypress is true."
         required: false
         type: string
+    secrets:
+      SENTRY_AUTH_TOKEN:
+        required: false
+      FIREBASE_PROJECT_ID:
+        required: true
+      GCP_WORKLOAD_IDENTITY_PROVIDER:
+        required: true
+      FIREBASE_HOSTING_SERVICE_ACCOUNT_ID:
+        required: true
+      CYPRESS_RECORD_KEY:
+        required: false
 
 jobs:
   deploy:
@@ -75,7 +86,7 @@ jobs:
             apps/assessments/${{ inputs.assessment }}/firebase.json
 
       - name: Deploy ${{ inputs.assessment }}
-        uses: ./.github/actions/deploy
+        uses: ./.github/actions/deploy-firebase-hosting
         with:
           firebase-channel: ${{ inputs.firebase-channel }}
           expires: ${{ inputs.expires }}
