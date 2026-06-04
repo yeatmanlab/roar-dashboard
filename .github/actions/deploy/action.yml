@@ -28,6 +28,18 @@ inputs:
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
+  dist-path:
+    description: "Path to the built dist directory to deploy."
+    required: false
+    default: "build/apps/dashboard/dist"
+  firebase-config-path:
+    description: "Path to the firebase.json hosting configuration file."
+    required: false
+    default: "build/apps/dashboard/firebase/admin/firebase.json"
+  expires:
+    description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Ignored for default channel deployments."
+    required: false
+    default: "7d"
 
 runs:
   using: composite
@@ -64,8 +76,8 @@ runs:
         FIREBASE_SITE: ${{ inputs.firebase-site }}
       run: |
         mkdir app
-        cp -r build/apps/dashboard/dist app/dist
-        cp build/apps/dashboard/firebase/admin/firebase.json app/firebase.json
+        cp -r ${{ inputs.dist-path }} app/dist
+        cp ${{ inputs.firebase-config-path }} app/firebase.json
         if [ -n "$FIREBASE_SITE" ]; then
           jq --arg site "$FIREBASE_SITE" '.hosting.site = $site' app/firebase.json > app/firebase.json.tmp
           mv app/firebase.json.tmp app/firebase.json
@@ -85,6 +97,7 @@ runs:
         repoToken: "${{ inputs.github-token }}"
         projectId: "${{ inputs.firebase-project-id }}"
         target: "${{ inputs.firebase-site }}"
+        expires: "${{ inputs.expires }}"
         entryPoint: ./app
 
     - name: Deploy application
