@@ -150,7 +150,7 @@ services:
       firebase-auth-emulator:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:4000/health"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:4000/health/live"]
       interval: 5s
       timeout: 5s
       retries: 15
