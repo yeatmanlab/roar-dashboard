@@ -50,6 +50,11 @@ on:
       CYPRESS_RECORD_KEY:
         required: false
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
 jobs:
   deploy:
     name: Deploy ${{ inputs.assessment }}
@@ -82,7 +87,8 @@ jobs:
         # groups these events separately from production issues.
         if: inputs.firebase-channel != 'default'
         run: |
-          sed -i "s/sentry_environment=production/sentry_environment=${{ inputs.firebase-channel }}/g" \
+          channel="${{ inputs.firebase-channel }}"
+          sed -i "s|sentry_environment=production|sentry_environment=${channel}|g" \
             apps/assessments/${{ inputs.assessment }}/firebase.json
 
       - name: Deploy ${{ inputs.assessment }}
