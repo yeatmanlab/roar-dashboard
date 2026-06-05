@@ -13,9 +13,9 @@ export default defineConfig({
     format: 'es',
     sourcemap: true,
   },
-  // Workspace deps are externalized — external researchers install them separately.
+  // Workspace deps and peer deps are externalized — consumers provide these themselves.
   // Everything else (jspsych, firebase, i18next, etc.) is bundled for a self-contained package.
-  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@roar-platform\/assessment-schema(\/.*)?$/],
+  external: [/^@roar-platform\/assessment-sdk(\/.*)?$/, /^@roar-platform\/assessment-schema(\/.*)?$/, /^@sentry\//],
   plugins: [
     postcss({
       inject: true,
@@ -31,7 +31,7 @@ export default defineConfig({
     esbuild({
       platform: 'browser',
       sourceMap: true,
-      minify: false,
+      minify: false, // Consumers run their own bundler (webpack, Vite) which handles minification.
     }),
   ],
 });

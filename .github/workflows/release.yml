@@ -3,8 +3,6 @@ name: Release
 on:
   push:
     branches:
-      # TODO: Remove once backend refactor is complete
-      - project/backend-refactor
       - main
 
 permissions:

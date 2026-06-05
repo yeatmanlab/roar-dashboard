@@ -49,7 +49,9 @@ jobs:
             if [ -n "$assessment" ]; then
               echo "matrix=$(jq -c -n --arg a "$assessment" '[$a]')" >> $GITHUB_OUTPUT
             else
-              # No specific assessment given — fall back to all known deployable assessments
+              # No specific assessment given — fall back to all known deployable assessments.
+              # When adding a new assessment (e.g. roar-swr), append its name here:
+              #   echo "matrix=[\"roar-pa\",\"roar-swr\"]" >> $GITHUB_OUTPUT
               echo "matrix=[\"roar-pa\"]" >> $GITHUB_OUTPUT
             fi
           else
