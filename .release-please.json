@@ -42,6 +42,11 @@
       "hidden": false
     }
   ],
+  // TODO: Remove all "release-as" fields after the first release PR merges.
+  // They are one-time overrides to seed the initial version — if left in place,
+  // Release Please will continue forcing that version on every subsequent run
+  // instead of deriving the next version from conventional commits.
+  // https://github.com/yeatmanlab/roar-project-management/issues/1864
   "packages": {
     "apps/backend": {
       "changelog-path": "CHANGELOG.md",
