@@ -71,6 +71,9 @@
     },
     "format": {},
     "format:check": {},
+    // ^build ensures upstream workspace packages are built before linting,
+    // preventing false lint errors from unresolved imports. First run on a clean
+    // checkout is slower; subsequent runs use Turbo's cache and are fast.
     "lint": {
       "dependsOn": ["^build"]
     },
