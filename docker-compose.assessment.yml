@@ -55,7 +55,8 @@ services:
   # ────────────────────────────────────────────────────────────────────────────
   # One-shot migration runner.
   # Sets up postgres_fdw prerequisites, applies all Drizzle migrations, and
-  # seeds the PA task data. Exits 0 on success — backend waits for this.
+  # seeds the assessment task data. ASSESSMENT_NAME is set by assessment-env-up.sh
+  # and drives the db:seed:${ASSESSMENT_NAME} script. Exits 0 on success.
   # ────────────────────────────────────────────────────────────────────────────
   assessment-db-migrate:
     container_name: assessment-db-migrate
@@ -69,7 +70,7 @@ services:
         ./scripts/setup-fdw-local.sh &&
         cd apps/backend &&
         npm run db:migrate &&
-        npm run db:seed:pa
+        npm run db:seed:${ASSESSMENT_NAME:-}
       "
     environment:
       CORE_DATABASE_URL: postgres://postgres@assessment-db:5432/roar_core

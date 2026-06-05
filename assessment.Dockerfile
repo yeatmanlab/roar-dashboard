@@ -12,7 +12,20 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Stage 1 — Install dependencies and build
+# Stage 1 — Prune the monorepo to only what roar-backend needs.
+# turbo prune outputs out/json/ (manifests only) and out/full/ (full source),
+# so adding new workspace members never requires extra COPY lines below.
+# ──────────────────────────────────────────────────────────────────────────────
+FROM node:22 AS pruner
+
+RUN npm install turbo --global
+
+WORKDIR /app
+COPY . .
+RUN turbo prune roar-backend --docker
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Stage 2 — Install dependencies and build
 # ──────────────────────────────────────────────────────────────────────────────
 FROM node:22 AS builder
 
@@ -20,36 +33,22 @@ RUN npm install turbo --global
 
 WORKDIR /app
 
-# Copy package manifests for every workspace so npm ci can install and hoist
-# correctly. Source files for stub workspaces are intentionally excluded —
-# those packages are not imported at migration or server runtime.
-COPY package.json package-lock.json ./
-COPY apps/backend/package.json                    apps/backend/
-COPY apps/assessments/roar-pa/package.json        apps/assessments/roar-pa/
-COPY packages/api-contract/package.json           packages/api-contract/
-COPY packages/assessment-schema/package.json      packages/assessment-schema/
-COPY packages/assessment-sdk/package.json         packages/assessment-sdk/
-COPY packages/authz/package.json                  packages/authz/
-COPY packages/config-eslint/package.json          packages/config-eslint/
-COPY packages/config-prettier/package.json        packages/config-prettier/
-COPY packages/config-typescript/package.json      packages/config-typescript/
+# Install against pruned manifests only — this layer is cached as long as no
+# package.json or lockfile in the roar-backend dependency tree changes.
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/package-lock.json ./package-lock.json
 
 RUN npm ci --ignore-scripts
 
-# Copy source for packages that must be built.
-# Layer order: packages with fewer transitive deps first so cache busts are narrow.
-COPY packages/config-typescript/  packages/config-typescript/
-COPY packages/assessment-schema/  packages/assessment-schema/
-COPY packages/api-contract/       packages/api-contract/
-COPY apps/backend/                apps/backend/
-COPY turbo.json                   ./
+# Copy full pruned source and build
+COPY --from=pruner /app/out/full/ .
 
 # turbo resolves build order automatically (assessment-schema and api-contract
 # before the backend).
 RUN turbo build --filter=roar-backend
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Stage 2 — Assessment runtime
+# Stage 3 — Assessment runtime
 # Serves as both migration runner and API server in docker-compose.assessment.yml.
 # ──────────────────────────────────────────────────────────────────────────────
 FROM node:22-slim AS assessment-runtime
@@ -81,7 +80,6 @@ COPY --from=builder /app/apps/backend/src/db                       ./apps/backen
 # Package manifests for `cd apps/backend && npm run` commands inside the container
 COPY --from=builder /app/package.json                           ./package.json
 COPY --from=builder /app/apps/backend/package.json              ./apps/backend/package.json
-COPY --from=builder /app/apps/assessments/roar-pa/package.json  ./apps/assessments/roar-pa/package.json
 
 # FDW setup script — lives at repo root/scripts/, not in turbo prune output.
 # Copied directly from build context.
@@ -94,7 +92,7 @@ EXPOSE 4000
 CMD ["node", "apps/backend/dist/server.js"]
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Stage 3 — Firebase Auth emulator (independent)
+# Stage 4 — Firebase Auth emulator (independent)
 # ──────────────────────────────────────────────────────────────────────────────
 FROM node:22-slim AS firebase-emulator
 
