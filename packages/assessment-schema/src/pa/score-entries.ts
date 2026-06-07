@@ -105,11 +105,24 @@ export function toPaScoreEntries(
   }
 
   // Process composite and composite_foundational groups
+  // Use different domains to avoid natural-key collision on (type, domain, name, assessmentStage)
   for (const groupKey of ['composite', 'composite_foundational']) {
     const groupScores = computed[groupKey];
     if (groupScores) {
+      // Use different domain for composite_foundational to distinguish from composite
+      const domain = groupKey === 'composite_foundational' ? 'pa_foundational' : PA_TASK_ID;
+      const addWithDomain = (name: PaScoreName, value: unknown) => {
+        if (value == null) return;
+        entries.push({
+          type: 'computed',
+          domain,
+          name,
+          value: String(value),
+        });
+      };
+
       for (const summaryName of SUMMARY_NAMES) {
-        add(summaryName, groupScores[summaryName]);
+        addWithDomain(summaryName, groupScores[summaryName]);
       }
     }
   }

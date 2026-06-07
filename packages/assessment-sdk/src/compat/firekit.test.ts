@@ -52,7 +52,7 @@ function setupFetchMock(runId: string): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn();
   fetchMock.mockImplementation((url: string | Request) => {
     // Extract URL string from Request object if needed
-    const urlString = typeof url === 'string' ? url : url.url;
+    const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
     // Return 200 OK for event endpoints (POST /runs/:runId/event) - check this first
     if (urlString.includes('/event')) {
@@ -737,7 +737,7 @@ describe('firekit compat', () => {
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation((url: string | Request) => {
-          const urlString = typeof url === 'string' ? url : url.url;
+          const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
           if (urlString.includes('/runs') && !urlString.includes('/event')) {
             return Promise.resolve({
               status: StatusCodes.CREATED,
@@ -784,7 +784,7 @@ describe('firekit compat', () => {
 
     it('accumulates multiple interactions in buffer', async () => {
       const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
         if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
@@ -832,7 +832,7 @@ describe('firekit compat', () => {
 
     it('clears buffer after writeTrial', async () => {
       const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
         if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
@@ -879,7 +879,7 @@ describe('firekit compat', () => {
     it('restores interactions to buffer if writeTrial fails', async () => {
       let callCount = 0;
       const fetchMock = vi.fn().mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
         if (urlString.includes('/runs') && !urlString.includes('/event')) {
           return Promise.resolve({
             status: StatusCodes.CREATED,
@@ -963,7 +963,7 @@ describe('firekit compat', () => {
     it('retrieves variant params with happy path', async () => {
       const fetchMock = vi.fn();
       fetchMock.mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
         // Handle variant lookup
         if (urlString.includes('/tasks/task-123/variants/variant-456')) {
@@ -1015,7 +1015,7 @@ describe('firekit compat', () => {
     it('returns empty params when variant has no parameters', async () => {
       const fetchMock = vi.fn();
       fetchMock.mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
         if (urlString.includes('/tasks/task-123/variants/variant-456')) {
           return Promise.resolve({
@@ -1059,7 +1059,7 @@ describe('firekit compat', () => {
     it('propagates SDKError from command on variant not found', async () => {
       const fetchMock = vi.fn();
       fetchMock.mockImplementation((url: string | Request) => {
-        const urlString = typeof url === 'string' ? url : url.url;
+        const urlString = typeof url === 'string' ? url : (url as { url?: string }).url || '';
 
         if (urlString.includes('/tasks/task-123/variants/variant-456')) {
           return Promise.resolve({

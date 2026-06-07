@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { pa, PA_SCORING_VERSION } from '@roar-dashboard/assessment-schema';
+import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
 // Import necessary for async in the top level of the experiment script
@@ -104,6 +105,9 @@ onAuthStateChanged(auth, async (user) => {
         taskVersion,
         isAnonymous: true,
       });
+
+      // Wire PA score computation pipeline
+      wireScoreAdapter();
 
       const userParams = {
         assessmentPid,
