@@ -1,8 +1,7 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig } from 'cypress';
 
 export default defineConfig({
-  projectId: '7xux4p',
+  projectId: process.env.CYPRESS_PROJECT_ID ?? undefined,
   e2e: {
     experimentalRunAllSpecs: true,
     retries: 2,

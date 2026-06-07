@@ -1,10 +1,11 @@
-// Firebase imports
 import store from 'store2';
 import _omitBy from 'lodash/omitBy';
 import _isNull from 'lodash/isNull';
 import i18next from 'i18next';
 import _isUndefined from 'lodash/isUndefined';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
+import { pa } from '@roar-dashboard/assessment-schema';
+import { writeTrial, finishRun, addInteraction, updateUser } from '@yeatmanlab/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { jsPsych } from '../jsPsych';
 import { RoarScores } from '../scores';
@@ -14,7 +15,7 @@ import { paValidityEvaluator } from '../experiment';
 const makePid = () => {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  // eslint-disable-next-line max-len, no-plusplus
+
   for (let i = 0; i < 16; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
@@ -51,7 +52,6 @@ const getStoryOption = (opt, grade) => {
       story = true;
     }
     // Note: we use == instead of === in order to compare against both undefined and null
-    // eslint-disable-next-line eqeqeq
   } else if (opt == undefined) {
     story = true;
   } else if (opt === true) {
@@ -66,7 +66,7 @@ const getStoryOption = (opt, grade) => {
   return story;
 };
 
-export const initConfig = async (firekit, gameParams, userParams, displayElement) => {
+export const initConfig = async (gameParams, userParams, displayElement) => {
   const cleanParams = _omitBy(_omitBy({ ...gameParams, ...userParams }, _isNull), _isUndefined);
 
   const {
@@ -106,8 +106,10 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
 
   if (language !== 'en') i18next.changeLanguage(language);
 
+  const taskId = language === 'en' ? pa.PA_TASK_ID : `${pa.PA_TASK_ID}-${language}`;
+
   const config = {
-    taskId: firekit.task.taskId,
+    taskId,
     pid: assessmentPid,
     labId,
     userMode: userMode || 'fixed',
@@ -116,7 +118,7 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
     userMetadata: { ...userMetadata, grade, ...ageData },
     startTime: new Date(),
     language,
-    firekit,
+    runStarted: true,
     skipInstructions: skipInstructions ?? true,
     numTestItems: parseInt(numTestItems, 10),
     story: computedStoryParam,
@@ -136,13 +138,19 @@ export const initConfig = async (firekit, gameParams, userParams, displayElement
   // Temporarily reset story to whatever the input value was. This is a
   // temporary solution while the ``story`` parameter is being deprecated.
   updatedGameParams.story = story;
-  await config.firekit.updateTaskParams(updatedGameParams);
+
+  // updateTaskParams is deprecated and will be removed in a future version.
+  console.warn('[roar-pa] updateTaskParams is deprecated and has no effect.');
 
   if (config.pid) {
-    await config.firekit.updateUser({
-      assessmentPid: config.pid,
-      ...config.userMetadata,
-    });
+    try {
+      await updateUser({
+        assessmentPid: config.pid,
+        ...config.userMetadata,
+      });
+    } catch (err) {
+      console.error('[roar-pa] updateUser failed (non-fatal):', err);
+    }
   }
 
   return config;
@@ -157,25 +165,26 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+
       code.apply(fn, arguments);
     };
 
   jsPsych.opts.on_finish = extend(jsPsych.opts.on_finish, () => {
     paValidityEvaluator.markAsCompleted();
-    config.firekit.finishRun();
+    finishRun().catch((err) => console.error('[roar-pa] finishRun failed:', err));
   });
 
   const roarScores = new RoarScores();
   jsPsych.opts.on_data_update = extend(jsPsych.opts.on_data_update, (data) => {
     if (data.save_trial) {
-      config.firekit.writeTrial(data, roarScores.computedScoreCallback.bind(roarScores));
+      writeTrial(data, roarScores.computedScoreCallback.bind(roarScores)).catch((err) =>
+        console.error('[roar-pa] writeTrial failed:', err),
+      );
     }
   });
   jsPsych.opts.on_interaction_data_update = function (data) {
-    config.firekit.addInteraction(data);
+    addInteraction(data);
   };
 };
 
@@ -184,13 +193,16 @@ export const initRoarTimeline = (config) => {
   const beginningTimeline = {
     timeline: getUserDataTimeline,
     on_timeline_finish: async () => {
-      // eslint-disable-next-line no-param-reassign
       config.pid = config.pid || makePid();
-      await config.firekit.updateUser({
-        assessmentPid: config.pid,
-        labId: config.labId,
-        ...config.userMetadata,
-      });
+      try {
+        await updateUser({
+          assessmentPid: config.pid,
+          labId: config.labId,
+          ...config.userMetadata,
+        });
+      } catch (err) {
+        console.error('[roar-pa] updateUser failed (non-fatal):', err);
+      }
     },
   };
 

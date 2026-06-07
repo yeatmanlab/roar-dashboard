@@ -1,8 +1,8 @@
 const path = require('path');
 const webpack = require('webpack');
-// eslint-disable-next-line import/no-extraneous-dependencies
+
 const { merge } = require('webpack-merge');
-// eslint-disable-next-line import/no-extraneous-dependencies
+
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 const dotenv = require('dotenv');
@@ -139,6 +139,17 @@ const developmentConfig = merge(webConfig, {
     client: {
       overlay: false,
     },
+    // Proxy /v1 to the local backend so the browser sees a same-origin request —
+    // no CORS headers needed on the backend. Mirrors how Firebase Hosting proxies
+    // to Cloud Run in staging/production.
+    proxy: [
+      {
+        context: ['/v1'],
+        target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+        secure: false,
+        changeOrigin: true,
+      },
+    ],
   },
 });
 
@@ -149,6 +160,9 @@ module.exports = async (env, args) => {
     plugins: [
       new webpack.DefinePlugin({
         ROAR_DB: JSON.stringify(roarDB),
+        // Default to '/v1' so dev builds use relative URLs proxied by webpack-dev-server.
+        // Set ROAR_API_BASE_URL for production — full URL including /v1.
+        ROAR_API_BASE_URL: JSON.stringify(process.env.ROAR_API_BASE_URL || '/v1'),
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
@@ -162,12 +176,10 @@ module.exports = async (env, args) => {
   const devFirebaseConfig = {
     plugins: [
       new webpack.EnvironmentPlugin({
-        FIREBASE_APP_API_KEY: '',
-        FIREBASE_APP_AUTH_DOMAIN: '',
-        FIREBASE_APP_PROJECT_ID: '',
-        FIREBASE_APP_STORAGE_BUCKET: '',
-        FIREBASE_APP_MESSAGING_SENDER_ID: '',
-        FIREBASE_APP_APP_ID: '',
+        // Empty string by default — connectAuthEmulator() in serve.js only fires when
+        // this is explicitly set (e.g. by assessment-environment:up). Regular dev builds
+        // connecting to a real Firebase project are unaffected.
+        FIREBASE_AUTH_EMULATOR_HOST: '',
       }),
     ],
   };

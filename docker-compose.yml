@@ -10,6 +10,8 @@ services:
   #
   # After first run, initialise the store and model:
   #   npm run fga:init -w apps/backend
+  #
+  # Requires Docker Compose v2 (docker compose, not docker-compose).
   # –––––––––––––––––––––––––––––––––––––––––––––––– #
   openfga:
     container_name: openfga
@@ -19,8 +21,8 @@ services:
       openfga-migrate:
         condition: service_completed_successfully
     ports:
-      - '5050:8080'  # HTTP API
-      - '5052:8081'  # gRPC
+      - "5050:8080" # HTTP API
+      - "5052:8081" # gRPC
     volumes:
       - ./certs:/certs:ro
     environment:
@@ -31,7 +33,7 @@ services:
       - OPENFGA_HTTP_TLS_CERT=/certs/roar-local.crt
       - OPENFGA_HTTP_TLS_KEY=/certs/roar-local.key
     extra_hosts:
-      - 'host.docker.internal:host-gateway'
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   # Nginx reverse proxy for the OpenFGA Playground.
@@ -43,7 +45,7 @@ services:
     depends_on:
       - openfga
     ports:
-      - '5051:5051'
+      - "5051:5051"
     volumes:
       - ./openfga-playground.nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
@@ -58,5 +60,5 @@ services:
       - OPENFGA_DATASTORE_ENGINE=postgres
       - OPENFGA_DATASTORE_URI=postgres://${PG_USER:-postgres}:${PG_PASSWORD:-postgres}@host.docker.internal:5432/roar_openfga
     extra_hosts:
-      - 'host.docker.internal:host-gateway'
+      - "host.docker.internal:host-gateway"
     restart: on-failure

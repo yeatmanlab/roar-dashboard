@@ -1,9 +1,9 @@
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
-# roar-dashboard/deploy
+# roar-dashboard/deploy-firebase-hosting
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
 
-name: Deploy
-description: Deploys the ROAR Dashboard to Firebase Hosting.
+name: Deploy Firebase Hosting
+description: Deploys a ROAR application to Firebase Hosting.
 outputs:
   deployment-url:
     description: "The URL of the deployed application."
@@ -24,6 +24,17 @@ inputs:
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
+  dist-path:
+    description: "Path to the built dist directory to deploy."
+    required: false
+    default: "build/apps/dashboard/dist"
+  firebase-config-path:
+    description: "Path to the firebase.json config file, relative to the repository root."
+    required: true
+  firebase-hosting-site:
+    description: "Firebase Hosting site ID to deploy to (e.g. roar-phoneme-staging). Required when the Firebase project hosts multiple sites."
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -56,8 +67,11 @@ runs:
       shell: bash
       run: |
         mkdir app
-        cp -r build/apps/dashboard/dist app/dist
-        cp build/apps/dashboard/firebase/admin/firebase.json app/firebase.json
+        cp -r ${{ inputs.dist-path }} app/dist
+        cp ${{ inputs.firebase-config-path }} app/firebase.json
+        if [ -n "${{ inputs.firebase-hosting-site }}" ]; then
+          jq --arg site "${{ inputs.firebase-hosting-site }}" '.hosting.site = $site' app/firebase.json > app/firebase.tmp.json && mv app/firebase.tmp.json app/firebase.json
+        fi
         cd app && pwd && ls -la
 
     # Deploy application
@@ -71,6 +85,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         repoToken: "${{ inputs.github-token }}"
         projectId: "${{ inputs.firebase-project-id }}"
+        expires: "${{ inputs.expires }}"
         entryPoint: ./app
 
     - name: Deploy application

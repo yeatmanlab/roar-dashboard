@@ -6,12 +6,23 @@
   "main": "src/index.js",
   "module": "src/index.js",
   "type": "module",
+  "roar": {
+    "hosting": {
+      "staging": "roar-phoneme-monorepo-abc",
+      "production": "roar-phoneme",
+      "test": "test"
+    }
+  },
   "scripts": {
     "//": "build is a no-op: Vite resolves imports via 'main' (src/index.js) directly, so no webpack output is needed for dashboard#dev.",
     "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
-    "build:dev": "npx webpack --mode production --env dbmode=development",
-    "predev": "fkill :8000 -f || true",
-    "dev": "npx webpack serve --open --mode development --env dbmode=development",
+    "build:staging": "webpack --mode production --env dbmode=staging",
+    "build:production": "webpack --mode production --env dbmode=production",
+    "predev": "if lsof -i :8000 -sTCP:LISTEN >/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':8000 '; then echo 'Error: port 8000 is already in use. Stop that process before starting the dev server.' >&2; exit 1; fi",
+    "dev": "bash ../../../scripts/dev-platform.sh",
+    "dev:ci": "npx webpack serve --mode development --env dbmode=development",
+    "assessment-environment:up": "bash ../../../scripts/assessment-env-up.sh",
+    "assessment-environment:down": "docker compose -f ../../../docker-compose.assessment.yml down -v",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
@@ -20,8 +31,9 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
+    "@roar-dashboard/assessment-schema": "*",
+    "@yeatmanlab/assessment-sdk": "*",
     "@bdelab/jscat": "^5.2.2",
-    "@bdelab/roar-firekit": "9.11.0",
     "@bdelab/roar-utils": "^1.2.2",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.0",
     "@jspsych/plugin-audio-button-response": "^1.1.2",
@@ -56,6 +68,7 @@
     "@types/node": "^20.9.0",
     "babel-loader": "^8.2.5",
     "concurrently": "^9.1.0",
+    "firebase-tools": "^15.18.0",
     "css-loader": "^6.7.1",
     "csv-loader": "^3.0.5",
     "cypress": "^13.6.4",
@@ -63,7 +76,6 @@
     "eslint": "^9.0.0",
     "eslint-plugin-cypress": "^5.1.0",
     "file-loader": "^6.2.0",
-    "fkill-cli": "^8.0.0",
     "folder-hash": "^4.0.2",
     "globals": "^16.0.0",
     "html-webpack-plugin": "^5.5.0",

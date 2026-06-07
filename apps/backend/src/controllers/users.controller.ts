@@ -293,6 +293,29 @@ export const UsersController = {
   },
 
   /**
+   * Register or retrieve an anonymous guest user.
+   *
+   * The Firebase UID from `req.decodedAnonymousUser` (set by AnonTokenMiddleware)
+   * is the sole identifier — no name, email, or memberships.
+   *
+   * @param authId - Firebase UID from the verified anonymous token.
+   */
+  createAnonymous: async (authId: string) => {
+    try {
+      const user = await userService.createAnonymousUser(authId);
+      return {
+        status: StatusCodes.OK as const,
+        body: { data: { id: user.id } },
+      };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return toErrorResponse(error, [StatusCodes.INTERNAL_SERVER_ERROR]);
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Get a longitudinal student score report for a guardian or supervisory caller.
    *
    * Authorization is delegated to ReportService.getGuardianStudentReport — the
