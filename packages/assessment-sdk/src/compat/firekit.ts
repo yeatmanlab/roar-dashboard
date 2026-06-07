@@ -238,6 +238,20 @@ export class FirekitFacade {
   }
 
   /**
+   * Internal method to accumulate raw scores from a trial.
+   * Called by writeTrial() to build up raw scores for later score computation.
+   * Returns undefined by default; can be overridden by assessment-specific implementations.
+   * @internal
+   * @param _subtask - The subtask key (e.g., 'fsm', 'lsm', 'del')
+   * @param _stage - The assessment stage ('practice' or 'test')
+   * @param _correct - Whether the trial was correct (1 or 0)
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _accumulateRawScore(_subtask: string, _stage: string, _correct: number): void {
+    // Default implementation does nothing; can be overridden
+  }
+
+  /**
    * Internal getter for logger.
    * Returns the logger from the CommandContext if available.
    * @internal
@@ -688,6 +702,13 @@ export async function writeTrial(
   // Coerce boolean correct values (legacy Firekit) to numbers
   const correct =
     typeof trialDataRecord['correct'] === 'boolean' ? (trialDataRecord['correct'] ? 1 : 0) : trialDataRecord['correct'];
+
+  // Accumulate raw scores from this trial for later score computation
+  // Extract subtask from trial data for PA assessments
+  const subtask = trialDataRecord['subtask'] as string | undefined;
+  if (subtask && facade._accumulateRawScore) {
+    facade._accumulateRawScore(subtask, assessmentStage, correct);
+  }
 
   // Drain buffered interactions from addInteraction() calls
   const bufferedInteractions = facade._drainInteractionBuffer();

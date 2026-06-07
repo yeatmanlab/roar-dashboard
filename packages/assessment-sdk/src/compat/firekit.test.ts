@@ -719,6 +719,87 @@ describe('firekit compat', () => {
         ) => Promise<void>
       >();
     });
+
+    it('accumulates raw scores and produces scores array when facade methods are wired', async () => {
+      const { fetchMock } = await initializeFirekitAndStartRun('run-computed-scores');
+
+      const facade = getFirekitCompat();
+
+      // Track if accumulation was called
+      let accumulationCalled = false;
+      let callbackCalled = false;
+
+      // Wire the facade methods to accumulate raw scores and return scores
+      const accumulatedRawScores: Record<string, Record<string, Record<string, number>>> = {};
+
+      facade._accumulateRawScore = (subtask: string, stage: string, correct: number) => {
+        accumulationCalled = true;
+        if (!accumulatedRawScores[subtask]) {
+          accumulatedRawScores[subtask] = {
+            practice: { numCorrect: 0, numAttempted: 0 },
+            test: { numCorrect: 0, numAttempted: 0 },
+          };
+        }
+        const stageScores = accumulatedRawScores[subtask]![stage]!;
+        stageScores.numAttempted += 1;
+        if (correct === 1) {
+          stageScores.numCorrect += 1;
+        }
+      };
+
+      facade._getRawScores = () => {
+        return Object.keys(accumulatedRawScores).length > 0 ? (accumulatedRawScores as RawScores) : undefined;
+      };
+
+      facade._getScoreAdapter = () => {
+        return (scores: ComputedScores) => {
+          // Mock adapter that converts computed scores to ScoreEntry array
+          const scoresRecord = scores as Record<string, unknown>;
+          return [
+            {
+              type: 'computed',
+              domain: 'test-domain',
+              name: 'testScore',
+              value: String(scoresRecord.testScore),
+            },
+          ];
+        };
+      };
+
+      // Write a trial with subtask and stage
+      const trialData: TrialData = {
+        subtask: 'fsm',
+        assessmentStage: 'test',
+        correct: 1,
+        response: 'A',
+        rt: 1500,
+      };
+
+      const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
+        callbackCalled = true;
+        const scoresRecord = rawScores as Record<string, Record<string, Record<string, number>>>;
+        const fsmScores = scoresRecord.fsm;
+        const testScores = fsmScores?.test;
+        const numCorrect = testScores?.numCorrect ?? 0;
+        return { testScore: numCorrect };
+      };
+
+      await expect(writeTrial(trialData, callback)).resolves.toBeUndefined();
+
+      // Verify that raw score accumulation was called
+      expect(accumulationCalled).toBe(true);
+
+      // Verify that the callback was invoked
+      expect(callbackCalled).toBe(true);
+
+      // Verify that the fetch call was made to the event endpoint
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/runs/run-computed-scores/event'),
+        expect.objectContaining({
+          method: 'POST',
+        }),
+      );
+    });
   });
 
   describe('addInteraction', () => {
