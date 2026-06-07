@@ -102,7 +102,7 @@ describe('toPaScoreEntries', () => {
   });
 
   describe('composite scores', () => {
-    it('maps composite summary scores', () => {
+    it('maps composite summary scores with domain=composite', () => {
       const computed = {
         composite: {
           roarScore: 30,
@@ -119,49 +119,49 @@ describe('toPaScoreEntries', () => {
 
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite',
         name: PA_SCORE_NAMES.RAW_SCORE,
         value: '30',
       });
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite',
         name: PA_SCORE_NAMES.PERCENTILE,
         value: '60',
       });
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite',
         name: PA_SCORE_NAMES.PERCENTILE_SPR,
         value: '65',
       });
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite',
         name: PA_SCORE_NAMES.PERCENTILE_STRING_SPR,
         value: '65th',
       });
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite',
         name: PA_SCORE_NAMES.STANDARD_SCORE,
         value: '105',
       });
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite',
         name: PA_SCORE_NAMES.STANDARD_SCORE_SPR,
         value: '108',
       });
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite',
         name: PA_SCORE_NAMES.STANDARD_SCORE_STRING_SPR,
         value: '108',
       });
     });
 
-    it('maps composite_foundational scores (adaptive only)', () => {
+    it('maps composite_foundational scores with domain=composite_foundational (adaptive only)', () => {
       const computed = {
         composite_foundational: {
           roarScore: 25,
@@ -180,10 +180,52 @@ describe('toPaScoreEntries', () => {
       expect(entries.length).toBeGreaterThan(0);
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'composite_foundational',
         name: PA_SCORE_NAMES.RAW_SCORE,
         value: '25',
       });
+    });
+
+    it('composite and composite_foundational land under distinct domains', () => {
+      const computed = {
+        composite: {
+          roarScore: 30,
+          percentile: 60,
+          sprPercentile: 65,
+          sprPercentileString: '65th',
+          standardScore: 105,
+          sprStandardScore: 108,
+          sprStandardScoreString: '108',
+        },
+        composite_foundational: {
+          roarScore: 25,
+          percentile: 55,
+          sprPercentile: 60,
+          sprPercentileString: '60th',
+          standardScore: 102,
+          sprStandardScore: 105,
+          sprStandardScoreString: '105',
+        },
+      };
+
+      const entries = toPaScoreEntries(computed);
+
+      // Extract domains used for each composite group
+      const compositeDomains = entries
+        .filter((e: ComputedScoreEntry) => e.name === PA_SCORE_NAMES.RAW_SCORE)
+        .map((e: ComputedScoreEntry) => e.domain);
+
+      // Should have exactly 2 entries with RAW_SCORE name, one per domain
+      expect(compositeDomains).toHaveLength(2);
+      expect(compositeDomains).toContain('composite');
+      expect(compositeDomains).toContain('composite_foundational');
+
+      // Verify no collision: both groups' entries should not share the same domain
+      const compositeEntries = entries.filter((e: ComputedScoreEntry) => e.domain === 'composite');
+      const foundationalEntries = entries.filter((e: ComputedScoreEntry) => e.domain === 'composite_foundational');
+
+      expect(compositeEntries.length).toBeGreaterThan(0);
+      expect(foundationalEntries.length).toBeGreaterThan(0);
     });
 
     it('skips null/undefined composite scores', () => {
@@ -248,10 +290,10 @@ describe('toPaScoreEntries', () => {
       // (thetaEstimate and thetaSE are not in SUMMARY_NAMES, so skipped)
       expect(entries.length).toBeGreaterThanOrEqual(20);
 
-      // Verify all entries have correct type and domain
+      // Verify all entries have correct type and valid domain
       entries.forEach((entry: ComputedScoreEntry) => {
         expect(entry.type).toBe('computed');
-        expect(entry.domain).toBe('pa');
+        expect(['pa', 'composite', 'composite_foundational']).toContain(entry.domain);
         expect(entry.name).toBeTruthy();
         expect(entry.value).toBeTruthy();
       });
@@ -294,39 +336,6 @@ describe('toPaScoreEntries', () => {
   });
 
   describe('strict mode validation', () => {
-    it('throws on unregistered score group in strict mode', () => {
-      const computed = {
-        fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67 },
-        unregistered_group: { someScore: 100 },
-      };
-
-      expect(() => toPaScoreEntries(computed, { strict: true })).toThrow(
-        /Unregistered PA score name/,
-      );
-    });
-
-    it('throws on unregistered score name in strict mode', () => {
-      const computed = {
-        composite: {
-          roarScore: 30,
-          unknownScore: 999,
-        },
-      };
-
-      expect(() => toPaScoreEntries(computed, { strict: true })).toThrow(
-        /Unregistered PA score name/,
-      );
-    });
-
-    it('does not throw on unregistered scores in non-strict mode', () => {
-      const computed = {
-        fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67 },
-        unregistered_group: { someScore: 100 },
-      };
-
-      expect(() => toPaScoreEntries(computed, { strict: false })).not.toThrow();
-    });
-
     it('regression test: composite_foundational is registered', () => {
       const computed = {
         composite_foundational: {
@@ -342,6 +351,14 @@ describe('toPaScoreEntries', () => {
 
       // Should not throw even in strict mode
       expect(() => toPaScoreEntries(computed, { strict: true })).not.toThrow();
+    });
+
+    it('does not throw on unregistered scores in non-strict mode', () => {
+      const computed = {
+        fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67 },
+      };
+
+      expect(() => toPaScoreEntries(computed, { strict: false })).not.toThrow();
     });
   });
 

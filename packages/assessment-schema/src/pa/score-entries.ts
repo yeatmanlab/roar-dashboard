@@ -1,6 +1,15 @@
 import { PA_SUBTASK_KEYS, PA_SUBSCORE_DEFS, PA_SCORE_NAMES, PA_TASK_ID, type PaScoreName } from './index.js';
 
 /**
+ * Score domain constants for PA assessment.
+ * These map to the backend's SCORE_DOMAIN values for proper recompute lookups.
+ */
+const SCORE_DOMAIN = {
+  COMPOSITE: 'composite',
+  COMPOSITE_FOUNDATIONAL: 'composite_foundational',
+} as const;
+
+/**
  * Score entry for computed scores (aggregates across stages).
  * Mirrors the shape of the api-contract ScoreEntry type but kept local
  * to avoid coupling assessment-schema to api-contract.
@@ -110,7 +119,8 @@ export function toPaScoreEntries(
     const groupScores = computed[groupKey];
     if (groupScores) {
       // Use different domain for composite_foundational to distinguish from composite
-      const domain = groupKey === 'composite_foundational' ? 'pa_foundational' : PA_TASK_ID;
+      // Domains must match backend SCORE_DOMAIN constants for recompute lookups
+      const domain = groupKey === 'composite_foundational' ? SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL : SCORE_DOMAIN.COMPOSITE;
       const addWithDomain = (name: PaScoreName, value: unknown) => {
         if (value == null) return;
         entries.push({
