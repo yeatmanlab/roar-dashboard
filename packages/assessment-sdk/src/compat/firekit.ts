@@ -596,8 +596,9 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * - Validates required fields (assessmentStage, correct) to prevent silent failures
  * - Coerces boolean correct values to numbers (true → 1, false → 0) for Firekit compatibility
  * - Normalizes assessment stages and interaction events to backend format
- * - Submits trial data via the WriteTrialCommand
- * - Supports optional computed score callback (not yet implemented)
+ * - Accumulates raw scores from trials (when subtask is provided)
+ * - Invokes optional computed score callback with accumulated raw scores
+ * - Converts computed scores to ScoreEntry[] and submits via the WriteTrialCommand
  *
  * **Required trial data fields:**
  * - `assessmentStage` or `assessment_stage`: ASSESSMENT_STAGE_PRACTICE, ASSESSMENT_STAGE_PRACTICE_RESPONSE, ASSESSMENT_STAGE_TEST, or ASSESSMENT_STAGE_TEST_RESPONSE (supports both camelCase and snake_case for backward compatibility)
@@ -610,7 +611,7 @@ export async function updateUser(userUpdateData: UpdateUserInput): UpdateUserOut
  * - Any other assessment-specific fields
  *
  * @param trialData - Trial data object containing assessment-specific trial information
- * @param computedScoreCallback - Optional callback function that receives raw scores and returns computed scores (not yet implemented)
+ * @param computedScoreCallback - Optional callback function that receives accumulated raw scores and returns computed scores. When provided, the callback is invoked with raw scores accumulated from all trials, and the returned computed scores are converted to ScoreEntry[] and submitted with the trial event.
  * @returns Promise<void> - Resolves when the trial event has been successfully submitted
  *
  * @throws {SDKError}
