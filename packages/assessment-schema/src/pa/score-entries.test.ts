@@ -14,8 +14,9 @@ describe('toPaScoreEntries', () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have 9 entries: 3 per subtask (correct, attempted, percentCorrect)
-      expect(entries).toHaveLength(9);
+      // Should have 6 entries: 2 per subtask (correct, percentCorrect)
+      // Note: #Attempted names are not emitted by scores.js callback
+      expect(entries).toHaveLength(6);
 
       // Verify FSM entries
       expect(entries).toContainEqual({
@@ -23,12 +24,6 @@ describe('toPaScoreEntries', () => {
         domain: 'pa',
         name: PA_SCORE_NAMES.FSM_CORRECT,
         value: '10',
-      });
-      expect(entries).toContainEqual({
-        type: 'computed',
-        domain: 'pa',
-        name: PA_SCORE_NAMES.FSM_ATTEMPTED,
-        value: '15',
       });
       expect(entries).toContainEqual({
         type: 'computed',
@@ -47,12 +42,6 @@ describe('toPaScoreEntries', () => {
       expect(entries).toContainEqual({
         type: 'computed',
         domain: 'pa',
-        name: PA_SCORE_NAMES.LSM_ATTEMPTED,
-        value: '15',
-      });
-      expect(entries).toContainEqual({
-        type: 'computed',
-        domain: 'pa',
         name: PA_SCORE_NAMES.LSM_PERCENT_CORRECT,
         value: '80',
       });
@@ -63,12 +52,6 @@ describe('toPaScoreEntries', () => {
         domain: 'pa',
         name: PA_SCORE_NAMES.DEL_CORRECT,
         value: '8',
-      });
-      expect(entries).toContainEqual({
-        type: 'computed',
-        domain: 'pa',
-        name: PA_SCORE_NAMES.DEL_ATTEMPTED,
-        value: '15',
       });
       expect(entries).toContainEqual({
         type: 'computed',
@@ -93,11 +76,7 @@ describe('toPaScoreEntries', () => {
           name: PA_SCORE_NAMES.LSM_CORRECT,
         }),
       );
-      expect(entries).not.toContainEqual(
-        expect.objectContaining({
-          name: PA_SCORE_NAMES.DEL_ATTEMPTED,
-        }),
-      );
+      // Note: #Attempted names are never emitted, so no need to test skipping them
     });
   });
 
@@ -286,8 +265,9 @@ describe('toPaScoreEntries', () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have: 9 subtask + 7 composite + 7 composite_foundational = 23 entries
+      // Should have: 6 subtask (2 per subtask: correct, percentCorrect) + 7 composite + 7 composite_foundational = 20 entries
       // (thetaEstimate and thetaSE are not in SUMMARY_NAMES, so skipped)
+      // (#Attempted names are not emitted by scores.js callback)
       expect(entries.length).toBeGreaterThanOrEqual(20);
 
       // Verify all entries have correct type and valid domain
@@ -322,8 +302,9 @@ describe('toPaScoreEntries', () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have: 9 subtask + 7 composite = 16 entries
-      expect(entries.length).toBeGreaterThanOrEqual(15);
+      // Should have: 6 subtask + 7 composite = 13 entries
+      // (#Attempted names are not emitted by scores.js callback)
+      expect(entries.length).toBeGreaterThanOrEqual(13);
 
       // Verify roarScore is included in subtask entries
       expect(entries).toContainEqual(
@@ -377,9 +358,10 @@ describe('toPaScoreEntries', () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should only have FSM entries
+      // Should only have FSM entries (2 per subtask: correct, percentCorrect)
+      // Note: #Attempted names are not emitted by scores.js callback
       const fsmEntries = entries.filter((e: ComputedScoreEntry) => e.name.startsWith('fsm'));
-      expect(fsmEntries.length).toBe(3);
+      expect(fsmEntries.length).toBe(2);
 
       const lsmEntries = entries.filter((e: ComputedScoreEntry) => e.name.startsWith('lsm'));
       expect(lsmEntries.length).toBe(0);

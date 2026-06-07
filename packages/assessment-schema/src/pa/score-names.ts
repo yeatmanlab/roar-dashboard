@@ -2,6 +2,10 @@
  * Canonical run_scores.name strings written by the PA scoring callback.
  * This is the single source of truth — both the assessment and the backend
  * scoring registry import from here to prevent field-name drift.
+ *
+ * Note: #Attempted names are not emitted by scores.js (which only tracks
+ * numCorrect and percentCorrect per subtask). They are kept in PA_SUBSCORE_DEFS
+ * for UI display purposes but should never appear in run_scores.
  */
 export const PA_SCORE_NAMES = {
   // Summary scores
@@ -15,17 +19,14 @@ export const PA_SCORE_NAMES = {
 
   // FSM subscores (First Sound Match)
   FSM_CORRECT: "fsmCorrect",
-  FSM_ATTEMPTED: "fsmAttempted",
   FSM_PERCENT_CORRECT: "fsmPercentCorrect",
 
   // LSM subscores (Last Sound Match)
   LSM_CORRECT: "lsmCorrect",
-  LSM_ATTEMPTED: "lsmAttempted",
   LSM_PERCENT_CORRECT: "lsmPercentCorrect",
 
   // DEL subscores (Delete)
   DEL_CORRECT: "delCorrect",
-  DEL_ATTEMPTED: "delAttempted",
   DEL_PERCENT_CORRECT: "delPercentCorrect",
 } as const;
 

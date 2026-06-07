@@ -12,7 +12,8 @@ const SCORE_DOMAIN = {
 /**
  * Score entry for computed scores (aggregates across stages).
  * Mirrors the shape of the api-contract ScoreEntry type but kept local
- * to avoid coupling assessment-schema to api-contract.
+ * to avoid coupling assessment-schema to api-contract at build time.
+ * The adapter return type is verified at runtime in CI with strict: true.
  */
 export interface ComputedScoreEntry {
   type: 'computed';
@@ -108,7 +109,8 @@ export function toPaScoreEntries(
     if (subtaskScores) {
       const def = PA_SUBSCORE_DEFS[subtaskKey];
       add(def.correctName, subtaskScores.numCorrect);
-      add(def.attemptedName, subtaskScores.numAttempted);
+      // Note: #Attempted names are not emitted by scores.js callback
+      // They are kept in PA_SUBSCORE_DEFS for UI display only
       add(def.percentCorrectName, subtaskScores.percentCorrect);
     }
   }
