@@ -170,8 +170,6 @@ jobs:
   # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   deploy-frontend:
-    # TODO: Re-enable after frontend deployment testing is complete (project/backend-refactor)
-    if: false
     name: Deploy frontend
     needs: [deploy-backend]
     runs-on: ubuntu-latest
@@ -191,10 +189,10 @@ jobs:
 
       - name: Deploy app
         uses: ./.github/actions/deploy-firebase-hosting
-        id: deployment
         with:
           firebase-channel: default
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          firebase-hosting-site: roar-dashboard-production
           gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
           dist-path: build/apps/dashboard/dist
@@ -209,4 +207,8 @@ jobs:
         with:
           environment: production
           sourcemaps: ./app/dist/assets/*.js.map
-          version: ${{ inputs.version }}
+          # Push-triggered runs (temporary, during the backend refactor) have no release version,
+          # so fall back to the commit SHA. release.yml-driven runs pass an explicit version.
+          version: ${{ inputs.version || github.sha }}
+          # Don't fail the release when the previous release commit is unreachable (shallow checkout).
+          ignore_missing: true
