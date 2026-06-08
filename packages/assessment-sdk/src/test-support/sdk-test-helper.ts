@@ -6,7 +6,7 @@
 
 import { initAssessmentSdk } from '../index';
 import type { CommandContext } from '../command/command';
-import type { TestFixture } from '@roar-dashboard/api-contract/test-fixture.type';
+import type { TestFixture } from '@roar-platform/api-contract/test-fixture.type';
 
 /**
  * Gets the backend port from the global setup.

@@ -7,7 +7,7 @@ import {
   cert,
   getApps,
 } from 'firebase-admin/app';
-import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-dashboard/assessment-schema';
+import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
 import { logger } from '../logger';
 
 /**

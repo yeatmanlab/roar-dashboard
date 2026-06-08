@@ -1,4 +1,4 @@
-import { config as base } from '@roar-dashboard/eslint-config';
+import { config as base } from '@roar-platform/eslint-config';
 import cypress from 'eslint-plugin-cypress/flat';
 import globals from 'globals';
 

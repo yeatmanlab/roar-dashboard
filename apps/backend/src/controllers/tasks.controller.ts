@@ -9,7 +9,7 @@ import type {
   Json,
   CreateTaskRequestBody,
   UpdateTaskRequestBody,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import type { Task, TaskVariant } from '../db/schema';
 import { StatusCodes } from 'http-status-codes';
 import { TaskService } from '../services/task/task.service';

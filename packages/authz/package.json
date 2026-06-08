@@ -1,5 +1,5 @@
 {
-  "name": "@roar-dashboard/authz",
+  "name": "@roar-platform/authz",
   "version": "0.0.1",
   "private": true,
   "scripts": {

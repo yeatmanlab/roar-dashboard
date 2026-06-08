@@ -7,7 +7,7 @@ import type {
   RecordUserAgreementRequestBody,
   GuardianStudentReportResponse,
   AdministrationsListQuery,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { UserService } from '../services/user';
 import { ReportService } from '../services/report/report.service';

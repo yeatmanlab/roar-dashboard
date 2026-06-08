@@ -23,7 +23,7 @@ import type {
   UpdateAdministrationRequest,
   IndividualStudentReportQuery,
   IndividualStudentReportResponse,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import type {
   AgreementWithVersion,
   AssignmentWithOptional,

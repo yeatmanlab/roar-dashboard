@@ -7,7 +7,7 @@
 </template>
 <script setup>
 import RoarSWR from '@bdelab/roar-swr';
-import RoarPA from '@roar-dashboard/roar-pa';
+import RoarPA from '@roar-platform/roar-pa';
 import RoarSRE from '@bdelab/roar-sre';
 import { useAuthStore } from '@/store/auth';
 import { toRaw, onMounted, ref, watch } from 'vue';

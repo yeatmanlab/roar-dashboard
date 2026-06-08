@@ -7,17 +7,17 @@
 </template>
 <script setup>
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
-import '@roar-dashboard/roar-pa/src/experiment/styles/roar.css';
+import '@roar-platform/roar-pa/src/experiment/styles/roar.css';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
-import { initFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
-import { PA_TASK_ID } from '@roar-dashboard/assessment-schema/pa';
+import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { PA_TASK_ID } from '@roar-platform/assessment-schema/roar-pa';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { getRoarApiClient } from '@/clients/roar-api';
 import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
-import { version } from '@roar-dashboard/roar-pa/package.json';
+import { version } from '@roar-platform/roar-pa/package.json';
 
 const props = defineProps({
   taskId: { type: String, default: PA_TASK_ID },
@@ -65,7 +65,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('@roar-dashboard/roar-pa')).default;
+    TaskLauncher = (await import('@roar-platform/roar-pa')).default;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }

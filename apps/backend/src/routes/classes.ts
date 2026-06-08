@@ -1,6 +1,6 @@
 import type { Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
-import { ClassesContract } from '@roar-dashboard/api-contract';
+import { ClassesContract } from '@roar-platform/api-contract';
 import { ClassesController } from '../controllers/classes.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 

@@ -41,7 +41,7 @@ import 'dotenv/config';
 import fs from 'fs';
 import http from 'http';
 import type { Express } from 'express';
-import type { TestFixture } from '@roar-dashboard/api-contract/test-fixture.type';
+import type { TestFixture } from '@roar-platform/api-contract/test-fixture.type';
 import { initializeDatabasePools, closeDatabasePools } from './db/clients';
 import { truncateAllTables, runMigrations, setupFdwForTests } from './test-support/db';
 import { seedBaseFixture, type BaseFixture } from './test-support/fixtures';
