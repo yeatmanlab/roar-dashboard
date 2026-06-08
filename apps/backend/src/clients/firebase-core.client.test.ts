@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
 import { FirebaseCoreClient } from './firebase-core.client';
-import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-dashboard/assessment-schema';
+import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-platform/assessment-schema';
 import {
   initializeApp,
   getApp as getAdminApp,
