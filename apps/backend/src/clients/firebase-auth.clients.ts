@@ -38,7 +38,7 @@ export const FirebaseAuthClient: Auth = new Proxy({} as Auth, {
   has(_target, prop) {
     return Reflect.has(getAuthInstance(), prop);
   },
-  ownKeys(_target) {
+  ownKeys() {
     return Reflect.ownKeys(getAuthInstance());
   },
   getOwnPropertyDescriptor(_target, prop) {
