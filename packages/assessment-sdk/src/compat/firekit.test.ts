@@ -590,6 +590,19 @@ describe('firekit compat', () => {
         response: 'correct',
         rt: 500,
       };
+      // NOTE: This test uses a stub callback, not the actual RoarScores.computedScoreCallback
+      // from apps/assessments/roar-pa/src/experiment/scores.js.
+      //
+      // Architectural constraint: assessment-schema cannot depend on roar-pa to avoid
+      // coupling the shared schema package to a specific assessment implementation.
+      //
+      // Drift detection: If RoarScores.computedScoreCallback changes its output shape
+      // (e.g., adds/removes fields, changes field names), this will be caught by:
+      // 1. Integration tests in roar-api.integration.test.ts that exercise the real
+      //    scoring path end-to-end (real RoarScores → toPaScoreEntries → backend)
+      // 2. The compile-time type check in score-entries.ts that ensures
+      //    ComputedScoreEntry remains compatible with api-contract's ScoreEntry
+      // 3. Runtime validation in pa-firekit-facade.js with strict: true mode
       const callback = async (rawScores: RawScores): Promise<ComputedScores> => {
         return { computed: rawScores };
       };

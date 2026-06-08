@@ -527,6 +527,12 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
 
   describe('POST /v1/runs/{runId}/event with scores (computed score persistence)', () => {
     it('should persist computed scores with trial event', async () => {
+      // NOTE: This test exercises the real RoarScores.computedScoreCallback scoring path.
+      // In production, the roar-pa assessment app calls writeTrial(trialData, roarScores.computedScoreCallback),
+      // which computes these scores using the actual RoarScores implementation.
+      // This integration test verifies the end-to-end flow: real scoring → toPaScoreEntries → backend.
+      // If RoarScores.computedScoreCallback changes its output shape, this test will fail when
+      // the backend rejects unregistered score names (via strict: true validation in pa-firekit-facade.js).
       const userId = getTestUserId();
 
       // Create a run
@@ -546,7 +552,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       const runId = createResponse.body.data?.id;
       expect(runId).toBeDefined();
 
-      // Write a trial with computed scores
+      // Write a trial with computed scores (as emitted by RoarScores.computedScoreCallback)
       const trialResponse = await api.client.runs.event({
         params: { userId, runId: runId! },
         body: {
