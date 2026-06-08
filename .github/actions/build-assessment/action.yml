@@ -1,0 +1,32 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/build-assessment
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Build Assessment
+description: Builds a ROAR assessment application.
+inputs:
+  assessment:
+    description: "Assessment directory name under apps/assessments/ (e.g. roar-pa)."
+    required: true
+  build-script:
+    description: "npm script to run for the build (e.g. build:staging, build:production)."
+    required: true
+  roar-api-base-url:
+    description: "Full base URL for the ROAR backend API, including /v1 (e.g. https://api.staging.roar.education/v1). Baked into the bundle at build time."
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup environment
+      uses: ./.github/actions/setup-node-environment
+
+    - name: Build workspace packages
+      shell: bash
+      run: npx turbo run build --filter='./packages/*'
+
+    - name: Build assessment
+      shell: bash
+      env:
+        ROAR_API_BASE_URL: ${{ inputs.roar-api-base-url }}
+      run: npm run ${{ inputs.build-script }} -w apps/assessments/${{ inputs.assessment }}

@@ -18,7 +18,7 @@ const requestLog = logger.child(
 /**
  * Routes to exclude from request logging (e.g., health checks).
  */
-const EXCLUDED_ROUTES = ['/health', '/ready'];
+const EXCLUDED_ROUTES = new Set(['/health/live', '/health/startup', '/health/ready']);
 
 /**
  * Express middleware that logs HTTP request/response details.
@@ -31,7 +31,7 @@ const EXCLUDED_ROUTES = ['/health', '/ready'];
  */
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
   // Skip logging for excluded routes
-  if (EXCLUDED_ROUTES.includes(req.path)) {
+  if (EXCLUDED_ROUTES.has(req.path)) {
     return next();
   }
 

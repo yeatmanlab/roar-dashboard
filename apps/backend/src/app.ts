@@ -5,15 +5,14 @@ import { registerAllRoutes } from './routes';
 import { errorHandler } from './error-handler';
 import { requestLogger } from './middleware/request-logger/request-logger.middleware';
 import { ApiErrorCode } from './enums/api-error-code.enum';
+import { healthRouter } from './health/health-routes';
 
 const app = express();
 
 app.use(requestLogger);
 app.use(express.json());
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(StatusCodes.OK).json({ status: 'ok' });
-});
+app.use(healthRouter);
 
 registerAllRoutes(app);
 

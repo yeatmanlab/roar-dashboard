@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
 import { FirebaseCoreClient } from './firebase-core.client';
+import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-dashboard/assessment-schema';
 import {
   initializeApp,
   getApp as getAdminApp,
@@ -124,9 +125,12 @@ describe('FirebaseCoreClient', () => {
     expect(app).toBe(mockApp);
   });
 
-  it('initializes with project ID only when FIREBASE_AUTH_EMULATOR_HOST is set', () => {
+  it('initializes with the emulator project ID when FIREBASE_AUTH_EMULATOR_HOST is set, ignoring project env vars', () => {
     process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
-    process.env.GOOGLE_CLOUD_PROJECT = 'mock-emulator-project';
+    // A real project ID in the environment must not override the emulator project
+    // ID, which has to match the emulator's --project flag exactly.
+    process.env.GCLOUD_PROJECT = 'gcloud-project';
+    process.env.GOOGLE_CLOUD_PROJECT = 'google-cloud-project';
 
     const mockApp = { name: 'mock-emulator-app' };
     getAppsMock.mockReturnValue([]);
@@ -134,39 +138,11 @@ describe('FirebaseCoreClient', () => {
 
     const app = FirebaseCoreClient.getApp();
 
-    // No credential is resolved in emulator mode — the Admin SDK does not
-    // contact real Google services when the emulator host is set.
+    // No credential is resolved in emulator mode.
     expect(applicationDefaultMock).not.toHaveBeenCalled();
     expect(certMock).not.toHaveBeenCalled();
-    expect(initializeAppMock).toHaveBeenCalledWith({ projectId: 'mock-emulator-project' });
+    expect(initializeAppMock).toHaveBeenCalledWith({ projectId: FIREBASE_EMULATOR_PROJECT_ID });
     expect(app).toBe(mockApp);
-  });
-
-  it('falls back to a sentinel project ID in emulator mode when no project env var is set', () => {
-    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
-
-    const mockApp = { name: 'mock-emulator-fallback-app' };
-    getAppsMock.mockReturnValue([]);
-    initializeAppMock.mockReturnValue(mockApp);
-
-    const app = FirebaseCoreClient.getApp();
-
-    expect(initializeAppMock).toHaveBeenCalledWith({ projectId: 'demo-roar-test' });
-    expect(app).toBe(mockApp);
-  });
-
-  it('prefers GCLOUD_PROJECT over GOOGLE_CLOUD_PROJECT in emulator mode', () => {
-    process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
-    process.env.GCLOUD_PROJECT = 'gcloud-project';
-    process.env.GOOGLE_CLOUD_PROJECT = 'google-cloud-project';
-
-    const mockApp = { name: 'mock-app' };
-    getAppsMock.mockReturnValue([]);
-    initializeAppMock.mockReturnValue(mockApp);
-
-    FirebaseCoreClient.getApp();
-
-    expect(initializeAppMock).toHaveBeenCalledWith({ projectId: 'gcloud-project' });
   });
 
   it('clearCache resets the cached app and allows re-initialization', () => {

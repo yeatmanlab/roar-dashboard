@@ -4,6 +4,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { config } from '@dotenvx/dotenvx';
+import dsv from '@rollup/plugin-dsv';
 import { fileURLToPath, URL } from 'url';
 import path from 'path';
 import fs from 'fs';
@@ -116,6 +117,18 @@ const buildFirebaseConfig = (mode = 'development') => {
   const cspTemplate = replaceEnvVars(fs.readFileSync(cspTemplatePath, 'utf8'));
   const cspObj = JSON.parse(cspTemplate);
 
+  // Append the ROAR backend origin to connect-src so the ts-rest API client can reach it.
+  // Derives the origin from VITE_ROAR_API_BASE_URL (which includes the /v1 path prefix).
+  const roarApiBaseUrl = process.env.VITE_ROAR_API_BASE_URL;
+  if (roarApiBaseUrl) {
+    try {
+      const roarApiOrigin = new URL(roarApiBaseUrl).origin;
+      cspObj['connect-src'] = [...(cspObj['connect-src'] ?? []), roarApiOrigin];
+    } catch {
+      console.warn(`VITE_ROAR_API_BASE_URL is not a valid URL: ${roarApiBaseUrl}`);
+    }
+  }
+
   // Join arrays into single-line policy
   const cspPolicy = Object.entries(cspObj)
     .map(([dir, vals]) => `${dir} ${vals.join(' ')}`)
@@ -167,6 +180,7 @@ export default defineConfig(({ mode }) => {
           process: true,
         },
       }),
+      dsv(),
       UnheadVite(),
       ...(process.env.NODE_ENV !== 'development'
         ? [
@@ -180,9 +194,23 @@ export default defineConfig(({ mode }) => {
     ],
 
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
+      // Ensure a single jspsych instance across all manually-chunked assessment packages.
+      // Without this, Rollup may create multiple copies whose ParameterType enums initialize
+      // in an undefined order, causing "Cannot read properties of undefined (reading 'BOOL')".
+      dedupe: ['jspsych'],
+      alias: [
+        { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
+        // @roar-dashboard/assessment-schema is not reliably resolved through workspace
+        // symlinks when using subpath exports (e.g. /pa). Point all subpath imports to
+        // the pre-built dist so Vite doesn't fail on unresolved package exports.
+        //
+        // The capture group `(\/[^/]+)?` matches a single subpath segment or nothing;
+        // `$1` is spliced in by JS regex replace — giving e.g. `.../dist/pa/index.js`.
+        {
+          find: /^@roar-dashboard\/assessment-schema(\/[^/]+)?$/,
+          replacement: fileURLToPath(new URL('../../packages/assessment-schema/dist', import.meta.url)) + '$1/index.js',
+        },
+      ],
     },
 
     server: {
@@ -199,6 +227,19 @@ export default defineConfig(({ mode }) => {
               cert: fs.readFileSync(path.resolve(__dirname, '../../certs/roar-local.crt')),
             }
           : false,
+      // Proxy /v1 to the local backend so the browser sees same-origin requests —
+      // mirrors how Firebase Hosting proxies to Cloud Run in staging/production.
+      ...(process.env.NODE_ENV === 'development'
+        ? {
+            proxy: {
+              '/v1': {
+                target: process.env.BACKEND_URL ?? 'https://localhost:4000',
+                secure: false,
+                changeOrigin: true,
+              },
+            },
+          }
+        : {}),
     },
 
     preview: {
@@ -216,11 +257,13 @@ export default defineConfig(({ mode }) => {
             tanstack: ['@tanstack/vue-query'],
             chartJs: ['chart.js'],
             sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
+            // jspsych must be its own chunk so it initializes (and exports ParameterType) before
+            // any assessment plugin chunk that accesses ParameterType at module evaluation time.
+            jspsych: ['jspsych'],
             roam: ['@bdelab/roam-apps'],
             firekit: ['@bdelab/roar-firekit'],
             letter: ['@bdelab/roar-letter'],
             multichoice: ['@bdelab/roar-multichoice'],
-            phoneme: ['@bdelab/roar-pa'],
             sre: ['@bdelab/roar-sre'],
             swr: ['@bdelab/roar-swr'],
             utils: ['@bdelab/roar-utils'],
@@ -229,6 +272,7 @@ export default defineConfig(({ mode }) => {
             crowding: ['@bdelab/roav-crowding'],
             'roav-mep': ['@bdelab/roav-mep'],
             'roar-readaloud': ['@bdelab/roar-readaloud'],
+            phoneme: ['@roar-dashboard/roar-pa'],
           },
         },
       },

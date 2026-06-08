@@ -7,6 +7,7 @@ import {
   cert,
   getApps,
 } from 'firebase-admin/app';
+import { FIREBASE_EMULATOR_PROJECT_ID } from '@roar-dashboard/assessment-schema';
 import { logger } from '../logger';
 
 /**
@@ -52,17 +53,12 @@ export class FirebaseCoreClient {
       return this.appInstance;
     }
 
-    // Emulator mode: when FIREBASE_AUTH_EMULATOR_HOST is set, the Admin SDK
-    // talks to the local Auth emulator and skips signature verification on
-    // emulator-issued tokens. In that mode we don't need (and don't have) a
-    // real Google credential — `applicationDefault()` would attempt a metadata
-    // server lookup and fail in CI. Initialize with project ID only.
-    //
-    // Used by `apps/backend/src/server-test.ts` when CI sets the env var to
-    // boot the backend against a Firebase Auth emulator container.
+    // When the Auth emulator is active, the Admin SDK routes token verification to localhost
+    // and does not validate credentials — no credential object needed.
+    // The project ID must match the emulator's --project flag exactly; GOOGLE_CLOUD_PROJECT
+    // may hold a real project ID and must not override it here.
     if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-      const projectId = process.env.GCLOUD_PROJECT ?? process.env.GOOGLE_CLOUD_PROJECT ?? 'demo-roar-test';
-      this.appInstance = initializeApp({ projectId });
+      this.appInstance = initializeApp({ projectId: FIREBASE_EMULATOR_PROJECT_ID });
       return this.appInstance;
     }
 

@@ -4,6 +4,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 optionalGames.forEach((game) => {
   let isCurrentAppVersion;
 
+  // SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
   describe.skip(`Optional Participant Assessment: ${game.name}`, () => {
     before(async () => {
       isCurrentAppVersion = await isCurrentVersion(game.app);

@@ -1,0 +1,5 @@
+"trial_type","theta.min","theta.max","theta.mean","theta.sd","transformation.scale","transformation.shift"
+"composite",-6,6,0,1,1.818227295,-1.414714477
+"fsm",-6,6,0,1,NA,NA
+"del",-6,6,0,1,NA,NA
+"lsm",-6,6,0,1,NA,NA

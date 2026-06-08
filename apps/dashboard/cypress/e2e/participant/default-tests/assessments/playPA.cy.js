@@ -1,9 +1,10 @@
 import { playPA } from '../../../../support/helper-functions/roar-pa/paHelpers';
 import { isCurrentVersion } from '../../../../support/utils';
 
-const app = '@bdelab/roar-pa';
+const app = '@roar-dashboard/roar-pa';
 let isCurrentAppVersion;
 
+// SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
 describe.skip('Participant Assessment: ROAR Phoneme', () => {
   before(async () => {
     isCurrentAppVersion = await isCurrentVersion(app);

@@ -1,6 +1,5 @@
 import { sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
+import type { NodePgDatabase, NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
 import type { TablesRelationalConfig } from 'drizzle-orm/relations';
 

@@ -1208,4 +1208,85 @@ describe('UserService', () => {
       );
     });
   });
+
+  describe('createAnonymousUser', () => {
+    const authId = 'firebase-anon-uid-abc123';
+
+    it('returns existing user ID when findByAuthId finds a record (idempotency)', async () => {
+      const existingUser = UserFactory.build();
+      mockUserRepository.findByAuthId.mockResolvedValue(existingUser);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      const result = await userService.createAnonymousUser(authId);
+
+      expect(result).toEqual({ id: existingUser.id });
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('creates a new user with assessmentPid derived from authId when none exists', async () => {
+      const newUser = UserFactory.build();
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue({ id: newUser.id });
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      await userService.createAnonymousUser(authId);
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            authId,
+            assessmentPid: expect.any(String),
+          }),
+        }),
+      );
+    });
+
+    it('creates the user as UserType.STUDENT', async () => {
+      const newUser = UserFactory.build();
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue({ id: newUser.id });
+
+      const userService = UserService({ userRepository: mockUserRepository });
+      await userService.createAnonymousUser(authId);
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ userType: 'student' }),
+        }),
+      );
+    });
+
+    it('re-throws ApiError from findByAuthId without wrapping', async () => {
+      const apiError = new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+      });
+      mockUserRepository.findByAuthId.mockRejectedValue(apiError);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+
+      await expect(userService.createAnonymousUser(authId)).rejects.toBe(apiError);
+    });
+
+    it('wraps unknown errors from userRepository.create in ApiError INTERNAL_SERVER_ERROR', async () => {
+      const dbError = new Error('db conn failed');
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockRejectedValue(dbError);
+
+      const userService = UserService({ userRepository: mockUserRepository });
+
+      await expect(userService.createAnonymousUser(authId)).rejects.toMatchObject({
+        message: ApiErrorMessage.INTERNAL_SERVER_ERROR,
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { authId },
+        cause: dbError,
+      });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: dbError, context: { authId } }),
+        'Failed to create anonymous user',
+      );
+    });
+  });
 });
