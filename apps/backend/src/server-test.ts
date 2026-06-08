@@ -38,6 +38,14 @@ import { logger } from './logger';
 
 const { PORT = '4000', TEST_FIXTURE_FILE = '/tmp/roar-test-fixture.json' } = process.env;
 
+// This server is run with NODE_ENV=production to exercise the built artifact, which makes
+// ALLOWED_ORIGINS a required var (parseAllowedOrigins throws when it is unset in production).
+// Default it to localhost so the test harness boots; SDK requests are server-to-server, so the
+// CORS allowlist value is irrelevant here. A real deployment must still set ALLOWED_ORIGINS.
+if (!process.env.ALLOWED_ORIGINS) {
+  process.env.ALLOWED_ORIGINS = 'https://localhost:5173';
+}
+
 let server: http.Server;
 
 /**
