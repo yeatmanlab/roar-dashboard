@@ -136,7 +136,7 @@ describe('TaskRepository', () => {
         const created = await Promise.all(
           inputs.map((name, idx) =>
             TaskFactory.create({
-              slug: `case-insensitive-name-${idx}-${name.toLowerCase()}`,
+              slug: `ci-name-${idx}-${name.toLowerCase()}`,
               name,
             }),
           ),
@@ -157,10 +157,13 @@ describe('TaskRepository', () => {
         expect(seededNames).toEqual(['Apple', 'banana', 'BlueBerry', 'cherry']);
       });
 
-      it('sorts by slug case-insensitively across mixed-case values', async () => {
-        const slugs = ['banana-slug', 'Apple-slug', 'cherry-slug', 'BlueBerry-slug'];
+      it('sorts by slug ascending', async () => {
+        // Slugs are constrained to lowercase by `tasks_slug_format`, so the
+        // LOWER(slug) sort key equals the stored value; this guards ascending
+        // slug ordering (the descending direction is covered above).
+        const slugs = ['banana-slug', 'apple-slug', 'cherry-slug', 'blueberry-slug'];
         const created = await Promise.all(
-          slugs.map((slug) => TaskFactory.create({ slug, name: `Case insensitive slug ${slug}` })),
+          slugs.map((slug) => TaskFactory.create({ slug, name: `Slug sort ${slug}` })),
         );
         const createdIds = new Set(created.map((t) => t.id));
 
@@ -172,7 +175,7 @@ describe('TaskRepository', () => {
 
         const seededSlugs = result.items.filter((t) => createdIds.has(t.id)).map((t) => t.slug);
 
-        expect(seededSlugs).toEqual(['Apple-slug', 'banana-slug', 'BlueBerry-slug', 'cherry-slug']);
+        expect(seededSlugs).toEqual(['apple-slug', 'banana-slug', 'blueberry-slug', 'cherry-slug']);
       });
 
       it('maintains stable order with secondary sort on id', async () => {
