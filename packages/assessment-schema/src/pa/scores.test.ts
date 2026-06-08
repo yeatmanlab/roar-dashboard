@@ -52,6 +52,13 @@ interface ScoringConfig {
 /**
  * Mock RoarScores class for testing the scoring logic.
  * This mirrors the actual implementation in apps/assessments/roar-pa/src/experiment/scores.js
+ *
+ * Note: We use a mock rather than importing the actual RoarScores class because:
+ * - The actual implementation is in a browser-based assessment app (roar-pa)
+ * - assessment-schema is a shared package that shouldn't depend on specific assessments
+ * - This mock allows us to test the scoring math in isolation
+ * - If the actual RoarScores implementation drifts from this mock, the integration tests
+ *   in firekit.test.ts will catch the divergence
  */
 class MockRoarScores {
   scoringVersion: number;
