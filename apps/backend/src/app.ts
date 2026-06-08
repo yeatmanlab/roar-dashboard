@@ -12,9 +12,11 @@ import { healthRouter } from './health/health-routes';
 
 const app = express();
 
+// requestLogger is registered first so every request is logged — including CORS preflight
+// (OPTIONS), which corsMiddleware short-circuits with a 204 before later middleware run.
+app.use(requestLogger);
 app.use(securityHeadersMiddleware);
 app.use(corsMiddleware);
-app.use(requestLogger);
 app.use(express.json());
 
 app.use(healthRouter);

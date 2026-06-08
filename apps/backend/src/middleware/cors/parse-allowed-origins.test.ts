@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { logger } from '../../logger';
 import { parseAllowedOrigins } from './parse-allowed-origins';
 
@@ -51,5 +51,22 @@ describe('parseAllowedOrigins', () => {
   it('does not log a warning when origins are provided', () => {
     parseAllowedOrigins('https://a.com');
     expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  describe('production', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('throws when ALLOWED_ORIGINS is unset or empty in production', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      expect(() => parseAllowedOrigins(undefined)).toThrow(/ALLOWED_ORIGINS/);
+      expect(() => parseAllowedOrigins('   ,  ,  ')).toThrow(/ALLOWED_ORIGINS/);
+    });
+
+    it('still returns provided origins in production', () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      expect(parseAllowedOrigins('https://app.example.com')).toEqual(['https://app.example.com']);
+    });
   });
 });

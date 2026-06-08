@@ -1,6 +1,9 @@
 import cors from 'cors';
 import { parseAllowedOrigins } from './parse-allowed-origins';
 
+// Evaluated once at import time, so the allowlist is frozen for the process's lifetime;
+// changing ALLOWED_ORIGINS requires a restart. This is deliberately eager (unlike the lazy
+// env reads in fga.client.ts) because origins do not change within a running deployment.
 const allowedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
 
 /**
