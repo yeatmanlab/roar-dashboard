@@ -7,7 +7,6 @@
 </template>
 <script setup>
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
-import '@roar-platform/roar-pa/src/experiment/styles/roar.css';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';

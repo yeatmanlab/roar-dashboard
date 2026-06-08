@@ -1,0 +1,115 @@
+name: Deploy Assessments to Production
+
+on:
+  workflow_call:
+    inputs:
+      assessments:
+        description: 'JSON array of assessment names to deploy (e.g. ["roar-pa"])'
+        type: string
+        required: true
+    secrets:
+      FIREBASE_PROJECT_ID:
+        required: true
+      GCP_WORKLOAD_IDENTITY_PROVIDER:
+        required: true
+      FIREBASE_HOSTING_SERVICE_ACCOUNT_ID:
+        required: true
+      ROAR_API_BASE_URL:
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      assessment:
+        description: 'Assessment to deploy (e.g. roar-pa). Leave empty to deploy all.'
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Build matrix from inputs
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  prepare-matrix:
+    name: Prepare deployment matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+    steps:
+      - name: Build matrix
+        id: build-matrix
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            assessment="${{ inputs.assessment }}"
+            if [ -n "$assessment" ]; then
+              echo "matrix=$(jq -c -n --arg a "$assessment" '[$a]')" >> $GITHUB_OUTPUT
+            else
+              # No specific assessment given — fall back to all known deployable assessments.
+              # When adding a new assessment (e.g. roar-swr), append its name here:
+              #   echo "matrix=[\"roar-pa\",\"roar-swr\"]" >> $GITHUB_OUTPUT
+              echo "matrix=[\"roar-pa\"]" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "matrix=${{ inputs.assessments }}" >> $GITHUB_OUTPUT
+          fi
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Production approval gate
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  approval:
+    name: Request production deployment approval
+    needs: [prepare-matrix]
+    runs-on: ubuntu-latest
+    environment: assessments:production
+    timeout-minutes: 30
+    steps:
+      - name: Approval granted
+        run: echo "Approval granted, proceeding with assessment deployment to production."
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Build and deploy each assessment
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  deploy:
+    name: Deploy ${{ matrix.assessment }} to production
+    needs: [prepare-matrix, approval]
+    if: needs.prepare-matrix.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    environment: assessments:production
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        assessment: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Read hosting site name
+        id: hosting
+        run: |
+          site=$(jq -r '.roar.hosting.production' apps/assessments/${{ matrix.assessment }}/package.json)
+          echo "site=$site" >> $GITHUB_OUTPUT
+
+      - name: Build assessment
+        uses: ./.github/actions/build-assessment
+        with:
+          assessment: ${{ matrix.assessment }}
+          build-script: build:production
+          roar-api-base-url: ${{ secrets.ROAR_API_BASE_URL }}
+
+      - name: Deploy to Firebase Hosting
+        uses: ./.github/actions/deploy-firebase-hosting
+        with:
+          firebase-channel: default
+          firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
+          dist-path: apps/assessments/${{ matrix.assessment }}/dist
+          firebase-config-path: apps/assessments/${{ matrix.assessment }}/firebase.json
+          firebase-hosting-site: ${{ steps.hosting.outputs.site }}
