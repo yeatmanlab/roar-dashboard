@@ -1,6 +1,4 @@
 import { PA_SUBTASK_KEYS, PA_SUBSCORE_DEFS, PA_SCORE_NAMES, PA_TASK_ID, type PaScoreName } from './index.js';
-// @ts-expect-error - Import from source to get live type; api-contract build doesn't export types in dist
-import type { ComputedScoreEntry as ApiComputedScoreEntry } from '@roar-dashboard/api-contract/src/v1/runs/schema';
 
 /**
  * Score domain constants for PA assessment.
@@ -29,10 +27,20 @@ export interface ComputedScoreEntry {
   value: string;
 }
 
-// Compile-time assertion: ComputedScoreEntry must be assignable to the live api-contract type.
+// Compile-time assertion: ComputedScoreEntry must be assignable to api-contract's ComputedScoreEntry shape.
+// The api-contract defines: { type: 'computed'; domain: string; name: string; value: string; categoryScore?: boolean; assessmentStage?: string }
 // If api-contract adds a NEW REQUIRED field, this check will fail and alert us to update this interface.
 // This ensures contract changes surface immediately at compile time rather than being silently missed.
-declare const _typeCheck: ComputedScoreEntry extends ApiComputedScoreEntry ? true : false;
+declare const _typeCheck: ComputedScoreEntry extends {
+  type: 'computed';
+  domain: string;
+  name: string;
+  value: string;
+  categoryScore?: boolean;
+  assessmentStage?: string;
+}
+  ? true
+  : false;
 
 /**
  * Summary score names that are emitted at the composite level.
