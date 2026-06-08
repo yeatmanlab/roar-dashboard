@@ -1,0 +1,142 @@
+{
+  "loading": "Das Spiel wird geladen...",
+  "labID": "Labor-ID",
+  "participantID": "Teilnehmer*in-ID",
+  "progressBar": "Vorgang abgeschlossen",
+  "buttonLabel": "Weiter",
+  "preloadTrial": {
+    "messageText": "Bitte warte, während das Spiel geladen wird. Dies kann einige Minuten dauern."
+  },
+  "fullScreenTrial": {
+    "prompt": "Das Spiel wird jetzt in den Vollbildmodus wechseln. <br/> Klicke auf 'Weiter' um zu starten.",
+    "buttonText": "Weiter"
+  },
+  "navigation": {
+    "continueButtonText": "Drücke <span class='yellow'>EINE BELIEBIGE TASTE</span>, {{action}}",
+    "continueButtonTextMobile": "Drücke <span class='yellow'>HIER</span>, {{action}}"
+  },
+  "introTrials": {
+    "trial1": {
+      "header1": "Willkommen in der Welt der Lexikalisierung!",
+      "paragraph1": "Du bist ein Zauberer, der nach dem Tor sucht, das dich nach Hause auf die Erde zurückführt. Um das Tor zu erreichen, musst du durch Länder reisen, die von magischen Wächtern beherrscht werden.",
+      "paragraph2": "Damit die Wächter dich durch ihr Land lassen, musst du den Unterschied zwischen erfundenen und echten Wörtern erkennen.&nbsp;",
+      "header2": "Willkommen bei der Einzelworterkennungsaufgabe!",
+      "paragraph3": "Bei dieser Aufgabe wirst du Wörter sehen, die schnell in der Mitte des Bildschirms erscheinen.",
+      "paragraph4": "Du musst dann den Unterschied zwischen erfundenen und echten Wörtern erkennen.&nbsp;"
+    },
+    "trial2": {
+      "header": "Du wirst sehen, dass entweder ein echtes oder ein erfundenes Wort sehr schnell in der Mitte des Bildschirms erscheint.",
+      "paragraph1": "Die erfundenen Wörter sehen vielleicht wie deutsche Wörter aus, haben aber auf Deutsch keine Bedeutung. Zum Beispiel sind „gor“, „Bowe“ oder „Kladurf“ erfundene Wörter. <span class='orange'><b>Wenn du ein erfundenes Wort siehst, drücke die LINKE PFEILTASTE.</b></span>",
+      "paragraph2": "Die echten Wörter werden diejenigen sein, die du als Wörter erkennst. Es handelt sich um deutsche Wörter wie „ist“, „und“, „Korb“ oder „Katze“. <span class='blue'><b> Wenn du ein echtes Wort siehst, drücke die RECHTE PFEILTASTE.</b></span>"
+    },
+    "trial3": {
+      "header": "Lass uns wiederholen, welche Taste wir für erfundene und welche für echte Wörter drücken.",
+      "paragraph1": "Versuche so genau wie möglich zu antworten.",
+      "paragraph2": "Manche Wörter werden schwer sein und das ist in Ordnung. Wenn du dir nicht sicher bist, kannst du einfach raten!"
+    },
+    "postPracticeTrial": {
+      "header1": "Gut gemacht! Du bist bereit, die Reise zu beginnen.",
+      "header2": "Gut gemacht! Du bist bereit mit der eigentlichen Aufgabe zu beginnen!",
+      "paragraph1": "Unterwegs wirst du Goldmünzen verdienen.",
+      "paragraph2": "Viel Glück!"
+    }
+  },
+  "practiceFeedbackTrial": {
+    "paragraph1": "Du hast auf den {{direction}}n Pfeil gedrückt, der für {{typeWord}} Wörter steht!",
+    "paragraph2": "ist ein {{typeWord}}s Wort. Drücke auf den {{direction}}n Pfeil, um fortzufahren.",
+    "arrowChoicesImgAlt": "Pfeiloptionen"
+  },
+  "gameBreakTrials": {
+    "midBlockTrials": {
+      "trial1": {
+        "header1": "Gut gemacht!",
+        "paragraph1": "Du hast die Hälfte des Tals schon durchquert und beschließt, in der Nähe eines kleinen Dorfes zu zelten.",
+        "paragraph2": "Im Dorf triffst du einen weiteren Abenteurer, der sich deiner Reise anschließt!",
+        "header2": "Gut gemacht!",
+        "paragraph3": "Du hast schon die Hälfte des ersten Blocks geschafft.",
+        "paragraph4": "Du kannst eine kurze Pause machen und weitermachen, sobald du bereit bist."
+      },
+      "trial2": {
+        "header1": "Toll!",
+        "paragraph1": "Nach ein paar Reisetagen kommst du bei einem Gasthof an!",
+        "paragraph2": "Dort triffst du einen weiteren Abenteurer, der sich deiner Reise anschließt!",
+        "header2": "Toll!",
+        "paragraph3": "Du hast schon die Hälfte des zweiten Blocks geschafft.",
+        "paragraph4": "Du kannst eine kurze Pause machen und weitermachen, sobald du bereit bist."
+      },
+      "trial3": {
+        "header1": "Prima!",
+        "paragraph1": "Du hast die Hälfte des Tals schon durchquert und beschließt, in der Nähe eines kleinen Dorfes zu zelten.",
+        "paragraph2": "Im Dorf triffst du einen weiteren Abenteurer, der sich deiner Reise anschließt!",
+        "header2": "Prima!",
+        "paragraph3": "Du hast schon die Hälfte des dritten Blocks geschafft.",
+        "paragraph4": "Du kannst eine kurze Pause machen und weitermachen, sobald du bereit bist."
+      }
+    },
+    "postBlockTrials": {
+      "trial1": {
+        "header1": "Glückwunsch!",
+        "paragraph1": "Mit der Hilfe des Wächters hast du es durch das Tal geschafft.",
+        "paragraph2": "Du kommst dem Tor näher!",
+        "header2": "Glückwunsch!",
+        "paragraph3": "Du hast den ersten Block geschafft.",
+        "paragraph4": "Du kannst eine kurze Pause machen und weitermachen, sobald du bereit bist."
+      },
+      "trial2": {
+        "header1": "Glückwunsch!",
+        "paragraph1": "Mit der Hilfe des Wächters hast du es durch das Tal geschafft.",
+        "paragraph2": "Nur noch ein Tal bis zum Tor!",
+        "header2": "Glückwunsch!",
+        "paragraph3": "Du hast den zweiten Block geschafft.",
+        "paragraph4": "Du kannst eine kurze Pause machen und weitermachen, sobald du bereit bist."
+      },
+      "trial3": {
+        "header1": "Glückwunsch!",
+        "paragraph1": "Mit der Hilfe des Wächters hast du es durch das Tal geschafft.",
+        "paragraph2": "Du kommst dem Tor näher!",
+        "header2": "Großartige Arbeit!",
+        "paragraph3": "Du hast diesen Block geschafft.",
+        "paragraph4": "Du kannst eine kurze Pause machen und weitermachen, sobald du bereit bist."
+      }
+    },
+    "finalTrial": {
+      "header1": "Endlich hast du den Wächter und das Tor gefunden, das dich nach Hause bringt!",
+      "paragraph1": "Du verwendest deine Münzen, um das Tor zu öffnen.",
+      "paragraph2": "Du verabschiedest dich von deinen neuen Freundinnen und Freunden und verlässt die Welt der Lexikalisierung. Bis zum nächsten Mal!",
+      "header2": "Herzlichen Glückwunsch!",
+      "paragraph3": "Du hast die Einzelworterkennungsaufgabe abgeschlossen.",
+      "paragraph4": "Danke für deine großartige Arbeit!"
+    }
+  },
+  "imagesAlt": {
+    "arrowKeys": "Pfeiltasten",
+    "leftArrow": "linke Pfeiltaste",
+    "rightArrow": "rechte Pfeiltaste",
+    "valley": "Hintergrundbild mit Hügeln und Bäumen",
+    "adventurer1": "Abenteurer mit Harfe",
+    "adventurer2": "Abenteurer, der Regenbögen macht",
+    "adventurer3": "Abenteurer, der Herzformen macht",
+    "wizardCoin": "Zauberer, der Münzen herstellt",
+    "guardian1": "oranger Dinosaurier-Wächter",
+    "guardian2": "blauer Drachen-Wächter",
+    "endingBackground": "Landschaft mit Bäumen",
+    "guardian3": "zwinkerndes Einhorn",
+    "endingGateCoinbag": "Tor mit Münzbeutel-Animation",
+    "wizardWand": "Zauberer, der einen Zauberstab schwingt",
+    "leftArrowIntro": "erfundenes Wort, drücke die linke Pfeiltaste",
+    "rightArrowIntro": "echtes Wort, drücke die rechte Pfeiltaste"
+  },
+  "terms": {
+    "__comment1__": "z.B. 'drücke eine beliebige Taste, um weiterzufahren/zu üben/zu beginnen'",
+    "continue": "damit es weitergeht",
+    "practice": "um zu üben",
+    "begin": "um zu beginnen",
+    "gold": "Goldmünzen",
+    "left": "linke",
+    "right": "rechte",
+    "__comment2__": "d.h. 'xop ist ein erfundenes/echtes Wort'",
+    "real": "echte",
+    "made-up": "erfundene",
+    "save": "um deine Arbeit speichern"
+  }
+}

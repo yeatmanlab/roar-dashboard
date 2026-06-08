@@ -1,14 +1,25 @@
-<br />
+# ROAR-SWR (v3.x)
 
-<div align="center">
-  <a href="https://github.com/yeatmanlab/roar-dashboard">
-    <img width="120" alt="Logo" src="https://github.com/yeatmanlab/roar-dashboard/blob/main/apps/dashboard/src/assets/roar-short-logo.png?raw=true">
-  </a>
+Development for jsPsych version of ROAR-Single Word Recognition.
+Versions and their dependencies are packaged within
+folders to ensure continued functionality as new test versions are deployed.
 
-  <h3 align="center">ROAR Dashboard</h3>
-  <p>This web app serves as the participant and administrator dashboard for the Rapid Online Assessment of Reading (ROAR) platform.</p>
-  
-  [![Deploy to Dev](https://github.com/yeatmanlab/roar-dashboard/actions/workflows/deploy-development.yml/badge.svg)](https://github.com/yeatmanlab/roar-dashboard/actions/workflows/deploy-development.yml)
-  [![Deploy to Staging](https://github.com/yeatmanlab/roar-dashboard/actions/workflows/deploy-staging.yml/badge.svg)](https://github.com/yeatmanlab/roar-dashboard/actions/workflows/deploy-staging.yml)
-  [![Deploy to Production](https://github.com/yeatmanlab/roar-dashboard/actions/workflows/deploy-production.yml/badge.svg)](https://github.com/yeatmanlab/roar-dashboard/actions/workflows/deploy-production.yml)
-</div>
+## Links
+
+- Deployed experiment available https://roar-word.web.app
+- Staging environment available at https://roar-word-staging.web.app
+
+## Instructions for Testing
+
+- To run tests use the command npx playwright test
+
+  - Optionally add --trace on flag to get detailed logs (flags go at the end of the command)
+  - To pass in arguments (env variables) use all caps and prefix before the command
+    Ex. MODE=demo npx playwright test
+
+- To change the values being tested, you can change the variable values in testHelperFunctions.js located in the **tests**/e2e folder
+
+- To change what modes are being tested, comment them in or out in the testHelperFunctions.js file. Any tests that are commented in or out must also be commented in or out in the github action file located in .github/workflows/firebase-preview.yml
+  - For example, if you want to test the fullRandom mode, you can comment it in in the the test helpers, and do the same in the github workflows file.
+
+NOTE: You may need to install some things from playwright for the test to run (it will tell when you run the command)
