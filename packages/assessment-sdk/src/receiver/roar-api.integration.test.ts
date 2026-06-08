@@ -715,8 +715,14 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
       });
 
       expect(firstWrite.status).toBe(200);
+      if (firstWrite.status !== 200 || !('data' in firstWrite.body)) {
+        throw new Error('Expected 200 with data in response');
+      }
+      expect(firstWrite.body.data?.status).toBe('ok');
 
       // Re-send the same score with updated value (should upsert, not duplicate)
+      // Natural key: (run_id, type, domain, name, assessment_stage)
+      // Both writes have identical keys, so the second should UPDATE the first row
       const secondWrite = await api.client.runs.event({
         params: { userId, runId: runId! },
         body: {
@@ -742,6 +748,14 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
         throw new Error('Expected 200 with data in response');
       }
       expect(secondWrite.body.data?.status).toBe('ok');
+
+      // Verify upsert behavior: exactly one record with the updated value
+      // TODO: Add database query to verify:
+      // - Exactly 1 row in run_scores with (run_id, type='computed', domain='pa', name='roarScore', assessment_stage=null)
+      // - That row has value='35' (not '30')
+      // This requires direct database access which is not currently exposed through the SDK API.
+      // For now, we verify both writes succeeded with 200 status, which is necessary but not sufficient
+      // to prove upsert behavior (could be two rows with same natural key if constraint is missing).
     });
   });
 });
