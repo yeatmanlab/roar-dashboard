@@ -208,6 +208,7 @@ jobs:
       # The dashboard bakes this into its bundle at build time so it can
       # reach the locally-running backend.
       VITE_ROAR_API_BASE_URL: http://127.0.0.1:4000
+      ALLOWED_ORIGINS: "http://127.0.0.1:4173"
 
     steps:
       - name: Checkout repository
@@ -237,7 +238,7 @@ jobs:
       # browser can both reach it on 127.0.0.1.
       - name: Install firebase-tools and start Auth emulator
         run: |
-          npm install --no-save firebase-tools
+          npm install --no-save firebase-tools@15
           cat > /tmp/firebase.json <<EOF
           {
             "emulators": {
