@@ -31,6 +31,9 @@ export interface ComputedScoreEntry {
 // The api-contract defines: { type: 'computed'; domain: string; name: string; value: string; categoryScore?: boolean; assessmentStage?: string }
 // If api-contract adds a NEW REQUIRED field, this check will fail and alert us to update this interface.
 // This ensures contract changes surface immediately at compile time rather than being silently missed.
+// NOTE: We use a hardcoded shape instead of importing the type because api-contract doesn't export
+// ComputedScoreEntry from its main entry point (only from dist/v1/runs/schema which isn't in exports).
+// When api-contract's exports are fixed, this can be changed to: declare const _typeCheck: ComputedScoreEntry extends ApiComputedScoreEntry ? true : false;
 declare const _typeCheck: ComputedScoreEntry extends {
   type: 'computed';
   domain: string;
