@@ -82,7 +82,8 @@ const SUMMARY_NAMES = [
  *
  * Output: Array of ScoreEntry objects with:
  * - type: 'computed' (PA computed scores are final aggregates)
- * - domain: PA_TASK_ID for subtask scores; 'composite' or 'composite_foundational' for composite scores
+ * - domain: 'pa' for subtask correct/percentCorrect; subtask key (fsm/lsm/del) for subtask theta fields;
+ *   'composite' or 'composite_foundational' for composite scores
  * - name: one of PA_SCORE_NAMES values
  * - value: stringified score value
  *
@@ -105,17 +106,19 @@ const SUMMARY_NAMES = [
  * // [
  * //   { type: 'computed', domain: 'pa', name: 'fsmCorrect', value: '10' },
  * //   { type: 'computed', domain: 'pa', name: 'fsmPercentCorrect', value: '67' },
- * //   { type: 'computed', domain: 'pa', name: 'thetaEstimate', value: '0.5' },
- * //   { type: 'computed', domain: 'pa', name: 'thetaSE', value: '0.2' },
+ * //   { type: 'computed', domain: 'fsm', name: 'thetaEstimate', value: '0.5' },
+ * //   { type: 'computed', domain: 'fsm', name: 'thetaSE', value: '0.2' },
  * //   { type: 'computed', domain: 'pa', name: 'lsmCorrect', value: '12' },
  * //   { type: 'computed', domain: 'pa', name: 'lsmPercentCorrect', value: '80' },
- * //   { type: 'computed', domain: 'pa', name: 'thetaEstimate', value: '0.8' },
- * //   { type: 'computed', domain: 'pa', name: 'thetaSE', value: '0.18' },
+ * //   { type: 'computed', domain: 'lsm', name: 'thetaEstimate', value: '0.8' },
+ * //   { type: 'computed', domain: 'lsm', name: 'thetaSE', value: '0.18' },
  * //   { type: 'computed', domain: 'composite', name: 'roarScore', value: '25' },
  * //   { type: 'computed', domain: 'composite', name: 'percentile', value: '60' },
  * //   { type: 'computed', domain: 'composite', name: 'standardScore', value: '105' },
+ * //   { type: 'computed', domain: 'composite', name: 'thetaEstimate', value: '0.65' },
  * //   { type: 'computed', domain: 'composite_foundational', name: 'roarScore', value: '22' },
  * //   { type: 'computed', domain: 'composite_foundational', name: 'percentile', value: '55' },
+ * //   { type: 'computed', domain: 'composite_foundational', name: 'thetaEstimate', value: '0.6' },
  * //   ...
  * // ]
  * ```
@@ -147,9 +150,24 @@ export function toPaScoreEntries(
       // Note: #Attempted names are not emitted by scores.js callback
       // They are kept in PA_SUBSCORE_DEFS for UI display only
       add(def.percentCorrectName, subtaskScores.percentCorrect);
-      // Emit theta fields for adaptive scoring (v4+)
-      add(PA_SCORE_NAMES.THETA_ESTIMATE, subtaskScores.thetaEstimate);
-      add(PA_SCORE_NAMES.THETA_SE, subtaskScores.thetaSE);
+      // Emit theta fields for adaptive scoring (v4+) using per-subtask domain
+      // to avoid natural-key collision on (type, domain, name, assessmentStage)
+      if (subtaskScores.thetaEstimate != null) {
+        entries.push({
+          type: 'computed',
+          domain: subtaskKeyLower,
+          name: PA_SCORE_NAMES.THETA_ESTIMATE,
+          value: String(subtaskScores.thetaEstimate),
+        });
+      }
+      if (subtaskScores.thetaSE != null) {
+        entries.push({
+          type: 'computed',
+          domain: subtaskKeyLower,
+          name: PA_SCORE_NAMES.THETA_SE,
+          value: String(subtaskScores.thetaSE),
+        });
+      }
     }
   }
 

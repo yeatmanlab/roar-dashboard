@@ -331,16 +331,17 @@ describe('toPaScoreEntries', () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Verify theta fields are emitted for subtask
+      // Verify theta fields are emitted for subtask with per-subtask domain
+      // to avoid natural-key collision on (type, domain, name, assessmentStage)
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'fsm',
         name: PA_SCORE_NAMES.THETA_ESTIMATE,
         value: '0.5',
       });
       expect(entries).toContainEqual({
         type: 'computed',
-        domain: 'pa',
+        domain: 'fsm',
         name: PA_SCORE_NAMES.THETA_SE,
         value: '0.15',
       });
