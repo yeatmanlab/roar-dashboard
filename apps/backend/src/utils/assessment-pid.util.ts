@@ -1,10 +1,11 @@
-import { createRequire } from 'node:module';
+// crc-32 is CJS-only. Use a default import so Rollup's commonjs() plugin can
+// statically resolve and bundle it into the production output. Named ESM imports
+// (import { str }) also work at build time, but a default import is more robust
+// across bundler CJS interop modes. In the distroless Docker image there are no
+// node_modules, so the module MUST be bundled — createRequire() won't work.
+import crc32Module from 'crc-32';
 
-// crc-32 is CJS-only; named ESM imports fail at runtime when the module is externalized.
-// createRequire loads it as CJS and avoids TypeScript organize-imports rewriting the call.
-const { str: crc32 } = createRequire(import.meta.url)('crc-32') as {
-  str: (data: string, seed?: number) => number;
-};
+const crc32 = crc32Module.str;
 
 /**
  * Generate a CRC32 hex checksum of a string.
