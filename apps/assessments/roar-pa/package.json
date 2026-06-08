@@ -1,10 +1,26 @@
 {
   "name": "@roar-platform/roar-pa",
   "description": "This is a 3-AFC task to measure phonological awareness",
-  "version": "5.1.0",
+  "version": "0.1.0",
   "author": "AnyaWMa <anyawma08@gmail.com>",
-  "main": "src/index.js",
-  "module": "src/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "package.json"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "type": "module",
   "roar": {
     "hosting": {
@@ -14,8 +30,7 @@
     }
   },
   "scripts": {
-    "//": "build is a no-op: Vite resolves imports via 'main' (src/index.js) directly, so no webpack output is needed for dashboard#dev.",
-    "build": "echo 'roar-pa: skipped (Vite uses src directly)'",
+    "build": "rollup -c rollup.lib.config.mjs",
     "build:staging": "webpack --mode production --env dbmode=staging",
     "build:production": "webpack --mode production --env dbmode=production",
     "predev": "if lsof -i :8000 -sTCP:LISTEN >/dev/null 2>&1 || ss -tlnp 2>/dev/null | grep -q ':8000 '; then echo 'Error: port 8000 is already in use. Stop that process before starting the dev server.' >&2; exit 1; fi",
@@ -31,8 +46,8 @@
   },
   "license": "STANFORD ACADEMIC SOFTWARE LICENSE FOR ROAR™",
   "dependencies": {
-    "@roar-platform/assessment-schema": "*",
-    "@roar-platform/assessment-sdk": "*",
+    "@roar-platform/assessment-schema": "^0.1.0",
+    "@roar-platform/assessment-sdk": "^0.1.0",
     "@bdelab/jscat": "^5.2.2",
     "@bdelab/roar-utils": "^1.2.2",
     "@jspsych-contrib/plugin-html-multi-response": "^1.0.0",
@@ -46,9 +61,6 @@
     "@jspsych/plugin-survey-html-form": "^1.0.2",
     "@jspsych/plugin-survey-multi-select": "^1.1.2",
     "@jspsych/plugin-survey-text": "^1.1.1",
-    "@sentry/browser": "^7.100.1",
-    "@sentry/integrations": "^7.101.1",
-    "@sentry/wasm": "^7.100.1",
     "firebase": "^10.5.0",
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.1.0",
@@ -59,9 +71,17 @@
     "roarr": "^7.14.0",
     "store2": "^2.14.2"
   },
+  "peerDependencies": {
+    "@sentry/browser": ">=7",
+    "@sentry/integrations": ">=7"
+  },
   "devDependencies": {
     "@babel/core": "^7.19.0",
     "@babel/preset-env": "^7.19.0",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-dsv": "^3.0.4",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@roar-platform/eslint-config": "*",
     "@roar-platform/prettier-config": "*",
     "@sentry/webpack-plugin": "^2.14.0",
@@ -82,6 +102,9 @@
     "path-browserify": "^1.0.1",
     "prettier": "^3.6.0",
     "process": "^0.11.10",
+    "rollup": "^4.48.1",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "rollup-plugin-postcss": "^4.0.2",
     "style-loader": "^3.3.1",
     "webpack": "^5.74.0",
     "webpack-cli": "5.1.4",

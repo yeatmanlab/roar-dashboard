@@ -55,7 +55,7 @@ runs:
       #   - Add its name to the shared-changed list below: echo 'matrix=["roar-pa","roar-swr"]'
       run: |
         if [ -n "${{ inputs.assessment }}" ]; then
-          echo 'matrix=["${{ inputs.assessment }}"]' >> $GITHUB_OUTPUT
+          echo "matrix=$(jq -c -n --arg a "${{ inputs.assessment }}" '[$a]')" >> $GITHUB_OUTPUT
         elif [ "${{ steps.filter.outputs.shared }}" == "true" ]; then
           echo 'matrix=["roar-pa"]' >> $GITHUB_OUTPUT
         else

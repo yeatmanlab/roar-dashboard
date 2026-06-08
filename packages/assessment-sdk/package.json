@@ -1,6 +1,6 @@
 {
   "name": "@roar-platform/assessment-sdk",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "publishConfig": {
     "access": "public",
@@ -43,7 +43,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@roar-platform/api-contract": "*",
+    "@roar-platform/api-contract": "^0.1.0",
     "@ts-rest/core": "^3.52.1",
     "http-status-codes": "^2.3.0"
   },

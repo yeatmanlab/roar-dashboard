@@ -428,3 +428,81 @@ jobs:
       #     service-account-key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ASSESSMENT_STAGING }}
       #     appcheck-site-key: ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_ASSESSMENT_STAGING }}
       #     environment-url: ${{ fromJson(steps.firebase-deploy-preview.outputs.urls)[0] }}
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Detect changed assessments
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  detect-assessment-changes:
+    name: Detect changed assessments
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        id: detect
+        uses: ./.github/actions/detect-assessment-changes
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Assessment E2E tests
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  e2e-assessments:
+    name: E2E ${{ matrix.assessment }} (${{ matrix.browser }})
+    needs: [detect-assessment-changes]
+    if: needs.detect-assessment-changes.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        assessment: ${{ fromJson(needs.detect-assessment-changes.outputs.matrix) }}
+        browser: [chrome, edge]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-node-environment
+
+      - name: Build workspace packages
+        run: npx turbo run build --filter='./packages/*'
+
+      - name: Pull Docker images
+        run: |
+          for i in 1 2 3; do
+            docker pull postgres:17 && break
+            echo "Attempt $i failed, retrying in 15s..."
+            sleep 15
+          done
+        timeout-minutes: 5
+
+      - name: Start assessment infrastructure
+        run: docker compose -f docker-compose.assessment.yml up -d --wait
+        timeout-minutes: 10
+
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npm run dev:ci
+          browser: ${{ matrix.browser }}
+          working-directory: apps/assessments/${{ matrix.assessment }}
+          wait-on: "http://localhost:8000"
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          tag: ${{ github.event_name }},${{ matrix.assessment }},${{ matrix.browser }}
+          spec: cypress/e2e/**/*
+          ci-build-id: ${{ github.run_id }}-${{ matrix.assessment }}-${{ matrix.browser }}
+        env:
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          BACKEND_URL: http://localhost:4000
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          CYPRESS_PROJECT_ID: ${{ secrets.CYPRESS_PROJECT_ID }}
+          COMMIT_INFO_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
