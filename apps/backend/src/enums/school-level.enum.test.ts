@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SchoolLevelSchema } from '@roar-dashboard/api-contract';
+import { SchoolLevelSchema } from '@roar-platform/api-contract';
 import { schoolLevelEnum } from '../db/schema/enums';
 
 describe('SchoolLevel enum', () => {

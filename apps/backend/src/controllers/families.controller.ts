@@ -3,7 +3,7 @@ import type {
   AddFamilyChildrenRequest,
   CreateFamilyRequest,
   EnrolledFamilyUsersQuery,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';
 import type { AuthContext } from '../types/auth-context';

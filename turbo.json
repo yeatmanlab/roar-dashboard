@@ -61,7 +61,7 @@
         "VITEST_PROJECT"
       ]
     },
-    "@yeatmanlab/assessment-sdk#test": {
+    "@roar-platform/assessment-sdk#test": {
       "dependsOn": ["roar-backend#test", "^build"],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["coverage/**"]

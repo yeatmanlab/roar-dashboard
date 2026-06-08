@@ -1,4 +1,4 @@
-import type { ApiError as ApiErrorBody } from '@roar-dashboard/api-contract';
+import type { ApiError as ApiErrorBody } from '@roar-platform/api-contract';
 import type { ApiError } from '../errors/api-error';
 
 export type { ApiErrorBody };

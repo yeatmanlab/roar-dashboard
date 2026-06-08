@@ -21,6 +21,10 @@ inputs:
   gcp-service-account-id:
     description: "The GCP service account ID to impersonate."
     required: true
+  expires:
+    description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Only used when firebase-channel is 'preview'."
+    required: false
+    default: "7d"
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
@@ -34,11 +38,7 @@ inputs:
   firebase-hosting-site:
     description: "Firebase Hosting site ID to deploy to (e.g. roar-phoneme-staging). Required when the Firebase project hosts multiple sites."
     required: false
-    default: ''
-  expires:
-    description: "How long a preview channel deployment lives, e.g. 7d. Defaults to the Firebase CLI default."
-    required: false
-    default: ''
+    default: ""
 
 runs:
   using: composite

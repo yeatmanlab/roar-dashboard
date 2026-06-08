@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import type { Command } from '../command/command';
 import type { RoarApi } from '../receiver/roar-api';
 import type { StartRunInput, StartRunOutput } from '../types/start-run';
-import type { CreateRunRequestBody } from '@roar-dashboard/api-contract';
+import type { CreateRunRequestBody } from '@roar-platform/api-contract';
 import { SDKError } from '../errors/sdk-error';
 import { SdkErrorCode } from '../enums';
 

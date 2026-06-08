@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response, Router } from 'express';
 import { initServer, createExpressEndpoints } from '@ts-rest/express';
-import { AgreementsContract } from '@roar-dashboard/api-contract';
+import { AgreementsContract } from '@roar-platform/api-contract';
 import { AgreementsController } from '../controllers/agreements.controller';
 import { AuthGuardMiddleware } from '../middleware/auth-guard/auth-guard.middleware';
 

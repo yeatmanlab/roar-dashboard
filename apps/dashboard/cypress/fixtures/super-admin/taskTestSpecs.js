@@ -42,13 +42,13 @@ export const testSpecs = [
   },
   {
     name: 'ROAR - Phoneme',
-    app: '@roar-dashboard/roar-pa',
+    app: '@roar-platform/roar-pa',
     spec: playPA,
     language: 'en',
   },
   {
     name: 'ROAR - Fonema',
-    app: '@roar-dashboard/roar-pa',
+    app: '@roar-platform/roar-pa',
     spec: playPA,
     language: 'es',
   },

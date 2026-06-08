@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
-import type { SyncFgaResponse } from '@roar-dashboard/api-contract';
+import type { SyncFgaResponse } from '@roar-platform/api-contract';
 
 vi.mock('../services/system/system.service', () => ({
   SystemService: vi.fn(),

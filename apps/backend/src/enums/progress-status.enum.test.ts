@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ProgressStatusSchema, ProgressStatus } from '@roar-dashboard/api-contract';
+import { ProgressStatusSchema, ProgressStatus } from '@roar-platform/api-contract';
 
 /**
  * ProgressStatus is a computed field (not stored in the database), so there is no

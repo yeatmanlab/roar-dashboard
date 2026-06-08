@@ -19,7 +19,7 @@
  * ```
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { ClassRepository } from './class.repository';
 import { UserRole } from '../enums/user-role.enum';
 import { CoreDbClient } from '../test-support/db';

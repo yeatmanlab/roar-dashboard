@@ -136,6 +136,10 @@ services:
       # Should match FIREBASE_EMULATOR_PROJECT_ID constant in @assessment-schema/src/firebase-emulator.ts
       GOOGLE_CLOUD_PROJECT: demo-roar
       FIREBASE_AUTH_EMULATOR_HOST: firebase-auth-emulator:9099
+      # The webpack dev server proxies /v1 to the backend so CORS never applies
+      # in this environment. This value just satisfies the production boot check
+      # (ALLOWED_ORIGINS must be set when NODE_ENV=production).
+      ALLOWED_ORIGINS: "http://localhost:8000"
       # Placeholder FGA config — the FGA client must be initialized at startup
       # (module-level service instantiation), but FGA is never actually called
       # for anonymous assessment runs.

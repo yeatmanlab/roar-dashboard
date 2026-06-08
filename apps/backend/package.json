@@ -35,8 +35,8 @@
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.4.3",
     "@openfga/sdk": "^0.9.3",
-    "@roar-dashboard/api-contract": "*",
-    "@roar-dashboard/assessment-schema": "*",
+    "@roar-platform/api-contract": "*",
+    "@roar-platform/assessment-schema": "*",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
     "axios": "^1.15.2",
@@ -58,8 +58,8 @@
   "devDependencies": {
     "@faker-js/faker": "^10.0.0",
     "@openfga/syntax-transformer": "^0.2.1",
-    "@roar-dashboard/eslint-config": "*",
-    "@roar-dashboard/typescript-config": "*",
+    "@roar-platform/eslint-config": "*",
+    "@roar-platform/typescript-config": "*",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-json": "^6.1.0",
