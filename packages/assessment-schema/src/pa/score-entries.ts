@@ -14,6 +14,10 @@ const SCORE_DOMAIN = {
  * Mirrors the shape of the api-contract ScoreEntry type but kept local
  * to avoid coupling assessment-schema to api-contract at build time.
  * The adapter return type is verified at runtime in CI with strict: true.
+ *
+ * Compile-time type check: If api-contract adds a required field to ComputedScoreEntry,
+ * this assignment will fail with a TypeScript error, alerting us to update this interface.
+ * @see packages/api-contract/src/v1/runs/schema.ts
  */
 export interface ComputedScoreEntry {
   type: 'computed';
@@ -21,6 +25,10 @@ export interface ComputedScoreEntry {
   name: PaScoreName;
   value: string;
 }
+
+// Compile-time assertion: ComputedScoreEntry must be assignable to api-contract's shape
+// If this fails, the local interface is missing fields from the contract type
+declare const _typeCheck: ComputedScoreEntry extends { type: 'computed'; domain: string; value: string } ? true : false;
 
 /**
  * Summary score names that are emitted at the composite level.
