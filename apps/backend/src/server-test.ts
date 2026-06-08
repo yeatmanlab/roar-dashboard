@@ -310,7 +310,7 @@ async function startTestServer(): Promise<void> {
     logger.info('[server-test] Configuring AuthService provider...');
     mockAuthService();
 
-    // 7b. In emulator mode, seed the Firebase Auth emulator with users
+    // 8. In emulator mode, seed the Firebase Auth emulator with users
     // matching baseFixture.authId and write the Cypress fixture file.
     if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
       logger.info('[server-test] Seeding Firebase Auth emulator...');
@@ -319,15 +319,15 @@ async function startTestServer(): Promise<void> {
       writeCypressFixtureFile(fixture, seeded, CYPRESS_FIXTURE_FILE);
     }
 
-    // 8. Write fixture data to file
+    // 9. Write fixture data to file
     logger.info('[server-test] Writing fixture data to file...');
     await writeFixtureFile(TEST_FIXTURE_FILE);
 
-    // 9. Dynamic import app AFTER all setup is complete
+    // 10. Dynamic import app AFTER all setup is complete
     logger.info('[server-test] Importing Express app...');
     const { default: app }: { default: Express } = await import('./app');
 
-    // 10. Start HTTP server
+    // 11. Start HTTP server
     const port = parseInt(PORT, 10);
     app.set('port', port);
 
@@ -339,7 +339,7 @@ async function startTestServer(): Promise<void> {
     server.on('error', (err) => onError(err, port));
     server.on('listening', onListening);
 
-    // 11. Graceful shutdown
+    // 12. Graceful shutdown
     const shutdown = (signal: string) => {
       logger.info(`[server-test] ${signal} received: shutting down server`);
       server.close(() => {
