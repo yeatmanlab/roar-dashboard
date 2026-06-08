@@ -1,0 +1,27 @@
+node_modules
+dist
+**/.Rhistory
+**/.Rproj.user
+**/.ipynb_checkpoints
+.idea
+.DS_Store.firebase/*.cache
+**/.DS_Store
+test-results/
+lib/
+playwright-report/
+# Environment Variables
+.env
+.env.test
+# Sentry Config File
+.env.sentry-build-plugin
+
+# Emulator Suite
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+firestore-debug.*.log
+ui-debug.log
+ui-debug.*.log
+firebase/
+.firebase/
+emulator-exports/
