@@ -398,6 +398,17 @@ describe('toPaScoreEntries', () => {
 
       expect(() => toPaScoreEntries(computed, { strict: false })).not.toThrow();
     });
+
+    it('throws on unregistered input group key in strict mode', () => {
+      const computed = {
+        fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67 },
+        unregistered_group: { someScore: 100 },
+      };
+
+      expect(() => toPaScoreEntries(computed, { strict: true })).toThrow(
+        /unregistered_group/,
+      );
+    });
   });
 
   describe('edge cases', () => {

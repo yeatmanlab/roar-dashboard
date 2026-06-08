@@ -80,17 +80,18 @@ const SUMMARY_NAMES = [
  * @example
  * ```ts
  * const computed = {
- *   fsm: { numCorrect: 10, percentCorrect: 67, roarScore: 10, ... },
- *   lsm: { numCorrect: 12, percentCorrect: 80, roarScore: 12, ... },
- *   composite: { roarScore: 25, percentile: 60, standardScore: 105, ... },
- *   composite_foundational: { roarScore: 22, percentile: 55, ... }
+ *   fsm: { numCorrect: 10, percentCorrect: 67, thetaEstimate: 0.5, thetaSE: 0.2 },
+ *   lsm: { numCorrect: 12, percentCorrect: 80, thetaEstimate: 0.8, thetaSE: 0.18 },
+ *   composite: { roarScore: 25, percentile: 60, standardScore: 105, thetaEstimate: 0.65, thetaSE: 0.15 },
+ *   composite_foundational: { roarScore: 22, percentile: 55, standardScore: 100, thetaEstimate: 0.6, thetaSE: 0.16 }
  * };
  * const entries = toPaScoreEntries(computed);
  * // Returns:
  * // [
  * //   { type: 'computed', domain: 'pa', name: 'fsmCorrect', value: '10' },
  * //   { type: 'computed', domain: 'pa', name: 'fsmPercentCorrect', value: '67' },
- * //   { type: 'computed', domain: 'pa', name: 'roarScore', value: '10' },
+ * //   { type: 'computed', domain: 'pa', name: 'thetaEstimate', value: '0.5' },
+ * //   { type: 'computed', domain: 'pa', name: 'thetaSE', value: '0.2' },
  * //   { type: 'computed', domain: 'pa', name: 'lsmCorrect', value: '12' },
  * //   { type: 'computed', domain: 'pa', name: 'lsmPercentCorrect', value: '80' },
  * //   { type: 'computed', domain: 'pa', name: 'roarScore', value: '12' },
