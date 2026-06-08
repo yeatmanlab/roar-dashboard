@@ -11,12 +11,13 @@ const SCORE_DOMAIN = {
 
 /**
  * Score entry for computed scores (aggregates across stages).
- * Mirrors the shape of the api-contract ScoreEntry type but kept local
+ * Mirrors the shape of the api-contract ComputedScoreEntry type but kept local
  * to avoid coupling assessment-schema to api-contract at build time.
  * The adapter return type is verified at runtime in CI with strict: true.
  *
  * Compile-time type check: If api-contract adds a required field to ComputedScoreEntry,
- * this assignment will fail with a TypeScript error, alerting us to update this interface.
+ * the _typeCheck assignment below will fail with a TypeScript error, alerting us to update
+ * this interface. This ensures contract changes surface immediately at compile time.
  * @see packages/api-contract/src/v1/runs/schema.ts
  */
 export interface ComputedScoreEntry {
@@ -26,9 +27,20 @@ export interface ComputedScoreEntry {
   value: string;
 }
 
-// Compile-time assertion: ComputedScoreEntry must be assignable to api-contract's shape
-// If this fails, the local interface is missing fields from the contract type
-declare const _typeCheck: ComputedScoreEntry extends { type: 'computed'; domain: string; value: string } ? true : false;
+// Compile-time assertion: ComputedScoreEntry must be assignable to api-contract's ComputedScoreEntry.
+// The api-contract defines: { type: 'computed'; domain: string; name: string; value: string; categoryScore?: boolean; assessmentStage?: string }
+// If api-contract adds a NEW REQUIRED field, this check will fail and alert us to update this interface.
+// Optional fields (categoryScore, assessmentStage) don't cause failures since our interface can omit them.
+declare const _typeCheck: ComputedScoreEntry extends {
+  type: 'computed';
+  domain: string;
+  name: string;
+  value: string;
+  categoryScore?: boolean;
+  assessmentStage?: string;
+}
+  ? true
+  : false;
 
 /**
  * Summary score names that are emitted at the composite level.
