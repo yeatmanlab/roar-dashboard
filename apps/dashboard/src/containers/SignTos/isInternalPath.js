@@ -15,6 +15,11 @@
  */
 export function isInternalPath(next, origin = window.location.origin) {
   if (typeof next !== 'string' || next.length === 0) return false;
+  // The `?next=` value is always an absolute in-app path (router.fullPath
+  // starts with `/`). Requiring a leading slash rejects bare relative paths
+  // ("foo") and backslash / percent-encoded-backslash bypasses before the
+  // URL parser can normalise them into a same-origin path.
+  if (!next.startsWith('/')) return false;
   try {
     const url = new URL(next, origin);
     return url.origin === origin && url.pathname.startsWith('/');

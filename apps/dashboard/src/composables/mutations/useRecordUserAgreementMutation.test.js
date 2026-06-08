@@ -28,8 +28,7 @@ describe('useRecordUserAgreementMutation', () => {
 
   it('invalidates /me on a 201 response so the unsigned-agreements queue refreshes', async () => {
     mockRecordUserAgreement.mockResolvedValueOnce({ status: 201, body: { data: { recorded: true } } });
-    const invalidateSpy = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockReturnValue({ invalidateQueries: invalidateSpy });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     const [result] = withSetup(() => useRecordUserAgreementMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
@@ -52,8 +51,7 @@ describe('useRecordUserAgreementMutation', () => {
       status: 409,
       body: { error: { code: 'agreement/already-recorded' } },
     });
-    const invalidateSpy = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockReturnValue({ invalidateQueries: invalidateSpy });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     const [result] = withSetup(() => useRecordUserAgreementMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
@@ -71,8 +69,7 @@ describe('useRecordUserAgreementMutation', () => {
       status: 500,
       body: { error: { code: 'server-error' } },
     });
-    const invalidateSpy = vi.fn();
-    vi.spyOn(VueQuery, 'useQueryClient').mockReturnValue({ invalidateQueries: invalidateSpy });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     const [result] = withSetup(() => useRecordUserAgreementMutation(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],

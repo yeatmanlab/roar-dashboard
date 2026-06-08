@@ -39,7 +39,7 @@ export const queryClient = new QueryClient({
       // Only treat the `/me` query as a global server error. Other queries
       // may have their own UI affordances for failure (retry buttons,
       // toasts, empty states) and shouldn't take the whole app down.
-      if (Array.isArray(query.queryKey) && query.queryKey[0] === ME_QUERY_KEY) {
+      if (Array.isArray(query?.queryKey) && query.queryKey[0] === ME_QUERY_KEY) {
         setGlobalError({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
       }
     },
