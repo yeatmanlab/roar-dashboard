@@ -20,7 +20,6 @@ export interface ComputedScoreEntry {
   domain: string;
   name: PaScoreName;
   value: string;
-  assessmentStage?: 'practice' | 'test';
 }
 
 /**
@@ -86,7 +85,7 @@ const SUMMARY_NAMES = [
  * ```
  */
 export function toPaScoreEntries(
-  computed: Record<string, any>,
+  computed: Record<string, Record<string, unknown>>,
   { strict = false } = {},
 ): ComputedScoreEntry[] {
   const entries: ComputedScoreEntry[] = [];

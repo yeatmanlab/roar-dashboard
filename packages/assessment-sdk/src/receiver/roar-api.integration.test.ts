@@ -33,6 +33,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { initTestSdk, getBaseFixtureData, getTestUserId, getTeacherUserId } from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
+import { PA_SCORE_NAMES } from '@roar-dashboard/assessment-schema/pa';
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration)', () => {
   let api: RoarApi;
@@ -559,31 +560,25 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
             {
               type: 'computed',
               domain: 'pa',
-              name: 'fsmCorrect',
+              name: PA_SCORE_NAMES.FSM_CORRECT,
               value: '10',
             },
             {
               type: 'computed',
               domain: 'pa',
-              name: 'fsmAttempted',
-              value: '15',
-            },
-            {
-              type: 'computed',
-              domain: 'pa',
-              name: 'fsmPercentCorrect',
+              name: PA_SCORE_NAMES.FSM_PERCENT_CORRECT,
               value: '67',
             },
             {
               type: 'computed',
               domain: 'pa',
-              name: 'roarScore',
+              name: PA_SCORE_NAMES.RAW_SCORE,
               value: '30',
             },
             {
               type: 'computed',
               domain: 'pa',
-              name: 'percentile',
+              name: PA_SCORE_NAMES.PERCENTILE,
               value: '60',
             },
           ],
@@ -712,7 +707,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
             {
               type: 'computed',
               domain: 'pa',
-              name: 'roarScore',
+              name: PA_SCORE_NAMES.RAW_SCORE,
               value: '30',
             },
           ],
@@ -735,7 +730,7 @@ describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration
             {
               type: 'computed',
               domain: 'pa',
-              name: 'roarScore',
+              name: PA_SCORE_NAMES.RAW_SCORE,
               value: '35', // Updated value
             },
           ],

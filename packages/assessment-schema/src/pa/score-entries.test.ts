@@ -156,7 +156,7 @@ describe('toPaScoreEntries', () => {
       const entries = toPaScoreEntries(computed);
 
       // Should have 7 entries for composite_foundational summary scores
-      expect(entries.length).toBeGreaterThan(0);
+      expect(entries).toHaveLength(7);
       expect(entries).toContainEqual({
         type: 'computed',
         domain: 'composite_foundational',
@@ -276,11 +276,6 @@ describe('toPaScoreEntries', () => {
         expect(['pa', 'composite', 'composite_foundational']).toContain(entry.domain);
         expect(entry.name).toBeTruthy();
         expect(entry.value).toBeTruthy();
-      });
-
-      // Verify no assessmentStage (computed scores aggregate across stages)
-      entries.forEach((entry: ComputedScoreEntry) => {
-        expect(entry.assessmentStage).toBeUndefined();
       });
     });
 

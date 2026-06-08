@@ -256,7 +256,7 @@ export class FirekitFacade {
    * Returns the logger from the CommandContext if available.
    * @internal
    */
-  getLogger() {
+  _getLogger() {
     return this.#ctx?.logger;
   }
 }
@@ -720,13 +720,13 @@ export async function writeTrial(
   let scores: ScoreEntry[] | undefined;
   if (computedScoreCallback) {
     try {
-      const rawScores = facade._getRawScores?.();
+      const rawScores = facade._getRawScores();
       if (rawScores) {
         const computedScores = await computedScoreCallback(rawScores);
         if (computedScores) {
           // Map computed scores to ScoreEntry[] using assessment-specific adapter
           // For PA, this uses toPaScoreEntries; other assessments would have their own adapters
-          const scoreAdapter = facade._getScoreAdapter?.();
+          const scoreAdapter = facade._getScoreAdapter();
           if (scoreAdapter) {
             scores = scoreAdapter(computedScores);
           }
@@ -735,7 +735,7 @@ export async function writeTrial(
     } catch (error) {
       // Log callback error but don't fail the trial write
       // The trial data is still valuable even if score computation fails
-      const logger = facade.getLogger?.();
+      const logger = facade._getLogger();
       if (logger) {
         logger.warn({ err: error }, 'Computed score callback failed; trial will be recorded without scores');
       }
