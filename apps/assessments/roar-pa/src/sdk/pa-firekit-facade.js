@@ -63,7 +63,7 @@ export function wireScoreAdapter() {
     return (scores) => {
       // scores is the ComputedScores object from RoarScores.computedScoreCallback
       // toPaScoreEntries converts it to ScoreEntry[] for backend persistence
-      // Use strict: true to fail loudly on unregistered score names in CI
+      // Use strict: true to fail loudly on unrecognized score group keys in CI
       return toPaScoreEntries(scores, { strict: true });
     };
   };

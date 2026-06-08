@@ -17,6 +17,12 @@ export const PA_SCORE_NAMES = {
   STANDARD_SCORE_SPR: "sprStandardScore",
   STANDARD_SCORE_STRING_SPR: "sprStandardScoreString",
 
+  // Theta estimates (adaptive scoring only, emitted for all score groups)
+  THETA_ESTIMATE: "thetaEstimate",
+  THETA_SE: "thetaSE",
+  THETA_ESTIMATE_RAW: "thetaEstimateRaw",
+  THETA_SE_RAW: "thetaSERaw",
+
   // FSM subscores (First Sound Match)
   FSM_CORRECT: "fsmCorrect",
   FSM_PERCENT_CORRECT: "fsmPercentCorrect",

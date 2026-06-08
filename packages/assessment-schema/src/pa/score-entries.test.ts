@@ -309,6 +309,68 @@ describe('toPaScoreEntries', () => {
         }),
       );
     });
+
+    it('emits theta fields for adaptive scoring (v4+)', () => {
+      const computed = {
+        fsm: {
+          numCorrect: 10,
+          percentCorrect: 67,
+          thetaEstimate: 0.5,
+          thetaSE: 0.15,
+        },
+        composite: {
+          roarScore: 25,
+          percentile: 60,
+          standardScore: 105,
+          thetaEstimate: 0.45,
+          thetaSE: 0.12,
+          thetaEstimateRaw: 0.4,
+          thetaSERaw: 0.13,
+        },
+      };
+
+      const entries = toPaScoreEntries(computed);
+
+      // Verify theta fields are emitted for subtask
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: 'pa',
+        name: PA_SCORE_NAMES.THETA_ESTIMATE,
+        value: '0.5',
+      });
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: 'pa',
+        name: PA_SCORE_NAMES.THETA_SE,
+        value: '0.15',
+      });
+
+      // Verify theta fields are emitted for composite
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: 'composite',
+        name: PA_SCORE_NAMES.THETA_ESTIMATE,
+        value: '0.45',
+      });
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: 'composite',
+        name: PA_SCORE_NAMES.THETA_SE,
+        value: '0.12',
+      });
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: 'composite',
+        name: PA_SCORE_NAMES.THETA_ESTIMATE_RAW,
+        value: '0.4',
+      });
+      expect(entries).toContainEqual({
+        type: 'computed',
+        domain: 'composite',
+        name: PA_SCORE_NAMES.THETA_SE_RAW,
+        value: '0.13',
+      });
+    });
   });
 
   describe('strict mode validation', () => {

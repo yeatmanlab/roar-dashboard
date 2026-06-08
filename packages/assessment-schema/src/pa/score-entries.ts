@@ -24,8 +24,9 @@ export interface ComputedScoreEntry {
 
 /**
  * Summary score names that are emitted at the composite level.
- * These are the final aggregate scores (percentile, standard score, etc.)
+ * These are the final aggregate scores (percentile, standard score, theta estimates, etc.)
  * that apply across all subtasks.
+ * Theta fields are only populated for adaptive scoring (v4+).
  */
 const SUMMARY_NAMES = [
   PA_SCORE_NAMES.RAW_SCORE,
@@ -35,6 +36,10 @@ const SUMMARY_NAMES = [
   PA_SCORE_NAMES.STANDARD_SCORE,
   PA_SCORE_NAMES.STANDARD_SCORE_SPR,
   PA_SCORE_NAMES.STANDARD_SCORE_STRING_SPR,
+  PA_SCORE_NAMES.THETA_ESTIMATE,
+  PA_SCORE_NAMES.THETA_SE,
+  PA_SCORE_NAMES.THETA_ESTIMATE_RAW,
+  PA_SCORE_NAMES.THETA_SE_RAW,
 ] as const;
 
 /**
@@ -54,32 +59,38 @@ const SUMMARY_NAMES = [
  *
  * Output: Array of ScoreEntry objects with:
  * - type: 'computed' (PA computed scores are final aggregates)
- * - domain: 'pa' (PA_TASK_ID)
+ * - domain: PA_TASK_ID for subtask scores; 'composite' or 'composite_foundational' for composite scores
  * - name: one of PA_SCORE_NAMES values
  * - value: stringified score value
- * - assessmentStage: omitted (computed scores aggregate across stages)
  *
  * @param computed - Nested computed scores object from RoarScores.computedScoreCallback
  * @param options - Configuration options
- * @param options.strict - If true, throw on unregistered score groups; if false, skip them
+ * @param options.strict - If true, throw on unrecognized input group keys; if false, silently skip them
  * @returns Array of ScoreEntry objects ready for backend upsert
- * @throws {Error} If strict=true and an unregistered score group is encountered
+ * @throws {Error} If strict=true and an unrecognized input group key is encountered
  *
  * @example
  * ```ts
  * const computed = {
- *   fsm: { numCorrect: 10, numAttempted: 15, percentCorrect: 67, ... },
- *   composite: { roarScore: 25, percentile: 60, standardScore: 105, ... }
+ *   fsm: { numCorrect: 10, percentCorrect: 67, roarScore: 10, ... },
+ *   lsm: { numCorrect: 12, percentCorrect: 80, roarScore: 12, ... },
+ *   composite: { roarScore: 25, percentile: 60, standardScore: 105, ... },
+ *   composite_foundational: { roarScore: 22, percentile: 55, ... }
  * };
  * const entries = toPaScoreEntries(computed);
  * // Returns:
  * // [
  * //   { type: 'computed', domain: 'pa', name: 'fsmCorrect', value: '10' },
- * //   { type: 'computed', domain: 'pa', name: 'fsmAttempted', value: '15' },
  * //   { type: 'computed', domain: 'pa', name: 'fsmPercentCorrect', value: '67' },
- * //   { type: 'computed', domain: 'pa', name: 'roarScore', value: '25' },
- * //   { type: 'computed', domain: 'pa', name: 'percentile', value: '60' },
- * //   { type: 'computed', domain: 'pa', name: 'standardScore', value: '105' },
+ * //   { type: 'computed', domain: 'pa', name: 'roarScore', value: '10' },
+ * //   { type: 'computed', domain: 'pa', name: 'lsmCorrect', value: '12' },
+ * //   { type: 'computed', domain: 'pa', name: 'lsmPercentCorrect', value: '80' },
+ * //   { type: 'computed', domain: 'pa', name: 'roarScore', value: '12' },
+ * //   { type: 'computed', domain: 'composite', name: 'roarScore', value: '25' },
+ * //   { type: 'computed', domain: 'composite', name: 'percentile', value: '60' },
+ * //   { type: 'computed', domain: 'composite', name: 'standardScore', value: '105' },
+ * //   { type: 'computed', domain: 'composite_foundational', name: 'roarScore', value: '22' },
+ * //   { type: 'computed', domain: 'composite_foundational', name: 'percentile', value: '55' },
  * //   ...
  * // ]
  * ```
@@ -111,6 +122,9 @@ export function toPaScoreEntries(
       // Note: #Attempted names are not emitted by scores.js callback
       // They are kept in PA_SUBSCORE_DEFS for UI display only
       add(def.percentCorrectName, subtaskScores.percentCorrect);
+      // Emit theta fields for adaptive scoring (v4+)
+      add(PA_SCORE_NAMES.THETA_ESTIMATE, subtaskScores.thetaEstimate);
+      add(PA_SCORE_NAMES.THETA_SE, subtaskScores.thetaSE);
     }
   }
 
@@ -138,15 +152,19 @@ export function toPaScoreEntries(
     }
   }
 
-  // Validate that all emitted names are registered in the schema (strict mode)
+  // Validate that all input group keys are recognized (strict mode)
+  // This catches typos or unexpected groups in the computed scores object
   if (strict) {
-    const registeredNames = new Set(Object.values(PA_SCORE_NAMES));
-    const emittedNames = new Set(entries.map((e: ComputedScoreEntry) => e.name));
-    for (const name of emittedNames) {
-      if (!registeredNames.has(name)) {
+    const recognizedGroups = new Set([
+      ...PA_SUBTASK_KEYS.map((k) => k.toLowerCase()),
+      'composite',
+      'composite_foundational',
+    ]);
+    for (const groupKey of Object.keys(computed)) {
+      if (!recognizedGroups.has(groupKey)) {
         throw new Error(
-          `Unregistered PA score name "${name}" — add it to PA_SCORE_NAMES in assessment-schema before emitting. ` +
-            `Registered names: ${Array.from(registeredNames).sort().join(', ')}`,
+          `Unrecognized score group "${groupKey}" in computed scores. ` +
+            `Expected one of: ${Array.from(recognizedGroups).sort().join(', ')}`,
         );
       }
     }

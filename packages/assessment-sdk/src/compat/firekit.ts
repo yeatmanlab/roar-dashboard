@@ -707,7 +707,7 @@ export async function writeTrial(
   // Accumulate raw scores from this trial for later score computation
   // Extract subtask from trial data for PA assessments
   const subtask = trialDataRecord['subtask'] as string | undefined;
-  if (subtask && facade._accumulateRawScore) {
+  if (subtask) {
     facade._accumulateRawScore(subtask, assessmentStage, correct);
   }
 
