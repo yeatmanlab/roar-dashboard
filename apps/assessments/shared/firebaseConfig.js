@@ -1,4 +1,4 @@
-import { FIREBASE_EMULATOR_PROJECT_ID, FIREBASE_EMULATOR_API_KEY } from '@roar-dashboard/assessment-schema';
+import { FIREBASE_EMULATOR_PROJECT_ID, FIREBASE_EMULATOR_API_KEY } from '@roar-platform/assessment-schema';
 
 /**
  * Returns the Firebase config for the current environment.

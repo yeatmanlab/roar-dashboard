@@ -9,7 +9,7 @@ import {
   PA_SCORING_VERSION,
   PA_SCORE_KIND,
   PA_SCORE_TABLE_URL,
-} from '@roar-dashboard/assessment-schema/pa';
+} from '@roar-platform/assessment-schema/roar-pa';
 
 export class RoarScores {
   constructor() {

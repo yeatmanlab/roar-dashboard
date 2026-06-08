@@ -7,8 +7,8 @@ import { tasks } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
-import type { TaskSortFieldType } from '@roar-dashboard/api-contract';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import type { TaskSortFieldType } from '@roar-platform/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { escapeLikePattern } from '../utils/escape-like-pattern.util';
 
 /**

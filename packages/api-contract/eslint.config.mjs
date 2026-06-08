@@ -1,3 +1,3 @@
-import { config } from '@roar-dashboard/eslint-config/backend';
+import { config } from '@roar-platform/eslint-config/backend';
 
 export default config;

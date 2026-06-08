@@ -9,7 +9,7 @@ vi.mock('@ts-rest/core', () => ({
   tsRestFetchApi: vi.fn(),
 }));
 
-vi.mock('@roar-dashboard/api-contract', () => ({
+vi.mock('@roar-platform/api-contract', () => ({
   ApiContractV1: {},
 }));
 

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { StatusCodes } from 'http-status-codes';
-import type { SyncFgaResponse } from '@roar-dashboard/api-contract';
+import type { SyncFgaResponse } from '@roar-platform/api-contract';
 import { ClientWriteRequestOnDuplicateWrites } from '@openfga/sdk';
 import type { OpenFgaClient, TupleKey, TupleKeyWithoutCondition } from '@openfga/sdk';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
