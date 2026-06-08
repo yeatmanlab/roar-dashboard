@@ -34,7 +34,7 @@
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.4.3",
     "@openfga/sdk": "^0.9.3",
-    "@roar-platform/api-contract": "*",
+    "@roar-platform/api-contract": "^0.1.0",
     "@roar-platform/assessment-schema": "^0.1.0",
     "@ts-rest/core": "^3.52.1",
     "@ts-rest/express": "^3.52.1",
