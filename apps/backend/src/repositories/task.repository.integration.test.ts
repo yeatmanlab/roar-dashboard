@@ -162,9 +162,7 @@ describe('TaskRepository', () => {
         // LOWER(slug) sort key equals the stored value; this guards ascending
         // slug ordering (the descending direction is covered above).
         const slugs = ['banana-slug', 'apple-slug', 'cherry-slug', 'blueberry-slug'];
-        const created = await Promise.all(
-          slugs.map((slug) => TaskFactory.create({ slug, name: `Slug sort ${slug}` })),
-        );
+        const created = await Promise.all(slugs.map((slug) => TaskFactory.create({ slug, name: `Slug sort ${slug}` })));
         const createdIds = new Set(created.map((t) => t.id));
 
         const result = await repository.listAll({
