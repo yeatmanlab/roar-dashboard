@@ -74,8 +74,8 @@ jobs:
         run: |
           PUBLISHABLE_WORKSPACES=(
             packages/assessment-schema
-            packages/assessment-sdk
             packages/api-contract
+            packages/assessment-sdk
             apps/assessments/roar-pa
           )
 
