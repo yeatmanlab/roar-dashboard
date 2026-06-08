@@ -1,4 +1,6 @@
 import { PA_SUBTASK_KEYS, PA_SUBSCORE_DEFS, PA_SCORE_NAMES, PA_TASK_ID, type PaScoreName } from './index.js';
+// @ts-expect-error - Import from source to get live type; api-contract build doesn't export types in dist
+import type { ComputedScoreEntry as ApiComputedScoreEntry } from '@roar-dashboard/api-contract/src/v1/runs/schema';
 
 /**
  * Score domain constants for PA assessment.
@@ -27,20 +29,10 @@ export interface ComputedScoreEntry {
   value: string;
 }
 
-// Compile-time assertion: ComputedScoreEntry must be assignable to api-contract's ComputedScoreEntry.
-// The api-contract defines: { type: 'computed'; domain: string; name: string; value: string; categoryScore?: boolean; assessmentStage?: string }
+// Compile-time assertion: ComputedScoreEntry must be assignable to the live api-contract type.
 // If api-contract adds a NEW REQUIRED field, this check will fail and alert us to update this interface.
-// Optional fields (categoryScore, assessmentStage) don't cause failures since our interface can omit them.
-declare const _typeCheck: ComputedScoreEntry extends {
-  type: 'computed';
-  domain: string;
-  name: string;
-  value: string;
-  categoryScore?: boolean;
-  assessmentStage?: string;
-}
-  ? true
-  : false;
+// This ensures contract changes surface immediately at compile time rather than being silently missed.
+declare const _typeCheck: ComputedScoreEntry extends ApiComputedScoreEntry ? true : false;
 
 /**
  * Summary score names that are emitted at the composite level.
@@ -106,7 +98,8 @@ const SUMMARY_NAMES = [
  * //   { type: 'computed', domain: 'pa', name: 'thetaSE', value: '0.2' },
  * //   { type: 'computed', domain: 'pa', name: 'lsmCorrect', value: '12' },
  * //   { type: 'computed', domain: 'pa', name: 'lsmPercentCorrect', value: '80' },
- * //   { type: 'computed', domain: 'pa', name: 'roarScore', value: '12' },
+ * //   { type: 'computed', domain: 'pa', name: 'thetaEstimate', value: '0.8' },
+ * //   { type: 'computed', domain: 'pa', name: 'thetaSE', value: '0.18' },
  * //   { type: 'computed', domain: 'composite', name: 'roarScore', value: '25' },
  * //   { type: 'computed', domain: 'composite', name: 'percentile', value: '60' },
  * //   { type: 'computed', domain: 'composite', name: 'standardScore', value: '105' },
