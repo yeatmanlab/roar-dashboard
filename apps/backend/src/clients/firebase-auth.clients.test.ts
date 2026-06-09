@@ -10,16 +10,30 @@ describe('FirebaseAuthClient', () => {
   });
 
   it('exports a Firebase Auth instance', async () => {
-    // Import the client to trigger initialization
+    // Import the client; the Proxy lazily initializes on first property access
     const { FirebaseAuthClient } = await import('./firebase-auth.clients');
 
     expect(FirebaseAuthClient).toBeDefined();
     expect(FirebaseAuthClient.app).toEqual({ name: 'mock-app' });
   });
 
-  it('initializes Auth with a Firebase app', async () => {
+  it('does not initialize Auth at module import time (lazy via Proxy)', async () => {
     await import('./firebase-auth.clients');
 
+    // No property access yet — getAuth must not have been called
+    expect(getAuthMock).not.toHaveBeenCalled();
+  });
+
+  it('initializes Auth on first property access', async () => {
+    const { FirebaseAuthClient } = await import('./firebase-auth.clients');
+
+    expect(getAuthMock).not.toHaveBeenCalled();
+    // Trigger a property read — proxy resolves the underlying Auth instance
+    void FirebaseAuthClient.app;
+    expect(getAuthMock).toHaveBeenCalledTimes(1);
+
+    // Subsequent reads reuse the cached instance
+    void FirebaseAuthClient.app;
     expect(getAuthMock).toHaveBeenCalledTimes(1);
   });
 
@@ -46,7 +60,7 @@ describe('FirebaseAuthClient', () => {
     expect(typeof FirebaseAuthClient.updateUser).toBe('function');
   });
 
-  it('handles getAuth() errors during initialization', async () => {
+  it('surfaces getAuth() errors on first property access (deferred until use)', async () => {
     getAuthMock.mockImplementationOnce(() => {
       throw new Error('Auth initialization failed');
     });
@@ -54,16 +68,18 @@ describe('FirebaseAuthClient', () => {
     // Clear the module cache to force re-import
     vi.resetModules();
 
-    await expect(async () => {
-      await import('./firebase-auth.clients');
-    }).rejects.toThrow('Auth initialization failed');
+    // Import does NOT throw — initialization is deferred behind the Proxy
+    const { FirebaseAuthClient } = await import('./firebase-auth.clients');
+
+    // The error surfaces when any property is accessed
+    expect(() => FirebaseAuthClient.app).toThrow('Auth initialization failed');
   });
 
-  it('is initialized immediately when module is imported', async () => {
+  it('defers initialization until first property access', async () => {
     await import('./firebase-auth.clients');
 
-    // Should have been called during module initialization
-    expect(getAuthMock).toHaveBeenCalledTimes(1);
+    // Importing alone should not have triggered getAuth
+    expect(getAuthMock).not.toHaveBeenCalled();
   });
 
   it('maintains consistent auth instance across multiple imports', async () => {

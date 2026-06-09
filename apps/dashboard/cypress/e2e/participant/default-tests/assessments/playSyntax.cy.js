@@ -11,7 +11,7 @@ describe.skip('Participant Assessment: ROAR Syntax', () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });
 
-  describe('EN', () => {
+  describe.skip('EN', () => {
     it('Completes assessment with username/password authentication', () => {
       if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);

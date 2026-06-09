@@ -10,7 +10,7 @@ describe.skip('Participant Assessment: ROAR Phoneme', () => {
     isCurrentAppVersion = await isCurrentVersion(app);
   });
 
-  describe('EN', () => {
+  describe.skip('EN', () => {
     it('Completes assessment with username/password authentication', () => {
       if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
@@ -30,7 +30,7 @@ describe.skip('Participant Assessment: ROAR Phoneme', () => {
     });
   });
 
-  describe('ES', () => {
+  describe.skip('ES', () => {
     it('Completes assessment with username/password authentication', () => {
       if (isCurrentAppVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);

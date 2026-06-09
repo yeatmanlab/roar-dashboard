@@ -129,6 +129,53 @@ describe('TaskRepository', () => {
         }
       });
 
+      it('sorts by name case-insensitively across mixed-case values', async () => {
+        // Tasks with names that differ only by case so that a naive byte-order
+        // sort would interleave uppercase letters ahead of lowercase ones.
+        const inputs = ['banana', 'Apple', 'cherry', 'BlueBerry'];
+        const created = await Promise.all(
+          inputs.map((name, idx) =>
+            TaskFactory.create({
+              slug: `ci-name-${idx}-${name.toLowerCase()}`,
+              name,
+            }),
+          ),
+        );
+        const createdIds = new Set(created.map((t) => t.id));
+
+        const result = await repository.listAll({
+          page: 1,
+          perPage: 100,
+          orderBy: { field: 'name', direction: 'asc' },
+        });
+
+        const seededNames = result.items.filter((t) => createdIds.has(t.id)).map((t) => t.name);
+
+        // JS lowercase sort puts these as Apple, banana, BlueBerry, cherry.
+        // Byte-order sort would put uppercase before lowercase (Apple,
+        // BlueBerry, banana, cherry), so this is a real regression guard.
+        expect(seededNames).toEqual(['Apple', 'banana', 'BlueBerry', 'cherry']);
+      });
+
+      it('sorts by slug ascending', async () => {
+        // Slugs are constrained to lowercase by `tasks_slug_format`, so the
+        // LOWER(slug) sort key equals the stored value; this guards ascending
+        // slug ordering (the descending direction is covered above).
+        const slugs = ['banana-slug', 'apple-slug', 'cherry-slug', 'blueberry-slug'];
+        const created = await Promise.all(slugs.map((slug) => TaskFactory.create({ slug, name: `Slug sort ${slug}` })));
+        const createdIds = new Set(created.map((t) => t.id));
+
+        const result = await repository.listAll({
+          page: 1,
+          perPage: 100,
+          orderBy: { field: 'slug', direction: 'asc' },
+        });
+
+        const seededSlugs = result.items.filter((t) => createdIds.has(t.id)).map((t) => t.slug);
+
+        expect(seededSlugs).toEqual(['apple-slug', 'banana-slug', 'blueberry-slug', 'cherry-slug']);
+      });
+
       it('maintains stable order with secondary sort on id', async () => {
         // Create tasks with same name to test tiebreaker
         await TaskFactory.create({ slug: 'stable-sort-1', name: 'Identical Name For Sort' });

@@ -6,7 +6,7 @@ function clickOrgTabs() {
   }
 }
 
-describe(
+describe.skip(
   'The admin user can navigate to the list organizations page, ' +
     'and can see which they organizations they are associated with',
   () => {

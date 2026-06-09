@@ -12,12 +12,9 @@ import type { AuthorizationModel } from '@openfga/sdk';
 import { transformer } from '@openfga/syntax-transformer';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { FgaClient } from '../../clients/fga.client';
 import { AuthorizationModule } from '../../services/system/authorization/authorization.module';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { MONOREPO_ROOT } from '../paths';
 
 /** Cached parsed model JSON — read once, reused for every store reset. */
 let cachedModelJson: Omit<AuthorizationModel, 'id'> | null = null;
@@ -36,7 +33,7 @@ function getModelJson(): Omit<AuthorizationModel, 'id'> {
   if (cachedModelJson) return cachedModelJson;
 
   const dslPath =
-    process.env.AUTHZ_MODEL_PATH || path.resolve(__dirname, '../../../../../packages/authz/authorization-model.fga');
+    process.env.AUTHZ_MODEL_PATH || path.join(MONOREPO_ROOT, 'packages', 'authz', 'authorization-model.fga');
   const dsl = fs.readFileSync(dslPath, 'utf-8');
   cachedModelJson = transformer.transformDSLToJSONObject(dsl);
   return cachedModelJson;
