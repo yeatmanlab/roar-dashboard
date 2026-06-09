@@ -6,19 +6,13 @@ import _clamp from 'lodash/clamp';
 import _mapValues from 'lodash/mapValues';
 import _omitBy from 'lodash/omitBy';
 import { camelize } from '@bdelab/roar-utils';
+import { pa } from '@roar-platform/assessment-schema';
 import { jsPsych } from './jsPsych';
 import { mediaAssets, paValidityEvaluator } from './experiment';
 import './i18n';
 import irtHyperparameters from './config/corpus/en/irt_hyperparameters.csv';
 
-const catOrderMap = {
-  0: 'practiceFSM',
-  1: 'fsm',
-  2: 'practiceLSM',
-  3: 'lsm',
-  4: 'practiceDEL',
-  5: 'del',
-};
+const { PA_CATS, PA_CAT_ORDER } = pa;
 
 let clowder;
 
@@ -87,6 +81,13 @@ export const initClowder = (config) => {
       ...hyperMap.composite,
       randomSeed: 'seed-composite',
     },
+    composite_foundational: {
+      method: config.abilityMethod,
+      itemSelect: config.itemSelect,
+      priorDist: 'norm',
+      ...hyperMap.composite_foundational,
+      randomSeed: 'seed-composite-foundational',
+    },
   };
 
   let earlyStopping;
@@ -114,11 +115,7 @@ export const initClowder = (config) => {
     ...corpus.test_LSM,
   ];
 
-  const clowderCorpus = prepareClowderCorpus(
-    combinedCorpus,
-    ['practiceFSM', 'practiceLSM', 'practiceDEL', 'fsm', 'lsm', 'del', 'composite'],
-    '.',
-  );
+  const clowderCorpus = prepareClowderCorpus(combinedCorpus, PA_CATS, '.');
 
   store.session.set('corpusClowder', clowderCorpus);
 
@@ -150,18 +147,16 @@ const isPracticeCat = (catName) => catName.includes('practice');
 
 export const setNextStimulus = (ignorePreviousItem = false) => {
   const catIndex = safeGetCatIndex();
-  const catName = catOrderMap[catIndex];
+  const catName = PA_CAT_ORDER[catIndex];
   const previousItem = ignorePreviousItem ? undefined : store.session.get('previousItem');
   const previousAnswer = ignorePreviousItem ? undefined : store.session.get('previousAnswer');
 
   const isPractice = isPracticeCat(catName);
   const catToSelect = isPractice ? catName : 'composite';
 
-  const catsToUpdate = ['practiceFSM', 'fsm', 'practiceLSM', 'lsm', 'practiceDEL', 'del'];
-
-  if (!isPractice) {
-    catsToUpdate.push('composite');
-  }
+  // Update all CATs (including composite and composite_foundational) on every trial.
+  // This ensures both composite scores track practice responses, not just test responses.
+  const catsToUpdate = PA_CATS;
 
   const catToEvaluateEarlyStopping = isPractice ? catToSelect : catName;
 
@@ -239,7 +234,7 @@ export const saveTrialData = (data, source) => {
 
   if (store.session('config').isAdaptive) {
     const catIndex = safeGetCatIndex();
-    const catName = catOrderMap[catIndex];
+    const catName = PA_CAT_ORDER[catIndex];
     const isPractice = isPracticeCat(catName);
     const ignorePreviousItem = isPractice && store.session('response') === 0;
 
@@ -259,11 +254,14 @@ export const saveTrialData = (data, source) => {
     const thetaSERaw = clowder.seMeasurement.composite;
     const thetaScaled = thetaRaw * transformationScale + transformationShift;
     const thetaSEScaled = thetaSERaw * Math.abs(transformationScale);
+    const thetaRawFoundational = clowder.theta.composite_foundational;
+    const thetaSERawFoundational = clowder.seMeasurement.composite_foundational;
 
     const thetas = _omitBy(
       {
         ...clowder.theta,
         composite: thetaRaw,
+        composite_foundational: thetaRawFoundational,
         scaled: thetaScaled,
       },
       (value, key) => isPracticeCat(key),
@@ -274,6 +272,7 @@ export const saveTrialData = (data, source) => {
         {
           ...clowder.seMeasurement,
           composite: thetaSERaw,
+          composite_foundational: thetaSERawFoundational,
           scaled: thetaSEScaled,
         },
         (value, key) => isPracticeCat(key),
