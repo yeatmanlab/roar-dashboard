@@ -1,5 +1,5 @@
-import { getFirekitCompat } from '@yeatmanlab/assessment-sdk/compat/firekit';
-import { toPaScoreEntries } from '@roar-dashboard/assessment-schema/pa';
+import { getFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { toPaScoreEntries } from '@roar-platform/assessment-schema/pa';
 
 /**
  * Wires the PA score computation pipeline into the Firekit facade.

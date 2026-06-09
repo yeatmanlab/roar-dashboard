@@ -33,7 +33,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { initTestSdk, getBaseFixtureData, getTestUserId, getTeacherUserId } from '../test-support/sdk-test-helper';
 import type { RoarApi } from './roar-api';
-import { PA_SCORE_NAMES } from '@roar-dashboard/assessment-schema/pa';
+import { PA_SCORE_NAMES } from '@roar-platform/assessment-schema/pa';
 
 describe.skipIf(!process.env.RUN_INTEGRATION_TESTS)('Assessment SDK (integration)', () => {
   let api: RoarApi;

@@ -4,6 +4,7 @@ import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit'
 import { pa } from '@roar-platform/assessment-schema';
 import RoarPA from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
+import { wireScoreAdapter } from '../src/sdk/pa-firekit-facade';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 
