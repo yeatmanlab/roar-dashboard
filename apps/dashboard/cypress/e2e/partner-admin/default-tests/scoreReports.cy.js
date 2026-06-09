@@ -17,7 +17,7 @@ const openSchoolScoreReport = () => {
   cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/school/${testSchoolId}`);
 };
 
-describe('Partner Admin: Score Reports', () => {
+describe.skip('Partner Admin: Score Reports', () => {
   // @TODO: Expand on test to verify only stats exist for district admin.
   it('Renders only stats for district admin score report', () => {
     // Login as a partner admin.

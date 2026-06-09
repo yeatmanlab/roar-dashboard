@@ -27,7 +27,12 @@
     "FIREBASE_AUTH_EMULATOR_HOST",
     "AUTHZ_MODEL_PATH",
     "BACKEND_URL",
-    "ROAR_API_BASE_URL"
+    "ROAR_API_BASE_URL",
+    "VITE_ROAR_API_BASE_URL",
+    "CYPRESS_FIXTURE_FILE",
+    "POSTGRES_ADMIN_URL",
+    "TEST_DATABASE_NAMES",
+    "ALLOWED_ORIGINS"
   ],
   "globalDependencies": [".env"],
   "tasks": {

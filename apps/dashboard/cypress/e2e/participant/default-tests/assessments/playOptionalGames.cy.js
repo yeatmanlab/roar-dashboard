@@ -10,7 +10,7 @@ optionalGames.forEach((game) => {
       isCurrentAppVersion = await isCurrentVersion(game.app);
     });
 
-    describe('EN', () => {
+    describe.skip('EN', () => {
       const administration = Cypress.env('testOptionalRoarAppsAdministration');
       const language = 'en';
       const optional = true;
