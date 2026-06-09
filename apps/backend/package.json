@@ -29,7 +29,8 @@
     "db:studio:core": "drizzle-kit studio --config ./drizzle.core.config.ts",
     "db:studio:assess": "drizzle-kit studio --config ./drizzle.assessment.config.ts",
     "fga:init": "bash ../../scripts/init-openfga-store.sh",
-    "db:seed:pa": "tsx seeds/pa.seed.ts"
+    "db:seed:pa": "tsx seeds/pa.seed.ts",
+    "db:seed:swr": "tsx seeds/swr.seed.ts"
   },
   "dependencies": {
     "@google-cloud/cloud-sql-connector": "^1.4.3",
