@@ -14,6 +14,11 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ASSESSMENT_DIR="$(pwd)"
 COMPOSE_FILE="$REPO_ROOT/docker-compose.assessment.yml"
 
+# Derive assessment name from the calling directory (e.g. roar-pa → roar-pa).
+# Exported so docker compose can substitute ${ASSESSMENT_NAME} in the compose file.
+ASSESSMENT_NAME="$(basename "$ASSESSMENT_DIR")"
+export ASSESSMENT_NAME
+
 if ! docker compose version &>/dev/null; then
   echo "Error: 'docker compose' (v2) is required. Install Docker Desktop or Docker Engine with the Compose plugin." >&2
   exit 1
