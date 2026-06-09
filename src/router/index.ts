@@ -303,6 +303,15 @@ const routes: Array<RouteRecordRaw> = [
       allowedRoles: [],
     },
   },
+  {
+    path: '/translations/:taskId?',
+    name: 'Translations',
+    component: () => import('@/pages/Translations.vue'),
+    meta: {
+      pageTitle: 'Translations',
+      allowedRoles: ['*'],
+    },
+  },
 ];
 
 const scrollBehavior: RouterScrollBehavior = (to, from, savedPosition) => {

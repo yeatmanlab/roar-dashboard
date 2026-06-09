@@ -45,4 +45,5 @@ export const allowedUnauthenticatedRoutes = [
   'Maintenance',
   'SignIn',
   'Login', // @TODO: Remove Login after replacing the login page
+  'Translations',
 ] as const;
