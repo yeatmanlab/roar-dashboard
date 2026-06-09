@@ -1,9 +1,11 @@
 import i18next from 'i18next';
 import store from 'store2';
 import _shuffle from 'lodash/shuffle';
-import { PA_TRIAL_TYPES, PA_CATS, PA_CORPUS_TYPES } from '@roar-platform/assessment-schema/pa';
+import { pa } from '@roar-platform/assessment-schema';
 import { corpusTranslations } from '../i18n';
 import { standardizeItemComponent } from '../experimentHelpers';
+
+const { PA_TRIAL_TYPES, PA_CATS, PA_CORPUS_TYPES } = pa;
 
 export function processCSV(config = {}) {
   const { isAdaptive, numTestItems } = config;

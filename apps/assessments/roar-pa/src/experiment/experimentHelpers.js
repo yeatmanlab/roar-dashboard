@@ -6,11 +6,13 @@ import _clamp from 'lodash/clamp';
 import _mapValues from 'lodash/mapValues';
 import _omitBy from 'lodash/omitBy';
 import { camelize } from '@bdelab/roar-utils';
-import { PA_CATS, PA_CAT_ORDER } from '@roar-platform/assessment-schema/pa';
+import { pa } from '@roar-platform/assessment-schema';
 import { jsPsych } from './jsPsych';
 import { mediaAssets, paValidityEvaluator } from './experiment';
 import './i18n';
 import irtHyperparameters from './config/corpus/en/irt_hyperparameters.csv';
+
+const { PA_CATS, PA_CAT_ORDER } = pa;
 
 let clowder;
 
