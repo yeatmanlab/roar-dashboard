@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup environment
         uses: ./.github/actions/setup-node-environment
@@ -68,7 +68,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -128,7 +128,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -212,7 +212,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -341,7 +341,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: "recursive"
           token: ${{ secrets.CI_GITHUB_PAT }}
@@ -391,7 +391,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build preview app
         uses: ./.github/actions/build
