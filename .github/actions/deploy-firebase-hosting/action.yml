@@ -21,6 +21,10 @@ inputs:
   gcp-service-account-id:
     description: "The GCP service account ID to impersonate."
     required: true
+  expires:
+    description: "TTL for ephemeral preview channels (e.g. '7d', '12h'). Only used when firebase-channel is 'preview'."
+    required: false
+    default: "7d"
   github-token:
     description: "The GitHub token to use for authentication."
     required: false
@@ -34,7 +38,7 @@ inputs:
   firebase-hosting-site:
     description: "Firebase Hosting site ID to deploy to (e.g. roar-phoneme-staging). Required when the Firebase project hosts multiple sites."
     required: false
-    default: ''
+    default: ""
 
 runs:
   using: composite
@@ -63,14 +67,21 @@ runs:
     # Note: As the project relies on two simultaneous Firebase projects and the configs are stored in the /firebase
     # directory, we prepare the deployment by ensuring that the Firebase config and dist directory are located on the
     # same path. Otherwise, the firebaseextended/action-hosting-deploy action fails to deploy the application.
+    # Note: When a named Hosting site is requested via the firebase-hosting-site input, we inject it as the "site"
+    # key of the hosting config so the Firebase CLI deploys to that site instead of the project's default site. The
+    # input is read through an environment variable as it can carry runtime-derived values (e.g. step outputs).
     - name: Prepare deployment
       shell: bash
+      env:
+        FIREBASE_HOSTING_SITE: ${{ inputs.firebase-hosting-site }}
       run: |
         mkdir app
         cp -r ${{ inputs.dist-path }} app/dist
         cp ${{ inputs.firebase-config-path }} app/firebase.json
-        if [ -n "${{ inputs.firebase-hosting-site }}" ]; then
-          jq --arg site "${{ inputs.firebase-hosting-site }}" '.hosting.site = $site' app/firebase.json > app/firebase.tmp.json && mv app/firebase.tmp.json app/firebase.json
+        if [ -n "$FIREBASE_HOSTING_SITE" ]; then
+          jq --arg site "$FIREBASE_HOSTING_SITE" '.hosting.site = $site' app/firebase.json > app/firebase.tmp.json
+          mv app/firebase.tmp.json app/firebase.json
+          echo "Deploying to named Firebase Hosting site: $FIREBASE_HOSTING_SITE"
         fi
         cd app && pwd && ls -la
 
@@ -85,6 +96,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         repoToken: "${{ inputs.github-token }}"
         projectId: "${{ inputs.firebase-project-id }}"
+        target: "${{ inputs.firebase-hosting-site }}"
         expires: "${{ inputs.expires }}"
         entryPoint: ./app
 
@@ -95,6 +107,7 @@ runs:
         firebaseServiceAccount: "${{ env.GCP_HOSTING_SERVICE_ACCOUNT_KEY }}"
         projectId: "${{ inputs.firebase-project-id }}"
         channelId: "live"
+        target: "${{ inputs.firebase-hosting-site }}"
         entryPoint: ./app
 
     # Output deployment URL

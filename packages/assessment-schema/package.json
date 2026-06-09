@@ -1,17 +1,26 @@
 {
-  "name": "@roar-dashboard/assessment-schema",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@roar-platform/assessment-schema",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./roar-pa": {
+      "types": "./dist/roar-pa/index.d.ts",
+      "import": "./dist/roar-pa/index.js",
+      "default": "./dist/roar-pa/index.js"
     },
     "./pa": {
-      "types": "./dist/pa/index.d.ts",
-      "import": "./dist/pa/index.js",
-      "default": "./dist/pa/index.js"
+      "types": "./dist/roar-pa/index.d.ts",
+      "import": "./dist/roar-pa/index.js",
+      "default": "./dist/roar-pa/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -25,7 +34,7 @@
     "@roar-dashboard/api-contract": "*"
   },
   "devDependencies": {
-    "@roar-dashboard/typescript-config": "*",
+    "@roar-platform/typescript-config": "*",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
   }

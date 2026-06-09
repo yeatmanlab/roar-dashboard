@@ -1,6 +1,6 @@
 import { eq, and, isNull, count, asc, desc } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import type { PaginatedResult } from './base.repository';
 import { BaseRepository } from './base.repository';
 import type { Family, NewFamily, NewUser, NewUserFamily, NewUserGroup } from '../db/schema';

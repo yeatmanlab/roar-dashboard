@@ -1,7 +1,7 @@
 import type {
   TaskVariantsListQuery,
   TaskVariantListItem as ContractTaskVariantListItem,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import { TaskVariantService, type TaskVariantListItem } from '../services/task-variant/task-variant.service';

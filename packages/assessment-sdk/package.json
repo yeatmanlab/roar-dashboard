@@ -1,9 +1,10 @@
 {
-  "name": "@yeatmanlab/assessment-sdk",
-  "version": "0.0.0",
+  "name": "@roar-platform/assessment-sdk",
+  "version": "0.1.0",
   "type": "module",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "repository": {
     "type": "git",
@@ -42,8 +43,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@roar-dashboard/api-contract": "*",
     "@roar-dashboard/assessment-schema": "*",
+    "@roar-platform/api-contract": "^0.1.0",
     "@ts-rest/core": "^3.52.1",
     "http-status-codes": "^2.3.0"
   },

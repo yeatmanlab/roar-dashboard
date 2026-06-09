@@ -25,7 +25,7 @@ The assessment SDK (`packages/assessment-sdk/`) follows the Gang of Four (GoF) C
 
 ### Receiver — thin ts-rest client wrapper
 
-The Receiver's only job is to initialize a typed ts-rest client from `@roar-dashboard/api-contract` and inject cross-cutting concerns (auth headers, request tracing). It must not contain endpoint-specific methods like `createRun()` or `writeTrial()`.
+The Receiver's only job is to initialize a typed ts-rest client from `@roar-platform/api-contract` and inject cross-cutting concerns (auth headers, request tracing). It must not contain endpoint-specific methods like `createRun()` or `writeTrial()`.
 
 #### Incorrect
 
@@ -58,7 +58,7 @@ Problems with this approach:
 
 ```typescript
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
-import { ApiContractV1 } from '@roar-dashboard/api-contract';
+import { ApiContractV1 } from '@roar-platform/api-contract';
 import type { CommandContext } from '../command/command';
 
 // Type alias for the inferred ts-rest client — used for the public property type
@@ -154,7 +154,7 @@ Every future command follows the same shape: call the typed contract endpoint, i
 The compat layer exposes standalone functions (`startRun`, `writeTrial`, `finishRun`, `abortRun`) that match the legacy Firekit API. Internally, each function creates the appropriate command and runs it via the Invoker. Assessments must call `initFirekitCompat` first, then use the standalone functions:
 
 ```typescript
-import { initFirekitCompat, startRun, writeTrial, finishRun, abortRun } from '@roar-dashboard/assessment-sdk/compat/firekit';
+import { initFirekitCompat, startRun, writeTrial, finishRun, abortRun } from '@roar-platform/assessment-sdk/compat/firekit';
 
 // Initialize once — creates the RoarApi client and Invoker internally
 initFirekitCompat(ctx, { variantId: 'abc', version: '1.0' });

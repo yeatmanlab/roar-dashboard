@@ -1,4 +1,4 @@
-import type { Json } from '@roar-dashboard/api-contract';
+import type { Json } from '@roar-platform/api-contract';
 
 /**
  * StartRunInput is a discriminated union type that enforces the relationship

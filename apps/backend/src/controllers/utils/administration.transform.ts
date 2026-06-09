@@ -1,7 +1,7 @@
 import type {
   AdministrationBase as ContractAdministrationBase,
   Administration as ContractAdministration,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import type { Administration } from '../../db/schema';
 import type { AdministrationWithEmbeds } from '../../services/administration/administration.service';
 /**

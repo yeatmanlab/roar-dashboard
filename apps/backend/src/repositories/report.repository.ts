@@ -24,7 +24,7 @@ import type * as CoreDbSchema from '../db/schema/core';
 import { CoreDbClient } from '../db/clients';
 import { fdwRuns } from '../db/schema/assessment-fdw/runs';
 import { fdwRunScores } from '../db/schema/assessment-fdw/run-scores';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import type { ScopeType } from '../services/report/report.types';
 import { conditionToSql } from '../utils/condition-to-sql';
 import type { Condition } from '../types/condition';

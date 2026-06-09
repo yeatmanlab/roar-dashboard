@@ -4,14 +4,10 @@ import _reduce from 'lodash/reduce';
 import * as Papa from 'papaparse';
 import store from 'store2';
 import { getGrade } from '@bdelab/roar-utils';
-import {
-  PA_TASK_ID,
-  PA_SCORE_KIND,
-  PA_SCORE_TABLE_URL,
-  PA_SCORING_VERSION,
-  PA_COMPOSITE,
-  PA_COMPOSITE_FOUNDATIONAL,
-} from '@roar-dashboard/assessment-schema/pa';
+import { pa } from '@roar-platform/assessment-schema';
+
+const { PA_TASK_ID, PA_SCORE_KIND, PA_SCORE_TABLE_URL, PA_SCORING_VERSION, PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL } =
+  pa;
 
 export class RoarScores {
   constructor() {

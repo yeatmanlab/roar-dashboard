@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StatusCodes } from 'http-status-codes';
-import type { TaskBundleListQuery } from '@roar-dashboard/api-contract';
+import type { TaskBundleListQuery } from '@roar-platform/api-contract';
 import { ApiError } from '../errors/api-error';
 import { ApiErrorCode } from '../enums/api-error-code.enum';
 import { TaskBundleFactory, buildTaskBundleVariantWithDetails } from '../test-support/factories/task-bundle.factory';

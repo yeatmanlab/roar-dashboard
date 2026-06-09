@@ -1,4 +1,4 @@
-import type { Json, ScoreEntry } from '@roar-dashboard/api-contract';
+import type { Json } from '@roar-platform/api-contract';
 import { RUN_EVENT_TRIAL } from './run-event-status';
 
 /**

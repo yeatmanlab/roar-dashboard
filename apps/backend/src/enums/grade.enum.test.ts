@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { UserGradeSchema } from '@roar-dashboard/api-contract';
+import { UserGradeSchema } from '@roar-platform/api-contract';
 import { gradeEnum } from '../db/schema/enums';
 
 describe('Grade enum', () => {

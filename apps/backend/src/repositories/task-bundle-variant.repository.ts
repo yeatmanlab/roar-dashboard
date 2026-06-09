@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { taskBundleVariants, taskVariants, tasks } from '../db/schema';
 import { CoreDbClient } from '../db/clients';
 import type * as CoreDbSchema from '../db/schema/core';
-import type { TaskVariantStatus } from '@roar-dashboard/api-contract';
+import type { TaskVariantStatus } from '@roar-platform/api-contract';
 
 /**
  * A task bundle variant row joined with its parent task and task variant fields.

@@ -64,16 +64,24 @@ runs:
     # Inject dotenv configuration
     - name: Inject environment configuration
       if: ${{ inputs.override-env-configs != 'false' }}
+      env:
+        REPO_NAME: ${{ github.event.repository.name }}
       shell: bash
       run: |
         rm -rf build/apps/dashboard/env-configs
-        cp -r ${{ github.event.repository.name }}/apps/dashboard/env-configs build/apps/dashboard/env-configs
+        cp -r "${REPO_NAME}/apps/dashboard/env-configs" build/apps/dashboard/env-configs
 
     # Build workspace packages (assessment-sdk, api-contract, etc.) before the dashboard
     - name: Build workspace packages
       working-directory: build
       shell: bash
       run: npx turbo run build --filter='./packages/*'
+
+    # Build assessment packages that the dashboard imports at runtime
+    - name: Build assessment packages
+      working-directory: build
+      shell: bash
+      run: npx turbo run build --filter='./apps/assessments/*'
 
     # Build the application
     - name: Build application
