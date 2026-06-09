@@ -1,7 +1,7 @@
 {
   "name": "@roar-platform/roar-pa",
   "description": "This is a 3-AFC task to measure phonological awareness",
-  "version": "0.1.0",
+  "version": "5.1.0",
   "author": "AnyaWMa <anyawma08@gmail.com>",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
