@@ -61,16 +61,16 @@ const lexicalityTrialContent = [
       const correctResponse = jsPsych.timelineVariable('correct_response');
 
       if (data.keyboard_response) {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = jsPsych.pluginAPI.compareKeys(data.keyboard_response, correctResponse);
       } else if (correctResponse === 'ArrowLeft' && data.button_response === 0) {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = true;
       } else if (correctResponse === 'ArrowRight' && data.button_response === 1) {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = true;
       } else {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = false;
       }
 
@@ -135,16 +135,16 @@ const lexicalityTrialContent = [
       const nextStimulus = store.session('nextStimulus');
 
       if (data.keyboard_response) {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = jsPsych.pluginAPI.compareKeys(data.keyboard_response, nextStimulus.correct_response);
       } else if (nextStimulus.correct_response === 'ArrowLeft' && data.button_response === 0) {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = true;
       } else if (nextStimulus.correct_response === 'ArrowRight' && data.button_response === 1) {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = true;
       } else {
-        // eslint-disable-next-line no-param-reassign
+         
         data.correct = false;
       }
 
@@ -235,7 +235,7 @@ const lexicalityTrialContent = [
   },
 ];
 
-// eslint-disable-next-line no-unused-vars
+ 
 const lexicalityTrialsMapped = lexicalityTrialContent.map((trial) => ({
   type: jsPsychHTMLMultiResponse,
   stimulus: trial.stimulus,
@@ -245,7 +245,7 @@ const lexicalityTrialsMapped = lexicalityTrialContent.map((trial) => ({
   keyboard_choices: () =>
     store.session.get('config').addNoResponse ? ['ArrowLeft', 'ArrowRight', ' '] : ['ArrowLeft', 'ArrowRight', ''],
   button_choices: () => (isTouchScreen ? ['ArrowLeft', 'ArrowRight'] : []),
-  // eslint-disable-next-line consistent-return
+   
   button_html: () => {
     if (isTouchScreen) {
       return [

@@ -1,4 +1,4 @@
-/* eslint-disable no-param-reassign */
+ 
 import jsPsychAudioMultiResponse from '@jspsych-contrib/plugin-audio-multi-response';
 import store from 'store2';
 import i18next from 'i18next';

@@ -14,6 +14,11 @@ export default [
         process: 'readonly',
       },
     },
+    rules: {
+      // Rest-sibling destructuring (e.g. `const { a, b, ...rest } = obj`) is an
+      // intentional omit pattern; the named bindings exist to exclude them from rest.
+      'no-unused-vars': ['error', { ignoreRestSiblings: true }],
+    },
   },
 
   // Cypress test files

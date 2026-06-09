@@ -184,7 +184,7 @@ const surveyPid = {
   autocomplete: true,
   on_finish: (data) => {
     const tmpMetadata = {};
-    // eslint-disable-next-line no-restricted-syntax
+     
     for (const field in data.response) {
       if (data.response[field] === '') {
         tmpMetadata[field] = null;

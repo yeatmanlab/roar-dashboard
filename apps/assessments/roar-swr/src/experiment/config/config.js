@@ -123,7 +123,7 @@ const fixationTimeOptions = [1000, 2000, 25000];
 // Trial completion time options in milliseconds
 const trialTimeOptions = [null, 5000, 8000, 100000];
 
-// eslint-disable-next-line max-len
+ 
 const divideTrial2Block = (n1, n2, nBlock) => {
   const n = parseInt(n1, 10) + parseInt(n2, 10);
   return [Math.floor(n / nBlock), Math.floor(n / nBlock), n - 2 * Math.floor(n / nBlock)];
@@ -281,9 +281,9 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-      // eslint-disable-next-line prefer-rest-params
+       
       fn.apply(fn, arguments);
-      // eslint-disable-next-line prefer-rest-params
+       
       code.apply(fn, arguments);
     };
 

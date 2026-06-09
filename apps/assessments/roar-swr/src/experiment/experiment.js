@@ -1,4 +1,4 @@
-/* eslint-disable no-param-reassign */
+ 
 import store from 'store2';
 import {
   generateAssetObject,
@@ -28,20 +28,20 @@ import { ifCoinTracking } from './trials/coinFeedback';
 
 const bucketURI = 'https://storage.googleapis.com/roar-swr';
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let cat;
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let cat2;
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export const presentationTimeCats = {};
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let mediaAssets;
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let preloadTrials;
 
-// eslint-disable-next-line import/no-mutable-exports
+ 
 export let swrValidityEvaluator;
 
 export function buildExperiment(config) {
