@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FreeReducedLunchStatusSchema } from '@roar-dashboard/api-contract';
+import { FreeReducedLunchStatusSchema } from '@roar-platform/api-contract';
 import { freeReducedLunchStatusEnum } from '../db/schema/enums';
 
 describe('FreeReducedLunchStatus enum', () => {

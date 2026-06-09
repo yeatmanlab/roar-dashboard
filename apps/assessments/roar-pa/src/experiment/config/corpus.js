@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import store from 'store2';
 import _shuffle from 'lodash/shuffle';
-import { PA_TRIAL_TYPES, PA_CATS, PA_CORPUS_TYPES } from '@roar-dashboard/assessment-schema/pa';
+import { PA_TRIAL_TYPES, PA_CATS, PA_CORPUS_TYPES } from '@roar-platform/assessment-schema/pa';
 import { corpusTranslations } from '../i18n';
 import { standardizeItemComponent } from '../experimentHelpers';
 

@@ -3,7 +3,8 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "env": ["ROAR_API_BASE_URL", "FIREBASE_AUTH_EMULATOR_HOST", "CYPRESS_PROJECT_ID"]
+      "env": ["ROAR_API_BASE_URL", "FIREBASE_AUTH_EMULATOR_HOST", "CYPRESS_PROJECT_ID"],
+      "outputs": ["dist/index.js", "dist/index.js.map"]
     },
     "dev": {
       "passThroughEnv": ["BACKEND_URL", "FIREBASE_AUTH_EMULATOR_HOST"]

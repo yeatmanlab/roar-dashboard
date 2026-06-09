@@ -2,7 +2,7 @@ import store from 'store2';
 // Import necessary for async in the top level of the experiment script
 import 'regenerator-runtime/runtime';
 import i18next from 'i18next';
-import { updateEngagementFlags } from '@yeatmanlab/assessment-sdk/compat/firekit';
+import { updateEngagementFlags } from '@roar-platform/assessment-sdk/compat/firekit';
 import {
   generateAssetObject,
   createPreloadTrials,

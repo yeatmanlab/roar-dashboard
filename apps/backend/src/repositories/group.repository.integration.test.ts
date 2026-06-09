@@ -5,7 +5,7 @@
  * real database. Groups have a flat structure with no hierarchy.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { GroupRepository } from './group.repository';
 import { UserRole } from '../enums/user-role.enum';
 import { CoreDbClient } from '../test-support/db';

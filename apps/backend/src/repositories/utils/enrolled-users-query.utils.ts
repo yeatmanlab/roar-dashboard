@@ -1,5 +1,5 @@
 import { SQL, inArray, eq, Column } from 'drizzle-orm';
-import type { EnrolledUsersSortFieldType } from '@roar-dashboard/api-contract';
+import type { EnrolledUsersSortFieldType } from '@roar-platform/api-contract';
 import { users, userClasses, userGroups, userOrgs, userFamilies } from '../../db/schema';
 import { isActiveRoster } from './enrollment.utils';
 import type { ListEnrolledUsersOptions, ListEnrolledFamilyUsersOptions } from '../../types/user';

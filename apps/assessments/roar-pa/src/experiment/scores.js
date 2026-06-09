@@ -11,7 +11,7 @@ import {
   PA_SCORING_VERSION,
   PA_COMPOSITE,
   PA_COMPOSITE_FOUNDATIONAL,
-} from '@roar-dashboard/assessment-schema/pa';
+} from '@roar-platform/assessment-schema/pa';
 
 export class RoarScores {
   constructor() {

@@ -1,4 +1,4 @@
-import type { Json } from '@roar-dashboard/api-contract';
+import type { Json } from '@roar-platform/api-contract';
 import { RUN_EVENT_STATUS_OK, RUN_EVENT_COMPLETE } from './run-event-status';
 
 /**

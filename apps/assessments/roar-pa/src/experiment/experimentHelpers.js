@@ -6,7 +6,7 @@ import _clamp from 'lodash/clamp';
 import _mapValues from 'lodash/mapValues';
 import _omitBy from 'lodash/omitBy';
 import { camelize } from '@bdelab/roar-utils';
-import { PA_CATS, PA_CAT_ORDER } from '@roar-dashboard/assessment-schema/pa';
+import { PA_CATS, PA_CAT_ORDER } from '@roar-platform/assessment-schema/pa';
 import { jsPsych } from './jsPsych';
 import { mediaAssets, paValidityEvaluator } from './experiment';
 import './i18n';

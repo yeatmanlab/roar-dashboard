@@ -7,7 +7,7 @@
  * Verifies SQL correctness and proper filtering by orgType, rosteringEnded, etc.
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { SortOrder } from '@roar-dashboard/api-contract';
+import { SortOrder } from '@roar-platform/api-contract';
 import { baseFixture } from '../test-support/fixtures';
 import { OrgFactory } from '../test-support/factories/org.factory';
 import { ClassFactory } from '../test-support/factories/class.factory';

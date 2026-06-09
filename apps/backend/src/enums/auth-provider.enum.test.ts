@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AuthProviderSchema } from '@roar-dashboard/api-contract';
+import { AuthProviderSchema } from '@roar-platform/api-contract';
 import { authProviderEnum } from '../db/schema/enums';
 
 describe('AuthProvider enum', () => {

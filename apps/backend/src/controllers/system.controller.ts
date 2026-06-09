@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import type { SyncFgaQuery } from '@roar-dashboard/api-contract';
+import type { SyncFgaQuery } from '@roar-platform/api-contract';
 import { SystemService } from '../services/system/system.service';
 import { ApiError } from '../errors/api-error';
 import { toErrorResponse } from '../utils/to-error-response.util';

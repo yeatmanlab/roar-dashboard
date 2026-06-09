@@ -1,7 +1,7 @@
 import { playPA } from '../../../../support/helper-functions/roar-pa/paHelpers';
 import { isCurrentVersion } from '../../../../support/utils';
 
-const app = '@roar-dashboard/roar-pa';
+const app = '@roar-platform/roar-pa';
 
 // SKIPPED until #1827: assessment play-through tests need reevaluation after monorepo migration
 describe.skip('Testing playthrough of ROAR-Phoneme as a participant with a simulated 3g connection', () => {

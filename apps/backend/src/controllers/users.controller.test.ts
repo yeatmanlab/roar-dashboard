@@ -4,7 +4,7 @@ import type {
   CreateUserRequestBody,
   UpdateUserRequestBody,
   AdministrationsListQuery,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import { UserFactory, AuthContextFactory } from '../test-support/factories/user.factory';
 import { AdministrationWithEmbedsFactory } from '../test-support/factories/administration.factory';
 import { createMockUserService } from '../test-support/services/user.service';

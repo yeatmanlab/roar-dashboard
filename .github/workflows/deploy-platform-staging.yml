@@ -103,9 +103,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Deploy frontend
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # TODO: Re-enable after testing is complete
   deploy-frontend:
-    if: false
     name: Deploy frontend
     needs: [deploy-backend]
     runs-on: ubuntu-latest
@@ -125,10 +123,10 @@ jobs:
 
       - name: Deploy app
         uses: ./.github/actions/deploy-firebase-hosting
-        id: deployment
         with:
           firebase-channel: default
           firebase-project-id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          firebase-hosting-site: roar-dashboard-staging
           gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           gcp-service-account-id: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_ID }}
           dist-path: build/apps/dashboard/dist

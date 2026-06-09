@@ -5,7 +5,7 @@
  * Retries once on 401 auth/token-expired by forcing a token refresh.
  */
 import { initClient, tsRestFetchApi } from '@ts-rest/core';
-import { ApiContractV1 } from '@roar-dashboard/api-contract';
+import { ApiContractV1 } from '@roar-platform/api-contract';
 import { useAuthStore } from '@/store/auth';
 
 const ROAR_API_BASE_URL = import.meta.env.VITE_ROAR_API_BASE_URL;

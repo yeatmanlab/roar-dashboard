@@ -2,7 +2,7 @@ import type {
   TaskBundleListItem,
   TaskBundleListQuery,
   TaskBundleVariantItem as ContractVariantItem,
-} from '@roar-dashboard/api-contract';
+} from '@roar-platform/api-contract';
 import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../errors/api-error';
 import {
