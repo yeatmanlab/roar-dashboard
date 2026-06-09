@@ -16,6 +16,11 @@
       "types": "./dist/roar-pa/index.d.ts",
       "import": "./dist/roar-pa/index.js",
       "default": "./dist/roar-pa/index.js"
+    },
+    "./pa": {
+      "types": "./dist/roar-pa/index.d.ts",
+      "import": "./dist/roar-pa/index.js",
+      "default": "./dist/roar-pa/index.js"
     }
   },
   "main": "./dist/index.js",
