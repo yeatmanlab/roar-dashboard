@@ -13,8 +13,8 @@ describe('PA IRT hyperparameters — composite theta bounds', () => {
   it('composite_foundational bounds are pinned to -9 / 7', () => {
     const row = byType.composite_foundational;
     expect(row, 'composite_foundational row should exist').toBeDefined();
-    // NOTE: these are asymmetric (-9 / +7) while every other row is symmetric (-6 / 6).
-    // Introduced in 02d5c4850 — confirm the asymmetry is intentional, not a typo.
+    // NOTE: bounds are intentionally asymmetric (-9 / +7) for composite_foundational,
+    // unlike the symmetric (-6 / 6) rows. Confirmed intentional (introduced in 02d5c4850).
     expect(row['theta.min']).toBe(-9);
     expect(row['theta.max']).toBe(7);
   });

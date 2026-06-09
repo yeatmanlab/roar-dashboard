@@ -490,7 +490,6 @@ export const testLoopFunction = (subskill) => {
 
   const numItems = store.session.get('numItems');
   const maxNumber = store.session('config').numTestItems ?? numItems[`numItems${subskill.toUpperCase()}`];
-
   if (store.session('trialNumBlock') < maxNumber) {
     return true;
   }
