@@ -1,7 +1,10 @@
 import store from 'store2';
+import Ajv from 'ajv/dist/2020';
+import addErrors from 'ajv-errors';
 import _omitBy from 'lodash/omitBy';
 import _isNull from 'lodash/isNull';
 import _isUndefined from 'lodash/isUndefined';
+import parameterSchema from '../../../parameters.json';
 import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import i18next from 'i18next';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
@@ -18,6 +21,10 @@ import { processCSV, getCorpusForPresentationExp } from './corpus';
 import { RoarScores } from '../scores';
 import { jsPsych } from '../jsPsych';
 import { shuffle, createBlocks } from '../helperFunctions';
+
+const ajv = new Ajv({ allErrors: true });
+addErrors(ajv);
+const validateParams = ajv.compile(parameterSchema);
 
 const makePid = () => {
   let text = '';
@@ -257,9 +264,12 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
   console.warn('[roar-swr] updateTaskParams is deprecated and has no effect.', updatedGameParams);
 
   if (config.useParameterValidation) {
-    // validateParameters via Firekit is deprecated. Parameter validation now relies
-    // on the JSON Schema defined in parameters.json being enforced at the serve layer.
-    console.warn('[roar-swr] validateParameters is deprecated and has no effect in this version.');
+    // Exclude the internal control flag — it is not a game parameter and is not in the schema.
+    const { useParameterValidation: _useParameterValidation, ...paramsToValidate } = gameParams;
+    const valid = validateParams(paramsToValidate);
+    if (!valid) {
+      console.warn('[roar-swr] Parameter validation warnings:\n' + validateParams.errors.map((e) => e.message).join('\n'));
+    }
   }
 
   if (config.pid) {
