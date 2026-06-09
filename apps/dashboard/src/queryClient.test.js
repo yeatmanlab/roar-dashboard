@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref, readonly } from 'vue';
 import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
 
 // Shared spy state for useGlobalError — lets us verify setGlobalError calls
 // while sharing the same module-scoped ref that queryClient.js will use.
@@ -96,6 +97,22 @@ describe('queryClient QueryCache onError', () => {
   it('does not set global error for unrecognized error codes', () => {
     const error = { body: { error: { code: 'some/other-error' } } };
     onErrorCallback(error);
+
+    expect(setGlobalError).not.toHaveBeenCalled();
+    expect(globalError.value).toBeNull();
+  });
+
+  it('sets SERVER_ERROR for a /me query failure', () => {
+    const error = { body: { error: { code: 'some/other-error' } } };
+    onErrorCallback(error, { queryKey: [ME_QUERY_KEY] });
+
+    expect(setGlobalError).toHaveBeenCalledWith({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+    expect(globalError.value).toEqual({ type: GLOBAL_ERROR_TYPES.SERVER_ERROR });
+  });
+
+  it('does not set SERVER_ERROR for a non-/me query failure', () => {
+    const error = { body: { error: { code: 'some/other-error' } } };
+    onErrorCallback(error, { queryKey: ['some-other-key'] });
 
     expect(setGlobalError).not.toHaveBeenCalled();
     expect(globalError.value).toBeNull();
