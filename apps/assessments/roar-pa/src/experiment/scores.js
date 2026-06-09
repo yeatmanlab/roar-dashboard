@@ -16,6 +16,8 @@ export class RoarScores {
     this.tableURL = PA_SCORE_TABLE_URL(this.scoringVersion);
     this.lookupTable = [];
     this.tableLoaded = false;
+    this.tableLoadingPromise = null;
+    this.tableLoadingError = null;
   }
 
   isAdaptiveScoring() {
@@ -28,7 +30,18 @@ export class RoarScores {
   }
 
   async initTable() {
-    return new Promise((resolve, reject) => {
+    // Prevent race condition: if table is already loading, return the existing promise
+    if (this.tableLoadingPromise) {
+      return this.tableLoadingPromise;
+    }
+
+    // If table is already loaded, return immediately
+    if (this.tableLoaded) {
+      return Promise.resolve();
+    }
+
+    // Create and store the loading promise
+    this.tableLoadingPromise = new Promise((resolve, reject) => {
       const ageInMonths = store.session.get('config').userMetadata?.ageMonths;
       const grade = getGrade(store.session.get('config').userMetadata?.grade);
 
@@ -62,10 +75,19 @@ export class RoarScores {
         },
         complete: () => {
           this.tableLoaded = true;
+          this.tableLoadingPromise = null;
           resolve();
+        },
+        error: (error) => {
+          this.tableLoadingPromise = null;
+          // Reset to prevent stale data on retry
+          this.lookupTable = [];
+          reject(error);
         },
       });
     });
+
+    return this.tableLoadingPromise;
   }
 
   /**
@@ -191,7 +213,22 @@ export class RoarScores {
 
     if (grade != undefined || ageMonths != undefined) {
       if (!this.tableLoaded) {
-        await this.initTable();
+        if (!this.tableLoadingPromise) {
+          this.tableLoadingPromise = this.initTable();
+        }
+
+        try {
+          // Subsequent calls await the same promise to avoid multiple network requests
+          await this.tableLoadingPromise;
+        } catch (error) {
+          // Only log when error state changes to avoid flooding logs
+          const errorMessage = error?.message || error;
+          const previousErrorMessage = this.tableLoadingError?.message || this.tableLoadingError;
+          if (previousErrorMessage !== errorMessage) {
+            console.error('Error loading scoring table:', errorMessage);
+            this.tableLoadingError = error;
+          }
+        }
       }
 
       // Then we find the row in the lookup table that corresponds to the total score.
