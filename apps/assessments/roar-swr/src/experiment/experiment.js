@@ -1,4 +1,3 @@
- 
 import store from 'store2';
 import {
   generateAssetObject,
@@ -28,20 +27,16 @@ import { ifCoinTracking } from './trials/coinFeedback';
 
 const bucketURI = 'https://storage.googleapis.com/roar-swr';
 
- 
 export let cat;
- 
+
 export let cat2;
 
- 
 export const presentationTimeCats = {};
 
- 
 export let mediaAssets;
- 
+
 export let preloadTrials;
 
- 
 export let swrValidityEvaluator;
 
 export function buildExperiment(config) {

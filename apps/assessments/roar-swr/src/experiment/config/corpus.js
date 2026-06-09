@@ -1,4 +1,3 @@
- 
 import i18next from 'i18next';
 // eslint-disable-next-line import/no-duplicates
 import '../i18n';

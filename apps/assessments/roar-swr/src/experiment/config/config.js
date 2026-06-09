@@ -9,12 +9,7 @@ import { getAgeData, getGrade } from '@bdelab/roar-utils';
 import i18next from 'i18next';
 import jsPsychCallFunction from '@jspsych/plugin-call-function';
 import { SWR_LANGUAGES } from '@roar-platform/assessment-schema/roar-swr';
-import {
-  writeTrial,
-  finishRun,
-  addInteraction,
-  updateUser,
-} from '@roar-platform/assessment-sdk/compat/firekit';
+import { writeTrial, finishRun, addInteraction, updateUser } from '@roar-platform/assessment-sdk/compat/firekit';
 import { getUserDataTimeline } from '../trials/getUserData';
 import { enterFullscreen } from '../trials/fullScreen';
 import { processCSV, getCorpusForPresentationExp } from './corpus';
@@ -130,7 +125,6 @@ const fixationTimeOptions = [1000, 2000, 25000];
 // Trial completion time options in milliseconds
 const trialTimeOptions = [null, 5000, 8000, 100000];
 
- 
 const divideTrial2Block = (n1, n2, nBlock) => {
   const n = parseInt(n1, 10) + parseInt(n2, 10);
   return [Math.floor(n / nBlock), Math.floor(n / nBlock), n - 2 * Math.floor(n / nBlock)];
@@ -268,7 +262,9 @@ export const initConfig = async (gameParams, userParams, displayElement, usePara
     const { useParameterValidation: _useParameterValidation, ...paramsToValidate } = gameParams;
     const valid = validateParams(paramsToValidate);
     if (!valid) {
-      console.warn('[roar-swr] Parameter validation warnings:\n' + validateParams.errors.map((e) => e.message).join('\n'));
+      console.warn(
+        '[roar-swr] Parameter validation warnings:\n' + validateParams.errors.map((e) => e.message).join('\n'),
+      );
     }
   }
 
@@ -291,9 +287,8 @@ export const initRoarJsPsych = (config) => {
   // run as completed and write data to Firestore, respectively.
   const extend = (fn, code) =>
     function () {
-       
       fn.apply(fn, arguments);
-       
+
       code.apply(fn, arguments);
     };
 

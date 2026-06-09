@@ -184,7 +184,7 @@ const surveyPid = {
   autocomplete: true,
   on_finish: (data) => {
     const tmpMetadata = {};
-     
+
     for (const field in data.response) {
       if (data.response[field] === '') {
         tmpMetadata[field] = null;

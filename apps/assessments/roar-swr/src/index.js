@@ -17,12 +17,7 @@ class RoarSWR {
   async init() {
     initSentry();
     await startRun();
-    const config = await initConfig(
-      this.gameParams,
-      this.userParams,
-      this.displayElement,
-      this.useParameterValidation,
-    );
+    const config = await initConfig(this.gameParams, this.userParams, this.displayElement, this.useParameterValidation);
 
     store.session.set('config', config);
     return buildExperiment(config);

@@ -7,7 +7,7 @@ export const shuffle = (array) => {
 
     // swap elements array[i] and array[j]
     // use "destructuring assignment" syntax
-     
+
     [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
   }
   return shuffledArray;
@@ -28,11 +28,9 @@ const randomAssignGroup = (objects, numGroups, itemsPerGroup) => {
 
   const groups = _chunk(objects, itemsPerGroup);
 
-   
   for (let i = 0; i < numGroups; i++) {
-     
     const numbers = shuffle(Array.from({ length: itemsPerGroup }, (_, i) => i + 1));
-     
+
     for (let j = 0; j < itemsPerGroup; j++) {
       groups[i][j].group = numbers[j];
     }
@@ -88,7 +86,7 @@ export const splitList2 = (objects, numGroups, itemsPerGroup, presentationTimeLi
 
 export const shuffleBlocks = (values2repeat, n) => {
   const list = [];
-   
+
   for (let i = 0; i < n; i++) {
     list.push(...shuffle(values2repeat));
   }
@@ -101,7 +99,7 @@ export const combineLists = (list1, list2) => {
   }
 
   const combinedList = [];
-   
+
   for (let i = 0; i < list1.length; i++) {
     combinedList.push([...list1[i], ...list2[i]]);
   }

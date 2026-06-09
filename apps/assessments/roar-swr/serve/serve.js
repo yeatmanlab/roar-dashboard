@@ -11,8 +11,7 @@ const queryString = new URL(window.location).search;
 const urlParams = new URLSearchParams(queryString);
 
 // Participant / session
-const assessmentPid =
-  urlParams.get('PROLIFIC_PID') || urlParams.get('sona_id') || urlParams.get('participant');
+const assessmentPid = urlParams.get('PROLIFIC_PID') || urlParams.get('sona_id') || urlParams.get('participant');
 const labId = urlParams.get('labId');
 const recruitment = urlParams.get('recruitment');
 const variantId = urlParams.get('variantId');
