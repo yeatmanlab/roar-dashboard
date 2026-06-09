@@ -15,6 +15,7 @@ export interface PaSubscoreDef {
   /** Human-readable label for the subscore column header. */
   label: PaSubtaskLabel;
   correctName: PaScoreName;
+  attemptedName: PaScoreName;
   percentCorrectName: PaScoreName;
 }
 
@@ -30,16 +31,19 @@ export const PA_SUBSCORE_DEFS = {
   FSM: {
     label: PA_SUBTASK_LABELS.FSM,
     correctName: PA_SCORE_NAMES.FSM_CORRECT,
+    attemptedName: PA_SCORE_NAMES.FSM_ATTEMPTED,
     percentCorrectName: PA_SCORE_NAMES.FSM_PERCENT_CORRECT,
   },
   LSM: {
     label: PA_SUBTASK_LABELS.LSM,
     correctName: PA_SCORE_NAMES.LSM_CORRECT,
+    attemptedName: PA_SCORE_NAMES.LSM_ATTEMPTED,
     percentCorrectName: PA_SCORE_NAMES.LSM_PERCENT_CORRECT,
   },
   DEL: {
     label: PA_SUBTASK_LABELS.DEL,
     correctName: PA_SCORE_NAMES.DEL_CORRECT,
+    attemptedName: PA_SCORE_NAMES.DEL_ATTEMPTED,
     percentCorrectName: PA_SCORE_NAMES.DEL_PERCENT_CORRECT,
   },
 } as const satisfies Record<PaSubtaskKey, PaSubscoreDef>;

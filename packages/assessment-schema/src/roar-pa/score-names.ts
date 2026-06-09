@@ -25,14 +25,17 @@ export const PA_SCORE_NAMES = {
 
   // FSM subscores (First Sound Match)
   FSM_CORRECT: "fsmCorrect",
+  FSM_ATTEMPTED: "fsmAttempted",
   FSM_PERCENT_CORRECT: "fsmPercentCorrect",
 
   // LSM subscores (Last Sound Match)
   LSM_CORRECT: "lsmCorrect",
+  LSM_ATTEMPTED: "lsmAttempted",
   LSM_PERCENT_CORRECT: "lsmPercentCorrect",
 
   // DEL subscores (Delete)
   DEL_CORRECT: "delCorrect",
+  DEL_ATTEMPTED: "delAttempted",
   DEL_PERCENT_CORRECT: "delPercentCorrect",
 } as const;
 
