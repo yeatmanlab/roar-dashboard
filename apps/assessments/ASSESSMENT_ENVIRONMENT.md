@@ -38,6 +38,24 @@ To stop all Docker services **and permanently delete the database**:
 npm run assessment-environment:down
 ```
 
+## Rebuilding the Docker images
+
+Docker caches build layers, so changes to files that are copied into the image are sometimes not picked up by a normal `up`. Force a clean rebuild with:
+
+```bash
+npm run assessment-environment:build
+```
+
+Run this after making changes to any of the following:
+
+- `assessment.Dockerfile`
+- `apps/backend/` — source, migrations, seeds, or dependencies
+- `packages/api-contract/` — shared API types and Zod schemas
+- `packages/assessment-schema/` — shared assessment data schemas
+- Root `package.json` / `package-lock.json` — dependency changes
+
+The environment does not need to be stopped first — the rebuild only updates the images. Run `assessment-environment:up` afterward to start the environment with the new images.
+
 ---
 
 ## Querying your data

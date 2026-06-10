@@ -38,6 +38,7 @@
     "dev:ci": "npx webpack serve --mode development --env dbmode=development",
     "assessment-environment:up": "bash ../../../scripts/assessment-env-up.sh",
     "assessment-environment:down": "bash ../../../scripts/assessment-env-down.sh",
+    "assessment-environment:build": "bash ../../../scripts/assessment-env-build.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write --log-level=warn",
