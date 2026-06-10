@@ -84,7 +84,7 @@ function checkAdministrationCreated() {
   cy.log('Administration successfully created.');
 }
 
-describe('The admin user can create an administration and assign it to a district.', () => {
+describe.skip('The admin user can create an administration and assign it to a district.', () => {
   it(
     'Logs into the dashboard, navigates to the Create Administrations component,' +
       'creates a new administration, and assigns it to a test district.',

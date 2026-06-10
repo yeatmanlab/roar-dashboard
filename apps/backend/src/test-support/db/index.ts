@@ -11,4 +11,5 @@ export {
   closeDatabasePools as closeAllConnections,
 } from '../../db/clients';
 export { runMigrations } from './migrate';
+export { setupFdwForTests } from './setup-fdw';
 export { truncateAllTables } from './cleanup';

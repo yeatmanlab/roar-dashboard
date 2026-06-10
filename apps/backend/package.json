@@ -24,6 +24,7 @@
     "db:migrate:core": "drizzle-kit migrate --config ./drizzle.core.config.ts",
     "db:migrate:assess": "drizzle-kit migrate --config ./drizzle.assessment.config.ts",
     "db:migrate": "npm run db:migrate:core && npm run db:migrate:assess",
+    "db:create-test-dbs": "tsx ./scripts/create-test-databases.ts",
     "db:push:core": "drizzle-kit push --config ./drizzle.core.config.ts",
     "db:push:assess": "drizzle-kit push --config ./drizzle.assessment.config.ts",
     "db:studio:core": "drizzle-kit studio --config ./drizzle.core.config.ts",
