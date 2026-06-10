@@ -295,6 +295,15 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    path: '/survey-manager/:surveyPreview?/:surveyId?/:surveyLanguage?',
+    name: 'SurveyManager',
+    component: () => import('@/pages/SurveyManager.vue'),
+    meta: {
+      pageTitle: 'SurveyManager',
+      allowedRoles: [],
+    },
+  },
+  {
     path: '/maintenance',
     name: 'Maintenance',
     component: () => import('@/pages/MaintenancePage.vue'),

@@ -16,6 +16,7 @@ import {
   LEVANTE_BUCKET_URL,
 } from '@/constants/bucket';
 import { findBestMatchingLocale } from '@/translations/i18n';
+import { toRaw } from 'vue';
 
 export interface AudioLinkMap {
   [locale: string]: {
@@ -179,10 +180,7 @@ export function getParsedLocale(locale: string | undefined | null): string {
  * Maps dashboard locale to the `audio/<folder>/` prefix used in levante-assets-*.
  * Exceptions: German → `de`; English → `en`; otherwise the folder name matches the full locale (e.g. `es-CO`).
  */
-export function resolveAudioLinksForLocale(
-  audioLinks: AudioLinkMap,
-  parsedLocale: string,
-): Record<string, string> {
+export function resolveAudioLinksForLocale(audioLinks: AudioLinkMap, parsedLocale: string): Record<string, string> {
   const mapFor = (folderKey: string): Record<string, string> => audioLinks[folderKey] ?? {};
 
   if (!parsedLocale) {
@@ -228,10 +226,10 @@ export const fetchBuffer = ({
 
   const urlMap = resolveAudioLinksForLocale(audioLinks, parsedLocale);
   if (Object.keys(urlMap).length === 0) {
-    console.warn(
-      '[survey audio] No files for locale; check bucket folders vs app locale.',
-      { parsedLocale, bucketLocales: Object.keys(audioLinks) },
-    );
+    console.warn('[survey audio] No files for locale; check bucket folders vs app locale.', {
+      parsedLocale,
+      bucketLocales: Object.keys(audioLinks),
+    });
     setSurveyAudioLoading(false);
     return;
   }
@@ -474,3 +472,7 @@ export async function saveFinalSurveyData({
 }
 
 export type { RoarFirekit as RoarfirekitType } from '@bdelab/roar-firekit';
+
+export const getPlainSurveyData = (raw: unknown) => {
+  return typeof structuredClone === 'function' ? structuredClone(toRaw(raw)) : JSON.parse(JSON.stringify(toRaw(raw)));
+};

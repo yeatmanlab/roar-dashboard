@@ -44,6 +44,7 @@ import { NAVBAR_BLACKLIST } from './constants';
 import { usePageEventTracking } from '@/composables/usePageEventTracking';
 import { allowedUnauthenticatedRoutes } from '@/constants/auth';
 import { useI18n } from 'vue-i18n';
+import { slk } from 'survey-core';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 const VueQueryDevtools = defineAsyncComponent(() =>
@@ -99,27 +100,27 @@ onBeforeMount(async () => {
 
   await authStore.initFirekit();
 
-  await authStore.initStateFromRedirect().then(async () => {
-    // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
-    // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
-    // in order for SSO to work and cannot currently be changed without significant refactoring.
-    const uid = authStore.getUserId();
-    if (!uid) {
-      return;
-    }
-    try {
-      const [userClaims, userData] = await Promise.all([
-        fetchDocById('userClaims', uid),
-        fetchDocById('users', uid),
-      ]);
-      authStore.setUserClaims(userClaims);
-      authStore.setUserData(userData);
-    } catch (error) {
-      await recoverFromProfileFetchFailure(error);
-    }
-  }).catch((error) => {
-    console.error('Error initializing auth store', error);
-  });
+  await authStore
+    .initStateFromRedirect()
+    .then(async () => {
+      // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
+      // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
+      // in order for SSO to work and cannot currently be changed without significant refactoring.
+      const uid = authStore.getUserId();
+      if (!uid) {
+        return;
+      }
+      try {
+        const [userClaims, userData] = await Promise.all([fetchDocById('userClaims', uid), fetchDocById('users', uid)]);
+        authStore.setUserClaims(userClaims);
+        authStore.setUserData(userData);
+      } catch (error) {
+        await recoverFromProfileFetchFailure(error);
+      }
+    })
+    .catch((error) => {
+      console.error('Error initializing auth store', error);
+    });
 
   isAuthStoreReady.value = true;
 });
@@ -127,6 +128,8 @@ onBeforeMount(async () => {
 onMounted(() => {
   const isLocal = import.meta.env.MODE === 'development';
   const isDevToolsEnabled = import.meta.env.VITE_QUERY_DEVTOOLS_ENABLED === 'true';
+
+  slk(import.meta.env.VITE_SURVEYJS_LICENSE_KEY ?? '');
 
   if (isLocal) {
     showDevtools.value = true;
