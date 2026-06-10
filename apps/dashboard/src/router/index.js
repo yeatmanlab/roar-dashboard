@@ -1,11 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
-import { APP_ROUTES, GAME_ROUTES } from '@/constants/routes';
+import { APP_ROUTES, APP_ROUTE_NAMES, GAME_ROUTES } from '@/constants/routes';
+import { GLOBAL_ERROR_TYPES } from '@/constants/globalErrorTypes';
 import { NAV_LOG_MESSAGES } from '@/constants/logMessages';
+import { ME_QUERY_KEY } from '@/constants/queryKeys';
 import { usePermissions } from '@/composables/usePermissions';
 import useSentryLogging from '@/composables/useSentryLogging';
 import { useGlobalError } from '@/composables/useGlobalError';
+import { queryClient } from '@/queryClient';
 const { Permissions } = usePermissions();
 const { logNavEvent } = useSentryLogging();
 
@@ -782,6 +785,12 @@ const routes = [
     meta: { pageTitle: 'Access Ended' },
   },
   {
+    path: APP_ROUTES.SIGN_TOS,
+    name: 'SignTos',
+    component: () => import('../pages/SignTos.vue'),
+    meta: { pageTitle: 'Sign Terms of Service' },
+  },
+  {
     path: '/error',
     name: 'GenericError',
     component: () => import('../pages/GenericError.vue'),
@@ -849,25 +858,25 @@ router.beforeEach(async (to, from, next) => {
 
   // Handle global error state — route to error pages before auth check
   if (globalError.value) {
-    if (globalError.value.type === 'rostering-ended' && to.name !== 'AccessEnded') {
-      next({ name: 'AccessEnded' });
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.ROSTERING_ENDED && to.name !== APP_ROUTE_NAMES.ACCESS_ENDED) {
+      next({ name: APP_ROUTE_NAMES.ACCESS_ENDED });
       return;
     }
-    if (globalError.value.type === 'auth-expired' && to.name !== 'SignIn') {
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.AUTH_EXPIRED && to.name !== APP_ROUTE_NAMES.SIGN_IN) {
       // Clear the error before redirecting so we don't loop after successful sign-in
       clearGlobalError();
-      next({ name: 'SignIn' });
+      next({ name: APP_ROUTE_NAMES.SIGN_IN });
       return;
     }
-    if (globalError.value.type === 'server-error' && to.name !== 'GenericError') {
-      next({ name: 'GenericError' });
+    if (globalError.value.type === GLOBAL_ERROR_TYPES.SERVER_ERROR && to.name !== APP_ROUTE_NAMES.GENERIC_ERROR) {
+      next({ name: APP_ROUTE_NAMES.GENERIC_ERROR });
       return;
     }
   }
 
   // If navigating to an error page but no error exists, redirect to home
-  if ((to.name === 'AccessEnded' || to.name === 'GenericError') && !globalError.value) {
-    next({ name: 'Home' });
+  if ((to.name === APP_ROUTE_NAMES.ACCESS_ENDED || to.name === APP_ROUTE_NAMES.GENERIC_ERROR) && !globalError.value) {
+    next({ name: APP_ROUTE_NAMES.HOME });
     return;
   }
   // Check if user is signed in. If not, go to signin
@@ -897,6 +906,59 @@ router.beforeEach(async (to, from, next) => {
       next({ path: APP_ROUTES.SSO, query: { redirect_to: from.query.redirect_to } });
       return;
     }
+  }
+
+  // Block all navigation when the user has unsigned TOS agreements except to
+  // the signing flow itself, SignIn (so the user can sign out if they don't
+  // want to accept), and the error pages (AccessEnded / GenericError). The
+  // error pages must be allowed through because the `meError` watcher in
+  // `App.vue` calls `router.replace()` to them when `/me` fails — without
+  // these in the allowlist, a user with both unsigned agreements (from a
+  // prior successful response) and a subsequent `/me` failure would enter a
+  // navigation loop: meError → router.replace(GenericError) → this guard
+  // redirects to SignTos → global-error guard redirects back to GenericError.
+  // Once `unsignedAgreements` is empty (via `useRecordUserAgreementMutation`
+  // invalidating `/me`), this guard releases entirely.
+  //
+  // Read the cached `/me` payload directly off the TanStack queryClient
+  // — `meData` no longer lives in the auth store. On the very first
+  // navigation after sign-in the cache is empty, so we await the in-flight
+  // `useMeQuery` (via `ensureQueryData`) up to a short timeout. The 5s race
+  // is a safety valve: if `/me` is unusually slow we'd rather let the
+  // navigation through and re-evaluate on the next one than freeze the
+  // router. App.vue's `AppSpinner` gates render on `isMeSettling` in the
+  // meantime, so the user never sees a flash of the wrong page.
+  let meData;
+  if (store.isAuthenticated) {
+    try {
+      meData = await Promise.race([
+        queryClient.ensureQueryData({
+          queryKey: [ME_QUERY_KEY],
+          staleTime: 60_000,
+        }),
+        new Promise((resolve) => setTimeout(() => resolve(undefined), 5000)),
+      ]);
+    } catch {
+      // ensureQueryData throws on terminal `/me` failures (rostering-ended,
+      // auth-expired). Those are surfaced via the QueryCache → globalError
+      // bridge, which the early-return guard above handles. Treat the
+      // payload as unavailable and let navigation continue.
+      meData = undefined;
+    }
+  }
+  if (!meData) {
+    meData = queryClient.getQueryData([ME_QUERY_KEY]);
+  }
+  const hasUnsignedTos = (meData?.unsignedAgreements?.length ?? 0) > 0;
+  if (
+    hasUnsignedTos &&
+    to.name !== APP_ROUTE_NAMES.SIGN_TOS &&
+    to.name !== APP_ROUTE_NAMES.SIGN_IN &&
+    to.name !== APP_ROUTE_NAMES.ACCESS_ENDED &&
+    to.name !== APP_ROUTE_NAMES.GENERIC_ERROR
+  ) {
+    next({ name: APP_ROUTE_NAMES.SIGN_TOS, query: { next: to.fullPath } });
+    return;
   }
 
   // Prevent routing to routes that the user does not have permission to access.
