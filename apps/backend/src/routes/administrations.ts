@@ -32,13 +32,14 @@ export function registerAdministrationsRoutes(routerInstance: Router) {
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.getAssignees(user!, id),
     },
     listTaskVariants: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, query }) =>
         AdministrationsController.listTaskVariants(user!, id, query),
     },
     listAgreements: {
-      middleware: [AuthGuardMiddleware],
       // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, query }) =>
         AdministrationsController.listAgreements(user!, id, query),
     },
