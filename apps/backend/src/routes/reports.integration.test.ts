@@ -597,8 +597,9 @@ describe('GET /v1/administrations/:id/reports/progress/students', () => {
       const { UserOrgFactory } = await import('../test-support/factories/user-org.factory');
       const { AdministrationFactory } = await import('../test-support/factories/administration.factory');
       const { AdministrationOrgFactory } = await import('../test-support/factories/administration-org.factory');
-      const { AdministrationTaskVariantFactory } =
-        await import('../test-support/factories/administration-task-variant.factory');
+      const { AdministrationTaskVariantFactory } = await import(
+        '../test-support/factories/administration-task-variant.factory'
+      );
       const { OrgType } = await import('../enums/org-type.enum');
       const { UserRole } = await import('../enums/user-role.enum');
 

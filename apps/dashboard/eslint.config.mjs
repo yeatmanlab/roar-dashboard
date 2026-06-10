@@ -15,12 +15,4 @@ export default [
       },
     },
   },
-  {
-    files: ['**/*.test.js', '**/*.spec.js'],
-    rules: {
-      // Disable no-conditional-expect: type guards checking response structure before assertions
-      // are a legitimate pattern for type-safe response validation in TypeScript tests
-      'vitest/no-conditional-expect': 'off',
-    },
-  },
 ];

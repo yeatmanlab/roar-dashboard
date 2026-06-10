@@ -126,7 +126,6 @@ export class FgaClient {
 
     logger.debug({ apiUrl, storeId, authorizationModelId }, 'Initializing OpenFGA client');
 
-    // @ts-expect-error OpenFGA SDK has its own axios dependency that conflicts with the main axios version
     this.instance = new OpenFgaClient({ apiUrl, storeId, authorizationModelId }, axiosInstance);
 
     return this.instance;

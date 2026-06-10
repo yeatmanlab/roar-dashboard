@@ -16,44 +16,53 @@ const s = initServer();
 export function registerUserRoutes(routerInstance: Router) {
   const UserRoutes = s.router(UsersContract, {
     get: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => UsersController.get(user!, id),
     },
     create: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => UsersController.create(user!, body),
     },
     update: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, body }) => UsersController.update(user!, id, body),
     },
     recordUserAgreement: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { userId }, body }) =>
         UsersController.recordUserAgreement(user!, userId, body),
     },
     listUserAdministrations: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { userId }, query }) =>
         UsersController.listUserAdministrations(user!, userId, query),
     },
     getUserAdministration: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { userId, administrationId } }) =>
         UsersController.getUserAdministration(user!, userId, administrationId),
     },
     scoreReports: {
       getGuardianStudentReport: {
+        // @ts-expect-error - Express v4/v5 types mismatch in monorepo
         middleware: [AuthGuardMiddleware],
         handler: async ({ req: { user }, params: { userId } }) =>
           UsersController.getGuardianStudentReport(user!, userId),
       },
     },
     createAnonymous: {
+      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
       middleware: [AnonTokenMiddleware],
       handler: async ({ req: { decodedAnonymousUser } }) => UsersController.createAnonymous(decodedAnonymousUser!.uid),
     },
   });
 
+  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
   createExpressEndpoints(UsersContract, UserRoutes, routerInstance);
 }
