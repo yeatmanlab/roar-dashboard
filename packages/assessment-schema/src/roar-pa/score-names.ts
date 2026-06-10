@@ -13,6 +13,18 @@ export const PA_SCORE_NAMES = {
   STANDARD_SCORE_SPR: "sprStandardScore",
   STANDARD_SCORE_STRING_SPR: "sprStandardScoreString",
 
+  // Composite-level raw counts (summed across subtasks). Generic names so the
+  // backend recompute can read them by name under domain='composite'
+  // (see SCORE_NAME.NUM_ATTEMPTED in apps/backend/src/constants/run-scores.ts).
+  NUM_CORRECT: "numCorrect",
+  NUM_ATTEMPTED: "numAttempted",
+
+  // Theta estimates (adaptive scoring only, emitted for all score groups)
+  THETA_ESTIMATE: "thetaEstimate",
+  THETA_SE: "thetaSE",
+  THETA_ESTIMATE_RAW: "thetaEstimateRaw",
+  THETA_SE_RAW: "thetaSERaw",
+
   // FSM subscores (First Sound Match)
   FSM_CORRECT: "fsmCorrect",
   FSM_ATTEMPTED: "fsmAttempted",

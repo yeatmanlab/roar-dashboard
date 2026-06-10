@@ -15,12 +15,12 @@ const s = initServer();
 export function registerGroupsRoutes(routerInstance: Router) {
   const GroupsRoutes = s.router(GroupsContract, {
     create: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => GroupsController.create(user!, body),
     },
     getInvitationCode: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params }) =>
         GroupsController.getInvitationCode(
@@ -29,7 +29,7 @@ export function registerGroupsRoutes(routerInstance: Router) {
         ),
     },
     listUsers: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params, query }) =>
         GroupsController.listUsers(
@@ -40,6 +40,6 @@ export function registerGroupsRoutes(routerInstance: Router) {
     },
   });
 
-  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(GroupsContract, GroupsRoutes, routerInstance);
 }

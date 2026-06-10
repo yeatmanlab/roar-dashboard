@@ -160,6 +160,7 @@ export class RoarScores {
       return {
         ...(this.isAdaptiveScoring() ? {} : { roarScore: numCorrect }),
         numCorrect,
+        numAttempted,
         percentCorrect,
         roarScoreKind: this.roarScoreKind,
         scoringVersion: this.scoringVersion,
@@ -173,6 +174,18 @@ export class RoarScores {
       (sum, score) => sum + score.roarScore,
       0,
     );
+
+    // Composite raw counts are the sum across the subtasks (fsm/lsm/del). These are
+    // emitted for the composite group and read by the backend best-run recompute
+    // (numAttempted tiebreaker under domain='composite').
+    const subtaskScoresOnly = _omit(computedScores, [PA_COMPOSITE, PA_COMPOSITE_FOUNDATIONAL]);
+    const compositeNumCorrect = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numCorrect ?? 0), 0);
+    const compositeNumAttempted = _reduce(subtaskScoresOnly, (sum, score) => sum + (score.numAttempted ?? 0), 0);
+    computedScores[PA_COMPOSITE] = {
+      ...computedScores[PA_COMPOSITE],
+      numCorrect: compositeNumCorrect,
+      numAttempted: compositeNumAttempted,
+    };
 
     if (this.isAdaptiveScoring()) {
       for (const key of Object.keys(computedScores)) {

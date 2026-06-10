@@ -83,12 +83,15 @@ describe('RoarScores.computedScoreCallback', () => {
     expect(result.fsm).toMatchObject({
       roarScore: 8,
       numCorrect: 8,
+      numAttempted: 10,
       percentCorrect: 80,
       roarScoreKind: PA_SCORE_KIND.RAW_TOTAL_CORRECT,
       scoringVersion: PA_SCORING_VERSION.V3_FIXED,
     });
     expect(result.lsm.percentCorrect).toBe(60);
     expect(result.fsm.thetaEstimate).toBeUndefined();
+    // Composite raw counts = sum across subtasks (numCorrect 8+6, numAttempted 10+10).
+    expect(result.composite).toMatchObject({ numCorrect: 14, numAttempted: 20 });
   });
 
   it('adaptive scoring (v5): attaches per-subtask thetas; composite uses scaled, composite_foundational its own', async () => {
@@ -130,8 +133,10 @@ describe('RoarScores.computedScoreCallback', () => {
 
     expect(result.composite).toMatchObject({ percentile: 55, standardScore: 102 });
     // Pins the `...computedScores.composite_foundational` merge: composite inherits the
-    // foundational numCorrect (9), overriding its own (1). This is a surprising side-effect
-    // worth confirming is intended — exactly what this regression test exists to catch.
+    // foundational numCorrect (9), overriding the value it holds at that point (14, the
+    // subtask sum 8+6 — the raw composite.test input of 1 was already replaced by the
+    // composite-count step). This is a surprising side-effect worth confirming is intended —
+    // exactly what this regression test exists to catch.
     expect(result.composite.numCorrect).toBe(9);
   });
 });

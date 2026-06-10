@@ -63,6 +63,7 @@ export const config = [
       'import/prefer-default-export': 'off',
       'import/no-named-as-default': 'off',
       'import/no-cycle': 'off',
+      'import/namespace': 'off',
       'no-restricted-syntax': 'off',
       'camelcase': 'off',
       'func-names': 'off',
@@ -102,6 +103,7 @@ export const config = [
       '**/rollup.config.mjs',
       '**/drizzle*.{ts,js}',
       '**/vite.config.{js,ts}',
+      '**/vitest.config.ts',
     ],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -114,6 +116,7 @@ export const config = [
     },
     rules: {
       'import/no-extraneous-dependencies': 'off',
+      'import/no-unresolved': 'off',
     },
   },
 
