@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { getVariantParamsById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SWR_LANGUAGES } from '@roar-platform/assessment-schema/roar-swr';
 import RoarSWR from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
@@ -122,20 +122,22 @@ onAuthStateChanged(auth, async (user) => {
         ageMonths,
       };
 
-      const gameParams = {
-        userMode,
-        recruitment,
-        skipInstructions,
-        consent,
-        audioFeedbackOption,
-        numAdaptive,
-        numNew,
-        numValidated,
-        addNoResponse,
-        storyOption,
-        scoringVersion,
-        lng: lngParam,
-      };
+      // const gameParams = {
+      //   userMode,
+      //   recruitment,
+      //   skipInstructions,
+      //   consent,
+      //   audioFeedbackOption,
+      //   numAdaptive,
+      //   numNew,
+      //   numValidated,
+      //   addNoResponse,
+      //   storyOption,
+      //   scoringVersion,
+      //   lng: lngParam,
+      // };
+
+      const gameParams = getVariantParamsById(taskId, resolvedVariantId);
 
       const roarApp = new RoarSWR(gameParams, userParams, null, useParameterValidation);
       roarApp.run();

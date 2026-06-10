@@ -81,6 +81,9 @@ services:
       PG_HOST: assessment-db
       PG_PORT: "5432"
       PG_USER: postgres
+      TASK_VARIANT_PARAMETERS_FILE: /app/assessment-config/taskVariantParameters.json
+    volumes:
+      - ./apps/assessments/${ASSESSMENT_NAME:-}:/app/assessment-config:ro
     depends_on:
       assessment-db:
         condition: service_healthy

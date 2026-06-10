@@ -34,3 +34,6 @@ coverage
 
 # Other
 .DS_Store
+
+# Local assessment environment config (copy from *.example.json to get started)
+taskVariantParameters.json
