@@ -2,18 +2,11 @@
  * Global Setup for Integration Tests
  *
  * Runs once before any test files are loaded.
- * - Provisions FDW prerequisites via the shared shell script
+ * - Provisions FDW prerequisites via the shared TS helper
  * - Runs migrations once (schema setup)
  *
  * Env vars are loaded in vitest.config.ts and merged into process.env.
  */
-
-import { execFileSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export default async function globalSetup() {
   // Fail fast if required env vars are missing.
@@ -25,37 +18,12 @@ export default async function globalSetup() {
   }
 
   // Provision FDW prerequisites before migrations (superuser-only operations).
-  // Reuses the same shell script used for local dev setup.
-  const coreUrl = new URL(process.env.CORE_DATABASE_URL!);
-  const assessmentUrl = new URL(process.env.ASSESSMENT_DATABASE_URL!);
-
-  // The setup script uses a single PG_HOST/PG_PORT for both psql connections and
-  // the FDW server definition. Fail fast if the databases are on different hosts.
-  const coreHost = coreUrl.hostname;
-  const corePort = coreUrl.port || '5432';
-  const assessHost = assessmentUrl.hostname;
-  const assessPort = assessmentUrl.port || '5432';
-  if (coreHost !== assessHost || corePort !== assessPort) {
-    throw new Error(
-      `[globalSetup] CORE_DATABASE_URL and ASSESSMENT_DATABASE_URL must share the same host:port. ` +
-        `Got core=${coreHost}:${corePort}, assessment=${assessHost}:${assessPort}`,
-    );
-  }
-
-  const password = coreUrl.password || '';
-
-  execFileSync(path.resolve(__dirname, '../../scripts/setup-fdw-local.sh'), {
-    env: {
-      ...process.env,
-      CORE_DB: coreUrl.pathname.slice(1),
-      ASSESSMENT_DB: assessmentUrl.pathname.slice(1),
-      PG_HOST: coreUrl.hostname,
-      PG_PORT: coreUrl.port || '5432',
-      PG_USER: coreUrl.username,
-      ...(password ? { PGPASSWORD: password } : {}),
-    },
-    stdio: 'inherit',
-  });
+  // Uses the same helper as `server-test.ts` so both bootstrap paths share one
+  // implementation. The TS helper replaces an earlier execFileSync on
+  // `scripts/setup-fdw-local.sh` so this works in any Node environment without
+  // requiring psql on the PATH (e.g., the cypress/browsers e2e container).
+  const { setupFdwForTests } = await import('./src/test-support/db/setup-fdw');
+  await setupFdwForTests();
 
   // Initialize database pools before running migrations
   const { initializeDatabasePools, closeDatabasePools } = await import('./src/db/clients');

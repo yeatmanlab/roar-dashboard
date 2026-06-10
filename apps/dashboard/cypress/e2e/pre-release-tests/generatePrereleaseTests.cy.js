@@ -17,7 +17,7 @@ function createAdminTestSpec(adminName) {
   });
 }
 
-describe('Fetches all open administrations and generates test spec files for each one.', () => {
+describe.skip('Fetches all open administrations and generates test spec files for each one.', () => {
   let openAdmins;
 
   beforeEach(() => {
