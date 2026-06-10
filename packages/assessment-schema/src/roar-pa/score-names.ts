@@ -2,10 +2,6 @@
  * Canonical run_scores.name strings written by the PA scoring callback.
  * This is the single source of truth — both the assessment and the backend
  * scoring registry import from here to prevent field-name drift.
- *
- * Note: #Attempted names are not emitted by scores.js (which only tracks
- * numCorrect and percentCorrect per subtask). They are kept in PA_SUBSCORE_DEFS
- * for UI display purposes but should never appear in run_scores.
  */
 export const PA_SCORE_NAMES = {
   // Summary scores
@@ -16,6 +12,12 @@ export const PA_SCORE_NAMES = {
   STANDARD_SCORE: "standardScore",
   STANDARD_SCORE_SPR: "sprStandardScore",
   STANDARD_SCORE_STRING_SPR: "sprStandardScoreString",
+
+  // Composite-level raw counts (summed across subtasks). Generic names so the
+  // backend recompute can read them by name under domain='composite'
+  // (see SCORE_NAME.NUM_ATTEMPTED in apps/backend/src/constants/run-scores.ts).
+  NUM_CORRECT: "numCorrect",
+  NUM_ATTEMPTED: "numAttempted",
 
   // Theta estimates (adaptive scoring only, emitted for all score groups)
   THETA_ESTIMATE: "thetaEstimate",

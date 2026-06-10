@@ -1,12 +1,17 @@
-import { PA_SUBTASK_KEYS, PA_SUBSCORE_DEFS, PA_SCORE_NAMES, PA_TASK_ID, type PaScoreName } from './index.js';
+import {
+  PA_SUBTASK_KEYS,
+  PA_SUBSCORE_DEFS,
+  PA_SCORE_NAMES,
+  type PaScoreName,
+} from "./index.js";
 
 /**
  * Score domain constants for PA assessment.
  * These map to the backend's SCORE_DOMAIN values for proper recompute lookups.
  */
 const SCORE_DOMAIN = {
-  COMPOSITE: 'composite',
-  COMPOSITE_FOUNDATIONAL: 'composite_foundational',
+  COMPOSITE: "composite",
+  COMPOSITE_FOUNDATIONAL: "composite_foundational",
 } as const;
 
 /**
@@ -21,7 +26,7 @@ const SCORE_DOMAIN = {
  * @see packages/api-contract/src/v1/runs/schema.ts
  */
 export interface ComputedScoreEntry {
-  type: 'computed';
+  type: "computed";
   domain: string;
   name: PaScoreName;
   value: string;
@@ -35,7 +40,7 @@ export interface ComputedScoreEntry {
 // ComputedScoreEntry from its main entry point (only from dist/v1/runs/schema which isn't in exports).
 // When api-contract's exports are fixed, this can be changed to: declare const _typeCheck: ComputedScoreEntry extends ApiComputedScoreEntry ? true : false;
 declare const _typeCheck: ComputedScoreEntry extends {
-  type: 'computed';
+  type: "computed";
   domain: string;
   name: string;
   value: string;
@@ -82,8 +87,8 @@ const SUMMARY_NAMES = [
  *
  * Output: Array of ScoreEntry objects with:
  * - type: 'computed' (PA computed scores are final aggregates)
- * - domain: 'pa' for subtask correct/percentCorrect; subtask key (fsm/lsm/del) for subtask theta fields;
- *   'composite' or 'composite_foundational' for composite scores
+ * - domain: the subtask key (fsm/lsm/del) for all of a subtask's scores (correct, attempted,
+ *   percentCorrect, theta fields); 'composite' or 'composite_foundational' for composite scores
  * - name: one of PA_SCORE_NAMES values
  * - value: stringified score value
  *
@@ -104,21 +109,21 @@ const SUMMARY_NAMES = [
  * const entries = toPaScoreEntries(computed);
  * // Returns:
  * // [
- * //   { type: 'computed', domain: 'pa', name: 'fsmCorrect', value: '10' },
- * //   { type: 'computed', domain: 'pa', name: 'fsmPercentCorrect', value: '67' },
+ * //   { type: 'computed', domain: 'fsm', name: 'fsmCorrect', value: '10' },
+ * //   { type: 'computed', domain: 'fsm', name: 'fsmPercentCorrect', value: '67' },
  * //   { type: 'computed', domain: 'fsm', name: 'thetaEstimate', value: '0.5' },
  * //   { type: 'computed', domain: 'fsm', name: 'thetaSE', value: '0.2' },
- * //   { type: 'computed', domain: 'pa', name: 'lsmCorrect', value: '12' },
- * //   { type: 'computed', domain: 'pa', name: 'lsmPercentCorrect', value: '80' },
+ * //   { type: 'computed', domain: 'lsm', name: 'lsmCorrect', value: '12' },
+ * //   { type: 'computed', domain: 'lsm', name: 'lsmPercentCorrect', value: '80' },
  * //   { type: 'computed', domain: 'lsm', name: 'thetaEstimate', value: '0.8' },
  * //   { type: 'computed', domain: 'lsm', name: 'thetaSE', value: '0.18' },
  * //   { type: 'computed', domain: 'composite', name: 'roarScore', value: '25' },
  * //   { type: 'computed', domain: 'composite', name: 'percentile', value: '60' },
  * //   { type: 'computed', domain: 'composite', name: 'standardScore', value: '105' },
- * //   { type: 'computed', domain: 'composite', name: 'thetaEstimate', value: '0.65' },
+ * //   { type: 'computed', domain: 'composite', name: 'numCorrect', value: '30' },
+ * //   { type: 'computed', domain: 'composite', name: 'numAttempted', value: '45' },
  * //   { type: 'computed', domain: 'composite_foundational', name: 'roarScore', value: '22' },
  * //   { type: 'computed', domain: 'composite_foundational', name: 'percentile', value: '55' },
- * //   { type: 'computed', domain: 'composite_foundational', name: 'thetaEstimate', value: '0.6' },
  * //   ...
  * // ]
  * ```
@@ -129,60 +134,49 @@ export function toPaScoreEntries(
 ): ComputedScoreEntry[] {
   const entries: ComputedScoreEntry[] = [];
 
-  const add = (name: PaScoreName, value: unknown) => {
-    if (value == null) return;
-    entries.push({
-      type: 'computed',
-      domain: PA_TASK_ID,
-      name,
-      value: String(value),
-    });
-  };
-
-  // Iterate over subtasks (FSM, LSM, DEL) in canonical order
+  // Iterate over subtasks (FSM, LSM, DEL) in canonical order. Every score for a
+  // subtask is written under that subtask's own domain (fsm/lsm/del) so the
+  // subtask scores stay grouped and never collide on the natural key
+  // (type, domain, name, assessmentStage).
   for (const subtaskKey of PA_SUBTASK_KEYS) {
     const subtaskKeyLower = subtaskKey.toLowerCase();
     const subtaskScores = computed[subtaskKeyLower];
 
     if (subtaskScores) {
       const def = PA_SUBSCORE_DEFS[subtaskKey];
-      add(def.correctName, subtaskScores.numCorrect);
-      // Note: #Attempted names are not emitted by scores.js callback
-      // They are kept in PA_SUBSCORE_DEFS for UI display only
-      add(def.percentCorrectName, subtaskScores.percentCorrect);
-      // Emit theta fields for adaptive scoring (v4+) using per-subtask domain
-      // to avoid natural-key collision on (type, domain, name, assessmentStage)
-      if (subtaskScores.thetaEstimate != null) {
+      const addToSubtask = (name: PaScoreName, value: unknown) => {
+        if (value == null) return;
         entries.push({
-          type: 'computed',
+          type: "computed",
           domain: subtaskKeyLower,
-          name: PA_SCORE_NAMES.THETA_ESTIMATE,
-          value: String(subtaskScores.thetaEstimate),
+          name,
+          value: String(value),
         });
-      }
-      if (subtaskScores.thetaSE != null) {
-        entries.push({
-          type: 'computed',
-          domain: subtaskKeyLower,
-          name: PA_SCORE_NAMES.THETA_SE,
-          value: String(subtaskScores.thetaSE),
-        });
-      }
+      };
+      addToSubtask(def.correctName, subtaskScores.numCorrect);
+      addToSubtask(def.attemptedName, subtaskScores.numAttempted);
+      addToSubtask(def.percentCorrectName, subtaskScores.percentCorrect);
+      // Theta fields are populated only for adaptive scoring (v4+).
+      addToSubtask(PA_SCORE_NAMES.THETA_ESTIMATE, subtaskScores.thetaEstimate);
+      addToSubtask(PA_SCORE_NAMES.THETA_SE, subtaskScores.thetaSE);
     }
   }
 
   // Process composite and composite_foundational groups
   // Use different domains to avoid natural-key collision on (type, domain, name, assessmentStage)
-  for (const groupKey of ['composite', 'composite_foundational']) {
+  for (const groupKey of ["composite", "composite_foundational"]) {
     const groupScores = computed[groupKey];
     if (groupScores) {
       // Use different domain for composite_foundational to distinguish from composite
       // Domains must match backend SCORE_DOMAIN constants for recompute lookups
-      const domain = groupKey === 'composite_foundational' ? SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL : SCORE_DOMAIN.COMPOSITE;
+      const domain =
+        groupKey === "composite_foundational"
+          ? SCORE_DOMAIN.COMPOSITE_FOUNDATIONAL
+          : SCORE_DOMAIN.COMPOSITE;
       const addWithDomain = (name: PaScoreName, value: unknown) => {
         if (value == null) return;
         entries.push({
-          type: 'computed',
+          type: "computed",
           domain,
           name,
           value: String(value),
@@ -192,6 +186,12 @@ export function toPaScoreEntries(
       for (const summaryName of SUMMARY_NAMES) {
         addWithDomain(summaryName, groupScores[summaryName]);
       }
+
+      // Composite raw counts (summed across subtasks). Only the main composite
+      // carries these; the backend best-run recompute reads numAttempted under
+      // domain='composite'. composite_foundational has no counts, so these no-op there.
+      addWithDomain(PA_SCORE_NAMES.NUM_CORRECT, groupScores.numCorrect);
+      addWithDomain(PA_SCORE_NAMES.NUM_ATTEMPTED, groupScores.numAttempted);
     }
   }
 
@@ -200,14 +200,14 @@ export function toPaScoreEntries(
   if (strict) {
     const recognizedGroups = new Set([
       ...PA_SUBTASK_KEYS.map((k) => k.toLowerCase()),
-      'composite',
-      'composite_foundational',
+      "composite",
+      "composite_foundational",
     ]);
     for (const groupKey of Object.keys(computed)) {
       if (!recognizedGroups.has(groupKey)) {
         throw new Error(
           `Unrecognized score group "${groupKey}" in computed scores. ` +
-            `Expected one of: ${Array.from(recognizedGroups).sort().join(', ')}`,
+            `Expected one of: ${Array.from(recognizedGroups).sort().join(", ")}`,
         );
       }
     }
