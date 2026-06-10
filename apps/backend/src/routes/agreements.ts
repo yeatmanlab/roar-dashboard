@@ -33,7 +33,6 @@ function setCacheControlHeaderMiddleware(_req: Request, res: Response, next: Nex
 export function registerAgreementsRoutes(routerInstance: Router) {
   const AgreementsRoutes = s.router(AgreementsContract, {
     list: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => AgreementsController.list(user!, query),
     },

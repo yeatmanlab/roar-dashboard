@@ -17,6 +17,7 @@ const s = initServer();
 export function registerSystemRoutes(routerInstance: Router) {
   const SystemRoutes = s.router(SystemContract, {
     syncFga: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware, SuperAdminAuthGuardMiddleware],
       handler: async ({ req, query }) =>
         SystemController.syncFga({ userId: req.user!.userId, isSuperAdmin: req.user!.isSuperAdmin }, query),

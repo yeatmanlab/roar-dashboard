@@ -16,41 +16,34 @@ const s = initServer();
 export function registerUserRoutes(routerInstance: Router) {
   const UserRoutes = s.router(UsersContract, {
     get: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => UsersController.get(user!, id),
     },
     create: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => UsersController.create(user!, body),
     },
     update: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, body }) => UsersController.update(user!, id, body),
     },
     recordUserAgreement: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { userId }, body }) =>
         UsersController.recordUserAgreement(user!, userId, body),
     },
     listUserAdministrations: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { userId }, query }) =>
         UsersController.listUserAdministrations(user!, userId, query),
     },
     getUserAdministration: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { userId, administrationId } }) =>
         UsersController.getUserAdministration(user!, userId, administrationId),
     },
     scoreReports: {
       getGuardianStudentReport: {
-        // @ts-expect-error - ts-rest middleware type incompatibility with Express
         middleware: [AuthGuardMiddleware],
         handler: async ({ req: { user }, params: { userId } }) =>
           UsersController.getGuardianStudentReport(user!, userId),
