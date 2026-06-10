@@ -15,28 +15,23 @@ const s = initServer();
 export function registerSchoolsRoutes(routerInstance: Router) {
   const SchoolsRoutes = s.router(SchoolsContract, {
     create: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => SchoolsController.create(user!, body),
     },
     list: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => SchoolsController.list(user!, query),
     },
     get: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { schoolId } }) => SchoolsController.getById(user!, schoolId),
     },
     listClasses: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { schoolId }, query }) =>
         SchoolsController.listClasses(user!, schoolId, query),
     },
     listUsers: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { schoolId }, query }) =>
         SchoolsController.listUsers(user!, schoolId, query),

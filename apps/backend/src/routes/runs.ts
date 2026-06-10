@@ -15,13 +15,11 @@ const s = initServer();
 export function registerRunsRoutes(routerInstance: Router) {
   const RunsRoutes = s.router(RunsContract, {
     create: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params, body }) => RunsController.create(req.user!, params.userId, body),
     },
 
     event: {
-      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params, body }) => RunsController.event(req.user!, params.userId, params.runId, body),
     },
