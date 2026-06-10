@@ -23,9 +23,9 @@ export interface PaSubscoreDef {
  * Per-subtask display metadata and run_scores.name mappings for PA.
  * Consumers iterate PA_SUBTASK_KEYS to preserve canonical order.
  *
- * Note: #Attempted names are not emitted by scores.js callback (which only tracks
- * numCorrect and percentCorrect per subtask). They were previously included for UI
- * display but are no longer needed.
+ * Note: attemptedName fields ARE emitted as subtask score entries whenever the
+ * scores.js callback provides a non-null numAttempted for that subtask
+ * (see toPaScoreEntries). They are skipped only when numAttempted is null/undefined.
  */
 export const PA_SUBSCORE_DEFS = {
   FSM: {

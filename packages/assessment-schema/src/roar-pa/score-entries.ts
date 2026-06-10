@@ -103,7 +103,7 @@ const SUMMARY_NAMES = [
  * const computed = {
  *   fsm: { numCorrect: 10, percentCorrect: 67, thetaEstimate: 0.5, thetaSE: 0.2 },
  *   lsm: { numCorrect: 12, percentCorrect: 80, thetaEstimate: 0.8, thetaSE: 0.18 },
- *   composite: { roarScore: 25, percentile: 60, standardScore: 105, thetaEstimate: 0.65, thetaSE: 0.15 },
+ *   composite: { roarScore: 25, percentile: 60, standardScore: 105, numCorrect: 30, numAttempted: 45, thetaEstimate: 0.65, thetaSE: 0.15 },
  *   composite_foundational: { roarScore: 22, percentile: 55, standardScore: 100, thetaEstimate: 0.6, thetaSE: 0.16 }
  * };
  * const entries = toPaScoreEntries(computed);

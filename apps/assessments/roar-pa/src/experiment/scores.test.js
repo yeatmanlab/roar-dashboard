@@ -133,8 +133,10 @@ describe('RoarScores.computedScoreCallback', () => {
 
     expect(result.composite).toMatchObject({ percentile: 55, standardScore: 102 });
     // Pins the `...computedScores.composite_foundational` merge: composite inherits the
-    // foundational numCorrect (9), overriding its own (1). This is a surprising side-effect
-    // worth confirming is intended — exactly what this regression test exists to catch.
+    // foundational numCorrect (9), overriding the value it holds at that point (14, the
+    // subtask sum 8+6 — the raw composite.test input of 1 was already replaced by the
+    // composite-count step). This is a surprising side-effect worth confirming is intended —
+    // exactly what this regression test exists to catch.
     expect(result.composite.numCorrect).toBe(9);
   });
 });

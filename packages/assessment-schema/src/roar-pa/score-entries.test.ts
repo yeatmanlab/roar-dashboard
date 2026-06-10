@@ -94,7 +94,12 @@ describe("toPaScoreEntries", () => {
           name: PA_SCORE_NAMES.LSM_CORRECT,
         }),
       );
-      // Note: #Attempted names are never emitted, so no need to test skipping them
+      // del has numAttempted: undefined, so its delAttempted entry is also skipped
+      expect(entries).not.toContainEqual(
+        expect.objectContaining({
+          name: PA_SCORE_NAMES.DEL_ATTEMPTED,
+        }),
+      );
     });
   });
 
@@ -308,10 +313,12 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have: 6 subtask (2 per subtask: correct, percentCorrect) + 7 composite + 7 composite_foundational = 20 entries
-      // (thetaEstimate and thetaSE are not in SUMMARY_NAMES, so skipped)
-      // (#Attempted names are not emitted by scores.js callback)
-      expect(entries.length).toBeGreaterThanOrEqual(20);
+      // Should have: 9 subtask (3 per subtask: correct, attempted, percentCorrect)
+      //   + 9 composite (7 summary names + thetaEstimate + thetaSE)
+      //   + 9 composite_foundational (same) = 27 entries.
+      // (composite/composite_foundational have no numCorrect/numAttempted here, so
+      //  those count entries are skipped.)
+      expect(entries.length).toBe(27);
 
       // Verify all entries have correct type and valid domain
       entries.forEach((entry: ComputedScoreEntry) => {
@@ -361,9 +368,10 @@ describe("toPaScoreEntries", () => {
 
       const entries = toPaScoreEntries(computed);
 
-      // Should have: 6 subtask + 7 composite = 13 entries
-      // (#Attempted names are not emitted by scores.js callback)
-      expect(entries.length).toBeGreaterThanOrEqual(13);
+      // Should have: 9 subtask (3 per subtask: correct, attempted, percentCorrect)
+      //   + 7 composite summary names = 16 entries.
+      // (roarScore on subtasks is not emitted; composite has no numCorrect/numAttempted here.)
+      expect(entries.length).toBe(16);
 
       // Verify roarScore is included in subtask entries
       expect(entries).toContainEqual(
