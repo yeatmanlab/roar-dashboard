@@ -15,8 +15,8 @@ const s = initServer();
 export function registerAdministrationsRoutes(routerInstance: Router) {
   const AdministrationsRoutes = s.router(AdministrationsContract, {
     list: {
-      middleware: [AuthGuardMiddleware],
       // @ts-expect-error - ts-rest middleware type incompatibility with Express
+      middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => AdministrationsController.list(user!, query),
     },
     create: {
