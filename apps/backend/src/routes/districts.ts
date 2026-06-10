@@ -15,34 +15,34 @@ const s = initServer();
 export function registerDistrictsRoutes(routerInstance: Router) {
   const DistrictsRoutes = s.router(DistrictsContract, {
     create: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => DistrictsController.create(user!, body),
     },
     list: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => DistrictsController.list(user!, query),
     },
     get: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => DistrictsController.getById(user!, id),
     },
     listSchools: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { districtId }, query }) =>
         DistrictsController.listSchools(user!, districtId, query),
     },
     listUsers: {
-      // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { districtId }, query }) =>
         DistrictsController.listUsers(user!, districtId, query),
     },
   });
 
-  // @ts-expect-error - Express v4/v5 types mismatch in monorepo
+  // @ts-expect-error - ts-rest middleware type incompatibility with Express
   createExpressEndpoints(DistrictsContract, DistrictsRoutes, routerInstance);
 }
