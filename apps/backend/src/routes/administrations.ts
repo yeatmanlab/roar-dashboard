@@ -15,40 +15,49 @@ const s = initServer();
 export function registerAdministrationsRoutes(routerInstance: Router) {
   const AdministrationsRoutes = s.router(AdministrationsContract, {
     list: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => AdministrationsController.list(user!, query),
     },
     create: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => AdministrationsController.create(user!, body),
     },
     get: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.get(user!, id),
     },
     getAssignees: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.getAssignees(user!, id),
     },
     listTaskVariants: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, query }) =>
         AdministrationsController.listTaskVariants(user!, id, query),
     },
     listAgreements: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, query }) =>
         AdministrationsController.listAgreements(user!, id, query),
     },
     getTree: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, query }) => AdministrationsController.getTree(user!, id, query),
     },
     delete: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id } }) => AdministrationsController.delete(user!, id),
     },
     update: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, params: { id }, body }) => AdministrationsController.update(user!, id, body),
     },

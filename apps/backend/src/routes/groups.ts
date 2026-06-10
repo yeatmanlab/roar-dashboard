@@ -15,10 +15,12 @@ const s = initServer();
 export function registerGroupsRoutes(routerInstance: Router) {
   const GroupsRoutes = s.router(GroupsContract, {
     create: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, body }) => GroupsController.create(user!, body),
     },
     getInvitationCode: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params }) =>
         GroupsController.getInvitationCode(
@@ -27,6 +29,7 @@ export function registerGroupsRoutes(routerInstance: Router) {
         ),
     },
     listUsers: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req, params, query }) =>
         GroupsController.listUsers(

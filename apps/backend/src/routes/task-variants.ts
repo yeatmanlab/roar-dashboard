@@ -9,6 +9,7 @@ const s = initServer();
 export function registerTaskVariantsRoutes(routerInstance: Router) {
   const TaskVariantsRoutes = s.router(TaskVariantsContract, {
     list: {
+      // @ts-expect-error - ts-rest middleware type incompatibility with Express
       middleware: [AuthGuardMiddleware],
       handler: async ({ req: { user }, query }) => TaskVariantsController.list(user!, query),
     },
