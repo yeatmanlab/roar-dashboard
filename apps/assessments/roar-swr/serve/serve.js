@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { getVariantParamsById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
+import { getVariantById, initFirekitCompat } from '@roar-platform/assessment-sdk/compat/firekit';
 import { SWR_LANGUAGES } from '@roar-platform/assessment-schema/roar-swr';
 import RoarSWR from '../src/index';
 import { getFirebaseConfig } from '../../shared/firebaseConfig';
@@ -13,7 +13,6 @@ const urlParams = new URLSearchParams(queryString);
 // Participant / session
 const assessmentPid = urlParams.get('PROLIFIC_PID') || urlParams.get('sona_id') || urlParams.get('participant');
 const labId = urlParams.get('labId');
-const recruitment = urlParams.get('recruitment');
 const variantId = urlParams.get('variantId');
 const taskVersion = urlParams.get('taskVersion') ?? '1.0';
 
@@ -24,27 +23,12 @@ const birthMonth = urlParams.get('birthmonth');
 const age = urlParams.get('age');
 const ageMonths = urlParams.get('agemonths');
 
-// Game parameters
-const userMode = urlParams.get('mode');
-const audioFeedbackOption = urlParams.get('audioFeedbackOption'); // "random", "neutral", "binary", or null
-const numAdaptive = urlParams.get('numAdaptive') === null ? null : parseInt(urlParams.get('numAdaptive'), 10);
-const numNew = urlParams.get('numNew') === null ? null : parseInt(urlParams.get('numNew'), 10);
-const numValidated = urlParams.get('numValidated') === null ? null : parseInt(urlParams.get('numValidated'), 10);
-const storyOption = urlParams.get('storyoption');
-// Boolean parameters
-const consent = urlParams.get('consent') !== 'false';
-const skipInstructions = urlParams.get('skip') !== 'true';
-const addNoResponse = urlParams.get('addNoResponse')?.toLocaleLowerCase() === 'true';
 const useParameterValidation = urlParams.get('useParameterValidation') === 'true';
 
-// Language → task ID mapping via schema constants
+// Language → task ID mapping used only when no variantId is in the URL (fallback variant resolution)
 const lngParam = urlParams.get('lng') ?? 'en';
 const language = SWR_LANGUAGES[lngParam] ?? SWR_LANGUAGES.en;
-const taskId = language.taskId;
-
-// Scoring version: URL param takes precedence; fall back to language default (null for non-normed languages)
-const scoringVersionParam = parseInt(urlParams.get('scoringVersion'), 10);
-const scoringVersion = Number.isNaN(scoringVersionParam) ? language.defaultScoringVersion : scoringVersionParam;
+const fallbackTaskId = language.taskId;
 
 const firebaseConfig = await getFirebaseConfig();
 const app = initializeApp(firebaseConfig);
@@ -77,24 +61,24 @@ onAuthStateChanged(auth, async (user) => {
       const { data } = json;
 
       // Resolve variantId: use URL param if provided, otherwise fall back to the
-      // first published variant for this task.
+      // first variant for this task (derived from the lng URL param).
       // TODO: Replace with a proper "default variant" concept once the task_variants
       // schema supports marking a single variant as default per task.
       // See: https://github.com/yeatmanlab/roar-project-management/issues/1828
       let resolvedVariantId = variantId;
       if (!resolvedVariantId) {
         // eslint-disable-next-line no-undef
-        const variantRes = await fetch(`${ROAR_API_BASE_URL}/tasks/${taskId}/variants?perPage=1`, {
+        const variantRes = await fetch(`${ROAR_API_BASE_URL}/tasks/${fallbackTaskId}/variants?perPage=1`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const variantJson = await variantRes.json();
         if (!variantRes.ok) {
-          console.error(`Failed to fetch roar-swr task variants for ${taskId}:`, variantRes.status, variantJson);
+          console.error(`Failed to fetch roar-swr task variants for ${fallbackTaskId}:`, variantRes.status, variantJson);
           return;
         }
         resolvedVariantId = variantJson?.data?.items?.[0]?.id ?? null;
         if (!resolvedVariantId) {
-          console.error(`Could not resolve a roar-swr task variant for ${taskId}:`, variantJson);
+          console.error(`Could not resolve a roar-swr task variant for ${fallbackTaskId}:`, variantJson);
           return;
         }
       }
@@ -112,6 +96,8 @@ onAuthStateChanged(auth, async (user) => {
         isAnonymous: true,
       });
 
+      const { variantParams } = await getVariantById(resolvedVariantId);
+
       const userParams = {
         assessmentPid,
         labId,
@@ -122,24 +108,7 @@ onAuthStateChanged(auth, async (user) => {
         ageMonths,
       };
 
-      // const gameParams = {
-      //   userMode,
-      //   recruitment,
-      //   skipInstructions,
-      //   consent,
-      //   audioFeedbackOption,
-      //   numAdaptive,
-      //   numNew,
-      //   numValidated,
-      //   addNoResponse,
-      //   storyOption,
-      //   scoringVersion,
-      //   lng: lngParam,
-      // };
-
-      const gameParams = getVariantParamsById(taskId, resolvedVariantId);
-
-      const roarApp = new RoarSWR(gameParams, userParams, null, useParameterValidation);
+      const roarApp = new RoarSWR(variantParams, userParams, null, useParameterValidation);
       roarApp.run();
     } catch (err) {
       console.error('Failed to initialize assessment:', err);

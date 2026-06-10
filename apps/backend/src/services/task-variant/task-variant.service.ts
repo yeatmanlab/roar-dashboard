@@ -169,5 +169,58 @@ export function TaskVariantService({
     }
   }
 
-  return { listAllPublished };
+  /**
+   * Retrieve a task variant by ID, with its parameters and denormalized task fields.
+   *
+   * Authorization behavior:
+   * - Any authenticated user may retrieve a variant (draft, published, or deprecated).
+   *
+   * @param authContext - The caller's auth context
+   * @param variantId - UUID of the variant to retrieve
+   * @returns The variant with task details and parameters
+   * @throws {ApiError} NOT_FOUND if no variant exists with that ID
+   * @throws {ApiError} DATABASE_QUERY_FAILED on unexpected repository errors
+   */
+  async function getByIdWithTaskDetails(authContext: AuthContext, variantId: string): Promise<TaskVariantListItem> {
+    const { userId } = authContext;
+
+    try {
+      const variant = await taskVariantRepository.getByIdWithTaskDetails(variantId);
+
+      if (!variant) {
+        throw new ApiError(ApiErrorMessage.NOT_FOUND, {
+          statusCode: StatusCodes.NOT_FOUND,
+          code: ApiErrorCode.RESOURCE_NOT_FOUND,
+          context: { userId, variantId },
+        });
+      }
+
+      const rawParams = await taskVariantParameterRepository.getByTaskVariantIds([variantId]).catch((err) => {
+        throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          code: ApiErrorCode.DATABASE_QUERY_FAILED,
+          context: { userId, variantId },
+          cause: err,
+        });
+      });
+
+      return {
+        ...variant,
+        parameters: rawParams.map((p) => ({ name: p.name, value: p.value })),
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+
+      logger.error({ err: error, context: { userId, variantId } }, 'Failed to retrieve task variant');
+
+      throw new ApiError(ApiErrorMessage.INTERNAL_SERVER_ERROR, {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        code: ApiErrorCode.DATABASE_QUERY_FAILED,
+        context: { userId, variantId },
+        cause: error,
+      });
+    }
+  }
+
+  return { listAllPublished, getByIdWithTaskDetails };
 }

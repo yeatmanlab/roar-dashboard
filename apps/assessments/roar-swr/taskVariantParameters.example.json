@@ -11,7 +11,7 @@
       "numValidated": null,
       "addNoResponse": false,
       "consent": true,
-      "skipInstructions": false,
+      "skipInstructions": true,
       "storyOption": null,
       "recruitment": null
     }
@@ -28,7 +28,7 @@
       "numValidated": null,
       "addNoResponse": false,
       "consent": true,
-      "skipInstructions": false,
+      "skipInstructions": true,
       "storyOption": null,
       "recruitment": null
     }
@@ -45,7 +45,7 @@
       "numValidated": null,
       "addNoResponse": false,
       "consent": true,
-      "skipInstructions": false,
+      "skipInstructions": true,
       "storyOption": null,
       "recruitment": null
     }
@@ -62,7 +62,7 @@
       "numValidated": null,
       "addNoResponse": false,
       "consent": true,
-      "skipInstructions": false,
+      "skipInstructions": true,
       "storyOption": null,
       "recruitment": null
     }
@@ -79,7 +79,7 @@
       "numValidated": null,
       "addNoResponse": false,
       "consent": true,
-      "skipInstructions": false,
+      "skipInstructions": true,
       "storyOption": null,
       "recruitment": null
     }
