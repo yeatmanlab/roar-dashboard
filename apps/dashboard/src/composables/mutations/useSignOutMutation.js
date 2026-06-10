@@ -21,16 +21,21 @@ const useSignOutMutation = () => {
       await authStore.roarfirekit.signOut();
     },
     onSuccess: async () => {
-      // Cancel all actively fetching queries.
+      // Cancel all actively fetching queries so they don't resolve into a
+      // freshly-reset store.
       await queryClient.cancelQueries();
 
-      // Reset store and delete persisted data. Persisted data should be cleared via the $reset but to be safe, we also
-      // remove it manually from sessionStorage to prevent any issues.
+      // Reset store state. `meData` is no longer part of the auth store — it
+      // lives in TanStack Query and is dropped by the `queryClient.clear()`
+      // call below. The explicit `sessionStorage` removals defend against
+      // persisted state surviving the reset on environments where the Pinia
+      // persistence plugin races the redirect.
       authStore.$reset();
       sessionStorage.removeItem('authStore');
       sessionStorage.removeItem('gameStore');
 
-      // Clear the query client to remove all cached data.
+      // Clear the query client to remove all cached data — this also drops
+      // any cached `/me` payload.
       queryClient.clear();
 
       // Re-initialize Firekit. This is necessary to ensure that Firekit is properly reset after
